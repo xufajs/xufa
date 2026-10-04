@@ -29,6 +29,7 @@
           <a href="guide.html">Guide</a>
           <a href="http.html">HTTP</a>
           <a href="orm.html">ORM</a>
+          <a class="hide-small" href="auth.html">Auth</a>
           <a class="hide-small" href="sequelize.html">Sequelize</a>
           <a class="hide-small" href="packages.html">Packages</a>
           <a class="hide-small" href="benchmarks.html">Benchmarks</a>
@@ -211,9 +212,10 @@ const books = await Book.findAll({
             <table>
               <thead><tr><th>Package</th><th>Has the API of</th><th>What it is</th></tr></thead>
               <tbody>
-                <tr><td><a href="guide.html"><code>xufa</code></a></td><td></td><td>The framework: <code>@xufa/http</code>, and the ORM as <code>xufa/orm</code></td></tr>
+                <tr><td><a href="guide.html"><code>xufa</code></a></td><td></td><td>The framework: <code>@xufa/http</code>, the ORM as <code>xufa/orm</code> and the authentication as <code>xufa/auth</code></td></tr>
                 <tr><td><a href="http.html"><code>@xufa/http</code></a></td><td>fastify</td><td>The HTTP framework</td></tr>
                 <tr><td><a href="orm.html"><code>@xufa/orm</code></a></td><td>Django's ORM</td><td>Models and QuerySets on SQLite, PostgreSQL, MongoDB and memory</td></tr>
+                <tr><td><a href="auth.html"><code>@xufa/auth</code></a></td><td></td><td>Passwords, JWTs, TOTP, lockouts and refresh tokens</td></tr>
                 <tr><td><a href="sequelize.html"><code>@xufa/sequelize</code></a></td><td>Sequelize 6</td><td>Sequelize code on the ORM</td></tr>
                 <tr><td><a href="packages.html#pg"><code>@xufa/pg</code></a></td><td>pg</td><td>PostgreSQL driver</td></tr>
                 <tr><td><a href="packages.html#mongo"><code>@xufa/mongo</code></a></td><td>mongodb</td><td>MongoDB driver</td></tr>
@@ -235,7 +237,7 @@ const books = await Book.findAll({
       <div class="container">
         <span>xufa is MIT licensed. &copy; Jes&uacute;s Seijas</span>
         <span>
-          <a href="guide.html">Guide</a> &middot; <a href="http.html">HTTP</a> &middot; <a href="orm.html">ORM</a> &middot;
+          <a href="guide.html">Guide</a> &middot; <a href="http.html">HTTP</a> &middot; <a href="orm.html">ORM</a> &middot; <a href="auth.html">Auth</a> &middot;
           <a href="sequelize.html">Sequelize</a> &middot; <a href="packages.html">Packages</a> &middot;
           <a href="benchmarks.html">Benchmarks</a> &middot; <a href="https://github.com/xufajs/xufa">GitHub</a>
         </span>

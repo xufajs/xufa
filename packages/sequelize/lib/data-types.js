@@ -108,20 +108,30 @@ class DataType {
   }
 }
 
+// As Sequelize: ABSTRACT is the type every type is, and warn() logs a warning about a type once.
+DataType.key = 'ABSTRACT';
+const warnings = new Set();
+DataType.warn = function warn(link, text) {
+  if (warnings.has(text)) return;
+  warnings.add(text);
+  console.warn(`(sequelize) Warning: ${text} \n>> Check: ${link}`); // eslint-disable-line no-console
+};
+
 // A type: a function that makes the type with options (with or without new), which is itself the type with none.
-function defineType(key, kind, parse = () => ({})) {
-  // Its types are instances of it (instanceof DataTypes.INTEGER) and of DataType.
+function defineType(key, kind, parse = () => ({}), parent = DataType) {
+  // Its types are instances of it (instanceof DataTypes.INTEGER), of its parent (DataTypes.NUMBER) and of DataType.
   const type = function makeType(...args) {
     const instance = Object.create(type.prototype);
     Object.assign(instance, { key, kind, options: parse(...args) });
     return instance;
   };
-  type.prototype = Object.create(DataType.prototype, {
+  type.prototype = Object.create(parent.prototype, {
     constructor: { value: type, writable: true, configurable: true },
   });
   type.key = key;
   type.kind = kind;
   type.options = parse();
+  type.warn = DataType.warn;
   type.toString = () => key;
   Object.defineProperty(type, 'name', { value: key });
   for (const modifier of ['UNSIGNED', 'ZEROFILL']) {
@@ -142,6 +152,10 @@ const decimal = (precision, scale) => {
   return { precision, scale };
 };
 
+// The type of numbers, which the numeric types are (DataTypes.INTEGER() instanceof DataTypes.NUMBER), as in Sequelize.
+const NUMBER = defineType('NUMBER', 'float');
+const numeric = (key, kind, parse) => defineType(key, kind, parse, NUMBER);
+
 // The types of a dialect (DataTypes.postgres.DATE...) are those of every dialect.
 const DataTypes = {
   // The type all types are (type instanceof DataTypes.ABSTRACT).
@@ -152,16 +166,17 @@ const DataTypes = {
   CITEXT: defineType('CITEXT', 'text'),
   // Text search vectors of PostgreSQL (text elsewhere): written as text, which PostgreSQL makes a vector.
   TSVECTOR: defineType('TSVECTOR', 'text'),
-  TINYINT: defineType('TINYINT', 'integer'),
-  SMALLINT: defineType('SMALLINT', 'integer'),
-  MEDIUMINT: defineType('MEDIUMINT', 'integer'),
-  INTEGER: defineType('INTEGER', 'integer'),
-  BIGINT: defineType('BIGINT', 'bigint'),
-  FLOAT: defineType('FLOAT', 'float'),
-  REAL: defineType('REAL', 'float'),
-  DOUBLE: defineType('DOUBLE', 'float'),
-  DECIMAL: defineType('DECIMAL', 'decimal', decimal),
-  NUMERIC: defineType('NUMERIC', 'decimal', decimal),
+  NUMBER,
+  TINYINT: numeric('TINYINT', 'integer'),
+  SMALLINT: numeric('SMALLINT', 'integer'),
+  MEDIUMINT: numeric('MEDIUMINT', 'integer'),
+  INTEGER: numeric('INTEGER', 'integer'),
+  BIGINT: numeric('BIGINT', 'bigint'),
+  FLOAT: numeric('FLOAT', 'float'),
+  REAL: numeric('REAL', 'float'),
+  DOUBLE: numeric('DOUBLE', 'float'),
+  DECIMAL: numeric('DECIMAL', 'decimal', decimal),
+  NUMERIC: numeric('NUMERIC', 'decimal', decimal),
   BOOLEAN: defineType('BOOLEAN', 'boolean'),
   DATE: defineType('DATE', 'datetime'),
   DATEONLY: defineType('DATEONLY', 'date'),
@@ -205,6 +220,8 @@ DataTypes.DATE.parse = (value) => new Date(value);
 DataTypes.DATEONLY.parse = (value) => value;
 DataTypes.RANGE.parse = (value, options = {}) =>
   require('./range').parseRange(value, typeof options === 'function' ? options : options.parser || 'INTEGER'); // eslint-disable-line global-require
+// Whether a type is an ARRAY of a type: DataTypes.ARRAY.is(type, DataTypes.ENUM).
+DataTypes.ARRAY.is = (type, itemType) => type instanceof DataTypes.ARRAY && type.options.type instanceof itemType;
 DataTypes.postgres = DataTypes;
 DataTypes.sqlite = DataTypes;
 
@@ -213,7 +230,7 @@ function normalizeType(type) {
   if (type instanceof DataType) return type;
   if (typeof type === 'function' && type.kind) return type();
   // The types of the sequelize package itself (by their key, with their options).
-  if (type && typeof type.key === 'string' && DataTypes[type.key]) {
+  if (type && typeof type.key === 'string' && DataTypes[type.key] && DataTypes[type.key] !== DataType) {
     if (typeof type === 'function') return DataTypes[type.key]();
     const options = type.options || {};
     switch (type.key) {

@@ -113,11 +113,52 @@ rawErrors })`. As in Sequelize, replacements are written in the SQL, escaped; bi
   of the database.
 - CLS: `Sequelize.useCLS(namespace)` as in Sequelize (the transaction of a managed callback is in the namespace, and
   the queries without `{ transaction }` take it).
+- QueryInterface: tables, columns, indexes and constraints (SQLite tables are made again for the changes it cannot
+  make, as Sequelize does), rows (`bulkInsert`, `bulkUpdate`, `bulkDelete`, `insert`, `select`, `upsert`,
+  `increment`, `decrement`, `delete`, `rawSelect`), and in PostgreSQL functions (`createFunction`...), triggers
+  (`createTrigger`, `dropTrigger`, `renameTrigger`), databases (`createDatabase`, `dropDatabase`) and enum types.
 - Also: the `schema` option of the Sequelize instance, `onUpdate` (CASCADE by default, as Sequelize), references to
-  tables that are no model, `queryInterface.createFunction`/`dropFunction`/`renameFunction` and functional indexes
-  (PostgreSQL), aggregates of includes (`attributes: [[fn('COUNT', col('comments.id')), 'n']]` with `group`).
+  tables that are no model, functional indexes (PostgreSQL), aggregates of includes
+  (`attributes: [[fn('COUNT', col('comments.id')), 'n']]` with `group`), `Sequelize.useInflection()`, and the
+  helpers of `Utils` that code outside Sequelize uses (`pluralize`, `camelize`, `cloneDeep`...).
 - Errors: `ValidationError`, `UniqueConstraintError` (with `fields`), `ForeignKeyConstraintError`, `DatabaseError`,
   `EmptyResultError`, `ConnectionError`, `TimeoutError`...
+
+## TypeScript and ES modules
+
+The declarations are Sequelize's own (6.37.8), ported with their type tests by
+[`tools/port-types`](../../tools/port-types): models typed by `InferAttributes`, `CreationOptional`, the accessors
+of associations, `WhereOptions`... What changes in them is what the package has not: the helpers of Sequelize's own
+SQL writer in `Utils` (`format`, `mapFinderOptions`...) and the transactions of the QueryInterface
+(`startTransaction`...; transactions are `sequelize.transaction()`). They do not need `@types/validator` or
+`retry-as-promised`, as Sequelize's do. `NotSupportedError` is declared too.
+
+```ts
+import {
+  type CreationOptional,
+  DataTypes,
+  type InferAttributes,
+  type InferCreationAttributes,
+  Model,
+  Sequelize,
+} from '@xufa/sequelize';
+
+class User extends Model<InferAttributes<User>, InferCreationAttributes<User>> {
+  declare id: CreationOptional<number>;
+  declare name: string;
+}
+
+const sequelize = new Sequelize('sqlite::memory:');
+User.init(
+  { id: { type: DataTypes.INTEGER, autoIncrement: true, primaryKey: true }, name: DataTypes.STRING },
+  { sequelize }
+);
+await sequelize.sync();
+const ada = await User.create({ name: 'Ada' }); // id is optional
+```
+
+As Sequelize, the package is also an ES module with named exports (`import { Sequelize, DataTypes, Op } from
+'@xufa/sequelize'`), and `require('@xufa/sequelize')` is the Sequelize class.
 
 ## Differences
 
@@ -143,12 +184,13 @@ rawErrors })`. As in Sequelize, replacements are written in the SQL, escaped; bi
 
 The integration tests of Sequelize 6 (its v6 branch, `test/integration`) run against this package, each file in a
 process of its own, with `sequelize` resolved to this package; the same harness runs them against Sequelize 6.37.8
-itself, to tell the failures of the tests and of the environment from those of the package. Latest runs:
+itself, to tell the failures of the tests and of the environment from those of the package (the harness is
+[`tools/sequelize-compat`](../../tools/sequelize-compat)). Latest runs:
 
 | Database                                    | @xufa/sequelize          | Sequelize 6.37.8        |
 | ------------------------------------------- | ------------------------ | ----------------------- |
 | SQLite                                      | 1,707 passed, 54 failed  | 1,737 passed, 5 failed  |
-| PostgreSQL 18 (PostGIS, hstore, btree_gist) | 1,937 passed, 107 failed | 1,968 passed, 39 failed |
+| PostgreSQL 18 (PostGIS, hstore, btree_gist) | 1,939 passed, 105 failed | 1,968 passed, 39 failed |
 
 What fails here and passes in Sequelize checks its internals (the parsers of its data types, its connection manager
 and query generator), the SQL text it writes, or the differences listed above (bigints as bigints, hasMany includes

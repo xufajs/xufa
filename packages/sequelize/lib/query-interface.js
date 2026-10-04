@@ -164,6 +164,24 @@ function whereSql(where, dialect) {
   return parts.join(' AND ');
 }
 
+// A value as a parameter of a query: objects as JSON, and in SQLite dates as ISO text and booleans as 1 or 0.
+function parameterOf(value, dialect) {
+  if (value !== null && typeof value === 'object' && !(value instanceof Date) && !Buffer.isBuffer(value)) {
+    return JSON.stringify(value);
+  }
+  if (dialect === 'sqlite' && value instanceof Date) return value.toISOString();
+  if (dialect === 'sqlite' && typeof value === 'boolean') return value ? 1 : 0;
+  return value;
+}
+
+// LIMIT and OFFSET (an OFFSET alone needs a LIMIT in SQLite: -1, none).
+function limitSql({ limit, offset }, dialect) {
+  const limited = limit !== undefined && limit !== null;
+  let sql = limited ? ` LIMIT ${Number(limit)}` : '';
+  if (offset) sql += `${!limited && dialect === 'sqlite' ? ' LIMIT -1' : ''} OFFSET ${Number(offset)}`;
+  return sql;
+}
+
 const unquote = (text) => text.trim().replace(/^["`]|["`]$/g, '');
 
 class QueryInterface {
@@ -911,16 +929,11 @@ class QueryInterface {
     const placeholder = () => (this.dialect === 'postgres' ? `$${params.length}` : '?');
     const tuples = records.map((record) => {
       const values = columns.map((column) => {
-        let value = record[column];
+        const value = record[column];
         if (value === undefined) return this.dialect === 'postgres' ? 'DEFAULT' : 'NULL';
         if (value && (value.xufaLiteral !== undefined || value.xufaFn !== undefined))
           return literal(value, this.dialect);
-        if (value !== null && typeof value === 'object' && !(value instanceof Date) && !Buffer.isBuffer(value)) {
-          value = JSON.stringify(value);
-        }
-        if (this.dialect === 'sqlite' && value instanceof Date) value = value.toISOString();
-        if (this.dialect === 'sqlite' && typeof value === 'boolean') value = value ? 1 : 0;
-        params.push(value);
+        params.push(parameterOf(value, this.dialect));
         return placeholder();
       });
       return `(${values.join(', ')})`;
@@ -955,6 +968,198 @@ class QueryInterface {
     const condition = whereSql(where, this.dialect);
     const table_ = this.qt(tableNameOf(table));
     return this.execute(`UPDATE ${table_} SET ${sets.join(', ')}${condition ? ` WHERE ${condition}` : ''}`, options);
+  }
+
+  // A row inserted (with the values of its columns): [the row as the database has it, 1].
+  async insert(instance, table, values, options = {}) {
+    const [row] = await this.bulkInsert(table, [values], { ...options, returning: true });
+    if (instance) instance.isNewRecord = false;
+    return [row, 1];
+  }
+
+  // A row inserted, or updated with updateValues when one with the same key is there (options.conflictFields, or
+  // the primary key of options.model, or the columns of where): [the row, null].
+  async upsert(table, insertValues, updateValues, where, options = {}) {
+    const { model } = options;
+    let keys = options.conflictFields || [];
+    if (!keys.length && model) keys = model.primaryKeyAttributes.map((name) => model.rawAttributes[name].field || name);
+    if (!keys.length) keys = Object.keys(where || {});
+    if (!keys.length) throw new Error('upsert needs the columns of its key (options.conflictFields)');
+    const params = [];
+    const value = (item) => {
+      if (item && (item.xufaLiteral !== undefined || item.xufaFn !== undefined)) return literal(item, this.dialect);
+      params.push(parameterOf(item, this.dialect));
+      return this.dialect === 'postgres' ? `$${params.length}` : '?';
+    };
+    const columns = Object.keys(insertValues);
+    const updates = Object.keys(updateValues).filter((column) => !keys.includes(column));
+    const sql =
+      `INSERT INTO ${this.qt(tableNameOf(table))} (${columns.map(quote).join(', ')}) ` +
+      `VALUES (${columns.map((column) => value(insertValues[column])).join(', ')}) ` +
+      `ON CONFLICT (${keys.map(quote).join(', ')}) ` +
+      (updates.length
+        ? `DO UPDATE SET ${updates.map((column) => `${quote(column)} = ${value(updateValues[column])}`).join(', ')}`
+        : 'DO NOTHING') +
+      ' RETURNING *';
+    const [row] = await this.raw(sql, params, options);
+    return [row && model ? model.build(row, { isNewRecord: false, raw: true }) : row || null, null];
+  }
+
+  // The rows of a table (options: where, attributes, order, limit, offset): instances of model when one is given.
+  async select(model, table, options = {}) {
+    const rows = await this.raw(this.selectSql(table, options), [], options);
+    if (!model) return rows;
+    // The columns of the rows as the attributes of the model.
+    const named = (row) =>
+      Object.fromEntries(
+        Object.entries(row).map(([column, value]) => [
+          (model.xufaColumns && model.xufaColumns.get(column)) || column,
+          value,
+        ])
+      );
+    return rows.map((row) => model.build(named(row), { isNewRecord: false, raw: true }));
+  }
+
+  selectSql(table, options) {
+    const attributes = (options.attributes || []).map((attribute) => {
+      if (Array.isArray(attribute)) {
+        const [expression, alias] = attribute;
+        const sql = typeof expression === 'string' ? quote(expression) : literal(expression, this.dialect);
+        return `${sql} AS ${quote(alias)}`;
+      }
+      return typeof attribute === 'string' ? quote(attribute) : literal(attribute, this.dialect);
+    });
+    const condition = whereSql(options.where, this.dialect);
+    const order = [].concat(options.order || []).map((item) => {
+      const [column, direction = 'ASC'] = [].concat(item);
+      return `${typeof column === 'string' ? quote(column) : literal(column, this.dialect)} ${direction}`;
+    });
+    return (
+      `SELECT ${attributes.length ? attributes.join(', ') : '*'} FROM ${this.qt(tableNameOf(table))}` +
+      (condition ? ` WHERE ${condition}` : '') +
+      (order.length ? ` ORDER BY ${order.join(', ')}` : '') +
+      limitSql(options, this.dialect)
+    );
+  }
+
+  // One value of the first row of a query (attributeSelector names it), as Model.aggregate() reads it: of its
+  // options.dataType when given. With plain: false, the rows.
+  async rawSelect(table, options = {}, attributeSelector) {
+    if (attributeSelector === undefined) throw new Error('Please pass an attribute selector!');
+    const rows = await this.raw(this.selectSql(table, options), [], options);
+    if (options.plain === false) return rows;
+    const result = rows.length ? rows[0][attributeSelector] : null;
+    const type = options.dataType && normalizeType(options.dataType);
+    if (result === null || result === undefined || !type) return result === undefined ? null : result;
+    if (type.kind === 'float' || type.kind === 'decimal') return Number.parseFloat(result);
+    if (type.kind === 'integer') return Number.parseInt(result, 10);
+    if (type.kind === 'datetime') return result instanceof Date ? result : new Date(result);
+    return result;
+  }
+
+  // Columns of rows added to (or subtracted from), with other columns set too: Sequelize's (model, table, where,
+  // { column: by }, { column: value }, options).
+  async increment(model, table, where, amounts, extra = {}, options = {}) {
+    return this.arithmetic('+', table, where, amounts, extra, options);
+  }
+
+  async decrement(model, table, where, amounts, extra = {}, options = {}) {
+    return this.arithmetic('-', table, where, amounts, extra, options);
+  }
+
+  async arithmetic(operator, table, where, amounts, extra, options) {
+    const sets = [
+      ...Object.entries(amounts).map(
+        ([column, by]) => `${quote(column)} = ${quote(column)} ${operator} ${literal(by, this.dialect)}`
+      ),
+      ...Object.entries(extra || {}).map(([column, value]) => `${quote(column)} = ${literal(value, this.dialect)}`),
+    ];
+    const condition = whereSql(where, this.dialect);
+    const table_ = this.qt(tableNameOf(table));
+    return this.execute(`UPDATE ${table_} SET ${sets.join(', ')}${condition ? ` WHERE ${condition}` : ''}`, options);
+  }
+
+  // The row of an instance deleted (identifier: its key), as bulkDelete.
+  async delete(instance, table, identifier, options = {}) {
+    return this.bulkDelete(table, identifier, options);
+  }
+
+  // The names of the foreign keys of tables: { table: [names] } (SQLite has no names of them: []).
+  async getForeignKeysForTables(tables, options = {}) {
+    const result = {};
+    for (const table of tables) {
+      const name = typeof table === 'object' && table.tableName ? `${table.schema}.${table.tableName}` : String(table);
+      const keys = await this.getForeignKeyReferencesForTable(table, options);
+      result[name] = [...new Set(keys.map((key) => key.constraintName).filter(Boolean))];
+    }
+    return result;
+  }
+
+  quoteIdentifier(identifier) {
+    return quote(identifier);
+  }
+
+  quoteIdentifiers(identifiers) {
+    return String(identifiers).split('.').map(quote).join('.');
+  }
+
+  quoteTable(table) {
+    return this.qt(tableNameOf(table));
+  }
+
+  // Databases (PostgreSQL), as Sequelize writes them.
+
+  async createDatabase(name, options = {}) {
+    if (this.dialect !== 'postgres') throw new NotSupportedError(`Databases in ${this.dialect}`);
+    const text = (value) => literal(String(value), this.dialect);
+    const sql =
+      `CREATE DATABASE ${quote(name)}` +
+      (options.encoding ? ` ENCODING = ${text(options.encoding)}` : '') +
+      (options.collate ? ` LC_COLLATE = ${text(options.collate)}` : '') +
+      (options.ctype ? ` LC_CTYPE = ${text(options.ctype)}` : '') +
+      (options.template ? ` TEMPLATE = ${text(options.template)}` : '');
+    await this.execute(sql, options);
+  }
+
+  async dropDatabase(name, options = {}) {
+    if (this.dialect !== 'postgres') throw new NotSupportedError(`Databases in ${this.dialect}`);
+    await this.execute(`DROP DATABASE IF EXISTS ${quote(name)}`, options);
+  }
+
+  // Triggers (PostgreSQL), as Sequelize writes them: timing after, before, instead_of or after_constraint; events
+  // insert, update, delete or truncate.
+  async createTrigger(table, triggerName, timing, events, functionName, params, optionsArray, options = {}) {
+    if (this.dialect !== 'postgres') throw new NotSupportedError(`Triggers in ${this.dialect}`);
+    const TIMINGS = { after: 'AFTER', before: 'BEFORE', instead_of: 'INSTEAD OF', after_constraint: 'AFTER' };
+    if (!TIMINGS[timing]) throw new Error(`Invalid trigger event specified: ${timing}`);
+    const EVENTS = { insert: 'INSERT', update: 'UPDATE', delete: 'DELETE', truncate: 'TRUNCATE' };
+    const entries = Object.entries(events || {});
+    if (!entries.length) throw new Error('no table change events specified to trigger on');
+    const spec = entries
+      .map(([key, event]) => {
+        if (!EVENTS[event]) throw new Error(`parseTriggerEventSpec: undefined trigger event ${key}`);
+        return EVENTS[event];
+      })
+      .join(' OR ');
+    const extra = optionsArray && optionsArray.length ? ` ${optionsArray.join(' ')}` : '';
+    const sql =
+      `CREATE ${timing === 'after_constraint' ? 'CONSTRAINT ' : ''}TRIGGER ${quote(triggerName)} ${TIMINGS[timing]} ` +
+      `${spec} ON ${this.qt(tableNameOf(table))}${extra} EXECUTE PROCEDURE ${functionName}(${functionParams(params)});`;
+    await this.raw(sql, [], options);
+  }
+
+  async dropTrigger(table, triggerName, options = {}) {
+    if (this.dialect !== 'postgres') throw new NotSupportedError(`Triggers in ${this.dialect}`);
+    await this.raw(`DROP TRIGGER ${quote(triggerName)} ON ${this.qt(tableNameOf(table))} RESTRICT;`, [], options);
+  }
+
+  async renameTrigger(table, oldName, newName, options = {}) {
+    if (this.dialect !== 'postgres') throw new NotSupportedError(`Triggers in ${this.dialect}`);
+    await this.raw(
+      `ALTER TRIGGER ${quote(oldName)} ON ${this.qt(tableNameOf(table))} RENAME TO ${quote(newName)};`,
+      [],
+      options
+    );
   }
 
   // Functions (PostgreSQL), as Sequelize writes them.

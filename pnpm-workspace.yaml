@@ -2,6 +2,7 @@ packages:
   - packages/*
   - bench
   - tools/*
+  - '!tools/sequelize-compat'
 
 onlyBuiltDependencies:
   - sqlite3

@@ -55,6 +55,8 @@ const VALIDATORS = {
   min: (value, limit) => Number(value) >= limit,
   is: (value, pattern, flags) => toRegExp(pattern, flags).test(text(value)),
   not: (value, pattern, flags) => !toRegExp(pattern, flags).test(text(value)),
+  regex: (value, pattern, flags) => toRegExp(pattern, flags).test(text(value)),
+  notRegex: (value, pattern, flags) => !toRegExp(pattern, flags).test(text(value)),
   isNull: (value) => value === null || value === undefined,
   notNull: (value) => value !== null && value !== undefined,
   isArray: (value) => Array.isArray(value),

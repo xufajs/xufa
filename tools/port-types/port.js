@@ -42,7 +42,7 @@ function port(filter) {
         code = code.replace(pattern, replacement);
       }
       code = code.replace(/@@LINK(\d+)@@/g, (_, index) => links[Number(index)]);
-      if (file.patch) code = file.patch(code);
+      if (file.patch) code = file.patch(code, file.from);
       const target = path.join(ROOT, 'packages', pkg.target, file.to);
       fs.mkdirSync(path.dirname(target), { recursive: true });
       fs.writeFileSync(target, HEADER(pkg.upstream, file.from) + code);

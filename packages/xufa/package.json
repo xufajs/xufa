@@ -1,7 +1,7 @@
 {
   "name": "xufa",
   "version": "0.1.0",
-  "description": "A framework for Node.js in the spirit of Django: HTTP (with the API of fastify) and an ORM over SQL and NoSQL databases, with no dependencies",
+  "description": "A framework for Node.js in the spirit of Django: HTTP (with the API of fastify), an ORM over SQL and NoSQL databases and authentication, with no dependencies",
   "main": "./index.js",
   "types": "./index.d.ts",
   "type": "commonjs",
@@ -16,6 +16,10 @@
       "types": "./orm.d.ts",
       "default": "./orm.js"
     },
+    "./auth": {
+      "types": "./auth.d.ts",
+      "default": "./auth.js"
+    },
     "./package.json": "./package.json"
   },
   "files": [
@@ -23,7 +27,9 @@
     "index.mjs",
     "index.d.ts",
     "orm.js",
-    "orm.d.ts"
+    "orm.d.ts",
+    "auth.js",
+    "auth.d.ts"
   ],
   "scripts": {
     "test": "vyntra"
@@ -51,6 +57,7 @@
     "node": ">=22"
   },
   "dependencies": {
+    "@xufa/auth": "workspace:*",
     "@xufa/http": "workspace:*",
     "@xufa/orm": "workspace:*"
   },

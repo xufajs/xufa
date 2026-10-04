@@ -1,0 +1,62 @@
+{
+  "name": "@xufa/auth",
+  "version": "0.1.0",
+  "description": "Authentication with no dependencies: scrypt passwords, JSON Web Tokens with rotating keys, TOTP, login lockout, rotating refresh tokens and a plugin for @xufa/http",
+  "main": "./index.js",
+  "types": "./index.d.ts",
+  "type": "commonjs",
+  "exports": {
+    ".": {
+      "types": "./index.d.ts",
+      "default": "./index.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "index.js",
+    "index.d.ts",
+    "lib"
+  ],
+  "scripts": {
+    "test": "vyntra",
+    "test:types": "tsd"
+  },
+  "keywords": [
+    "auth",
+    "authentication",
+    "jwt",
+    "totp",
+    "2fa",
+    "scrypt",
+    "password",
+    "refresh-token"
+  ],
+  "author": "Jesús Seijas <jseijas@gmail.com>",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/xufajs/xufa.git",
+    "directory": "packages/auth"
+  },
+  "homepage": "https://github.com/xufajs/xufa/tree/main/packages/auth#readme",
+  "bugs": {
+    "url": "https://github.com/xufajs/xufa/issues"
+  },
+  "engines": {
+    "node": ">=22"
+  },
+  "dependencies": {
+    "@xufa/errors": "workspace:*"
+  },
+  "devDependencies": {
+    "@xufa/http": "workspace:*",
+    "@xufa/orm": "workspace:*",
+    "vyntra": "^0.6.0"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "tsd": {
+    "directory": "test/types"
+  }
+}

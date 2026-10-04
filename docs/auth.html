@@ -1,0 +1,259 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Auth · xufa</title>
+    <meta
+      name="description"
+      content="@xufa/auth: passwords with scrypt, JSON Web Tokens with rotating keys, TOTP, login lockout, refresh tokens that rotate, and the plugin of @xufa/http that puts them together. No dependencies."
+    />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%23d9502b'/%3E%3Ctext x='16' y='22.5' font-family='monospace' font-size='18' font-weight='700' fill='white' text-anchor='middle'%3Ex%3C/text%3E%3C/svg%3E"
+    />
+    <link rel="stylesheet" href="style.css?v=0.1.0" />
+    <script src="main.js?v=0.1.0"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js" defer></script>
+  </head>
+  <body>
+    <header class="header">
+      <div class="header-inner">
+        <a class="logo" href="./"><span class="logo-mark">x</span>xufa</a>
+        <nav class="nav">
+          <a href="guide.html">Guide</a>
+          <a href="http.html">HTTP</a>
+          <a href="orm.html">ORM</a>
+          <a class="hide-small" href="auth.html" aria-current="page">Auth</a>
+          <a class="hide-small" href="sequelize.html">Sequelize</a>
+          <a class="hide-small" href="packages.html">Packages</a>
+          <a class="hide-small" href="benchmarks.html">Benchmarks</a>
+          <a href="https://github.com/xufajs/xufa">GitHub</a>
+          <button class="theme-toggle" type="button" aria-label="Switch between light and dark theme">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+              <path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z" />
+            </svg>
+          </button>
+        </nav>
+      </div>
+    </header>
+
+    <div class="docs">
+      <button class="menu-toggle" type="button" aria-expanded="false">☰ Contents</button>
+      <aside class="sidebar">
+        <h4>@xufa/auth</h4>
+        <ul>
+          <li><a href="#app">An app with logins</a></li>
+          <li><a href="#plugin">The plugin</a></li>
+          <li><a href="#login">Login routes</a></li>
+        </ul>
+        <h4>Parts</h4>
+        <ul>
+          <li><a href="#passwords">Passwords</a></li>
+          <li><a href="#jwt">JSON Web Tokens</a></li>
+          <li><a href="#totp">One-time codes</a></li>
+          <li><a href="#lockout">Lockout</a></li>
+          <li><a href="#refresh">Refresh tokens</a></li>
+          <li><a href="#errors">Errors</a></li>
+          <li><a href="#typescript">TypeScript</a></li>
+        </ul>
+      </aside>
+
+      <article class="content">
+        <h1>Auth</h1>
+        <p class="intro">
+          <code>@xufa/auth</code> (or <code>xufa/auth</code>) is the authentication of xufa, with no dependencies:
+          everything is <code>node:crypto</code>. Passwords hashed with scrypt, JSON Web Tokens with keys that rotate,
+          one-time codes of authenticator apps, logins locked after failures, refresh tokens that rotate, and the
+          plugin of <a href="http.html"><code>@xufa/http</code></a> that puts them together.
+        </p>
+
+        <h2 id="app">An app with logins</h2>
+        <p>Users in the <a href="orm.html">ORM</a>, logins with an optional second factor, and routes that need a user or a role:</p>
+        <pre><code class="language-js">const xufa = require('xufa');
+const { Database, Model, fields, plugin: orm } = require('xufa/orm');
+const auth = require('xufa/auth'); // or require('@xufa/auth')
+
+class User extends Model {
+  static fields = {
+    email: fields.string({ unique: true }),
+    password: fields.string(),
+    role: fields.string({ default: 'user' }),
+    totpSecret: fields.string({ null: true }),
+    totpStep: fields.integer({ null: true }),
+  };
+}
+
+class RefreshToken extends Model {
+  static fields = auth.refreshTokenFields(fields);
+}
+
+const db = new Database({ backend: 'sqlite', filename: 'app.db' });
+db.register(User, RefreshToken);
+
+const app = xufa();
+app.register(orm, { database: db, sync: true });
+app.register(auth.plugin, {
+  keys: process.env.JWT_KEY,
+  accessToken: { expiresIn: '15m' },
+  login: {
+    findUser: (email) =&gt; User.objects.filter({ email: email.toLowerCase() }).first(),
+    claims: (user) =&gt; ({ sub: String(user.id), role: user.role }),
+    totp: (user) =&gt; user.totpSecret, // users with a secret need the code of their app
+    lastTotpStep: (user) =&gt; user.totpStep,
+    onTotp: (user, step) =&gt; User.objects.filter({ id: user.id }).update({ totpStep: step }),
+    rehash: (user, hash) =&gt; User.objects.filter({ id: user.id }).update({ password: hash }),
+  },
+  refresh: { store: auth.modelStore(RefreshToken), ttl: '30d' },
+});
+
+app.get('/me', { config: { auth: true } }, (request) =&gt; request.user);
+app.delete('/users/:id', { config: { auth: ['admin'] } }, async (request) =&gt; {
+  await User.objects.filter({ id: request.params.id }).delete();
+  return { deleted: true };
+});</code></pre>
+        <pre><code class="language-sh">POST /auth/login    { "username": "ada@example.com", "password": "...", "code": "123456" }
+  -&gt; { "accessToken": "eyJ...", "tokenType": "Bearer", "expiresIn": 900, "refreshToken": "..." }
+GET  /me            Authorization: Bearer eyJ...
+POST /auth/refresh  { "refreshToken": "..." }   -&gt; new tokens (the old refresh token is spent)
+POST /auth/logout   { "refreshToken": "..." }   -&gt; 204</code></pre>
+
+        <h2 id="plugin">The plugin</h2>
+        <ul>
+          <li><code>keys</code>: a secret, a <code>KeySet</code> (or its options), or a function of the request that gives them: a <code>KeySet</code> per tenant, <code>(request) =&gt; keysOf(request.tenant)</code>.</li>
+          <li><code>accessToken</code>: <code>expiresIn</code> (<code>'15m'</code>), <code>issuer</code>, <code>audience</code>, <code>algorithms</code>, <code>clockTolerance</code>.</li>
+          <li><code>token</code>: where tokens are read from: the Authorization header (<code>Bearer</code>), then the cookie <code>cookie</code> and the query parameter <code>query</code>, when they are given.</li>
+          <li><code>user(claims, request)</code>: the user of a valid token (its claims by default; null refuses it).</li>
+          <li><code>hook</code>: the hook that verifies the token of every request (<code>'onRequest'</code>), or <code>false</code>.</li>
+        </ul>
+        <p>
+          Every request gets <code>request.user</code> (null without a valid token), <code>request.auth</code> (the claims)
+          and <code>request.authError</code>. Routes that need a user say so with <code>config: { auth: true }</code>, a
+          role (<code>'admin'</code>), roles (<code>['admin', 'staff']</code>: any of them, from <code>user.roles</code> or
+          <code>user.role</code>) or a function (<code>(user, request) =&gt; boolean</code>); or with the hooks
+          <code>app.authenticate</code> and <code>app.authorize(...roles)</code>. Without a valid token they answer 401 (with
+          <code>WWW-Authenticate</code>), and 403 without the role. <code>app.auth</code> has <code>sign(claims, request)</code>,
+          <code>verify(token, request)</code>, the keys and the passwords.
+        </p>
+
+        <h2 id="login">Login routes</h2>
+        <p>With <code>login</code>, the plugin adds <code>POST /auth/login</code>, <code>/auth/refresh</code> and <code>/auth/logout</code> (<code>prefix</code>: <code>'/auth'</code>):</p>
+        <ul>
+          <li><code>findUser(username, request)</code>: the user, or null. <code>password(user)</code> gives its hash (<code>user.password</code>).</li>
+          <li><code>claims(user)</code>: the claims of its tokens (<code>{ sub: String(user.id) }</code>).</li>
+          <li><code>totp(user)</code>: its secret of TOTP, when it has one: then the login needs <code>code</code> (without it, 401 with the code <code>XUFA_AUTH_TOTP_REQUIRED</code>, for the client to ask for it). <code>lastTotpStep(user)</code> and <code>onTotp(user, step)</code> keep the step of each login, so codes are used once.</li>
+          <li><code>lockout</code>: a <code>Lockout</code> or its options (5 failures in 15 minutes lock for 15 minutes), or <code>false</code>. A locked login is answered with 429 and <code>Retry-After</code>.</li>
+          <li><code>rehash(user, hash)</code>: the new hash of a password whose hash had other parameters.</li>
+          <li><code>reload(subject, data, request)</code>: the claims of a refresh, read from the user again (null: it can no longer log in).</li>
+          <li><code>fields</code>: the names of the fields of the body (<code>username</code>, <code>password</code>, <code>code</code>).</li>
+        </ul>
+        <p>
+          <code>refresh</code>: <code>RefreshTokens</code> or its options (<code>false</code>: none). <code>refreshCookie: true</code>
+          keeps the refresh token in an HttpOnly, Secure, SameSite=Strict cookie of the path of the prefix, instead of the body.
+          A login answers the same <code>Invalid credentials</code> (401) for a user that does not exist and for a wrong
+          password, and verifies a password in both cases, so neither the answer nor its time tells which.
+        </p>
+
+        <h2 id="passwords">Passwords</h2>
+        <p>
+          <code>hashPassword(password, options)</code> gives <code>$scrypt$ln=17,r=8,p=1$&lt;salt&gt;$&lt;hash&gt;</code>:
+          scrypt with N = 2<sup>17</sup>, r = 8, p = 1 (128 MiB, as OWASP recommends). <code>verifyPassword(password, hash)</code>
+          reads the parameters from the hash, so older hashes still verify, and compares in constant time.
+          <code>needsRehash(hash, options)</code> says when a hash should be made again with the current parameters.
+        </p>
+
+        <h2 id="jwt">JSON Web Tokens</h2>
+        <pre><code class="language-js">const keys = new auth.KeySet({ current: '2026-10', keys: { '2026-10': process.env.JWT_KEY, '2026-07': oldKey } });
+const token = auth.signJwt({ sub: '42', role: 'admin' }, keys, { expiresIn: '15m', issuer: 'app' });
+const claims = auth.verifyJwt(token, keys, { issuer: 'app' }); // or a TokenError (401) with its reason</code></pre>
+        <p>
+          A <code>KeySet</code> has keys by id: the current one signs (its id is the <code>kid</code> of the tokens) and all
+          of them verify, so keys rotate without logging anyone out. A key is a secret (32 bytes or more, HS256/384/512)
+          or a PEM or KeyObject: RSA (RS256, PS256...), EC (ES256, ES384, ES512) or Ed25519 (EdDSA). A set of public keys
+          only verifies, as another service would; <code>keys.toJWKS()</code> publishes them.
+        </p>
+        <p>
+          <code>verifyJwt()</code> takes only the algorithms of its keys (a token cannot choose <code>none</code>, nor HMAC
+          with a public key), checks <code>exp</code> and <code>nbf</code> (with <code>clockTolerance</code>) and, when they
+          are given, <code>issuer</code>, <code>audience</code>, <code>subject</code> and <code>maxAge</code>. Its
+          <code>TokenError</code> (401) says why in <code>reason</code>.
+        </p>
+
+        <h2 id="totp">One-time codes</h2>
+        <pre><code class="language-js">// Enrolling: the app scans the QR code of the URI, and the user types a code to confirm it.
+const secret = auth.generateSecret();
+const uri = auth.totpUri({ secret, issuer: 'Acme', label: 'ada@example.com' });
+const step = auth.verifyTotp(code, secret); // null, or the time step to keep with the user</code></pre>
+        <p>
+          <code>verifyTotp(code, secret, { window, after })</code> takes the codes of <code>window</code> steps around now
+          and returns the step of the code; codes of the step <code>after</code> or before are refused, so keeping the step
+          of each login makes each code work once. <code>totp()</code> and <code>hotp()</code> follow RFC 6238 and RFC 4226
+          (SHA1, SHA256 or SHA512, 6 to 10 digits). <code>generateRecoveryCodes(n)</code> gives codes to log in without the
+          app; keep their <code>hashRecoveryCode()</code>. Keep the secrets of TOTP encrypted: they are passwords that never
+          change.
+        </p>
+
+        <h2 id="lockout">Lockout</h2>
+        <pre><code class="language-js">const lockout = new auth.Lockout({ maxAttempts: 5, window: '15m', lockFor: '15m' });
+await lockout.check(email); // throws Locked (429, retryAfter) while it is locked
+ok ? await lockout.succeed(email) : await lockout.fail(email);</code></pre>
+        <p>
+          The failures are kept in a store with <code>get</code>, <code>set</code> and <code>delete</code>: one of the
+          process by default, or a cache of the ORM. With a <code>SharedCache</code> they are in the primary of a
+          <a href="packages.html#cluster">cluster</a>, so every worker counts the same failures.
+        </p>
+
+        <h2 id="refresh">Refresh tokens</h2>
+        <pre><code class="language-js">const refresh = new auth.RefreshTokens({ store: auth.modelStore(RefreshToken), ttl: '30d' });
+const { token } = await refresh.issue(user.id, claims);
+const next = await refresh.rotate(token); // { token, record }: the old one is spent
+await refresh.revoke(next.token); // logout (its family)
+await refresh.revokeSubject(user.id); // logout everywhere (a changed password)</code></pre>
+        <p>
+          The store keeps the id of each token and the SHA-256 of its secret (a stolen store gives no usable token), its
+          subject, its data and its dates. Each use spends the token (atomically) and gives a new one of its family. A
+          token used twice means that two parties have it: its whole family is revoked, so the thief's token and the
+          user's stop working. Stores: <code>MemoryTokenStore</code> and <code>modelStore(Model)</code>, for a model of
+          the ORM with the fields of <code>refreshTokenFields(fields)</code>.
+        </p>
+
+        <h2 id="errors">Errors</h2>
+        <p>
+          <code>TokenError</code> (401, <code>XUFA_AUTH_INVALID_TOKEN</code>, with its <code>reason</code>),
+          <code>Unauthorized</code> (401), <code>TotpRequired</code> (401), <code>Forbidden</code> (403) and
+          <code>Locked</code> (429, with <code>retryAfter</code>), all made with <a href="packages.html#errors"><code>@xufa/errors</code></a>.
+        </p>
+
+        <h2 id="typescript">TypeScript</h2>
+        <p>The declarations are in the package. The plugin decorates the app and the requests; to type them:</p>
+        <pre><code class="language-ts">import type { AuthApi, AuthRule, Claims } from '@xufa/auth';
+
+declare module '@xufa/http' {
+  interface XufaInstance {
+    auth: AuthApi&lt;User&gt;;
+    authenticate: AuthApi['authenticate'];
+    authorize: AuthApi['authorize'];
+  }
+  interface XufaRequest {
+    user: User | null;
+    auth: Claims | null;
+  }
+  interface XufaContextConfig {
+    auth?: AuthRule&lt;User&gt;;
+  }
+}</code></pre>
+      </article>
+    </div>
+
+    <footer class="footer">
+      <div class="container">
+        <span>xufa is MIT licensed. &copy; Jes&uacute;s Seijas</span>
+        <span>
+          <a href="guide.html">Guide</a> &middot; <a href="http.html">HTTP</a> &middot; <a href="orm.html">ORM</a> &middot; <a href="auth.html">Auth</a> &middot;
+          <a href="sequelize.html">Sequelize</a> &middot; <a href="packages.html">Packages</a> &middot;
+          <a href="benchmarks.html">Benchmarks</a> &middot; <a href="https://github.com/xufajs/xufa">GitHub</a>
+        </span>
+      </div>
+    </footer>
+  </body>
+</html>

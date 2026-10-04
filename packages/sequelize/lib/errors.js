@@ -144,6 +144,24 @@ const HostNotFoundError = connectionError('HostNotFoundError');
 const HostNotReachableError = connectionError('HostNotReachableError');
 const InvalidConnectionError = connectionError('InvalidConnectionError');
 const ConnectionTimedOutError = connectionError('ConnectionTimedOutError');
+// Sequelize's error of a connection not had from the pool in time (options.pool.acquire), for code that names it.
+const ConnectionAcquireTimeoutError = connectionError('ConnectionAcquireTimeoutError');
+
+// A scope that can not be applied (Sequelize's own name for it).
+class SequelizeScopeError extends BaseError {
+  constructor(message) {
+    super(message);
+    this.name = 'SequelizeScopeError';
+  }
+}
+
+// Sequelize's error of the queue of queries of a connection of MSSQL: here only for code that names it.
+class AsyncQueueError extends BaseError {
+  constructor(message) {
+    super(message);
+    this.name = 'SequelizeAsyncQueueError';
+  }
+}
 
 class UnknownConstraintError extends DatabaseError {
   constructor(options = {}) {
@@ -252,6 +270,9 @@ module.exports = {
   HostNotReachableError,
   InvalidConnectionError,
   ConnectionTimedOutError,
+  ConnectionAcquireTimeoutError,
+  SequelizeScopeError,
+  AsyncQueueError,
   UnknownConstraintError,
   QueryError,
   TimeoutError,

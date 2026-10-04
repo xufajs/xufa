@@ -1,0 +1,38 @@
+{
+  "name": "@xufa/sequelize-compat",
+  "private": true,
+  "description": "Runs the integration tests of Sequelize 6 against @xufa/sequelize",
+  "scripts": {
+    "fetch-tests": "node fetch-tests.js",
+    "test:sqlite": "node run-all.js sqlite",
+    "test:postgres": "node run-all.js postgres"
+  },
+  "devDependencies": {
+    "chai": "^4.3.7",
+    "chai-as-promised": "^7.1.1",
+    "chai-datetime": "^1.8.0",
+    "cls-hooked": "^4.2.2",
+    "delay": "^5.0.0",
+    "fs-jetpack": "^4.3.0",
+    "js-combinatorics": "^0.6.1",
+    "lodash": "^4.17.21",
+    "mariadb": "^3.5.4",
+    "mocha": "^7.2.0",
+    "moment": "^2.31.0",
+    "mysql2": "^3.24.5",
+    "p-map": "^4.0.0",
+    "p-props": "^4.0.0",
+    "p-settle": "^4.1.1",
+    "p-timeout": "^4.0.0",
+    "pg": "^8.23.1",
+    "pg-hstore": "^2.3.4",
+    "real-sequelize": "npm:sequelize@6.37.8",
+    "semver": "^7.5.4",
+    "sinon": "^12.0.1",
+    "sinon-chai": "^3.7.0",
+    "sqlite3": "^5.1.7",
+    "tedious": "^20.3.3",
+    "uuid": "^8.3.2",
+    "validator": "^13.9.0"
+  }
+}

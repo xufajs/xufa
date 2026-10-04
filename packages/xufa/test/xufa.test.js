@@ -29,3 +29,9 @@ describe('xufa/orm', () => {
     expect(require('xufa/orm')).toBe(require('@xufa/orm'));
   });
 });
+
+describe('xufa/auth', () => {
+  it('is @xufa/auth', () => {
+    expect(require('xufa/auth')).toBe(require('@xufa/auth'));
+  });
+});

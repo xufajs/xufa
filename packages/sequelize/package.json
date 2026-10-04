@@ -3,17 +3,26 @@
   "version": "0.1.0",
   "description": "The API of Sequelize 6 over @xufa/orm: models, associations, queries and transactions, with no dependencies",
   "main": "./index.js",
+  "types": "./types/index.d.ts",
   "type": "commonjs",
   "exports": {
-    ".": "./index.js",
+    ".": {
+      "types": "./types/index.d.ts",
+      "import": "./index.mjs",
+      "require": "./index.js",
+      "default": "./index.js"
+    },
     "./package.json": "./package.json"
   },
   "files": [
     "index.js",
-    "lib"
+    "index.mjs",
+    "lib",
+    "types"
   ],
   "scripts": {
-    "test": "vyntra"
+    "test": "vyntra",
+    "test:types": "tsc --project ./test/types/tsconfig.json"
   },
   "keywords": [
     "orm",
@@ -41,6 +50,7 @@
     "@xufa/orm": "workspace:*"
   },
   "devDependencies": {
+    "expect-type": "^0.12.0",
     "vyntra": "^0.6.0"
   },
   "publishConfig": {

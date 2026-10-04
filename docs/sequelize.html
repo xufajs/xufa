@@ -24,6 +24,7 @@
           <a href="guide.html">Guide</a>
           <a href="http.html">HTTP</a>
           <a href="orm.html">ORM</a>
+          <a class="hide-small" href="auth.html">Auth</a>
           <a class="hide-small" href="sequelize.html" aria-current="page">Sequelize</a>
           <a class="hide-small" href="packages.html">Packages</a>
           <a class="hide-small" href="benchmarks.html">Benchmarks</a>
@@ -50,6 +51,7 @@
         <ul>
           <li><a href="#supported">What there is</a></li>
           <li><a href="#postgres">PostgreSQL types</a></li>
+          <li><a href="#typescript">TypeScript</a></li>
           <li><a href="#differences">Differences</a></li>
           <li><a href="#checklist">Moving an app</a></li>
         </ul>
@@ -125,14 +127,15 @@ const books = await Book.findAll({
         <p>
           Sequelize's own integration tests (its v6 branch) run against <code>@xufa/sequelize</code>, each file in a
           process of its own. The same harness runs them against Sequelize 6.37.8 itself, on the same databases, to tell
-          the failures of the tests and of the environment from those of the package:
+          the failures of the tests and of the environment from those of the package (the harness is
+          <a href="https://github.com/xufajs/xufa/tree/main/tools/sequelize-compat"><code>tools/sequelize-compat</code></a>):
         </p>
         <div class="table-wrap">
           <table class="numbers">
             <thead><tr><th>Database</th><th>@xufa/sequelize</th><th>Sequelize 6.37.8</th></tr></thead>
             <tbody>
               <tr><td>SQLite</td><td>1,707 passed, 54 failed</td><td>1,737 passed, 5 failed</td></tr>
-              <tr><td>PostgreSQL 18 (PostGIS, hstore, btree_gist)</td><td>1,937 passed, 107 failed</td><td>1,968 passed, 39 failed</td></tr>
+              <tr><td>PostgreSQL 18 (PostGIS, hstore, btree_gist)</td><td>1,939 passed, 105 failed</td><td>1,968 passed, 39 failed</td></tr>
             </tbody>
           </table>
         </div>
@@ -200,8 +203,10 @@ const books = await Book.findAll({
           <li>
             <strong>QueryInterface</strong>: <code>createTable</code>, <code>describeTable</code>,
             <code>addColumn</code>, <code>changeColumn</code>, <code>renameColumn</code>, <code>addIndex</code>,
-            <code>addConstraint</code>, <code>showIndex</code>, bulk operations, functions, enum types... (SQLite tables are
-            made again for the changes it cannot make, as Sequelize does).
+            <code>addConstraint</code>, <code>showIndex</code>, rows (<code>bulkInsert</code>, <code>insert</code>,
+            <code>select</code>, <code>upsert</code>, <code>increment</code>, <code>rawSelect</code>...), functions,
+            triggers, databases, enum types... (SQLite tables are made again for the changes it cannot make, as Sequelize
+            does).
           </li>
         </ul>
 
@@ -215,6 +220,40 @@ const books = await Book.findAll({
           <li><code>sync</code> adds the values an <code>ENUM</code> gained to its type, in their order.</li>
           <li>xufa's own <code>fillfactor</code> works as a model option: <code>define(name, attributes, { fillfactor: 50 })</code>.</li>
         </ul>
+
+        <h2 id="typescript">TypeScript</h2>
+        <p>
+          The declarations are Sequelize's own (6.37.8), ported with their type tests: models typed by
+          <code>InferAttributes</code> and <code>CreationOptional</code>, the accessors of associations,
+          <code>WhereOptions</code>... Left out is what the package has not: the helpers of Sequelize's own SQL writer
+          in <code>Utils</code> and the transactions of the QueryInterface (transactions are
+          <code>sequelize.transaction()</code>). They need no <code>@types/validator</code>, as Sequelize's do.
+        </p>
+        <pre><code class="language-ts">import {
+  type CreationOptional,
+  DataTypes,
+  type InferAttributes,
+  type InferCreationAttributes,
+  Model,
+  Sequelize,
+} from '@xufa/sequelize';
+
+class User extends Model&lt;InferAttributes&lt;User&gt;, InferCreationAttributes&lt;User&gt;&gt; {
+  declare id: CreationOptional&lt;number&gt;;
+  declare name: string;
+}
+
+const sequelize = new Sequelize('sqlite::memory:');
+User.init(
+  { id: { type: DataTypes.INTEGER, autoIncrement: true, primaryKey: true }, name: DataTypes.STRING },
+  { sequelize }
+);
+await sequelize.sync();
+const ada = await User.create({ name: 'Ada' }); // id is optional</code></pre>
+        <p>
+          As Sequelize, the package is also an ES module with named exports:
+          <code>import { Sequelize, DataTypes, Op } from '@xufa/sequelize'</code>.
+        </p>
 
         <h2 id="differences">Differences</h2>
         <ul>
@@ -251,7 +290,7 @@ const books = await Book.findAll({
       <div class="container">
         <span>xufa is MIT licensed. &copy; Jes&uacute;s Seijas</span>
         <span>
-          <a href="guide.html">Guide</a> &middot; <a href="http.html">HTTP</a> &middot; <a href="orm.html">ORM</a> &middot;
+          <a href="guide.html">Guide</a> &middot; <a href="http.html">HTTP</a> &middot; <a href="orm.html">ORM</a> &middot; <a href="auth.html">Auth</a> &middot;
           <a href="sequelize.html">Sequelize</a> &middot; <a href="packages.html">Packages</a> &middot;
           <a href="benchmarks.html">Benchmarks</a> &middot; <a href="https://github.com/xufajs/xufa">GitHub</a>
         </span>

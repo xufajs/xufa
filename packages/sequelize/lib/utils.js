@@ -108,12 +108,21 @@ function inflect(name, rules, irregular) {
   return head + (rule ? word.replace(rule[0], rule[1]) : word);
 }
 
+// The inflector of Sequelize.useInflection(), when one is given: { pluralize, singularize } (as the inflection package).
+let inflector = null;
+
+function useInflection(given) {
+  inflector = given || null;
+}
+
 // The plural of the last word of a name (User -> Users, Category -> Categories, UserXYZ -> UserXYZs).
 function pluralize(name) {
+  if (inflector) return inflector.pluralize(name);
   return inflect(name, PLURALS, (lower) => IRREGULAR[lower] || (Object.values(IRREGULAR).includes(lower) && lower));
 }
 
 function singularize(name) {
+  if (inflector) return inflector.singularize(name);
   return inflect(
     name,
     SINGULARS,
@@ -148,4 +157,4 @@ function isPlainObject(value) {
   return proto === Object.prototype || proto === null;
 }
 
-module.exports = { pluralize, singularize, lowerFirst, upperFirst, camelize, underscore, isPlainObject };
+module.exports = { useInflection, pluralize, singularize, lowerFirst, upperFirst, camelize, underscore, isPlainObject };

@@ -2,3 +2,7 @@ bench/results/
 pnpm-lock.yaml
 packages/*/test/
 docs/
+tools/sequelize-compat/test/
+tools/sequelize-compat/.snapshot/
+tools/sequelize-compat/results/
+tools/sequelize-compat/.mocharc.jsonc

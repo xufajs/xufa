@@ -4,6 +4,12 @@ Ports the TypeScript declarations of the libraries xufa replaces, with their typ
 the files are copied from the installed packages (or from the `../fastify` checkout), with what they call themselves
 renamed and their imports of other upstream packages pointed to the xufa ones.
 
+The declarations of Sequelize 6 (for `@xufa/sequelize`) come from the Sequelize that
+[`tools/sequelize-compat`](../sequelize-compat) installs, and their type tests from the tests its `fetch-tests.js`
+gets: set that folder up first (`npm install` and `node fetch-tests.js` there). They are patched for what the layer
+has not (Sequelize's SQL helpers in `Utils`, the transactions of the QueryInterface) and for the packages of types
+they use (validator, retry-as-promised, debug), which are written in instead.
+
 ```sh
 node tools/port-types/port.js [package name filter]   # writes the declarations and type tests
 node tools/port-types/wire.js <package> <test command> [declaration files...]   # points package.json to them
@@ -18,7 +24,10 @@ The ported files say so in their first line, and a new port overwrites them. Wri
 
 - `packages/http/types/compilers.d.ts` (the default compilers, on schiva and @xufa/serializer, instead of ajv's);
 - the `test/types/xufa.*` type tests of each package;
-- `packages/http/test/types/tsconfig.json`.
+- `packages/http/test/types/tsconfig.json`;
+- `packages/sequelize/types/errors/not-supported-error.d.ts` and `packages/sequelize/test/types/tsconfig.json`.
+
+The ported files are formatted with prettier after a port (`npx prettier --write packages/<package>`).
 
 The type tests run with the tool each upstream package uses: tstyche (http, router, serializer), tsd (logger,
-inject, errors) and tsc (boot). `pnpm test:types` runs them all.
+inject, errors) and tsc (boot, sequelize). `pnpm test:types` runs them all.

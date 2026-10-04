@@ -7,6 +7,8 @@ from scratch with **no runtime dependencies** outside this repository. It starts
 [`@xufa/http`](packages/http): a fast web framework with the API of [fastify](https://fastify.dev). Its ORM,
 [`@xufa/orm`](packages/orm), runs the same Django-like models and queries on SQL and NoSQL databases (SQLite,
 PostgreSQL and MongoDB), and [`@xufa/sequelize`](packages/sequelize) runs code written for Sequelize 6 on it.
+[`@xufa/auth`](packages/auth) logs users in: passwords, JSON Web Tokens, codes of authenticator apps, lockouts and
+refresh tokens.
 
 ```js
 const xufa = require('xufa'); // for now, @xufa/http
@@ -33,12 +35,13 @@ its test suite (see [Tests](#tests)).
 
 ## Packages
 
-[`xufa`](packages/xufa) is the framework, which gives its parts together; for now, it is `@xufa/http`. Each part is a
-package of its own, usable alone, and every library fastify depends on is replaced by one:
+[`xufa`](packages/xufa) is the framework, which gives its parts together: `@xufa/http`, with the ORM as `xufa/orm`
+and the authentication as `xufa/auth`. Each part is a package of its own, usable alone, and every library fastify
+depends on is replaced by one:
 
 | Package                                   | Replaces              | What it is                                 |
 | ----------------------------------------- | --------------------- | ------------------------------------------ |
-| [`xufa`](packages/xufa)                   |                       | The framework (for now, `@xufa/http`)      |
+| [`xufa`](packages/xufa)                   |                       | The framework (`xufa/orm`, `xufa/auth`)    |
 | [`@xufa/http`](packages/http)             | `fastify`             | The HTTP framework                         |
 | [`@xufa/logger`](packages/logger)         | `pino`, `sonic-boom`  | JSON logger                                |
 | [`@xufa/router`](packages/router)         | `find-my-way`         | HTTP router                                |
@@ -49,6 +52,7 @@ package of its own, usable alone, and every library fastify depends on is replac
 | [`@xufa/orm`](packages/orm)               |                       | ORM for SQL and NoSQL databases            |
 | [`@xufa/mongo`](packages/mongo)           | `mongodb`             | MongoDB driver                             |
 | [`@xufa/pg`](packages/pg)                 | `pg`                  | PostgreSQL driver                          |
+| [`@xufa/auth`](packages/auth)             |                       | Passwords, JWTs, TOTP, refresh tokens      |
 | [`@xufa/sequelize`](packages/sequelize)   | `sequelize`           | The API of Sequelize 6 over `@xufa/orm`    |
 | [`@xufa/cluster`](packages/cluster)       |                       | Apps in clusters of processes              |
 
@@ -105,6 +109,9 @@ The tests of fastify and of the libraries it uses are ported, not rewritten:
 - [`tools/port-types`](tools/port-types) ports the TypeScript declarations and their type tests the same way
   (`node tools/port-types/port.js`).
 
+The integration tests of Sequelize 6 run as they are: [`tools/sequelize-compat`](tools/sequelize-compat) runs them
+against `@xufa/sequelize`, and against Sequelize itself to compare (see its README).
+
 Tests of what xufa does differently are written for it, apart from the ported ones (which a new port overwrites):
 `packages/http/test/xufa/`, `packages/serializer/test/output.test.js`, and `test/types/xufa.*` in the packages
 with declarations.
@@ -112,4 +119,4 @@ with declarations.
 ## License
 
 MIT. The ported declarations and tests keep the MIT license of the projects they come from (fastify, pino,
-find-my-way, fast-json-stringify, light-my-request, avvio, @fastify/error, fastify-plugin).
+find-my-way, fast-json-stringify, light-my-request, avvio, @fastify/error, fastify-plugin, sequelize).

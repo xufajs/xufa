@@ -754,6 +754,110 @@ function defineSuite(name, makeSequelize) {
       });
     });
 
+    describe('query interface rows', () => {
+      const qi = () => sequelize.getQueryInterface();
+
+      it('inserts, selects, upserts and deletes rows', async () => {
+        const { Tag } = models;
+        const [row] = await qi().insert(null, 'Tags', { name: 'a' });
+        expect(row.name).toBe('a');
+        await qi().bulkInsert('Tags', [{ name: 'b' }, { name: 'c' }]);
+        const rows = await qi().select(null, 'Tags', { where: { name: { [Op.ne]: 'a' } }, order: [['name', 'DESC']] });
+        expect(rows.map((item) => item.name)).toEqual(['c', 'b']);
+        const page = await qi().select(Tag, 'Tags', { order: [['name', 'ASC']], offset: 1 });
+        expect(page[0]).toBeInstanceOf(Tag);
+        expect(page.map((item) => item.name)).toEqual(['b', 'c']);
+        const [upserted] = await qi().upsert('Tags', { id: row.id, name: 'z' }, { name: 'z' }, { id: row.id }, { model: Tag });
+        expect(upserted).toBeInstanceOf(Tag);
+        expect((await Tag.findByPk(row.id)).name).toBe('z');
+        await qi().delete(null, 'Tags', { name: 'z' });
+        expect(await Tag.count()).toBe(2);
+      });
+
+      it('selects instances by the columns of their attributes', async () => {
+        const { Book } = models;
+        const { ada } = await seed();
+        const books = await qi().select(Book, 'books', { where: { author_id: ada.id }, order: [['pages', 'ASC']] });
+        expect(books.map((book) => [book.title, book.authorId])).toEqual([
+          ['Notes on the Engine', ada.id],
+          ['The Analytical Engine', ada.id],
+        ]);
+      });
+
+      it('increments columns and reads single values', async () => {
+        const { Book } = models;
+        const { ada } = await seed();
+        await qi().increment(Book, 'books', { author_id: ada.id }, { pages: 10 }, {});
+        await qi().decrement(Book, 'books', { title: 'Compilers' }, { pages: 50 });
+        const max = await qi().rawSelect(
+          'books',
+          { attributes: [[sequelize.fn('max', sequelize.col('pages')), 'max']], dataType: DataTypes.INTEGER },
+          'max'
+        );
+        expect(max).toBe(310);
+        expect(Number(await qi().rawSelect('books', { where: { title: 'Compilers' } }, 'pages'))).toBe(200);
+      });
+
+      it('names the foreign keys of tables and quotes identifiers', async () => {
+        const keys = await qi().getForeignKeysForTables(['books']);
+        expect(Array.isArray(keys.books)).toBe(true);
+        if (name === 'postgres') expect(keys.books.length).toBeGreaterThan(0);
+        expect(qi().quoteIdentifiers('a.b')).toBe('"a"."b"');
+      });
+    });
+
+    describe('the rest of the API of Sequelize', () => {
+      it('has the types, errors, hints and helpers of Sequelize', () => {
+        const { Author } = models;
+        expect(DataTypes.INTEGER(11)).toBeInstanceOf(DataTypes.NUMBER);
+        expect(DataTypes.DECIMAL(10, 2)).toBeInstanceOf(Sequelize.NUMBER);
+        expect(DataTypes.STRING()).not.toBeInstanceOf(DataTypes.NUMBER);
+        expect(DataTypes.ARRAY.is(DataTypes.ARRAY(DataTypes.ENUM('a')), DataTypes.ENUM)).toBe(true);
+        expect(DataTypes.ABSTRACT.key).toBe('ABSTRACT');
+        expect(Sequelize.IndexHints.FORCE).toBe('FORCE');
+        expect(Sequelize.TableHints.NOLOCK).toBe('NOLOCK');
+        expect(Author.associations.publisher).toBeInstanceOf(Sequelize.BelongsTo);
+        expect(Author.associations.books).toBeInstanceOf(Sequelize.HasMany);
+        expect(sequelize.getQueryInterface()).toBeInstanceOf(Sequelize.QueryInterface);
+        expect(() => Author.scope('missing')).toThrow(Sequelize.SequelizeScopeError);
+        expect(Sequelize.Utils.camelize('author_id name')).toBe('authorIdName');
+        expect(Sequelize.Utils.combineTableNames('Tags', 'Books')).toBe('BooksTags');
+        expect(Sequelize.Utils.mergeDefaults({ a: 1, b: { c: 1 } }, { a: 2, b: { d: 2 }, e: 3 })).toEqual({
+          a: 1,
+          b: { c: 1, d: 2 },
+          e: 3,
+        });
+        expect(Sequelize.Validator.regex('abc', '^a')).toBe(true);
+      });
+
+      it('takes an inflector for the names of tables', () => {
+        Sequelize.useInflection({ pluralize: (word) => `${word}_list`, singularize: (word) => word });
+        try {
+          const Item = sequelize.define('XufaItem', {});
+          expect(Item.tableName).toBe('XufaItem_list');
+        } finally {
+          Sequelize.useInflection(null);
+          sequelize.modelManager.removeModel(sequelize.model('XufaItem'));
+        }
+        expect(Sequelize.Utils.pluralize('person')).toBe('people');
+      });
+
+      it('has the hooks of models on their instances', async () => {
+        const { Tag } = models;
+        const seen = [];
+        const tag = await Tag.create({ name: 'hooked' });
+        tag.addHook('beforeUpdate', 'mark', () => seen.push('update'));
+        expect(tag.hasHooks('beforeUpdate')).toBe(true);
+        expect(tag.equalsOneOf([await Tag.findByPk(tag.id)])).toBe(true);
+        tag.setAttributes({ name: 'renamed' });
+        await tag.save();
+        tag.removeHook('beforeUpdate', 'mark');
+        expect(Tag.hasHook('beforeUpdate')).toBe(false);
+        expect(seen).toEqual(['update']);
+        await expect(sequelize.set({ a: 1 })).rejects.toThrow('only supported for mysql or mariadb');
+      });
+    });
+
     describe('raw queries', () => {
       it('runs SQL with replacements and binds', async () => {
         const { Tag } = models;

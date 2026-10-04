@@ -53,6 +53,9 @@ const HOOKS = [
   'afterSync',
 ];
 
+// Hooks a model takes, as in Sequelize, without running them: sequelize.sync() runs those of the Sequelize instance.
+const KEPT_HOOKS = ['beforeBulkSync', 'afterBulkSync'];
+
 const DIRECTIONS = /^(ASC|DESC)( NULLS (FIRST|LAST))?$/i;
 const AGGREGATES = { COUNT: Count, SUM: Sum, AVG: Avg, MIN: Min, MAX: Max };
 
@@ -749,7 +752,7 @@ class Model {
 
   static addHook(type, name, fn) {
     const hook = typeof name === 'function' ? name : fn;
-    if (!HOOKS.includes(type)) throw new Error(`${type} is not a hook`);
+    if (!HOOKS.includes(type) && !KEPT_HOOKS.includes(type)) throw new Error(`${type} is not a hook`);
     if (!Object.hasOwn(this, 'xufaHooks')) this.xufaHooks = { ...this.xufaHooks };
     this.xufaHooks[type] = [
       ...(this.xufaHooks[type] || []),
@@ -808,7 +811,7 @@ class Model {
         if (item === 'defaultScope') options = base.xufaScope || {};
         else {
           const defined = base.xufaScopes[item];
-          if (!defined) throw new errors.BaseError(`Invalid scope ${item} called.`);
+          if (!defined) throw new errors.SequelizeScopeError(`Invalid scope ${item} called.`);
           options = typeof defined === 'function' ? defined() : defined;
         }
       } else if (item.method) {
@@ -1089,6 +1092,33 @@ class Model {
   equals(other) {
     if (!other || other.constructor.xufa !== this.constructor.xufa) return false;
     return this.constructor.primaryKeyAttributes.every((name) => this.dataValues[name] === other.dataValues[name]);
+  }
+
+  equalsOneOf(others) {
+    return others.some((other) => this.equals(other));
+  }
+
+  setAttributes(values) {
+    return this.set(values);
+  }
+
+  // The hooks of the model, from its instances (as Sequelize has them on both).
+  addHook(...args) {
+    this.constructor.addHook(...args);
+    return this;
+  }
+
+  removeHook(...args) {
+    this.constructor.removeHook(...args);
+    return this;
+  }
+
+  hasHook(type) {
+    return this.constructor.hasHook(type);
+  }
+
+  hasHooks(type) {
+    return this.constructor.hasHook(type);
   }
 
   isSoftDeleted() {
@@ -2598,7 +2628,7 @@ class Model {
   }
 }
 
-for (const type of HOOKS) {
+for (const type of [...HOOKS, ...KEPT_HOOKS]) {
   Model[type] = function addTypedHook(name, fn) {
     return this.addHook(type, name, fn);
   };
