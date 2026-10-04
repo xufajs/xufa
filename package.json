@@ -1,0 +1,40 @@
+{
+  "name": "xufa-monorepo",
+  "private": true,
+  "description": "xufa: a framework for Node.js in the spirit of Django, with no dependencies",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/xufajs/xufa.git"
+  },
+  "homepage": "https://github.com/xufajs/xufa#readme",
+  "bugs": {
+    "url": "https://github.com/xufajs/xufa/issues"
+  },
+  "author": "Jesús Seijas <jseijas@gmail.com>",
+  "scripts": {
+    "test": "pnpm -r --filter ./packages/** test",
+    "lint": "eslint .",
+    "lintfix": "eslint --fix .",
+    "bench": "node bench/run.js",
+    "bench:quick": "node bench/run.js --duration 3 --warmup 1 --rounds 1",
+    "test:types": "pnpm -r --filter \"./packages/**\" test:types"
+  },
+  "engines": {
+    "node": ">=22"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.39.2",
+    "@types/node": "^22.20.5",
+    "eslint": "^9.39.2",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-prettier": "^5.5.5",
+    "fastify-plugin": "^5.1.0",
+    "globals": "^17.0.0",
+    "prettier": "^3.8.0",
+    "tsd": "^0.33.0",
+    "tstyche": "^7.2.5",
+    "typescript": "~6.0.3"
+  },
+  "packageManager": "pnpm@10.32.1"
+}

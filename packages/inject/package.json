@@ -1,0 +1,61 @@
+{
+  "name": "@xufa/inject",
+  "version": "0.1.0",
+  "description": "Fake HTTP requests to a Node.js request handler without a socket, with the API of light-my-request and no dependencies",
+  "main": "./index.js",
+  "types": "./index.d.ts",
+  "type": "commonjs",
+  "exports": {
+    ".": {
+      "types": "./index.d.ts",
+      "default": "./index.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "index.js",
+    "lib",
+    "index.d.ts"
+  ],
+  "scripts": {
+    "test": "vyntra",
+    "test:types": "tsd"
+  },
+  "keywords": [
+    "http",
+    "inject",
+    "fake",
+    "request",
+    "testing"
+  ],
+  "author": "Jesús Seijas <jseijas@gmail.com>",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/xufajs/xufa.git",
+    "directory": "packages/inject"
+  },
+  "homepage": "https://github.com/xufajs/xufa/tree/main/packages/inject#readme",
+  "bugs": {
+    "url": "https://github.com/xufajs/xufa/issues"
+  },
+  "engines": {
+    "node": ">=22"
+  },
+  "devDependencies": {
+    "end-of-stream": "^1.4.4",
+    "express": "^5.1.0",
+    "form-auto-content": "^3.2.1",
+    "form-data": "^4.0.4",
+    "formdata-node": "^6.0.3",
+    "multer": "^2.0.2",
+    "undici": "^7.16.0",
+    "vyntra": "^0.6.0"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "tsd": {
+    "directory": "test/types"
+  }
+}

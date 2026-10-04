@@ -1,0 +1,254 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>HTTP · xufa</title>
+    <meta
+      name="description"
+      content="@xufa/http: a fast web framework for Node.js with the API of fastify, its test suite and its TypeScript declarations, and no dependencies. What is the same and what is different."
+    />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%23d9502b'/%3E%3Ctext x='16' y='22.5' font-family='monospace' font-size='18' font-weight='700' fill='white' text-anchor='middle'%3Ex%3C/text%3E%3C/svg%3E"
+    />
+    <link rel="stylesheet" href="style.css?v=0.1.0" />
+    <script src="main.js?v=0.1.0"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js" defer></script>
+  </head>
+  <body>
+    <header class="header">
+      <div class="header-inner">
+        <a class="logo" href="./"><span class="logo-mark">x</span>xufa</a>
+        <nav class="nav">
+          <a href="guide.html">Guide</a>
+          <a href="http.html" aria-current="page">HTTP</a>
+          <a href="orm.html">ORM</a>
+          <a class="hide-small" href="sequelize.html">Sequelize</a>
+          <a class="hide-small" href="packages.html">Packages</a>
+          <a class="hide-small" href="benchmarks.html">Benchmarks</a>
+          <a href="https://github.com/xufajs/xufa">GitHub</a>
+          <button class="theme-toggle" type="button" aria-label="Switch between light and dark theme">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+              <path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z" />
+            </svg>
+          </button>
+        </nav>
+      </div>
+    </header>
+
+    <div class="docs">
+      <button class="menu-toggle" type="button" aria-expanded="false">☰ Contents</button>
+      <aside class="sidebar">
+        <h4>@xufa/http</h4>
+        <ul>
+          <li><a href="#install">Install</a></li>
+          <li><a href="#fastify">The API is fastify's</a></li>
+          <li><a href="#parts">Its parts</a></li>
+        </ul>
+        <h4>What is different</h4>
+        <ul>
+          <li><a href="#validation">Validation: schiva</a></li>
+          <li><a href="#names">Names and error codes</a></li>
+          <li><a href="#plugins">Plugins</a></li>
+          <li><a href="#logger">Logger</a></li>
+          <li><a href="#bytes">Responses as bytes</a></li>
+          <li><a href="#speed">Where it is faster</a></li>
+        </ul>
+        <h4>More</h4>
+        <ul>
+          <li><a href="#typescript">TypeScript</a></li>
+          <li><a href="#tests">Tests</a></li>
+          <li><a href="benchmarks.html#http">Benchmarks</a></li>
+        </ul>
+      </aside>
+
+      <article class="content">
+        <h1>HTTP</h1>
+        <p class="intro">
+          <code>@xufa/http</code> is the HTTP layer of xufa: a fast web framework for Node.js with the API of
+          <a href="https://fastify.dev">fastify</a>, and no dependencies outside the packages of xufa. The package
+          <code>xufa</code> gives it too.
+        </p>
+
+        <h2 id="install">Install</h2>
+        <pre><code class="language-sh">npm install @xufa/http   # or: npm install xufa
+npm install schiva       # only if your routes validate requests with schemas</code></pre>
+        <pre><code class="language-js">const xufa = require('@xufa/http');
+// or: import xufa from '@xufa/http'  /  import { xufa } from '@xufa/http'
+
+const app = xufa({ logger: true });
+
+app.register(
+  async (users) =&gt; {
+    users.decorate('db', new Map([[1, { id: 1, name: 'Ada' }]]));
+
+    users.get(
+      '/:id',
+      {
+        schema: {
+          params: { type: 'object', properties: { id: { type: 'integer' } } },
+          response: { 200: { type: 'object', properties: { id: { type: 'integer' }, name: { type: 'string' } } } },
+        },
+      },
+      async (request, reply) =&gt; users.db.get(request.params.id) ?? reply.code(404).send()
+    );
+  },
+  { prefix: '/users' }
+);
+
+await app.listen({ port: 3000 });</code></pre>
+
+        <h2 id="fastify">The API is fastify's</h2>
+        <p>
+          Read <a href="https://fastify.dev/docs/latest/">fastify's documentation</a>: server options, routes, hooks,
+          plugins and encapsulation, decorators, validation and serialization, content type parsers,
+          <code>reply</code>, <code>request</code>, the logger, <code>inject()</code>, the type providers of
+          TypeScript. All of it applies. Code written for fastify, and plugins written with
+          <code>fastify-plugin</code>, run on xufa.
+        </p>
+        <div class="callout">
+          <p>
+            xufa runs fastify's own test suite (main branch, 6.0.0-alpha.4), ported: 2,248 tests pass, and the 23
+            skipped are those of ajv-only features. The TypeScript declarations are fastify's, ported with their type
+            tests.
+          </p>
+        </div>
+
+        <h2 id="parts">Its parts</h2>
+        <p>What fastify takes from other packages, xufa has in its own, each usable alone:</p>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>fastify uses</th><th>xufa uses</th></tr></thead>
+            <tbody>
+              <tr><td><code>pino</code></td><td><a href="packages.html#logger"><code>@xufa/logger</code></a></td></tr>
+              <tr><td><code>find-my-way</code></td><td><a href="packages.html#router"><code>@xufa/router</code></a></td></tr>
+              <tr><td><code>fast-json-stringify</code></td><td><a href="packages.html#serializer"><code>@xufa/serializer</code></a></td></tr>
+              <tr><td><code>light-my-request</code></td><td><a href="packages.html#inject"><code>@xufa/inject</code></a></td></tr>
+              <tr><td><code>avvio</code></td><td><a href="packages.html#boot"><code>@xufa/boot</code></a></td></tr>
+              <tr><td><code>@fastify/error</code></td><td><a href="packages.html#errors"><code>@xufa/errors</code></a></td></tr>
+              <tr><td><code>fastify-plugin</code></td><td><code>xufa.plugin</code></td></tr>
+              <tr><td><code>ajv</code></td><td><a href="https://www.npmjs.com/package/schiva">schiva</a> (an optional peer dependency)</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h2 id="validation">Validation: schiva</h2>
+        <p>
+          The default validator compiles schemas with <a href="https://www.npmjs.com/package/schiva">schiva</a> and
+          reports errors as ajv does (<code>instancePath</code>, <code>keyword</code>, <code>params</code>,
+          <code>message</code>), so <code>attachValidation</code>, <code>schemaErrorFormatter</code> and error handlers
+          work unchanged. By default it converts types (<code>coerceTypes: 'array'</code>), applies defaults and removes
+          additional properties, as fastify configures ajv.
+        </p>
+        <p>
+          The ajv options that schiva shares are read from <code>ajv.customOptions</code>: <code>coerceTypes</code>,
+          <code>useDefaults</code>, <code>removeAdditional</code>, <code>allErrors</code>, <code>strict</code> (and
+          <code>strictSchema</code>), <code>formats</code>, <code>keywords</code>. Options of schiva itself go in
+          <code>ajv.schivaOptions</code>.
+        </p>
+        <pre><code class="language-js">const app = xufa({
+  ajv: {
+    customOptions: { coerceTypes: false, allErrors: true, formats: { slug: /^[a-z0-9-]+$/ } },
+  },
+});</code></pre>
+        <p>
+          Not supported, because they are ajv's own: ajv plugins (<code>ajv.plugins</code> only accepts
+          <code>[]</code>), ajv-errors messages, <code>$async</code> schemas and the <code>$merge</code> and
+          <code>$patch</code> keywords. A <code>validatorCompiler</code> of your own can still use ajv for them.
+        </p>
+
+        <h2 id="names">Names and error codes</h2>
+        <ul>
+          <li>
+            Error codes are <code>XUFA_ERR_*</code> (fastify's <code>FST_ERR_*</code>), with the same suffixes:
+            <code>XUFA_ERR_NOT_FOUND</code>, <code>XUFA_ERR_VALIDATION</code>... They are in
+            <code>xufa.errorCodes</code>. Warnings are <code>XUFAWRN*</code> and <code>XUFASEC*</code>; errors of plugin
+            loading are <code>BOOT_ERR_*</code> (avvio's <code>AVV_ERR_*</code>).
+          </li>
+          <li>
+            The class of the errors is <code>XufaError</code>; the root of the plugin names is <code>xufa</code>; the
+            diagnostics channels are <code>tracing:xufa.request.handler</code> and <code>xufa.initialization</code>.
+          </li>
+        </ul>
+
+        <h2 id="plugins">Plugins</h2>
+        <p><code>xufa.plugin()</code> is fastify-plugin:</p>
+        <pre><code class="language-js">const { plugin } = require('@xufa/http');
+
+module.exports = plugin(
+  async (app, options) =&gt; {
+    app.decorate('db', await connect(options.url));
+  },
+  { name: 'db', xufa: '0.x' }
+);</code></pre>
+        <p>
+          The range of versions a plugin needs is <code>xufa</code> in its metadata. Plugins written for fastify load:
+          their <code>fastify</code> range is not checked, since it is a range of fastify versions, and
+          <code>decorators.fastify</code> counts as <code>decorators.xufa</code>.
+        </p>
+
+        <h2 id="logger">Logger</h2>
+        <p>
+          <code>logger: true</code>, or logger options, create an <a href="packages.html#logger"><code>@xufa/logger</code></a>:
+          pino's options and API, without transports. Give it a stream (<code>logger: { stream }</code>), or a logger of
+          your own as <code>loggerInstance</code> (pino works). To pretty-print in development, pipe the output:
+          <code>node app.js | pino-pretty</code>.
+        </p>
+
+        <h2 id="bytes">Responses as bytes</h2>
+        <p>
+          Routes with a response schema whose output can be large (arrays, maps, recursive schemas) write their JSON as
+          UTF-8 bytes and send that Buffer, without making a string first. A string joined from many pieces must be
+          copied into one before it can be written to a socket; for large responses that copy costs about as much as
+          making the JSON. When the route has <code>onSend</code> hooks, they get a string, as in fastify.
+        </p>
+
+        <h2 id="speed">Where it is faster</h2>
+        <ul>
+          <li>The router matches static paths with one map lookup, before walking its tree.</li>
+          <li>The query string is left unparsed until <code>request.query</code> is read.</li>
+          <li>Serializers write large responses as bytes (above): about 1.4&times; fastify on a big JSON response.</li>
+          <li>Validation is compiled by schiva.</li>
+        </ul>
+        <p>
+          On small responses over the network, xufa and fastify are about even: the socket and the HTTP parser of
+          Node.js take most of the time. See <a href="benchmarks.html#http">Benchmarks</a>.
+        </p>
+
+        <h2 id="typescript">TypeScript</h2>
+        <p>
+          The declarations are fastify's with the names of xufa: <code>XufaInstance</code>, <code>XufaRequest</code>,
+          <code>XufaReply</code>, <code>XufaPluginAsync</code>, <code>XufaSchema</code>, the type providers...
+        </p>
+        <pre><code class="language-ts">import xufa, { type XufaInstance, type XufaPluginAsync } from '@xufa/http';
+
+const users: XufaPluginAsync = async (app) =&gt; {
+  app.get&lt;{ Params: { id: string } }&gt;('/:id', async (request) =&gt; ({ id: request.params.id }));
+};
+
+const app: XufaInstance = xufa();
+app.register(users, { prefix: '/users' });</code></pre>
+
+        <h2 id="tests">Tests</h2>
+        <p>
+          The tests of fastify and of the libraries it uses are ported, not rewritten: a tool of the repository converts
+          their <code>node:test</code> suites to <a href="https://www.npmjs.com/package/vyntra">vyntra</a> and renames
+          what fastify calls itself. Tests of what xufa does differently are written apart, so a new port does not
+          overwrite them.
+        </p>
+      </article>
+    </div>
+
+    <footer class="footer">
+      <div class="container">
+        <span>xufa is MIT licensed. &copy; Jes&uacute;s Seijas</span>
+        <span>
+          <a href="guide.html">Guide</a> &middot; <a href="http.html">HTTP</a> &middot; <a href="orm.html">ORM</a> &middot;
+          <a href="sequelize.html">Sequelize</a> &middot; <a href="packages.html">Packages</a> &middot;
+          <a href="benchmarks.html">Benchmarks</a> &middot; <a href="https://github.com/xufajs/xufa">GitHub</a>
+        </span>
+      </div>
+    </footer>
+  </body>
+</html>

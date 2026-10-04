@@ -1,0 +1,446 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Guide · xufa</title>
+    <meta
+      name="description"
+      content="Build an application with xufa: routes, the ORM, validation, migrations, several databases, tenants, caches, clusters, tests and TypeScript."
+    />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%23d9502b'/%3E%3Ctext x='16' y='22.5' font-family='monospace' font-size='18' font-weight='700' fill='white' text-anchor='middle'%3Ex%3C/text%3E%3C/svg%3E"
+    />
+    <link rel="stylesheet" href="style.css?v=0.1.0" />
+    <script src="main.js?v=0.1.0"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js" defer></script>
+  </head>
+  <body>
+    <header class="header">
+      <div class="header-inner">
+        <a class="logo" href="./"><span class="logo-mark">x</span>xufa</a>
+        <nav class="nav">
+          <a href="guide.html" aria-current="page">Guide</a>
+          <a href="http.html">HTTP</a>
+          <a href="orm.html">ORM</a>
+          <a class="hide-small" href="sequelize.html">Sequelize</a>
+          <a class="hide-small" href="packages.html">Packages</a>
+          <a class="hide-small" href="benchmarks.html">Benchmarks</a>
+          <a href="https://github.com/xufajs/xufa">GitHub</a>
+          <button class="theme-toggle" type="button" aria-label="Switch between light and dark theme">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+              <path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z" />
+            </svg>
+          </button>
+        </nav>
+      </div>
+    </header>
+
+    <div class="docs">
+      <button class="menu-toggle" type="button" aria-expanded="false">☰ Contents</button>
+      <aside class="sidebar">
+        <h4>Start</h4>
+        <ul>
+          <li><a href="#getting-started">Getting started</a></li>
+          <li><a href="#first-app">Your first app</a></li>
+        </ul>
+        <h4>Data</h4>
+        <ul>
+          <li><a href="#orm">Adding the ORM</a></li>
+          <li><a href="#routes">Models and routes</a></li>
+          <li><a href="#errors">Validation and errors</a></li>
+          <li><a href="#migrations">Migrations</a></li>
+        </ul>
+        <h4>Going further</h4>
+        <ul>
+          <li><a href="#databases">Several databases</a></li>
+          <li><a href="#tenants">A database per tenant</a></li>
+          <li><a href="#cache">Caching objects</a></li>
+          <li><a href="#cluster">Running in a cluster</a></li>
+          <li><a href="#testing">Testing</a></li>
+          <li><a href="#typescript">TypeScript</a></li>
+          <li><a href="http.html">HTTP reference</a></li>
+          <li><a href="orm.html">ORM reference</a></li>
+        </ul>
+      </aside>
+
+      <article class="content">
+        <h1>Guide</h1>
+        <p class="intro">
+          This guide builds a small application with xufa: an HTTP API whose data lives in a database, with validation,
+          migrations and tests. Each part used here is a package of its own; the
+          <a href="http.html">HTTP</a> and <a href="orm.html">ORM</a> pages have the whole of each.
+        </p>
+
+        <h2 id="getting-started">Getting started</h2>
+        <p>xufa needs Node.js 22 or later, and nothing else.</p>
+        <pre><code class="language-sh">npm install xufa
+npm install schiva   # only if your routes validate requests with schemas</code></pre>
+        <p>
+          <code>xufa</code> gives the HTTP framework (<a href="http.html"><code>@xufa/http</code></a>) and, as
+          <code>xufa/orm</code>, the ORM (<a href="orm.html"><code>@xufa/orm</code></a>). The ORM talks to SQLite
+          through <code>node:sqlite</code>, and to PostgreSQL and MongoDB through its own drivers: there is no driver
+          to install.
+        </p>
+
+        <h2 id="first-app">Your first app</h2>
+        <p>
+          The HTTP layer has the API of <a href="https://fastify.dev">fastify</a>. If you know fastify, you know it:
+          routes, hooks, plugins, decorators and schemas are the same, and code written for fastify runs on it.
+        </p>
+        <pre><code class="language-js">// app.js
+const xufa = require('xufa');
+
+function build() {
+  const app = xufa({ logger: true });
+
+  app.get('/health', async () =&gt; ({ ok: true }));
+
+  app.register(
+    async (users) =&gt; {
+      users.get('/:id', async (request, reply) =&gt; {
+        if (request.params.id !== '1') return reply.code(404).send();
+        return { id: 1, name: 'Ada' };
+      });
+    },
+    { prefix: '/users' }
+  );
+
+  return app;
+}
+
+module.exports = { build };
+
+if (require.main === module) build().listen({ port: 3000 });</code></pre>
+        <p>
+          Plugins written for fastify (with <code>fastify-plugin</code>) load as they are. For your own, use
+          <code>xufa.plugin()</code>, which is fastify-plugin:
+        </p>
+        <pre><code class="language-js">const { plugin } = require('xufa');
+
+module.exports = plugin(
+  async (app, options) =&gt; {
+    app.decorate('mailer', createMailer(options));
+  },
+  { name: 'mailer', xufa: '0.x' }
+);</code></pre>
+
+        <h2 id="orm">Adding the ORM</h2>
+        <p>
+          Models are classes with their fields. The same models run on every backend: <code>sqlite</code>,
+          <code>postgres</code>, <code>mongodb</code>, and <code>memory</code> for tests.
+        </p>
+        <pre><code class="language-js">// models.js
+const { Model, fields } = require('xufa/orm');
+
+class Author extends Model {
+  static fields = {
+    name: fields.string({ maxLength: 100 }),
+    email: fields.string({ unique: true, null: true }),
+  };
+
+  static options = { ordering: ['name'] };
+}
+
+class Book extends Model {
+  static fields = {
+    title: fields.string({ maxLength: 200 }),
+    pages: fields.integer({ null: true, min: 1 }),
+    author: fields.foreignKey(() =&gt; Author, { relatedName: 'books' }),
+    createdAt: fields.datetime({ autoNowAdd: true }),
+  };
+}
+
+module.exports = { Author, Book };</code></pre>
+        <p>
+          The ORM's plugin connects the database when the app starts, gives it as <code>app.db</code>, and closes it
+          with the app. <code>sync: true</code> creates the tables that do not exist, which is enough to start;
+          <a href="#migrations">migrations</a> are for what comes after.
+        </p>
+        <pre><code class="language-js">const xufa = require('xufa');
+const orm = require('xufa/orm');
+const { Author, Book } = require('./models');
+
+function build({ database } = {}) {
+  const app = xufa({ logger: true });
+  const db = database || new orm.Database({ backend: 'sqlite', filename: 'app.db' });
+  // or { backend: 'postgres', url: 'postgres://user:password@localhost:5432/app' }
+  // or { backend: 'mongodb', url: 'mongodb://localhost:27017/app' }
+  db.register(Author, Book);
+  app.register(orm.plugin, { database: db, sync: true });
+  app.register(require('./routes/books'), { prefix: '/books' });
+  return app;
+}</code></pre>
+
+        <h2 id="routes">Models and routes</h2>
+        <p>
+          <code>Model.objects</code> is a QuerySet, as in Django: refine it with <code>filter</code>,
+          <code>exclude</code>, <code>orderBy</code>, <code>limit</code>..., and await it. Conditions follow relations
+          with <code>__</code>. <code>Model.jsonSchema()</code> gives the schema of the objects, for the schemas of
+          routes.
+        </p>
+        <pre><code class="language-js">// routes/books.js
+const { Book } = require('../models');
+
+module.exports = async function books(app) {
+  const body = Book.jsonSchema({ exclude: ['id', 'createdAt'] });
+
+  app.get('/', async (request) =&gt; {
+    const { author, minPages = 0 } = request.query;
+    let books = Book.objects.filter({ pages__gte: minPages }).selectRelated('author').orderBy('-pages');
+    if (author) books = books.filter({ author__name__icontains: author });
+    return books.limit(50);
+  });
+
+  app.get('/:id', async (request) =&gt; Book.objects.get({ pk: request.params.id }));
+
+  app.post('/', { schema: { body } }, async (request, reply) =&gt; {
+    reply.code(201);
+    return Book.objects.create(request.body);
+  });
+
+  app.patch('/:id', { schema: { body: Book.jsonSchema({ exclude: ['id', 'createdAt'], partial: true }) } }, async (request) =&gt; {
+    const book = await Book.objects.get({ pk: request.params.id });
+    Object.assign(book, request.body);
+    return book.save();
+  });
+
+  app.delete('/:id', async (request, reply) =&gt; {
+    await Book.objects.filter({ pk: request.params.id }).delete();
+    reply.code(204);
+  });
+};</code></pre>
+        <p>
+          A foreign key keeps its key in its own attribute: <code>author</code> is the object (once loaded),
+          <code>authorId</code> the key. The schema of the body asks for <code>authorId</code>. Objects serialize with
+          their loaded relations (<code>toJSON()</code>), so a book found with <code>selectRelated('author')</code> is
+          sent with its author:
+        </p>
+        <pre><code class="language-json">[{ "id": 1, "title": "Notes", "pages": 120, "authorId": 1, "createdAt": "2026-10-04T07:36:54.639Z",
+   "author": { "id": 1, "name": "Ada", "email": null } }]</code></pre>
+
+        <h2 id="errors">Validation and errors</h2>
+        <p>
+          Values are checked twice. The schema of a route (here, the one <code>Book.jsonSchema()</code> made) rejects a
+          request before the handler runs, as fastify does. The fields check their values again when an object is
+          saved: types, <code>maxLength</code>, <code>min</code> and <code>max</code>, <code>choices</code>,
+          <code>null</code>, and your own <code>validate</code> functions, so routes without a schema are safe too.
+          With the plugin, both become responses:
+        </p>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Error</th><th>Response</th></tr></thead>
+            <tbody>
+              <tr><td>The schema of the route (schiva)</td><td>400, as fastify answers it</td></tr>
+              <tr><td><code>ValidationError</code> of the ORM</td><td>400, with the messages of each field in <code>errors</code></td></tr>
+              <tr><td><code>NotFoundError</code> (<code>get()</code> found nothing)</td><td>404</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <pre><code class="language-json">{ "statusCode": 400, "code": "XUFA_ERR_VALIDATION", "error": "Bad Request", "message": "body/pages must be &gt;= 1" }</code></pre>
+        <pre><code class="language-json">{
+  "statusCode": 400,
+  "code": "XUFA_ORM_ERR_VALIDATION",
+  "error": "Bad Request",
+  "message": "Validation failed for Book: pages: Ensure this value is at least 1.",
+  "errors": { "pages": ["Ensure this value is at least 1."] }
+}</code></pre>
+        <pre><code class="language-json">{ "statusCode": 404, "code": "XUFA_ORM_ERR_NOT_FOUND", "error": "Not Found", "message": "No Book matches the query" }</code></pre>
+
+        <h2 id="migrations">Migrations</h2>
+        <p>
+          Migrations work as in Django. <code>makeMigrations</code> compares the models with the schema that the
+          migration files describe, and writes a file with the operations between them. <code>migrate</code> applies the
+          files not applied yet, each in a transaction where the database has them.
+        </p>
+        <pre><code class="language-js">// scripts/make-migrations.js
+const { Database } = require('xufa/orm');
+const { Author, Book } = require('../models');
+
+async function main() {
+  const db = new Database({ backend: 'postgres', url: process.env.DATABASE_URL }).register(Author, Book);
+  await db.makeMigrations({ dir: 'migrations' }); // writes migrations/0002_auto.js, for example
+}
+
+main();</code></pre>
+        <pre><code class="language-js">// The app applies them when it starts.
+app.register(orm.plugin, { database: db, migrate: { dir: 'migrations' } });</code></pre>
+        <p>
+          The files are JavaScript, and you can edit them. Renames are not detected: write
+          <code>{ op: 'renameColumn', table, from, to }</code> or <code>{ op: 'renameTable', from, to }</code>. For SQL
+          of your own, write <code>{ op: 'sql', sql }</code>; for data migrations,
+          <code>{ op: 'run', fn: async (db) =&gt; {} }</code>.
+        </p>
+
+        <h2 id="databases">Several databases</h2>
+        <p>
+          <code>Databases</code> holds several databases by name, and routes each model to one of them: the
+          <code>database</code> option of the model, or the <code>routes</code> given, or the default database.
+        </p>
+        <pre><code class="language-js">const { Databases } = require('xufa/orm');
+
+const dbs = new Databases(
+  {
+    default: { backend: 'postgres', url: process.env.DATABASE_URL },
+    events: { backend: 'mongodb', url: process.env.EVENTS_URL },
+  },
+  { routes: { Event: 'events' } }
+);
+dbs.register(Author, Book, Event);
+await dbs.connect();
+await dbs.migrate({ dir: 'migrations' }); // migrations/default and migrations/events</code></pre>
+        <p>
+          Relations between models of different databases are followed with more queries
+          (<code>prefetchRelated</code>, <code>load()</code>, reverse accessors, deletes); a query cannot join them.
+        </p>
+
+        <h2 id="tenants">A database per tenant</h2>
+        <p>
+          <code>Tenants</code> opens a database for each tenant the first time it is used, from your
+          <code>config(tenantId)</code>. Code run in a tenant uses its database: inside it, <code>Book.objects</code> is
+          the books of that tenant. The databases of the last <code>max</code> tenants used stay open.
+        </p>
+        <pre><code class="language-js">const { Tenants } = require('xufa/orm');
+
+const tenants = new Tenants({
+  models: [Author, Book],
+  config: async (id) =&gt; ({ backend: 'postgres', url: `postgres://app@db:5432/tenant_${id}` }),
+  setup: (db) =&gt; db.migrate({ dir: 'migrations' }),
+});
+
+// Each request runs in its tenant: resolve() says which.
+app.register(orm.plugin, {
+  tenants: { tenants, resolve: (request) =&gt; request.headers['x-tenant'] },
+});
+
+// Or, outside requests:
+await tenants.run('acme', () =&gt; Book.objects.count());</code></pre>
+        <p>
+          A request without a tenant gets a 400 (unless <code>required: false</code>), and a tenant whose
+          <code>config</code> gives nothing gets a 404.
+        </p>
+
+        <h2 id="cache">Caching objects</h2>
+        <p>
+          A model with the <code>cache</code> option answers <code>get()</code> by primary key, or by a unique field of
+          its <code>indexes</code>, from a cache. Saving or deleting an object removes it, and <code>update()</code> or
+          <code>delete()</code> of a QuerySet clears the model. Inside transactions the cache is neither read nor
+          filled.
+        </p>
+        <pre><code class="language-js">class User extends Model {
+  static fields = { email: fields.string({ unique: true }), name: fields.string() };
+
+  static options = { cache: { ttl: 60000, indexes: ['email'] } };
+}
+
+await User.objects.get({ email: 'ada@example.com' }); // the database
+await User.objects.get({ email: 'ada@example.com' }); // the cache</code></pre>
+        <p>
+          The cache of a database is a <code>MemoryCache</code> (an LRU in the process) unless you give one:
+          <code>new Database({ ..., cache })</code>. In a <a href="#cluster">cluster</a>, a <code>SharedCache</code> keeps
+          one copy in the primary process, and a <code>LocalCache</code> keeps a copy in each process, with
+          invalidations sent to the others.
+        </p>
+
+        <h2 id="cluster">Running in a cluster</h2>
+        <p>
+          <a href="packages.html#cluster"><code>@xufa/cluster</code></a> runs an app in a process per CPU: it forks the
+          workers, forks again those that die, and stops them all gracefully on <code>SIGINT</code> and
+          <code>SIGTERM</code>. Its bus carries messages between the processes.
+        </p>
+        <pre><code class="language-js">const { start, bus } = require('@xufa/cluster');
+const { Database, LocalCache } = require('xufa/orm');
+const { build } = require('./app');
+
+start({
+  primary: async ({ bus }) =&gt; {
+    let visits = 0;
+    bus.on('visit', () =&gt; (visits += 1));
+    bus.on('visits', () =&gt; visits); // a request: the result is the reply
+  },
+  worker: async ({ onShutdown }) =&gt; {
+    const database = new Database({ backend: 'postgres', url: process.env.DATABASE_URL, cache: new LocalCache({ bus }) });
+    const app = build({ database });
+    app.addHook('onRequest', async () =&gt; bus.send('visit'));
+    app.get('/visits', () =&gt; bus.request('visits'));
+    await app.listen({ port: 3000 });
+    onShutdown(() =&gt; app.close());
+  },
+});</code></pre>
+        <p>With <code>workers: 0</code> everything runs in one process, and the same bus calls work: handy in development.</p>
+
+        <h2 id="testing">Testing</h2>
+        <p>
+          <code>app.inject()</code> sends fake requests without a socket. With the <code>memory</code> backend, or SQLite in
+          memory, each test gets a fresh database in no time.
+        </p>
+        <pre><code class="language-js">const { Database } = require('xufa/orm');
+const { build } = require('./app');
+const { Author } = require('./models');
+
+describe('books', () =&gt; {
+  let app;
+
+  beforeEach(async () =&gt; {
+    app = build({ database: new Database({ backend: 'sqlite', filename: ':memory:' }) });
+    await app.ready();
+  });
+
+  afterEach(() =&gt; app.close());
+
+  it('creates and finds a book', async () =&gt; {
+    const author = await Author.objects.create({ name: 'Ada' });
+    const created = await app.inject({
+      method: 'POST',
+      url: '/books',
+      payload: { title: 'Notes', pages: 120, authorId: author.pk },
+    });
+    expect(created.statusCode).toBe(201);
+    const found = await app.inject({ url: `/books/${created.json().id}` });
+    expect(found.json().title).toBe('Notes');
+  });
+
+  it('refuses a book of no pages', async () =&gt; {
+    const author = await Author.objects.create({ name: 'Ada' });
+    const res = await app.inject({ method: 'POST', url: '/books', payload: { title: 'Empty', pages: 0, authorId: author.pk } });
+    expect(res.statusCode).toBe(400);
+  });
+});</code></pre>
+        <p>
+          xufa's own tests run with <a href="https://www.npmjs.com/package/vyntra">vyntra</a>, but any runner with the
+          API of Jest or Vitest works.
+        </p>
+
+        <h2 id="typescript">TypeScript</h2>
+        <p>
+          The HTTP layer has fastify's declarations, with xufa's names: <code>XufaInstance</code>,
+          <code>XufaRequest</code>, <code>XufaReply</code>, the type providers. The ORM types models from their fields:
+          give the model an interface of the same name, and use <code>Model.query()</code> for typed QuerySets.
+        </p>
+        <pre><code class="language-ts">import xufa, { type XufaInstance } from 'xufa';
+import { Model, fields, type Fields } from 'xufa/orm';
+
+const bookFields = { title: fields.string(), pages: fields.integer({ null: true }) };
+class Book extends Model {
+  static fields = bookFields;
+}
+interface Book extends Fields&lt;typeof bookFields&gt; {}
+
+const books: Book[] = await Book.query().filter({ pages__gte: 100 });
+books[0].pages; // number | null</code></pre>
+      </article>
+    </div>
+
+    <footer class="footer">
+      <div class="container">
+        <span>xufa is MIT licensed. &copy; Jes&uacute;s Seijas</span>
+        <span>
+          <a href="guide.html">Guide</a> &middot; <a href="http.html">HTTP</a> &middot; <a href="orm.html">ORM</a> &middot;
+          <a href="sequelize.html">Sequelize</a> &middot; <a href="packages.html">Packages</a> &middot;
+          <a href="benchmarks.html">Benchmarks</a> &middot; <a href="https://github.com/xufajs/xufa">GitHub</a>
+        </span>
+      </div>
+    </footer>
+  </body>
+</html>

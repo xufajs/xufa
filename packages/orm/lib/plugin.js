@@ -1,0 +1,61 @@
+// The plugin of the ORM for @xufa/http (and fastify): it connects a database when the app starts (and applies its
+// migrations, when asked), gives it as app.db, and closes it with the app. Validation errors of the models are
+// answered with 400 and the messages of each field (errors); NotFoundError is 404 by its status code.
+//
+//   app.register(orm.plugin, { database: db, migrate: { dir: 'migrations' } });
+//
+// With `tenants` ({ tenants, resolve(request), required }), each request runs in its tenant (resolve gives its id: a
+// header, the user...): the models use the database of the tenant. Requests without a tenant are answered with 400
+// when it is required (the default), and those of a tenant that does not exist with 404.
+const { ValidationError } = require('./errors');
+
+async function ormPlugin(app, options = {}) {
+  const { database, connect = true, close = true, migrate, sync = false, errorHandler = true, tenants } = options;
+  if (!database && !tenants) throw new TypeError('The orm plugin needs a database (or tenants)');
+  if (database) {
+    app.decorate('db', database);
+    if (connect) await database.connect();
+    if (migrate) await database.migrate(migrate);
+    if (sync) await database.sync();
+    if (close) app.addHook('onClose', () => database.close());
+  }
+  if (tenants) {
+    const { tenants: registry, resolve, required = true } = tenants;
+    app.decorate('tenants', registry);
+    app.decorateRequest('tenant', null);
+    app.addHook('onRequest', (request, reply, done) => {
+      const id = resolve(request);
+      if (id === undefined || id === null || id === '') {
+        if (required) reply.code(400).send({ statusCode: 400, error: 'Bad Request', message: 'No tenant' });
+        else done();
+        return;
+      }
+      request.tenant = String(id);
+      // Entered now (before any await), so the handler and its queries run in the tenant.
+      registry.enter(request.tenant).then(
+        () => done(),
+        () => reply.code(404).send({ statusCode: 404, error: 'Not Found', message: `No tenant ${request.tenant}` })
+      );
+    });
+    if (close) app.addHook('onClose', () => registry.close());
+  }
+  if (errorHandler) {
+    app.setErrorHandler((err, request, reply) => {
+      if (err instanceof ValidationError) {
+        reply
+          .code(400)
+          .send({ statusCode: 400, code: err.code, error: 'Bad Request', message: err.message, errors: err.errors });
+        return;
+      }
+      // Other errors are answered as without the plugin.
+      reply.send(err);
+    });
+  }
+}
+
+// As fastify-plugin does: the plugin decorates the app it is registered in (not an encapsulated child).
+ormPlugin[Symbol.for('skip-override')] = true;
+ormPlugin[Symbol.for('fastify.display-name')] = '@xufa/orm';
+ormPlugin[Symbol.for('plugin-meta')] = { name: '@xufa/orm' };
+
+module.exports = { ormPlugin };

@@ -1,0 +1,7 @@
+packages:
+  - packages/*
+  - bench
+  - tools/*
+
+onlyBuiltDependencies:
+  - sqlite3

@@ -1,0 +1,245 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>xufa: a Django-like framework for Node.js, with no dependencies</title>
+    <meta
+      name="description"
+      content="The parts a web application needs, built to work together: an HTTP framework with the API of fastify, a Django-like ORM over SQLite, PostgreSQL and MongoDB, the API of Sequelize 6 on it, and its own database drivers. No runtime dependencies."
+    />
+    <meta property="og:title" content="xufa: a Django-like framework for Node.js, with no dependencies" />
+    <meta
+      property="og:description"
+      content="fastify's API, a Django-like ORM on SQLite, PostgreSQL and MongoDB, Sequelize 6 code unchanged, and its own drivers. No runtime dependencies."
+    />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%23d9502b'/%3E%3Ctext x='16' y='22.5' font-family='monospace' font-size='18' font-weight='700' fill='white' text-anchor='middle'%3Ex%3C/text%3E%3C/svg%3E"
+    />
+    <link rel="stylesheet" href="style.css?v=0.1.0" />
+    <script src="main.js?v=0.1.0"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js" defer></script>
+  </head>
+  <body>
+    <header class="header">
+      <div class="header-inner">
+        <a class="logo" href="./"><span class="logo-mark">x</span>xufa</a>
+        <nav class="nav">
+          <a href="guide.html">Guide</a>
+          <a href="http.html">HTTP</a>
+          <a href="orm.html">ORM</a>
+          <a class="hide-small" href="sequelize.html">Sequelize</a>
+          <a class="hide-small" href="packages.html">Packages</a>
+          <a class="hide-small" href="benchmarks.html">Benchmarks</a>
+          <a href="https://github.com/xufajs/xufa">GitHub</a>
+          <button class="theme-toggle" type="button" aria-label="Switch between light and dark theme">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+              <path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z" />
+            </svg>
+          </button>
+        </nav>
+      </div>
+    </header>
+
+    <main>
+      <div class="container">
+        <section class="hero">
+          <div>
+            <p class="eyebrow">Framework for Node.js</p>
+            <h1>The parts of a web app, in the spirit of Django, <em>with no dependencies</em>.</h1>
+            <p>
+              xufa is an HTTP framework with the API of fastify, a Django-like ORM that runs the same models on SQLite,
+              PostgreSQL and MongoDB, the API of Sequelize 6 on top of it, and the database drivers they need. Every
+              part is written from scratch and works on its own, and none of them installs a dependency.
+            </p>
+            <div class="actions">
+              <a class="button primary" href="guide.html#getting-started">Get started</a>
+              <a class="button" href="sequelize.html">Move from Sequelize</a>
+            </div>
+            <button class="install" type="button" data-copy="npm install xufa" aria-label="Copy install command">
+              <span>$</span> <b class="copy-label">npm install xufa</b>
+            </button>
+          </div>
+
+          <div class="example">
+            <div class="tabs">
+              <div class="tab-list" role="tablist">
+                <button role="tab" id="tab-http" aria-controls="panel-http" aria-selected="true">HTTP</button>
+                <button role="tab" id="tab-orm" aria-controls="panel-orm" aria-selected="false">ORM</button>
+                <button role="tab" id="tab-seq" aria-controls="panel-seq" aria-selected="false">Sequelize</button>
+              </div>
+              <div class="tab-panel" id="panel-http" role="tabpanel" aria-labelledby="tab-http">
+                <pre><code class="language-js">const xufa = require('xufa');
+
+const app = xufa({ logger: true });
+
+app.get(
+  '/users/:id',
+  {
+    schema: {
+      params: { type: 'object', properties: { id: { type: 'integer' } } },
+      response: {
+        200: {
+          type: 'object',
+          properties: { id: { type: 'integer' }, name: { type: 'string' } },
+        },
+      },
+    },
+  },
+  async (request) =&gt; ({ id: request.params.id, name: 'Ada' })
+);
+
+await app.listen({ port: 3000 });</code></pre>
+              </div>
+              <div class="tab-panel" id="panel-orm" role="tabpanel" aria-labelledby="tab-orm" hidden>
+                <pre><code class="language-js">const { Database, Model, fields, Count } = require('xufa/orm');
+
+class Author extends Model {
+  static fields = { name: fields.string({ maxLength: 100 }) };
+}
+
+class Book extends Model {
+  static fields = {
+    title: fields.string(),
+    pages: fields.integer({ null: true }),
+    author: fields.foreignKey(() =&gt; Author, { relatedName: 'books' }),
+  };
+}
+
+const db = new Database({ backend: 'postgres', url: process.env.DATABASE_URL });
+db.register(Author, Book);
+await db.connect();
+
+const long = await Book.objects
+  .filter({ author__name__istartswith: 'a', pages__gte: 300 })
+  .selectRelated('author')
+  .orderBy('-pages');
+await Author.objects.values('name').annotate({ books: Count('books') });</code></pre>
+              </div>
+              <div class="tab-panel" id="panel-seq" role="tabpanel" aria-labelledby="tab-seq" hidden>
+                <pre><code class="language-js">// require('sequelize'), changed: the rest of the code as it was.
+const { Sequelize, DataTypes, Op } = require('@xufa/sequelize');
+
+const sequelize = new Sequelize(process.env.DATABASE_URL);
+const Author = sequelize.define('Author', { name: DataTypes.STRING });
+const Book = sequelize.define('Book', { title: DataTypes.STRING, pages: DataTypes.INTEGER });
+Book.belongsTo(Author, { as: 'author' });
+
+await sequelize.sync();
+const books = await Book.findAll({
+  where: { pages: { [Op.gte]: 300 } },
+  include: [{ model: Author, as: 'author' }],
+  order: [['pages', 'DESC']],
+});</code></pre>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="section">
+          <h2>Faster where it counts</h2>
+          <p class="lead">
+            The same workloads, the same database, the same machine. The ORM against Sequelize 6, and the drivers
+            against the ones they replace. See <a href="benchmarks.html">Benchmarks</a> for every number and how they
+            were measured.
+          </p>
+          <div class="stats">
+            <div class="stat"><span class="value">2.9&times;</span><span class="label">faster than Sequelize 6 finding rows by key on PostgreSQL (12.3&times; on SQLite)</span></div>
+            <div class="stat"><span class="value">2.5&times;</span><span class="label">faster creating rows, the same Sequelize code run on <code>@xufa/sequelize</code></span></div>
+            <div class="stat"><span class="value">4.7&times;</span><span class="label">faster than <code>pg</code> with 64 queries at once (<code>@xufa/pg</code>)</span></div>
+            <div class="stat"><span class="value">4.3&times;</span><span class="label">faster than the official MongoDB driver with 64 reads at once (<code>@xufa/mongo</code>)</span></div>
+          </div>
+        </section>
+
+        <section class="section">
+          <h2>What it is made of</h2>
+          <p class="lead">
+            Each part is a package of its own, usable alone. Where an existing library has the right API, xufa keeps it:
+            code written for fastify, Sequelize, pg or pino runs on xufa's part, and their test suites are its tests.
+          </p>
+          <div class="features">
+            <div class="feature">
+              <h3>No dependencies</h3>
+              <p>
+                Installing xufa installs xufa. The HTTP layer, its router, logger and serializer, the ORM, the PostgreSQL
+                and MongoDB drivers: all of it is in this repository. Validation uses schiva, an optional peer.
+              </p>
+            </div>
+            <div class="feature">
+              <h3>fastify's API, and its tests</h3>
+              <p>
+                Routes, hooks, plugins and encapsulation, decorators, schemas, <code>inject()</code> and the TypeScript
+                types are fastify's. Its test suite, ported, is xufa's: 2,248 tests.
+              </p>
+            </div>
+            <div class="feature">
+              <h3>A Django-like ORM</h3>
+              <p>
+                Models, QuerySets, lookups (<code>author__name__icontains</code>), <code>Q</code> and <code>F</code>,
+                aggregates, relations and migrations, the same on SQLite, PostgreSQL, MongoDB and memory.
+              </p>
+            </div>
+            <div class="feature">
+              <h3>Sequelize code, unchanged</h3>
+              <p>
+                <code>@xufa/sequelize</code> is the API of Sequelize 6 on the ORM: models, associations, includes,
+                scopes, hooks, transactions. Sequelize's own integration tests run against it.
+              </p>
+            </div>
+            <div class="feature">
+              <h3>Its own drivers</h3>
+              <p>
+                <code>@xufa/pg</code> has pg's API, prepares queries, reads binary results and pipelines;
+                <code>@xufa/mongo</code> has the official driver's, with replica sets, transactions and compression.
+              </p>
+            </div>
+            <div class="feature">
+              <h3>For real applications</h3>
+              <p>
+                Several databases at once, a database per tenant, caches of models shared through a cluster of
+                processes, PostgreSQL arrays, hstore and PostGIS geometries.
+              </p>
+            </div>
+          </div>
+        </section>
+
+        <section class="section">
+          <h2>Packages</h2>
+          <p class="lead"><code>xufa</code> gives the framework; every part can be installed alone.</p>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>Package</th><th>Has the API of</th><th>What it is</th></tr></thead>
+              <tbody>
+                <tr><td><a href="guide.html"><code>xufa</code></a></td><td></td><td>The framework: <code>@xufa/http</code>, and the ORM as <code>xufa/orm</code></td></tr>
+                <tr><td><a href="http.html"><code>@xufa/http</code></a></td><td>fastify</td><td>The HTTP framework</td></tr>
+                <tr><td><a href="orm.html"><code>@xufa/orm</code></a></td><td>Django's ORM</td><td>Models and QuerySets on SQLite, PostgreSQL, MongoDB and memory</td></tr>
+                <tr><td><a href="sequelize.html"><code>@xufa/sequelize</code></a></td><td>Sequelize 6</td><td>Sequelize code on the ORM</td></tr>
+                <tr><td><a href="packages.html#pg"><code>@xufa/pg</code></a></td><td>pg</td><td>PostgreSQL driver</td></tr>
+                <tr><td><a href="packages.html#mongo"><code>@xufa/mongo</code></a></td><td>mongodb</td><td>MongoDB driver</td></tr>
+                <tr><td><a href="packages.html#logger"><code>@xufa/logger</code></a></td><td>pino</td><td>JSON logger</td></tr>
+                <tr><td><a href="packages.html#router"><code>@xufa/router</code></a></td><td>find-my-way</td><td>HTTP router</td></tr>
+                <tr><td><a href="packages.html#serializer"><code>@xufa/serializer</code></a></td><td>fast-json-stringify</td><td>JSON serializers compiled from JSON Schema</td></tr>
+                <tr><td><a href="packages.html#inject"><code>@xufa/inject</code></a></td><td>light-my-request</td><td>Fake HTTP requests for tests</td></tr>
+                <tr><td><a href="packages.html#boot"><code>@xufa/boot</code></a></td><td>avvio</td><td>Plugin loading</td></tr>
+                <tr><td><a href="packages.html#errors"><code>@xufa/errors</code></a></td><td>@fastify/error</td><td>Errors with codes</td></tr>
+                <tr><td><a href="packages.html#cluster"><code>@xufa/cluster</code></a></td><td></td><td>Apps in a cluster of processes, and messages between them</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="container">
+        <span>xufa is MIT licensed. &copy; Jes&uacute;s Seijas</span>
+        <span>
+          <a href="guide.html">Guide</a> &middot; <a href="http.html">HTTP</a> &middot; <a href="orm.html">ORM</a> &middot;
+          <a href="sequelize.html">Sequelize</a> &middot; <a href="packages.html">Packages</a> &middot;
+          <a href="benchmarks.html">Benchmarks</a> &middot; <a href="https://github.com/xufajs/xufa">GitHub</a>
+        </span>
+      </div>
+    </footer>
+  </body>
+</html>

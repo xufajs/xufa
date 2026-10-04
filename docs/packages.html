@@ -1,0 +1,273 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Packages · xufa</title>
+    <meta
+      name="description"
+      content="The packages of xufa, each usable alone: the PostgreSQL and MongoDB drivers, the logger, router, serializer, inject, boot, errors and cluster."
+    />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%23d9502b'/%3E%3Ctext x='16' y='22.5' font-family='monospace' font-size='18' font-weight='700' fill='white' text-anchor='middle'%3Ex%3C/text%3E%3C/svg%3E"
+    />
+    <link rel="stylesheet" href="style.css?v=0.1.0" />
+    <script src="main.js?v=0.1.0"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js" defer></script>
+  </head>
+  <body>
+    <header class="header">
+      <div class="header-inner">
+        <a class="logo" href="./"><span class="logo-mark">x</span>xufa</a>
+        <nav class="nav">
+          <a href="guide.html">Guide</a>
+          <a href="http.html">HTTP</a>
+          <a href="orm.html">ORM</a>
+          <a class="hide-small" href="sequelize.html">Sequelize</a>
+          <a class="hide-small" href="packages.html" aria-current="page">Packages</a>
+          <a class="hide-small" href="benchmarks.html">Benchmarks</a>
+          <a href="https://github.com/xufajs/xufa">GitHub</a>
+          <button class="theme-toggle" type="button" aria-label="Switch between light and dark theme">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+              <path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z" />
+            </svg>
+          </button>
+        </nav>
+      </div>
+    </header>
+
+    <div class="docs">
+      <button class="menu-toggle" type="button" aria-expanded="false">☰ Contents</button>
+      <aside class="sidebar">
+        <h4>Drivers</h4>
+        <ul>
+          <li><a href="#pg">@xufa/pg</a></li>
+          <li><a href="#mongo">@xufa/mongo</a></li>
+        </ul>
+        <h4>The parts of @xufa/http</h4>
+        <ul>
+          <li><a href="#logger">@xufa/logger</a></li>
+          <li><a href="#router">@xufa/router</a></li>
+          <li><a href="#serializer">@xufa/serializer</a></li>
+          <li><a href="#inject">@xufa/inject</a></li>
+          <li><a href="#boot">@xufa/boot</a></li>
+          <li><a href="#errors">@xufa/errors</a></li>
+        </ul>
+        <h4>Running</h4>
+        <ul>
+          <li><a href="#cluster">@xufa/cluster</a></li>
+        </ul>
+      </aside>
+
+      <article class="content">
+        <h1>Packages</h1>
+        <p class="intro">
+          Every part of xufa is a package of its own, with no dependencies, usable without the rest. Most have the API of
+          a library you may know, and pass that library's test suite.
+        </p>
+
+        <h2 id="pg">@xufa/pg</h2>
+        <p>
+          A PostgreSQL driver with the API of <a href="https://node-postgres.com">pg</a> for what applications use:
+          <code>Client</code>, <code>Pool</code>, <code>query(text, values)</code>. The PostgreSQL backend of the ORM is
+          made with it.
+        </p>
+        <pre><code class="language-js">const { Pool } = require('@xufa/pg');
+
+const pool = new Pool({ connectionString: 'postgres://user:password@localhost:5432/app', max: 10 });
+const { rows } = await pool.query('SELECT id, name FROM users WHERE name ILIKE $1', ['a%']);
+
+const client = await pool.connect(); // a connection of its own, for a transaction
+try {
+  await client.query('BEGIN');
+  await client.query('UPDATE accounts SET balance = balance - $1 WHERE id = $2', [100, 1]);
+  await client.query('COMMIT');
+} catch (err) {
+  await client.query('ROLLBACK');
+  throw err;
+} finally {
+  client.release();
+}</code></pre>
+        <ul>
+          <li><strong>Clients and pools</strong>: <code>Client</code> (<code>connect</code>, <code>query</code>, <code>end</code>, LISTEN/NOTIFY), <code>Pool</code> (<code>query</code>, <code>connect</code>, <code>end</code>, <code>max</code>, <code>idleTimeoutMillis</code>); connection strings, <code>ssl</code>, the <code>PG*</code> variables; SCRAM-SHA-256, MD5 and cleartext passwords.</li>
+          <li><strong>COPY</strong>: <code>copyRows(table, columns, rows)</code> loads rows in COPY's binary format; <code>copyFrom(sql, data)</code> and <code>copyTo(sql)</code> stream COPY data in and out.</li>
+          <li><strong>Cancelling</strong>: <code>query({ text, values, signal })</code> with an AbortSignal, or a <code>timeout</code>, which also asks the server to stop the query.</li>
+          <li><strong>Types</strong>: as pg, except that <code>bigint</code> is a number when it is a safe integer (a bigint otherwise; pg gives strings).</li>
+          <li><strong>Speed</strong>: queries are prepared the second time their text runs, read and send binary values, and are pipelined: a pool sends queries to the least busy connection without waiting for the ones before.</li>
+        </ul>
+
+        <h2 id="mongo">@xufa/mongo</h2>
+        <p>
+          A MongoDB driver with the API of the <a href="https://www.mongodb.com/docs/drivers/node/">official driver</a>
+          for what applications use most: BSON, the wire protocol, authentication, TLS, <code>mongodb+srv://</code>, a
+          pool, sessions and transactions. The MongoDB backend of the ORM is made with it.
+        </p>
+        <pre><code class="language-js">const { MongoClient } = require('@xufa/mongo');
+
+const client = await new MongoClient('mongodb://localhost:27017/app').connect();
+const users = client.db().collection('users');
+
+await users.insertOne({ name: 'Ada', born: new Date('1815-12-10') });
+const found = await users.find({ name: /^a/i }, { sort: { name: 1 }, limit: 10 }).toArray();
+for await (const group of users.aggregate([{ $group: { _id: '$era', n: { $sum: 1 } } }])) console.log(group);
+
+const session = client.startSession();
+await session.withTransaction(async () =&gt; {
+  await users.insertOne({ name: 'Grace' }, { session });
+});
+await session.endSession();</code></pre>
+        <ul>
+          <li><strong>Collections</strong>: <code>find</code>, <code>findOne</code>, <code>aggregate</code>, <code>countDocuments</code>, the inserts, updates, replaces and deletes, indexes; cursors with <code>for await</code>.</li>
+          <li><strong>Deployments</strong>: replica sets (members found and checked, read preferences, failover), sharded clusters, retryable writes and reads, <code>zstd</code> and <code>zlib</code> compression.</li>
+          <li><strong>BSON</strong>: <code>ObjectId</code>, <code>Binary</code>, <code>Timestamp</code>, <code>Decimal128</code>... int64 values are numbers when they are safe integers.</li>
+          <li><strong>Speed</strong>: BSON encoded into a reused buffer, the commands of a tick written in one system call, many commands sharing a connection, and large unordered <code>insertMany</code> calls cut into parts that run in parallel.</li>
+          <li>Not yet: change streams.</li>
+        </ul>
+
+        <h2 id="logger">@xufa/logger</h2>
+        <p>A fast JSON logger with the API of <a href="https://getpino.io">pino</a>. It is the logger of <code>@xufa/http</code>.</p>
+        <pre><code class="language-js">const pino = require('@xufa/logger');
+
+const logger = pino({ level: 'debug', redact: ['req.headers.authorization'] });
+logger.info('hello %s', 'world');
+logger.child({ requestId: 'r1' }).warn({ user: 7 }, 'slow request');
+
+const toFile = pino(pino.destination({ dest: './app.log', sync: false, mkdir: true }));</code></pre>
+        <p>
+          pino's options, methods and output: levels, <code>child()</code>, <code>formatters</code>, <code>serializers</code>,
+          <code>redact</code>, <code>mixin</code>, <code>hooks</code>, <code>multistream()</code> and
+          <code>destination()</code>. Not supported: transports. Give it a stream, or pipe the output of the process
+          (<code>node app.js | pino-pretty</code>).
+        </p>
+
+        <h2 id="router">@xufa/router</h2>
+        <p>A fast HTTP router with the API of <a href="https://github.com/delvedor/find-my-way">find-my-way</a>.</p>
+        <pre><code class="language-js">const http = require('node:http');
+const router = require('@xufa/router')({ ignoreTrailingSlash: true });
+
+router.get('/users/:id', (req, res, params) =&gt; res.end(`user ${params.id}`));
+router.on(['GET', 'HEAD'], '/files/*', (req, res, params) =&gt; res.end(params['*']));
+
+http.createServer((req, res) =&gt; router.lookup(req, res)).listen(3000);</code></pre>
+        <p>
+          Parametric, multi-parametric, regexp and wildcard routes, constraints, and every option of find-my-way. It adds
+          <code>match(method, url)</code>, which finds the route without calling it and leaves the query string unparsed,
+          and finds static paths with one map lookup.
+        </p>
+
+        <h2 id="serializer">@xufa/serializer</h2>
+        <p>
+          JSON serializers compiled from JSON Schema, with the output of
+          <a href="https://github.com/fastify/fast-json-stringify">fast-json-stringify</a>.
+        </p>
+        <pre><code class="language-js">const build = require('@xufa/serializer');
+
+const stringify = build({
+  type: 'object',
+  properties: { id: { type: 'integer' }, name: { type: 'string' }, tags: { type: 'array', items: { type: 'string' } } },
+});
+
+stringify({ id: 1, name: 'Ada', tags: ['a'], password: 'x' }); // '{"id":1,"name":"Ada","tags":["a"]}'</code></pre>
+        <p>
+          Only the properties of the schema are written, so nothing leaks. A serializer can write a string, or UTF-8 bytes
+          (<code>output: 'bytes'</code>, and <code>toBuffer()</code>), which saves copying large responses;
+          <code>output: 'auto'</code>, the default, picks bytes when the size is unknown (arrays, maps, recursion).
+        </p>
+
+        <h2 id="inject">@xufa/inject</h2>
+        <p>
+          Fake HTTP requests to a request handler, without a socket, with the API of
+          <a href="https://github.com/fastify/light-my-request">light-my-request</a>. It is <code>inject()</code> of
+          <code>@xufa/http</code>, and works with any <code>(req, res)</code> handler.
+        </p>
+        <pre><code class="language-js">const inject = require('@xufa/inject');
+
+const res = await inject(handler, { method: 'POST', url: '/items?x=1', payload: { a: 1 } });
+res.statusCode; // 200
+res.json();</code></pre>
+
+        <h2 id="boot">@xufa/boot</h2>
+        <p>
+          Loading of plugins, asynchronously and in order, with encapsulation, <code>after</code>, <code>ready</code> and
+          <code>close</code> hooks and timeouts, with the API of <a href="https://github.com/fastify/avvio">avvio</a>.
+        </p>
+        <pre><code class="language-js">const boot = require('@xufa/boot');
+
+const app = boot({ name: 'app' });
+app.use(async (instance, options) =&gt; {
+  instance.db = await connect(options.url);
+}, { url: 'postgres://...' });
+app.onClose((instance, done) =&gt; instance.db.end(done));
+await app.ready();</code></pre>
+
+        <h2 id="errors">@xufa/errors</h2>
+        <p>
+          Classes of errors with a code, a status code and a formatted message, with the API of
+          <a href="https://github.com/fastify/fastify-error">@fastify/error</a>.
+        </p>
+        <pre><code class="language-js">const createError = require('@xufa/errors');
+
+const NotFound = createError('APP_NOT_FOUND', 'User %s not found', 404);
+const err = new NotFound('ada');
+err.code; // 'APP_NOT_FOUND'
+err.statusCode; // 404
+err.message; // 'User ada not found'</code></pre>
+
+        <h2 id="cluster">@xufa/cluster</h2>
+        <p>
+          Runs an app in a cluster of processes: the primary forks the workers (one per CPU by default), forks again those
+          that die (waiting longer each time one dies soon after it started), and stops them all gracefully on
+          <code>stop()</code>, <code>SIGINT</code> or <code>SIGTERM</code>: every worker runs its shutdown functions, and
+          those that do not exit in <code>shutdownTimeout</code> are killed.
+        </p>
+        <pre><code class="language-js">const { start, bus } = require('@xufa/cluster');
+
+start({
+  workers: 4, // os.availableParallelism() by default; 0 runs everything in one process
+  primary: async ({ bus }) =&gt; {
+    const counts = new Map();
+    bus.on('hit', (path) =&gt; counts.set(path, (counts.get(path) || 0) + 1));
+    bus.on('hits', () =&gt; Object.fromEntries(counts)); // a request: its result is the reply
+  },
+  worker: async ({ id, onShutdown }) =&gt; {
+    const app = makeApp();
+    app.addHook('onRequest', async (request) =&gt; bus.send('hit', request.routeOptions.url));
+    app.get('/hits', () =&gt; bus.request('hits'));
+    await app.listen({ port: 3000 });
+    onShutdown(() =&gt; app.close());
+  },
+});</code></pre>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Bus</th><th>From</th><th>To</th></tr></thead>
+            <tbody>
+              <tr><td><code>bus.on(event, handler)</code>, <code>bus.off(event, handler)</code></td><td></td><td>Handlers get <code>(data, sender)</code>; their result is the reply of requests</td></tr>
+              <tr><td><code>bus.send(event, data)</code></td><td>A worker</td><td>The primary</td></tr>
+              <tr><td><code>bus.request(event, data, { timeout })</code></td><td>A worker</td><td>The primary, and back: a promise of the reply</td></tr>
+              <tr><td><code>bus.sendTo(workerId, event, data)</code></td><td>The primary</td><td>One worker</td></tr>
+              <tr><td><code>bus.broadcast(event, data, { others })</code></td><td>Anyone</td><td>Every worker (<code>others</code> leaves the sender out)</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p>
+          Messages use the structured clone of Node.js: Dates, Maps, Sets, BigInts and typed arrays arrive as they were
+          sent. In one process (no workers), the same calls reach the handlers of that process, so code written for a
+          cluster runs as it is in development and in tests. The ORM's <code>SharedCache</code> and
+          <code>LocalCache</code> use this bus (see <a href="orm.html#cache">Caches</a>).
+        </p>
+      </article>
+    </div>
+
+    <footer class="footer">
+      <div class="container">
+        <span>xufa is MIT licensed. &copy; Jes&uacute;s Seijas</span>
+        <span>
+          <a href="guide.html">Guide</a> &middot; <a href="http.html">HTTP</a> &middot; <a href="orm.html">ORM</a> &middot;
+          <a href="sequelize.html">Sequelize</a> &middot; <a href="packages.html">Packages</a> &middot;
+          <a href="benchmarks.html">Benchmarks</a> &middot; <a href="https://github.com/xufajs/xufa">GitHub</a>
+        </span>
+      </div>
+    </footer>
+  </body>
+</html>

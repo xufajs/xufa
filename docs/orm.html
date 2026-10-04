@@ -1,0 +1,546 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>ORM · xufa</title>
+    <meta
+      name="description"
+      content="@xufa/orm: Django-like models and QuerySets on SQLite, PostgreSQL, MongoDB and memory. Fields, relations, lookups, aggregates, transactions, migrations, several databases, tenants and caches."
+    />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%23d9502b'/%3E%3Ctext x='16' y='22.5' font-family='monospace' font-size='18' font-weight='700' fill='white' text-anchor='middle'%3Ex%3C/text%3E%3C/svg%3E"
+    />
+    <link rel="stylesheet" href="style.css?v=0.1.0" />
+    <script src="main.js?v=0.1.0"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js" defer></script>
+  </head>
+  <body>
+    <header class="header">
+      <div class="header-inner">
+        <a class="logo" href="./"><span class="logo-mark">x</span>xufa</a>
+        <nav class="nav">
+          <a href="guide.html">Guide</a>
+          <a href="http.html">HTTP</a>
+          <a href="orm.html" aria-current="page">ORM</a>
+          <a class="hide-small" href="sequelize.html">Sequelize</a>
+          <a class="hide-small" href="packages.html">Packages</a>
+          <a class="hide-small" href="benchmarks.html">Benchmarks</a>
+          <a href="https://github.com/xufajs/xufa">GitHub</a>
+          <button class="theme-toggle" type="button" aria-label="Switch between light and dark theme">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+              <path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z" />
+            </svg>
+          </button>
+        </nav>
+      </div>
+    </header>
+
+    <div class="docs">
+      <button class="menu-toggle" type="button" aria-expanded="false">☰ Contents</button>
+      <aside class="sidebar">
+        <h4>Start</h4>
+        <ul>
+          <li><a href="#backends">Backends</a></li>
+          <li><a href="#tour">A quick tour</a></li>
+        </ul>
+        <h4>Models</h4>
+        <ul>
+          <li><a href="#models">Models and options</a></li>
+          <li><a href="#fields">Fields</a></li>
+          <li><a href="#postgres-fields">Arrays, hstore, geometries</a></li>
+          <li><a href="#relations">Relations</a></li>
+          <li><a href="#keys">Primary keys</a></li>
+          <li><a href="#objects">Objects</a></li>
+        </ul>
+        <h4>Queries</h4>
+        <ul>
+          <li><a href="#querysets">QuerySets</a></li>
+          <li><a href="#lookups">Conditions</a></li>
+          <li><a href="#aggregates">Aggregates</a></li>
+          <li><a href="#writing">Writing in bulk</a></li>
+          <li><a href="#transactions">Transactions and locks</a></li>
+        </ul>
+        <h4>Schema and more</h4>
+        <ul>
+          <li><a href="#migrations">Migrations</a></li>
+          <li><a href="#databases">Several databases</a></li>
+          <li><a href="#tenants">Tenants</a></li>
+          <li><a href="#cache">Caches</a></li>
+          <li><a href="#http">With @xufa/http</a></li>
+          <li><a href="#typescript">TypeScript</a></li>
+          <li><a href="#same">The same on every backend</a></li>
+        </ul>
+      </aside>
+
+      <article class="content">
+        <h1>ORM</h1>
+        <p class="intro">
+          <code>@xufa/orm</code> (or <code>xufa/orm</code>) has models and QuerySets in the spirit of Django, on SQL and
+          NoSQL databases, with no dependencies. The same models and queries run on every backend, and give the same
+          results.
+        </p>
+
+        <h2 id="backends">Backends</h2>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Backend</th><th>Database</th><th>Made with</th></tr></thead>
+            <tbody>
+              <tr><td><code>memory</code></td><td>In memory, for tests and prototypes</td><td>JavaScript</td></tr>
+              <tr><td><code>sqlite</code></td><td>SQLite</td><td><code>node:sqlite</code> (Node.js 22.5+)</td></tr>
+              <tr><td><code>postgres</code></td><td>PostgreSQL</td><td><a href="packages.html#pg"><code>@xufa/pg</code></a></td></tr>
+              <tr><td><code>mongodb</code></td><td>MongoDB</td><td><a href="packages.html#mongo"><code>@xufa/mongo</code></a></td></tr>
+            </tbody>
+          </table>
+        </div>
+        <pre><code class="language-js">const { Database } = require('@xufa/orm');
+
+new Database({ backend: 'sqlite', filename: 'app.db' }); // ':memory:' for a database in memory
+new Database({ backend: 'postgres', url: 'postgres://user:password@localhost:5432/app', max: 10 });
+new Database({ backend: 'mongodb', url: 'mongodb://localhost:27017/app' });
+new Database({ backend: 'memory' });</code></pre>
+
+        <h2 id="tour">A quick tour</h2>
+        <pre><code class="language-js">const { Database, Model, fields, or, F, Count, Sum } = require('@xufa/orm');
+
+class Author extends Model {
+  static fields = {
+    name: fields.string({ maxLength: 100 }),
+    email: fields.string({ null: true, unique: true }),
+    createdAt: fields.datetime({ autoNowAdd: true }),
+  };
+
+  static options = { ordering: ['name'] };
+}
+
+class Book extends Model {
+  static fields = {
+    title: fields.string({ maxLength: 200 }),
+    pages: fields.integer({ null: true, min: 1 }),
+    author: fields.foreignKey(() =&gt; Author, { relatedName: 'books', onDelete: 'cascade' }),
+  };
+}
+
+const db = new Database({ backend: 'sqlite', filename: 'app.db' });
+db.register(Author, Book);
+await db.connect();
+await db.sync(); // creates the tables (or collections and indexes) that do not exist
+
+const ada = await Author.objects.create({ name: 'Ada' });
+await ada.books.create({ title: 'Notes', pages: 120 });
+
+const books = await Book.objects
+  .filter({ author__name__istartswith: 'a', pages__gte: 100 })
+  .exclude(or({ title__contains: 'draft' }, { pages: null }))
+  .selectRelated('author')
+  .orderBy('-pages')
+  .limit(10);
+books[0].author.name; // 'Ada'
+
+await Book.objects.filter({ author: ada }).update({ pages: F('pages').add(1) });
+await Book.objects.values('author__name').annotate({ books: Count(), pages: Sum('pages') });</code></pre>
+
+        <h2 id="models">Models and options</h2>
+        <p>
+          A model is a class extending <code>Model</code>, with <code>static fields</code> and, optionally,
+          <code>static options</code>:
+        </p>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Option</th><th>What it does</th></tr></thead>
+            <tbody>
+              <tr><td><code>table</code></td><td>The name of the table (the snake case of the class name by default). Dots are part of the name.</td></tr>
+              <tr><td><code>schema</code></td><td>The schema of the table in PostgreSQL. SQLite names the table <code>schema.table</code>, MongoDB the collection.</td></tr>
+              <tr><td><code>ordering</code></td><td>The default order of its QuerySets: <code>['-createdAt', 'name']</code>.</td></tr>
+              <tr><td><code>indexes</code></td><td><code>[['a', 'b'], { fields: ['c'], unique: true }]</code>. In SQL, <code>condition</code> makes a partial index: <code>{ fields: ['c'], unique: true, condition: '"deleted" IS NULL' }</code>.</td></tr>
+              <tr><td><code>abstract</code></td><td>A parent whose fields its children get; it has no table.</td></tr>
+              <tr><td><code>primaryKey</code></td><td>The fields of a composite primary key, or <code>false</code> for a model without one (see <a href="#keys">Primary keys</a>).</td></tr>
+              <tr><td><code>fillfactor</code></td><td>PostgreSQL, 10 to 100: room left in the pages of the table for the new versions of updated rows. Updates of tables updated often get about twice as fast when they change no indexed column.</td></tr>
+              <tr><td><code>cache</code></td><td><code>true</code> or <code>{ ttl, indexes }</code>: <code>get()</code> by key answered from a cache (see <a href="#cache">Caches</a>).</td></tr>
+              <tr><td><code>database</code></td><td>The database of the model, with <a href="#databases"><code>Databases</code></a>.</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h2 id="fields">Fields</h2>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Field</th><th>Values</th><th>Options</th></tr></thead>
+            <tbody>
+              <tr><td><code>id</code></td><td>The key the database makes: an integer in SQL, an ObjectId as hex text in MongoDB</td><td></td></tr>
+              <tr><td><code>string</code>, <code>text</code></td><td>Strings</td><td><code>maxLength</code>, <code>minLength</code></td></tr>
+              <tr><td><code>integer</code>, <code>float</code></td><td>Numbers (<code>float</code> takes <code>NaN</code>, <code>Infinity</code> and <code>-Infinity</code> too)</td><td><code>min</code>, <code>max</code></td></tr>
+              <tr><td><code>bigint</code></td><td>Numbers when they are safe integers, bigints otherwise</td><td></td></tr>
+              <tr><td><code>decimal</code></td><td>Strings, so no precision is lost</td><td><code>precision</code>, <code>scale</code></td></tr>
+              <tr><td><code>boolean</code></td><td>Booleans</td><td></td></tr>
+              <tr><td><code>datetime</code></td><td>Dates, and <code>Infinity</code> / <code>-Infinity</code></td><td><code>autoNow</code>, <code>autoNowAdd</code></td></tr>
+              <tr><td><code>date</code></td><td><code>'YYYY-MM-DD'</code> strings, and <code>Infinity</code> / <code>-Infinity</code></td><td></td></tr>
+              <tr><td><code>json</code></td><td>Any JSON value, compared as a whole</td><td></td></tr>
+              <tr><td><code>uuid</code></td><td>UUID strings, generated when it is the primary key</td><td></td></tr>
+              <tr><td><code>bytes</code></td><td>Buffers</td><td></td></tr>
+              <tr><td><code>array(field)</code></td><td>Arrays of the values of a field</td><td>see below</td></tr>
+              <tr><td><code>hstore()</code></td><td>Maps of strings</td><td>see below</td></tr>
+              <tr><td><code>geometry()</code>, <code>geography()</code></td><td>GeoJSON geometries</td><td><code>shape</code>, <code>srid</code></td></tr>
+              <tr><td><code>foreignKey(Model)</code></td><td>The object it points to (its key in <code>&lt;name&gt;Id</code>)</td><td>see <a href="#relations">Relations</a></td></tr>
+              <tr><td><code>manyToMany(Model)</code></td><td>A QuerySet of the objects linked</td><td><code>relatedName</code>, <code>through</code></td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p>
+          Every field takes <code>null</code>, <code>default</code> (a value or a function), <code>unique</code>,
+          <code>index</code>, <code>primaryKey</code>, <code>choices</code>, <code>column</code> and
+          <code>validate</code> (functions that return a message, or false, when a value is not valid). In SQL databases a
+          field can also say its column exactly: <code>sqlType</code> (<code>'VARCHAR(255)'</code>) and
+          <code>dbDefault</code> (a <code>DEFAULT</code> of the column).
+        </p>
+        <p>
+          <code>datetime</code> and <code>date</code> take PostgreSQL's infinite dates as <code>Infinity</code> and
+          <code>-Infinity</code> (or those words as text), after and before every other date. SQLite keeps them as the
+          texts <code>infinity</code> and <code>-infinity</code>, which sort the same way; MongoDB has none and refuses
+          them.
+        </p>
+
+        <h2 id="postgres-fields">Arrays, hstore, geometries</h2>
+        <p>
+          These fields are native types of PostgreSQL. The other backends store them too, as JSON text (SQLite) or
+          documents (MongoDB), so the same models run everywhere.
+        </p>
+        <pre><code class="language-js">class Place extends Model {
+  static fields = {
+    tags: fields.array(fields.string({ maxLength: 20 })), // VARCHAR(20)[]
+    attributes: fields.hstore({ null: true }), // HSTORE: { wifi: 'yes', seats: '40' }
+    location: fields.geometry({ shape: 'POINT', srid: 4326 }), // GEOMETRY(POINT,4326)
+    area: fields.geography({ shape: 'POLYGON', null: true }), // GEOGRAPHY(POLYGON)
+  };
+}
+
+await Place.objects.create({
+  tags: ['cafe', 'quiet'],
+  attributes: { wifi: 'yes' },
+  location: { type: 'Point', coordinates: [-3.7038, 40.4168], crs: { type: 'name', properties: { name: 'EPSG:4326' } } },
+});
+await Place.objects.filter({ tags: ['cafe', 'quiet'] }).count(); // arrays and maps are compared as wholes</code></pre>
+        <ul>
+          <li>
+            <strong>Arrays</strong>, as Django's ArrayField: their items are checked by the field given (null items are
+            kept). Arrays of hstore, JSON or ranges work too.
+          </li>
+          <li>
+            <strong>hstore</strong>, as Django's HStoreField: values are strings or nulls (numbers and booleans are taken
+            as their text). The database needs the extension <code>hstore</code>.
+          </li>
+          <li>
+            <strong>Geometries</strong> of PostGIS are GeoJSON values; their SRID is their <code>crs</code>. They are
+            written as EWKT and read back from PostGIS's EWKB. A value without a <code>crs</code> is stored without an
+            SRID. Coordinates must be numbers: text that is not one is refused, not stored as 0. The database needs the
+            extension <code>postgis</code>.
+          </li>
+        </ul>
+
+        <h2 id="relations">Relations</h2>
+        <p>
+          A foreign key <code>author</code> keeps the key in <code>authorId</code> and, once loaded
+          (<code>selectRelated</code>, <code>prefetchRelated</code>, <code>await book.load('author')</code>, or
+          assigned), the object in <code>author</code>. The model it points to gets the reverse relation,
+          <code>relatedName</code> (<code>&lt;model&gt;Set</code> by default): <code>author.books</code> is a QuerySet,
+          and <code>author.books.create()</code> sets the key.
+        </p>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Option of <code>foreignKey</code></th><th>What it does</th></tr></thead>
+            <tbody>
+              <tr><td><code>onDelete</code></td><td><code>cascade</code> (default), <code>setNull</code>, <code>protect</code> or <code>doNothing</code>, done by the ORM so that it is the same on every database</td></tr>
+              <tr><td><code>relatedName</code></td><td>The name of the reverse relation</td></tr>
+              <tr><td><code>attname</code></td><td>The name of the key (<code>author_id</code>)</td></tr>
+              <tr><td><code>toField</code></td><td>A unique field of the other model to point to, instead of its primary key</td></tr>
+              <tr><td><code>dbOnDelete</code>, <code>dbOnUpdate</code></td><td><code>ON DELETE</code> and <code>ON UPDATE</code> of the foreign key in SQL (<code>cascade</code>, <code>setNull</code>, <code>restrict</code>, <code>noAction</code>), for writes made outside the ORM</td></tr>
+              <tr><td><code>dbConstraint: false</code></td><td>No constraint in the database at all</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p>
+          A many-to-many relation <code>tags</code> (of a Book to a Tag) goes through a model with a foreign key to
+          each, made when the models are registered (or given as <code>through</code>). <code>book.tags</code> is the
+          QuerySet of the tags of a book, with <code>add()</code>, <code>remove()</code>, <code>set()</code> and
+          <code>clear()</code>; <code>tag.books</code> (its <code>relatedName</code>) is the other way. Both can be in
+          conditions (<code>Book.objects.filter({ tags__name: 'x' })</code>) and in <code>prefetchRelated</code>.
+        </p>
+
+        <h2 id="keys">Primary keys</h2>
+        <p>
+          A model without a primary key gets <code>id</code>. A key of several fields (<code>primaryKey: true</code> on
+          each, or <code>options.primaryKey: ['student', 'course']</code>) is composite, as Django's
+          CompositePrimaryKey: <code>instance.pk</code> is the array of their values, and <code>pk</code> in queries takes
+          arrays (<code>get({ pk: [1, 'math'] })</code>, <code>pk__in: [[1, 'math'], [2, 'logic']]</code>). No foreign
+          key can point to such a model, except to a unique field with <code>toField</code>; MongoDB does not support
+          them.
+        </p>
+        <p>
+          <code>options.primaryKey: false</code> makes a model without a primary key, for tables that have none (logs,
+          tables of other systems). Its rows are inserted, read, counted, updated and deleted with QuerySets, but its
+          objects cannot be found again by themselves: <code>save()</code> of a saved one, <code>delete()</code> and
+          <code>refresh()</code> throw.
+        </p>
+
+        <h2 id="objects">Objects</h2>
+        <ul>
+          <li><code>save({ fields })</code>: inserts or updates, validating first.</li>
+          <li><code>delete()</code>, <code>refresh()</code>, <code>load(name)</code>, <code>pk</code>.</li>
+          <li>
+            <code>validate()</code>: throws a <code>ValidationError</code> with <code>errors</code> by field and the status
+            code 400.
+          </li>
+          <li><code>toJSON()</code>: the values, with the relations loaded.</li>
+          <li>Hooks: <code>Model.on('beforeSave' | 'afterSave' | 'beforeDelete' | 'afterDelete', fn)</code>.</li>
+          <li><code>Model.jsonSchema({ exclude, partial })</code>: the JSON Schema of the objects, for the schemas of routes.</li>
+        </ul>
+
+        <h2 id="querysets">QuerySets</h2>
+        <p>
+          <code>Model.objects</code> is a lazy QuerySet. Refining it gives a new one; it runs when it is awaited or
+          iterated (<code>for await</code>).
+        </p>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Refine</th><th>Run</th></tr></thead>
+            <tbody>
+              <tr>
+                <td>
+                  <code>filter</code>, <code>exclude</code>, <code>orderBy</code>, <code>limit</code>, <code>offset</code>,
+                  <code>slice</code>, <code>only</code>, <code>values</code>, <code>valuesList</code>,
+                  <code>selectRelated</code>, <code>prefetchRelated</code>, <code>annotate</code>, <code>using</code>,
+                  <code>selectForUpdate</code>, <code>limitPer</code>
+                </td>
+                <td>
+                  <code>get</code>, <code>first</code>, <code>last</code>, <code>count</code>, <code>exists</code>,
+                  <code>aggregate</code>, <code>create</code>, <code>getOrCreate</code>, <code>updateOrCreate</code>,
+                  <code>bulkCreate</code>, <code>update</code>, <code>delete</code>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <p>
+          <code>limitPer(names, count, offset)</code> gives the first objects of every group:
+          <code>Book.objects.orderBy('-pages').limitPer('author', 3)</code> is the three longest books of each author,
+          with a <code>ROW_NUMBER()</code> window in SQL.
+        </p>
+
+        <h2 id="lookups">Conditions</h2>
+        <p>
+          Conditions are those of Django: <code>field__lookup</code>, and <code>relation__field</code> to follow foreign
+          keys (joins in SQL, <code>$lookup</code> in MongoDB), reverse and many-to-many relations
+          (<code>Author.objects.filter({ books__title__contains: 'x' })</code>: each author once).
+        </p>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Lookups</th><th>Meaning</th></tr></thead>
+            <tbody>
+              <tr><td><code>exact</code>, <code>iexact</code></td><td>Equal (case insensitive)</td></tr>
+              <tr><td><code>contains</code>, <code>icontains</code>, <code>startswith</code>, <code>istartswith</code>, <code>endswith</code>, <code>iendswith</code></td><td>Text, with <code>%</code>, <code>_</code> and the characters of regular expressions as plain characters</td></tr>
+              <tr><td><code>like</code>, <code>ilike</code></td><td>Patterns of SQL <code>LIKE</code> (<code>%</code>, <code>_</code>, <code>\</code>), with the same results in SQLite and MongoDB</td></tr>
+              <tr><td><code>gt</code>, <code>gte</code>, <code>lt</code>, <code>lte</code>, <code>in</code>, <code>range</code>, <code>isnull</code></td><td>Comparisons</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <pre><code class="language-js">const { Q, and, or, not, F, Raw } = require('@xufa/orm');
+
+Book.objects.filter(or({ pages__gte: 500 }, { author__name: 'Ada' }));
+Book.objects.filter(new Q({ pages__gte: 500 }).or({ author__name: 'Ada' })); // the same
+Book.objects.exclude(not({ title__icontains: 'notes' }));
+Book.objects.filter({ pages__gt: F('chapters').mul(10) }); // compare with another field
+Book.objects.filter(Raw(`length(${Raw.TABLE}.title) &gt; ?`, [10])); // SQL of your own (SQL databases)</code></pre>
+        <p>
+          The conditions of one <code>filter()</code> on a relation of many are of the same row; those of chained calls,
+          of any. A <code>null</code> is not equal, greater or less than anything, and <code>exclude()</code> keeps the rows
+          with nulls, as in Django.
+        </p>
+
+        <h2 id="aggregates">Aggregates</h2>
+        <pre><code class="language-js">const { Count, Sum, Avg, Min, Max, Raw } = require('@xufa/orm');
+
+await Book.objects.aggregate({ books: Count(), pages: Avg('pages') });
+await Book.objects.values('author__name').annotate({ books: Count(), longest: Max('pages') });
+// Across reverse relations (SQL databases): LEFT JOINs.
+await Author.objects.values('name').annotate({ books: Count('books'), pages: Sum('books__pages') });
+// Fragments of SQL (SQL databases).
+await Book.objects.aggregate({ long: Raw('SUM(CASE WHEN pages &gt; 300 THEN 1 ELSE 0 END)') });</code></pre>
+        <p><code>Count</code> takes <code>{ distinct: true }</code>. A sum of no values is <code>null</code>.</p>
+
+        <h2 id="writing">Writing in bulk</h2>
+        <ul>
+          <li>
+            <code>update(values)</code> and <code>delete()</code> of a QuerySet write every row it matches, with
+            <code>F()</code> for values from other fields: <code>update({ views: F('views').add(1) })</code>.
+            <code>delete()</code> follows the <code>onDelete</code> of the relations.
+          </li>
+          <li>
+            <code>bulkCreate(objects)</code> inserts many rows. In PostgreSQL, 500 objects or more go through COPY (the
+            option <code>copyRows</code> of the database changes that number; <code>false</code>: never).
+          </li>
+          <li>
+            As in Django, <code>bulkCreate</code> can ignore the rows that break a unique key
+            (<code>{ ignoreConflicts: true }</code>), or update the rows there
+            (<code>{ updateConflicts: true, updateFields: ['name'], uniqueFields: ['code'] }</code>):
+            <code>INSERT ... ON CONFLICT</code> in SQL databases.
+          </li>
+        </ul>
+
+        <h2 id="transactions">Transactions and locks</h2>
+        <pre><code class="language-js">await db.transaction(async () =&gt; {
+  const account = await Account.objects.selectForUpdate().get({ pk: 1 }); // FOR UPDATE (PostgreSQL)
+  account.balance -= 100;
+  await account.save();
+  await db.transaction(async () =&gt; {
+    // a savepoint
+  });
+}); // commits when the function ends; rolls back when it throws</code></pre>
+        <p>
+          The queries inside the function run in the transaction, wherever they are in your code. Nested transactions are
+          savepoints. <code>selectForUpdate({ skipLocked, noWait, mode: 'share' })</code> locks the rows read. MongoDB has
+          transactions on replica sets and sharded clusters, without savepoints.
+        </p>
+
+        <h2 id="migrations">Migrations</h2>
+        <p>
+          As in Django: <code>await db.makeMigrations({ dir: 'migrations' })</code> compares the models with the schema the
+          migration files describe, and writes a file (<code>0002_auto.js</code>) with the operations between them:
+          tables created and dropped, fields added, dropped and altered, indexes and the fillfactor. A field added gets
+          its default in the rows that exist; one without <code>null</code> or a default is refused.
+        </p>
+        <p>
+          <code>await db.migrate({ dir })</code> applies the files not applied yet, in order, each in a transaction where
+          the database has them, and records them (<code>xufa_migrations</code>). <code>db.showMigrations({ dir })</code>
+          lists them.
+        </p>
+        <pre><code class="language-js">// migrations/0003_rename.js: written by hand
+module.exports = {
+  operations: [
+    { op: 'renameColumn', table: 'book', from: 'name', to: 'title' },
+    { op: 'sql', sql: 'CREATE INDEX book_title_trgm ON book USING gin (title gin_trgm_ops)' },
+    { op: 'run', fn: async (db) =&gt; { /* a data migration */ } },
+  ],
+};</code></pre>
+        <p>
+          SQLite has no <code>ALTER COLUMN</code>: its tables are made again, with the foreign keys checked after. In
+          MongoDB, migrations make collections and indexes, fill the fields added and unset those dropped.
+        </p>
+
+        <h2 id="databases">Several databases</h2>
+        <pre><code class="language-js">const { Databases } = require('@xufa/orm');
+
+const dbs = new Databases(
+  { default: { backend: 'postgres', url: process.env.DATABASE_URL }, events: { backend: 'mongodb', url: process.env.EVENTS_URL } },
+  { routes: { Event: 'events' } }
+);
+dbs.register(Author, Book, Event);
+await dbs.connect();
+await dbs.migrate({ dir: 'migrations' }); // migrations/default, migrations/events
+await dbs.transaction('default', async () =&gt; { /* ... */ });</code></pre>
+        <p>
+          A model goes to the database of its option <code>database</code>, or of its route, or to the default one.
+          <code>Model.objects.using(db)</code> runs one QuerySet elsewhere. Relations between models of different
+          databases are followed with more queries; a query cannot join them.
+        </p>
+
+        <h2 id="tenants">Tenants</h2>
+        <pre><code class="language-js">const { Tenants } = require('@xufa/orm');
+
+const tenants = new Tenants({
+  models: [Author, Book],
+  config: async (id) =&gt; ({ backend: 'postgres', url: `postgres://app@db:5432/tenant_${id}` }),
+  setup: (db) =&gt; db.migrate({ dir: 'migrations' }),
+  max: 100, // databases kept open
+});
+
+await tenants.run('acme', () =&gt; Book.objects.count()); // the books of acme</code></pre>
+        <p>
+          The database of a tenant is opened (and set up) the first time it is used. Code run in a tenant, including
+          what it awaits, uses its database. With the HTTP plugin, each request runs in its tenant (see
+          <a href="#http">With @xufa/http</a>).
+        </p>
+
+        <h2 id="cache">Caches</h2>
+        <p>
+          A model with the option <code>cache</code> (<code>true</code>, or <code>{ ttl, indexes }</code>) answers
+          <code>get()</code> by its primary key, or by a unique field of <code>indexes</code>, from the cache of its
+          database. Saving or deleting an object removes it; <code>update()</code> and <code>delete()</code> of QuerySets
+          clear the model. Inside transactions the cache is neither read nor filled. Values are copied in and out.
+        </p>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Cache</th><th>Where</th></tr></thead>
+            <tbody>
+              <tr><td><code>MemoryCache({ max, ttl })</code></td><td>In the process: an LRU of <code>max</code> keys. The default.</td></tr>
+              <tr><td><code>SharedCache({ bus })</code></td><td>One copy in the primary of a <a href="packages.html#cluster">cluster</a>, asked by the workers.</td></tr>
+              <tr><td><code>LocalCache({ bus })</code></td><td>A copy in each process, with invalidations sent to the others: reads never leave the process.</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <pre><code class="language-js">const { bus } = require('@xufa/cluster');
+const db = new Database({ backend: 'postgres', url, cache: new LocalCache({ bus, max: 50000 }) });</code></pre>
+
+        <h2 id="http">With @xufa/http</h2>
+        <pre><code class="language-js">const orm = require('@xufa/orm');
+
+app.register(orm.plugin, { database: db, migrate: { dir: 'migrations' } });
+// or { database: db, sync: true }, or { tenants: { tenants, resolve: (request) =&gt; request.headers['x-tenant'] } }</code></pre>
+        <p>
+          The plugin connects the database when the app starts (migrating it when asked), gives it as
+          <code>app.db</code>, and closes it with the app. A <code>ValidationError</code> is answered with 400 and the
+          messages of each field (<code>errors</code>); <code>get()</code> of nothing with 404. With tenants, a request
+          without one gets 400 (unless <code>required: false</code>), and one of a tenant that does not exist, 404.
+        </p>
+
+        <h2 id="typescript">TypeScript</h2>
+        <p>
+          The declarations type models from their fields. Give the model an interface of the same name, and use
+          <code>Model.query()</code> for QuerySets of the model (TypeScript cannot type <code>Model.objects</code> by the
+          class).
+        </p>
+        <pre><code class="language-ts">import { Model, fields, type Fields } from '@xufa/orm';
+
+const bookFields = { title: fields.string(), author: fields.foreignKey(() =&gt; Author) };
+class Book extends Model {
+  static fields = bookFields;
+}
+interface Book extends Fields&lt;typeof bookFields&gt; {}
+
+const books: Book[] = await Book.query().filter({ author__name: 'Ada' }); // book.title, book.authorId, book.author</code></pre>
+
+        <h2 id="same">The same on every backend</h2>
+        <p>Each backend compiles the description of a query to its database, and they give the same results:</p>
+        <ul>
+          <li>Nulls are never equal, greater or less than anything, and sort first ascending and last descending.</li>
+          <li><code>contains</code>, <code>startswith</code> and <code>endswith</code> are case sensitive everywhere (SQLite's <code>LIKE</code> is not, so they are compiled without it).</li>
+          <li>Unique fields allow many nulls (partial unique indexes in MongoDB).</li>
+          <li>JSON values, arrays and maps are compared as wholes.</li>
+          <li>A sum of no values is <code>null</code>; groups of a missing field and of a null are the same group.</li>
+        </ul>
+        <p>What differs, as it does between the databases:</p>
+        <ul>
+          <li>Transactions: MongoDB has them on replica sets and sharded clusters only, and has no savepoints.</li>
+          <li>Foreign keys are constraints in SQL; in MongoDB, a key can point to nothing.</li>
+          <li>The order of strings is the collation of the database.</li>
+          <li>Raw queries: <code>db.backend.raw(sql, params)</code> in SQL; <code>db.backend.db</code> is the <code>@xufa/mongo</code> database in MongoDB.</li>
+        </ul>
+        <p>
+          Not yet: ordering and values across reverse relations (conditions and aggregates follow them), generic
+          relations, and a command line for migrations.
+        </p>
+      </article>
+    </div>
+
+    <footer class="footer">
+      <div class="container">
+        <span>xufa is MIT licensed. &copy; Jes&uacute;s Seijas</span>
+        <span>
+          <a href="guide.html">Guide</a> &middot; <a href="http.html">HTTP</a> &middot; <a href="orm.html">ORM</a> &middot;
+          <a href="sequelize.html">Sequelize</a> &middot; <a href="packages.html">Packages</a> &middot;
+          <a href="benchmarks.html">Benchmarks</a> &middot; <a href="https://github.com/xufajs/xufa">GitHub</a>
+        </span>
+      </div>
+    </footer>
+  </body>
+</html>

@@ -1,0 +1,52 @@
+{
+  "name": "@xufa/router",
+  "version": "0.1.0",
+  "description": "A fast HTTP router (radix tree with a map of static routes), with the API of find-my-way and no dependencies",
+  "main": "./index.js",
+  "types": "./index.d.ts",
+  "type": "commonjs",
+  "exports": {
+    ".": {
+      "types": "./index.d.ts",
+      "default": "./index.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "index.js",
+    "lib",
+    "index.d.ts"
+  ],
+  "scripts": {
+    "test": "vyntra",
+    "test:types": "tstyche"
+  },
+  "keywords": [
+    "router",
+    "http",
+    "radix",
+    "tree",
+    "fast"
+  ],
+  "author": "Jesús Seijas <jseijas@gmail.com>",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/xufajs/xufa.git",
+    "directory": "packages/router"
+  },
+  "homepage": "https://github.com/xufajs/xufa/tree/main/packages/router#readme",
+  "bugs": {
+    "url": "https://github.com/xufajs/xufa/issues"
+  },
+  "engines": {
+    "node": ">=22"
+  },
+  "devDependencies": {
+    "vyntra": "^0.6.0",
+    "rfdc": "^1.4.1"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}

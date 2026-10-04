@@ -1,0 +1,4 @@
+bench/results/
+pnpm-lock.yaml
+packages/*/test/
+docs/

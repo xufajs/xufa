@@ -1,0 +1,12 @@
+{
+  "name": "node-test-to-vyntra",
+  "private": true,
+  "description": "Codemod: rewrites node:test suites (t.assert, t.plan, t.after, subtests) as vyntra suites with expect()",
+  "bin": {
+    "node-test-to-vyntra": "./cli.js"
+  },
+  "devDependencies": {
+    "acorn": "^8.15.0",
+    "vyntra": "^0.6.0"
+  }
+}

@@ -1,0 +1,49 @@
+{
+  "name": "@xufa/sequelize",
+  "version": "0.1.0",
+  "description": "The API of Sequelize 6 over @xufa/orm: models, associations, queries and transactions, with no dependencies",
+  "main": "./index.js",
+  "type": "commonjs",
+  "exports": {
+    ".": "./index.js",
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "index.js",
+    "lib"
+  ],
+  "scripts": {
+    "test": "vyntra"
+  },
+  "keywords": [
+    "orm",
+    "sequelize",
+    "database",
+    "sql",
+    "sqlite",
+    "postgresql"
+  ],
+  "author": "Jesús Seijas <jseijas@gmail.com>",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/xufajs/xufa.git",
+    "directory": "packages/sequelize"
+  },
+  "homepage": "https://github.com/xufajs/xufa/tree/main/packages/sequelize#readme",
+  "bugs": {
+    "url": "https://github.com/xufajs/xufa/issues"
+  },
+  "engines": {
+    "node": ">=22"
+  },
+  "dependencies": {
+    "@xufa/orm": "workspace:*"
+  },
+  "devDependencies": {
+    "vyntra": "^0.6.0"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}

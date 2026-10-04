@@ -1,0 +1,71 @@
+{
+  "name": "xufa",
+  "version": "0.1.0",
+  "description": "A framework for Node.js in the spirit of Django: HTTP (with the API of fastify) and an ORM over SQL and NoSQL databases, with no dependencies",
+  "main": "./index.js",
+  "types": "./index.d.ts",
+  "type": "commonjs",
+  "exports": {
+    ".": {
+      "types": "./index.d.ts",
+      "import": "./index.mjs",
+      "require": "./index.js",
+      "default": "./index.js"
+    },
+    "./orm": {
+      "types": "./orm.d.ts",
+      "default": "./orm.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "index.js",
+    "index.mjs",
+    "index.d.ts",
+    "orm.js",
+    "orm.d.ts"
+  ],
+  "scripts": {
+    "test": "vyntra"
+  },
+  "keywords": [
+    "framework",
+    "web",
+    "http",
+    "orm",
+    "django",
+    "fastify"
+  ],
+  "author": "Jesús Seijas <jseijas@gmail.com>",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/xufajs/xufa.git",
+    "directory": "packages/xufa"
+  },
+  "homepage": "https://github.com/xufajs/xufa/tree/main/packages/xufa#readme",
+  "bugs": {
+    "url": "https://github.com/xufajs/xufa/issues"
+  },
+  "engines": {
+    "node": ">=22"
+  },
+  "dependencies": {
+    "@xufa/http": "workspace:*",
+    "@xufa/orm": "workspace:*"
+  },
+  "peerDependencies": {
+    "schiva": ">=0.7.0"
+  },
+  "peerDependenciesMeta": {
+    "schiva": {
+      "optional": true
+    }
+  },
+  "devDependencies": {
+    "vyntra": "^0.6.0"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}

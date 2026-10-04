@@ -1,0 +1,54 @@
+{
+  "name": "@xufa/boot",
+  "version": "0.1.0",
+  "description": "Asynchronous loading of plugins in order, with encapsulation, after/ready/close hooks and timeouts, with the API of avvio",
+  "main": "./index.js",
+  "types": "./index.d.ts",
+  "type": "commonjs",
+  "exports": {
+    ".": {
+      "types": "./index.d.ts",
+      "default": "./index.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "index.js",
+    "lib",
+    "index.d.ts"
+  ],
+  "scripts": {
+    "test": "vyntra",
+    "test:types": "tsc --project ./test/types/tsconfig.json"
+  },
+  "keywords": [
+    "plugin",
+    "boot",
+    "loader",
+    "async",
+    "avvio"
+  ],
+  "author": "Jesús Seijas <jseijas@gmail.com>",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/xufajs/xufa.git",
+    "directory": "packages/boot"
+  },
+  "homepage": "https://github.com/xufajs/xufa/tree/main/packages/boot#readme",
+  "bugs": {
+    "url": "https://github.com/xufajs/xufa/issues"
+  },
+  "engines": {
+    "node": ">=22"
+  },
+  "dependencies": {
+    "@xufa/errors": "workspace:*"
+  },
+  "devDependencies": {
+    "vyntra": "^0.6.0"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}

@@ -1,0 +1,5 @@
+node_modules
+coverage
+bench/results/*.json
+.vyntra
+*.log

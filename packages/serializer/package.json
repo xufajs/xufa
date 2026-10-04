@@ -1,0 +1,56 @@
+{
+  "name": "@xufa/serializer",
+  "version": "0.1.0",
+  "description": "JSON serializers compiled from JSON Schema, with the output of fast-json-stringify and no dependencies",
+  "main": "./index.js",
+  "types": "./index.d.ts",
+  "type": "commonjs",
+  "exports": {
+    ".": {
+      "types": "./index.d.ts",
+      "default": "./index.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "index.js",
+    "lib",
+    "index.d.ts"
+  ],
+  "scripts": {
+    "test": "vyntra",
+    "test:types": "tstyche"
+  },
+  "keywords": [
+    "json",
+    "stringify",
+    "serializer",
+    "schema",
+    "fast"
+  ],
+  "author": "Jesús Seijas <jseijas@gmail.com>",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/xufajs/xufa.git",
+    "directory": "packages/serializer"
+  },
+  "homepage": "https://github.com/xufajs/xufa/tree/main/packages/serializer#readme",
+  "bugs": {
+    "url": "https://github.com/xufajs/xufa/issues"
+  },
+  "engines": {
+    "node": ">=22"
+  },
+  "devDependencies": {
+    "vyntra": "^0.6.0",
+    "is-my-json-valid": "^2.20.6",
+    "rfdc": "^1.4.1"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "vyntra": {
+    "pool": "forks"
+  }
+}
