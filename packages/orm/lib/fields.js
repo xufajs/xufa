@@ -2,6 +2,8 @@
 // (check) and gives defaults. How a value is stored is the business of each backend, which reads the field's `dbType`.
 const { randomUUID } = require('node:crypto');
 const { checkGeometry } = require('./geo');
+const { getKeyring, isEncrypted } = require('./encryption');
+const { EncryptionError } = require('./errors');
 
 const EMPTY = [];
 
@@ -98,9 +100,27 @@ class Field {
   }
 }
 
+// `mode` (SQL databases): how the keys that are integers are given, as those of bigint fields ('number', 'bigint' or
+// 'string').
 class IdField extends Field {
   constructor(options = {}) {
     super({ ...options, primaryKey: true });
+    this.mode = options.mode || 'number';
+    if (!BIGINT_MODES.includes(this.mode))
+      throw new TypeError(`The mode of a key is one of ${BIGINT_MODES.join(', ')}`);
+  }
+
+  // A key of the database in the mode of the field (keys that are not integers, as ObjectIds, are as they are).
+  fromDb(value) {
+    if (this.mode === 'number' || value === null || value === undefined) return value;
+    if (
+      typeof value === 'number' ||
+      typeof value === 'bigint' ||
+      (typeof value === 'string' && /^-?\d+$/.test(value))
+    ) {
+      return this.mode === 'bigint' ? BigInt(value) : String(value);
+    }
+    return value;
   }
 
   get type() {
@@ -113,7 +133,7 @@ class IdField extends Field {
 
   // Keys are numbers in SQL databases and strings (ObjectId) in MongoDB: the backend makes them what it stores.
   toValue(value) {
-    if (typeof value === 'number' || typeof value === 'string' || typeof value === 'bigint') return value;
+    if (typeof value === 'number' || typeof value === 'string' || typeof value === 'bigint') return this.fromDb(value);
     if (typeof value === 'object' && typeof value.toHexString === 'function') return value.toHexString();
     throw new TypeError('The value must be a key (a number or a string).');
   }
@@ -212,24 +232,44 @@ class FloatField extends NumberField {
   }
 }
 
-// Integers of 64 bits: numbers when they are safe integers, bigints otherwise.
+// Integers of 64 bits. `mode`: 'number' (the default: numbers when they are safe integers, bigints otherwise),
+// 'bigint' (always bigints) or 'string' (their decimal text, as node-postgres gives them).
+const BIGINT_MODES = ['number', 'bigint', 'string'];
 class BigIntegerField extends NumberField {
+  constructor(options = {}) {
+    super(options);
+    this.mode = options.mode || 'number';
+    if (!BIGINT_MODES.includes(this.mode))
+      throw new TypeError(`The mode of a bigint is one of ${BIGINT_MODES.join(', ')}`);
+  }
+
   get type() {
     return 'bigint';
   }
 
   toValue(value) {
-    if (typeof value === 'bigint') return Number.isSafeInteger(Number(value)) ? Number(value) : value;
-    if (typeof value === 'string' && /^-?\d+$/.test(value.trim())) {
-      const big = BigInt(value.trim());
-      return Number.isSafeInteger(Number(big)) ? Number(big) : big;
-    }
-    if (!Number.isInteger(value)) throw new TypeError('The value must be an integer.');
-    return value;
+    let big;
+    if (typeof value === 'bigint') big = value;
+    else if (typeof value === 'string' && /^-?\d+$/.test(value.trim())) big = BigInt(value.trim());
+    else if (Number.isInteger(value)) big = Number.isSafeInteger(value) ? null : BigInt(value);
+    else throw new TypeError('The value must be an integer.');
+    return this.inMode(big === null ? value : big);
+  }
+
+  // A value of the database (a number or a bigint) in the mode of the field.
+  fromDb(value) {
+    if (value === null || value === undefined || this.mode === 'number') return value;
+    return this.inMode(typeof value === 'string' ? BigInt(value) : value);
+  }
+
+  inMode(value) {
+    if (this.mode === 'bigint') return BigInt(value);
+    if (this.mode === 'string') return String(value);
+    return typeof value === 'bigint' && Number.isSafeInteger(Number(value)) ? Number(value) : value;
   }
 
   jsonSchema() {
-    return { type: 'integer' };
+    return this.mode === 'string' ? { type: 'string', pattern: '^-?\\d+$' } : { type: 'integer' };
   }
 }
 
@@ -442,6 +482,124 @@ class ArrayField extends Field {
   }
 }
 
+// Values of a field kept encrypted in the database (fields.encrypted(fields.string()), fields.encrypted(fields.json())):
+// AES-256-GCM with the keys of the keyring (see encryption.js), as text in a TEXT column (strings in MongoDB). The
+// objects have the values of the base field; the database never sees them. The memory backend keeps them as they are
+// (nothing leaves the process).
+//
+// Encrypted values cannot be compared, sorted nor aggregated by the database: their fields take isnull in conditions,
+// and nothing else. With `deterministic: true` the same value is the same text (for the same key), so they also take
+// exact and in, and can be unique: the database can tell which rows have the same value (not what it is). Values
+// written before the field was encrypted are read as they are with `acceptPlaintext: true` (until reencrypt() writes
+// them encrypted). `context` binds the values to something else than the table and column (when one of them is
+// renamed: the old names).
+const NOT_DETERMINISTIC = new Set(['json', 'array', 'hstore', 'geometry']);
+
+class EncryptedField extends Field {
+  constructor(base, options = {}) {
+    super(options);
+    if (
+      !(base instanceof Field) ||
+      base instanceof EncryptedField ||
+      base instanceof ForeignKey ||
+      base instanceof IdField
+    ) {
+      throw new TypeError('fields.encrypted() takes a field of values (not a relation, a key nor an encrypted field)');
+    }
+    this.base = base;
+    this.deterministic = Boolean(options.deterministic);
+    this.acceptPlaintext = Boolean(options.acceptPlaintext);
+    this.context = options.context;
+    if (this.primaryKey) throw new TypeError('An encrypted field cannot be a primary key');
+    if ((this.unique || this.index) && !this.deterministic) {
+      throw new TypeError('An encrypted field is unique or indexed only when it is deterministic');
+    }
+    if (this.deterministic && NOT_DETERMINISTIC.has(base.type)) {
+      throw new TypeError(`An encrypted ${base.type} field cannot be deterministic (its text is not canonical)`);
+    }
+  }
+
+  get type() {
+    return 'encrypted';
+  }
+
+  get dbType() {
+    return 'text';
+  }
+
+  get encrypted() {
+    return true;
+  }
+
+  bind(model, name) {
+    super.bind(model, name);
+    this.base.bind(model, name);
+  }
+
+  clone() {
+    const field = super.clone();
+    field.base = this.base.clone();
+    return field;
+  }
+
+  toValue(value) {
+    return this.base.toValue(value);
+  }
+
+  check(value) {
+    const messages = super.check(value);
+    if (value === null) return messages;
+    return [...this.base.check(value), ...messages];
+  }
+
+  jsonSchema() {
+    return this.base.jsonSchema();
+  }
+
+  // What the value is bound to: the table and column of the field.
+  get aad() {
+    if (this.context !== undefined) return String(this.context);
+    const { meta } = this.model;
+    return `${meta.schema ? `${meta.schema}.` : ''}${meta.table}.${this.column}`;
+  }
+
+  // The bytes of a value: Buffers as they are, the rest as JSON (dates as ISO text, bigints and the IEEE numbers as
+  // text).
+  serialize(value) {
+    if (this.base.type === 'bytes') return value;
+    let json = value;
+    if (value instanceof Date) json = value.toISOString();
+    else if (typeof value === 'bigint' || (typeof value === 'number' && !Number.isFinite(value))) json = String(value);
+    return Buffer.from(JSON.stringify(json));
+  }
+
+  deserialize(bytes) {
+    if (this.base.type === 'bytes') return bytes;
+    return this.base.toValue(JSON.parse(bytes.toString()));
+  }
+
+  // The text stored for a value (null for null).
+  seal(value) {
+    if (value === null || value === undefined) return null;
+    return getKeyring().seal(this.serialize(this.toValue(value)), this.aad, this.deterministic);
+  }
+
+  // The value of a stored text.
+  open(text) {
+    if (text === null || text === undefined) return null;
+    if (!isEncrypted(text)) {
+      // A value written before the field was encrypted (json as its text).
+      if (this.acceptPlaintext) {
+        return this.toValue(
+          typeof text === 'string' && NOT_DETERMINISTIC.has(this.base.type) ? JSON.parse(text) : text
+        );
+      }
+      throw new EncryptionError(`The value of ${this.model.name}.${this.name} in the database is not encrypted`);
+    }
+    return this.deserialize(getKeyring().open(text, this.aad));
+  }
+}
+
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 class UuidField extends Field {
@@ -517,6 +675,12 @@ class ForeignKey extends Field {
 
   get dbType() {
     return this.targetField.dbType;
+  }
+
+  // The values of the key are made as those of the field it holds (the mode of its bigints or keys).
+  get fromDb() {
+    const target = this.targetField;
+    return target.fromDb ? (value) => target.fromDb(value) : undefined;
   }
 
   // The field of the target the key holds: its primary key, or the unique field named by `toField`.
@@ -617,6 +781,7 @@ const fields = {
   DateTimeField,
   JsonField,
   ArrayField,
+  EncryptedField,
   GeometryField,
   HStoreField,
   UuidField,
@@ -635,6 +800,7 @@ const fields = {
   datetime: (options) => new DateTimeField(options),
   json: (options) => new JsonField(options),
   array: (base, options) => new ArrayField(base, options),
+  encrypted: (base, options) => new EncryptedField(base, options),
   geometry: (options) => new GeometryField(options),
   hstore: (options) => new HStoreField(options),
   geography: (options) => new GeometryField({ ...options, geography: true }),

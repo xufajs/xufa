@@ -3,7 +3,7 @@ import { Model, Sequelize, HasMany } from 'sequelize';
 
 class MyModel extends Model {
   public static associations: {
-    relation: HasMany
+    relation: HasMany;
   };
 }
 
@@ -18,7 +18,11 @@ MyModel.findAll({
       on: {
         a: 1,
       },
-      order: [['id', 'DESC'], [ 'AssociatedModel', MyModel, 'id', 'DESC' ], [ MyModel, 'id' ] ],
+      order: [
+        ['id', 'DESC'],
+        ['AssociatedModel', MyModel, 'id', 'DESC'],
+        [MyModel, 'id'],
+      ],
       separate: true,
       where: { state: Sequelize.col('project.state') },
       all: true,
@@ -32,11 +36,13 @@ MyModel.findAll({
 });
 
 MyModel.findAll({
-  include: [{
-    limit: 1,
-    association: 'relation',
-    order: [['id', 'DESC'], 'id', [ AssociatedModel, MyModel, 'id', 'ASC' ]],
-    separate: true,
-    where: { state: Sequelize.col('project.state') },
-  }]
+  include: [
+    {
+      limit: 1,
+      association: 'relation',
+      order: [['id', 'DESC'], 'id', [AssociatedModel, MyModel, 'id', 'ASC']],
+      separate: true,
+      where: { state: Sequelize.col('project.state') },
+    },
+  ],
 });

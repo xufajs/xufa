@@ -24,7 +24,7 @@ const User = sequelize.define<UserModel>(
     firstName: DataTypes.STRING,
     lastName: DataTypes.STRING,
   },
-  { tableName: 'users' },
+  { tableName: 'users' }
 );
 
 async function test() {
@@ -53,7 +53,7 @@ const UntypedUser = sequelize.define<UntypedUserModel>(
     firstName: DataTypes.STRING,
     lastName: DataTypes.STRING,
   },
-  { tableName: 'users' },
+  { tableName: 'users' }
 ) as UntypedUserModelStatic;
 
 UntypedUser.customStaticMethod = () => {};

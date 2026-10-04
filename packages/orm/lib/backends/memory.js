@@ -40,7 +40,10 @@ const JSON_VALUE = { dbType: 'jsonValue' };
 
 function encode(field, value) {
   if (value === null || value === undefined) return null;
-  if (field.dbType === 'id' && typeof value === 'string' && /^-?\d+$/.test(value)) return Number(value);
+  // Keys that are integers are numbers here (whatever the mode of the field), so they find their rows.
+  if (field.dbType === 'id' && (typeof value === 'bigint' || (typeof value === 'string' && /^-?\d+$/.test(value)))) {
+    return Number(value);
+  }
   return copy(value);
 }
 
@@ -331,7 +334,9 @@ class MemoryBackend extends Backend {
       if (!field.unique || field.primaryKey || row[field.attname] === null) return;
       table.rows.forEach((other, key) => {
         if (key !== pk && equals(other[field.attname], row[field.attname])) {
-          throw new BackendError(`Duplicate value of ${meta.table}.${field.column}`);
+          const err = new BackendError(`Duplicate value of ${meta.table}.${field.column}`);
+          err.unique = [field.column];
+          throw err;
         }
       });
     });
@@ -366,7 +371,9 @@ class MemoryBackend extends Backend {
             }
             const composite = meta.pkValue(stored);
             if (table.rows.has(composite))
-              throw new BackendError(`Duplicate primary key ${composite} in ${meta.table}`);
+              throw Object.assign(new BackendError(`Duplicate primary key ${composite} in ${meta.table}`), {
+                unique: meta.pkFields.map((item) => item.column),
+              });
             this.checkUnique(meta, table, stored, composite);
             table.rows.set(composite, stored);
             added.push(composite);
@@ -378,8 +385,11 @@ class MemoryBackend extends Backend {
             table.sequence += 1;
             key = table.sequence;
             stored[pk.attname] = key;
-          } else if (table.rows.has(key)) throw new BackendError(`Duplicate primary key ${key} in ${meta.table}`);
-          else if (typeof key === 'number' && key > table.sequence) table.sequence = key;
+          } else if (table.rows.has(key)) {
+            throw Object.assign(new BackendError(`Duplicate primary key ${key} in ${meta.table}`), {
+              unique: [meta.pk.column],
+            });
+          } else if (typeof key === 'number' && key > table.sequence) table.sequence = key;
           this.checkUnique(meta, table, stored, key);
           table.rows.set(key, stored);
           added.push(key);

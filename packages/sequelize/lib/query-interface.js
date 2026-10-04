@@ -4,10 +4,20 @@
 // table, the rows copied, the old one dropped and the new one renamed), as SQLite recommends.
 const { NotSupportedError, UnknownConstraintError } = require('./errors');
 const { normalizeType, DataType } = require('./data-types');
-const { sqlTypeOf, autoIncrementOf, createEnumSql, enumTypeName, enumValuesOf } = require('./sql-types');
+const {
+  generatedSql,
+  sqlTypeOf,
+  autoIncrementOf,
+  createEnumSql,
+  enumTypeName,
+  enumTypeSchema,
+  enumTypeRef,
+  enumValuesOf,
+  enumOptionsOf,
+} = require('./sql-types');
 const { Op } = require('./operators');
 const { underscore, isPlainObject } = require('./utils');
-const { deferrableSql } = require('./deferrable');
+const { deferrableSql, deferrableOf } = require('./deferrable');
 
 const quote = (name) => `"${String(name).replace(/"/g, '""')}"`;
 const ON_ACTIONS = /^(CASCADE|SET NULL|SET DEFAULT|RESTRICT|NO ACTION)$/i;
@@ -89,6 +99,100 @@ function functionVariables(variables) {
     .join(' ');
 }
 
+// An object with more properties that are not enumerable (what Sequelize 7 adds to what Sequelize 6 gives: they do
+// not change its keys, nor its JSON).
+function withHidden(object, hidden) {
+  Object.entries(hidden).forEach(([key, value]) => {
+    if (value !== undefined) Object.defineProperty(object, key, { value, configurable: true, writable: true });
+  });
+  return object;
+}
+
+// The type of a column of a STRICT table of SQLite: INTEGER, REAL, TEXT or BLOB, by the rules of SQLite (dates,
+// decimals and json are text), with its collation.
+function strictSqliteType(type) {
+  const upper = type.toUpperCase();
+  const collation = /\sCOLLATE\s+\w+/i.exec(type);
+  let strict = 'TEXT';
+  if (upper.includes('INT')) strict = 'INTEGER';
+  else if (/CHAR|CLOB|TEXT/.test(upper)) strict = 'TEXT';
+  else if (upper.includes('BLOB')) strict = 'BLOB';
+  else if (/REAL|FLOA|DOUB/.test(upper)) strict = 'REAL';
+  return collation ? `${strict}${collation[0]}` : strict;
+}
+
+// Whether a type of PostgreSQL (as Sequelize writes it: VARCHAR(255), INTEGER) is the one format_type gives.
+const PG_ALIASES = [
+  [/^varchar\b/, 'character varying'],
+  [/^char\b(?! varying)/, 'character'],
+  [/^int4$|^int$/, 'integer'],
+  [/^int8$/, 'bigint'],
+  [/^int2$/, 'smallint'],
+  [/^float8$|^double$/, 'double precision'],
+  [/^float4$/, 'real'],
+  [/^bool$/, 'boolean'],
+  [/^decimal\b/, 'numeric'],
+  [/^timestamptz$/, 'timestamp with time zone'],
+  [/^timestamp$/, 'timestamp without time zone'],
+  [/^time$/, 'time without time zone'],
+];
+function samePgType(type, current) {
+  if (!current) return false;
+  const normal = (text) => {
+    let out = String(text)
+      .trim()
+      .toLowerCase()
+      .replace(/\s+/g, ' ')
+      .replace(/\s*\(\s*/g, '(')
+      .replace(/\s*,\s*/g, ',');
+    PG_ALIASES.forEach(([pattern, name]) => {
+      out = out.replace(pattern, name);
+    });
+    return out;
+  };
+  return normal(type) === normal(current);
+}
+
+// The index of the parenthesis that closes the one at `open` (quoted names and strings skipped).
+function closingParen(text, open) {
+  let depth = 0;
+  for (let i = open; i < text.length; i += 1) {
+    const char = text[i];
+    if (char === '"' || char === "'") {
+      i = text.indexOf(char, i + 1);
+      while (i !== -1 && text[i + 1] === char) i = text.indexOf(char, i + 2);
+      if (i === -1) return text.length;
+    } else if (char === '(') depth += 1;
+    else if (char === ')') {
+      depth -= 1;
+      if (depth === 0) return i;
+    }
+  }
+  return text.length;
+}
+
+// A list of SQL split at its commas outside parentheses and quotes.
+function splitTopLevel(text) {
+  const items = [];
+  let depth = 0;
+  let start = 0;
+  for (let i = 0; i < text.length; i += 1) {
+    const char = text[i];
+    if (char === '"' || char === "'") {
+      i = text.indexOf(char, i + 1);
+      while (i !== -1 && text[i + 1] === char) i = text.indexOf(char, i + 2);
+      if (i === -1) break;
+    } else if (char === '(') depth += 1;
+    else if (char === ')') depth -= 1;
+    else if (char === ',' && depth === 0) {
+      items.push(text.slice(start, i).trim());
+      start = i + 1;
+    }
+  }
+  items.push(text.slice(start).trim());
+  return items;
+}
+
 // The schema (or null) and the name of a table of PostgreSQL.
 function splitTable(name) {
   const ref = tableNameOf(name);
@@ -128,7 +232,8 @@ const COMPARISONS = new Map([
 
 // The SQL of simple conditions (CHECK constraints, partial indexes, bulkDelete, bulkUpdate): equalities, lists,
 // nulls and the comparisons of Op on columns.
-function whereSql(where, dialect) {
+// `table`: the table its columns are of, in SQL (when other tables have them, as excluded in ON CONFLICT).
+function whereSql(where, dialect, table) {
   if (!where) return '';
   if (typeof where === 'string') return where;
   if (where.xufaLiteral) return where.xufaLiteral;
@@ -136,7 +241,7 @@ function whereSql(where, dialect) {
   const parts = [];
   Object.keys(where).forEach((column) => {
     const value = where[column];
-    const name = quote(column);
+    const name = table ? `${table}.${quote(column)}` : quote(column);
     if (value === null) parts.push(`${name} IS NULL`);
     else if (Array.isArray(value)) parts.push(`${name} IN (${list(value)})`);
     else if (isPlainObject(value)) {
@@ -155,10 +260,10 @@ function whereSql(where, dialect) {
     } else parts.push(`${name} = ${literal(value, dialect)}`);
   });
   Object.getOwnPropertySymbols(where).forEach((op) => {
-    const items = [].concat(where[op]).map((item) => `(${whereSql(item, dialect)})`);
+    const items = [].concat(where[op]).map((item) => `(${whereSql(item, dialect, table)})`);
     if (op === Op.and) parts.push(items.join(' AND '));
     else if (op === Op.or) parts.push(`(${items.join(' OR ')})`);
-    else if (op === Op.not) parts.push(`NOT (${whereSql(where[op], dialect)})`);
+    else if (op === Op.not) parts.push(`NOT (${whereSql(where[op], dialect, table)})`);
     else throw new NotSupportedError(`The operator ${String(op)} in the conditions of the QueryInterface`);
   });
   return parts.join(' AND ');
@@ -188,6 +293,8 @@ class QueryInterface {
   constructor(sequelize) {
     this.sequelize = sequelize;
     this.queryGenerator = {
+      // The options of the Sequelize instance (quoteIdentifiers...).
+      options: sequelize.options,
       _dialect: sequelize.dialect,
       dialect: sequelize.dialect.name,
       quoteIdentifier: (name) => quote(name),
@@ -195,6 +302,7 @@ class QueryInterface {
       quoteTable: (table) => this.qt(tableNameOf(table)),
       addSchema: (options) => this.addSchema(options),
       escape: (value) => literal(value, sequelize.getDialect()),
+      selectQuery: (table, options, model) => this.selectQuery(table, options, model),
     };
   }
 
@@ -202,11 +310,78 @@ class QueryInterface {
     return this.sequelize.xufaDb.backend;
   }
 
+  // The SQL of a SELECT, as queryGenerator.selectQuery(table, options) writes it in Sequelize (for subqueries and
+  // queries of your own): attributes (names, [expression, alias], literal(), fn(), col()), where (simple
+  // conditions), group, order, limit and offset. The names of the attributes of a model given are its columns.
+  selectQuery(table, options = {}, model = null) {
+    const { dialect } = this;
+    const name = tableNameOf(table);
+    const alias = quote(
+      options.tableAs ||
+        String(name.table || name)
+          .split('.')
+          .pop()
+    );
+    const columnOf = (attribute) => {
+      const definition = model && model.rawAttributes && model.rawAttributes[attribute];
+      return definition ? definition.field : attribute;
+    };
+    const expression = (item) => {
+      if (typeof item === 'string')
+        return item.includes('.') ? item.split('.').map(quote).join('.') : `${alias}.${quote(columnOf(item))}`;
+      if (item && item.xufaCol) return quote(item.xufaCol);
+      return literal(item, dialect);
+    };
+    const attributes = (options.attributes || ['*']).map((item) => {
+      if (item === '*') return '*';
+      if (Array.isArray(item)) return `${expression(item[0])} AS ${quote(item[1])}`;
+      return expression(item);
+    });
+    let sql = `SELECT ${attributes.join(', ')} FROM ${this.qt(name)} AS ${alias}`;
+    if (options.where && (typeof options.where !== 'object' || Reflect.ownKeys(options.where).length)) {
+      const columns = {};
+      if (typeof options.where === 'object' && !options.where.xufaLiteral) {
+        Object.keys(options.where).forEach((key) => {
+          columns[columnOf(key)] = options.where[key];
+        });
+        Object.getOwnPropertySymbols(options.where).forEach((symbol) => {
+          columns[symbol] = options.where[symbol];
+        });
+      }
+      sql += ` WHERE ${whereSql(typeof options.where === 'object' && !options.where.xufaLiteral ? columns : options.where, dialect, alias)}`;
+    }
+    if (options.group) sql += ` GROUP BY ${[].concat(options.group).map(expression).join(', ')}`;
+    if (options.order) {
+      const order = (Array.isArray(options.order) ? options.order : [options.order]).map((item) =>
+        Array.isArray(item)
+          ? `${expression(item[0])} ${String(item[1] || 'ASC').toUpperCase() === 'DESC' ? 'DESC' : 'ASC'}`
+          : expression(item)
+      );
+      sql += ` ORDER BY ${order.join(', ')}`;
+    }
+    if (options.limit !== undefined && options.limit !== null) sql += ` LIMIT ${Number.parseInt(options.limit, 10)}`;
+    if (options.offset) sql += ` OFFSET ${Number.parseInt(options.offset, 10)}`;
+    return `${sql};`;
+  }
+
   // A table quoted: "schema"."table" in PostgreSQL ('schema.table' is a name in SQLite, as Sequelize makes it).
   qt(name) {
     const ref = tableNameOf(name);
     if (this.dialect !== 'postgres') return quote(String(ref));
     return ref.schema ? `${quote(ref.schema)}.${quote(ref.table)}` : quote(ref.table);
+  }
+
+  // Whether a column of a table of PostgreSQL is unique by itself: its primary key, or a unique constraint or index
+  // of it alone (not partial, nor of expressions).
+  async isUniqueColumn(table, column, options = {}) {
+    const rows = await this.raw(
+      `SELECT 1 FROM pg_index i JOIN pg_attribute a ON a.attrelid = i.indrelid AND a.attnum = i.indkey[0]
+       WHERE i.indrelid = $1::regclass AND i.indisunique AND i.indnatts = 1
+         AND i.indpred IS NULL AND i.indexprs IS NULL AND a.attname = $2`,
+      [this.qt(table), column],
+      options
+    );
+    return rows.length > 0;
   }
 
   get dialect() {
@@ -300,6 +475,8 @@ class QueryInterface {
   // The definition of a column, as Sequelize writes it.
   columnSql(name, attribute, { inlinePrimaryKey = true, table } = {}) {
     const { dialect } = this;
+    // A column as its CREATE TABLE had it (generated columns of SQLite made again).
+    if (attribute.xufaColumnSql) return attribute.xufaColumnSql;
     const typed = typeof attribute.type !== 'string';
     if (attribute.primaryKey && attribute.autoIncrement && inlinePrimaryKey) {
       return `${quote(name)} ${autoIncrementOf(typed ? attribute.type : { key: attribute.type }, dialect)}`;
@@ -309,9 +486,16 @@ class QueryInterface {
     const serial = attribute.autoIncrement && dialect === 'postgres';
     if (serial) type = typed && attribute.type.key === 'BIGINT' ? 'BIGSERIAL' : 'SERIAL';
     let sql = `${quote(name)} ${type}`;
+    // A generated column (Sequelize 7): its SQL after its type, no default.
+    if (attribute.generatedAs !== undefined) sql += generatedSql(name, attribute);
     if (attribute.allowNull === false) sql += ' NOT NULL';
     const value = attribute.defaultValue;
-    if (value !== undefined && !serial && !(typeof value === 'function' && !value.kind)) {
+    if (
+      value !== undefined &&
+      !serial &&
+      attribute.generatedAs === undefined &&
+      !(typeof value === 'function' && !value.kind)
+    ) {
       sql += ` DEFAULT ${attribute.rawDefault ? value : literal(value, dialect)}`;
     }
     if (attribute.unique === true) sql += ' UNIQUE';
@@ -333,10 +517,17 @@ class QueryInterface {
     return sql;
   }
 
+  // options.strict (SQLite, as Sequelize 7): a STRICT table, its columns of the types STRICT has.
   createTableSql(table, attributes, options = {}, name = table) {
+    const strict = Boolean(options.strict) && this.dialect === 'sqlite';
     const columns = {};
     Object.entries(attributes).forEach(([key, definition]) => {
       const attribute = this.normalizeAttribute(definition);
+      if (strict && !(attribute.primaryKey && attribute.autoIncrement)) {
+        attribute.type = strictSqliteType(
+          typeof attribute.type === 'string' ? attribute.type : sqlTypeOf(attribute.type, 'sqlite') || 'TEXT'
+        );
+      }
       columns[attribute.field || key] = attribute;
     });
     const keys = Object.keys(columns).filter((column) => columns[column].primaryKey);
@@ -362,7 +553,7 @@ class QueryInterface {
       const constraint = customIndex ? `CONSTRAINT ${quote(group)} ` : '';
       parts.push(`${constraint}UNIQUE (${fields.map(quote).join(', ')})`);
     });
-    return `CREATE TABLE IF NOT EXISTS ${this.qt(name)} (${parts.join(', ')})`;
+    return `CREATE TABLE IF NOT EXISTS ${this.qt(name)} (${parts.join(', ')})${strict ? ' STRICT' : ''}`;
   }
 
   async createTable(table, attributes, options = {}) {
@@ -375,7 +566,8 @@ class QueryInterface {
       for (const [key, definition] of Object.entries(attributes)) {
         const attribute = this.normalizeAttribute(definition);
         const values = enumValuesOf(attribute);
-        if (values) await this.raw(createEnumSql(name, attribute.field || key, values), [], options);
+        if (values)
+          await this.raw(createEnumSql(name, attribute.field || key, values, enumOptionsOf(attribute)), [], options);
       }
     }
     await this.raw(this.createTableSql(name, attributes, options), [], options);
@@ -467,7 +659,22 @@ class QueryInterface {
 
   async describeSqlite(name, options) {
     const result = {};
-    const rows = await this.raw(`PRAGMA TABLE_INFO(${quote(name)})`, [], options);
+    // As Sequelize: table_info. A table with generated columns (which table_info leaves out) is read with table_xinfo
+    // (hidden 2 and 3; 1 are the hidden columns of virtual tables), and their definitions as its CREATE TABLE has them
+    // (a table made again keeps them).
+    let rows = await this.raw(`PRAGMA TABLE_INFO(${quote(name)})`, [], options);
+    let definitions = null;
+    const [master] = rows.length
+      ? await this.raw("SELECT sql FROM sqlite_master WHERE type = 'table' AND name = ?", [name], options)
+      : [];
+    if (master && /\bAS\s*\(/i.test(master.sql)) {
+      rows = (await this.raw(`PRAGMA TABLE_XINFO(${quote(name)})`, [], options)).filter((row) => row.hidden !== 1);
+    }
+    if (rows.some((row) => row.hidden === 2 || row.hidden === 3)) {
+      const { sql } = master;
+      const open = sql.indexOf('(');
+      definitions = splitTopLevel(sql.slice(open + 1, closingParen(sql, open)));
+    }
     rows.forEach((row) => {
       let defaultValue;
       if (row.dflt_value === 'NULL') defaultValue = null;
@@ -481,6 +688,11 @@ class QueryInterface {
       };
       if (column.type === 'TINYINT(1)') column.defaultValue = { 0: false, 1: true }[column.defaultValue];
       if (typeof column.defaultValue === 'string') column.defaultValue = column.defaultValue.replace(/^'(.*)'$/s, '$1');
+      if (definitions && (row.hidden === 2 || row.hidden === 3)) {
+        const own = definitions.find((item) => unquote(item.split(/\s/)[0]) === row.name);
+        column.generated = row.hidden === 3 ? 'STORED' : 'VIRTUAL';
+        if (own) column.xufaColumnSql = own;
+      }
       result[row.name] = column;
     });
     if (rows.length) {
@@ -500,7 +712,7 @@ class QueryInterface {
       `SELECT pk.constraint_type AS "Constraint", c.column_name AS "Field", c.column_default AS "Default",
          c.is_nullable AS "Null",
          (CASE WHEN c.udt_name = 'hstore' THEN 'HSTORE' ELSE c.data_type END) || (CASE WHEN c.character_maximum_length IS NOT NULL THEN '(' || c.character_maximum_length || ')' ELSE '' END) AS "Type",
-         (SELECT array_agg(e.enumlabel::text) FROM pg_catalog.pg_type t JOIN pg_catalog.pg_enum e ON t.oid = e.enumtypid WHERE t.typname = c.udt_name) AS "special",
+         (SELECT array_agg(e.enumlabel::text) FROM pg_catalog.pg_type t JOIN pg_catalog.pg_enum e ON t.oid = e.enumtypid JOIN pg_catalog.pg_namespace tn ON tn.oid = t.typnamespace WHERE t.typname = c.udt_name AND tn.nspname = c.udt_schema) AS "special",
          (SELECT pgd.description FROM pg_catalog.pg_statio_all_tables AS st INNER JOIN pg_catalog.pg_description pgd ON (pgd.objoid = st.relid)
            WHERE c.ordinal_position = pgd.objsubid AND c.table_name = st.relname) AS "Comment"
        FROM information_schema.columns c
@@ -555,7 +767,7 @@ class QueryInterface {
     const definition = this.normalizeAttribute(attribute);
     // The enum type of the column (of an ENUM or an ARRAY of ENUM), in PostgreSQL.
     const values = this.dialect === 'postgres' && enumValuesOf(definition);
-    if (values) await this.raw(createEnumSql(tableNameOf(table), key, values), [], options);
+    if (values) await this.raw(createEnumSql(tableNameOf(table), key, values, enumOptionsOf(definition)), [], options);
     await this.raw(
       `ALTER TABLE ${this.qt(tableNameOf(table))} ADD COLUMN ${this.columnSql(key, definition)}`,
       [],
@@ -574,35 +786,15 @@ class QueryInterface {
     await this.rebuild(name, fields, options);
   }
 
+  // As Sequelize 6: the column gets the definition given (in PostgreSQL, NULL allowed and no default unless they are
+  // given; in SQLite, what is not given stays).
   async changeColumn(table, column, dataTypeOrOptions, options = {}) {
     const name = tableNameOf(table);
     const attribute = this.normalizeAttribute(dataTypeOrOptions);
     if (this.dialect === 'postgres') {
-      const target = quote(column);
-      const type = typeof attribute.type === 'string' ? attribute.type : sqlTypeOf(attribute.type, 'postgres');
-      const statements = [
-        attribute.allowNull === false ? `ALTER COLUMN ${target} SET NOT NULL` : `ALTER COLUMN ${target} DROP NOT NULL`,
-      ];
-      if (attribute.defaultValue !== undefined) {
-        statements.push(`ALTER COLUMN ${target} SET DEFAULT ${literal(attribute.defaultValue, 'postgres')}`);
-      } else statements.push(`ALTER COLUMN ${target} DROP DEFAULT`);
-      statements.push(`ALTER COLUMN ${target} TYPE ${type} USING (${target}::${type})`);
-      for (const statement of statements) await this.raw(`ALTER TABLE ${this.qt(name)} ${statement}`, [], options);
-      if (attribute.unique) await this.raw(`ALTER TABLE ${this.qt(name)} ADD UNIQUE (${target})`, [], options);
-      if (attribute.references) {
-        await this.raw(
-          `ALTER TABLE ${this.qt(name)} ADD FOREIGN KEY (${target})${this.referencesSql(attribute)}`,
-          [],
-          options
-        );
-      }
-      if (attribute.comment) {
-        await this.raw(
-          `COMMENT ON COLUMN ${this.qt(name)}.${target} IS ${literal(attribute.comment, 'postgres')}`,
-          [],
-          options
-        );
-      }
+      const change = { ...attribute, allowNull: attribute.allowNull === false ? false : true };
+      if (attribute.defaultValue === undefined) change.dropDefaultValue = true;
+      await this.changeColumns(name, { [column]: change }, options);
       return;
     }
     const fields = await this.describeTable(name, options);
@@ -610,6 +802,187 @@ class QueryInterface {
     // As Sequelize: the options given over those the column has (unique, allowNull... stay unless given).
     fields[column] = { ...fields[column], ...attribute };
     await this.rebuild(name, fields, options);
+  }
+
+  // Changes columns of a table, as Sequelize 7: { column: definition (or a type) }, in one ALTER TABLE in
+  // PostgreSQL (one rebuild of the table in SQLite). Only what a definition gives changes: the type, NULL when
+  // allowNull is true or false, the default when defaultValue is given (dropDefaultValue: true drops it), unique,
+  // references, comment and autoIncrement. In PostgreSQL an ENUM keeps the type of its column: the values it lacks are
+  // added to it, and it is made again when some are left out (the rows must not have them).
+  async changeColumns(table, columns, options = {}) {
+    const name = tableNameOf(table);
+    const changes = Object.entries(columns).map(([column, definition]) => [column, this.changeOf(definition)]);
+    if (changes.length === 0) return;
+    const described = await this.describeTable(name, options);
+    const missing = changes.map(([column]) => column).filter((column) => !described[column]);
+    if (missing.length) {
+      throw new Error(`Table ${name} doesn't have the column${missing.length > 1 ? 's' : ''} ${missing.join(', ')}`);
+    }
+    if (this.dialect !== 'postgres') {
+      changes.forEach(([column, change]) => {
+        const field = { ...described[column], ...change };
+        if (change.dropDefaultValue) delete field.defaultValue;
+        delete field.dropDefaultValue;
+        described[column] = field;
+      });
+      await this.rebuild(name, described, options);
+      return;
+    }
+    await this.changePostgresColumns(name, described, changes, options);
+  }
+
+  // A definition of changeColumns: the keys given (a type alone is { type }).
+  changeOf(definition) {
+    if (!isPlainObject(definition)) return this.normalizeAttribute(definition);
+    const change = {};
+    Object.keys(definition).forEach((key) => {
+      if (definition[key] !== undefined) change[key] = definition[key];
+    });
+    if (change.type !== undefined && typeof change.type !== 'string') change.type = normalizeType(change.type);
+    return change;
+  }
+
+  async changePostgresColumns(name, described, changes, options) {
+    const ref = tableNameOf(name);
+    const actions = [];
+    const before = [];
+    const after = [];
+    const cleanup = [];
+    for (const [column, change] of changes) {
+      const target = quote(column);
+      const current = described[column];
+      let defaultValue = change.defaultValue;
+      let dropDefault = Boolean(change.dropDefaultValue) && defaultValue === undefined;
+      if (change.type !== undefined) {
+        const values = typeof change.type !== 'string' && enumValuesOf(change);
+        if (values) {
+          const plan = await this.pgEnumPlan(ref, column, values, options, enumOptionsOf(change));
+          before.push(...plan.before);
+          after.push(...plan.after);
+          cleanup.push(...plan.cleanup);
+          if (plan.retype) {
+            const type = sqlTypeOf(change.type, 'postgres', { table: ref, column }).replace(plan.ref, plan.retype);
+            const array = change.type.key === 'ARRAY';
+            // The default (of the type before) is dropped first, and set again after (unless another is given).
+            if (current.defaultValue !== null && current.defaultValue !== undefined && !dropDefault) {
+              actions.push(`ALTER COLUMN ${target} DROP DEFAULT`);
+              if (defaultValue === undefined && !current.autoIncrement) defaultValue = current.defaultValue;
+            }
+            actions.push(`ALTER COLUMN ${target} TYPE ${type} USING (${target}::text${array ? '[]' : ''}::${type})`);
+          }
+        } else {
+          const type = typeof change.type === 'string' ? change.type : sqlTypeOf(change.type, 'postgres');
+          // A column of that type already is left as it is (PostgreSQL refuses the type of a column a generated
+          // column uses, even the same one).
+          if (type && samePgType(type, (await this.pgColumnTypes(name, options)).get(column))) {
+            // nothing to change
+          } else if (type) actions.push(`ALTER COLUMN ${target} TYPE ${type} USING (${target}::${type})`);
+        }
+      }
+      if (change.allowNull === false) actions.push(`ALTER COLUMN ${target} SET NOT NULL`);
+      else if (change.allowNull === true) actions.push(`ALTER COLUMN ${target} DROP NOT NULL`);
+      if (change.autoIncrement === true && !current.autoIncrement) {
+        const sequence = this.qt(new TableRef(`${ref.table}_${column}_seq`, ref.schema));
+        before.push(`CREATE SEQUENCE IF NOT EXISTS ${sequence} OWNED BY ${this.qt(ref)}.${target}`);
+        actions.push(`ALTER COLUMN ${target} SET DEFAULT nextval(${literal(sequence, 'postgres')}::regclass)`);
+        after.push(
+          `SELECT setval(${literal(sequence, 'postgres')}::regclass, COALESCE(MAX(${target}), 0) + 1, false) FROM ${this.qt(ref)}`
+        );
+        defaultValue = undefined;
+        dropDefault = false;
+      } else if (change.autoIncrement === false && current.autoIncrement && defaultValue === undefined)
+        dropDefault = true;
+      if (defaultValue !== undefined) {
+        actions.push(`ALTER COLUMN ${target} SET DEFAULT ${literal(defaultValue, 'postgres')}`);
+      } else if (dropDefault) actions.push(`ALTER COLUMN ${target} DROP DEFAULT`);
+      // A column already unique (by a constraint or a unique index of it alone) is not made unique again: each
+      // sync({ alter }) would add a constraint.
+      if (change.unique && !(await this.isUniqueColumn(name, column, options))) actions.push(`ADD UNIQUE (${target})`);
+      if (change.references) actions.push(`ADD FOREIGN KEY (${target})${this.referencesSql(change)}`);
+      if (typeof change.comment === 'string') {
+        after.push(`COMMENT ON COLUMN ${this.qt(name)}.${target} IS ${literal(change.comment, 'postgres')}`);
+      }
+    }
+    try {
+      for (const statement of before) await this.raw(statement, [], options);
+      if (actions.length) await this.raw(`ALTER TABLE ${this.qt(name)} ${actions.join(', ')}`, [], options);
+    } catch (err) {
+      // The enum types made for the change are dropped when it fails (outside transactions, which roll them back).
+      if (!options.transaction) {
+        for (const statement of cleanup) await this.raw(statement, [], options).catch(() => {});
+      }
+      throw err;
+    }
+    for (const statement of after) await this.raw(statement, [], options);
+  }
+
+  // The types of the columns of a table of PostgreSQL, as format_type writes them (integer, character varying(255)).
+  async pgColumnTypes(table, options) {
+    const rows = await this.raw(
+      `SELECT a.attname AS name, format_type(a.atttypid, a.atttypmod) AS type FROM pg_attribute a
+       WHERE a.attrelid = $1::regclass AND a.attnum > 0 AND NOT a.attisdropped`,
+      [this.qt(table)],
+      options
+    );
+    return new Map(rows.map((row) => [row.name, row.type]));
+  }
+
+  // How the enum type of a column gets `values`: { before, after, cleanup } statements and `retype`, the type the
+  // column is changed to (null when it has that type already). The type is made when it is not there, gets the values
+  // it lacks (each after the value before it, or before the next one), or is made again (as <type>_xufa_new, renamed
+  // after) when values are left out or are in another order.
+  // A named type (Sequelize 7) only gets values: other columns can have it.
+  async pgEnumPlan(ref, column, values, options, enumOptions = {}) {
+    const named = enumOptions && (enumOptions.name || enumOptions.schema) ? enumOptions : null;
+    const typeRef = enumTypeRef(ref, column, named);
+    const typeName = enumTypeName(ref, column, named);
+    const typeSchema = enumTypeSchema(ref, named);
+    const labels = values.map(String);
+    const rows = await this.raw(
+      `SELECT e.enumlabel AS label FROM pg_enum e JOIN pg_type t ON t.oid = e.enumtypid
+       JOIN pg_namespace n ON n.oid = t.typnamespace
+       WHERE t.typname = $1 AND n.nspname = COALESCE($2, current_schema()) ORDER BY e.enumsortorder`,
+      [typeName, typeSchema],
+      options
+    );
+    const [{ uses }] = await this.raw(
+      `SELECT count(*)::int AS uses FROM pg_attribute a JOIN pg_type t ON t.oid = a.atttypid OR t.typarray = a.atttypid
+       JOIN pg_namespace n ON n.oid = t.typnamespace
+       WHERE a.attrelid = $1::regclass AND a.attname = $2 AND NOT a.attisdropped
+         AND t.typname = $3 AND n.nspname = COALESCE($4, current_schema())`,
+      [this.qt(ref), column, typeName, typeSchema],
+      options
+    );
+    const existing = rows.map((row) => row.label);
+    const plan = { before: [], after: [], cleanup: [], ref: typeRef, retype: typeRef };
+    if (existing.length === 0) {
+      if (named && named.schema) plan.before.push(`CREATE SCHEMA IF NOT EXISTS ${quote(named.schema)}`);
+      plan.before.push(createEnumSql(ref, column, labels, named));
+      return plan;
+    }
+    const kept = labels.filter((label) => existing.includes(label));
+    const inOrder = kept.every((label, i) => existing.indexOf(label) === i) && kept.length === existing.length;
+    if (inOrder || named) {
+      const have = new Set(existing);
+      labels.forEach((label, i) => {
+        if (have.has(label)) return;
+        const previous = i > 0 ? labels[i - 1] : null;
+        const next = labels.slice(i + 1).find((item) => have.has(item));
+        let place = '';
+        if (previous !== null && have.has(previous)) place = ` AFTER ${literal(previous, 'postgres')}`;
+        else if (next !== undefined) place = ` BEFORE ${literal(next, 'postgres')}`;
+        plan.before.push(`ALTER TYPE ${typeRef} ADD VALUE ${literal(label, 'postgres')}${place}`);
+        have.add(label);
+      });
+      if (uses > 0) plan.retype = null;
+      return plan;
+    }
+    const fresh = enumTypeRef(ref, `${column}_xufa_new`);
+    plan.before.push(`DROP TYPE IF EXISTS ${fresh}`, createEnumSql(ref, `${column}_xufa_new`, labels));
+    plan.cleanup.push(`DROP TYPE IF EXISTS ${fresh}`);
+    plan.after.push(`DROP TYPE ${typeRef}`, `ALTER TYPE ${fresh} RENAME TO ${quote(typeName)}`);
+    plan.retype = fresh;
+    return plan;
   }
 
   async renameColumn(table, before, after, options = {}) {
@@ -621,8 +994,9 @@ class QueryInterface {
   // SQLite: the table made again with the columns described (copying those that were there) or by the CREATE TABLE
   // given, and its indexes.
   async rebuild(table, fields, options, createSql) {
+    // The columns copied: those there and kept, but generated ones (the database makes their values).
     const before = await this.raw(`PRAGMA TABLE_INFO(${quote(table)})`, [], options);
-    const columns = before.map((row) => row.name).filter((column) => fields[column]);
+    const columns = before.map((row) => row.name).filter((column) => fields[column] && !fields[column].generated);
     const [{ sql: original }] = await this.raw(
       "SELECT sql FROM sqlite_master WHERE type = 'table' AND name = ?",
       [table],
@@ -653,7 +1027,8 @@ class QueryInterface {
         if (field.type === 'INTEGER' && field.primaryKey && autoIncrement) attribute.autoIncrement = true;
         attributes[column] = attribute;
       });
-      create = this.createTableSql(table, attributes, {}, temp);
+      // A STRICT table stays STRICT.
+      create = this.createTableSql(table, attributes, { strict: /\)\s*STRICT\s*;?\s*$/i.test(original) }, temp);
     }
     const list = columns.map(quote).join(', ');
     await this.raw('PRAGMA foreign_keys = OFF', [], options);
@@ -681,11 +1056,22 @@ class QueryInterface {
       const rows = await this.raw(`PRAGMA INDEX_LIST(${quote(name)})`, [], options);
       const indexes = [];
       for (const row of rows.reverse()) {
-        const columns = await this.raw(`PRAGMA INDEX_INFO(${quote(row.name)})`, [], options);
+        // index_xinfo: the keys (key = 1) with their order and collation (as Sequelize 7 gives them).
+        const columns = await this.raw(`PRAGMA INDEX_XINFO(${quote(row.name)})`, [], options);
         const fields = [];
-        columns.forEach((column) => {
-          fields[column.seqno] = { attribute: column.name, length: undefined, order: undefined };
-        });
+        columns
+          .filter((column) => column.key)
+          .forEach((column) => {
+            // As Sequelize 6 gives them (no order); the name and collation of Sequelize 7 are there, not enumerable.
+            fields[column.seqno] = withHidden(
+              { attribute: column.name, length: undefined, order: undefined },
+              {
+                name: column.name,
+                collate: column.coll && column.coll.toUpperCase() !== 'BINARY' ? column.coll : undefined,
+                xufaOrder: column.desc ? 'DESC' : 'ASC',
+              }
+            );
+          });
         indexes.push({
           ...row,
           tableName: String(name),
@@ -699,39 +1085,72 @@ class QueryInterface {
     }
     const rows = await this.raw(
       `SELECT i.relname AS name, ix.indisprimary AS primary, ix.indisunique AS unique, ix.indkey::text AS indkey,
+         ix.indnkeyatts AS keys, upper(am.amname) AS method,
          array_agg(a.attnum) AS column_indexes, array_agg(a.attname::text) AS column_names,
          pg_get_indexdef(ix.indexrelid) AS definition
-       FROM pg_class t, pg_class i, pg_index ix, pg_attribute a
+       FROM pg_class t, pg_class i, pg_index ix, pg_attribute a, pg_am am
        WHERE t.oid = ix.indrelid AND i.oid = ix.indexrelid AND a.attrelid = t.oid AND t.relkind = 'r'
+         AND am.oid = i.relam
          AND t.relname = $1 AND t.relnamespace = (SELECT oid FROM pg_namespace WHERE nspname = COALESCE($2, current_schema()))
-       GROUP BY i.relname, ix.indexrelid, ix.indisprimary, ix.indisunique, ix.indkey ORDER BY i.relname`,
+       GROUP BY i.relname, ix.indexrelid, ix.indisprimary, ix.indisunique, ix.indkey, ix.indnkeyatts, am.amname
+       ORDER BY i.relname`,
       [splitTable(name)[1], splitTable(name)[0]],
       options
     );
     return rows.map((row) => {
-      const attributes = /ON .*? (?:USING .*?\s)?\(([^]*)\)/i.exec(row.definition)[1].split(',');
+      // The keys in the definition: CREATE ... ON t USING btree (a DESC, "b" COLLATE "C") INCLUDE (c) WHERE ...
+      const definition = row.definition;
+      const open = definition.indexOf('(', definition.search(/ ON /));
+      const attributes = splitTopLevel(definition.slice(open + 1, closingParen(definition, open)));
       const byIndex = new Map(row.column_indexes.map((index, i) => [String(index), row.column_names[i]]));
-      const fields = String(row.indkey)
-        .split(' ')
+      const keys = String(row.indkey).split(' ');
+      const fields = keys
+        .slice(0, row.keys)
         .map((key, i) => {
           const attribute = byIndex.get(key);
           if (!attribute) return null;
-          const definition = attributes[i] || '';
+          const text = attributes[i] || '';
           let order;
-          if (definition.includes('DESC')) order = 'DESC';
-          else if (definition.includes('ASC')) order = 'ASC';
-          return { attribute, collate: undefined, order, length: undefined };
+          if (/\sDESC\b/.test(text)) order = 'DESC';
+          else if (/\sASC\b/.test(text)) order = 'ASC';
+          const collation = /\sCOLLATE\s+("(?:[^"]|"")+"|\S+)/.exec(text);
+          const collate = collation ? collation[1].replace(/^"|"$/g, '').replace(/""/g, '"') : undefined;
+          return withHidden({ attribute, collate, order, length: undefined }, { name: attribute });
         })
         .filter(Boolean);
       return {
         name: row.name,
         primary: row.primary,
         unique: row.unique,
-        definition: row.definition,
+        definition,
         tableName: String(name),
         fields,
+        // As Sequelize 7: the method (BTREE, GIN...) and the columns of INCLUDE.
+        method: row.method,
+        includes: keys
+          .slice(row.keys)
+          .map((key) => byIndex.get(key))
+          .filter(Boolean),
       };
     });
+  }
+
+  // The indexes as Sequelize 7 describes them (showIndexes): { name, unique, primary, fields: [{ name, order,
+  // collate }] }, with the method and the columns of INCLUDE in PostgreSQL; the order of every field, in SQLite too.
+  async showIndexes(table, options = {}) {
+    const postgres = this.dialect === 'postgres';
+    return (await this.showIndex(table, options)).map((index) => ({
+      name: index.name,
+      ...(postgres ? { method: index.method } : {}),
+      unique: index.unique,
+      primary: index.primary,
+      fields: index.fields.map((field) => ({
+        name: field.name,
+        order: field.xufaOrder || field.order || 'ASC',
+        collate: field.collate,
+      })),
+      ...(postgres ? { includes: index.includes } : {}),
+    }));
   }
 
   // addIndex(table, ['a', 'b'], options) or addIndex(table, { fields, name, unique, where, concurrently, using }).
@@ -904,7 +1323,8 @@ class QueryInterface {
         referencedTableCatalog: database,
       }));
     }
-    return this.raw(
+    // As Sequelize: with the deferrable of each key (Deferrable.NOT, INITIALLY_IMMEDIATE or INITIALLY_DEFERRED).
+    const rows = await this.raw(
       `SELECT DISTINCT tc.constraint_name AS "constraintName", tc.constraint_schema AS "constraintSchema",
          tc.constraint_catalog AS "constraintCatalog", tc.table_name AS "tableName", tc.table_schema AS "tableSchema",
          tc.table_catalog AS "tableCatalog", tc.initially_deferred AS "initiallyDeferred",
@@ -918,6 +1338,7 @@ class QueryInterface {
       splitTable(name).reverse(),
       options
     );
+    return rows.map((row) => ({ ...row, deferrable: deferrableOf(row.isDeferrable, row.initiallyDeferred) }));
   }
 
   // Rows

@@ -25,15 +25,30 @@ try {
 await pool.end();
 ```
 
-- `Client(config)`: `connect()`, `query(text, values)` or `query({ text, values, rowMode: 'array' })`, `end()`;
-  events `notice`, `notification` (LISTEN/NOTIFY), `error`, `end`. A text of several statements runs as a simple query (it may
-  have several statements: their results are an array).
-- `Pool(config)`: `query()`, `connect()` (a `PoolClient`: `query()`, `release(err)`), `end()`, `totalCount`,
-  `idleCount`, `waitingCount`; options `max` (10) and `idleTimeoutMillis` (10000).
-- Config: a connection string (`postgres://`, with `sslmode` and `application_name`), or `host`, `port`, `user`,
-  `password`, `database`, `ssl` (true or the options of `tls.connect`), `application_name`, `types` (parsers by oid,
-  as pg's `setTypeParser`; those types are read as text), `prepare` (false not to prepare statements), `binary`
-  (false to use only the text format); and the `PG*` variables.
+- `Client(config)`: `connect()`, `query(text, values)` or `query({ text, values, rowMode: 'array' })`, `end()`
+  (after the queries already sent, which the server runs; new ones are refused), `escapeIdentifier()` and
+  `escapeLiteral()` (also exported); events `notice`, `notification` (LISTEN/NOTIFY), `error`, `end`. A text of
+  several statements runs as a simple query (it may have several statements: their results are an array).
+- `Pool(config)`: `query()`, `connect()` (a `PoolClient`: `query()`, `release(err)`), `end()` (it waits for the queries
+  sent and for the clients given by `connect()` to be released), `totalCount`, `idleCount`, `waitingCount`; options
+  `max` (10) and `idleTimeoutMillis` (10000). `using client = await pool.connect()` releases the client at the end of
+  its block, and `await using` ends a `Client` or a `Pool` (explicit resource management).
+- Config: a connection string, or `host` (a unix socket by its directory: `/var/run/postgresql`), `port`, `user`,
+  `password` (both can be functions, sync or async, asked for every connection: tokens of AWS RDS IAM...),
+  `database`, `ssl` (true or the options of `tls.connect`), `application_name`, `options`, `connectionTimeoutMillis`
+  (to connect and log in: 30000, 0 for no limit), `statement_timeout`, `lock_timeout`,
+  `idle_in_transaction_session_timeout`, `types` (parsers by oid, as pg's `setTypeParser`; those types are read as
+  text; a parser that throws fails its query, not the connection), `prepare` (false not to prepare statements),
+  `binary` (false to use only the text format).
+- Connection strings are read as libpq reads them: `postgres://user:password@host:port/database?...` with `host`,
+  `port`, `dbname`, `user`, `password`, `application_name`, `options` and `connect_timeout` (seconds); `sslmode`
+  with its meaning in libpq (`disable`, `allow`, `prefer`: TLS when the server has it, `require`: encrypted without
+  checking the certificate, unless `sslrootcert` is given, `verify-ca`: the chain, `verify-full`: the chain and the
+  host; and pg's `no-verify`), `ssl=true|false`, `sslcert`, `sslkey`, `sslrootcert` (files; `system` for the CAs of
+  the system) and `sslpassword`. The `PG*` variables are read too: `PGHOST`, `PGPORT`, `PGUSER`, `PGPASSWORD`,
+  `PGDATABASE`, `PGAPPNAME`, `PGOPTIONS`, `PGCONNECT_TIMEOUT`, `PGSSLMODE`, `PGSSLCERT`, `PGSSLKEY`, `PGSSLROOTCERT`.
+- TLS: the certificate is checked against the host (an IP address too), and data a server sends before TLS is set up
+  is refused (as libpq does since CVE-2021-23222).
 - COPY, on `Client`, `PoolClient` and `Pool` (which takes a connection for it):
   - `forgetStatements()`: after changes of the schema (tables or types dropped and made again), the statements
     prepared are prepared again (each connection closes them before its next query; queries in a transaction then
@@ -50,13 +65,31 @@ await pool.end();
   every query of a client or pool), rejects at once (`AbortError`, or the code `QUERY_TIMEOUT`) and asks the server
   to stop the query (CancelRequest). Such a query has its connection to itself (it is not pipelined), so the cancel
   stops it and no other.
-- Authentication: SCRAM-SHA-256, MD5 and cleartext passwords, with or without TLS.
+- Authentication: SCRAM-SHA-256 (bound to the TLS channel, SCRAM-SHA-256-PLUS, when the server offers it), MD5 and
+  cleartext passwords, and OAuth tokens (`oauthBearerToken`, a string or a function: OAUTHBEARER of PostgreSQL 18).
+  As libpq: `require_auth` names the methods the server may ask for (`scram-sha-256`, `password,md5`, `!password`,
+  `none`...) and `channel_binding` (`prefer` by default, `require`, `disable`) whether SCRAM is bound to the channel
+  (with `require`, a server that asks for a password instead is refused, without sending it). Every request of the
+  server is checked before it is answered, a server that asks twice is refused, and so is one that makes the
+  connection usable without authenticating it. From the config, the connection string or `PGREQUIREAUTH` and
+  `PGCHANNELBINDING`.
+- Several hosts: `host` and `port` as lists (`'db1,db2'`, arrays, or `postgres://u@db1:5432,db2:5433/app`) are tried
+  in order until one connects; `target_session_attrs` (`read-write`, `read-only`, `primary`, `standby`,
+  `prefer-standby`) skips those that are not what is asked for (read from what PostgreSQL 14 and later report, or
+  asked to older servers), and `load_balance_hosts=random` tries them in a random order. Each connection of a pool
+  finds its host.
+- Describing: `query({ text, describe: true })` gives `{ params, fields }`, the types (oids) of the parameters and the
+  columns of a text, without running it.
+- Tracing: `node:diagnostics_channel` with the channels of pg: `pg:query`, `pg:connection` and `pg:pool:connect`
+  (tracing channels: their contexts have the query, the client and its result or error) and `pg:pool:release` and
+  `pg:pool:remove`. Nothing is made when no one subscribes.
 - Errors: `DatabaseError`, with the fields of pg (`code`, the SQLSTATE: `23505` for unique violations; `detail`,
   `constraint`, `table`...), and `ConnectionError`.
 
 ## Types
 
-Values are parsed as in pg: integers and floats are numbers, `numeric` a string, `boolean`, `json` and `jsonb`, `bytea`
+Floats are exact also in the text format of servers before PostgreSQL 12 (the connection sets
+`extra_float_digits` to 3 there). Values are parsed as in pg: integers and floats are numbers, `numeric` a string, `boolean`, `json` and `jsonb`, `bytea`
 (Buffers), `timestamptz` (Dates), `date` and `timestamp` (local Dates), arrays of them, and other types are strings.
 **Unlike pg, `bigint` (int8) is a number when it is a safe integer** (a bigint otherwise; pg gives strings).
 Parameters: strings, numbers, bigints, booleans, Dates, Buffers (binary), arrays (PostgreSQL arrays), objects (JSON)

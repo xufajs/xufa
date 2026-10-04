@@ -24,6 +24,7 @@ const {
 } = require('./query');
 const modelCache = require('./model-cache');
 const { NotFoundError, MultipleObjectsError, QueryError, ProtectedError, ValidationError } = require('./errors');
+const { uniqueErrorOf } = require('./errors');
 
 const MAX_GET_RESULTS = 21;
 
@@ -431,7 +432,7 @@ class QuerySet {
     } catch (err) {
       if (!(err instanceof NotFoundError)) throw err;
     }
-    return [await this.create({ ...equalities(conditions), ...defaults }), true];
+    return [await this.create({ ...equalities(this.model, conditions), ...defaults }), true];
   }
 
   async updateOrCreate(conditions, defaults = {}) {
@@ -440,7 +441,7 @@ class QuerySet {
       instance = await this.get(conditions);
     } catch (err) {
       if (!(err instanceof NotFoundError)) throw err;
-      return [await this.create({ ...equalities(conditions), ...defaults }), true];
+      return [await this.create({ ...equalities(this.model, conditions), ...defaults }), true];
     }
     Object.assign(instance, defaults);
     await instance.save({ db: this.state.db });
@@ -477,7 +478,9 @@ class QuerySet {
         where: uniqueCondition,
       };
     }
-    const pks = await this.backend.insert(model.meta, rows, conflict ? { conflict } : undefined);
+    const pks = await this.backend
+      .insert(model.meta, rows, conflict ? { conflict } : undefined)
+      .catch((err) => Promise.reject(uniqueErrorOf(model.meta, err) || err));
     instances.forEach((instance, i) => {
       // A composite key is given, not made by the database.
       const { pk } = model.meta;
@@ -519,7 +522,9 @@ class QuerySet {
     });
     if (Object.keys(errors).length) throw ValidationError(model.name, errors);
     if (assignments.length === 0) return 0;
-    const count = await this.backend.update(this.toQuery(), assignments);
+    const count = await this.backend
+      .update(this.toQuery(), assignments)
+      .catch((err) => Promise.reject(uniqueErrorOf(model.meta, err) || err));
     await modelCache.clear(this.db, model);
     return count;
   }
@@ -626,10 +631,11 @@ function checkDatabases(query) {
   visit(query.where);
 }
 
-function equalities(conditions) {
+function equalities(model, conditions) {
   const data = {};
   Object.keys(conditions).forEach((key) => {
-    if (!key.includes(SEPARATOR)) data[key] = conditions[key];
+    // Fields by their names (which can have the separator), not paths with lookups.
+    if (!key.includes(SEPARATOR) || model.meta.fieldMap.has(key)) data[key] = conditions[key];
   });
   return data;
 }

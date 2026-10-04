@@ -185,6 +185,13 @@ function onDeleteOf(references) {
   return `${onDelete}${onUpdate}${deferrable}`;
 }
 
+// A value of the database as the value of a field (encrypted fields decrypt it).
+function decodeField(dialect, field, value) {
+  if (field.encrypted) return field.open(value);
+  const decoded = dialect.decode(field.dbType, value);
+  return field.fromDb ? field.fromDb(decoded) : decoded;
+}
+
 class Context {
   // `prefix` names the aliases of a subquery (s1_t0...), so they are not those of the query around it; a subquery
   // shares the parameters of its query.
@@ -365,6 +372,8 @@ class SqlCompiler {
   }
 
   encode(field, value) {
+    // Encrypted fields: the text of their values.
+    if (field.encrypted) return field.seal(value);
     // Arrays of PostgreSQL: their items as their field (hstore, json...), the array as the driver writes it.
     if (field.dbType === 'array' && field.base && this.dialect.encodesArrayItems && Array.isArray(value)) {
       return value.map((item) => (item === null || item === undefined ? null : this.encode(field.base, item)));
@@ -720,14 +729,14 @@ class SqlCompiler {
     const decode = (row) => {
       const result = {};
       groups.forEach((item, i) => {
-        result[item.key] = dialect.decode(lastOf(item.fields).dbType, row[`g${i}`]);
+        result[item.key] = decodeField(dialect, lastOf(item.fields), row[`g${i}`]);
       });
       aggregates.forEach((item, i) => {
         const value = row[`a${i}`];
         if (item.fn === 'raw') result[item.key] = value === undefined ? null : value;
         else if (item.fn === 'count') result[item.key] = Number(value);
         else if (item.fn === 'sum' || item.fn === 'avg') result[item.key] = value === null ? null : Number(value);
-        else result[item.key] = dialect.decode(lastOf(item.fields).dbType, value);
+        else result[item.key] = decodeField(dialect, lastOf(item.fields), value);
       });
       return result;
     };
@@ -746,7 +755,17 @@ class SqlCompiler {
     const { quote } = this.dialect;
     // The key given back: the primary key (the first of its fields, when it is composite: its values are given); none
     // for a model without one.
-    const returning = meta.pk ? ` RETURNING ${quote(meta.pkFields[0].column)} AS pk` : '';
+    // Rows a conflict can leave out (ignored, or not updated): the columns of the conflict are given back too, so the
+    // keys find their rows.
+    const partial = Boolean(conflict && (!conflict.update || conflict.updateWhere));
+    let matchBy = partial && meta.pk ? this.conflictTarget(meta, conflict) : [];
+    // A conflict on any unique key (ignored rows): by the unique fields of one column.
+    if (partial && meta.pk && matchBy.length === 0) {
+      matchBy = meta.fields.filter((field) => field.unique && !field.primaryKey && field.column);
+    }
+    const returning = meta.pk
+      ? ` RETURNING ${quote(meta.pkFields[0].column)} AS pk${matchBy.map((field, i) => `, ${quote(field.column)} AS m${i}`).join('')}`
+      : '';
     const onConflict = conflict ? this.onConflict(meta, conflict) : '';
     const groups = new Map();
     rows.forEach((row, index) => {
@@ -764,7 +783,8 @@ class SqlCompiler {
             sql: `INSERT INTO ${table} DEFAULT VALUES${onConflict}${returning}`,
             params: [],
             indexes: [index],
-            ignore: Boolean(conflict && !conflict.update),
+            ignore: partial,
+            matchBy,
           });
         });
         return;
@@ -791,7 +811,8 @@ class SqlCompiler {
           sql: `INSERT INTO ${table} (${columns}) VALUES ${tuples.join(', ')}${onConflict}${returning}`,
           params,
           indexes: chunk,
-          ignore: Boolean(conflict && !conflict.update),
+          ignore: partial,
+          matchBy,
         });
       }
     });
@@ -831,18 +852,28 @@ class SqlCompiler {
   }
 
   // where: the SQL of the rows of the partial unique index of the conflict.
-  onConflict(meta, { fields, update, where }) {
+  // The fields of the unique key a conflict is on (none: any unique key).
+  conflictTarget(meta, { fields, update }) {
+    return fields && fields.length ? fields : update ? meta.pkFields : [];
+  }
+
+  // `updateWhere`: the SQL of the rows that are updated (the others are left as they are, and not given back).
+  // `set`: fields set to SQL of their own ([{ field, sql }]: counters, CURRENT_TIMESTAMP...), with those of `update`.
+  onConflict(meta, { fields, update, where, updateWhere, set: own = [] }) {
     const { quote } = this.dialect;
-    const target = fields && fields.length ? fields : update ? meta.pkFields : [];
+    const target = this.conflictTarget(meta, { fields, update });
     const columns = target.length
       ? ` (${target.map((field) => quote(field.column)).join(', ')})${where ? ` WHERE ${where}` : ''}`
       : '';
     if (!update) return ` ON CONFLICT${columns} DO NOTHING`;
     // With nothing to update, the row is left as it is (and still given back).
-    const set = (update.length ? update : [target[0]])
-      .map((field) => `${quote(field.column)} = excluded.${quote(field.column)}`)
-      .join(', ');
-    return ` ON CONFLICT${columns} DO UPDATE SET ${set}`;
+    const assignments = [
+      ...update.map((field) => `${quote(field.column)} = excluded.${quote(field.column)}`),
+      ...own.map(({ field, sql }) => `${quote(field.column)} = ${sql}`),
+    ];
+    if (assignments.length === 0) assignments.push(`${quote(target[0].column)} = excluded.${quote(target[0].column)}`);
+    const set = assignments.join(', ');
+    return ` ON CONFLICT${columns} DO UPDATE SET ${set}${updateWhere ? ` WHERE ${updateWhere}` : ''}`;
   }
 
   // The condition of an UPDATE or a DELETE: the primary key in a SELECT when the conditions follow relations.
@@ -885,6 +916,22 @@ class SqlCompiler {
   }
 
   // DDL from the schema of tables (schema.js), for sync() and migrations.
+
+  // The type of a column in its table: in a STRICT table of SQLite, the one of INTEGER, REAL, TEXT and BLOB its
+  // type is (by the rules of SQLite: INT, then CHAR, CLOB or TEXT, BLOB, then REAL, FLOA or DOUB; the rest is TEXT,
+  // as dates, decimals and json are), with its collation.
+  typeIn(owner, column) {
+    const type = this.columnType(column);
+    if (!owner.strict || this.dialect.name !== 'sqlite') return type;
+    const upper = type.toUpperCase();
+    const collation = /\sCOLLATE\s+\w+/i.exec(type);
+    let strict = 'TEXT';
+    if (upper.includes('INT')) strict = 'INTEGER';
+    else if (/CHAR|CLOB|TEXT/.test(upper)) strict = 'TEXT';
+    else if (upper.includes('BLOB')) strict = 'BLOB';
+    else if (/REAL|FLOA|DOUB/.test(upper)) strict = 'REAL';
+    return collation ? `${strict}${collation[0]}` : strict;
+  }
 
   columnType(column) {
     const { dialect } = this;
@@ -933,9 +980,9 @@ class SqlCompiler {
     if (column.primaryKey && !compositeOf(owner)) {
       if (column.type === 'id') return `${quote(name)} ${column.sqlType || this.dialect.autoPrimaryKey}`;
       // NOT NULL: SQLite lets primary keys that are not integers hold NULLs otherwise.
-      return `${quote(name)} ${this.columnType(column)} NOT NULL PRIMARY KEY`;
+      return `${quote(name)} ${this.typeIn(owner, column)} NOT NULL PRIMARY KEY`;
     }
-    let sql = `${quote(name)} ${this.columnType(column)}`;
+    let sql = `${quote(name)} ${this.typeIn(owner, column)}`;
     if (!column.null) sql += ' NOT NULL';
     const value = defaultValue !== undefined ? defaultValue : column.default;
     if (value !== undefined) sql += ` DEFAULT ${this.literal(column.type, value)}`;

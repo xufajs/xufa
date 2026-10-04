@@ -278,9 +278,32 @@ function paramToText(value) {
   if (value instanceof Date) return dateToText(value);
   if (Buffer.isBuffer(value)) return value;
   if (value instanceof Uint8Array) return Buffer.from(value);
-  if (Array.isArray(value)) return arrayToText(value);
+  // toPostgres() first: classes of values that extend Array (ranges, multiranges...) say their own text.
   if (typeof value.toPostgres === 'function') return paramToText(value.toPostgres());
+  if (Array.isArray(value)) return arrayToText(value);
   return JSON.stringify(value);
 }
 
-module.exports = { parsers, parserOf, paramToText, text, timestamp, arrayOf };
+// SQL identifiers and literals written in a text, as pg (and libpq) escape them. PostgreSQL has no null character in
+// them: a text with one is refused.
+function refuseNull(value) {
+  const text = String(value);
+  if (text.includes('\u0000')) {
+    throw new TypeError('Identifiers and literals of PostgreSQL cannot contain null characters');
+  }
+  return text;
+}
+
+function escapeIdentifier(value) {
+  return `"${refuseNull(value).replace(/"/g, '""')}"`;
+}
+
+// A string literal: quotes doubled; with backslashes, an E'' string whose backslashes are doubled too.
+function escapeLiteral(value) {
+  const text = refuseNull(value);
+  const escaped = text.replace(/'/g, "''");
+  if (!text.includes('\\')) return `'${escaped}'`;
+  return ` E'${escaped.replace(/\\/g, '\\\\')}'`;
+}
+
+module.exports = { parsers, parserOf, paramToText, text, timestamp, arrayOf, escapeIdentifier, escapeLiteral };

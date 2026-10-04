@@ -24,20 +24,22 @@ class User extends Model {
     email: fields.string({ unique: true }),
     password: fields.string(),
     role: fields.string({ default: 'user' }),
-    totpSecret: fields.string({ null: true }),
+    totpSecret: fields.encrypted(fields.string(), { null: true }), // keys: XUFA_ENCRYPTION_KEYS
     totpStep: fields.integer({ null: true }),
   };
 }
 
 class RefreshToken extends Model {
   static fields = auth.refreshTokenFields(fields);
+
+  static options = { indexes: [{ fields: ['expiresAt'], expireAfter: 0 }] }; // deleted when they expire
 }
 
 const db = new Database({ backend: 'sqlite', filename: 'app.db' });
 db.register(User, RefreshToken);
 
 const app = xufa();
-app.register(orm, { database: db, sync: true });
+app.register(orm, { database: db, sync: true, expire: true });
 app.register(auth.plugin, {
   keys: process.env.JWT_KEY,
   accessToken: { expiresIn: '15m' },
@@ -115,7 +117,8 @@ step of each login (`login.onTotp`, `login.lastTotpStep`) makes each code work o
 convert secrets. `generateRecoveryCodes(n)` gives codes to log in without the app (keep `hashRecoveryCode(code)` of
 each, and compare the hash of the one given).
 
-The secrets of TOTP are as sensitive as passwords that never change: keep them encrypted.
+The secrets of TOTP are as sensitive as passwords that never change: keep them encrypted, in a field
+`fields.encrypted(fields.string())` of [@xufa/orm](../orm#encrypted-fields) (as in the example).
 
 ## Lockout
 
@@ -147,7 +150,8 @@ user's stop working (the user logs in again). `reuseInterval` lets a spent token
 clients that refresh twice at once. Spending is atomic (an update of the row where it is not spent).
 
 Stores: `MemoryTokenStore` (the default: one process, tests) and `modelStore(Model)`, for a model of @xufa/orm with
-the fields of `refreshTokenFields(fields)`. Call `refresh.prune()` now and then to delete the tokens that expired.
+the fields of `refreshTokenFields(fields)`. A [TTL index](../orm#ttl-indexes) on `expiresAt` (with the plugin's
+`expire`, as in the example) deletes the tokens that expired; without one, call `refresh.prune()` now and then.
 
 ## The plugin
 

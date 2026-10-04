@@ -3,7 +3,7 @@
 //
 //   { name: 'Ada', pages: { [Op.gt]: 100 }, [Op.or]: [{ a: 1 }, { b: 2 }] }
 //   -> and({ name: 'Ada', pages__gt: 100 }, or({ a: 1 }, { b: 2 }))
-const { and, or, not, F } = require('@xufa/orm');
+const { and, or, not, F, jsonPath } = require('@xufa/orm');
 const { Op } = require('./operators');
 const { NotSupportedError } = require('./errors');
 const { isPlainObject } = require('./utils');
@@ -66,7 +66,7 @@ function fragmentComparison(context, left, op, value) {
 // The operators of PostgreSQL on ranges and JSON values (and arrays, which are JSON here).
 function pgOperator(context, path, op, value) {
   if (context.dialect !== 'postgres') throw new NotSupportedError(`The operator ${String(op)} in ${context.dialect}`);
-  const attribute = context.model.rawAttributes[path];
+  const attribute = typeof path === 'string' ? context.model.rawAttributes[path] : undefined;
   if (!attribute || path.includes('__')) throw new NotSupportedError(`The operator ${String(op)} on ${path}`);
   const column = columnSql(context, path);
   const sql = PG_OPERATORS.get(op);
@@ -114,30 +114,47 @@ function columnRef(context, value) {
   return undefined;
 }
 
-// The conditions of the operators of one attribute (its path in @xufa/orm).
-// `json`: the attribute is json, so the keys of an object are a path inside its values ({ data: { owner: 'x' } }).
-// A key inside json conditions ({ data: { 'owner.name': x, 'level::integer': y, 'tags[0]': z } }) as a path: the
-// cast after :: (checked, as Sequelize does) is left out, as the type of the value gives it.
-const CAST = /^[A-Za-z][A-Za-z0-9_ ]*(\(\d+(,\s*\d+)?\))?(\[\])?$/;
-function jsonKey(key) {
-  const [name, cast] = key.split('::');
-  if (cast !== undefined && !CAST.test(cast.trim())) throw new Error(`Invalid cast type: ${cast}`);
-  return name
-    .replace(/\[(\d+)\]/g, '.$1')
-    .split('.')
-    .filter(Boolean)
-    .join('__');
+// A path inside the values of a json attribute: the path of the attribute in @xufa/orm and the keys and indexes in it.
+// Conditions on it are jsonPath() of @xufa/orm, so a key can be any text (also 'in', 'gt' or 'a__b').
+class JsonRef {
+  constructor(base, steps) {
+    this.base = base;
+    this.steps = steps;
+  }
+
+  toString() {
+    return `${this.base}__${this.steps.join('__')}`;
+  }
 }
 
+// The path of `steps` inside `path` (an attribute, or a path inside one already).
+function jsonChild(path, steps) {
+  if (steps.length === 0) return path;
+  return path instanceof JsonRef ? new JsonRef(path.base, [...path.steps, ...steps]) : new JsonRef(path, steps);
+}
+
+// A condition of @xufa/orm: { path__lookup: value }, or jsonPath() inside a json attribute.
+function leaf(path, lookup, value) {
+  if (path instanceof JsonRef) return jsonPath(path.base, path.steps, value, lookup || 'exact');
+  return { [lookup ? `${path}__${lookup}` : path]: value };
+}
+
+// The conditions of the operators of one attribute (its path in @xufa/orm).
+// `json`: the attribute is json, so the keys of an object are a path inside its values ({ data: { owner: 'x' } }).
+// A key inside json conditions ({ data: { 'owner.name': x, 'level::integer': y, 'tags[0]': z, '"a.b"': w } }) is a
+// path of its own (see parseJsonPath).
+
 function attributeConditions(context, path, value, json = false) {
-  if (Array.isArray(value)) return { [`${path}__in`]: value };
-  if (isValue(value)) return { [path]: value };
-  if (value.xufaCol) return { [path]: columnRef(context, value) };
+  if (Array.isArray(value)) return leaf(path, 'in', value);
+  if (isValue(value)) return leaf(path, null, value);
+  if (value.xufaCol) return leaf(path, null, columnRef(context, value));
   if (isFragment(value))
-    return fragmentComparison(context, { sql: columnSql(context, path), params: [] }, Op.eq, value);
+    return fragmentComparison(context, { sql: columnSql(context, String(path)), params: [] }, Op.eq, value);
   const keys = Object.keys(value);
   if (keys.length && !json) throw new NotSupportedError(`Conditions inside attributes that are not JSON (${path})`);
-  const items = keys.map((key) => attributeConditions(context, `${path}__${jsonKey(key)}`, value[key], true));
+  const items = keys.map((key) =>
+    attributeConditions(context, jsonChild(path, parseJsonPath(key).steps), value[key], true)
+  );
   const symbols = Object.getOwnPropertySymbols(value);
   for (let i = 0; i < symbols.length; i += 1) {
     items.push(operatorCondition(context, path, symbols[i], value[symbols[i]]));
@@ -170,7 +187,7 @@ function whereCondition(context, { attribute, comparator, value }) {
   let path;
   if (typeof attribute === 'string') path = context.path(attribute);
   else if (attribute && attribute.xufaCol) path = context.path(attribute.xufaCol);
-  else if (attribute && attribute.xufaJson) path = context.path(attribute.xufaJson);
+  else if (attribute && attribute.xufaJson) path = context.jsonPath(arrowPath(attribute.xufaJson));
   let logic = value;
   let op = comparator;
   if (logic === undefined) {
@@ -213,25 +230,31 @@ function operand(context, value) {
 
 // x != v: false for NULLs, as in SQL.
 function notEqual(path, condition) {
-  return and({ [`${path}__isnull`]: false }, not(condition));
+  return and(leaf(path, 'isnull', false), not(condition));
 }
 
 function likeCondition(path, pattern, lookup, negated) {
   if (pattern && typeof pattern === 'object') throw new NotSupportedError('LIKE with ANY or ALL');
-  const condition = { [`${path}__${lookup}`]: pattern };
+  const condition = leaf(path, lookup, pattern);
   return negated ? notEqual(path, condition) : condition;
 }
 
 function operatorCondition(context, path, op, value) {
   // Comparisons with fragments, and with ANY or ALL of a list.
+  // IN and NOT IN of SQL of their own (a subquery: literal('(SELECT ...)')), as Sequelize writes them.
+  if (isFragment(value) && (op === Op.in || op === Op.notIn)) {
+    const right = fragmentOf(context, value);
+    const list = /^\s*\(/.test(right.sql) ? right.sql : `(${right.sql})`;
+    return Raw(`${columnSql(context, String(path))} ${op === Op.in ? 'IN' : 'NOT IN'} ${list}`, right.params);
+  }
   if (isFragment(value) && SQL_COMPARISONS.has(op)) {
-    return fragmentComparison(context, { sql: columnSql(context, path), params: [] }, op, value);
+    return fragmentComparison(context, { sql: columnSql(context, String(path)), params: [] }, op, value);
   }
   if (value && typeof value === 'object' && !Array.isArray(value) && !(value instanceof Date)) {
     if (value[Op.any] !== undefined || value[Op.all] !== undefined) {
       const list = value[Op.any] !== undefined ? value[Op.any] : value[Op.all];
       if (list && list[Op.values]) throw new NotSupportedError('Op.values');
-      if (op === Op.eq && value[Op.any] !== undefined) return { [`${path}__in`]: list };
+      if (op === Op.eq && value[Op.any] !== undefined) return leaf(path, 'in', list);
       if (op === Op.ne && value[Op.all] !== undefined) return operatorCondition(context, path, Op.notIn, list);
       const items = list.map((item) => operatorCondition(context, path, op, item));
       return value[Op.any] !== undefined ? or(...items) : and(...items);
@@ -239,28 +262,28 @@ function operatorCondition(context, path, op, value) {
   }
   if (PG_OPERATORS.has(op)) return pgOperator(context, path, op, value);
   const comparison = COMPARISONS.get(op);
-  if (comparison) return { [`${path}__${comparison}`]: operand(context, value) };
+  if (comparison) return leaf(path, comparison, operand(context, value));
   switch (op) {
     case Op.eq:
-      return { [path]: operand(context, value) };
+      return leaf(path, null, operand(context, value));
     case Op.ne:
-      return value === null ? { [`${path}__isnull`]: false } : notEqual(path, { [path]: operand(context, value) });
+      return value === null ? leaf(path, 'isnull', false) : notEqual(path, leaf(path, null, operand(context, value)));
     case Op.is:
-      return value === null ? { [`${path}__isnull`]: true } : { [path]: value };
+      return value === null ? leaf(path, 'isnull', true) : leaf(path, null, value);
     case Op.not:
-      if (value === null) return { [`${path}__isnull`]: false };
+      if (value === null) return leaf(path, 'isnull', false);
       // IS NOT TRUE is true for NULLs.
-      if (typeof value === 'boolean') return not({ [path]: value });
+      if (typeof value === 'boolean') return not(leaf(path, null, value));
       if (!isValue(value) && !value.xufaCol) return not(attributeConditions(context, path, value));
-      return notEqual(path, { [path]: operand(context, value) });
+      return notEqual(path, leaf(path, null, operand(context, value)));
     case Op.in:
-      return { [`${path}__in`]: [].concat(value) };
+      return leaf(path, 'in', [].concat(value));
     case Op.notIn:
-      return value.length === 0 ? and() : notEqual(path, { [`${path}__in`]: value });
+      return value.length === 0 ? and() : notEqual(path, leaf(path, 'in', value));
     case Op.between:
-      return { [`${path}__range`]: value };
+      return leaf(path, 'range', value);
     case Op.notBetween:
-      return notEqual(path, { [`${path}__range`]: value });
+      return notEqual(path, leaf(path, 'range', value));
     case Op.like:
       return likeCondition(path, value, 'like', false);
     case Op.notLike:
@@ -270,19 +293,19 @@ function operatorCondition(context, path, op, value) {
     case Op.notILike:
       return likeCondition(path, value, 'ilike', true);
     case Op.startsWith:
-      return { [`${path}__startswith`]: value };
+      return leaf(path, 'startswith', value);
     case Op.endsWith:
-      return { [`${path}__endswith`]: value };
+      return leaf(path, 'endswith', value);
     case Op.substring:
-      return { [`${path}__contains`]: value };
+      return leaf(path, 'contains', value);
     case Op.regexp:
-      return { [`${path}__regex`]: value };
+      return leaf(path, 'regex', value);
     case Op.iRegexp:
-      return { [`${path}__iregex`]: value };
+      return leaf(path, 'iregex', value);
     case Op.notRegexp:
-      return notEqual(path, { [`${path}__regex`]: value });
+      return notEqual(path, leaf(path, 'regex', value));
     case Op.notIRegexp:
-      return notEqual(path, { [`${path}__iregex`]: value });
+      return notEqual(path, leaf(path, 'iregex', value));
     case Op.and:
       return and(...[].concat(value).map((item) => attributeConditions(context, path, item)));
     case Op.or:
@@ -300,10 +323,11 @@ function operatorCondition(context, path, op, value) {
 // A json path in PostgreSQL's arrows (emergency_contact->>'name', data->'a'->>'b') as a dotted path.
 function arrowPath(path) {
   if (!path.includes('->')) return path;
-  return path
-    .split(/->>?/)
-    .map((part) => part.trim().replace(/^'(.*)'$/, '$1'))
-    .join('.');
+  const [attribute, ...keys] = path.split(/->>?/).map((part) => part.trim());
+  return [
+    attribute,
+    ...keys.map((key) => (/^\d+$/.test(key) ? key : JSON.stringify(key.replace(/^'(.*)'$/, '$1').replace(/''/g, "'")))),
+  ].join('.');
 }
 
 function translateWhere(context, where) {
@@ -317,7 +341,7 @@ function translateWhere(context, where) {
     if (where.xufaJson.includes('(')) {
       return fragmentComparison(context, fragmentOf(context, { xufaLiteral: where.xufaJson }), Op.eq, where.value);
     }
-    return attributeConditions(context, context.path(arrowPath(where.xufaJson)), where.value, true);
+    return attributeConditions(context, context.jsonPath(arrowPath(where.xufaJson)), where.value, true);
   }
   if (where.xufaLiteral !== undefined || where.xufaFn !== undefined) {
     const { sql, params } = fragmentOf(context, where);
@@ -346,13 +370,13 @@ function translateWhere(context, where) {
     if (value === undefined) {
       throw new Error(`WHERE parameter "${key}" has invalid "undefined" value`);
     }
-    const path = context.path(key);
+    const path = context.jsonPath(key);
     // A range (an array of bounds) is compared as a whole, and so is an ARRAY (= ARRAY[...]).
     const definition = context.model.rawAttributes[key];
     const isArray = Boolean(definition && definition.type && definition.type.key === 'ARRAY');
     let condition;
-    if (context.isRange(key) && Array.isArray(value)) condition = { [path]: stringifyRange(value) };
-    else if (isArray && Array.isArray(value)) condition = { [path]: value };
+    if (context.isRange(key) && Array.isArray(value)) condition = leaf(path, null, stringifyRange(value));
+    else if (isArray && Array.isArray(value)) condition = leaf(path, null, value);
     // An hstore equals an object as a whole ({ utilityBelt: { grapplingHook: true } }), as Sequelize compares it.
     else if (
       definition &&
@@ -361,7 +385,7 @@ function translateWhere(context, where) {
       isPlainObject(value) &&
       Object.getOwnPropertySymbols(value).length === 0
     ) {
-      condition = { [path]: value };
+      condition = leaf(path, null, value);
     } else condition = attributeConditions(context, path, value, key.includes('.') || context.isJson(key));
     if (!condition) continue;
     if (isPlainObject(condition)) {
@@ -395,4 +419,60 @@ function translateWhere(context, where) {
   return items.length === 1 ? items[0] : and(...items);
 }
 
-module.exports = { translateWhere };
+// The keys and indexes of a path inside json values, as Sequelize writes them: owner.name, tags[0] or tags.0 (numbers
+// are indexes, up to 2^31 - 1), "a.b" (a key in double quotes, as a JSON string: dots, brackets and \" in it), and a
+// cast at the end (level::integer: checked, then left out, as the type of the value gives it).
+const CAST = /^[A-Za-z_][A-Za-z0-9_ ]*(\(\d+(,\s*\d+)?\))?(\[\])?$/;
+const MAX_JSON_INDEX = 2 ** 31 - 1;
+function parseJsonPath(text) {
+  const steps = [];
+  let i = 0;
+  const fail = (why) => {
+    throw new Error(`Invalid json path ${JSON.stringify(text)} at ${i}: ${why}`);
+  };
+  const index = (digits) => {
+    const value = Number(digits);
+    if (!Number.isSafeInteger(value) || value > MAX_JSON_INDEX) fail(`indexes go up to ${MAX_JSON_INDEX}`);
+    return value;
+  };
+  while (i < text.length) {
+    const char = text[i];
+    if (char === '"') {
+      // A JSON string: up to the first quote not escaped.
+      let end = i + 1;
+      while (end < text.length && text[end] !== '"') end += text[end] === '\\' ? 2 : 1;
+      if (end >= text.length) fail('a quoted key is not closed');
+      try {
+        steps.push(JSON.parse(text.slice(i, end + 1)));
+      } catch {
+        fail('a quoted key is not a JSON string');
+      }
+      i = end + 1;
+    } else if (char === '[') {
+      const end = text.indexOf(']', i);
+      const digits = end === -1 ? '' : text.slice(i + 1, end);
+      if (!/^\d+$/.test(digits)) fail('an index of an array is a number in brackets');
+      steps.push(index(digits));
+      i = end + 1;
+    } else if (text.startsWith('::', i)) {
+      const cast = text.slice(i + 2);
+      if (!CAST.test(cast.trim())) throw new Error(`Invalid cast type: ${cast}`);
+      return { steps, cast };
+    } else {
+      let end = i;
+      while (end < text.length && !'."['.includes(text[end]) && !text.startsWith('::', end)) end += 1;
+      const name = text.slice(i, end);
+      if (name === '') fail('an empty key (it is written "")');
+      steps.push(/^\d+$/.test(name) ? index(name) : name);
+      i = end;
+    }
+    // Keys are separated by dots (not before an index nor a cast).
+    if (text[i] === '.') {
+      i += 1;
+      if (i === text.length) fail('the path ends in a dot');
+    } else if (i < text.length && text[i] !== '[' && !text.startsWith('::', i)) fail('a dot is missing');
+  }
+  return { steps, cast: undefined };
+}
+
+module.exports = { translateWhere, parseJsonPath, JsonRef, leaf };

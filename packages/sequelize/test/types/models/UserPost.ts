@@ -8,12 +8,9 @@ export interface UserPostAttributes {
   text: string;
 }
 
-export interface UserPostCreationAttributes
-  extends Optional<UserPostAttributes, 'id'> {}
+export interface UserPostCreationAttributes extends Optional<UserPostAttributes, 'id'> {}
 
-export interface UserPostInstance
-  extends Model<UserPostAttributes, UserPostCreationAttributes>,
-    UserPostAttributes {}
+export interface UserPostInstance extends Model<UserPostAttributes, UserPostCreationAttributes>, UserPostAttributes {}
 
 /**
  * This is a component defined using `sequelize.define` to ensure that various
@@ -44,7 +41,7 @@ export const UserPost = sequelize.define<UserPostInstance>(
         fields: ['userId'],
       },
     ],
-  },
+  }
 );
 
-UserPost.findOne({ where: { id: 1 }});
+UserPost.findOne({ where: { id: 1 } });

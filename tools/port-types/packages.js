@@ -354,7 +354,17 @@ const VALIDATORS = [
 const SEQUELIZE_PATCHES = {
   'types/sequelize.d.ts': (code) =>
     replaceOnce(
-      replaceOnce(code, "import type { Options as RetryAsPromisedOptions } from 'retry-as-promised';\n", ''),
+      replaceOnce(
+        replaceOnce(code, "import type { Options as RetryAsPromisedOptions } from 'retry-as-promised';\n", ''),
+        'export interface Options extends Logging {\n',
+        'export interface Options extends Logging {\n  /**\n' +
+          '   * How BIGINT values are given (@xufa/sequelize): numbers while they are safe integers and bigints beyond them\n' +
+          "   * ('number', the default), always bigints ('bigint', as Sequelize 7 goes), or strings ('string', as Sequelize 6\n" +
+          '   * gives them in PostgreSQL).\n   */\n' +
+          "  bigint?: 'number' | 'bigint' | 'string';\n\n" +
+          '  /**\n   * The foreign keys of associations are indexed (Sequelize 7 does it by default; @xufa/sequelize when asked).\n   */\n' +
+          '  indexForeignKeys?: boolean;\n\n'
+      ),
       'export type RetryOptions = RetryAsPromisedOptions;',
       '/**\n * Queries run again when they fail (retry-as-promised in Sequelize). @xufa/sequelize reads `max` and `match`; the\n' +
         ' * other options are accepted and not used.\n */\n' +
@@ -413,7 +423,201 @@ const SEQUELIZE_PATCHES = {
       '  /**\n   * Set option for autocommit of a transaction',
       'public rollbackTransaction(transaction: Transaction, options?: QueryOptions): Promise<void>;\n\n'
     );
-    return out;
+    // From Sequelize 7: changeColumns, and the method, includes and names of the fields of indexes.
+    out = replaceOnce(
+      out,
+      'export interface QueryInterfaceOptions extends Logging, Transactionable {}\n',
+      'export interface QueryInterfaceOptions extends Logging, Transactionable {}\n\n' +
+        '/** A column for changeColumns: what is given changes (the type too is optional). */\n' +
+        'export interface ChangeColumnDefinition extends Partial<ModelAttributeColumnOptions> {\n' +
+        '  /** Drops the default of the column. */\n  dropDefaultValue?: boolean;\n}\n\n' +
+        '/** An index of a table, as showIndex gives it (method, includes and the name and collate of fields as Sequelize 7). */\n' +
+        'export interface IndexDescription {\n  name: string;\n  tableName: string;\n  unique: boolean;\n  primary: boolean;\n' +
+        "  fields: Array<{ attribute: string; name: string; order?: 'ASC' | 'DESC'; collate?: string; length?: number }>;\n" +
+        '  /** PostgreSQL: the SQL of the index, its method (BTREE, GIN...) and the columns of INCLUDE. */\n' +
+        '  definition?: string;\n  method?: string;\n  includes?: string[];\n  [key: string]: unknown;\n}\n\n' +
+        '/** An index as Sequelize 7 describes it (showIndexes): the order and collation of every field; PostgreSQL gives its\n' +
+        ' * method (BTREE, GIN...) and the columns of INCLUDE too. */\n' +
+        'export interface IndexInfo {\n  name: string;\n  method?: string;\n  unique: boolean;\n  primary: boolean;\n' +
+        "  fields: Array<{ name: string; order: 'ASC' | 'DESC'; collate?: string }>;\n  includes?: string[];\n}\n"
+    );
+    out = replaceOnce(
+      out,
+      '    dataTypeOrOptions?: DataType | ModelAttributeColumnOptions,\n    options?: QueryInterfaceOptions\n  ): Promise<void>;\n',
+      '    dataTypeOrOptions?: DataType | ModelAttributeColumnOptions,\n    options?: QueryInterfaceOptions\n  ): Promise<void>;\n\n' +
+        '  /**\n   * Changes columns of a table, as Sequelize 7: in one ALTER TABLE in PostgreSQL. Only what a definition gives\n' +
+        '   * changes (`allowNull` when true or false, the default when `defaultValue` is given, or dropped with\n' +
+        '   * `dropDefaultValue`); an ENUM of PostgreSQL keeps its type, which gets the values it lacks or is made again.\n   */\n' +
+        '  public changeColumns(\n    tableName: TableName,\n    columns: Record<string, DataType | ChangeColumnDefinition>,\n' +
+        '    options?: QueryInterfaceOptions\n  ): Promise<void>;\n'
+    );
+    return replaceOnce(
+      out,
+      '  public showIndex(tableName: string | object, options?: QueryOptions): Promise<object>;',
+      '  public showIndex(tableName: string | object, options?: QueryOptions): Promise<IndexDescription[]>;\n\n' +
+        '  /**\n   * The indexes of a table as Sequelize 7 gives them (with the order of every field).\n   */\n' +
+        '  public showIndexes(tableName: TableName, options?: QueryOptions): Promise<IndexInfo[]>;'
+    );
+  },
+  // From Sequelize 7: VIRTUALs computed by SQL (include as).
+  'types/data-types.d.ts': (code) => {
+    let out = replaceOnce(
+      code,
+      'interface VirtualDataTypeConstructor extends AbstractDataTypeConstructor {\n' +
+        '  new <T extends AbstractDataTypeConstructor | AbstractDataType>(ReturnType: T, fields?: string[]): VirtualDataType<\n' +
+        '    T\n  >;\n' +
+        '  <T extends AbstractDataTypeConstructor | AbstractDataType>(ReturnType: T, fields?: string[]): VirtualDataType<T>;\n}\n',
+      '/**\n * As Sequelize 7 (include as): the SQL of a VIRTUAL computed by the database, given the name of the table of its model\n' +
+        " * in the query (`(includeAs) => [literal(`(SELECT COUNT(*) FROM posts p WHERE p.user_id = ${includeAs}.id)`), 'posts']`),\n" +
+        ' * selected when the attribute is in `attributes` (of the find or of an include).\n */\n' +
+        'export type IncludeAsCallback = (includeAs: string) => [Literal | Fn, string] | Literal | Fn;\n\n' +
+        'interface VirtualDataTypeConstructor extends AbstractDataTypeConstructor {\n' +
+        '  new <T extends AbstractDataTypeConstructor | AbstractDataType>(\n    ReturnType: T,\n' +
+        '    fields?: string[] | IncludeAsCallback\n  ): VirtualDataType<T>;\n' +
+        '  <T extends AbstractDataTypeConstructor | AbstractDataType>(\n    ReturnType: T,\n' +
+        '    fields?: string[] | IncludeAsCallback\n  ): VirtualDataType<T>;\n}\n'
+    );
+    out = replaceOnce(
+      out,
+      'export const UUIDV4: AbstractDataTypeConstructor;\n',
+      'export const UUIDV4: AbstractDataTypeConstructor;\n\n' +
+        '/**\n * A default value for UUID columns (Sequelize 7): UUIDs of version 7, which sort as they are made.\n */\n' +
+        'export const UUIDV7: AbstractDataTypeConstructor;\n'
+    );
+    out = replaceOnce(
+      out,
+      'export interface EnumDataTypeOptions<T extends string> {\n  values: T[];\n}\n',
+      'export interface EnumDataTypeOptions<T extends string> {\n  values: T[];\n' +
+        '  /** The name of the type of PostgreSQL (Sequelize 7): one type for every column of it. */\n  name?: string;\n' +
+        '  /** The schema of the type of PostgreSQL (Sequelize 7). */\n  schema?: string;\n}\n'
+    );
+    return `import type { Fn, Literal } from './utils';\n${replaceOnce(
+      out,
+      '  returnType: T;\n  fields: string[];\n',
+      '  returnType: T;\n  fields: string[] | IncludeAsCallback;\n'
+    )}`;
+  },
+  // From Sequelize 7: runtime attributes.
+  'types/model.d.ts': (code) => {
+    let out = replaceOnce(
+      code,
+      '  subQuery?: boolean;\n}\n\nexport interface NonNullFindOptions',
+      "  subQuery?: boolean;\n\n  /**\n   * As Sequelize 7: the values of the rows that no attribute has (`[literal(...), 'name']` in `attributes`) are\n" +
+        '   * properties of the instances too (`user.name`), not only values of `get()`.\n   */\n' +
+        '  enableRuntimeAttributes?: boolean;\n}\n\nexport interface NonNullFindOptions'
+    );
+    out = replaceOnce(
+      out,
+      '  public static findByPk<M extends Model>(\n    this: ModelStatic<M>,\n    identifier: Identifier,\n',
+      '  /**\n   * The instances of several primary keys, in one query (Sequelize 7): values, or objects of the attributes of a\n' +
+        '   * composite key.\n   */\n' +
+        '  public static findByPks<M extends Model>(\n    this: ModelStatic<M>,\n    identifiers: Array<Identifier | Record<string, unknown>>,\n' +
+        "    options?: Omit<FindOptions<Attributes<M>>, 'where'> & { where?: WhereOptions<Attributes<M>> }\n  ): Promise<M[]>;\n\n" +
+        '  public static findByPk<M extends Model>(\n    this: ModelStatic<M>,\n    identifier: Identifier,\n'
+    );
+    out = replaceOnce(
+      out,
+      '  skipLocked?: boolean;\n',
+      '  skipLocked?: boolean;\n\n  /**\n   * Fails at once (NOWAIT) on rows locked by others, instead of waiting for them (Sequelize 7, PostgreSQL).\n   */\n' +
+        '  noWait?: boolean;\n'
+    );
+    out = replaceOnce(
+      out,
+      '  updateOnDuplicate?: (keyof TAttributes)[];\n',
+      '  updateOnDuplicate?: Array<keyof TAttributes | [keyof TAttributes, unknown]>;\n\n' +
+        '  /**\n   * The rows there are updated only when it holds: ON CONFLICT ... DO UPDATE ... WHERE (Sequelize 7).\n   */\n' +
+        '  onConflictUpdateWhere?: WhereOptions<TAttributes> | Literal;\n'
+    );
+    out = replaceOnce(
+      out,
+      'export interface UpsertOptions<TAttributes = any> extends Logging, Transactionable, SearchPathable, Hookable {\n',
+      'export interface UpsertOptions<TAttributes = any> extends Logging, Transactionable, SearchPathable, Hookable {\n' +
+        "  /**\n   * What a row there gets instead of the values inserted (Sequelize 7): values, or SQL (literal('count + 1')).\n   */\n" +
+        '  updateValues?: { [key in keyof TAttributes]?: unknown };\n\n' +
+        '  /**\n   * The row there is updated only when it holds: ON CONFLICT ... DO UPDATE ... WHERE (Sequelize 7).\n   */\n' +
+        '  onConflictUpdateWhere?: WhereOptions<TAttributes> | Literal;\n\n'
+    );
+    out = replaceOnce(
+      out,
+      'export interface UpdateOptions<TAttributes = any> extends Logging, Transactionable, Paranoid, Hookable {\n',
+      'export interface UpdateOptions<TAttributes = any> extends Logging, Transactionable, Paranoid, Hookable {\n' +
+        '  /**\n   * The rows whose includes are there (required, or with a where) are updated (Sequelize 7).\n   */\n' +
+        '  include?: Includeable | Includeable[];\n\n'
+    );
+    out = replaceOnce(
+      out,
+      'export interface ModelAttributeColumnOptions<M extends Model = Model> extends ColumnOptions {\n',
+      'export interface ModelAttributeColumnOptions<M extends Model = Model> extends ColumnOptions {\n' +
+        '  /**\n   * A generated column (Sequelize 7): the SQL of its value, which the database makes.\n   */\n' +
+        '  generatedAs?: Literal | string;\n\n' +
+        "  /**\n   * How a generated column is kept: STORED (the default) or VIRTUAL.\n   */\n  generatedColumn?: 'STORED' | 'VIRTUAL';\n\n"
+    );
+    out = replaceOnce(
+      out,
+      'export interface IncludeOptions extends Filterable<any>, Projectable, Paranoid {\n',
+      'export interface IncludeOptions extends Filterable<any>, Projectable, Paranoid {\n' +
+        '  /**\n   * bulkCreate: the fields of the rows of the include updated when they are there (Sequelize 7).\n   */\n' +
+        '  updateOnDuplicate?: string[];\n\n'
+    );
+    return replaceOnce(
+      out,
+      'export interface ModelOptions<M extends Model = Model> {\n',
+      'export interface ModelOptions<M extends Model = Model> {\n  /**\n' +
+        '   * The default of `enableRuntimeAttributes` of the finds of the model (Sequelize 7).\n   */\n' +
+        '  enableRuntimeAttributes?: boolean;\n\n' +
+        '  /**\n   * A STRICT table of SQLite: its columns hold values of their types only (Sequelize 7).\n   */\n' +
+        '  strict?: boolean;\n\n'
+    );
+  },
+  'types/associations/base.d.ts': (code) =>
+    replaceOnce(
+      code,
+      'export interface ForeignKeyOptions extends ColumnOptions {\n  /** Attribute name for the relation */\n  name?: string;\n',
+      'export interface ForeignKeyOptions extends ColumnOptions {\n  /** Attribute name for the relation */\n  name?: string;\n' +
+        '  /** Whether the key is indexed (Sequelize 7), or the options of its index. */\n' +
+        '  index?: boolean | { unique?: boolean; name?: string };\n'
+    ),
+  'types/associations/has-many.d.ts': (code) => {
+    let out = code;
+    for (const name of ['SetAssociationsMixin', 'AddAssociationsMixin']) {
+      out = replaceOnce(
+        out,
+        `export type HasMany${name}<TModel, TModelPrimaryKey> = (\n  newAssociations?: (TModel | TModelPrimaryKey)[],`,
+        `export type HasMany${name}<TModel, TModelPrimaryKey> = (\n  newAssociations?: (TModel | TModelPrimaryKey | { [key: string]: unknown })[],`
+      );
+    }
+    out = replaceOnce(
+      out,
+      'export type HasManyAddAssociationMixin<TModel, TModelPrimaryKey> = (\n  newAssociation?: TModel | TModelPrimaryKey,',
+      'export type HasManyAddAssociationMixin<TModel, TModelPrimaryKey> = (\n  newAssociation?: TModel | TModelPrimaryKey | { [key: string]: unknown },'
+    );
+    return (
+      out +
+      '\n/**\n * Creates several targets at once (Sequelize 7: createTasks), linked to the instance.\n */\n' +
+      'export type HasManyCreateAssociationsMixin<TModel extends Model> = (\n' +
+      '  records: Array<CreationAttributes<TModel> | { [key: string]: unknown }>,\n  options?: CreateOptions<any>\n) => Promise<TModel[]>;\n'
+    );
+  },
+  'types/associations/belongs-to-many.d.ts': (code) => {
+    let out = code;
+    for (const name of ['SetAssociationsMixin', 'AddAssociationsMixin']) {
+      out = replaceOnce(
+        out,
+        `export type BelongsToMany${name}<TModel, TModelPrimaryKey> = (\n  newAssociations?: (TModel | TModelPrimaryKey)[],`,
+        `export type BelongsToMany${name}<TModel, TModelPrimaryKey> = (\n  newAssociations?: (TModel | TModelPrimaryKey | { [key: string]: unknown })[],`
+      );
+    }
+    out = replaceOnce(
+      out,
+      'export type BelongsToManyAddAssociationMixin<TModel, TModelPrimaryKey> = (\n  newAssociation?: TModel | TModelPrimaryKey,',
+      'export type BelongsToManyAddAssociationMixin<TModel, TModelPrimaryKey> = (\n  newAssociation?: TModel | TModelPrimaryKey | { [key: string]: unknown },'
+    );
+    return (
+      out +
+      '\n/**\n * Creates several targets at once (Sequelize 7: createTasks), linked to the instance.\n */\n' +
+      'export type BelongsToManyCreateAssociationsMixin<TModel extends Model> = (\n' +
+      '  records: Array<CreationAttributes<TModel> | { [key: string]: unknown }>,\n  options?: CreateOptions<any>\n) => Promise<TModel[]>;\n'
+    );
   },
   // The error of what @xufa/sequelize does not do of Sequelize 6.
   'types/errors/index.d.ts': (code) =>

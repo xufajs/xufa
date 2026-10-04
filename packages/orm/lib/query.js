@@ -58,6 +58,31 @@ class Q {
   }
 }
 
+// A condition on a value inside a json field, its path given as a list of keys and indexes: any key, also those that
+// look like lookups or have the separator (jsonPath('data', ['in'], 1), jsonPath('data', ['a__b', 0], 'x', 'gt')).
+class JsonPath {
+  constructor(field, path, value, lookup = 'exact') {
+    if (!Array.isArray(path) || path.length === 0) throw new QueryError('A json path must be a list of keys');
+    path.forEach((key) => {
+      const index = typeof key === 'number';
+      if (index ? !Number.isInteger(key) || key < 0 || key > MAX_JSON_INDEX : typeof key !== 'string') {
+        throw new QueryError(`Invalid key of a json path: ${String(key)}`);
+      }
+    });
+    this.field = field;
+    this.path = path.slice();
+    this.value = value;
+    this.lookup = lookup;
+  }
+}
+
+// The greatest index of a json array in a path (as Sequelize 7): beyond it, PostgreSQL has no operator (jsonb -> bigint).
+const MAX_JSON_INDEX = 2 ** 31 - 1;
+
+function jsonPath(field, path, value, lookup) {
+  return new JsonPath(field, path, value, lookup);
+}
+
 // A fragment of SQL (SQL databases only): in conditions, orders (Raw('x DESC')) and values ({ total: Raw('...') }).
 // `?` are its parameters; Raw.TABLE in it is the table of the model (its alias in the query).
 function Raw(sql, params = []) {
@@ -102,6 +127,29 @@ const Max = (name) => new Aggregate('max', name);
 // stops at the foreign key, whose value is that key, so no join is needed.
 // `reverse`: reverse relations can be followed too (aggregates: Count('books'), Sum('books__pages'), joined in SQL);
 // a path that ends at one is of the primary keys of its objects.
+// Whether some field of a model has the separator in its name (a__b): its paths are read by the longest names.
+const SEPARATOR_NAMES = new WeakMap();
+function hasSeparatorNames(meta) {
+  let has = SEPARATOR_NAMES.get(meta);
+  if (has === undefined) {
+    has = [...meta.fieldMap.keys()].some((name) => name.includes(SEPARATOR));
+    SEPARATOR_NAMES.set(meta, has);
+  }
+  return has;
+}
+
+// The field of a model a path names from its part i: the longest name of a field (names can have the separator), and
+// the part after it.
+function fieldAt(meta, parts, i) {
+  if (hasSeparatorNames(meta)) {
+    for (let j = parts.length; j > i + 1; j -= 1) {
+      const field = meta.field(parts.slice(i, j).join(SEPARATOR));
+      if (field) return { field, next: j };
+    }
+  }
+  return { field: meta.field(parts[i]), next: i + 1 };
+}
+
 function resolvePath(model, path, allowRest = true, reverse = false) {
   const parts = path.split(SEPARATOR);
   const fields = [];
@@ -109,7 +157,7 @@ function resolvePath(model, path, allowRest = true, reverse = false) {
   let i = 0;
   while (i < parts.length) {
     const { meta } = current;
-    const field = meta.field(parts[i]);
+    const { field, next: after } = fieldAt(meta, parts, i);
     if (!field) {
       const relation = meta.reverseRelation(parts[i]);
       if (relation && reverse) {
@@ -126,13 +174,13 @@ function resolvePath(model, path, allowRest = true, reverse = false) {
       break;
     }
     fields.push(field);
-    i += 1;
+    i = after;
     if (!(field instanceof ForeignKey) || i === parts.length) break;
     const target = field.target;
-    const next = target.meta.field(parts[i]);
+    const { field: next, next: following } = fieldAt(target.meta, parts, i);
     if (!next) break;
     if (next === field.targetField) {
-      i += 1;
+      i = following;
       break;
     }
     current = target;
@@ -158,9 +206,9 @@ function findReverse(model, key) {
   const parts = key.split(SEPARATOR);
   const through = [];
   let current = model;
-  for (let i = 0; i < parts.length; i += 1) {
+  for (let i = 0; i < parts.length;) {
     const { meta } = current;
-    const field = meta.field(parts[i]);
+    const { field, next } = fieldAt(meta, parts, i);
     if (!field) {
       const rest = parts.slice(i + 1).join(SEPARATOR);
       const relation = meta.reverseRelation(parts[i]);
@@ -175,9 +223,10 @@ function findReverse(model, key) {
           : `${many.to.name}${SEPARATOR}${rest}`;
       return { through, relation: many.from, rest: other };
     }
-    if (!(field instanceof ForeignKey) || field.attname === parts[i]) return null;
+    if (!(field instanceof ForeignKey) || field.attname === parts.slice(i, next).join(SEPARATOR)) return null;
     through.push(field);
     current = field.target;
+    i = next;
   }
   return null;
 }
@@ -186,8 +235,14 @@ function lastOf(fields) {
   return fields[fields.length - 1];
 }
 
+// Encrypted fields cannot be compared, sorted nor computed by the database: `what` is what was tried.
+function refuseEncrypted(field, what) {
+  if (field.encrypted) throw new QueryError(`${field.model.name}.${field.name} is encrypted: it cannot be ${what}`);
+}
+
 function resolveF(model, ref) {
   const { fields } = resolvePath(model, ref.name, false);
+  refuseEncrypted(lastOf(fields), 'in an F expression');
   const ops = ref.ops.map(({ op, value }) => {
     if (value instanceof F) return { op, value: resolveF(model, value) };
     if (typeof value !== 'number') throw new QueryError(`F expressions only operate with numbers and F (${ref.name})`);
@@ -277,6 +332,13 @@ function resolveLeaf(model, key, value) {
   const field = lastOf(fields);
   const lookup = rest || 'exact';
   const type = field.dbType;
+  // Encrypted values: isnull, and exact and in when they are deterministic (the same value, the same text).
+  const nullCheck = lookup === 'isnull' || (lookup === 'exact' && value === null);
+  if (field.encrypted && !(nullCheck || (field.deterministic && (lookup === 'exact' || lookup === 'in')))) {
+    throw new QueryError(
+      `${field.model.name}.${field.name} is encrypted: its conditions are isnull${field.deterministic ? ', exact and in' : ' (exact and in when it is deterministic)'}`
+    );
+  }
   if (
     !LOOKUPS.has(lookup) ||
     (TEXT_LOOKUPS.includes(lookup) && !TEXT_TYPES.has(type)) ||
@@ -316,6 +378,13 @@ function resolveLeaf(model, key, value) {
 // Resolves conditions (objects, Q) into a node or a leaf. Several keys of an object are ANDed.
 function resolveWhere(model, item) {
   if (item instanceof Raw) return { op: 'raw', sql: item.sql, params: item.params };
+  if (item instanceof JsonPath) {
+    const { fields, rest, jsonPath: more } = resolvePath(model, item.field, false);
+    if (rest !== undefined || more || lastOf(fields).dbType !== 'json') {
+      throw new QueryError(`${item.field} of ${model.name} is not a json field`);
+    }
+    return resolveJsonLeaf(fields, item.path, item.lookup, item.value, `${item.field}${JSON.stringify(item.path)}`);
+  }
   if (item instanceof Q) {
     const children = item.children.map((child) => resolveWhere(model, child)).filter(Boolean);
     if (item.op === 'not') return children.length ? { op: 'not', children: [and1(children)] } : null;
@@ -378,6 +447,7 @@ function resolveOrder(model, name) {
   if (name instanceof Raw) return { raw: name.sql, params: name.params, desc: false };
   const desc = name.startsWith('-');
   const { fields, jsonPath } = resolvePath(model, desc ? name.slice(1) : name, false);
+  refuseEncrypted(lastOf(fields), 'an order');
   return jsonPath ? { fields, desc, jsonPath } : { fields, desc };
 }
 
@@ -404,6 +474,7 @@ function resolveAggregate(model, aggregate) {
     return { fn: 'count', fields: null, distinct: false };
   }
   const { fields } = resolvePath(model, aggregate.name, false, true);
+  if (aggregate.fn !== 'count') refuseEncrypted(lastOf(fields), `aggregated by ${aggregate.fn}`);
   return { fn: aggregate.fn, fields, distinct: aggregate.distinct };
 }
 
@@ -490,11 +561,14 @@ function likeToRegex(pattern) {
 }
 
 module.exports = {
+  LOOKUPS,
   expandPkOrder,
   Raw,
   likeParts,
   likeToRegex,
   Q,
+  JsonPath,
+  jsonPath,
   and,
   or,
   not,

@@ -49,17 +49,24 @@ class Transaction {
     // In a transaction given (options.transaction), it is a savepoint of it.
     const parent = options && options.transaction && options.transaction.xufaStore;
     const run = (fn) => (parent ? sequelize.xufaDb.backend.context.run(parent, fn) : fn());
+    // With replication: read-only transactions on a replica, the others on the primary.
+    const replica = (fn) =>
+      sequelize.xufaReadPools && !parent
+        ? sequelize.xufaReplica.run(transaction.options.readOnly ? 'read' : 'write', fn)
+        : fn();
     transaction.xufaRunning = run(() =>
-      sequelize.xufaDb.transaction(
-        async () => {
-          transaction.xufaStore = backend.context.getStore();
-          await transaction.xufaDefer();
-          started();
-          const action = await ended;
-          if (action === 'rollback') throw ROLLBACK;
-        },
-        // Held open by hand: a savepoint made while others are open nests after them.
-        { mode: transaction.options.type, serial: false }
+      replica(() =>
+        sequelize.xufaDb.transaction(
+          async () => {
+            transaction.xufaStore = backend.context.getStore();
+            await transaction.xufaDefer();
+            started();
+            const action = await ended;
+            if (action === 'rollback') throw ROLLBACK;
+          },
+          // Held open by hand: a savepoint made while others are open nests after them.
+          { mode: transaction.options.type, serial: false }
+        )
       )
     ).catch((err) => {
       if (err !== ROLLBACK) throw sequelize.xufaError(err);

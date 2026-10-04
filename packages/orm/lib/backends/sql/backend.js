@@ -6,6 +6,12 @@
 const { Backend } = require('../base');
 const { SqlCompiler } = require('./compiler');
 
+// A key the database gives back, as its field makes its values (the mode of keys and bigints).
+function decodeKey(dialect, field, value) {
+  const key = dialect.decode(field.dbType, value);
+  return field.fromDb ? field.fromDb(key) : key;
+}
+
 class SqlBackend extends Backend {
   constructor(options, dialect) {
     super(options);
@@ -69,13 +75,27 @@ class SqlBackend extends Backend {
     const pks = new Array(rows.length);
     const insertAll = async () => {
       for (let i = 0; i < statements.length; i += 1) {
-        const { sql, params, indexes, ignore } = statements[i];
+        const { sql, params, indexes, ignore, matchBy = [] } = statements[i];
         const result = await this.query(sql, params);
         // A model without a primary key gets none back.
         if (!meta.pk) return;
-        const known = !ignore || result.length === indexes.length;
-        indexes.forEach((index, j) => {
-          pks[index] = known ? this.dialect.decode(meta.pkFields[0].dbType, result[j].pk) : null;
+        if (!ignore || result.length === indexes.length) {
+          indexes.forEach((index, j) => {
+            pks[index] = decodeKey(this.dialect, meta.pkFields[0], result[j].pk);
+          });
+          continue;
+        }
+        // Some rows were left out by the conflict: the others found by the values of its key (none without one).
+        const valueKey = (values) => JSON.stringify(values.map((value) => (value === null ? null : String(value))));
+        const byValues = new Map(
+          result.map((row) => [
+            valueKey(matchBy.map((field, k) => this.dialect.decode(field.dbType, row[`m${k}`]))),
+            decodeKey(this.dialect, meta.pkFields[0], row.pk),
+          ])
+        );
+        indexes.forEach((index) => {
+          const key = matchBy.length ? valueKey(matchBy.map((field) => rows[index][field.attname])) : null;
+          pks[index] = key !== null && byValues.has(key) ? byValues.get(key) : null;
         });
       }
     };
@@ -104,7 +124,17 @@ class SqlBackend extends Backend {
   // made before them.
   // The tables of the models that do not exist. Foreign keys to tables made later (cycles) are in the CREATE TABLE in
   // SQLite (it checks them when rows are written), and added after the tables in other databases.
+  // The schemas of the tables of the models (PostgreSQL), made when they are not there.
+  async ensureSchemas(metas) {
+    if (this.dialect.name !== 'postgres') return;
+    const schemas = [...new Set(metas.map((meta) => meta.schema).filter(Boolean))];
+    for (const schema of schemas) {
+      await this.run(() => this.execute(`CREATE SCHEMA IF NOT EXISTS ${this.dialect.quote(schema)}`, []));
+    }
+  }
+
   async createSchema(metas) {
+    await this.ensureSchemas(metas);
     const existing = new Set(await this.run(() => this.tables()));
     const lazy = this.dialect.name === 'sqlite';
     const known = new Set(lazy ? [...existing, ...metas.map((meta) => meta.key)] : existing);

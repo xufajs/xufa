@@ -11,7 +11,7 @@ import {
   FindOptions,
   Model,
   ModelStatic,
-  Op
+  Op,
 } from 'sequelize';
 import { sequelize } from '../connection';
 
@@ -45,7 +45,7 @@ User.init(
   {
     id: {
       type: DataTypes.NUMBER,
-      primaryKey: true
+      primaryKey: true,
     },
     firstName: {
       type: DataTypes.STRING,
@@ -62,32 +62,34 @@ User.init(
     getterMethods: {
       a() {
         return 1;
-      }
+      },
     },
     setterMethods: {
       b(val: string) {
         this.username = val;
-      }
+      },
     },
     scopes: {
       custom(a: number) {
         return {
           where: {
-            firstName: a
-          }
+            firstName: a,
+          },
         };
       },
       custom2() {
         return {};
-      }
+      },
     },
-    indexes: [{
-      fields: ['firstName'],
-      using: 'BTREE',
-      name: 'firstNameIdx',
-      concurrently: true
-    }],
-    sequelize
+    indexes: [
+      {
+        fields: ['firstName'],
+        using: 'BTREE',
+        name: 'firstNameIdx',
+        concurrently: true,
+      },
+    ],
+    sequelize,
   }
 );
 
@@ -96,7 +98,7 @@ User.afterSync(() => {
     fields: ['lastName'],
     using: 'BTREE',
     name: 'lastNameIdx',
-    concurrently: true
+    concurrently: true,
   });
 });
 
@@ -119,17 +121,14 @@ User.addHook('afterDestroy', async (instance, options) => {
 User.addScope('withoutLastName', {
   where: {
     lastName: {
-      [Op.is]: null
-    }
-  }
+      [Op.is]: null,
+    },
+  },
 });
 
-User.addScope(
-  'withFirstName',
-  (firstName: string) => ({
-    where: { firstName }
-  })
-);
+User.addScope('withFirstName', (firstName: string) => ({
+  where: { firstName },
+}));
 
 // associate
 // it is important to import _after_ the model above is already exported so the circular reference works.
@@ -143,7 +142,7 @@ User.hasMany(UserPost, { as: 'posts', foreignKey: 'userId' });
 UserPost.belongsTo(User, {
   foreignKey: 'userId',
   targetKey: 'id',
-  as: 'user'
+  as: 'user',
 });
 
 // associations refer to their Model
@@ -154,10 +153,7 @@ const groupType: ModelStatic<UserGroup> = User.associations.group.target;
 User.findOne({ include: [{ model: UserGroup }] });
 User.findOne({ include: [{ model: UserPost }] });
 
-User.scope([
-  'custom2',
-  { method: ['custom', 32] }
-]);
+User.scope(['custom2', { method: ['custom', 32] }]);
 
 const instance = new User({ username: 'foo', firstName: 'bar', lastName: 'baz' });
 instance.isSoftDeleted();

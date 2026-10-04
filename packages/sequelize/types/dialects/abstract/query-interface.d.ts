@@ -114,6 +114,37 @@ export interface QueryOptionsWithForce extends QueryOptions {
  */
 export interface QueryInterfaceOptions extends Logging, Transactionable {}
 
+/** A column for changeColumns: what is given changes (the type too is optional). */
+export interface ChangeColumnDefinition extends Partial<ModelAttributeColumnOptions> {
+  /** Drops the default of the column. */
+  dropDefaultValue?: boolean;
+}
+
+/** An index of a table, as showIndex gives it (method, includes and the name and collate of fields as Sequelize 7). */
+export interface IndexDescription {
+  name: string;
+  tableName: string;
+  unique: boolean;
+  primary: boolean;
+  fields: Array<{ attribute: string; name: string; order?: 'ASC' | 'DESC'; collate?: string; length?: number }>;
+  /** PostgreSQL: the SQL of the index, its method (BTREE, GIN...) and the columns of INCLUDE. */
+  definition?: string;
+  method?: string;
+  includes?: string[];
+  [key: string]: unknown;
+}
+
+/** An index as Sequelize 7 describes it (showIndexes): the order and collation of every field; PostgreSQL gives its
+ * method (BTREE, GIN...) and the columns of INCLUDE too. */
+export interface IndexInfo {
+  name: string;
+  method?: string;
+  unique: boolean;
+  primary: boolean;
+  fields: Array<{ name: string; order: 'ASC' | 'DESC'; collate?: string }>;
+  includes?: string[];
+}
+
 export interface CollateCharsetOptions {
   collate?: string;
   charset?: string;
@@ -423,6 +454,17 @@ export class QueryInterface {
   ): Promise<void>;
 
   /**
+   * Changes columns of a table, as Sequelize 7: in one ALTER TABLE in PostgreSQL. Only what a definition gives
+   * changes (`allowNull` when true or false, the default when `defaultValue` is given, or dropped with
+   * `dropDefaultValue`); an ENUM of PostgreSQL keeps its type, which gets the values it lacks or is made again.
+   */
+  public changeColumns(
+    tableName: TableName,
+    columns: Record<string, DataType | ChangeColumnDefinition>,
+    options?: QueryInterfaceOptions
+  ): Promise<void>;
+
+  /**
    * Renames a column
    */
   public renameColumn(
@@ -466,7 +508,12 @@ export class QueryInterface {
   /**
    * Shows the index of a table
    */
-  public showIndex(tableName: string | object, options?: QueryOptions): Promise<object>;
+  public showIndex(tableName: string | object, options?: QueryOptions): Promise<IndexDescription[]>;
+
+  /**
+   * The indexes of a table as Sequelize 7 gives them (with the order of every field).
+   */
+  public showIndexes(tableName: TableName, options?: QueryOptions): Promise<IndexInfo[]>;
 
   /**
    * Put a name to an index

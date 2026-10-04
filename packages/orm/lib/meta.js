@@ -2,6 +2,7 @@
 // primary key, the table and the options. A model is a class extending Model with `static fields` and, optionally,
 // `static options` ({ table, ordering, indexes, abstract }).
 const { IdField, ForeignKey, ManyToManyField } = require('./fields');
+const { seconds } = require('./duration');
 const { ModelError } = require('./errors');
 
 const STATE = Symbol('xufa.orm.state');
@@ -110,6 +111,8 @@ class Meta {
     ) {
       throw new ModelError(model.name, 'fillfactor must be an integer from 10 to 100');
     }
+    // A STRICT table of SQLite (its columns hold values of their types only). The other backends ignore it.
+    this.strict = Boolean(options.strict);
     this.db = undefined;
     // The foreign keys of other models pointing to this one, filled when the models are registered in a database.
     this.reverse = [];
@@ -184,6 +187,25 @@ class Meta {
     this.relations = this.fields.filter((field) => field instanceof ForeignKey);
     if (!this.abstract) {
       for (let i = 0; i < this.relations.length; i += 1) defineForwardAccessor(model, this.relations[i]);
+    }
+    // TTL indexes (an index of one datetime field with expireAfter): its rows expire that many seconds after the
+    // date of the field (0: at the date). `expiry` is [{ field, after }].
+    this.expiry = [];
+    for (let i = 0; i < this.indexes.length; i += 1) {
+      const index = this.indexes[i];
+      if (index.expireAfter === undefined) continue;
+      let after;
+      try {
+        after = Math.round(seconds(index.expireAfter, 'expireAfter'));
+      } catch (err) {
+        throw new ModelError(model.name, err.message);
+      }
+      const field = index.fields.length === 1 ? this.fieldMap.get(index.fields[0]) : null;
+      if (!field || field.type !== 'datetime') {
+        throw new ModelError(model.name, 'an index with expireAfter (TTL) has one datetime field');
+      }
+      this.indexes[i] = { ...index, expireAfter: after };
+      this.expiry.push({ field, after });
     }
     this.hooks = new Map();
     // The function that makes objects from rows, compiled the first time (Model.fromRow).

@@ -3,13 +3,13 @@ import { User } from './models/User';
 
 // These attributes exist
 User.findOne({ where: { firstName: 'John' } });
-User.findOne({ where: { '$firstName$': 'John' } });
+User.findOne({ where: { $firstName$: 'John' } });
 
 // These attributes do not exist
 // @ts-expect-error
 User.findOne({ where: { blah: 'blah2' } });
 // @ts-expect-error
-User.findOne({ where: { '$blah$': 'blah2' } });
+User.findOne({ where: { $blah$: 'blah2' } });
 
 // $nested.syntax$ is valid
 // TODO [2022-05-26]: Remove this ts-ignore once we drop support for TS < 4.4

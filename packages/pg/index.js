@@ -6,4 +6,17 @@ const types = require('./lib/types');
 const copy = require('./lib/copy');
 const errors = require('./lib/errors');
 
-module.exports = { Client, Pool, PoolClient, Connection, parseConfig, types, copy, ...errors };
+const { escapeIdentifier, escapeLiteral } = types;
+
+module.exports = {
+  Client,
+  Pool,
+  PoolClient,
+  Connection,
+  parseConfig,
+  escapeIdentifier,
+  escapeLiteral,
+  types,
+  copy,
+  ...errors,
+};

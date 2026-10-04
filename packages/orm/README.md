@@ -36,7 +36,7 @@ const db = new Database({ backend: 'sqlite', filename: 'app.db' });
 // or { backend: 'postgres', url: 'postgres://user:password@localhost:5432/app' }
 db.register(Author, Book);
 await db.connect();
-await db.sync(); // creates the tables (or collections and indexes) that do not exist
+await db.sync(); // creates the tables (or collections and indexes), and the schemas of PostgreSQL, that do not exist
 
 const ada = await Author.objects.create({ name: 'Ada' });
 await ada.books.create({ title: 'Notes', pages: 120 });
@@ -59,8 +59,9 @@ A model is a class extending `Model` with `static fields` and, optionally, `stat
 case of the class name by default; a name, dots included), `schema` (the schema of the table in PostgreSQL; SQLite names
 the table `schema.table`, MongoDB the collection), `ordering`, `indexes` (`[['a', 'b'], { fields: ['c'], unique: true }]`; in SQL
 databases, `condition` is the SQL of the rows of a partial index: `{ fields: ['c'], unique: true, condition:
-'"deleted" IS NULL' }`),
-`abstract` (a parent whose fields its children have) and `fillfactor` (PostgreSQL, 10 to 100: room left in the pages
+'"deleted" IS NULL' }`; `expireAfter` makes a [TTL index](#ttl-indexes)),
+`abstract` (a parent whose fields its children have), `strict` (SQLite: a STRICT table, its columns of the types
+STRICT has) and `fillfactor` (PostgreSQL, 10 to 100: room left in the pages
 of the table for the new versions of updated rows, which makes updates of tables updated often about twice as fast
 when they change no indexed column; set when the table is created by `sync()`). A model without a primary key gets `id` (an integer in SQL, an
 ObjectId as a hex string in MongoDB). A primary key of several fields (`primaryKey: true` on each, or
@@ -75,8 +76,8 @@ querysets, but its objects cannot be found again by themselves: `save()` of a sa
 throw, as do `last()` without an order and updates or deletes whose conditions follow relations (in SQL). No foreign
 key can point to it (but to a unique field, with `toField`), and it has no many-to-many fields.
 
-Fields: `id`, `string` (`maxLength`, `minLength`), `text`, `integer` and `float` (`min`, `max`), `bigint` (numbers
-when they are safe integers, bigints otherwise), `decimal` (`precision`, `scale`; strings, so no precision is lost),
+Fields: `id` (`mode` in SQL databases: keys as numbers, bigints or strings, as `bigint` fields), `string` (`maxLength`, `minLength`), `text`, `integer` and `float` (`min`, `max`), `bigint` (numbers
+when they are safe integers, bigints otherwise; `mode: 'bigint'` always gives bigints, `mode: 'string'` their text), `decimal` (`precision`, `scale`; strings, so no precision is lost),
 `boolean`, `datetime` (`autoNow`, `autoNowAdd`), `date` ('YYYY-MM-DD' strings), `json`, `uuid` (generated when it is
 the primary key), `bytes` (Buffers) and
 `foreignKey(Model | () => Model | 'Name' | 'self', { onDelete, relatedName, attname, dbOnDelete })` and
@@ -133,6 +134,84 @@ Objects: `save({ fields })` (insert or update; validates first), `delete()`, `re
 and `pk`. Hooks: `Model.on('beforeSave' | 'afterSave' | 'beforeDelete' | 'afterDelete', fn)`. `Model.jsonSchema()`
 gives the JSON Schema of the objects, for the schemas of routes.
 
+## TTL indexes
+
+An index of one datetime field with `expireAfter` (seconds, or text as `'30d'`) is a TTL index, as MongoDB's: its
+objects expire that long after the date of the field (`0`: at the date).
+
+```js
+class LogEntry extends Model {
+  static fields = { message: fields.text(), createdAt: fields.datetime({ autoNowAdd: true }) };
+
+  static options = { indexes: [{ fields: ['createdAt'], expireAfter: '30d' }] }; // deleted 30 days after createdAt
+}
+
+class Session extends Model {
+  static fields = { token: fields.string(), expiresAt: fields.datetime() };
+
+  static options = { indexes: [{ fields: ['expiresAt'], expireAfter: 0 }] }; // deleted at expiresAt
+}
+
+app.register(orm.plugin, { database: db, sync: true, expire: true }); // db.expire() every minute while the app runs
+```
+
+MongoDB deletes them itself (a TTL index, `expireAfterSeconds`; its monitor runs every minute). In every backend,
+`db.expire()` deletes the objects that expired, as QuerySets delete them (their relations as `onDelete` says, which
+MongoDB's own deletes do not do), and returns how many of each model; `db.startExpiry({ interval: '1m' })` calls it
+every interval (until `db.stopExpiry()` or `db.close()`), and so does the plugin with `expire: true` (or
+`{ interval }`). Objects that expired are found until they are deleted. In a cluster, any process (or all of them) can
+do it; for tenants, start it in their `setup`. Changing `expireAfter` makes a migration that drops and creates the
+index.
+
+## Encrypted fields
+
+`encrypted(field, options)` keeps the values of a field encrypted in the database (AES-256-GCM): the objects have
+their values, and the database has text it cannot read (`$xenc$1$<key id>$<iv>$<ciphertext>`), in a `TEXT` column
+(strings in MongoDB; the memory backend keeps the values as they are, since nothing leaves the process).
+
+```js
+setEncryptionKeys({ keys: { k1: process.env.ENCRYPTION_KEY } }); // or XUFA_ENCRYPTION_KEYS='k1:<base64>'
+
+class Patient extends Model {
+  static fields = {
+    name: fields.string(),
+    ssn: fields.encrypted(fields.string({ maxLength: 11 })),
+    email: fields.encrypted(fields.string(), { deterministic: true, unique: true }),
+    history: fields.encrypted(fields.json(), { null: true }),
+  };
+}
+
+await Patient.objects.create({ name: 'Ada', ssn: '123-45-6789', email: 'ada@example.com', history: { allergies: [] } });
+const ada = await Patient.objects.get({ email: 'ada@example.com' }); // deterministic: found by equality
+ada.ssn; // '123-45-6789'
+// Patient.objects.filter({ ssn: '123-45-6789' }) throws: ssn takes isnull only
+```
+
+- **Keys** are 32 random bytes (`generateEncryptionKey()` makes one), in base64 or hex, by id. The first one (or
+  `current`) encrypts, and all of them decrypt. They are set with `setEncryptionKeys()`, or read from
+  `XUFA_ENCRYPTION_KEYS` (`'k2:<base64>,k1:<base64>'`). Without keys, writing or reading an encrypted value throws.
+- **Values are authenticated and bound to their column**: a value changed in the database, or copied to another column
+  or table, is refused (`EncryptionError`), not read. `context` binds them to something else: after renaming the table
+  or the column, give the old `'table.column'`.
+- **Queries**: the database cannot compare, sort nor compute what it cannot read. Encrypted fields take `isnull` in
+  conditions, and no orders nor aggregates other than `Count`. With `deterministic: true`, the same value gives the
+  same text (for the same key), so the field also takes `exact` and `in`, and can be `unique` or indexed: the database
+  can tell which rows have the same value, not what it is. Fields of json, arrays, hstore and geometries cannot be
+  deterministic.
+- **The base field** validates the values (`maxLength`, `choices`...) and gives the JSON Schema.
+- **Rotating keys**: add the new key as the current one, call `reencrypt(Model)` (every object written again with
+  it), and remove the old one. Until then, deterministic values of the old key are not found by equality.
+
+  ```js
+  setEncryptionKeys({ current: 'k2', keys: { k2: newKey, k1: oldKey } });
+  await reencrypt(Patient);
+  setEncryptionKeys({ keys: { k2: newKey } });
+  ```
+
+- **Encrypting a field that has values**: make it `encrypted(..., { acceptPlaintext: true })`, so the values written
+  before are read as they are, call `reencrypt(Model)`, and remove `acceptPlaintext`. The column becomes `TEXT` (a
+  migration changes it).
+
 ## QuerySets
 
 `Model.objects` is a lazy QuerySet: refining it (`filter`, `exclude`, `orderBy`, `limit`, `offset`, `slice`,
@@ -178,8 +257,54 @@ added and unset those dropped. `db.sync()` still creates what does not exist, fo
 
 `app.register(orm.plugin, { database: db, migrate: { dir: 'migrations' } })` connects the database when the app
 starts (and migrates it, when asked; `sync: true` creates the tables), gives it as `app.db` and closes it with the
-app. Validation errors are answered with 400 and the messages of each field (`errors`), and `get()` of nothing
-with 404. `Model.jsonSchema({ exclude, partial })` gives the schema of the bodies of routes.
+app. Validation errors are answered with 400 and the messages of each field (`errors`), duplicates of unique fields
+(`UniqueError`, from every backend) with 409 and their `fields`, and `get()` of nothing with 404.
+`Model.jsonSchema({ exclude, partial })` gives the schema of the bodies of routes.
+
+### Resources
+
+`orm.resource(Model, options)` makes the routes of the objects of a model, as the ModelViewSets of Django REST
+framework, to register with a prefix:
+
+```js
+app.register(
+  orm.resource(Book, {
+    filters: { author: ['exact', 'in'], pages: ['gte', 'lte'] },
+    ordering: ['title', 'pages'],
+    search: ['title', 'author__name'],
+    related: ['author'],
+    readOnly: ['owner'],
+    auth: { list: false, get: false, create: true, update: true, delete: 'admin' }, // rules of @xufa/auth
+    hooks: { beforeCreate: (values, request) => ({ ...values, owner: request.user.sub }) },
+  }),
+  { prefix: '/books' }
+);
+app.register(orm.resource(Author, { actions: ['list', 'get'] }), { prefix: '/authors' });
+```
+
+| Route               | Action   | Answer                                                        |
+| ------------------- | -------- | ------------------------------------------------------------- |
+| `GET /books`        | `list`   | `{ count, limit, offset, results }` (query parameters: below) |
+| `GET /books/:id`    | `get`    | The object, or 404                                            |
+| `POST /books`       | `create` | 201 and the object                                            |
+| `PUT /books/:id`    | `update` | Every writable field set (those not given take their default) |
+| `PATCH /books/:id`  | `update` | The fields given set                                          |
+| `DELETE /books/:id` | `delete` | 204                                                           |
+
+- `queryset(request)`: the QuerySet of the objects of a request (all by default). An object out of it is not found by
+  any route: `(request) => Book.objects.filter({ owner: request.user.sub })` gives each user theirs.
+- `fields` or `exclude`: what is answered (`toJSON()`, with the related objects loaded); `serialize(object, request)`
+  answers something else.
+- `writable` or `readOnly`: what bodies set (every field but the primary key and those set by the ORM, by default).
+  Other fields of the model in a body are ignored (id, createdAt...); keys that are no field are a 400.
+- `filters`, `ordering` and `search` say which query parameters lists take (`?pages__gte=100`, `?author__in=1,2`,
+  `?ordering=-pages,title`, `?search=ada`, with `?limit=` and `?offset=`); others are a 400. `pageSize` (50),
+  `maxPageSize` (500), `pagination: false` (arrays), `lookup` (the field of `/:id`, `pk` by default).
+- `auth`: the rule of [@xufa/auth](../auth) (`config.auth` of the routes) for every action, or one by action.
+- `hooks`: `beforeCreate(values, request)` and `beforeUpdate(object, values, request)` (they can change the values,
+  or throw), `afterCreate`, `afterUpdate` and `beforeDelete(object, request)`.
+- Errors are answered with their status: 400 for values that are not valid (with the messages of each field), 404,
+  and 409 for duplicates (`UniqueError`) and for objects others protect (`ProtectedError`).
 
 ## TypeScript
 
@@ -205,7 +330,12 @@ Each backend compiles the description of a query (`lib/query.js`) to its databas
 - `contains`, `startswith` and `endswith` are case sensitive (SQLite's `LIKE` is not, so they are compiled
   without it), and `%`, `_` and the characters of regular expressions are plain characters.
 - Unique fields allow many nulls (partial unique indexes in MongoDB).
-- `json` fields are compared as whole values.
+- Names of fields can have `__` (`a__b`): paths are read by the longest names of fields first (`a__b__gt` is the
+  field `a__b` and the lookup `gt`).
+- `json` fields are compared as whole values, and so are the values inside them: `data__owner__name: 'ada'`,
+  `data__tags__0: 'x'` (numbers are indexes), `data__level__gte: 3`. For keys that this syntax cannot say (a key named
+  as a lookup, `in` or `gt`, or with `__`), `jsonPath('data', ['in'], 1)` and `jsonPath('data', ['a__b', 0], 2,
+'gte')` take the path as a list (indexes as numbers, up to 2^31 - 1). MongoDB cannot reach keys with dots or `$`.
 - A sum of no values is `null`; groups of a missing field and of a null are the same group.
 
 What differs, as it does between the databases:

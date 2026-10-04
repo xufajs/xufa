@@ -103,7 +103,7 @@ export interface HasManySetAssociationsMixinOptions extends FindOptions<any>, In
  * @see Instance
  */
 export type HasManySetAssociationsMixin<TModel, TModelPrimaryKey> = (
-  newAssociations?: (TModel | TModelPrimaryKey)[],
+  newAssociations?: (TModel | TModelPrimaryKey | { [key: string]: unknown })[],
   options?: HasManySetAssociationsMixinOptions
 ) => Promise<void>;
 
@@ -139,7 +139,7 @@ export interface HasManyAddAssociationsMixinOptions extends InstanceUpdateOption
  * @see Instance
  */
 export type HasManyAddAssociationsMixin<TModel, TModelPrimaryKey> = (
-  newAssociations?: (TModel | TModelPrimaryKey)[],
+  newAssociations?: (TModel | TModelPrimaryKey | { [key: string]: unknown })[],
   options?: HasManyAddAssociationsMixinOptions
 ) => Promise<void>;
 
@@ -175,7 +175,7 @@ export interface HasManyAddAssociationMixinOptions extends InstanceUpdateOptions
  * @see Instance
  */
 export type HasManyAddAssociationMixin<TModel, TModelPrimaryKey> = (
-  newAssociation?: TModel | TModelPrimaryKey,
+  newAssociation?: TModel | TModelPrimaryKey | { [key: string]: unknown },
   options?: HasManyAddAssociationMixinOptions
 ) => Promise<void>;
 
@@ -400,3 +400,11 @@ export interface HasManyCountAssociationsMixinOptions extends Transactionable, F
  * @see Instance
  */
 export type HasManyCountAssociationsMixin = (options?: HasManyCountAssociationsMixinOptions) => Promise<number>;
+
+/**
+ * Creates several targets at once (Sequelize 7: createTasks), linked to the instance.
+ */
+export type HasManyCreateAssociationsMixin<TModel extends Model> = (
+  records: Array<CreationAttributes<TModel> | { [key: string]: unknown }>,
+  options?: CreateOptions<any>
+) => Promise<TModel[]>;

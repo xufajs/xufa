@@ -1,5 +1,5 @@
 import { expectType, expectError } from 'tsd';
-import { Client, Pool, PoolClient, QueryResult, DatabaseError } from '../..';
+import { Client, Pool, PoolClient, QueryResult, DatabaseError, escapeLiteral } from '../..';
 
 async function main() {
   const client = new Client('postgres://user:password@localhost/app');
@@ -31,3 +31,42 @@ async function main() {
 }
 
 void main;
+
+// Credentials by functions, timeouts, escaping.
+const iam = new Client({
+  host: '/var/run/postgresql',
+  user: () => 'app',
+  password: async () => 'token',
+  connectionTimeoutMillis: 5000,
+  statement_timeout: 1000,
+});
+expectType<string>(iam.escapeIdentifier('t'));
+expectType<string>(escapeLiteral("it's"));
+expectError(new Client({ password: 42 }));
+
+// Explicit resource management.
+async function dispose(pool: Pool) {
+  const client = await pool.connect();
+  expectType<void>(client[Symbol.dispose]());
+  expectType<Promise<void>>(pool[Symbol.asyncDispose]());
+}
+void dispose;
+
+// Hosts, authentication, describing.
+async function features() {
+  const ha = new Pool({
+    host: ['db1', 'db2'],
+    port: [5432, 5433],
+    target_session_attrs: 'read-write',
+    load_balance_hosts: 'random',
+    require_auth: 'scram-sha-256',
+    channel_binding: 'require',
+    oauthBearerToken: async () => 'token',
+  });
+  const described = await ha.query({ text: 'SELECT $1::int', describe: true });
+  expectType<number[]>(described.params);
+  expectType<string>(described.fields[0].name);
+  expectError(new Client({ target_session_attrs: 'leader' }));
+  expectError(new Client({ channel_binding: 'always' }));
+}
+void features;

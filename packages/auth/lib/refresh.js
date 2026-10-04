@@ -88,9 +88,13 @@ function modelStore(Model) {
   };
 }
 
-// The fields of a model of refresh tokens for modelStore, made with the fields of @xufa/orm:
+// The fields of a model of refresh tokens for modelStore, made with the fields of @xufa/orm. A TTL index on expiresAt
+// deletes the tokens that expired (instead of refresh.prune()):
 //
-//   class RefreshToken extends Model { static fields = refreshTokenFields(fields); }
+//   class RefreshToken extends Model {
+//     static fields = refreshTokenFields(fields);
+//     static options = { indexes: [{ fields: ['expiresAt'], expireAfter: 0 }] };
+//   }
 function refreshTokenFields(fields) {
   return {
     id: fields.string({ primaryKey: true, maxLength: 32 }),
@@ -98,10 +102,10 @@ function refreshTokenFields(fields) {
     subject: fields.string({ maxLength: 255, index: true }),
     data: fields.json({ null: true }),
     hash: fields.string({ maxLength: 64 }),
-    createdAt: fields.bigint(),
-    expiresAt: fields.bigint({ index: true }),
-    usedAt: fields.bigint({ null: true }),
-    revokedAt: fields.bigint({ null: true }),
+    createdAt: fields.datetime(),
+    expiresAt: fields.datetime(),
+    usedAt: fields.datetime({ null: true }),
+    revokedAt: fields.datetime({ null: true }),
   };
 }
 

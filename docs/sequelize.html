@@ -52,6 +52,7 @@
           <li><a href="#supported">What there is</a></li>
           <li><a href="#postgres">PostgreSQL types</a></li>
           <li><a href="#typescript">TypeScript</a></li>
+          <li><a href="#sequelize7">From Sequelize 7</a></li>
           <li><a href="#differences">Differences</a></li>
           <li><a href="#checklist">Moving an app</a></li>
         </ul>
@@ -128,21 +129,23 @@ const books = await Book.findAll({
           Sequelize's own integration tests (its v6 branch) run against <code>@xufa/sequelize</code>, each file in a
           process of its own. The same harness runs them against Sequelize 6.37.8 itself, on the same databases, to tell
           the failures of the tests and of the environment from those of the package (the harness is
-          <a href="https://github.com/xufajs/xufa/tree/main/tools/sequelize-compat"><code>tools/sequelize-compat</code></a>):
+          <a href="https://github.com/xufajs/xufa/tree/main/tools/sequelize-compat"><code>tools/sequelize-compat</code></a>).
+          Counted on the tests both runs ran (a test that fails in a hook leaves the rest of its file out, and what a
+          dialect says it supports decides which tests run):
         </p>
         <div class="table-wrap">
           <table class="numbers">
-            <thead><tr><th>Database</th><th>@xufa/sequelize</th><th>Sequelize 6.37.8</th></tr></thead>
+            <thead><tr><th>Database (tests run by both)</th><th>@xufa/sequelize</th><th>Sequelize 6.37.8</th></tr></thead>
             <tbody>
-              <tr><td>SQLite</td><td>1,707 passed, 54 failed</td><td>1,737 passed, 5 failed</td></tr>
-              <tr><td>PostgreSQL 18 (PostGIS, hstore, btree_gist)</td><td>1,939 passed, 105 failed</td><td>1,968 passed, 39 failed</td></tr>
+              <tr><td>SQLite (1,739)</td><td>1,709 passed, 30 failed</td><td>1,735 passed, 4 failed</td></tr>
+              <tr><td>PostgreSQL 18, with PostGIS, hstore and btree_gist (2,004)</td><td>1,947 passed, 57 failed</td><td>1,966 passed, 38 failed</td></tr>
             </tbody>
           </table>
         </div>
         <p>
           What fails here and passes in Sequelize checks Sequelize's internals (the parsers of its data types, its
           connection manager and query generator), the exact SQL text it writes, or the <a href="#differences">differences</a>
-          below, by design. None of it is behavior an application sees.
+          below, by design; 3 (SQLite) and 8 (PostgreSQL) fail on Sequelize too.
         </p>
 
         <h2 id="supported">What there is</h2>
@@ -255,9 +258,62 @@ const ada = await User.create({ name: 'Ada' }); // id is optional</code></pre>
           <code>import { Sequelize, DataTypes, Op } from '@xufa/sequelize'</code>.
         </p>
 
+        <h2 id="sequelize7">From Sequelize 7</h2>
+        <p>
+          The API is Sequelize 6's: code written for it runs as it is. What Sequelize 7 improves is taken where it does
+          not change what code for Sequelize 6 does:
+        </p>
+        <ul>
+          <li>
+            <code>queryInterface.changeColumns(table, { column: definition })</code>: several columns in one
+            <code>ALTER TABLE</code>, changing only what each definition gives (<code>dropDefaultValue: true</code> drops a
+            default). In PostgreSQL an <code>ENUM</code> keeps its type, which gets the values it lacks or is made again
+            when values are left out; a text column can become an enum. <code>changeColumn</code> stays as in Sequelize 6.
+          </li>
+          <li>
+            JSON paths in conditions: keys in double quotes (<code>'data."a.b"'</code>), keys named as operators
+            (<code>{ data: { in: 1 } }</code>), indexes up to 2^31 - 1 and checked casts.
+          </li>
+          <li>Attribute names with any character (<code>first-name</code>, <code>a b</code>, <code>café</code>) in conditions and orders.</li>
+          <li>
+            Attributes computed by the database: <code>DataTypes.VIRTUAL(type, (includeAs) =&gt; [literal(...), 'name'])</code>,
+            selected when it is in <code>attributes</code> (of the find or of an include), <code>includeAs</code> naming the table
+            of its model in the query.
+          </li>
+          <li>
+            Runtime attributes: with <code>enableRuntimeAttributes: true</code>, the values selected with names of their own
+            (<code>[literal('...'), 'score']</code>) are properties of the instances (<code>user.score</code>).
+          </li>
+          <li>
+            <code>build(saved.toJSON(), { isNewRecord: false })</code> keeps the timestamps; <code>toJSON()</code> keeps the
+            order of the attributes for virtual ones.
+          </li>
+          <li>BIGINT values as bigints: <code>new Sequelize(url, { bigint: 'bigint' })</code>.</li>
+          <li><code>Model.findByPks(keys)</code>: several primary keys in one query.</li>
+          <li><code>sync()</code> makes the schemas that are not there.</li>
+          <li><code>DataTypes.UUIDV7</code>: UUIDs of version 7, in the order they are made.</li>
+          <li><code>noWait</code> with <code>lock</code>: an error at once on rows locked by others (PostgreSQL).</li>
+          <li>
+            <code>onConflictUpdateWhere</code>, <code>[attribute, value]</code> pairs in <code>updateOnDuplicate</code> (in
+            includes too), and <code>upsert(values, { updateValues })</code>: counters and conditions in ON CONFLICT.
+          </li>
+          <li>Named enums of PostgreSQL: <code>DataTypes.ENUM({ values, name, schema })</code>, one type for many columns.</li>
+          <li>Indexes of foreign keys, when asked: <code>indexForeignKeys: true</code>, or <code>foreignKey: { index }</code>.</li>
+          <li>STRICT tables of SQLite: <code>{ strict: true }</code>.</li>
+          <li>Generated columns: <code>generatedAs</code> and <code>generatedColumn</code> (STORED or VIRTUAL).</li>
+          <li>Instances of classes as values (their getters).</li>
+          <li>Plain objects in <code>set</code>/<code>add</code> of associations are created; <code>createTasks(records)</code> creates several.</li>
+          <li><code>Model.update(values, { include })</code>: the rows whose includes are there.</li>
+          <li><code>showIndexes()</code>, as Sequelize 7: the name, order and collation of every field, and <code>method</code> and <code>includes</code> in PostgreSQL. <code>showIndex()</code> stays as in Sequelize 6.</li>
+        </ul>
+
         <h2 id="differences">Differences</h2>
         <ul>
-          <li><code>BIGINT</code> values are numbers when they are safe integers (bigints otherwise), not strings.</li>
+          <li>
+            <code>BIGINT</code> values are numbers when they are safe integers (bigints otherwise), not strings; the option
+            <code>bigint</code> of the Sequelize instance gives them as bigints (<code>'bigint'</code>) or strings
+            (<code>'string'</code>, as Sequelize 6 in PostgreSQL), <code>BIGINT</code> keys and the foreign keys to them too.
+          </li>
           <li><code>NULL</code>s sort first in ascending order and last in descending order, in every database.</li>
           <li>
             <code>hasMany</code>, <code>hasOne</code> and <code>belongsToMany</code> includes are loaded with queries of their

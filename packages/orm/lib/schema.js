@@ -67,11 +67,14 @@ function specOf(meta) {
     const spec = { name: index.name || indexName(meta.table, names, unique), columns: names, unique };
     // condition: the SQL of the rows of a partial index (SQL backends).
     if (index.condition) spec.condition = index.condition;
+    // expireAfter: a TTL index (seconds after the date of its field): native in MongoDB, swept by db.expire() in all.
+    if (index.expireAfter !== undefined) spec.expireAfter = index.expireAfter;
     indexes.push(spec);
   });
   const spec = { table: meta.table, model: meta.name, fillfactor: meta.fillfactor || null, columns, indexes };
-  // The schema, when the table has one (specs of tables without one stay as they were).
+  // The schema, when the table has one (specs of tables without one stay as they were); and STRICT (SQLite).
   if (meta.schema) spec.schema = meta.schema;
+  if (meta.strict) spec.strict = true;
   return spec;
 }
 

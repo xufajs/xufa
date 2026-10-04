@@ -10,6 +10,7 @@ const modelCache = require('./model-cache');
 const { currentDatabase } = require('./context');
 const { ForeignKey } = require('./fields');
 const { ValidationError, NotRegisteredError, ModelError, FieldError, QueryError } = require('./errors');
+const { uniqueErrorOf } = require('./errors');
 
 const META = Symbol('xufa.orm.meta');
 
@@ -232,7 +233,9 @@ class Model {
     this.prepareSave(created);
     if (validate) this.validate();
     if (created) {
-      const [pk] = await database.backend.insert(meta, [this.toRow()]);
+      const [pk] = await database.backend
+        .insert(meta, [this.toRow()])
+        .catch((err) => Promise.reject(uniqueErrorOf(meta, err) || err));
       // A composite key is given (the database makes none); a model without a key has none.
       if (meta.pk && !meta.pk.composite) this[meta.pk.attname] = pk;
       state.adding = false;
@@ -244,7 +247,9 @@ class Model {
       }
       const assignments = saved.map((field) => ({ field, value: this[field.attname] }));
       if (assignments.length) {
-        await database.backend.update(model.objects.using(db).filter({ pk: this.pk }).orderBy().toQuery(), assignments);
+        await database.backend
+          .update(model.objects.using(db).filter({ pk: this.pk }).orderBy().toQuery(), assignments)
+          .catch((err) => Promise.reject(uniqueErrorOf(meta, err) || err));
       }
     }
     state.db = db || state.db;

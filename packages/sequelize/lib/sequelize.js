@@ -74,6 +74,73 @@ function removeHookFrom(store, type, nameOrFn) {
   store.hooks[type] = hooksOf(store, type).filter((hook) => hook.name !== nameOrFn && hook.fn !== nameOrFn);
 }
 
+// The settings of the connections of PostgreSQL, as Sequelize gives them to pg: those of dialectOptions it takes
+// (ssl, application_name, the timeouts, options...), ssl of the options, and client_min_messages (warning by
+// default; clientMinMessages of the options or of dialectOptions, false or 'IGNORE' to leave the server's).
+const PG_DIALECT_OPTIONS = [
+  'application_name',
+  'ssl',
+  'client_encoding',
+  'binary',
+  'keepAlive',
+  'keepAliveInitialDelayMillis',
+  'statement_timeout',
+  'query_timeout',
+  'connectionTimeoutMillis',
+  'idle_in_transaction_session_timeout',
+  'lock_timeout',
+  'options',
+  'stream',
+];
+function pgDialectOptions(options) {
+  const dialectOptions = options.dialectOptions || {};
+  const result = {};
+  PG_DIALECT_OPTIONS.forEach((name) => {
+    if (dialectOptions[name] !== undefined) result[name] = dialectOptions[name];
+  });
+  if (result.ssl === undefined && options.ssl !== undefined) result.ssl = options.ssl;
+  let level = options.clientMinMessages;
+  if (level === undefined) level = dialectOptions.clientMinMessages;
+  if (level === undefined) level = 'warning';
+  if (level !== false && String(level).toUpperCase() !== 'IGNORE') {
+    const setting = `-c client_min_messages=${String(level).toLowerCase()}`;
+    result.options = result.options ? `${result.options} ${setting}` : setting;
+  }
+  return result;
+}
+
+// The numbers of a pool of @xufa/pg as those of sequelize-pool (connectionManager.pool.size...).
+function poolNumbers(pool) {
+  return {
+    get size() {
+      return pool.totalCount;
+    },
+    get available() {
+      return pool.idleCount;
+    },
+    get using() {
+      return pool.totalCount - pool.idleCount;
+    },
+    get waiting() {
+      return pool.waitingCount;
+    },
+    get maxSize() {
+      return pool.max;
+    },
+  };
+}
+
+// The errors of connections by their cause, as Sequelize gives them.
+const CONNECTION_ERRORS = {
+  ECONNREFUSED: errors.ConnectionRefusedError,
+  ENOTFOUND: errors.HostNotFoundError,
+  EAI_AGAIN: errors.HostNotFoundError,
+  EHOSTUNREACH: errors.HostNotReachableError,
+  ENETUNREACH: errors.HostNotReachableError,
+  EINVAL: errors.InvalidConnectionError,
+  ETIMEDOUT: errors.ConnectionTimedOutError,
+};
+
 class Sequelize {
   constructor(...args) {
     const options = parseArguments(args);
@@ -94,8 +161,17 @@ class Sequelize {
       hooks: {},
     };
     this.config = config;
+    // How BIGINT values are given: numbers while they are safe integers (bigints beyond), bigints, or strings (as
+    // Sequelize 6 gives them in PostgreSQL).
+    if (this.options.bigint !== undefined && !['number', 'bigint', 'string'].includes(this.options.bigint)) {
+      throw new errors.BaseError(`The bigint option is number, bigint or string (not ${this.options.bigint})`);
+    }
     const dialect = DIALECTS[this.options.dialect];
-    if (!dialect) throw new errors.BaseError(`The dialect ${this.options.dialect} is not supported by @xufa/sequelize`);
+    if (!dialect) {
+      throw new errors.BaseError(
+        `The dialect ${this.options.dialect} is not supported. Supported dialects: postgres and sqlite (by @xufa/sequelize).`
+      );
+    }
     this.dialectName = dialect;
     // What the dialect is and supports, as Sequelize tells it (sequelize.dialect.supports).
     this.dialect = { ...(DIALECT_INFO[dialect] || { name: dialect, supports: {} }) };
@@ -130,6 +206,8 @@ class Sequelize {
     this.xufaPending = false;
     this.xufaConnecting = null;
     this.installLogging();
+    this.installReplication();
+    this.installPoolHooks();
     Sequelize.xufaRunSync('afterInit', this);
   }
 
@@ -195,20 +273,124 @@ class Sequelize {
     const { options, config } = this;
     if (dialect === 'sqlite') return { filename: options.storage || ':memory:' };
     if (dialect === 'postgres') {
-      const pool = options.pool || {};
-      if (options.url) return { url: options.url, max: pool.max || 10 };
-      // The settings as they are (a wrong one fails when connecting, as in Sequelize).
-      return {
-        host: config.host,
-        port: config.port || 5432,
-        user: config.username,
-        password: config.password,
-        database: config.database,
-        max: pool.max || 10,
-      };
+      // replication (as Sequelize): the primary (write) is the database of @xufa/orm; the replicas (read) are pools of
+      // their own (see installReplication).
+      const { replication } = options;
+      if (replication && replication.write) return this.pgServerOptions(replication.write);
+      return this.pgServerOptions({});
     }
     if (dialect === 'mongodb') return { url: options.url, database: config.database };
     return {};
+  }
+
+  // beforePoolAcquire(config) and afterPoolAcquire(connection, config), as Sequelize runs them (PostgreSQL): around
+  // what takes the pool, each query (whose connection is the pool's to choose: the pool is given) and each connection
+  // of transactions. Nothing is run when there are no such hooks.
+  installPoolHooks() {
+    const { pool } = this.xufaDb.backend;
+    if (!pool || typeof pool.query !== 'function' || typeof pool.connect !== 'function') return;
+    const query = pool.query.bind(pool);
+    const connect = pool.connect.bind(pool);
+    const around = async (acquire) => {
+      if (this.hasHook('beforePoolAcquire')) await this.runHooks('beforePoolAcquire', this.config);
+      const taken = await acquire();
+      if (this.hasHook('afterPoolAcquire')) await this.runHooks('afterPoolAcquire', taken, this.config);
+      return taken;
+    };
+    pool.query = (...args) => {
+      if (!this.hasHook('beforePoolAcquire') && !this.hasHook('afterPoolAcquire')) return query(...args);
+      return around(async () => pool).then(() => query(...args));
+    };
+    pool.connect = () => {
+      if (!this.hasHook('beforePoolAcquire') && !this.hasHook('afterPoolAcquire')) return connect();
+      return around(connect);
+    };
+  }
+
+  // The settings of a server of PostgreSQL: those of the instance, with those given over them (the servers of
+  // replication: host, port, username, password, database).
+  pgServerOptions(server) {
+    const { options, config } = this;
+    const pool = options.pool || {};
+    const connection = { ...pgDialectOptions(options), max: pool.max || 10 };
+    if (pool.idle !== undefined) connection.idleTimeoutMillis = pool.idle;
+    if (options.url && !server.host) {
+      // The options of the connection string (?options=-c...) go with those made here (client_min_messages).
+      let given = null;
+      try {
+        given = new URL(options.url).searchParams.get('options');
+      } catch {
+        // not a URL there
+      }
+      if (given && connection.options) connection.options = `${given} ${connection.options}`;
+      return { url: options.url, ...connection };
+    }
+    // The settings as they are (a wrong one fails when connecting, as in Sequelize).
+    return {
+      host: server.host || config.host,
+      port: server.port || config.port || 5432,
+      user: server.username || config.username,
+      password: server.password !== undefined ? server.password : config.password,
+      database: server.database || config.database,
+      ...connection,
+    };
+  }
+
+  // replication: { write, read: [...] } (PostgreSQL), as Sequelize: what reads (finds, counts, aggregates, queries of
+  // type SELECT; not with useMaster) runs on the replicas, in turn, and read-only transactions too; the rest on the
+  // primary. The pools are chosen by connectionManager.pool.read.acquire() and .write.acquire().
+  installReplication() {
+    this.xufaReplica = new AsyncLocalStorage();
+    const { replication } = this.options;
+    const { pool } = this.xufaDb.backend;
+    const reads = replication && Array.isArray(replication.read) ? replication.read : [];
+    if (this.dialectName !== 'postgres' || !pool || reads.length === 0) {
+      // The numbers of the pool, as sequelize-pool gives them (size, available, using, waiting).
+      this.xufaConnectionManager =
+        pool && pool.totalCount !== undefined ? { ...CONNECTION_MANAGER, pool: poolNumbers(pool) } : CONNECTION_MANAGER;
+      return;
+    }
+    // Pools of the class of the pool of the primary (that of @xufa/pg).
+    const Pool = pool.constructor;
+    this.xufaReadPools = reads.map((server) => {
+      const { url, ...settings } = this.pgServerOptions(server);
+      return new Pool(url ? { connectionString: url, ...settings } : settings);
+    });
+    const query = pool.query.bind(pool);
+    const connect = pool.connect.bind(pool);
+    const write = { query, connect };
+    let next = 0;
+    const manager = {
+      ...CONNECTION_MANAGER,
+      pool: {
+        read: {
+          acquire: () => {
+            const chosen = this.xufaReadPools[next % this.xufaReadPools.length];
+            next += 1;
+            return chosen;
+          },
+        },
+        write: { acquire: () => write },
+      },
+    };
+    this.xufaConnectionManager = manager;
+    const target = () => (this.xufaReplica.getStore() === 'read' ? manager.pool.read : manager.pool.write).acquire();
+    pool.query = (...args) => target().query(...args);
+    pool.connect = () => target().connect();
+  }
+
+  // With replication: a read-only transaction on a replica, the others on the primary (savepoints where they are).
+  xufaReplicaOf(transaction, fn) {
+    if (!this.xufaReadPools || transaction.options.transaction) return fn();
+    return this.xufaReplica.run(transaction.options.readOnly ? 'read' : 'write', fn);
+  }
+
+  // Runs what reads on the replicas (with replication, unless useMaster).
+  xufaReading(options, fn) {
+    if (!this.xufaReadPools || (options && (options.useMaster || options.transaction)) || this.xufaReplica.getStore()) {
+      return fn();
+    }
+    return this.xufaReplica.run('read', fn);
   }
 
   // The SQL run is given to options.logging (console.log by default, as in Sequelize; false for none).
@@ -306,7 +488,11 @@ class Sequelize {
         this.xufaConnecting = null;
         // As Sequelize words the errors of SQLite: SQLITE_CANTOPEN: ...
         if (err && err.errcode === 14 && !/^SQLITE_/.test(err.message)) err.message = `SQLITE_CANTOPEN: ${err.message}`;
-        throw new errors.ConnectionError(err);
+        // The error of its cause (ECONNREFUSED: ConnectionRefusedError...), or a ConnectionError.
+        let code;
+        for (let item = err; item && !code; item = item.cause) code = item.code;
+        const ByCause = CONNECTION_ERRORS[code] || errors.ConnectionError;
+        throw new ByCause(err);
       });
     }
     await this.xufaConnecting;
@@ -318,6 +504,15 @@ class Sequelize {
     seen.add(model);
     model.xufaBuilt = false;
     this.xufaPending = true;
+    // A model and its copies in schemas have the same attributes: they are built again together.
+    const base = model.xufaBase || model;
+    [
+      base,
+      ...(base.xufaCopies ? base.xufaCopies.values() : []),
+      ...(base.xufaSyncCopies ? base.xufaSyncCopies.values() : []),
+    ]
+      .filter((member) => member.xufaBuilt)
+      .forEach((member) => this.xufaRebuild(member, seen));
     this.modelManager.models.forEach((other) => {
       if (!other.xufaBuilt) return;
       const points = [...other.xufaForeignKeys.values()].some((key) => key.target === model);
@@ -332,10 +527,16 @@ class Sequelize {
     const add = (model) => {
       if (!model || model.xufaBuilt || models.includes(model)) return;
       models.push(model);
-      model.xufaForeignKeys.forEach((key) => add(key.target));
     };
     // Scoped models are their base; copies in other schemas are models of their own.
-    add(extra && (extra.xufaCopy ? extra : extra.xufaBase || extra));
+    // (a scoped model is the model it scopes, a copy in a schema too).
+    const unscoped = extra && Object.hasOwn(extra, 'xufaIsScoped') ? extra.xufaBase : extra;
+    add(unscoped && (unscoped.xufaCopy ? unscoped : unscoped.xufaBase || unscoped));
+    // The models the keys of each one point to (copies in schemas too), built when they are not.
+    for (let i = 0; i < models.length; i += 1) {
+      const model = models[i];
+      model.xufaForeignKeys.forEach((key) => add(model.xufaTargetOf(key)));
+    }
     if (models.length === 0) return;
     models.forEach((model) => model.xufaBuild());
     // In the order they were defined: a model defined again (with the name of one before) replaces it.
@@ -352,11 +553,6 @@ class Sequelize {
       this.xufaDb.register(model.xufa);
     });
     models.forEach((model) => model.xufaPrepare());
-  }
-
-  // As Sequelize: validate() is authenticate().
-  validate(options) {
-    return this.authenticate(options);
   }
 
   async authenticate() {
@@ -402,6 +598,8 @@ class Sequelize {
     // The hooks of each model (beforeSync, afterSync) around the tables made.
     const hooks = options.hooks !== false;
     if (hooks) for (const model of models) if (model.hasHook('beforeSync')) await model.runHooks('beforeSync', options);
+    // As Sequelize 7: the schemas of the tables are made when they are not there (their enum types are made in them).
+    await this.xufaDb.backend.ensureSchemas(metas);
     for (const model of models) await model.xufaCreateEnums();
     await this.xufaDb.backend.createSchema(metas);
     // The comments of the columns (PostgreSQL).
@@ -455,6 +653,7 @@ class Sequelize {
       await this.xufaConnecting.catch(() => {});
       await this.xufaDb.close();
     }
+    if (this.xufaReadPools) await Promise.all(this.xufaReadPools.map((pool) => pool.end().catch(() => {})));
     this.xufaConnecting = null;
     this.xufaIsReady = false;
   }
@@ -516,19 +715,21 @@ class Sequelize {
       // the context of the callback.
       const result = await Sequelize._clsRun(() =>
         this.xufaRun(options, () =>
-          this.xufaDb.transaction(
-            async () => {
-              transaction.xufaStore = backend.context.getStore();
-              if (Sequelize._cls) Sequelize._cls.set('transaction', transaction);
-              await transaction.xufaDefer();
-              try {
-                return await fn(transaction);
-              } catch (err) {
-                transaction.finished = 'rollback';
-                throw err;
-              }
-            },
-            { mode: transaction.options.type }
+          this.xufaReplicaOf(transaction, () =>
+            this.xufaDb.transaction(
+              async () => {
+                transaction.xufaStore = backend.context.getStore();
+                if (Sequelize._cls) Sequelize._cls.set('transaction', transaction);
+                await transaction.xufaDefer();
+                try {
+                  return await fn(transaction);
+                } catch (err) {
+                  transaction.finished = 'rollback';
+                  throw err;
+                }
+              },
+              { mode: transaction.options.type }
+            )
           )
         )
       );
@@ -621,6 +822,8 @@ class Sequelize {
   // The errors of the database (and of @xufa/orm) as those of Sequelize.
   xufaError(err) {
     if (err instanceof errors.BaseError) return err;
+    // A UniqueError of the ORM: the error of the database, which says the columns and values as Sequelize reads them.
+    if (err && err.code === 'XUFA_ORM_ERR_UNIQUE' && err.cause) err = err.cause;
     if (err && err.code === 'XUFA_ORM_ERR_VALIDATION') {
       const items = Object.entries(err.errors || {}).flatMap(([path, messages]) =>
         messages.map((message) => new errors.ValidationErrorItem(message, 'Validation error', path))
@@ -679,16 +882,29 @@ class Sequelize {
       sqliteCode === 787 ||
       (sqliteCode !== undefined && /FOREIGN KEY constraint failed/.test(message))
     ) {
+      // PostgreSQL names the columns and values in the detail, in any language: Key (a, b)=(1, 2) ... The reltype
+      // (child: a row that references one missing; parent: a row still referenced) only from English messages.
+      const key = /\(([^)]*)\)=\((.*)\)/.exec(err.detail || '');
+      let reltype;
+      if (/^insert or update on table/.test(message)) reltype = 'child';
+      else if (/^update or delete on table/.test(message)) reltype = 'parent';
       return new errors.ForeignKeyConstraintError({
         parent: err,
         table: err.table,
-        fields: err.column ? [err.column] : undefined,
+        fields: key
+          ? key[1].split(', ').map((name) => name.replace(/^"|"$/g, ''))
+          : err.column
+            ? [err.column]
+            : undefined,
+        value: key ? key[2].split(', ') : undefined,
+        reltype,
         index: err.constraint,
       });
     }
     if (err.code === '23P01') return new errors.ExclusionConstraintError({ parent: err });
     if (err.code === '57014') return new errors.TimeoutError(err);
-    if (err.code === 'ECONNREFUSED' || err.code === 'ENOTFOUND') return new errors.ConnectionError(err);
+    const connection = CONNECTION_ERRORS[err.code || (err.cause && err.cause.code)];
+    if (connection) return new connection(err); // eslint-disable-line new-cap
     if (err.code || sqliteCode !== undefined || err.severity) return new errors.DatabaseError(err);
     return err;
   }
@@ -696,6 +912,10 @@ class Sequelize {
   // Raw SQL: replacements (? or :name, written as parameters) or bind ($1 or $name). The type says what is given:
   // SELECT gives the rows (instances of options.model with mapToModel), RAW (by default) [rows, metadata].
   async query(sql, options = {}) {
+    // Queries of type SELECT read (on a replica, with replication).
+    if (this.xufaReadPools && options && options.type === 'SELECT' && !this.xufaReplica.getStore()) {
+      return this.xufaReading(options, () => this.query(sql, options));
+    }
     options = Sequelize.xufaWithCLS(options);
     await this.xufaReady();
     const { backend } = this.xufaDb;
@@ -793,10 +1013,15 @@ class Sequelize {
 
   // The parsers of types of Sequelize's connection managers: @xufa/orm reads the values of every type itself, so there
   // are none to refresh or clear (tests and code that reset them run).
-  refreshTypes() {}
+  // As Sequelize: the parse and stringify functions given to the DataTypes are taken (the parse functions of types the
+  // dialect cannot parse are an error).
+  refreshTypes() {
+    require('./data-types').checkParsers(this.dialectName); // eslint-disable-line global-require
+    this.xufaTypesVersion = (this.xufaTypesVersion || 0) + 1;
+  }
 
   get connectionManager() {
-    return CONNECTION_MANAGER;
+    return this.xufaConnectionManager || CONNECTION_MANAGER;
   }
 
   getQueryInterface() {
@@ -947,6 +1172,7 @@ const Utils = {
     if (typeof value === 'function' && !value.kind) return value();
     const type = value && (typeof value === 'function' ? value.key : value.key);
     if (type === 'UUIDV1' || type === 'UUIDV4') return require('node:crypto').randomUUID(); // eslint-disable-line global-require
+    if (type === 'UUIDV7') return require('./data-types').uuidv7(); // eslint-disable-line global-require
     if (type === 'NOW') return Utils.now(dialect);
     if (Array.isArray(value)) return value.slice();
     if (isPlainObject(value)) return { ...value };
@@ -956,7 +1182,7 @@ const Utils = {
   defaultValueSchemable(value) {
     if (value === undefined) return false;
     const type = value && value.key;
-    if (type === 'NOW' || type === 'UUIDV1' || type === 'UUIDV4') return false;
+    if (type === 'NOW' || type === 'UUIDV1' || type === 'UUIDV4' || type === 'UUIDV7') return false;
     return typeof value !== 'function';
   },
   stack() {
@@ -1148,5 +1374,8 @@ Sequelize.prototype.Op = Op;
 Sequelize.prototype.Validator = Validator;
 Sequelize.prototype.QueryTypes = QueryTypes;
 Sequelize.prototype.DataTypes = DataTypes;
+
+// As Sequelize: validate is authenticate (the same function).
+Sequelize.prototype.validate = Sequelize.prototype.authenticate;
 
 module.exports = { Sequelize };

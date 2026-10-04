@@ -104,7 +104,7 @@ MyModel.findAll({
     or({ id: 1 }, { id: 2 }),
     and({ id: 1 }, { id: 2 }),
     Sequelize.where(Sequelize.col('col'), Op.eq, null),
-    Sequelize.literal('1 = 2'),
+    Sequelize.literal('1 = 2')
   ),
 });
 
@@ -114,7 +114,7 @@ MyModel.findAll({
     or({ id: 1 }, { id: 2 }),
     and({ id: 1 }, { id: 2 }),
     Sequelize.where(Sequelize.col('col'), Op.eq, null),
-    Sequelize.literal('1 = 2'),
+    Sequelize.literal('1 = 2')
   ),
 });
 

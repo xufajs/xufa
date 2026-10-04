@@ -68,4 +68,27 @@ describe('plugin', () => {
     app.register(plugin, {});
     await expect(app.ready()).rejects.toThrow('needs a database');
   });
+
+  it('deletes the objects of TTL indexes that expired while the app runs', async () => {
+    class Ping extends Model {
+      static fields = { at: fields.datetime() };
+
+      static options = { indexes: [{ fields: ['at'], expireAfter: 60 }] };
+    }
+    const db = new Database({ backend: 'memory' }).register(Ping);
+    const app = xufa();
+    app.register(plugin, { database: db, sync: true, expire: { interval: 0.02 } });
+    await app.ready();
+    expect(db.expiryTimer).not.toBe(null);
+    await Ping.objects.create({ at: new Date(Date.now() - 120 * 1000) });
+    await Ping.objects.create({ at: new Date() });
+    for (let i = 0; i < 50 && (await Ping.objects.count()) > 1; i += 1) {
+      await new Promise((resolve) => {
+        setTimeout(resolve, 20);
+      });
+    }
+    expect(await Ping.objects.count()).toBe(1);
+    await app.close();
+    expect(db.expiryTimer).toBe(null);
+  });
 });

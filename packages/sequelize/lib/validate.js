@@ -188,7 +188,7 @@ function validateInstance(instance, options = {}) {
     )
       continue;
     if (value === null || value === undefined) {
-      const generated = attribute.autoIncrement || attribute.xufaGenerated;
+      const generated = attribute.autoIncrement || attribute.xufaGenerated || attribute.generatedAs !== undefined;
       if (attribute.allowNull === false && !generated) {
         errors.push(
           new ValidationErrorItem(

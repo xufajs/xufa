@@ -1,7 +1,8 @@
 // The tests every backend passes: the same models and queries give the same results on all of them. Each test file
 // of a backend calls defineSuite with a function that makes a Database of it.
 const { Model, fields, Q, or, not, F, Raw, Count, Sum, Avg, Min, Max, ValidationError, NotFoundError } = require('..');
-const { MultipleObjectsError, ProtectedError, QueryError, FieldError, LookupError } = require('..');
+const { MultipleObjectsError, ProtectedError, QueryError, FieldError, LookupError, UniqueError } = require('..');
+const { setEncryptionKeys, generateEncryptionKey, reencrypt, jsonPath } = require('..');
 
 function defineModels() {
   class Publisher extends Model {
@@ -84,7 +85,25 @@ function defineModels() {
     static fields = { name: fields.string(), data: fields.json({ null: true }) };
   }
 
-  return { Publisher, Author, Book, Review, Category, Tag, Ledger, Country, City, Document };
+  // Integers of 64 bits in each mode.
+  class Tally extends Model {
+    static fields = {
+      auto: fields.bigint({ null: true }),
+      big: fields.bigint({ mode: 'bigint', null: true }),
+      text: fields.bigint({ mode: 'string', null: true }),
+    };
+  }
+
+  // Names with the separator of paths (a__b), next to a json field whose path could read the same.
+  class Spaced extends Model {
+    static fields = {
+      a__b: fields.string({ null: true }),
+      a: fields.json({ null: true }),
+      n__count: fields.integer({ default: 0 }),
+    };
+  }
+
+  return { Publisher, Author, Book, Review, Category, Tag, Ledger, Country, City, Document, Tally, Spaced };
 }
 
 function defineSuite(name, makeDatabase) {
@@ -237,9 +256,20 @@ function defineSuite(name, makeDatabase) {
 
       it('enforces unique fields', async () => {
         const { Publisher } = models;
-        await Publisher.objects.create({ name: 'Unique' });
-        await expect(Publisher.objects.create({ name: 'Unique' })).rejects.toThrow();
+        const first = await Publisher.objects.create({ name: 'Unique' });
+        const err = await Publisher.objects.create({ name: 'Unique' }).catch((e) => e);
+        expect(err).toBeInstanceOf(UniqueError);
+        expect(err).toMatchObject({ statusCode: 409, model: 'Publisher', fields: ['name'] });
+        expect(err.message).toBe('There is already a Publisher with this name');
         expect(await Publisher.objects.filter({ name: 'Unique' }).count()).toBe(1);
+        // Updates and saves too, and duplicate primary keys.
+        const other = await Publisher.objects.create({ name: 'Other' });
+        const updated = await Publisher.objects.filter({ pk: other.pk }).update({ name: 'Unique' }).catch((e) => e);
+        expect(updated).toMatchObject({ code: 'XUFA_ORM_ERR_UNIQUE', fields: ['name'] });
+        other.name = 'Unique';
+        expect((await other.save().catch((e) => e)).fields).toEqual(['name']);
+        const twin = await Publisher.objects.bulkCreate([{ id: first.pk, name: 'Twin' }]).catch((e) => e);
+        expect(twin).toBeInstanceOf(UniqueError);
       });
 
       it('deletes objects', async () => {
@@ -348,6 +378,69 @@ function defineSuite(name, makeDatabase) {
           { name: 'a', data__owner: { name: 'Ada', age: 36 }, data__owner__age: 36, data__tags: ['x', 'y'] },
           { name: 'c', data__owner: { name: 'Grace' }, data__owner__age: null, data__tags: null },
         ]);
+      });
+
+      it('reads paths by the longest names of fields (a__b)', async () => {
+        const { Spaced } = models;
+        await Spaced.objects.bulkCreate([
+          { a__b: 'v', a: { b: 'json' }, n__count: 3 },
+          { a__b: 'w', a: { b: 'v' }, n__count: 5 },
+        ]);
+        const names = async (where) => (await Spaced.objects.filter(where).orderBy('a__b')).map((row) => row.a__b);
+        expect(await names({ a__b: 'v' })).toEqual(['v']);
+        expect(await names({ a__b__startswith: 'w' })).toEqual(['w']);
+        expect(await names({ n__count__gt: 4 })).toEqual(['w']);
+        expect(await names(jsonPath('a', ['b'], 'v'))).toEqual(['w']);
+        expect((await Spaced.objects.orderBy('-n__count')).map((row) => row.a__b)).toEqual(['w', 'v']);
+        expect(await Spaced.objects.orderBy('a__b').values('a__b', 'n__count')).toEqual([
+          { a__b: 'v', n__count: 3 },
+          { a__b: 'w', n__count: 5 },
+        ]);
+        const [made, created] = await Spaced.objects.getOrCreate({ a__b: 'x' }, { n__count: 1 });
+        expect([made.a__b, made.n__count, created]).toEqual(['x', 1, true]);
+        expect(await Spaced.objects.filter({ a__b: 'w' }).update({ n__count: 9 })).toBe(1);
+      });
+
+      it('gives bigints in the mode of their field', async () => {
+        const { Tally } = models;
+        const huge = '9007199254740993';
+        await Tally.objects.bulkCreate([{ auto: 5, big: 5, text: 5 }, { auto: huge, big: huge, text: huge }]);
+        const rows = await Tally.objects.orderBy('pk');
+        expect(rows.map((row) => [row.auto, row.big, row.text])).toEqual([
+          [5, 5n, '5'],
+          [BigInt(huge), BigInt(huge), huge],
+        ]);
+        expect(await Tally.objects.filter({ text: huge, big__gt: 6 }).count()).toBe(1);
+        expect(await Tally.objects.orderBy('pk').values('big', 'text')).toEqual([
+          { big: 5n, text: '5' },
+          { big: BigInt(huge), text: huge },
+        ]);
+        expect(() => fields.bigint({ mode: 'text' })).toThrow('The mode of a bigint is one of');
+        expect(() => fields.id({ mode: 'text' })).toThrow('The mode of a key is one of');
+      });
+
+      it('filters by paths given as lists of keys (jsonPath)', async () => {
+        const { Document } = models;
+        await Document.objects.bulkCreate([
+          { name: 'a', data: { in: 1, a__b: 2, gt: { x: 'y' }, list: [10, 20], "it's": true } },
+          { name: 'b', data: { a: { b: 2 }, in: 5, list: [30] } },
+        ]);
+        const names = async (where) => (await Document.objects.filter(where).orderBy('name')).map((doc) => doc.name);
+        expect(await names(jsonPath('data', ['in'], 1))).toEqual(['a']);
+        expect(await names(jsonPath('data', ['in'], 2, 'gte'))).toEqual(['b']);
+        expect(await names(jsonPath('data', ['a__b'], 2))).toEqual(['a']);
+        expect(await names({ data__a__b: 2 })).toEqual(['b']);
+        expect(await names(jsonPath('data', ['gt', 'x'], 'y'))).toEqual(['a']);
+        expect(await names(jsonPath('data', ['list', 1], 20))).toEqual(['a']);
+        expect(await names(jsonPath('data', ["it's"], true))).toEqual(['a']);
+        expect(await names(jsonPath('data', ['gt'], true, 'isnull'))).toEqual(['b']);
+        expect(await Document.objects.exclude(jsonPath('data', ['in'], 1)).filter({ name__in: ['a', 'b'] }).count()).toBe(1);
+        expect(() => jsonPath('data', ['list', 2 ** 31], 1)).toThrow(QueryError);
+        expect(() => jsonPath('data', [], 1)).toThrow(QueryError);
+        expect(() => Document.objects.filter(jsonPath('name', ['x'], 1))).toThrow('is not a json field');
+        const dotted = Document.objects.filter(jsonPath('data', ['x.y'], 1)).count();
+        if (name === 'mongodb') await expect(dotted).rejects.toThrow(QueryError);
+        else expect(await dotted).toBe(0);
       });
     });
 
@@ -1599,6 +1692,283 @@ function defineSuite(name, makeDatabase) {
       // A text that is no number is still refused.
       await expect(Period.objects.create({ label: 'bad', ratio: 'abc' })).rejects.toThrow('must be a number');
       await Period.objects.delete();
+    });
+  });
+
+  // TTL indexes: objects that expire some time after the date of a field (native in MongoDB; db.expire() deletes them
+  // in every backend).
+  describe(`${name} backend: TTL indexes`, () => {
+    let db;
+    let Log;
+    let Session;
+    let Visit;
+
+    beforeAll(async () => {
+      Log = class Log extends Model {
+        static fields = { message: fields.string(), createdAt: fields.datetime() };
+
+        static options = { table: 'ttl_log', indexes: [{ fields: ['createdAt'], expireAfter: '1h' }] };
+      };
+      // expireAfter 0: the date of the field is the date it expires at.
+      Session = class Session extends Model {
+        static fields = { token: fields.string(), expiresAt: fields.datetime({ null: true }) };
+
+        static options = { table: 'ttl_session', indexes: [{ fields: ['expiresAt'], expireAfter: 0 }] };
+      };
+      Visit = class Visit extends Model {
+        static fields = { session: fields.foreignKey(() => Session, { onDelete: 'cascade' }), path: fields.string() };
+
+        static options = { table: 'ttl_visit' };
+      };
+      db = makeDatabase();
+      db.register(Log, Session, Visit);
+      await db.connect();
+      await db.drop();
+      await db.sync();
+    });
+
+    afterAll(async () => {
+      if (db) {
+        await db.drop();
+        await db.close();
+      }
+    });
+
+    beforeEach(async () => {
+      await Visit.objects.delete();
+      await Session.objects.delete();
+      await Log.objects.delete();
+    });
+
+    const at = (iso) => new Date(iso);
+
+    it('deletes the objects that expired', async () => {
+      await Log.objects.bulkCreate([
+        { message: 'old', createdAt: at('2026-10-04T08:00:00Z') },
+        { message: 'recent', createdAt: at('2026-10-04T09:30:00Z') },
+      ]);
+      const gone = await Session.objects.create({ token: 'a', expiresAt: at('2026-10-04T09:59:00Z') });
+      await Session.objects.create({ token: 'b', expiresAt: at('2026-10-04T10:01:00Z') });
+      await Session.objects.create({ token: 'forever', expiresAt: null });
+      await Visit.objects.create({ session: gone, path: '/' });
+      const deleted = await db.expire({ now: at('2026-10-04T10:00:00Z') });
+      expect(deleted).toEqual({ Log: 1, Session: 1 });
+      expect((await Log.objects.values('message')).map((row) => row.message)).toEqual(['recent']);
+      expect((await Session.objects.orderBy('token').values('token')).map((row) => row.token)).toEqual(['b', 'forever']);
+      // Deleted as QuerySets delete: their relations as onDelete says.
+      expect(await Visit.objects.count()).toBe(0);
+    });
+
+    it('deletes them every interval', async () => {
+      await Log.objects.create({ message: 'old', createdAt: new Date(Date.now() - 2 * 3600 * 1000) });
+      await Log.objects.create({ message: 'new', createdAt: new Date() });
+      const errors = [];
+      db.startExpiry({ interval: 0.05, onError: (err) => errors.push(err) });
+      try {
+        for (let i = 0; i < 40 && (await Log.objects.count()) > 1; i += 1) {
+          await new Promise((resolve) => {
+            setTimeout(resolve, 25);
+          });
+        }
+      } finally {
+        db.stopExpiry();
+      }
+      expect(errors).toEqual([]);
+      expect((await Log.objects.values('message')).map((row) => row.message)).toEqual(['new']);
+    });
+
+    it('are TTL indexes of MongoDB', async () => {
+      if (name !== 'mongodb') return;
+      const indexes = await db.backend.collection(Log.meta).indexes();
+      expect(indexes.find((index) => index.key.createdAt)).toMatchObject({ expireAfterSeconds: 3600 });
+    });
+
+    it('refuse indexes that cannot expire', () => {
+      class Wrong extends Model {
+        static fields = { a: fields.datetime(), b: fields.string() };
+
+        static options = { indexes: [{ fields: ['b'], expireAfter: 10 }] };
+      }
+      expect(() => Wrong.meta).toThrow('one datetime field');
+      class Two extends Model {
+        static fields = { a: fields.datetime(), b: fields.datetime() };
+
+        static options = { indexes: [{ fields: ['a', 'b'], expireAfter: 10 }] };
+      }
+      expect(() => Two.meta).toThrow('one datetime field');
+      class Bad extends Model {
+        static fields = { a: fields.datetime() };
+
+        static options = { indexes: [{ fields: ['a'], expireAfter: 'soon' }] };
+      }
+      expect(() => Bad.meta).toThrow('expireAfter must be');
+    });
+  });
+
+  // Encrypted fields: the database keeps their text ($xenc$...), the objects their values. A model of the same table
+  // with text fields reads what is stored. The memory backend keeps the values as they are.
+  describe(`${name} backend: encrypted fields`, () => {
+    const KEY1 = generateEncryptionKey();
+    const KEY2 = generateEncryptionKey();
+    let db;
+    let Secret;
+    let Stored;
+
+    beforeAll(async () => {
+      setEncryptionKeys({ keys: { k1: KEY1 } });
+      Secret = class Secret extends Model {
+        static fields = {
+          name: fields.string(),
+          ssn: fields.encrypted(fields.string({ maxLength: 11 }), { null: true }),
+          email: fields.encrypted(fields.string(), { deterministic: true, unique: true, null: true }),
+          profile: fields.encrypted(fields.json(), { null: true }),
+          born: fields.encrypted(fields.datetime(), { null: true }),
+          score: fields.encrypted(fields.bigint(), { null: true }),
+          photo: fields.encrypted(fields.bytes(), { null: true }),
+          notes: fields.encrypted(fields.text(), { null: true, acceptPlaintext: true }),
+        };
+
+        static options = { table: 'enc_secret' };
+      };
+      Stored = class Stored extends Model {
+        static fields = {
+          name: fields.string(),
+          ssn: fields.text({ null: true }),
+          email: fields.text({ null: true }),
+          notes: fields.text({ null: true }),
+        };
+
+        static options = { table: 'enc_secret' };
+      };
+      db = makeDatabase();
+      db.register(Secret);
+      await db.connect();
+      await db.drop();
+      await db.sync();
+      // The model of the stored text, of the same table (registered after sync, which made it).
+      db.register(Stored);
+    });
+
+    afterAll(async () => {
+      setEncryptionKeys({ keys: { k1: KEY1 } });
+      if (db) {
+        await db.drop();
+        await db.close();
+      }
+      setEncryptionKeys(null);
+    });
+
+    beforeEach(async () => {
+      setEncryptionKeys({ keys: { k1: KEY1 } });
+      await Secret.objects.delete();
+    });
+
+    const storedOf = async (id) => (name === 'memory' ? null : Stored.objects.get({ pk: id }));
+
+    it('keeps the values encrypted, and gives them back', async () => {
+      const born = new Date('1815-12-10T08:00:00.000Z');
+      const ada = await Secret.objects.create({
+        name: 'Ada',
+        ssn: '123-45-6789',
+        email: 'ada@example.com',
+        profile: { languages: ['en', 'fr'], engine: true },
+        born,
+        score: 9007199254740993n,
+        photo: Buffer.from([0, 1, 2, 255]),
+      });
+      const found = await Secret.objects.get({ pk: ada.pk });
+      expect(found.ssn).toBe('123-45-6789');
+      expect(found.email).toBe('ada@example.com');
+      expect(found.profile).toEqual({ languages: ['en', 'fr'], engine: true });
+      expect(found.born).toEqual(born);
+      expect(found.score).toBe(9007199254740993n);
+      expect(found.photo).toEqual(Buffer.from([0, 1, 2, 255]));
+      expect(found.notes).toBe(null);
+      const stored = await storedOf(ada.pk);
+      if (stored) {
+        expect(stored.ssn).toMatch(/^\$xenc\$1\$k1\$[\w-]{16}\$[\w-]+$/);
+        expect(stored.ssn).not.toContain('6789');
+        expect(stored.notes).toBe(null);
+      }
+      // values() and bulkCreate() and update() of querysets too.
+      await Secret.objects.bulkCreate([{ name: 'Grace', ssn: '987-65-4321' }]);
+      await Secret.objects.filter({ name: 'Grace' }).update({ email: 'grace@example.com' });
+      const values = await Secret.objects.orderBy('name').values('name', 'ssn', 'email');
+      expect(values).toEqual([
+        { name: 'Ada', ssn: '123-45-6789', email: 'ada@example.com' },
+        { name: 'Grace', ssn: '987-65-4321', email: 'grace@example.com' },
+      ]);
+      // The base field still validates.
+      await expect(Secret.objects.create({ name: 'Bad', ssn: '123-45-67890' })).rejects.toThrow('at most 11');
+    });
+
+    it('finds deterministic values by equality, and nothing else by their values', async () => {
+      await Secret.objects.create({ name: 'Ada', ssn: '1', email: 'ada@example.com' });
+      await Secret.objects.create({ name: 'Grace', ssn: '2', email: 'grace@example.com' });
+      await Secret.objects.create({ name: 'Alan' });
+      expect((await Secret.objects.get({ email: 'grace@example.com' })).name).toBe('Grace');
+      expect(await Secret.objects.filter({ email__in: ['ada@example.com', 'x@example.com'] }).count()).toBe(1);
+      expect(await Secret.objects.exclude({ email: 'ada@example.com' }).count()).toBe(2);
+      expect(await Secret.objects.filter({ ssn__isnull: true }).count()).toBe(1);
+      expect(await Secret.objects.filter({ ssn: null }).count()).toBe(1);
+      expect(() => Secret.objects.filter({ ssn: '1' })).toThrow('is encrypted');
+      expect(() => Secret.objects.filter({ email__startswith: 'ada' })).toThrow('is encrypted');
+      await expect(Secret.objects.orderBy('ssn')).rejects.toThrow('is encrypted');
+      await expect(Secret.objects.aggregate({ max: Max('ssn') })).rejects.toThrow('is encrypted');
+      expect(await Secret.objects.aggregate({ n: Count('ssn') })).toEqual({ n: 2 });
+      // Groups of deterministic values are their values.
+      const groups = await Secret.objects.filter({ email__isnull: false }).values('email').annotate({ n: Count() });
+      expect(groups.map((group) => group.email).sort()).toEqual(['ada@example.com', 'grace@example.com']);
+      // Unique: the same value is the same text.
+      await expect(Secret.objects.create({ name: 'Copy', email: 'ada@example.com' })).rejects.toThrow();
+    });
+
+    it('refuses values that were changed or moved to another column', async () => {
+      if (name === 'memory') return;
+      const ada = await Secret.objects.create({ name: 'Ada', ssn: '123-45-6789', notes: 'x' });
+      const stored = await storedOf(ada.pk);
+      // The text of the ssn in the column of the email: bound to its column, it is refused there.
+      await Stored.objects.filter({ pk: ada.pk }).update({ email: stored.ssn });
+      await expect(Secret.objects.get({ pk: ada.pk })).rejects.toThrow('of another field');
+      const changed = `${stored.ssn.slice(0, -2)}${stored.ssn.endsWith('A') ? 'BA' : 'AA'}`;
+      await Stored.objects.filter({ pk: ada.pk }).update({ email: null, ssn: changed });
+      await expect(Secret.objects.get({ pk: ada.pk })).rejects.toThrow('was changed');
+      // A value that is not encrypted is refused too (unless the field accepts plaintext).
+      await Stored.objects.filter({ pk: ada.pk }).update({ ssn: '123-45-6789' });
+      await expect(Secret.objects.get({ pk: ada.pk })).rejects.toThrow('is not encrypted');
+    });
+
+    it('rotates keys, and encrypts the values written before', async () => {
+      const ada = await Secret.objects.create({ name: 'Ada', ssn: '123-45-6789', email: 'ada@example.com' });
+      if (name !== 'memory') {
+        await Stored.objects.filter({ pk: ada.pk }).update({ notes: 'written before the field was encrypted' });
+      }
+      // A new key encrypts; the old one still decrypts.
+      setEncryptionKeys({ current: 'k2', keys: { k2: KEY2, k1: KEY1 } });
+      expect((await Secret.objects.get({ pk: ada.pk })).ssn).toBe('123-45-6789');
+      if (name !== 'memory') {
+        // Deterministic values of the old key are not found by the new one until they are written again.
+        expect(await Secret.objects.filter({ email: 'ada@example.com' }).count()).toBe(0);
+        expect((await Secret.objects.get({ pk: ada.pk })).notes).toBe('written before the field was encrypted');
+      }
+      expect(await reencrypt(Secret, { batchSize: 1 })).toBe(1);
+      expect(await Secret.objects.filter({ email: 'ada@example.com' }).count()).toBe(1);
+      const stored = await storedOf(ada.pk);
+      if (stored) {
+        expect(stored.ssn.startsWith('$xenc$1$k2$')).toBe(true);
+        expect(stored.notes.startsWith('$xenc$1$k2$')).toBe(true);
+      }
+      // Without the old key, everything is still read.
+      setEncryptionKeys({ keys: { k2: KEY2 } });
+      const found = await Secret.objects.get({ pk: ada.pk });
+      expect([found.ssn, found.notes]).toEqual([
+        '123-45-6789',
+        name === 'memory' ? null : 'written before the field was encrypted',
+      ]);
+      if (name !== 'memory') {
+        setEncryptionKeys({ keys: { k1: KEY1 } });
+        await expect(Secret.objects.get({ pk: ada.pk })).rejects.toThrow('not in the keyring');
+      }
     });
   });
 }

@@ -357,6 +357,185 @@ describe.skipIf(!available)('Pool', () => {
   });
 });
 
+describe.skipIf(!available)('ending', () => {
+  it('lets the queries sent end before a pool ends, and waits for the clients given', async () => {
+    const pool = new Pool({ connectionString: url, max: 2 });
+    await pool.query('SELECT 1');
+    const running = pool.query('SELECT pg_sleep(0.1), 1 AS done');
+    const client = await pool.connect();
+    let ended = false;
+    const ending = pool.end().then(() => {
+      ended = true;
+    });
+    await expect(pool.query('SELECT 1')).rejects.toThrow('The pool has ended');
+    expect((await running).rows[0].done).toBe(1);
+    // The client given by connect() still works until it is released.
+    expect((await client.query('SELECT 2 AS n')).rows[0].n).toBe(2);
+    expect(ended).toBe(false);
+    client.release();
+    await ending;
+    expect(pool.totalCount).toBe(0);
+  });
+
+  it('lets the queries sent end before a client ends, and refuses new ones', async () => {
+    const client = new Client(url);
+    await client.connect();
+    const running = client.query('SELECT pg_sleep(0.05), 3 AS n');
+    const ending = client.end();
+    await expect(client.query('SELECT 1')).rejects.toThrow('ending');
+    expect((await running).rows[0].n).toBe(3);
+    await ending;
+  });
+});
+
+describe.skipIf(!available)('describing statements', () => {
+  it('gives the types of the parameters and the columns of a text without running it', async () => {
+    const client = new Client(url);
+    await client.connect();
+    const described = await client.query({ text: 'SELECT $1::int + 1 AS n, $2::text AS t, now() AS at', describe: true });
+    expect(described.params).toEqual([23, 25]);
+    expect(described.fields.map((field) => [field.name, field.dataTypeID])).toEqual([
+      ['n', 23],
+      ['t', 25],
+      ['at', 1184],
+    ]);
+    // Not run: the table is not made.
+    expect(await client.query({ text: 'CREATE TABLE pg_never_made (a int)', describe: true })).toEqual({ fields: [], params: [] });
+    expect((await client.query("SELECT to_regclass('pg_never_made') AS t")).rows[0].t).toBe(null);
+    await expect(client.query({ text: 'SELEC 1', describe: true })).rejects.toMatchObject({ code: '42601' });
+    expect((await client.query('SELECT 1 AS ok')).rows).toEqual([{ ok: 1 }]);
+    await client.end();
+  });
+});
+
+describe.skipIf(!available)('tracing', () => {
+  const dc = require('node:diagnostics_channel');
+
+  it('publishes queries, connections and the pool on the channels of pg', async () => {
+    const events = [];
+    const handlers = (name) => ({
+      start: (context) => events.push([name, 'start', context]),
+      asyncEnd: (context) => events.push([name, 'asyncEnd', context]),
+      error: (context) => events.push([name, 'error', context]),
+      end: () => {},
+      asyncStart: () => {},
+    });
+    const subscriptions = ['pg:query', 'pg:connection', 'pg:pool:connect'].map((name) => {
+      const channel = dc.tracingChannel(name);
+      const subscriber = handlers(name);
+      channel.subscribe(subscriber);
+      return () => channel.unsubscribe(subscriber);
+    });
+    const released = [];
+    const onRelease = (message) => released.push(message);
+    dc.channel('pg:pool:release').subscribe(onRelease);
+    try {
+      const pool = new Pool({ connectionString: url, max: 1 });
+      const client = await pool.connect();
+      await client.query('SELECT $1::int AS n', [1]);
+      await expect(client.query('SELECT nope')).rejects.toThrow();
+      client.release();
+      await pool.end();
+      const names = events.map(([name, kind]) => `${name} ${kind}`);
+      expect(names).toEqual([
+        'pg:pool:connect start',
+        'pg:connection start',
+        'pg:connection asyncEnd',
+        'pg:pool:connect asyncEnd',
+        'pg:query start',
+        'pg:query asyncEnd',
+        'pg:query start',
+        'pg:query error',
+        'pg:query asyncEnd',
+      ]);
+      const query = events.find(([name, kind]) => name === 'pg:query' && kind === 'asyncEnd')[2];
+      expect(query.query.text).toBe('SELECT $1::int AS n');
+      expect(query.result).toMatchObject({ rowCount: 1, command: 'SELECT' });
+      expect(query.client).toMatchObject({ database: 'xufa_test', user: 'xufa', port: 5432, ssl: false });
+      expect(typeof query.client.processID).toBe('number');
+      expect(events[3][2].client).toMatchObject({ reused: false });
+      expect(released).toHaveLength(1);
+    } finally {
+      subscriptions.forEach((unsubscribe) => unsubscribe());
+      dc.channel('pg:pool:release').unsubscribe(onRelease);
+    }
+  });
+});
+
+describe.skipIf(!available)('resources', () => {
+  it('releases a client and ends pools and clients by Symbol.dispose', async () => {
+    const pool = new Pool({ connectionString: url, max: 1 });
+    {
+      const client = await pool.connect();
+      await client.query('SELECT 1');
+      client[Symbol.dispose]();
+      expect(client.released).toBe(true);
+    }
+    // Released: the only connection is free again.
+    expect((await pool.query('SELECT 1 AS n')).rows[0].n).toBe(1);
+    await pool[Symbol.asyncDispose]();
+    await expect(pool.query('SELECT 1')).rejects.toThrow('The pool has ended');
+    const client = new Client(url);
+    await client.connect();
+    await client[Symbol.asyncDispose]();
+    await expect(client.query('SELECT 1')).rejects.toThrow();
+  });
+
+  it('does not keep a statement whose values could not be written', async () => {
+    const client = new Client(url);
+    await client.connect();
+    const text = 'SELECT $1::text AS v';
+    await client.query(text, ['once']);
+    const bad = {
+      toPostgres() {
+        throw new Error('cannot write it');
+      },
+    };
+    await expect(client.query(text, [bad])).rejects.toThrow('cannot write it');
+    expect(client.connection.statements.has(text)).toBe(false);
+    // The next runs prepare it again, without a failed first try.
+    const runs = await Promise.all([client.query(text, ['a']), client.query(text, ['b'])]);
+    expect(runs.map((result) => result.rows[0].v)).toEqual(['a', 'b']);
+    expect(client.connection.statements.has(text)).toBe(true);
+    await client.end();
+  });
+});
+
+describe.skipIf(!available)('settings', () => {
+  it('sends the timeouts of the session given in the config', async () => {
+    const client = new Client({ connectionString: url, statement_timeout: 1234, lock_timeout: '2s', idle_in_transaction_session_timeout: 5000 });
+    await client.connect();
+    const show = async (name) => (await client.query(`SHOW ${name}`)).rows[0][name];
+    expect(await show('statement_timeout')).toBe('1234ms');
+    expect(await show('lock_timeout')).toBe('2ms');
+    expect(await show('idle_in_transaction_session_timeout')).toBe('5s');
+    await expect(client.query('SELECT pg_sleep(2)')).rejects.toMatchObject({ code: '57014' });
+    await client.end();
+  });
+
+  it('fails only the query whose value a type parser could not read', async () => {
+    const client = new Client({
+      connectionString: url,
+      types: {
+        25: (value) => {
+          if (value === 'bad') throw new Error('not this one');
+          return value.toUpperCase();
+        },
+      },
+    });
+    await client.connect();
+    const [bad, other] = await Promise.allSettled([
+      client.query("SELECT 'ok'::text AS t UNION ALL SELECT 'bad'::text"),
+      client.query("SELECT 'fine'::text AS t"),
+    ]);
+    expect(bad.status).toBe('rejected');
+    expect(bad.reason.message).toBe('Cannot parse the value of t (type 25): not this one');
+    expect(other.value.rows).toEqual([{ t: 'FINE' }]);
+    expect((await client.query("SELECT 'again'::text AS t")).rows).toEqual([{ t: 'AGAIN' }]);
+    await client.end();
+  });
+});
+
 describe.skipIf(!available)('cancelling queries', () => {
   let pool;
 

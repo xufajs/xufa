@@ -24,12 +24,9 @@ import { User } from './User';
 
 // This class doesn't extend the generic Model<TAttributes>, but should still
 // function just fine, with a bit less safe type-checking
-export class UserGroup extends Model<
-  InferAttributes<UserGroup>,
-  InferCreationAttributes<UserGroup>
-> {
+export class UserGroup extends Model<InferAttributes<UserGroup>, InferCreationAttributes<UserGroup>> {
   public static associations: {
-    users: HasMany<UserGroup, User>
+    users: HasMany<UserGroup, User>;
   };
 
   declare id: CreationOptional<number>;
@@ -50,14 +47,17 @@ export class UserGroup extends Model<
 
 // attach all the metadata to the model
 // instead of this, you could also use decorators
-UserGroup.init({
-  name: DataTypes.STRING,
-  id: {
-    type: DataTypes.INTEGER,
-    allowNull: false,
-    primaryKey: true,
-    autoIncrement: true
-  }
-}, { sequelize });
+UserGroup.init(
+  {
+    name: DataTypes.STRING,
+    id: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
+      primaryKey: true,
+      autoIncrement: true,
+    },
+  },
+  { sequelize }
+);
 
 export const Users = UserGroup.hasMany(User, { as: 'users', foreignKey: 'groupId' });

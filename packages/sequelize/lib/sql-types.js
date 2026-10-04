@@ -46,8 +46,8 @@ const POSTGRES = {
   JSONB: () => 'JSONB',
   BLOB: () => 'BYTEA',
   STRING: (o) => (o.binary ? 'BYTEA' : `VARCHAR(${o.length || 255})`),
-  // An enum type of its own, as Sequelize makes it: "enum_<table>_<column>".
-  ENUM: (o, where) => (where ? enumTypeRef(where.table, where.column) : 'VARCHAR(255)'),
+  // An enum type of its own, as Sequelize makes it: "enum_<table>_<column>" (or the one it names).
+  ENUM: (o, where) => (where ? enumTypeRef(where.table, where.column, o) : 'VARCHAR(255)'),
   // The type of the items with [] (an enum of the column: "enum_<table>_<column>"[]).
   ARRAY: (o, where) => `${(o.type && sqlTypeOf(o.type, 'postgres', where)) || 'TEXT'}[]`,
   RANGE: (o) => rangeSqlType(o.subtype),
@@ -68,18 +68,35 @@ function geometrySqlType(name, { type, srid }) {
 
 const TYPES = { sqlite: SQLITE, postgres: POSTGRES };
 
-// The name of the enum type of a column: enum_<table>_<column> (of the name of the table, without its schema).
-function enumTypeName(table, column) {
+// The name of the enum type of a column: enum_<table>_<column> (of the name of the table, without its schema), or
+// the name of the ENUM (`named`: the options of the ENUM, { name, schema }).
+function enumTypeName(table, column, named) {
+  if (named && named.name) return named.name;
   const name = table && typeof table === 'object' ? table.table : table;
   return `enum_${name}_${column}`;
 }
 
+// The schema of the enum type of a column: of the ENUM, or of its table (null: the search path's).
+function enumTypeSchema(table, named) {
+  if (named && named.schema) return named.schema;
+  return table && typeof table === 'object' ? table.schema || null : null;
+}
+
 // The enum type of a column in SQL: in the schema of its table ("schema"."enum_<table>_<column>"), as Sequelize
 // makes it. `table`: a name, or { table, schema }.
-function enumTypeRef(table, column) {
-  const name = `"${enumTypeName(table, column)}"`;
-  const schema = table && typeof table === 'object' ? table.schema : null;
+function enumTypeRef(table, column, named) {
+  const name = `"${enumTypeName(table, column, named).replace(/"/g, '""')}"`;
+  const schema = enumTypeSchema(table, named);
   return schema ? `"${String(schema).replace(/"/g, '""')}".${name}` : name;
+}
+
+// The options of the ENUM of a column (of an ARRAY of ENUM too): { values, name, schema }.
+function enumOptionsOf(attribute) {
+  const { type } = attribute;
+  if (!type || typeof type === 'string') return null;
+  if (type.key === 'ENUM') return type.options || {};
+  const item = type.key === 'ARRAY' && type.options && type.options.type;
+  return item && item.key === 'ENUM' ? item.options || {} : null;
 }
 
 // The SQL type of a DataType in a dialect (undefined in others, which use the types of @xufa/orm). `where` is the
@@ -101,9 +118,9 @@ function enumValuesOf(attribute) {
 }
 
 // The statement that makes the enum type of a column in PostgreSQL (when it does not exist).
-function createEnumSql(table, column, values) {
+function createEnumSql(table, column, values, named) {
   const labels = values.map((value) => `'${String(value).replace(/'/g, "''")}'`).join(', ');
-  const name = enumTypeRef(table, column);
+  const name = enumTypeRef(table, column, named);
   return `DO $$ BEGIN CREATE TYPE ${name} AS ENUM(${labels}); EXCEPTION WHEN duplicate_object THEN null; END $$;`;
 }
 
@@ -114,4 +131,26 @@ function autoIncrementOf(type, dialect) {
   return undefined;
 }
 
-module.exports = { sqlTypeOf, autoIncrementOf, enumTypeName, enumTypeRef, createEnumSql, enumValuesOf };
+// GENERATED ALWAYS AS (sql) STORED | VIRTUAL of a generated column: generatedAs is a literal (or SQL as text),
+// generatedColumn 'STORED' (the default) or 'VIRTUAL'.
+function generatedSql(name, attribute) {
+  const { generatedAs, generatedColumn = 'STORED' } = attribute;
+  const sql = generatedAs && generatedAs.xufaLiteral !== undefined ? generatedAs.xufaLiteral : generatedAs;
+  if (typeof sql !== 'string' || sql.trim() === '') throw new Error(`The generatedAs of ${name} is a literal of SQL`);
+  const mode = String(generatedColumn).toUpperCase();
+  if (mode !== 'STORED' && mode !== 'VIRTUAL') throw new Error(`The generatedColumn of ${name} is STORED or VIRTUAL`);
+  if (attribute.defaultValue !== undefined) throw new Error(`The generated column ${name} cannot have a defaultValue`);
+  return ` GENERATED ALWAYS AS (${sql}) ${mode}`;
+}
+
+module.exports = {
+  generatedSql,
+  sqlTypeOf,
+  autoIncrementOf,
+  enumTypeName,
+  enumTypeSchema,
+  enumTypeRef,
+  createEnumSql,
+  enumValuesOf,
+  enumOptionsOf,
+};

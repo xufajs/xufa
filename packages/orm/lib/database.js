@@ -8,6 +8,7 @@ const { Model, defineReverseAccessor, defineManyToManyAccessor } = require('./mo
 const fields = require('./fields');
 const { lowerFirst, snakeCase } = require('./meta');
 const { BackendError, ModelError } = require('./errors');
+const { seconds } = require('./duration');
 const migrations = require('./migrations');
 
 const backends = new Map();
@@ -29,6 +30,7 @@ class Database {
     } else if (typeof backend === 'function') this.backend = new backend(rest);
     else this.backend = backend;
     this.models = new Map();
+    this.expiryTimer = null;
   }
 
   static registerBackend(name, factory) {
@@ -128,7 +130,53 @@ class Database {
   }
 
   async close() {
+    this.stopExpiry();
     await this.backend.close();
+  }
+
+  // Deletes the objects of the models of TTL indexes (indexes with expireAfter) that expired: those whose date is
+  // older than expireAfter seconds (`now`: a Date, now by default). They are deleted as QuerySets delete (their
+  // relations as onDelete says). Returns the number of objects deleted, by model.
+  async expire({ now = new Date() } = {}) {
+    const deleted = {};
+    for (const model of this.models.values()) {
+      for (const { field, after } of model.meta.expiry) {
+        const cutoff = new Date(now.getTime() - after * 1000);
+        const count = await model.objects
+          .using(this)
+          .filter({ [`${field.name}__lt`]: cutoff })
+          .delete();
+        deleted[model.name] = (deleted[model.name] || 0) + count;
+      }
+    }
+    return deleted;
+  }
+
+  // Calls expire() every `interval` (seconds or text: '1m' by default) until stopExpiry() or close(). A run does not
+  // start while the previous one has not ended; errors go to onError (a warning of the process by default). In a
+  // cluster every process can do it (deleting what expired is the same in all of them), or one.
+  startExpiry({ interval = '1m', onError } = {}) {
+    this.stopExpiry();
+    const ms = Math.max(1, seconds(interval, 'interval') * 1000);
+    const report =
+      onError || ((err) => process.emitWarning(`Expiring the objects of ${this.name} failed: ${err.message}`));
+    let running = false;
+    this.expiryTimer = setInterval(() => {
+      if (running) return;
+      running = true;
+      this.expire()
+        .catch(report)
+        .finally(() => {
+          running = false;
+        });
+    }, ms);
+    this.expiryTimer.unref();
+    return this;
+  }
+
+  stopExpiry() {
+    if (this.expiryTimer) clearInterval(this.expiryTimer);
+    this.expiryTimer = null;
   }
 
   // Creates the tables (or collections) and indexes of the models that do not exist.

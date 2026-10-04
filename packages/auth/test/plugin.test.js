@@ -231,3 +231,29 @@ describe('auth plugin', () => {
     expect((await app.inject({ url: '/me', headers: bearer(foreign) })).statusCode).toBe(401);
   });
 });
+
+describe('auth plugin with resources of @xufa/orm', () => {
+  it('checks the rules of each action', async () => {
+    const { Database, Model, fields, plugin: orm, resource } = require('@xufa/orm');
+    class Article extends Model {
+      static fields = { title: fields.string() };
+    }
+    const app = xufa();
+    app.register(orm, { database: new Database({ backend: 'memory' }).register(Article), sync: true });
+    app.register(auth.plugin, { keys: KEY });
+    app.register(resource(Article, { auth: { list: false, get: false, create: true, update: 'editor', delete: 'admin' } }), {
+      prefix: '/articles',
+    });
+    await app.ready();
+    const as = async (role) => ({ authorization: `Bearer ${await app.auth.sign({ sub: '1', role })}` });
+    expect((await app.inject({ url: '/articles' })).statusCode).toBe(200);
+    expect((await app.inject({ method: 'POST', url: '/articles', payload: { title: 'a' } })).statusCode).toBe(401);
+    const created = await app.inject({ method: 'POST', url: '/articles', headers: await as('user'), payload: { title: 'a' } });
+    expect(created.statusCode).toBe(201);
+    const url = `/articles/${created.json().id}`;
+    expect((await app.inject({ method: 'PATCH', url, headers: await as('user'), payload: { title: 'b' } })).statusCode).toBe(403);
+    expect((await app.inject({ method: 'PATCH', url, headers: await as('editor'), payload: { title: 'b' } })).statusCode).toBe(200);
+    expect((await app.inject({ method: 'DELETE', url, headers: await as('editor') })).statusCode).toBe(403);
+    expect((await app.inject({ method: 'DELETE', url, headers: await as('admin') })).statusCode).toBe(204);
+  });
+});

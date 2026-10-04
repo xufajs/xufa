@@ -1,7 +1,7 @@
 const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
-const { Database, Model, fields } = require('..');
+const { Database, Model, fields, setEncryptionKeys, generateEncryptionKey } = require('..');
 const { defineSuite } = require('./suite');
 const { url, available } = require('../../pg/test/server');
 
@@ -111,5 +111,29 @@ describe.skipIf(!available)('postgres', () => {
       static options = { fillfactor: 5 };
     }
     expect(() => Wrong.meta).toThrow('fillfactor must be an integer from 10 to 100');
+  });
+
+  it('encrypts the values of large inserts (COPY)', async () => {
+    setEncryptionKeys({ keys: { k1: generateEncryptionKey() } });
+    class Vault extends Model {
+      static fields = {
+        label: fields.integer(),
+        secret: fields.encrypted(fields.string()),
+        code: fields.encrypted(fields.integer(), { deterministic: true }),
+      };
+
+      static options = { table: 'enc_vault' };
+    }
+    const db = new Database({ backend: 'postgres', url }).register(Vault);
+    await db.connect();
+    await db.drop();
+    await db.sync();
+    await Vault.objects.bulkCreate(Array.from({ length: 600 }, (_, i) => ({ label: i, secret: `s${i}`, code: i })));
+    const [row] = await db.backend.raw('SELECT secret FROM enc_vault WHERE label = 7');
+    expect(row.secret.startsWith('$xenc$1$k1$')).toBe(true);
+    expect((await Vault.objects.get({ code: 7 })).secret).toBe('s7');
+    await db.drop();
+    await db.close();
+    setEncryptionKeys(null);
   });
 });

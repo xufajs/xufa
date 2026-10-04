@@ -38,6 +38,8 @@ export interface MultiAssociationAccessors {
 export interface ForeignKeyOptions extends ColumnOptions {
   /** Attribute name for the relation */
   name?: string;
+  /** Whether the key is indexed (Sequelize 7), or the options of its index. */
+  index?: boolean | { unique?: boolean; name?: string };
 }
 
 /**

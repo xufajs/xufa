@@ -17,10 +17,23 @@ function setter(mode) {
   return make;
 }
 
+// As Sequelize: each one is used as it is (Deferrable.INITIALLY_DEFERRED), or called (Deferrable.INITIALLY_DEFERRED()),
+// and new'd too; what is given back is of it (instanceof).
+function kind(sql) {
+  function make() {
+    if (!(this instanceof make)) return new make(); // eslint-disable-line new-cap
+    this.xufaDeferrable = sql;
+    return this;
+  }
+  make.xufaDeferrable = sql;
+  make.prototype.toString = () => sql;
+  return make;
+}
+
 const Deferrable = {
-  INITIALLY_DEFERRED: { xufaDeferrable: 'DEFERRABLE INITIALLY DEFERRED' },
-  INITIALLY_IMMEDIATE: { xufaDeferrable: 'DEFERRABLE INITIALLY IMMEDIATE' },
-  NOT: { xufaDeferrable: 'NOT DEFERRABLE' },
+  INITIALLY_DEFERRED: kind('DEFERRABLE INITIALLY DEFERRED'),
+  INITIALLY_IMMEDIATE: kind('DEFERRABLE INITIALLY IMMEDIATE'),
+  NOT: kind('NOT DEFERRABLE'),
   SET_DEFERRED: setter('DEFERRED'),
   SET_IMMEDIATE: setter('IMMEDIATE'),
 };
@@ -31,4 +44,10 @@ function deferrableSql(deferrable) {
   return deferrable.xufaDeferrable;
 }
 
-module.exports = { Deferrable, deferrableSql };
+// The deferrable of a foreign key, as information_schema says it (is_deferrable, initially_deferred).
+function deferrableOf(isDeferrable, initiallyDeferred) {
+  if (isDeferrable !== 'YES') return Deferrable.NOT;
+  return initiallyDeferred === 'YES' ? Deferrable.INITIALLY_DEFERRED : Deferrable.INITIALLY_IMMEDIATE;
+}
+
+module.exports = { Deferrable, deferrableSql, deferrableOf };

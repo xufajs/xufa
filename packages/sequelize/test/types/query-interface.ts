@@ -53,8 +53,8 @@ async function test() {
         test: {
           customIndex: true,
           fields: ['attr2', 'attr3'],
-        }
-      }
+        },
+      },
     }
   );
   await queryInterface.createTable({ tableName: '<table-name>' }, {});
@@ -64,9 +64,18 @@ async function test() {
 
   await queryInterface.bulkDelete({ tableName: 'foo', schema: 'bar' }, {}, {});
 
-  const bulkInsertRes: Promise<number | object> = queryInterface.bulkInsert({ tableName: 'foo', as: 'bar', name: 'as' }, [{}], {});
+  const bulkInsertRes: Promise<number | object> = queryInterface.bulkInsert(
+    { tableName: 'foo', as: 'bar', name: 'as' },
+    [{}],
+    {}
+  );
 
-  const bulkInsertResWithAttrs: Promise<number | object> = queryInterface.bulkInsert('foo', [{}], {}, { bar: { type: DataTypes.JSON } });
+  const bulkInsertResWithAttrs: Promise<number | object> = queryInterface.bulkInsert(
+    'foo',
+    [{}],
+    {},
+    { bar: { type: DataTypes.JSON } }
+  );
 
   await queryInterface.bulkUpdate({ tableName: 'foo', delimiter: 'bar', as: 'baz', name: 'quz' }, {}, {});
 
@@ -74,17 +83,17 @@ async function test() {
 
   await queryInterface.quoteTable({ tableName: 'foo', delimiter: 'bar' });
 
-  queryInterface.quoteIdentifier("foo");
-  queryInterface.quoteIdentifier("foo", true);
-  queryInterface.quoteIdentifiers("table.foo");
+  queryInterface.quoteIdentifier('foo');
+  queryInterface.quoteIdentifier('foo', true);
+  queryInterface.quoteIdentifiers('table.foo');
 
   await queryInterface.dropAllTables();
 
   await queryInterface.renameTable('Person', 'User');
   await queryInterface.renameTable(
-      { schema: '<schema>', tableName: 'Person' },
-      { schema: '<schema>', tableName: 'User' },
-    );
+    { schema: '<schema>', tableName: 'Person' },
+    { schema: '<schema>', tableName: 'User' }
+  );
 
   const tableNames: string[] = await queryInterface.showAllTables();
 
@@ -167,26 +176,18 @@ async function test() {
 
   await queryInterface.addIndex('Foo', {
     name: 'foo_a',
-    fields: [
-      { name: 'foo_b', order: 'DESC' },
-      'foo_c',
-      { name: 'foo_d', order: 'ASC', collate: 'foobar', length: 42 }
-    ],
+    fields: [{ name: 'foo_b', order: 'DESC' }, 'foo_c', { name: 'foo_d', order: 'ASC', collate: 'foobar', length: 42 }],
   });
 
   await queryInterface.addIndex('Foo', {
     name: 'foo_b_lower',
-    fields: [
-      fn('lower', col('foo_b'))
-    ],
+    fields: [fn('lower', col('foo_b'))],
   });
 
   await queryInterface.addIndex('Foo', {
     name: 'foo_c_lower',
-    fields: [
-      literal('LOWER(foo_c)')
-    ]
-  })
+    fields: [literal('LOWER(foo_c)')],
+  });
 
   await queryInterface.removeIndex('Person', 'SuperDuperIndex');
   await queryInterface.removeIndex({ schema: '<schema>', tableName: 'Person' }, 'SuperDuperIndex');
@@ -195,12 +196,14 @@ async function test() {
 
   await queryInterface.removeIndex('Person', ['firstname', 'lastname']);
 
-  await queryInterface.sequelize.transaction(trx => queryInterface.addConstraint('Person', {
-    name: 'firstnamexlastname',
-    fields: ['firstname', 'lastname'],
-    type: 'unique',
-    transaction: trx,
-  }))
+  await queryInterface.sequelize.transaction((trx) =>
+    queryInterface.addConstraint('Person', {
+      name: 'firstnamexlastname',
+      fields: ['firstname', 'lastname'],
+      type: 'unique',
+      transaction: trx,
+    })
+  );
 
   await queryInterface.removeConstraint('Person', 'firstnamexlastname');
   await queryInterface.removeConstraint({ schema: '<schema>', tableName: 'Person' }, 'firstnamexlastname');
@@ -210,11 +213,15 @@ async function test() {
       a: 1,
     },
   });
-  await queryInterface.select(null, { schema: '<schema>', tableName: 'Person' }, {
-    where: {
-      a: 1,
-    },
-  });
+  await queryInterface.select(
+    null,
+    { schema: '<schema>', tableName: 'Person' },
+    {
+      where: {
+        a: 1,
+      },
+    }
+  );
 
   await queryInterface.delete(null, 'Person', {
     where: {
@@ -224,7 +231,7 @@ async function test() {
 
   class TestModel extends Model {}
 
-  await queryInterface.upsert("test", {"a": 1}, {"b": 2}, {"c": 3}, {model: TestModel});
+  await queryInterface.upsert('test', { a: 1 }, { b: 2 }, { c: 3 }, { model: TestModel });
 
   await queryInterface.insert(null, 'test', {});
 }

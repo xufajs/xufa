@@ -79,20 +79,22 @@ class User extends Model {
     email: fields.string({ unique: true }),
     password: fields.string(),
     role: fields.string({ default: 'user' }),
-    totpSecret: fields.string({ null: true }),
+    totpSecret: fields.encrypted(fields.string(), { null: true }), // keys: XUFA_ENCRYPTION_KEYS
     totpStep: fields.integer({ null: true }),
   };
 }
 
 class RefreshToken extends Model {
   static fields = auth.refreshTokenFields(fields);
+
+  static options = { indexes: [{ fields: ['expiresAt'], expireAfter: 0 }] }; // deleted when they expire
 }
 
 const db = new Database({ backend: 'sqlite', filename: 'app.db' });
 db.register(User, RefreshToken);
 
 const app = xufa();
-app.register(orm, { database: db, sync: true });
+app.register(orm, { database: db, sync: true, expire: true });
 app.register(auth.plugin, {
   keys: process.env.JWT_KEY,
   accessToken: { expiresIn: '15m' },
@@ -189,8 +191,8 @@ const step = auth.verifyTotp(code, secret); // null, or the time step to keep wi
           and returns the step of the code; codes of the step <code>after</code> or before are refused, so keeping the step
           of each login makes each code work once. <code>totp()</code> and <code>hotp()</code> follow RFC 6238 and RFC 4226
           (SHA1, SHA256 or SHA512, 6 to 10 digits). <code>generateRecoveryCodes(n)</code> gives codes to log in without the
-          app; keep their <code>hashRecoveryCode()</code>. Keep the secrets of TOTP encrypted: they are passwords that never
-          change.
+          app; keep their <code>hashRecoveryCode()</code>. Keep the secrets of TOTP encrypted (they are passwords that never
+          change), in <a href="orm.html#encrypted"><code>fields.encrypted()</code></a> of the ORM, as in the example.
         </p>
 
         <h2 id="lockout">Lockout</h2>
@@ -214,7 +216,8 @@ await refresh.revokeSubject(user.id); // logout everywhere (a changed password)<
           subject, its data and its dates. Each use spends the token (atomically) and gives a new one of its family. A
           token used twice means that two parties have it: its whole family is revoked, so the thief's token and the
           user's stop working. Stores: <code>MemoryTokenStore</code> and <code>modelStore(Model)</code>, for a model of
-          the ORM with the fields of <code>refreshTokenFields(fields)</code>.
+          the ORM with the fields of <code>refreshTokenFields(fields)</code>. A <a href="orm.html#ttl">TTL index</a> on
+          <code>expiresAt</code> deletes the tokens that expired (or call <code>refresh.prune()</code> now and then).
         </p>
 
         <h2 id="errors">Errors</h2>

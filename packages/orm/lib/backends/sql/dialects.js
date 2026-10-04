@@ -178,9 +178,15 @@ const common = {
   // The decoder of the values of a field (by its dbType); arrays decode their items as their base field.
   decoderOf(field) {
     const decode = this.decoders[field.dbType];
+    // Encrypted fields: their text decrypted (as the value of their base field).
+    if (field.encrypted) return (value) => field.open(decode ? decode(value) : value);
+    // Fields that make the value decoded their own (the mode of bigints).
+    if (field.fromDb) return (value) => field.fromDb(decode ? decode(value) : value);
     if (field.dbType !== 'array' || !field.base) return decode;
-    const item = this.decoders[field.base.dbType];
-    if (!item) return decode;
+    const itemDecode = this.decoders[field.base.dbType];
+    if (!itemDecode) return decode;
+    const { base } = field;
+    const item = base.fromDb ? (element) => base.fromDb(itemDecode(element)) : itemDecode;
     return (value) => {
       const array = decode(value);
       // Items already made (objects of json text, documents the driver parsed) are as they are.
@@ -201,6 +207,8 @@ const common = {
 const sqlite = {
   ...common,
   name: 'sqlite',
+  // STRICT tables: their columns hold values of their types only.
+  tableOptions: (spec) => (spec.strict ? ' STRICT' : ''),
   decoders: sqliteDecoders,
   placeholder: () => '?',
   textParam: (sql) => sql,

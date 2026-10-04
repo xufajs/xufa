@@ -1,17 +1,9 @@
 // Ported from sequelize (test/types/bulk-create.ts, MIT License) by tools/port-types/port.js: do not edit, change the tool.
-import {
-  Model,
-  InferAttributes,
-  CreationOptional,
-  InferCreationAttributes,
-} from 'sequelize';
+import { Model, InferAttributes, CreationOptional, InferCreationAttributes } from 'sequelize';
 import { sequelize } from './connection';
 import type { MakeNullishOptional } from 'sequelize/types/utils';
 
-class TestModel extends Model<
-  InferAttributes<TestModel>,
-  InferCreationAttributes<TestModel>
-> {
+class TestModel extends Model<InferAttributes<TestModel>, InferCreationAttributes<TestModel>> {
   declare id: CreationOptional<number>;
   declare testString: CreationOptional<string | null>;
   declare testEnum: CreationOptional<'d' | 'e' | 'f' | null>;
@@ -19,10 +11,8 @@ class TestModel extends Model<
 
 type wat = InferCreationAttributes<TestModel>;
 
-sequelize.transaction(async trx => {
-  const newItems: Array<
-    MakeNullishOptional<InferCreationAttributes<TestModel>>
-  > = [
+sequelize.transaction(async (trx) => {
+  const newItems: Array<MakeNullishOptional<InferCreationAttributes<TestModel>>> = [
     {
       testEnum: 'e',
       testString: 'abc',

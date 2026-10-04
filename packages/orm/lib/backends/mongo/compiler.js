@@ -5,6 +5,7 @@
 // It keeps the semantics of the SQL backends: lookups compare values of their type only, NOT of a condition on a null
 // is true ($nor), nulls sort first, json fields are compared as wholes, and missing fields are nulls.
 const { collectJoins, eachLeaf, eachExists, hasExists, lastOf, likeToRegex } = require('../../query');
+const { QueryError } = require('../../errors');
 
 const COMPARISONS = { exact: '$eq', gt: '$gt', gte: '$gte', lt: '$lt', lte: '$lte' };
 const ARITHMETIC = { '+': '$add', '-': '$subtract', '*': '$multiply', '/': '$divide' };
@@ -104,6 +105,13 @@ class MongoCompiler {
   leaf({ fields, lookup, value, path: jsonPath }) {
     // A value inside json values is compared as it is.
     const field = jsonPath ? JSON_VALUE : lastOf(fields);
+    // MongoDB reads dots as steps of a path and $ as operators: keys with them cannot be reached by a path.
+    if (
+      jsonPath &&
+      jsonPath.some((step) => String(step).includes('.') || String(step).startsWith('$') || step === '')
+    ) {
+      throw new QueryError(`MongoDB cannot compare keys of json with dots or $, or empty: ${JSON.stringify(jsonPath)}`);
+    }
     const key = jsonPath ? `${path(fields)}.${jsonPath.join('.')}` : path(fields);
     const regex = (pattern, insensitive) => ({ [key]: { $regex: pattern, $options: insensitive ? 'i' : '' } });
     if (value && value.kind === 'F') {
@@ -336,6 +344,8 @@ class MongoCompiler {
         key[columnOf(name)] = 1;
       });
       const options = { name: index.name };
+      // TTL indexes: MongoDB deletes the documents that expired (its monitor runs every minute).
+      if (index.expireAfter !== undefined) options.expireAfterSeconds = index.expireAfter;
       if (index.unique) {
         options.unique = true;
         const type =

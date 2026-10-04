@@ -6,17 +6,36 @@
  * Don't include this comment in the md file.
  */
 import {
-  Association, DataTypes, HasManyAddAssociationMixin, HasManyCountAssociationsMixin,
-  HasManyCreateAssociationMixin, HasManyGetAssociationsMixin, HasManyHasAssociationMixin,
-  HasManySetAssociationsMixin, HasManyAddAssociationsMixin, HasManyHasAssociationsMixin,
-  HasManyRemoveAssociationMixin, HasManyRemoveAssociationsMixin, Model, ModelDefined, Optional,
-  Sequelize, InferAttributes, InferCreationAttributes, CreationOptional, NonAttribute, ForeignKey,
+  Association,
+  DataTypes,
+  HasManyAddAssociationMixin,
+  HasManyCountAssociationsMixin,
+  HasManyCreateAssociationMixin,
+  HasManyGetAssociationsMixin,
+  HasManyHasAssociationMixin,
+  HasManySetAssociationsMixin,
+  HasManyAddAssociationsMixin,
+  HasManyHasAssociationsMixin,
+  HasManyRemoveAssociationMixin,
+  HasManyRemoveAssociationsMixin,
+  Model,
+  ModelDefined,
+  Optional,
+  Sequelize,
+  InferAttributes,
+  InferCreationAttributes,
+  CreationOptional,
+  NonAttribute,
+  ForeignKey,
 } from 'sequelize';
 
 const sequelize = new Sequelize('mysql://root:asd123@localhost:3306/mydb');
 
 // 'projects' is excluded as it's not an attribute, it's an association.
-class User extends Model<InferAttributes<User, { omit: 'projects' }>, InferCreationAttributes<User, { omit: 'projects' }>> {
+class User extends Model<
+  InferAttributes<User, { omit: 'projects' }>,
+  InferCreationAttributes<User, { omit: 'projects' }>
+> {
   // id can be undefined during creation when using `autoIncrement`
   declare id: CreationOptional<number>;
   declare name: string;
@@ -57,10 +76,7 @@ class User extends Model<InferAttributes<User, { omit: 'projects' }>, InferCreat
   };
 }
 
-class Project extends Model<
-  InferAttributes<Project>,
-  InferCreationAttributes<Project>
-> {
+class Project extends Model<InferAttributes<Project>, InferCreationAttributes<Project>> {
   // id can be undefined during creation when using `autoIncrement`
   declare id: CreationOptional<number>;
 
@@ -80,10 +96,7 @@ class Project extends Model<
   declare updatedAt: CreationOptional<Date>;
 }
 
-class Address extends Model<
-  InferAttributes<Address>,
-  InferCreationAttributes<Address>
-> {
+class Address extends Model<InferAttributes<Address>, InferCreationAttributes<Address>> {
   declare userId: ForeignKey<User['id']>;
   declare address: string;
 
@@ -98,18 +111,18 @@ Project.init(
     id: {
       type: DataTypes.INTEGER.UNSIGNED,
       autoIncrement: true,
-      primaryKey: true
+      primaryKey: true,
     },
     name: {
       type: new DataTypes.STRING(128),
-      allowNull: false
+      allowNull: false,
     },
     createdAt: DataTypes.DATE,
     updatedAt: DataTypes.DATE,
   },
   {
     sequelize,
-    tableName: 'projects'
+    tableName: 'projects',
   }
 );
 
@@ -118,22 +131,22 @@ User.init(
     id: {
       type: DataTypes.INTEGER.UNSIGNED,
       autoIncrement: true,
-      primaryKey: true
+      primaryKey: true,
     },
     name: {
       type: new DataTypes.STRING(128),
-      allowNull: false
+      allowNull: false,
     },
     preferredName: {
       type: new DataTypes.STRING(128),
-      allowNull: true
+      allowNull: true,
     },
     createdAt: DataTypes.DATE,
     updatedAt: DataTypes.DATE,
   },
   {
     tableName: 'users',
-    sequelize // passing the `sequelize` instance is required
+    sequelize, // passing the `sequelize` instance is required
   }
 );
 
@@ -141,14 +154,14 @@ Address.init(
   {
     address: {
       type: new DataTypes.STRING(128),
-      allowNull: false
+      allowNull: false,
     },
     createdAt: DataTypes.DATE,
     updatedAt: DataTypes.DATE,
   },
   {
     tableName: 'address',
-    sequelize // passing the `sequelize` instance is required
+    sequelize, // passing the `sequelize` instance is required
   }
 );
 
@@ -163,28 +176,25 @@ interface NoteAttributes {
 type NoteCreationAttributes = Optional<NoteAttributes, 'id' | 'title'>;
 
 // And with a functional approach defining a module looks like this
-const Note: ModelDefined<
-  NoteAttributes,
-  NoteCreationAttributes
-> = sequelize.define(
+const Note: ModelDefined<NoteAttributes, NoteCreationAttributes> = sequelize.define(
   'Note',
   {
     id: {
       type: DataTypes.INTEGER.UNSIGNED,
       autoIncrement: true,
-      primaryKey: true
+      primaryKey: true,
     },
     title: {
       type: new DataTypes.STRING(64),
-      defaultValue: 'Unnamed Note'
+      defaultValue: 'Unnamed Note',
     },
     content: {
       type: new DataTypes.STRING(4096),
-      allowNull: false
-    }
+      allowNull: false,
+    },
   },
   {
-    tableName: 'notes'
+    tableName: 'notes',
   }
 );
 
@@ -192,7 +202,7 @@ const Note: ModelDefined<
 User.hasMany(Project, {
   sourceKey: 'id',
   foreignKey: 'ownerId',
-  as: 'projects' // this determines the name in `associations`!
+  as: 'projects', // this determines the name in `associations`!
 });
 
 Address.belongsTo(User, { targetKey: 'id' });
@@ -206,12 +216,12 @@ async function doStuffWithUser() {
   console.log(newUser.id, newUser.name, newUser.preferredName);
 
   const project = await newUser.createProject({
-    name: 'first!'
+    name: 'first!',
   });
 
   const ourUser = await User.findByPk(1, {
     include: [User.associations.projects],
-    rejectOnEmpty: true // Specifying true here removes `null` from the return type!
+    rejectOnEmpty: true, // Specifying true here removes `null` from the return type!
   });
 
   // Note the `!` null assertion since TS can't know if we included

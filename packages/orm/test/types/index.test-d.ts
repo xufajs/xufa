@@ -3,16 +3,25 @@ import {
   Database,
   Model,
   fields,
+  Field,
   Fields,
   QuerySet,
   RelatedSet,
   Q,
+  JsonPath,
+  jsonPath,
   or,
   F,
   Count,
   Sum,
   plugin,
   ValidationError,
+  Keyring,
+  setEncryptionKeys,
+  generateEncryptionKey,
+  reencrypt,
+  resource,
+  UniqueError,
 } from '../..';
 
 const tagFields = { name: fields.string({ unique: true }) };
@@ -97,3 +106,61 @@ class Keyless extends Model {
   static options = { primaryKey: false as const };
 }
 expectType<typeof Keyless>(Keyless);
+
+// Encrypted fields: the values of their base field.
+const secretFields = {
+  ssn: fields.encrypted(fields.string({ maxLength: 11 })),
+  email: fields.encrypted(fields.string(), { deterministic: true, unique: true, null: true }),
+  profile: fields.encrypted(fields.json<{ languages: string[] }>()),
+  legacy: fields.encrypted(fields.text(), { acceptPlaintext: true, context: 'old_table.notes' }),
+};
+class Secret extends Model {
+  static fields = secretFields;
+}
+interface Secret extends Fields<typeof secretFields> {}
+declare const secret: Secret;
+expectType<string>(secret.ssn);
+expectType<string | null>(secret.email);
+expectType<{ languages: string[] }>(secret.profile);
+expectError(fields.encrypted(fields.string(), { primaryKey: true }));
+expectType<Keyring | null>(setEncryptionKeys({ current: 'k2', keys: { k2: generateEncryptionKey(), k1: Buffer.alloc(32) } }));
+expectType<Promise<number>>(reencrypt(Secret, { batchSize: 100 }));
+
+// TTL indexes.
+class Event extends Model {
+  static fields = { at: fields.datetime() };
+
+  static options = { indexes: [{ fields: ['at'], expireAfter: '30d' }] };
+}
+declare const eventsDb: Database;
+expectType<Promise<Record<string, number>>>(eventsDb.expire({ now: new Date() }));
+expectType<Database>(eventsDb.startExpiry({ interval: '5m', onError: (err) => console.error(err.message) }));
+expectType<Promise<void>>(plugin({}, { database: eventsDb, expire: { interval: 60 } }));
+expectError(eventsDb.startExpiry({ interval: true }));
+void Event;
+
+// Resources.
+expectType<(app: any) => Promise<void>>(
+  resource(Author, {
+    actions: ['list', 'get', 'create'],
+    queryset: () => Author.query().filter({ active: true }),
+    filters: { age: ['gte', 'lte'], name: 'icontains' },
+    ordering: ['name'],
+    search: ['name'],
+    auth: { create: 'admin' },
+    hooks: { beforeCreate: (values) => ({ ...values, active: true }) },
+    serialize: (author) => ({ name: author.name }),
+  })
+);
+expectError(resource(Author, { actions: ['destroy'] }));
+expectType<string[]>(new UniqueError('x').fields);
+
+// Paths inside json fields as lists of keys and indexes.
+expectType<JsonPath>(jsonPath('data', ['in', 0], 1));
+expectType<JsonPath>(jsonPath('data', ['a__b'], 2, 'gte'));
+expectError(jsonPath('data', [true], 1));
+
+// The modes of bigints.
+expectType<Field<number | bigint, false>>(fields.bigint());
+expectType<Field<bigint, false>>(fields.bigint({ mode: 'bigint' }));
+expectType<Field<string, true>>(fields.bigint({ mode: 'string', null: true }));

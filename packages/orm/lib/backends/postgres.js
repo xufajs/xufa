@@ -62,12 +62,16 @@ class PostgresBackend extends SqlBackend {
     const values = rows.map((row) =>
       fields.map((field, i) => {
         const value = row[field.attname];
+        if (field.encrypted) return field.seal(value);
         return json[i] && value !== null && value !== undefined ? JSON.stringify(value) : value;
       })
     );
     await target.copyRows(meta.schema ? [meta.schema, meta.table] : [meta.table], columns, values);
     if (!pk || pk.composite) return rows.map(() => null);
-    return rows.map((row) => this.dialect.decode(pk.dbType, row[pk.attname]));
+    return rows.map((row) => {
+      const key = this.dialect.decode(pk.dbType, row[pk.attname]);
+      return pk.fromDb ? pk.fromDb(key) : key;
+    });
   }
 
   // The tables of the schema in use by their names, and those of other schemas as 'schema.table'.

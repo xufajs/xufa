@@ -129,6 +129,8 @@ refreshSuite('memory', () => undefined);
 for (const backend of ['memory', 'sqlite']) {
   class RefreshToken extends Model {
     static fields = refreshTokenFields(fields);
+
+    static options = { indexes: [{ fields: ['expiresAt'], expireAfter: 0 }] };
   }
   const db = new Database({ backend, filename: ':memory:' });
   db.register(RefreshToken);
@@ -141,3 +143,24 @@ for (const backend of ['memory', 'sqlite']) {
   });
   afterAll(() => db.close());
 }
+
+describe('refresh tokens in a model with a TTL index', () => {
+  it('are deleted by db.expire() when they expire', async () => {
+    class ExpiringToken extends Model {
+      static fields = refreshTokenFields(fields);
+
+      static options = { indexes: [{ fields: ['expiresAt'], expireAfter: 0 }] };
+    }
+    const db = new Database({ backend: 'sqlite', filename: ':memory:' }).register(ExpiringToken);
+    await db.connect();
+    await db.sync();
+    const refresh = new RefreshTokens({ store: modelStore(ExpiringToken), ttl: '50ms' });
+    const { token } = await refresh.issue('42');
+    await refresh.issue('7', null);
+    expect(await db.expire()).toEqual({ ExpiringToken: 0 });
+    await sleep(80);
+    expect(await db.expire()).toEqual({ ExpiringToken: 2 });
+    expect((await refresh.verify(token).catch((err) => err)).reason).toBe('unknown');
+    await db.close();
+  });
+});

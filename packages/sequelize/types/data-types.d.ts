@@ -1,4 +1,5 @@
 // Ported from sequelize (types/data-types.d.ts, MIT License) by tools/port-types/port.js: do not edit, change the tool.
+import type { Fn, Literal } from './utils';
 /**
  * The datatypes are used when defining a new model using `Model.init`, like this:
  * ```js
@@ -453,6 +454,11 @@ export const UUIDV1: AbstractDataTypeConstructor;
 export const UUIDV4: AbstractDataTypeConstructor;
 
 /**
+ * A default value for UUID columns (Sequelize 7): UUIDs of version 7, which sort as they are made.
+ */
+export const UUIDV7: AbstractDataTypeConstructor;
+
+/**
  * A virtual value that is not stored in the DB. This could for example be useful if you want to provide a default value in your model that is returned to the user but not stored in the DB.
  *
  * You could also use it to validate a value before permuting and storing it. Checking password length before hashing it for example:
@@ -495,14 +501,27 @@ export const UUIDV4: AbstractDataTypeConstructor;
  */
 export const VIRTUAL: VirtualDataTypeConstructor;
 
+/**
+ * As Sequelize 7 (include as): the SQL of a VIRTUAL computed by the database, given the name of the table of its model
+ * in the query (`(includeAs) => [literal(`(SELECT COUNT(*) FROM posts p WHERE p.user_id = ${includeAs}.id)`), 'posts']`),
+ * selected when the attribute is in `attributes` (of the find or of an include).
+ */
+export type IncludeAsCallback = (includeAs: string) => [Literal | Fn, string] | Literal | Fn;
+
 interface VirtualDataTypeConstructor extends AbstractDataTypeConstructor {
-  new <T extends AbstractDataTypeConstructor | AbstractDataType>(ReturnType: T, fields?: string[]): VirtualDataType<T>;
-  <T extends AbstractDataTypeConstructor | AbstractDataType>(ReturnType: T, fields?: string[]): VirtualDataType<T>;
+  new <T extends AbstractDataTypeConstructor | AbstractDataType>(
+    ReturnType: T,
+    fields?: string[] | IncludeAsCallback
+  ): VirtualDataType<T>;
+  <T extends AbstractDataTypeConstructor | AbstractDataType>(
+    ReturnType: T,
+    fields?: string[] | IncludeAsCallback
+  ): VirtualDataType<T>;
 }
 
 export interface VirtualDataType<T extends AbstractDataTypeConstructor | AbstractDataType> extends AbstractDataType {
   returnType: T;
-  fields: string[];
+  fields: string[] | IncludeAsCallback;
 }
 
 /**
@@ -524,6 +543,10 @@ export interface EnumDataType<T extends string> extends AbstractDataType {
 
 export interface EnumDataTypeOptions<T extends string> {
   values: T[];
+  /** The name of the type of PostgreSQL (Sequelize 7): one type for every column of it. */
+  name?: string;
+  /** The schema of the type of PostgreSQL (Sequelize 7). */
+  schema?: string;
 }
 
 /**

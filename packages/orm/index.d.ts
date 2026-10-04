@@ -69,6 +69,15 @@ export interface ForeignKeyOptions extends FieldOptions<unknown> {
   dbOnUpdate?: DbOnDelete;
 }
 
+export interface EncryptedOptions<T> extends Omit<FieldOptions<T>, 'primaryKey'> {
+  // The same value is the same text (for the same key): found by exact and in, and can be unique or indexed.
+  deterministic?: boolean;
+  // Values that are not encrypted (written before the field was) are read as they are, until reencrypt().
+  acceptPlaintext?: boolean;
+  // What the values are bound to (the table and column by default): the old names, when one of them is renamed.
+  context?: string;
+}
+
 export interface ManyToManyOptions {
   relatedName?: string;
   through?: ModelClass | (() => ModelClass);
@@ -106,12 +115,20 @@ type Nullable<O> = O extends { null: true } ? true : false;
 type ModelRef<M extends Model> = ModelClass<M> | (() => ModelClass<M>) | 'self' | string;
 
 export declare const fields: {
-  id(options?: FieldOptions<number | string>): Field<number | string>;
+  // mode (SQL databases): the keys as numbers (the default), bigints or strings, as those of bigint fields.
+  id(
+    options?: FieldOptions<number | string> & { mode?: 'number' | 'bigint' | 'string' }
+  ): Field<number | string | bigint>;
   string<O extends StringOptions>(options?: O): Field<string, Nullable<O>>;
   text<O extends StringOptions>(options?: O): Field<string, Nullable<O>>;
   integer<O extends NumberOptions>(options?: O): Field<number, Nullable<O>>;
   float<O extends NumberOptions>(options?: O): Field<number, Nullable<O>>;
-  bigint<O extends FieldOptions<number | bigint>>(options?: O): Field<number | bigint, Nullable<O>>;
+  // mode: 'number' (the default: numbers when they are safe integers, bigints otherwise), 'bigint' or 'string'.
+  bigint<O extends FieldOptions<number | bigint> & { mode?: 'number' }>(
+    options?: O
+  ): Field<number | bigint, Nullable<O>>;
+  bigint<O extends FieldOptions<bigint> & { mode: 'bigint' }>(options: O): Field<bigint, Nullable<O>>;
+  bigint<O extends FieldOptions<string> & { mode: 'string' }>(options: O): Field<string, Nullable<O>>;
   decimal<O extends DecimalOptions>(options?: O): Field<string, Nullable<O>>;
   date<O extends FieldOptions<string>>(options?: O): Field<string, Nullable<O>>;
   bytes<O extends FieldOptions<Buffer>>(options?: O): Field<Buffer, Nullable<O>>;
@@ -130,6 +147,12 @@ export declare const fields: {
     base: Field<T, boolean>,
     options?: O
   ): Field<Array<T | null>, Nullable<O>>;
+  // The values of a field kept encrypted (AES-256-GCM) in a TEXT column: conditions only by isnull (and exact and in
+  // when deterministic), no orders nor aggregates other than Count.
+  encrypted<T, O extends EncryptedOptions<T> = EncryptedOptions<T>>(
+    base: Field<T, boolean>,
+    options?: O
+  ): Field<T, Nullable<O>>;
   uuid<O extends FieldOptions<string>>(options?: O): Field<string, Nullable<O>>;
   foreignKey<M extends Model, O extends ForeignKeyOptions = ForeignKeyOptions>(
     to: ModelRef<M>,
@@ -183,9 +206,15 @@ export interface ModelOptions {
   // a model without one (its objects are only inserted; querysets update and delete its rows).
   primaryKey?: string[] | false;
   ordering?: string | string[];
-  indexes?: Array<string[] | { fields: string[]; unique?: boolean; name?: string }>;
+  // expireAfter (seconds, or text as '30d'; 0: at the date): a TTL index of one datetime field. Its objects expire
+  // that long after the date: native in MongoDB, deleted by db.expire() / db.startExpiry() in every backend.
+  indexes?: Array<
+    string[] | { fields: string[]; unique?: boolean; name?: string; condition?: string; expireAfter?: number | string }
+  >;
   abstract?: boolean;
   fillfactor?: number;
+  // SQLite: a STRICT table (its columns hold values of their types only).
+  strict?: boolean;
 }
 
 export interface Meta {
@@ -222,7 +251,23 @@ export declare class Model {
   toJSON(): Record<string, unknown>;
 }
 
-export type Conditions = Record<string, unknown> | Q;
+export type Conditions = Record<string, unknown> | Q | JsonPath;
+
+// A condition on a value inside a json field, its path a list of keys (any text: also 'in' or 'a__b') and indexes
+// of arrays (numbers up to 2^31 - 1): jsonPath('data', ['owner', 'name'], 'ada'), jsonPath('data', ['tags', 0], 'x').
+export declare class JsonPath {
+  constructor(field: string, path: Array<string | number>, value: unknown, lookup?: string);
+  readonly field: string;
+  readonly path: Array<string | number>;
+  readonly value: unknown;
+  readonly lookup: string;
+}
+export declare function jsonPath(
+  field: string,
+  path: Array<string | number>,
+  value: unknown,
+  lookup?: string
+): JsonPath;
 
 export declare class Q {
   constructor(conditions?: Record<string, unknown>, op?: 'and' | 'or' | 'not');
@@ -344,6 +389,11 @@ export declare class Database {
   } | null>;
   migrate(options: { dir: string; to?: string }): Promise<string[]>;
   showMigrations(options: { dir: string }): Promise<Array<{ name: string; applied: boolean }>>;
+  // Deletes the objects of TTL indexes that expired: the number deleted, by model.
+  expire(options?: { now?: Date }): Promise<Record<string, number>>;
+  // Calls expire() every interval (seconds or text: '1m') until stopExpiry() or close().
+  startExpiry(options?: { interval?: number | string; onError?: (err: Error) => void }): this;
+  stopExpiry(): void;
 }
 
 export declare class Backend {
@@ -378,6 +428,38 @@ export declare const QueryError: ErrorClass;
 export declare const ProtectedError: ErrorClass;
 export declare const BackendError: ErrorClass;
 export declare const UnsupportedError: ErrorClass;
+// A write that would duplicate a unique field or key: 409, with the names of the fields and the model.
+export interface UniqueErrorInstance extends OrmError {
+  model: string;
+  fields: string[];
+}
+export declare const UniqueError: ErrorClass<UniqueErrorInstance>;
+// An encrypted value that cannot be read (its key is not in the keyring, it was changed), or no keys to encrypt.
+export declare const EncryptionError: ErrorClass;
+
+// The keys of encrypted fields: 32 bytes each (Buffers, or base64 or hex text), by id; the current one encrypts.
+export type EncryptionKey = string | Buffer | Uint8Array;
+
+export declare class Keyring {
+  constructor(options: EncryptionKey | { current?: string; keys: Record<string, EncryptionKey> });
+  current: string;
+  seal(plaintext: Buffer, context: string, deterministic?: boolean): string;
+  open(text: string, context: string): Buffer;
+}
+
+// Sets the keyring of the process (null: none; then XUFA_ENCRYPTION_KEYS='k2:<base64>,k1:<base64>' is read).
+export declare function setEncryptionKeys(
+  options: Keyring | EncryptionKey | { current?: string; keys: Record<string, EncryptionKey> } | null
+): Keyring | null;
+// 32 random bytes in base64.
+export declare function generateEncryptionKey(): string;
+// Whether a stored value is encrypted text ($xenc$...).
+export declare function isEncrypted(value: unknown): value is string;
+// Writes the encrypted fields of every object again with the current key: the number of objects written.
+export declare function reencrypt(
+  Model: ModelClass,
+  options?: { fields?: string[]; batchSize?: number }
+): Promise<number>;
 
 export interface PluginOptions {
   database: Database;
@@ -386,7 +468,63 @@ export interface PluginOptions {
   migrate?: { dir: string; to?: string };
   sync?: boolean;
   errorHandler?: boolean;
+  // Deletes the objects of TTL indexes that expired while the app runs (true: every minute).
+  expire?: boolean | { interval?: number | string; onError?: (err: Error) => void };
 }
+
+export type ResourceAction = 'list' | 'get' | 'create' | 'update' | 'delete';
+
+export interface ResourceOptions<T extends Model = Model> {
+  // The actions given (all of them by default): list (GET /), get (GET /:id), create (POST /), update (PUT and PATCH
+  // /:id) and delete (DELETE /:id).
+  actions?: ResourceAction[];
+  // The objects of a request (all by default): those out of it are not found by any route.
+  queryset?(request: any): QuerySet<T>;
+  // The fields answered (all of them by default), or all but `exclude`.
+  fields?: string[];
+  exclude?: string[];
+  // The fields a body sets (every one but the primary key and those set by the ORM by default), or all but readOnly.
+  writable?: string[];
+  readOnly?: string[];
+  // The filters of lists, as query parameters: ['author', 'pages__gte'] or { pages: ['gte', 'lte'] }.
+  filters?: string[] | Record<string, string | string[]>;
+  // The fields lists can be ordered by (?ordering=-pages,title).
+  ordering?: string[];
+  // The fields ?search= looks into (icontains, any of them).
+  search?: string[];
+  // Related objects loaded with the objects (selectRelated).
+  related?: string[];
+  // ?limit (pageSize by default, maxPageSize at most) and ?offset; pagination: false answers arrays.
+  pageSize?: number;
+  maxPageSize?: number;
+  pagination?: boolean;
+  // The field of /:id ('pk' by default).
+  lookup?: string;
+  // The rule of @xufa/auth of every action (config.auth of its routes), or one by action.
+  auth?: unknown | Partial<Record<ResourceAction, unknown>>;
+  hooks?: {
+    beforeCreate?(
+      values: Record<string, unknown>,
+      request: any
+    ): Record<string, unknown> | void | Promise<Record<string, unknown> | void>;
+    afterCreate?(object: T, request: any): void | Promise<void>;
+    beforeUpdate?(
+      object: T,
+      values: Record<string, unknown>,
+      request: any
+    ): Record<string, unknown> | void | Promise<Record<string, unknown> | void>;
+    afterUpdate?(object: T, request: any): void | Promise<void>;
+    beforeDelete?(object: T, request: any): void | Promise<void>;
+  };
+  // How an object is answered (its toJSON() by default).
+  serialize?(object: T, request: any): unknown;
+}
+
+// The routes of the objects of a model, to register with a prefix: app.register(resource(Book), { prefix: '/books' }).
+export declare function resource<T extends Model>(
+  model: ModelClass<T>,
+  options?: ResourceOptions<T>
+): (app: any) => Promise<void>;
 
 // The plugin for @xufa/http (and fastify): app.register(plugin, { database }).
 export declare function plugin(app: any, options: PluginOptions): Promise<void>;

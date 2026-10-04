@@ -214,6 +214,11 @@ module.exports = async function books(app) {
   });
 };</code></pre>
         <p>
+          These routes are what <a href="orm.html#resources"><code>orm.resource()</code></a> makes for a model, with
+          filters, ordering, search and pages: <code>app.register(orm.resource(Book, { filters: ['author'], related:
+          ['author'] }), { prefix: '/books' })</code>. Write them by hand when they do something else.
+        </p>
+        <p>
           A foreign key keeps its key in its own attribute: <code>author</code> is the object (once loaded),
           <code>authorId</code> the key. The schema of the body asks for <code>authorId</code>. Objects serialize with
           their loaded relations (<code>toJSON()</code>), so a book found with <code>selectRelated('author')</code> is
@@ -269,9 +274,12 @@ class User extends Model {
 
 class RefreshToken extends Model {
   static fields = auth.refreshTokenFields(fields);
+
+  static options = { indexes: [{ fields: ['expiresAt'], expireAfter: 0 }] }; // deleted when they expire
 }</code></pre>
         <pre><code class="language-js">// in build()
 db.register(Author, Book, User, RefreshToken);
+// and expire: true in the plugin of the ORM: it deletes the refresh tokens that expired (their TTL index)
 app.register(auth.plugin, {
   keys: process.env.JWT_KEY, // 32 bytes or more
   login: {

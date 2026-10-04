@@ -7,7 +7,8 @@ renamed and their imports of other upstream packages pointed to the xufa ones.
 The declarations of Sequelize 6 (for `@xufa/sequelize`) come from the Sequelize that
 [`tools/sequelize-compat`](../sequelize-compat) installs, and their type tests from the tests its `fetch-tests.js`
 gets: set that folder up first (`npm install` and `node fetch-tests.js` there). They are patched for what the layer
-has not (Sequelize's SQL helpers in `Utils`, the transactions of the QueryInterface) and for the packages of types
+has not (Sequelize's SQL helpers in `Utils`, the transactions of the QueryInterface), for what it takes of Sequelize 7
+(`changeColumns`, `showIndexes` and the descriptions of indexes, VIRTUALs computed by SQL, `enableRuntimeAttributes`) and for the packages of types
 they use (validator, retry-as-promised, debug), which are written in instead.
 
 ```sh

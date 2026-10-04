@@ -181,7 +181,7 @@ export interface BelongsToManySetAssociationsMixinOptions
  * @see Instance
  */
 export type BelongsToManySetAssociationsMixin<TModel, TModelPrimaryKey> = (
-  newAssociations?: (TModel | TModelPrimaryKey)[],
+  newAssociations?: (TModel | TModelPrimaryKey | { [key: string]: unknown })[],
   options?: BelongsToManySetAssociationsMixinOptions
 ) => Promise<void>;
 
@@ -220,7 +220,7 @@ export interface BelongsToManyAddAssociationsMixinOptions
  * @see Instance
  */
 export type BelongsToManyAddAssociationsMixin<TModel, TModelPrimaryKey> = (
-  newAssociations?: (TModel | TModelPrimaryKey)[],
+  newAssociations?: (TModel | TModelPrimaryKey | { [key: string]: unknown })[],
   options?: BelongsToManyAddAssociationsMixinOptions
 ) => Promise<void>;
 
@@ -259,7 +259,7 @@ export interface BelongsToManyAddAssociationMixinOptions
  * @see Instance
  */
 export type BelongsToManyAddAssociationMixin<TModel, TModelPrimaryKey> = (
-  newAssociation?: TModel | TModelPrimaryKey,
+  newAssociation?: TModel | TModelPrimaryKey | { [key: string]: unknown },
   options?: BelongsToManyAddAssociationMixinOptions
 ) => Promise<void>;
 
@@ -483,3 +483,11 @@ export interface BelongsToManyCountAssociationsMixinOptions extends Transactiona
 export type BelongsToManyCountAssociationsMixin = (
   options?: BelongsToManyCountAssociationsMixinOptions
 ) => Promise<number>;
+
+/**
+ * Creates several targets at once (Sequelize 7: createTasks), linked to the instance.
+ */
+export type BelongsToManyCreateAssociationsMixin<TModel extends Model> = (
+  records: Array<CreationAttributes<TModel> | { [key: string]: unknown }>,
+  options?: CreateOptions<any>
+) => Promise<TModel[]>;

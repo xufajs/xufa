@@ -8,9 +8,9 @@ import {
   HasManyCountAssociationsMixin,
   HasManyCreateAssociationMixin,
   HasManyGetAssociationsMixin,
-  HasManyHasAssociationMixin
+  HasManyHasAssociationMixin,
 } from 'sequelize/lib/associations';
-import QueryTypes = require("sequelize/lib/query-types");
+import QueryTypes = require('sequelize/lib/query-types');
 
 class User extends Model {
   public id!: number; // Note that the `null assertion` `!` is required in strict mode.
@@ -59,66 +59,75 @@ class Address extends Model {
   public readonly updatedAt!: Date;
 }
 
-Project.init({
-  id: {
-    type: DataTypes.INTEGER.UNSIGNED, // you can omit the `new` but this is discouraged
-    autoIncrement: true,
-    primaryKey: true,
+Project.init(
+  {
+    id: {
+      type: DataTypes.INTEGER.UNSIGNED, // you can omit the `new` but this is discouraged
+      autoIncrement: true,
+      primaryKey: true,
+    },
+    ownerId: {
+      type: DataTypes.INTEGER.UNSIGNED,
+      allowNull: false,
+    },
+    name: {
+      type: new DataTypes.STRING(128),
+      allowNull: false,
+    },
   },
-  ownerId: {
-    type: DataTypes.INTEGER.UNSIGNED,
-    allowNull: false,
-  },
-  name: {
-    type: new DataTypes.STRING(128),
-    allowNull: false,
+  {
+    sequelize,
+    tableName: 'projects',
   }
-}, {
-  sequelize,
-  tableName: 'projects',
-});
+);
 
-User.init({
-  id: {
-    type: DataTypes.INTEGER.UNSIGNED,
-    autoIncrement: true,
-    primaryKey: true,
+User.init(
+  {
+    id: {
+      type: DataTypes.INTEGER.UNSIGNED,
+      autoIncrement: true,
+      primaryKey: true,
+    },
+    name: {
+      type: new DataTypes.STRING(128),
+      allowNull: false,
+    },
+    preferredName: {
+      type: new DataTypes.STRING(128),
+      allowNull: true,
+    },
   },
-  name: {
-    type: new DataTypes.STRING(128),
-    allowNull: false,
-  },
-  preferredName: {
-    type: new DataTypes.STRING(128),
-    allowNull: true
+  {
+    tableName: 'users',
+    sequelize: sequelize, // this bit is important
   }
-}, {
-  tableName: 'users',
-  sequelize: sequelize, // this bit is important
-});
+);
 
-Address.init({
-  userId: {
-    type: DataTypes.INTEGER.UNSIGNED,
+Address.init(
+  {
+    userId: {
+      type: DataTypes.INTEGER.UNSIGNED,
+    },
+    address: {
+      type: new DataTypes.STRING(128),
+      allowNull: false,
+    },
   },
-  address: {
-    type: new DataTypes.STRING(128),
-    allowNull: false,
+  {
+    tableName: 'users',
+    sequelize: sequelize, // this bit is important
   }
-}, {
-  tableName: 'users',
-  sequelize: sequelize, // this bit is important
-});
+);
 
 // Here we associate which actually populates out pre-declared `association` static and other methods.
 User.hasMany(Project, {
   sourceKey: 'id',
   foreignKey: 'ownerId',
-  as: 'projects' // this determines the name in `associations`!
+  as: 'projects', // this determines the name in `associations`!
 });
 
-Address.belongsTo(User, {targetKey: 'id'});
-User.hasOne(Address,{sourceKey: 'id'});
+Address.belongsTo(User, { targetKey: 'id' });
+User.hasOne(Address, { sourceKey: 'id' });
 
 async function stuff() {
   const newUser = await User.create({
@@ -136,16 +145,16 @@ async function stuff() {
     rejectOnEmpty: true, // Specifying true here removes `null` from the return type!
   });
   console.log(ourUser.projects![0].name); // Note the `!` null assertion since TS can't know if we included
-                                          // the model or not
+  // the model or not
 
-  const user = await sequelize.query('SELECT * FROM users WHERE name = :userName',{
+  const user = await sequelize.query('SELECT * FROM users WHERE name = :userName', {
     type: QueryTypes.SELECT,
     replacements: {
-      userName: 'Johnny'
+      userName: 'Johnny',
     },
     mapToModel: true,
-    model: User
-  })
+    model: User,
+  });
 }
 
 // Legacy models
@@ -158,14 +167,14 @@ interface MyModel extends Model {
 // Need to declare the static model so `findOne` etc. use correct types.
 type MyModelStatic = typeof Model & {
   new (values?: object, options?: BuildOptions): MyModel;
-}
+};
 
 // TS can't derive a proper class definition from a `.define` call, therefor we need to cast here.
 const MyDefineModel = <MyModelStatic>sequelize.define('MyDefineModel', {
   id: {
     primaryKey: true,
     type: DataTypes.INTEGER.UNSIGNED,
-  }
+  },
 });
 
 async function stuffTwo() {

@@ -199,6 +199,18 @@ export type Dialect = 'mysql' | 'postgres' | 'sqlite' | 'mariadb' | 'mssql' | 'd
  */
 export interface Options extends Logging {
   /**
+   * How BIGINT values are given (@xufa/sequelize): numbers while they are safe integers and bigints beyond them
+   * ('number', the default), always bigints ('bigint', as Sequelize 7 goes), or strings ('string', as Sequelize 6
+   * gives them in PostgreSQL).
+   */
+  bigint?: 'number' | 'bigint' | 'string';
+
+  /**
+   * The foreign keys of associations are indexed (Sequelize 7 does it by default; @xufa/sequelize when asked).
+   */
+  indexForeignKeys?: boolean;
+
+  /**
    * The dialect of the database you are connecting to. One of mysql, postgres, sqlite, mariadb and mssql.
    *
    * @default 'mysql'

@@ -1,13 +1,35 @@
 // Model: the models of Sequelize (init or sequelize.define, find*, create, update, destroy, associations, hooks,
 // scopes, paranoid models) over @xufa/orm. Each model has a model of @xufa/orm made from its attributes (its schema
 // and queries), built before the first query; its instances keep their values in dataValues, as in Sequelize.
-const { QuerySet, Model: XufaModel, fields: xufaFields, and, F, Count, Sum, Avg, Min, Max } = require('@xufa/orm');
-const { normalizeType, defaultValueOf, DataTypes } = require('./data-types');
-const { sqlTypeOf, autoIncrementOf, enumTypeName, enumTypeRef, createEnumSql, enumValuesOf } = require('./sql-types');
+const {
+  QuerySet,
+  Model: XufaModel,
+  fields: xufaFields,
+  and,
+  F,
+  Count,
+  Sum,
+  Avg,
+  Min,
+  Max,
+  parseHstore,
+} = require('@xufa/orm');
+const { normalizeType, defaultValueOf, DataTypes, customParserOf, customStringifyOf } = require('./data-types');
+const {
+  generatedSql,
+  sqlTypeOf,
+  autoIncrementOf,
+  enumTypeName,
+  enumTypeSchema,
+  enumTypeRef,
+  createEnumSql,
+  enumValuesOf,
+  enumOptionsOf,
+} = require('./sql-types');
 const { deferrableSql } = require('./deferrable');
 const { stringifyRange, parseRange } = require('./range');
 const { Raw, fragmentOf, isFragment, columnSql, literalSql } = require('./fragments');
-const { translateWhere } = require('./where');
+const { translateWhere, parseJsonPath, JsonRef } = require('./where');
 const { validateInstance, checkEnums } = require('./validate');
 const { whereSql, literal } = require('./query-interface');
 const { BelongsTo, HasMany, HasOne, BelongsToMany } = require('./associations');
@@ -79,7 +101,8 @@ function dbDefaultOf(value) {
   return undefined;
 }
 
-function xufaField(name, attribute, dialect, table) {
+// `bigint`: how BIGINT values are given (the bigint option of Sequelize: number, bigint or string).
+function xufaField(name, attribute, dialect, table, bigint) {
   const { type } = attribute;
   const options = {
     null: attribute.allowNull !== false && !attribute.primaryKey,
@@ -91,8 +114,18 @@ function xufaField(name, attribute, dialect, table) {
       : sqlTypeOf(type, dialect, { table, column: attribute.field }),
     dbDefault: attribute.primaryKey ? undefined : dbDefaultOf(attribute.defaultValue),
   };
+  // A generated column (as Sequelize 7): GENERATED ALWAYS AS (its SQL) STORED or VIRTUAL, after its type.
+  if (attribute.generatedAs !== undefined) {
+    options.sqlType = `${options.sqlType || sqlTypeOf(type, dialect) || 'TEXT'}${generatedSql(name, attribute)}`;
+    options.dbDefault = undefined;
+  }
   if (attribute.primaryKey && attribute.autoIncrement) {
-    return xufaFields.id({ column: attribute.field, sqlType: autoIncrementOf(type, dialect) });
+    // BIGINT keys are given as the bigint option says (as BIGINT values are).
+    return xufaFields.id({
+      column: attribute.field,
+      sqlType: autoIncrementOf(type, dialect),
+      mode: type.key === 'BIGINT' ? bigint : undefined,
+    });
   }
   switch (type.kind) {
     case 'string':
@@ -104,7 +137,7 @@ function xufaField(name, attribute, dialect, table) {
     case 'integer':
       return xufaFields.integer(options);
     case 'bigint':
-      return xufaFields.bigint(options);
+      return xufaFields.bigint({ ...options, mode: bigint });
     case 'float':
       return xufaFields.float(options);
     case 'decimal':
@@ -122,7 +155,8 @@ function xufaField(name, attribute, dialect, table) {
           name,
           { type: type.options.type, field: attribute.field, allowNull: true },
           dialect,
-          table
+          table,
+          bigint
         );
         return xufaFields.array(item, options);
       }
@@ -216,6 +250,14 @@ class Model {
       ...merged,
     };
     const { fillfactor } = this.options;
+    // Generated columns are checked when the model is defined (their SQL, their mode, no default).
+    Object.entries(attributes || {}).forEach(([name, attribute]) => {
+      if (attribute && typeof attribute === 'object' && attribute.generatedAs !== undefined)
+        generatedSql(name, attribute);
+    });
+    if (this.options.strict && sequelize.dialectName !== 'sqlite') {
+      throw new NotSupportedError(`The STRICT tables of SQLite in ${sequelize.dialectName} (${modelName})`);
+    }
     if (fillfactor !== undefined && !(Number.isInteger(fillfactor) && fillfactor >= 10 && fillfactor <= 100)) {
       throw new Error(`${modelName}: fillfactor must be an integer from 10 to 100`);
     }
@@ -227,6 +269,9 @@ class Model {
         : this.underscored
           ? underscore(pluralize(modelName))
           : pluralize(modelName));
+    // quoteIdentifiers: false (PostgreSQL): names as PostgreSQL makes the ones not quoted (in lower case), so SQL
+    // that names them without quotes finds them.
+    if (this.xufaUnquoted()) this.tableName = this.tableName.toLowerCase();
     this.associations = {};
     // The schema of the model, or the one of the Sequelize instance (options.schema).
     this.xufaSchema = this.options.schema || sequelize.options.schema || null;
@@ -390,6 +435,7 @@ class Model {
     }
     attribute.fieldName = name;
     attribute.field = attribute.field || (this.underscored ? underscore(name) : name);
+    if (this.xufaUnquoted()) attribute.field = attribute.field.toLowerCase();
     // The values of an ENUM: of its type, or of the attribute.
     const values = attribute.type.options.values;
     if (!attribute.values && values && values.length) attribute.values = values;
@@ -398,12 +444,27 @@ class Model {
 
   // The primary key and the accessors of the attributes on the prototype.
   static refreshAttributes() {
+    this.xufaRefreshOwn();
+    // A model and its copies in schemas have the same attributes: what is made of them is made again for each one.
+    const base = this.xufaBase || this;
+    [
+      base,
+      ...(base.xufaCopies ? base.xufaCopies.values() : []),
+      ...(base.xufaSyncCopies ? base.xufaSyncCopies.values() : []),
+    ]
+      .filter((member) => member !== this && member.rawAttributes === this.rawAttributes)
+      .forEach((member) => member.xufaRefreshOwn());
+  }
+
+  static xufaRefreshOwn() {
     const names = Object.keys(this.rawAttributes);
     this.primaryKeyAttributes = names.filter((name) => this.rawAttributes[name].primaryKey);
     [this.primaryKeyAttribute] = this.primaryKeyAttributes;
     this.primaryKeyField = this.primaryKeyAttribute ? this.rawAttributes[this.primaryKeyAttribute].field : undefined;
     this.tableAttributes = this.rawAttributes;
     this.xufaDbAttributes = names.filter((name) => this.rawAttributes[name].type.kind !== 'virtual');
+    // Generated columns (as Sequelize 7: generatedAs): the database makes their values; they are read, not written.
+    this.xufaGenerated = new Set(names.filter((name) => this.rawAttributes[name].generatedAs !== undefined));
     this.xufaGetters = new Map();
     this.xufaSetters = new Map();
     names.forEach((name) => {
@@ -456,12 +517,46 @@ class Model {
   }
 
   // The model in a schema (before it is used).
+  // The model a foreign key points to: its target, or (in a copy made by sync({ schema })) the target's copy in that
+  // schema, as Sequelize makes the references of the tables it syncs in a schema.
+  static xufaTargetOf(key) {
+    return this.xufaRefSchema ? key.target.schema(this.xufaRefSchema, this.xufaDelimiter) : key.target;
+  }
+
+  // The copy that sync({ schema }) makes the table of: in the schema, with its references to the tables there.
+  static xufaSyncCopy(schema, delimiter) {
+    const base = this.xufaBase || this;
+    if (!Object.hasOwn(base, 'xufaSyncCopies')) base.xufaSyncCopies = new Map();
+    const cacheKey = `${schema}|${delimiter || base.xufaDelimiter}`;
+    if (base.xufaSyncCopies.has(cacheKey)) return base.xufaSyncCopies.get(cacheKey);
+    const copy = { [base.name]: class extends base {} }[base.name];
+    base.xufaSyncCopies.set(cacheKey, copy);
+    copy.xufaBase = base;
+    copy.xufaSchema = schema;
+    copy.xufaRefSchema = schema;
+    copy.xufaDelimiter = delimiter || base.xufaDelimiter;
+    copy.xufaBuilt = false;
+    copy.xufa = null;
+    copy.xufaCopy = 'sync';
+    copy.options = { ...base.options, schema };
+    return copy;
+  }
+
   static schema(schema, options) {
     const delimiter = typeof options === 'string' ? options : options && options.schemaDelimiter;
-    // A model in use gives a copy in the schema (as Sequelize does), with a model of @xufa/orm of its own.
-    if (this.xufaBuilt && (schema !== this.xufaSchema || (delimiter && delimiter !== this.xufaDelimiter))) {
+    // A copy in the schema (as Sequelize does: the model itself is left as it is, built or not), with a model of
+    // @xufa/orm of its own.
+    if (schema !== this.xufaSchema || (delimiter && delimiter !== this.xufaDelimiter)) {
       const base = this.xufaBase || this;
+      // One copy for each schema (and delimiter): its model of @xufa/orm is made once.
+      if (!Object.hasOwn(base, 'xufaCopies')) base.xufaCopies = new Map();
+      const cacheKey = `${schema || ''}\u0000${delimiter || base.xufaDelimiter}`;
+      // The schema of the model itself: the model.
+      if ((schema || null) === (base.xufaSchema || null) && (!delimiter || delimiter === base.xufaDelimiter))
+        return base;
+      if (base.xufaCopies.has(cacheKey)) return base.xufaCopies.get(cacheKey);
       const copy = { [base.name]: class extends base {} }[base.name];
+      base.xufaCopies.set(cacheKey, copy);
       copy.xufaBase = base;
       copy.xufaSchema = schema || null;
       copy.xufaDelimiter = delimiter || base.xufaDelimiter;
@@ -518,7 +613,8 @@ class Model {
           name,
           { ...attribute, references: undefined },
           this.sequelize.dialectName,
-          this.xufaEnumTable()
+          this.xufaEnumTable(),
+          this.sequelize.options.bigint
         );
         return;
       }
@@ -529,7 +625,7 @@ class Model {
           const onDelete = { CASCADE: 'cascade', 'SET NULL': 'setNull', RESTRICT: 'restrict', 'NO ACTION': 'noAction' };
           key = {
             target,
-            deferrable: deferrableSql(attribute.references.deferrable),
+            deferrable: attribute.references.deferrable,
             allowNull: attribute.allowNull !== false,
             dbOnDelete: attribute.onDelete ? onDelete[String(attribute.onDelete).toUpperCase()] : undefined,
             dbOnUpdate: attribute.onUpdate ? onDelete[String(attribute.onUpdate).toUpperCase()] : undefined,
@@ -543,7 +639,13 @@ class Model {
             ? ` REFERENCES "${attribute.references.model}" ("${attribute.references.key || 'id'}")`
             : '';
         const definition = unresolved ? { ...attribute, xufaSqlSuffix: unresolved } : attribute;
-        fields[name] = xufaField(name, definition, this.sequelize.dialectName, this.xufaEnumTable());
+        fields[name] = xufaField(
+          name,
+          definition,
+          this.sequelize.dialectName,
+          this.xufaEnumTable(),
+          this.sequelize.options.bigint
+        );
         return;
       }
       // The field of the key is named by its association (author), or by the key without its suffix.
@@ -551,7 +653,7 @@ class Model {
       if (!fieldName || fieldName === name) fieldName = `${name}_ref`;
       while (taken.has(fieldName)) fieldName = `${fieldName}_`;
       taken.add(fieldName);
-      const { target } = key;
+      const target = this.xufaTargetOf(key);
       fields[fieldName] = xufaFields.foreignKey(() => target.xufa, {
         // A key can be (part of) the primary key: the keys of through models are theirs.
         primaryKey: Boolean(attribute.primaryKey),
@@ -567,13 +669,26 @@ class Model {
           : key.relatedName || `xufa_${this.name}_${fieldName}`,
         index: false,
         toField: key.toField,
-        dbDeferrable: this.sequelize.dialectName === 'postgres' ? key.deferrable : undefined,
+        dbDeferrable: this.sequelize.dialectName === 'postgres' ? deferrableSql(key.deferrable) : undefined,
         sqlType: sqlTypeOf(attribute.type, this.sequelize.dialectName),
         dbDefault: dbDefaultOf(attribute.defaultValue),
       });
       this.xufaPaths.set(name, fieldName);
     });
     const indexes = [];
+    // The indexes of the foreign keys of associations (as Sequelize 7): with the indexForeignKeys option of Sequelize,
+    // or the index option of a key (true, false, or { unique, name }). Keys that lead the primary key have its index.
+    this.xufaForeignKeys.forEach((key, name) => {
+      const attribute = this.rawAttributes[name];
+      const wanted = key.index !== undefined ? key.index : this.sequelize.options.indexForeignKeys === true;
+      if (!wanted || !attribute || key.loose || this.primaryKeyAttributes[0] === name) return;
+      const given = typeof wanted === 'object' ? wanted : {};
+      indexes.push({
+        fields: [name],
+        unique: Boolean(given.unique),
+        name: given.name || underscore(`${this.tableName}_${attribute.field}`),
+      });
+    });
     const groups = new Map();
     Object.entries(this.rawAttributes).forEach(([name, attribute]) => {
       const { unique } = attribute;
@@ -609,7 +724,9 @@ class Model {
     });
     // Copies of a model in other schemas are models of @xufa/orm of their own names.
     // Models in other schemas (and copies of models in them) are models of @xufa/orm of their own names.
-    const name = this.xufaCopy || this.xufaSchema ? `${this.name}@${this.xufaTable()}` : this.name;
+    // The copies made by sync({ schema }) are other models than those of Model.schema() (their references differ).
+    let name = this.xufaCopy || this.xufaSchema ? `${this.name}@${this.xufaTable()}` : this.name;
+    if (this.xufaCopy === 'sync') name = `${name}#sync`;
     const xufa = { [name]: class extends XufaModel {} }[name];
     xufa.fields = fields;
     // PostgreSQL keeps the schema apart from the name (a name can have dots); SQLite names the table 'schema.table'.
@@ -619,6 +736,8 @@ class Model {
         : { table: this.xufaTable(), indexes };
     // fillfactor (PostgreSQL, 10 to 100): room left in the pages of the table for updated rows (as @xufa/orm takes it).
     if (this.options.fillfactor !== undefined) xufa.options.fillfactor = this.options.fillfactor;
+    // strict (SQLite, as Sequelize 7): a STRICT table.
+    if (this.options.strict) xufa.options.strict = true;
     // A model without primary key attributes (removeAttribute('id')) is a model of @xufa/orm without one: its table
     // has no key column (as a table of logs, or one made by others).
     if (this.primaryKeyAttributes.length === 0) xufa.options.primaryKey = false;
@@ -802,7 +921,8 @@ class Model {
 
   // A model with the scopes named (or given as objects, or { method: [name, ...args] } for scopes of functions).
   static scope(...items) {
-    const base = this.xufaBase || this;
+    // A scoped model is of the model it scopes: its base (for a scoped model), or itself (a copy in a schema too).
+    const base = Object.hasOwn(this, 'xufaIsScoped') ? this.xufaBase : this;
     let scope = {};
     items.flat().forEach((item) => {
       if (item === null || item === undefined) return;
@@ -822,6 +942,7 @@ class Model {
     });
     const scoped = { [base.name]: class extends base {} }[base.name];
     scoped.xufaBase = base;
+    scoped.xufaIsScoped = true;
     scoped.xufaScope = scope;
     return scoped;
   }
@@ -848,8 +969,44 @@ class Model {
     return values.map((item) => this.build(item, options));
   }
 
+  // Whether the names are those PostgreSQL makes of names not quoted (quoteIdentifiers: false of Sequelize, or of the
+  // model).
+  static xufaUnquoted() {
+    const quoting =
+      this.options && this.options.quoteIdentifiers !== undefined ? this.options.quoteIdentifiers : undefined;
+    const value = quoting !== undefined ? quoting : this.sequelize && this.sequelize.options.quoteIdentifiers;
+    return value === false && this.sequelize.dialectName === 'postgres';
+  }
+
+  // The parse and stringify functions given to the types of the attributes (after sequelize.refreshTypes()):
+  // { parsers: attribute -> parse, stringifiers: attribute -> type }.
+  static xufaCustomTypes() {
+    const version = this.sequelize.xufaTypesVersion || 0;
+    if (this.xufaCustom && this.xufaCustom.version === version) return this.xufaCustom;
+    // The types with functions given (which are looked up when used: they can be taken back).
+    const parsers = new Map();
+    const stringifiers = new Map();
+    if (version) {
+      this.xufaDbAttributes.forEach((name) => {
+        const { type } = this.rawAttributes[name];
+        if (customParserOf(type)) parsers.set(name, type);
+        if (customStringifyOf(type)) stringifiers.set(name, type);
+      });
+    }
+    this.xufaCustom = { version, parsers, stringifiers };
+    return this.xufaCustom;
+  }
+
   // An instance of a row of @xufa/orm (values by attribute), with the instances of the joined includes in it.
   static xufaFromRow(row, joined) {
+    // The parse functions given to types (as Sequelize calls them for the values read).
+    const { parsers } = this.xufaCustomTypes();
+    if (parsers.size) {
+      parsers.forEach((type, name) => {
+        const parse = customParserOf(type);
+        if (parse && name in row && row[name] !== null && row[name] !== undefined) row[name] = parse(row[name]);
+      });
+    }
     // Ranges as their bounds.
     if (this.xufaRanges.size) {
       this.xufaRanges.forEach(({ subtype, array }, name) => {
@@ -917,7 +1074,9 @@ class Model {
         this._changed.add(name);
       });
     }
-    if (values) this.set(values, { raw: options.raw });
+    // The values it is built with: the timestamps of a saved instance too (build(saved.toJSON(), { isNewRecord:
+    // false }) keeps them, as Sequelize 7).
+    if (values) this.set(values, { raw: options.raw, xufaInitial: true });
     if (!this.isNewRecord) {
       this._previousDataValues = { ...this.dataValues };
       this._changed = null;
@@ -962,14 +1121,25 @@ class Model {
       result[name] = plain ? plainOf(value, options) : value;
     }
     const asked = this._options && this._options.attributes;
+    let added = false;
     model.xufaGetters.forEach((getter, name) => {
       if (asked && !asked.includes(name)) return;
       if (!(name in result) && !(options && options.raw)) {
         const value = getter.call(this, name, options || {});
         result[name] = plain ? plainOf(value, options) : value;
+        added = true;
       }
     });
-    return result;
+    if (!added) return result;
+    // The values of getters (virtual attributes) in the order of the attributes (as Sequelize 7), then the rest.
+    const ordered = {};
+    Object.keys(model.rawAttributes).forEach((name) => {
+      if (name in result) ordered[name] = result[name];
+    });
+    Object.keys(result).forEach((name) => {
+      if (!(name in ordered)) ordered[name] = result[name];
+    });
+    return ordered;
   }
 
   getDataValue(key) {
@@ -978,7 +1148,7 @@ class Model {
 
   set(key, value, options) {
     if (key !== null && typeof key === 'object' && !Array.isArray(key)) {
-      const values = key;
+      const values = valuesOf(this.constructor, key);
       const names = Object.keys(values);
       for (let i = 0; i < names.length; i += 1) this.set(names[i], values[names[i]], value);
       return this;
@@ -1012,7 +1182,8 @@ class Model {
     if (!(options && options.raw)) {
       // As Sequelize: a primary key set is not changed, nor the timestamps of a saved instance.
       if (model.primaryKeyAttributes.includes(key) && this.dataValues[key]) return this;
-      if (!this.isNewRecord && Object.values(model.xufaTimestamps).includes(key)) return this;
+      if (!this.isNewRecord && !(options && options.xufaInitial) && Object.values(model.xufaTimestamps).includes(key))
+        return this;
       // The value before, for previous() of values not saved yet.
       if (key in this.dataValues && !(key in this._previousDataValues)) {
         if (!this.xufaBefore) this.xufaBefore = {};
@@ -1030,6 +1201,18 @@ class Model {
         value.xufaCol === undefined
       ) {
         value = type._sanitize(value);
+      }
+      // BIGINT values set are as the database gives them (the bigint option: bigints or strings).
+      const { bigint } = model.sequelize.options;
+      if (
+        type &&
+        type.kind === 'bigint' &&
+        (bigint === 'bigint' || bigint === 'string') &&
+        ((typeof value === 'number' && Number.isInteger(value)) ||
+          typeof value === 'bigint' ||
+          (typeof value === 'string' && /^-?\d+$/.test(value)))
+      ) {
+        value = bigint === 'bigint' ? BigInt(value) : String(value);
       }
     }
     this.setDataValue(key, value);
@@ -1140,8 +1323,9 @@ class Model {
     for (let i = 0; i < names.length; i += 1) {
       const name = names[i];
       const value = this.dataValues[name];
-      // A key the database gives is not sent.
+      // A key the database gives is not sent, nor are the values of generated columns.
       if (value === undefined || (value === null && name === model.primaryKeyAttribute)) continue;
+      if (model.xufaGenerated.has(name)) continue;
       // Expressions of SQL (fn, col, literal) as they are.
       if (isFragment(value) || (value && value.xufaCol !== undefined)) {
         const { sql, params } = fragmentOf(new Context(model), value);
@@ -1149,7 +1333,7 @@ class Model {
         continue;
       }
       try {
-        let stored = model.xufaRangeText(name, value);
+        let stored = model.xufaRangeText(name, xufaStringified(model, name, value));
         // Strings take other values as their text (as Sequelize stores them).
         const { kind } = model.rawAttributes[name].type;
         if ((kind === 'string' || kind === 'text') && stored !== null && typeof stored !== 'string') {
@@ -1294,11 +1478,20 @@ class Model {
         )
       : model.xufaDbAttributes;
     const row = this.xufaRow(names);
-    const [pk] = await model.xufaBackend.insert(model.xufaMeta, [row]);
+    // ignoreDuplicates: a row that breaks a unique key is not inserted (nor an error): nothing is read back.
+    const ignore = Boolean(options.ignoreDuplicates);
+    const [pk] = await model.xufaBackend.insert(
+      model.xufaMeta,
+      [row],
+      ignore ? { conflict: { fields: [], update: null } } : undefined
+    );
     const pkName = model.primaryKeyAttribute;
-    if (this.dataValues[pkName] === null || this.dataValues[pkName] === undefined) this.dataValues[pkName] = pk;
-    await this.xufaReadBack(names, options);
-    await this.xufaReadRanges(names, options);
+    const missing = this.dataValues[pkName] === null || this.dataValues[pkName] === undefined;
+    if (missing && (pk !== null || !ignore)) this.dataValues[pkName] = pk;
+    if (!ignore || (pk !== null && pk !== undefined)) {
+      await this.xufaReadBack(names, options);
+      await this.xufaReadRanges(names, options);
+    }
     this.isNewRecord = false;
     if (options.xufaChildren) await options.xufaChildren();
     // The changes are there for the hooks after (as Sequelize keeps them).
@@ -1321,6 +1514,10 @@ class Model {
     const made = names.filter((name) => {
       const value = this.dataValues[name];
       return value && typeof value === 'object' && (isFragment(value) || value.xufaCol !== undefined);
+    });
+    // The values of the generated columns, as the database made them.
+    model.xufaGenerated.forEach((name) => {
+      if (!made.includes(name)) made.push(name);
     });
     if (made.length === 0 || !pkName) return;
     const row = await model.unscoped().findOne({
@@ -1413,8 +1610,9 @@ class Model {
       }
       this.dataValues[version] = current + 1;
     }
-    // With returning (as RETURNING gives them in Sequelize), the values the database made are read back.
-    if (options.returning) await this.xufaReadBack(names, options);
+    // With returning (as RETURNING gives them in Sequelize), the values the database made are read back; those of
+    // generated columns always.
+    if (options.returning || model.xufaGenerated.size) await this.xufaReadBack(options.returning ? names : [], options);
     await this.xufaReadRanges(names, options);
     if (options.xufaChildren) await options.xufaChildren();
     if (hooks) {
@@ -1573,9 +1771,19 @@ class Model {
     if (this.hasHook('beforeFindAfterExpandIncludeAll'))
       await this.runHooks('beforeFindAfterExpandIncludeAll', options);
     if (this.hasHook('beforeFindAfterOptions')) await this.runHooks('beforeFindAfterOptions', options);
-    const result = await this.sequelize.xufaRun(options, () =>
-      options.groupedLimit ? this.xufaGroupedLimit(options) : this.xufaFind(options)
+    // It reads: on a replica, with replication.
+    const result = await this.sequelize.xufaReading(options, () =>
+      this.sequelize.xufaRun(options, () =>
+        options.groupedLimit ? this.xufaGroupedLimit(options) : this.xufaFind(options)
+      )
     );
+    // enableRuntimeAttributes (of the options, or of the model), as Sequelize 7: the values of the rows that no
+    // attribute has ([literal(...), 'name'] in attributes) are properties of the instances too, as attributes are.
+    const runtime =
+      options.enableRuntimeAttributes !== undefined
+        ? options.enableRuntimeAttributes
+        : this.options.enableRuntimeAttributes;
+    if (runtime && !options.raw && Array.isArray(result)) result.forEach(exposeRuntimeAttributes);
     // afterFind gets what the find gives: the instance (or null) of findOne.
     if (this.hasHook('afterFind')) {
       await this.runHooks('afterFind', options.xufaOne ? result[0] || null : result, options);
@@ -1746,6 +1954,28 @@ class Model {
     return this.findOne({ ...options, where: options.where ? { [Op.and]: [own, options.where] } : own });
   }
 
+  // The instances of some primary keys, in one query (as Sequelize 7): values, or objects of the attributes of a
+  // composite key. No query for none.
+  static async findByPks(keys, options = {}) {
+    if (!Array.isArray(keys)) throw new TypeError(`${this.name}.findByPks() takes an array of primary keys`);
+    const names = this.primaryKeyAttributes;
+    if (names.length === 0) throw new Error(`${this.name} has no primary key: it cannot be found by primary keys`);
+    if (keys.length === 0) return [];
+    let own;
+    if (names.length === 1) own = { [names[0]]: { [Op.in]: keys } };
+    else {
+      own = {
+        [Op.or]: keys.map((key) => {
+          if (!isPlainObject(key) || names.some((name) => key[name] === undefined)) {
+            throw new TypeError(`The keys of ${this.name} are objects of ${names.join(', ')}`);
+          }
+          return Object.fromEntries(names.map((name) => [name, key[name]]));
+        }),
+      };
+    }
+    return this.findAll({ ...options, where: options.where ? { [Op.and]: [own, options.where] } : own });
+  }
+
   static async findAndCountAll(options = {}) {
     const countOptions = { ...options, attributes: undefined, order: undefined, limit: undefined, offset: undefined };
     const [count, rows] = await Promise.all([this.count(countOptions), this.findAll(options)]);
@@ -1757,6 +1987,10 @@ class Model {
     if (ready) await ready;
     options = this.xufaScoped(options);
     if (this.hasHook('beforeCount')) await this.runHooks('beforeCount', options);
+    return this.sequelize.xufaReading(options, () => this.xufaCount(options));
+  }
+
+  static xufaCount(options) {
     return this.sequelize.xufaRun(options, async () => {
       options = await this.xufaLooseKeys(options);
       const plan = planFind(this, {
@@ -1796,6 +2030,11 @@ class Model {
     const ready = this.xufaReady();
     if (ready) await ready;
     options = this.xufaScoped(options);
+    // It reads: on a replica, with replication.
+    return this.sequelize.xufaReading(options, () => this.xufaAggregate(attribute, fn, options));
+  }
+
+  static xufaAggregate(attribute, fn, options) {
     return this.sequelize.xufaRun(options, async () => {
       const plan = planFind(this, {
         ...options,
@@ -2039,6 +2278,7 @@ class Model {
   }
 
   static async update(values, options = {}) {
+    values = valuesOf(this, values);
     // The scope gives a where too (checked after it, as Sequelize does).
     options = this.xufaScoped({ ...options });
     if (!options || !options.where) throw new Error('Missing where attribute in the options parameter');
@@ -2088,7 +2328,13 @@ class Model {
       if (options.sideEffects === false) names = names.filter((name) => name in plainValues);
       checkEnums(this, Object.fromEntries(names.map((name) => [name, probe.dataValues[name]])), probe);
       if (options.validate !== false) await validateInstance(probe, { fields: names, skipModel: true });
-      const plan = planFind(this, { where: options.where, paranoid: options.paranoid, xufaWrite: true });
+      // include (as Sequelize 7): the rows whose includes are there (required, or with a where), as a find gives them.
+      const plan = planFind(this, {
+        where: options.where,
+        paranoid: options.paranoid,
+        include: options.include,
+        xufaWrite: true,
+      });
       const changes = {};
       names.forEach((name) => {
         changes[name] = this.xufaRangeText(name, probe.dataValues[name]);
@@ -2301,7 +2547,14 @@ class Model {
   static xufaConflict(options) {
     if (options.ignoreDuplicates) return { fields: [], update: null };
     if (!options.updateOnDuplicate) return null;
-    const update = options.updateOnDuplicate.filter((name) => this.xufaFieldOf.has(name));
+    const update = options.updateOnDuplicate.filter((name) => typeof name === 'string' && this.xufaFieldOf.has(name));
+    // As Sequelize 7: [attribute, value] sets the attribute to a value or to SQL (literal('count + 1'), fn(...)).
+    const set = options.updateOnDuplicate
+      .filter((item) => Array.isArray(item))
+      .map(([name, value]) => {
+        if (!this.xufaFieldOf.has(name)) throw new Error(`${this.name} has no attribute ${name} (updateOnDuplicate)`);
+        return { field: this.xufaFieldOf.get(name), sql: this.xufaAssignmentSql(value) };
+      });
     let keys = options.conflictAttributes;
     if (!keys || !keys.length) {
       // As Sequelize: the fields of the unique indexes and of the first unique key, or the primary key.
@@ -2322,12 +2575,45 @@ class Model {
     return {
       fields: [...new Set(keys)].map((name) => this.xufaFieldOf.get(name)),
       update: update.map((name) => this.xufaFieldOf.get(name)),
+      set,
       where: options.conflictWhere ? this.xufaConditionSql(options.conflictWhere) : undefined,
+      // As Sequelize 7: ON CONFLICT ... DO UPDATE ... WHERE: the rows there are updated only when it holds.
+      updateWhere: options.onConflictUpdateWhere
+        ? this.xufaConditionSql(options.onConflictUpdateWhere, true)
+        : undefined,
     };
   }
 
+  // The SQL a column is set to in ON CONFLICT ... DO UPDATE: a value as a literal of SQL, or an expression (literal,
+  // fn, col) with the names of the model as its table (excluded names the row that was not inserted).
+  static xufaAssignmentSql(value) {
+    const dialect = this.sequelize.dialectName;
+    if (!isFragment(value) && !(value && value.xufaCol !== undefined)) return literal(value, dialect);
+    const { sql, params } = fragmentOf(new Context(this), value);
+    const meta = this.xufaMeta;
+    const table = this.xufaBackend.dialect.quoteTable(meta.table, meta.schema);
+    // Its parameters as literals (outside quotes), and its table by its name.
+    let index = 0;
+    let quote = null;
+    let out = '';
+    for (const char of sql.split(Raw.TABLE).join(table)) {
+      if (quote) {
+        if (char === quote) quote = null;
+        out += char;
+      } else if (char === "'" || char === '"') {
+        quote = char;
+        out += char;
+      } else if (char === '?' && index < params.length) {
+        out += literal(params[index], dialect);
+        index += 1;
+      } else out += char;
+    }
+    return out;
+  }
+
   // The SQL of simple conditions on attributes (of partial indexes and conflicts), with the columns of the attributes.
-  static xufaConditionSql(where) {
+  // `qualified`: the columns with the table (ON CONFLICT ... DO UPDATE ... WHERE, where excluded has them too).
+  static xufaConditionSql(where, qualified = false) {
     if (!where || typeof where !== 'object' || where.xufaLiteral !== undefined)
       return whereSql(where, this.sequelize.dialectName);
     const columns = {};
@@ -2337,12 +2623,15 @@ class Model {
     Object.getOwnPropertySymbols(where).forEach((symbol) => {
       columns[symbol] = where[symbol];
     });
-    return whereSql(columns, this.sequelize.dialectName);
+    const meta = this.xufaMeta;
+    const table = qualified ? this.xufaBackend.dialect.quoteTable(meta.table, meta.schema) : undefined;
+    return whereSql(columns, this.sequelize.dialectName, table);
   }
 
   // Inserts the values, or updates the row with the same unique key (INSERT ... ON CONFLICT ... DO UPDATE): as
   // Sequelize in SQLite and PostgreSQL, [instance, null].
   static async upsert(values, options = {}) {
+    values = valuesOf(this, values);
     options = this.sequelize.constructor.xufaWithCLS(options);
     const ready = this.xufaReady();
     if (ready) await ready;
@@ -2350,24 +2639,42 @@ class Model {
     const pk = this.primaryKeyAttribute;
     const hasPrimary = values[pk] !== undefined && values[pk] !== null;
     const instance = this.build(values);
-    // As Sequelize: the values given are those updated (not the defaults of the instance).
-    const fields = options.fields || Object.keys(values);
     if (options.validate) await instance.validate(options);
-    const { createdAt, updatedAt } = this.xufaTimestamps;
-    const now = new Date();
-    if (createdAt && !instance.dataValues[createdAt]) instance.dataValues[createdAt] = now;
-    if (updatedAt && !instance.dataValues[updatedAt]) instance.dataValues[updatedAt] = now;
-    let updated = fields.filter((name) => this.xufaFieldOf.has(name));
-    if (updatedAt && !updated.includes(updatedAt)) updated.push(updatedAt);
-    if (!hasPrimary) updated = updated.filter((name) => name !== pk);
-    const keys = this.xufaConflictKeys(updated, options.conflictFields, Boolean(options.conflictWhere));
     return this.sequelize.xufaRun(options, async () => {
-      if (options.hooks && this.hasHook('beforeUpsert')) await this.runHooks('beforeUpsert', values, options);
+      // What the hooks change in the values is what is inserted or updated.
+      if (options.hooks && this.hasHook('beforeUpsert')) {
+        await this.runHooks('beforeUpsert', values, options);
+        instance.set(values);
+      }
+      // As Sequelize: the values given are those updated (not the defaults of the instance).
+      const fields = options.fields || Object.keys(values);
+      const { createdAt, updatedAt } = this.xufaTimestamps;
+      const now = new Date();
+      if (createdAt && !instance.dataValues[createdAt]) instance.dataValues[createdAt] = now;
+      if (updatedAt && !instance.dataValues[updatedAt]) instance.dataValues[updatedAt] = now;
+      let updated = fields.filter((name) => this.xufaFieldOf.has(name));
+      if (updatedAt && !updated.includes(updatedAt)) updated.push(updatedAt);
+      if (!hasPrimary) updated = updated.filter((name) => name !== pk);
+      const keys = this.xufaConflictKeys(updated, options.conflictFields, Boolean(options.conflictWhere));
       const row = instance.xufaRow(this.xufaDbAttributes);
+      // updateValues (as Sequelize 7): what a row there gets instead of the values inserted (literal('count + 1')).
+      const updateValues = options.updateValues || {};
+      Object.keys(updateValues).forEach((name) => {
+        if (!this.xufaFieldOf.has(name)) throw new Error(`${this.name} has no attribute ${name} (updateValues)`);
+      });
       const conflict = {
         fields: keys.map((name) => this.xufaFieldOf.get(name)),
-        update: updated.filter((name) => !keys.includes(name)).map((name) => this.xufaFieldOf.get(name)),
+        update: updated
+          .filter((name) => !keys.includes(name) && !(name in updateValues))
+          .map((name) => this.xufaFieldOf.get(name)),
+        set: Object.entries(updateValues).map(([name, value]) => ({
+          field: this.xufaFieldOf.get(name),
+          sql: this.xufaAssignmentSql(value),
+        })),
         where: options.conflictWhere ? this.xufaConditionSql(options.conflictWhere) : undefined,
+        updateWhere: options.onConflictUpdateWhere
+          ? this.xufaConditionSql(options.onConflictUpdateWhere, true)
+          : undefined,
       };
       const [key] = await this.xufaBackend.insert(this.xufaMeta, [row], { conflict });
       // The row as it is in the database (what RETURNING * gives in Sequelize).
@@ -2471,6 +2778,12 @@ class Model {
   // Schema
 
   static async sync(options = {}) {
+    // As Sequelize: sync({ schema }) makes the table in that schema, its references to the tables there.
+    if (options.schema && options.schema !== this.xufaSchema) {
+      const copy = this.xufaSyncCopy(options.schema, options.schemaDelimiter);
+      await copy.sync({ ...options, schema: undefined });
+      return this;
+    }
     const ready = this.xufaReady();
     if (ready) await ready;
     // With a search path (PostgreSQL), the tables are made in its first schema.
@@ -2485,6 +2798,8 @@ class Model {
       await backend.dropSchema([this.xufaMeta]);
       await this.xufaDropEnums();
     } else if (options.alter) await this.xufaAlter(options.alter === true ? {} : options.alter);
+    // As Sequelize 7: the schema of the table is made when it is not there (its enum types are made in it).
+    await backend.ensureSchemas([this.xufaMeta]);
     await this.xufaCreateEnums();
     await backend.createSchema([this.xufaMeta]);
     if (this.sequelize.dialectName === 'postgres') await this.xufaComments(options);
@@ -2506,27 +2821,37 @@ class Model {
     return this.xufaDbAttributes
       .map((name) => this.rawAttributes[name])
       .filter((attribute) => enumValuesOf(attribute))
-      .map((attribute) => ({ column: attribute.field, values: enumValuesOf(attribute) }));
+      .map((attribute) => {
+        const { name, schema } = enumOptionsOf(attribute);
+        // A named ENUM (Sequelize 7): a type of its own name, which other columns can have too.
+        return {
+          column: attribute.field,
+          values: enumValuesOf(attribute),
+          named: name || schema ? { name, schema } : null,
+        };
+      });
   }
 
   static async xufaCreateEnums() {
-    for (const { column, values } of this.xufaEnums()) {
-      await this.xufaBackend.raw(createEnumSql(this.xufaEnumTable(), column, values), []);
-      await this.xufaAddEnumValues(column, values);
+    for (const { column, values, named } of this.xufaEnums()) {
+      // The schema of a named type is made when it is not there.
+      if (named && named.schema) await this.xufaBackend.ensureSchemas([{ schema: named.schema }]);
+      await this.xufaBackend.raw(createEnumSql(this.xufaEnumTable(), column, values, named), []);
+      await this.xufaAddEnumValues(column, values, named);
     }
     if (this.xufaEnums().length) this.xufaBackend.forgetStatements();
   }
 
   // As Sequelize: the values of the model that the enum type of a column lacks are added, in their order (each after
   // the value before it, or before the first one).
-  static async xufaAddEnumValues(column, values) {
+  static async xufaAddEnumValues(column, values, named) {
     const table = this.xufaEnumTable();
-    const schema = typeof table === 'object' ? table.schema : null;
+    const schema = enumTypeSchema(table, named);
     const rows = await this.xufaBackend.raw(
       `SELECT e.enumlabel AS label FROM pg_enum e JOIN pg_type t ON t.oid = e.enumtypid
        JOIN pg_namespace n ON n.oid = t.typnamespace
        WHERE t.typname = $1 AND n.nspname = COALESCE($2, current_schema()) ORDER BY e.enumsortorder`,
-      [enumTypeName(table, column), schema]
+      [enumTypeName(table, column, named), schema]
     );
     const existing = new Set(rows.map((row) => row.label));
     const literal = (value) => `'${String(value).replace(/'/g, "''")}'`;
@@ -2541,13 +2866,18 @@ class Model {
       let place = '';
       if (previous !== null && existing.has(previous)) place = ` AFTER ${literal(previous)}`;
       else if (next !== undefined) place = ` BEFORE ${literal(next)}`;
-      await this.xufaBackend.raw(`ALTER TYPE ${enumTypeRef(table, column)} ADD VALUE ${literal(value)}${place}`, []);
+      await this.xufaBackend.raw(
+        `ALTER TYPE ${enumTypeRef(table, column, named)} ADD VALUE ${literal(value)}${place}`,
+        []
+      );
       existing.add(value);
     }
   }
 
   static async xufaDropEnums() {
-    for (const { column } of this.xufaEnums()) {
+    // Named types are kept (other tables can have them).
+    for (const { column, named } of this.xufaEnums()) {
+      if (named) continue;
       await this.xufaBackend.raw(`DROP TYPE IF EXISTS ${enumTypeRef(this.xufaEnumTable(), column)}`, []);
     }
     if (this.xufaEnums().length) this.xufaBackend.forgetStatements();
@@ -2577,11 +2907,23 @@ class Model {
         onUpdate: attribute.onUpdate,
       };
       const current = columns[field];
-      if (!current) await qi.addColumn(this, field, definition);
-      else if (!attribute.primaryKey) {
-        const type = sqlTypeOf(attribute.type, dialect);
+      if (!current)
+        await qi.addColumn(this, field, {
+          ...definition,
+          generatedAs: attribute.generatedAs,
+          generatedColumn: attribute.generatedColumn,
+        });
+      // Generated columns are left as they are (the database computes them).
+      else if (!attribute.primaryKey && attribute.generatedAs === undefined) {
         const nullable = attribute.allowNull !== false;
-        if ((type && type.toUpperCase() !== String(current.type).toUpperCase()) || nullable !== current.allowNull) {
+        // An ENUM of PostgreSQL has its own type (whose values are added apart): changed when the column has another.
+        const enumType = dialect === 'postgres' && enumValuesOf(attribute);
+        const wanted = enumType
+          ? attribute.type.key === 'ARRAY'
+            ? 'ARRAY'
+            : 'USER-DEFINED'
+          : sqlTypeOf(attribute.type, dialect);
+        if ((wanted && wanted.toUpperCase() !== String(current.type).toUpperCase()) || nullable !== current.allowNull) {
           await qi.changeColumn(this, field, { ...definition, references: undefined });
         }
       }
@@ -2589,7 +2931,32 @@ class Model {
     if (alter.drop !== false) {
       for (const column of Object.keys(columns)) if (!fields.has(column)) await qi.removeColumn(this, column);
     }
-    if (dialect === 'postgres') await this.xufaAlterFillfactor();
+    if (dialect === 'postgres') {
+      await this.xufaAlterFillfactor();
+      await this.xufaAlterDeferrables();
+    }
+  }
+
+  // The foreign keys whose deferrable the model says otherwise (PostgreSQL): changed (ALTER CONSTRAINT).
+  static async xufaAlterDeferrables() {
+    const wanted = new Map();
+    this.xufaForeignKeys.forEach((key, name) => {
+      const attribute = this.rawAttributes[name];
+      if (!attribute) return;
+      // The attribute's, as it is now (it can be changed after the association copied it).
+      const deferrable = (attribute.references && attribute.references.deferrable) || key.deferrable;
+      if (deferrable) wanted.set(attribute.field, deferrableSql(deferrable));
+    });
+    if (wanted.size === 0) return;
+    const qi = this.sequelize.getQueryInterface();
+    const meta = this.xufaMeta;
+    const table = this.xufaBackend.dialect.quoteTable(meta.table, meta.schema);
+    for (const row of await qi.getForeignKeyReferencesForTable(this)) {
+      const sql = wanted.get(row.columnName);
+      if (!sql || sql === row.deferrable.xufaDeferrable) continue;
+      const name = `"${String(row.constraintName).replace(/"/g, '""')}"`;
+      await this.xufaBackend.raw(`ALTER TABLE ${table} ALTER CONSTRAINT ${name} ${sql}`, []);
+    }
   }
 
   // The fillfactor of the table as the model says it (set, or reset when the model has none).
@@ -2849,6 +3216,73 @@ function rawRow(row, joined, nest, prefix = '', target = row) {
   return row;
 }
 
+// A value written as the stringify function given to its type makes it (as Sequelize writes it), as the field takes
+// it: the text of json values parsed.
+function xufaStringified(model, name, value) {
+  if (value === null || value === undefined) return value;
+  const type = model.xufaCustomTypes().stringifiers.get(name);
+  const how = type && customStringifyOf(type);
+  if (!how) return value;
+  const options = { dialect: model.sequelize.dialectName, timezone: model.sequelize.options.timezone || '+00:00' };
+  let text;
+  if (how === 'bindParam') {
+    type.bindParam(value, {
+      ...options,
+      bindParam: (bound) => {
+        text = bound;
+        return '$1';
+      },
+    });
+  } else text = type.stringify(value, options);
+  // The text of the database as the value of the field: json and geometries parsed, hstore read.
+  if (typeof text !== 'string') return text;
+  if (type.kind === 'json' || type.kind === 'geometry') {
+    try {
+      return JSON.parse(text);
+    } catch {
+      return text;
+    }
+  }
+  if (type.kind === 'hstore') return parseHstore(text);
+  return text;
+}
+
+// The values of an instance (and of those it includes) that no attribute nor association has, as properties.
+function exposeRuntimeAttributes(instance) {
+  if (!isInstance(instance)) return;
+  const model = instance.constructor;
+  Object.keys(instance.dataValues).forEach((key) => {
+    const value = instance.dataValues[key];
+    if (model.associations[key]) {
+      [].concat(value).forEach(exposeRuntimeAttributes);
+      return;
+    }
+    if (model.rawAttributes[key] || key in instance) return;
+    Object.defineProperty(instance, key, {
+      configurable: true,
+      get() {
+        return this.get(key);
+      },
+      set(next) {
+        this.set(key, next, { raw: true });
+      },
+    });
+  });
+}
+
+// The values of an object given for a model: a plain object as it is; an instance of a class of its own (as Sequelize
+// 7 takes it), its own values and those its getters give for the attributes and associations of the model.
+function valuesOf(model, values) {
+  if (values === null || typeof values !== 'object' || isPlainObject(values) || isInstance(values)) return values;
+  if (Array.isArray(values) || values instanceof Date || Buffer.isBuffer(values) || values instanceof Map)
+    return values;
+  const plain = { ...values };
+  [...Object.keys(model.rawAttributes), ...Object.keys(model.associations)].forEach((name) => {
+    if (!(name in plain) && name in values && values[name] !== undefined) plain[name] = values[name];
+  });
+  return plain;
+}
+
 function renameValues(values, renames) {
   renames.forEach(([from, to]) => {
     values[to] = values[from];
@@ -2887,18 +3321,26 @@ class Context {
       steps.push(attribute);
       return steps.join('__');
     }
-    // 'data.owner.name' is a path inside the values of a json attribute (a cast after :: is left out; indexes of
-    // arrays as data.tags[0] or data.tags.0).
-    if (key.includes('.') || /\[\d+\]/.test(key)) {
-      const [attribute, ...rest] = key
-        .replace(/::\w+(\(\d+\))?$/, '')
-        .replace(/\[(\d+)\]/g, '.$1')
-        .split('.');
-      // Otherwise 'author.name' is an attribute of an include, as '$author.name$'.
-      if (!this.isJson(attribute)) return this.path(`$${key}$`);
-      return `${this.base}${attribute}__${rest.join('__')}`;
+    // 'data.owner.name' is a path inside the values of a json attribute (see jsonPath).
+    return String(this.jsonPath(key));
+  }
+
+  // The path of a key in conditions: for 'data.owner.name' (a path inside the values of the json attribute data:
+  // indexes as data.tags[0] or data.tags.0, keys in double quotes as data."a.b", a cast after :: left out), a JsonRef
+  // of its keys; otherwise the path of @xufa/orm.
+  jsonPath(key) {
+    if (key.length > 2 && key[0] === '$' && key[key.length - 1] === '$') return this.path(key);
+    const split = /[.[]|::/.exec(key);
+    if (!split) return this.base + key;
+    const attribute = key.slice(0, split.index);
+    // Otherwise 'author.name' is an attribute of an include, as '$author.name$'.
+    if (!this.isJson(attribute)) {
+      if (split[0] === '.') return this.path(`$${key}$`);
+      return this.base + key;
     }
-    return this.base + key;
+    const rest = key.slice(split.index + (split[0] === '.' ? 1 : 0));
+    const { steps } = parseJsonPath(rest);
+    return steps.length ? new JsonRef(this.base + attribute, steps) : this.base + attribute;
   }
 
   isJson(key) {
@@ -2999,6 +3441,18 @@ function normalizeIncludes(model, includes) {
     }
     if (!association)
       throw new errors.BaseError(`Association with alias "${options.association}" does not exist on ${model.name}`);
+    // An include of a copy of the target in another schema (Target.schema('s')): its rows are those of that copy (as
+    // Sequelize reads them), loaded apart.
+    if (
+      options.model &&
+      options.model.xufaCopy &&
+      options.model !== association.target &&
+      (options.model.xufaBase || options.model) === (association.target.xufaBase || association.target) &&
+      association.associationType !== 'BelongsToMany'
+    ) {
+      association = Object.create(association, { target: { value: options.model, enumerable: true } });
+      if (association.associationType === 'BelongsTo') options.separate = true;
+    }
     const target = options.model && options.model.xufaScope ? options.model : association.target;
     let { where } = options;
     const required = options.required !== undefined ? options.required : Boolean(where);
@@ -3021,6 +3475,14 @@ function normalizeIncludes(model, includes) {
       },
     ];
   });
+}
+
+// Whether an attribute is a VIRTUAL computed by the database (VIRTUAL(type, (includeAs) => [literal, name])).
+function isComputed(model, name) {
+  const definition = model.rawAttributes[name];
+  return Boolean(
+    definition && definition.type.kind === 'virtual' && typeof definition.type.options.fields === 'function'
+  );
 }
 
 // The attributes asked for: { names, renames, aggregates } (names null for all).
@@ -3057,7 +3519,19 @@ function attributesOf(model, attributes) {
       const definition = model.rawAttributes[item];
       // A VIRTUAL with the attributes it is made of (VIRTUAL(type, ['a', 'b'])) selects them.
       if (definition && definition.type.kind === 'virtual') {
-        names.push(...(definition.type.options.fields || []));
+        const { fields } = definition.type.options;
+        // As Sequelize 7 (include as): VIRTUAL(type, (includeAs) => [literal(...), name]) is computed by the database,
+        // includeAs naming the table of the model in the query (its includes too).
+        if (typeof fields === 'function') {
+          const made = fields(model.name);
+          const [source, alias] = Array.isArray(made) ? made : [made, item];
+          if (!isFragment(source))
+            throw new Error(`The SQL of the VIRTUAL ${model.name}.${item} must be a literal or a fn`);
+          fragments.push({ value: source, alias: alias || item });
+          selected[index] = alias || item;
+          return;
+        }
+        names.push(...(fields || []));
         return;
       }
       if (item.includes('.')) json.push({ path: item, alias: item });
@@ -3147,17 +3621,7 @@ function orderOf(model, context, order, nested) {
     const aliases = [];
     let current = model;
     for (let index = 0; index < parts.length; index += 1) {
-      const part = parts[index];
-      let association;
-      if (typeof part === 'string') association = current.associations[part];
-      else if (part && part.associationType) association = part;
-      else {
-        const options = typeof part === 'function' ? { model: part } : part;
-        const target = options.model && (options.model.xufaBase || options.model);
-        association = Object.values(current.associations).find((candidate) =>
-          options.as ? candidate.as === options.as : target && candidate.target.name === target.name
-        );
-      }
+      const association = orderAssociation(current, parts[index]);
       if (!association) throw new errors.BaseError(`Unable to find the association to order by in ${current.name}`);
       aliases.push(association.as);
       if (association.associationType !== 'BelongsTo') {
@@ -3166,7 +3630,7 @@ function orderOf(model, context, order, nested) {
         nested.set(key, [...(nested.get(key) || []), [...parts.slice(index + 1), attribute, direction]]);
         // The parents by the rows of an include of theirs: in SQL (limits too), by the first of the rows of each, as a
         // join orders them.
-        const sql = index === 0 ? includeOrderSql(association, parts.slice(index + 1), attribute, direction) : null;
+        const sql = includeOrderSql(model, parts, attribute, direction);
         if (!sql) return null;
         nested.xufaSql = true;
         return Raw(`${sql} ${direction.startsWith('DESC') ? 'DESC' : 'ASC'}`, []);
@@ -3189,58 +3653,115 @@ function orderOf(model, context, order, nested) {
 // The SQL of the value an instance is ordered by through an include of many (hasMany, hasOne, belongsToMany: an attribute
 // of the targets, or of the through model with [Target, Through, 'attribute']): the first one of its rows (MIN, or MAX
 // in descending orders), as a correlated subquery. Null when the order is not of those.
-function includeOrderSql(association, rest, attribute, direction) {
+function includeOrderSql(model, parts, attribute, direction) {
   const name = typeof attribute === 'string' ? attribute : attribute && attribute.fieldName;
   if (typeof name !== 'string') return null;
   const q = (identifier) => `"${String(identifier).replace(/"/g, '""')}"`;
-  const qi = association.source.sequelize.getQueryInterface();
+  const qi = model.sequelize.getQueryInterface();
   const fn = direction.startsWith('DESC') ? 'MAX' : 'MIN';
-  const { source, target } = association;
-  const fieldOf = (model, attributeName) =>
-    model.rawAttributes[attributeName] && model.rawAttributes[attributeName].field;
-  const sourceKey = fieldOf(source, association.sourceKey);
+  const fieldOf = (owner, attributeName) =>
+    owner.rawAttributes[attributeName] && owner.rawAttributes[attributeName].field;
   // The conditions of the rows: not deleted (paranoid models) and the values of scopes.
-  const conditions = (model, alias, scope) => {
-    const parts = [];
-    const { deletedAt } = model.xufaTimestamps;
-    if (deletedAt) parts.push(`${alias}.${q(fieldOf(model, deletedAt))} IS NULL`);
+  const conditions = (owner, alias, scope) => {
+    const items = [];
+    const { deletedAt } = owner.xufaTimestamps;
+    if (deletedAt) items.push(`${alias}.${q(fieldOf(owner, deletedAt))} IS NULL`);
     Object.entries(scope || {}).forEach(([key, value]) => {
-      const column = fieldOf(model, key);
+      const column = fieldOf(owner, key);
       if (!column || (value !== null && typeof value === 'object')) return;
-      parts.push(
+      items.push(
         value === null
           ? `${alias}.${q(column)} IS NULL`
-          : `${alias}.${q(column)} = ${literal(value, model.sequelize.dialectName)}`
+          : `${alias}.${q(column)} = ${literal(value, owner.sequelize.dialectName)}`
       );
     });
-    return parts.map((part) => ` AND ${part}`).join('');
+    return items;
   };
-  if (association.associationType === 'HasMany' || association.associationType === 'HasOne') {
-    const column = fieldOf(target, name);
-    if (rest.length || !column || !sourceKey) return null;
-    return (
-      `(SELECT ${fn}(tg.${q(column)}) FROM ${qi.qt(target)} AS tg WHERE tg.${q(fieldOf(target, association.foreignKey))} = ` +
-      `${Raw.TABLE}.${q(sourceKey)}${conditions(target, 'tg', association.scope)})`
-    );
+  // The steps from the model of the query: belongsTo, hasOne, hasMany and belongsToMany (the through model of the
+  // last belongsToMany can name the column: [Target, Through, 'attribute']).
+  const tables = [];
+  const correlations = [];
+  let previous = Raw.TABLE;
+  let current = model;
+  let column = null;
+  for (let index = 0; index < parts.length; index += 1) {
+    const part = parts[index];
+    const last = tables.length && tables[tables.length - 1];
+    const throughPart = typeof part === 'function' ? part : part && part.model;
+    if (
+      last &&
+      last.through &&
+      index === parts.length - 1 &&
+      throughPart &&
+      (throughPart.xufaBase || throughPart).name === last.through.name
+    ) {
+      column = `${last.throughAlias}.${q(fieldOf(last.through, name) || '')}`;
+      if (!fieldOf(last.through, name)) return null;
+      break;
+    }
+    const association = orderAssociation(current, part);
+    if (!association || association.xufaLoose) return null;
+    const { source, target } = association;
+    const alias = `o${index}`;
+    const on = [];
+    const step = { join: '', through: null, throughAlias: null };
+    if (association.associationType === 'BelongsTo') {
+      on.push(
+        `${alias}.${q(fieldOf(target, association.targetKey))} = ${previous}.${q(fieldOf(source, association.foreignKey))}`
+      );
+      step.join = `${qi.qt(target)} AS ${alias}`;
+    } else if (association.associationType === 'HasMany' || association.associationType === 'HasOne') {
+      on.push(
+        `${alias}.${q(fieldOf(target, association.foreignKey))} = ${previous}.${q(fieldOf(source, association.sourceKey))}`
+      );
+      step.join = `${qi.qt(target)} AS ${alias}`;
+    } else if (association.associationType === 'BelongsToMany') {
+      const through = association.throughModel;
+      const throughAlias = `${alias}t`;
+      // The through model first: its key to the source, then the target by its other key.
+      tables.push({
+        join: `${qi.qt(through)} AS ${throughAlias}`,
+        on: [
+          `${throughAlias}.${q(fieldOf(through, association.foreignKey))} = ${previous}.${q(fieldOf(source, association.sourceKey))}`,
+          ...conditions(through, throughAlias, association.throughScope),
+        ],
+      });
+      on.push(
+        `${alias}.${q(fieldOf(target, association.targetKey))} = ${throughAlias}.${q(fieldOf(through, association.otherKey))}`
+      );
+      step.join = `${qi.qt(target)} AS ${alias}`;
+      step.through = through;
+      step.throughAlias = throughAlias;
+    } else return null;
+    if (on.some((item) => item.includes('"undefined"'))) return null;
+    on.push(...conditions(target, alias, association.scope));
+    step.on = on;
+    tables.push(step);
+    previous = alias;
+    current = target;
   }
-  if (association.associationType !== 'BelongsToMany') return null;
-  const through = association.throughModel;
-  let alias = 'tg';
-  let column = fieldOf(target, name);
-  if (rest.length) {
-    const part = rest[0];
-    const model = typeof part === 'function' ? part : part && part.model;
-    const isThrough = rest.length === 1 && model && (model.xufaBase || model).name === through.name;
-    if (!isThrough) return null;
-    alias = 'th';
-    column = fieldOf(through, name);
+  if (tables.length === 0) return null;
+  if (!column) {
+    const field = fieldOf(current, name);
+    if (!field) return null;
+    column = `${previous}.${q(field)}`;
   }
-  if (!column || !sourceKey) return null;
-  return (
-    `(SELECT ${fn}(${alias}.${q(column)}) FROM ${qi.qt(through)} AS th JOIN ${qi.qt(target)} AS tg ` +
-    `ON tg.${q(fieldOf(target, association.targetKey))} = th.${q(fieldOf(through, association.otherKey))} ` +
-    `WHERE th.${q(fieldOf(through, association.foreignKey))} = ${Raw.TABLE}.${q(sourceKey)}` +
-    `${conditions(through, 'th', association.throughScope)}${conditions(target, 'tg', association.scope)})`
+  // The first table is correlated with the row of the query (in WHERE); the others are joined.
+  const [first, ...joined] = tables;
+  correlations.push(...first.on);
+  const joins = joined.map(({ join, on }) => ` JOIN ${join} ON ${on.join(' AND ')}`).join('');
+  return `(SELECT ${fn}(${column}) FROM ${first.join}${joins} WHERE ${correlations.join(' AND ')})`;
+}
+
+// The association an order names from a model: by its alias, the association itself, a model or { model, as }.
+function orderAssociation(current, part) {
+  if (typeof part === 'string') return current.associations[part];
+  if (part && part.associationType) return part;
+  const options = typeof part === 'function' ? { model: part } : part;
+  if (!options) return undefined;
+  const target = options.model && (options.model.xufaBase || options.model);
+  return Object.values(current.associations).find((candidate) =>
+    options.as ? candidate.as === options.as : target && candidate.target.name === target.name
   );
 }
 
@@ -3285,11 +3806,12 @@ function planFind(model, options) {
     items.forEach((include) => {
       const { association } = include;
       const target = association.target;
-      // A belongsTo with attributes that are not names (json paths, fragments), or of a polymorphic key, is loaded
-      // apart.
+      // A belongsTo with attributes that are not names (json paths, fragments, VIRTUALs computed by SQL), or of a
+      // polymorphic key, is loaded apart.
       if (
         association.associationType === 'BelongsTo' &&
-        ((Array.isArray(include.attributes) && include.attributes.some((item) => typeof item !== 'string')) ||
+        ((Array.isArray(include.attributes) &&
+          include.attributes.some((item) => typeof item !== 'string' || isComputed(target, item))) ||
           association.xufaLoose)
       ) {
         include.separate = true;
@@ -3322,10 +3844,8 @@ function planFind(model, options) {
       // Conditions on the through model of a belongsToMany filter the parents too.
       if (association.associationType === 'BelongsToMany' && include.through && include.through.where) {
         include.required = include.required !== false;
-        if (!options.xufaWrite) {
-          const step = `${base}${association.sourceRelation}__`;
-          add(translateWhere(new Context(association.throughModel, step, model), include.through.where));
-        }
+        const step = `${base}${association.sourceRelation}__`;
+        add(translateWhere(new Context(association.throughModel, step, model), include.through.where));
       }
       // Loaded apart; the parents are filtered by them when they are required.
       const key = [...path, association.as].join('.');
@@ -3333,7 +3853,7 @@ function planFind(model, options) {
       separate.push({ path, include });
       // An include asked to be separate (separate: true) is a query of its own: it does not filter the parents.
       const asked = Boolean(include.xufaOptions && include.xufaOptions.separate) && !association.xufaLoose;
-      if (include.required && !asked && !options.xufaWrite) {
+      if (include.required && !asked) {
         // A polymorphic key: the parents with rows, found before (options.xufaLoose).
         if (association.xufaLoose) {
           const keys = options.xufaLoose && options.xufaLoose.get(association);
@@ -3469,13 +3989,16 @@ function planFind(model, options) {
   if (options.offset) qs = qs.offset(options.offset);
   // The first rows of each parent of a separate include (by its key): a window of the query.
   if (options.xufaPer) qs = qs.limitPer(options.xufaPer.names, options.xufaPer.limit, options.xufaPer.offset);
-  // lock (true, a level of Transaction.LOCK, or { level }) and skipLocked: the rows locked (PostgreSQL).
+  // lock (true, a level of Transaction.LOCK, or { level }) and skipLocked or noWait (as Sequelize 7: an error instead
+  // of waiting for rows locked by others): the rows locked (PostgreSQL).
   if (options.lock) {
     const level = typeof options.lock === 'object' ? options.lock.level : options.lock;
     const modes = { SHARE: 'share', 'KEY SHARE': 'keyShare', 'NO KEY UPDATE': 'noKeyUpdate' };
+    if (options.skipLocked && options.noWait) throw new Error('A lock cannot have both skipLocked and noWait');
     qs = qs.selectForUpdate({
       mode: modes[String(level).toUpperCase()] || 'update',
       skipLocked: options.skipLocked,
+      noWait: options.noWait,
       of: typeof options.lock === 'object' && options.lock.of ? 'self' : null,
     });
   }

@@ -4,7 +4,7 @@
 const { Op } = require('./operators');
 const { normalizeType } = require('./data-types');
 const { AssociationError } = require('./errors');
-const { pluralize, singularize, upperFirst, camelize, underscore } = require('./utils');
+const { pluralize, singularize, upperFirst, camelize, underscore, isPlainObject } = require('./utils');
 
 const ON_DELETE = { CASCADE: 'cascade', 'SET NULL': 'setNull', RESTRICT: 'restrict', 'NO ACTION': 'noAction' };
 
@@ -44,7 +44,9 @@ class Association {
   // Adds the foreign key attribute to `model` (unless it has it) and records it for the schema.
   addForeignKey(model, other, key, options, extra = {}) {
     // A model in use gets the key when it is built again (before the next query).
-    if (model.xufaBuilt) model.sequelize.xufaRebuild(model);
+    // Built again: the model, or (for a copy in a schema) the models of its attributes (its base, its copies).
+    const base = model.xufaBase || model;
+    if (model.xufaBuilt || base.xufaBuilt) model.sequelize.xufaRebuild(model.xufaBuilt ? model : base);
     const existing = model.rawAttributes[key.name];
     const allowNull = key.allowNull !== undefined ? key.allowNull : existing ? existing.allowNull !== false : true;
     // As Sequelize: SET NULL when the key can be null, else NO ACTION (belongsTo) or CASCADE (the others).
@@ -60,7 +62,8 @@ class Association {
     }
     const pk = other.rawAttributes[toField || other.primaryKeyAttribute];
     // The options of the key given (defaultValue, comment...) are of the attribute.
-    const { name: keyName, fieldName, ...keyOptions } = key; // eslint-disable-line no-unused-vars
+    // index (as Sequelize 7): whether the key is indexed (true, false, or the options of its index).
+    const { name: keyName, fieldName, index, ...keyOptions } = key; // eslint-disable-line no-unused-vars
     const attribute = {
       ...(existing || { type: options.keyType ? normalizeType(options.keyType) : pk.type }),
       ...keyOptions,
@@ -69,8 +72,14 @@ class Association {
         : (existing && existing.type) || (options.keyType ? normalizeType(options.keyType) : pk.type),
       allowNull,
       field: key.field || (existing && existing.field) || (model.options.underscored ? underscore(key.name) : key.name),
-      // As Sequelize: the column of the key it points to.
-      references: { model: other.getTableName(), key: pk.field || toField || other.primaryKeyAttribute },
+      // As Sequelize: the column of the key it points to (the deferrable of the attribute kept).
+      references: {
+        ...(existing && existing.references && existing.references.deferrable
+          ? { deferrable: existing.references.deferrable }
+          : {}),
+        model: other.getTableName(),
+        key: pk.field || toField || other.primaryKeyAttribute,
+      },
       onDelete,
       onUpdate,
     };
@@ -92,6 +101,8 @@ class Association {
       // reverse relation).
       fieldName: (previous && previous.fieldName) || extra.fieldName,
       relatedName: (previous && previous.relatedName) || extra.relatedName,
+      index: index !== undefined ? index : previous && previous.index,
+      deferrable: (attribute.references && attribute.references.deferrable) || (previous && previous.deferrable),
     });
     return model.xufaForeignKeys.get(key.name);
   }
@@ -116,10 +127,12 @@ class Association {
 
   // The target as getters take it: with the scope given (scope: false for none, or the names of scopes), or its
   // default scope.
+  // The target in options.schema (its copy there, as Sequelize reads it), and in options.scope.
   scopedTarget(options = {}) {
-    if (options.scope === false || options.scope === null) return this.target.unscoped();
-    if (options.scope !== undefined) return this.target.scope(options.scope);
-    return this.target;
+    const target = options.schema ? this.target.schema(options.schema, options.schemaDelimiter) : this.target;
+    if (options.scope === false || options.scope === null) return target.unscoped();
+    if (options.scope !== undefined) return target.scope(options.scope);
+    return target;
   }
 
   // Whether its key is polymorphic (of associations to several models): it is then a column, not a relation.
@@ -145,6 +158,29 @@ class Association {
 
   toInstanceArray(items) {
     return [].concat(items).filter((item) => item !== null && item !== undefined);
+  }
+
+  // As Sequelize 7: the plain objects of the items given to set() and add() are targets to create (the others, keys
+  // and instances, as they are). `make(records)` creates them, as the association makes its targets.
+  async createPlain(items, make) {
+    const list = this.toInstanceArray(items);
+    const plain = list.filter((item) => isPlainObject(item));
+    if (plain.length === 0) return items;
+    const created = await make(plain);
+    let next = 0;
+    return list.map((item) => (isPlainObject(item) ? created[next++] : item)); // eslint-disable-line no-plusplus
+  }
+
+  // The accessor that creates several targets (createTasks), when its name is not that of the one of one target.
+  createManyAccessor(source, plural, singular) {
+    if (plural === singular) return;
+    const association = this;
+    this.accessors.createMultiple = `create${plural}`;
+    this.defineAccessors(source, {
+      [this.accessors.createMultiple](records = [], opts = {}) {
+        return association.createMany(this, records, opts);
+      },
+    });
   }
 }
 
@@ -284,6 +320,7 @@ class HasMany extends Association {
         return association.create(this, values, opts);
       },
     });
+    this.createManyAccessor(source, plural, singular);
   }
 
   // The targets of an instance: its key, and the scope of the association.
@@ -331,6 +368,7 @@ class HasMany extends Association {
   }
 
   async set(instance, items, options) {
+    items = await this.createPlain(items || [], (records) => this.createMany(instance, records, options));
     const keys = this.keysOf(items || []);
     const pk = this.target.primaryKeyAttribute;
     const unlink = { [Op.and]: [this.where(instance, {}), keys.length ? { [pk]: { [Op.notIn]: keys } } : {}] };
@@ -340,6 +378,7 @@ class HasMany extends Association {
   }
 
   async add(instance, items, options) {
+    items = await this.createPlain(items, (records) => this.createMany(instance, records, options));
     const keys = this.keysOf(items);
     if (keys.length === 0) return instance;
     const value = instance.get(this.sourceKey, { raw: true });
@@ -368,6 +407,14 @@ class HasMany extends Association {
     const own = { ...this.scope, [this.foreignKey]: instance.get(this.sourceKey, { raw: true }) };
     const fields = options.fields ? [...new Set([...options.fields, ...Object.keys(own)])] : undefined;
     return this.target.create({ ...values, ...own }, fields ? { ...options, fields } : options);
+  }
+
+  // Several targets created at once (as Sequelize 7: createTasks), with the key and the scope.
+  createMany(instance, records, options = {}) {
+    const own = { ...this.scope, [this.foreignKey]: instance.get(this.sourceKey, { raw: true }) };
+    const fields = options.fields ? [...new Set([...options.fields, ...Object.keys(own)])] : undefined;
+    const rows = [].concat(records).map((values) => ({ ...values, ...own }));
+    return this.target.bulkCreate(rows, { validate: true, ...(fields ? { ...options, fields } : options) });
   }
 }
 
@@ -646,6 +693,7 @@ class BelongsToMany extends Association {
         return association.create(this, values, opts);
       },
     });
+    this.createManyAccessor(source, plural, singular);
   }
 
   // The names Sequelize also gives the keys of the through model.
@@ -718,6 +766,7 @@ class BelongsToMany extends Association {
 
   // `current`: the links of the instance there are (set() reads them), so they are not read again.
   async add(instance, items, options = {}, current = null) {
+    items = await this.createPlain(items, (records) => this.createTargets(records, options));
     const keys = [...new Set(this.keysOf(items))];
     if (keys.length === 0) return [];
     const value = instance.get(this.sourceKey, { raw: true });
@@ -772,6 +821,7 @@ class BelongsToMany extends Association {
   // As Sequelize: the links there are read once; those not given are deleted, and the new ones made (each in one
   // query, when there are any).
   async set(instance, items, options = {}) {
+    items = await this.createPlain(items || [], (records) => this.createTargets(records, options));
     const keys = this.keysOf(items || []).map(String);
     const value = instance.get(this.sourceKey, { raw: true });
     const own = { ...this.throughScope, [this.foreignKey]: value };
@@ -789,6 +839,21 @@ class BelongsToMany extends Association {
     // The values of the scope of the association are those of the target created.
     const created = await this.target.create({ ...values, ...this.scope }, options);
     // The fields given are those of the target: the through row has its own.
+    const { fields, ...rest } = options; // eslint-disable-line no-unused-vars
+    await this.add(instance, created, rest);
+    return created;
+  }
+
+  // Targets created (with the scope of the association), not linked yet.
+  createTargets(records, options = {}) {
+    const { through, ...rest } = options; // eslint-disable-line no-unused-vars
+    const rows = [].concat(records).map((values) => ({ ...values, ...this.scope }));
+    return this.target.bulkCreate(rows, { validate: true, ...rest });
+  }
+
+  // Several targets created and linked at once (as Sequelize 7: createTags).
+  async createMany(instance, records, options = {}) {
+    const created = await this.createTargets(records, options);
     const { fields, ...rest } = options; // eslint-disable-line no-unused-vars
     await this.add(instance, created, rest);
     return created;

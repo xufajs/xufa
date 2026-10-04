@@ -64,6 +64,7 @@ class MongoBackend extends Backend {
 
   encode(field, value) {
     if (value === null || value === undefined) return null;
+    if (field.encrypted) return field.seal(value);
     if ((field.dbType === 'datetime' || field.dbType === 'date') && typeof value === 'number') {
       throw new BackendError(`MongoDB has no infinite dates (${field.model.name}.${field.name})`);
     }
@@ -76,14 +77,19 @@ class MongoBackend extends Backend {
 
   decode(field, value) {
     if (value === null || value === undefined) return null;
+    if (field.encrypted) return field.open(value);
     switch (field.dbType) {
-      case 'id':
-        return value instanceof this.ObjectId ? value.toHexString() : value;
+      case 'id': {
+        const key = value instanceof this.ObjectId ? value.toHexString() : value;
+        return field.fromDb ? field.fromDb(key) : key;
+      }
       case 'integer':
       case 'float':
         return Number(value);
-      case 'bigint':
-        return typeof value === 'bigint' && Number.isSafeInteger(Number(value)) ? Number(value) : value;
+      case 'bigint': {
+        const number = typeof value === 'bigint' && Number.isSafeInteger(Number(value)) ? Number(value) : value;
+        return field.fromDb ? field.fromDb(number) : number;
+      }
       case 'bytes':
         return Buffer.isBuffer(value) ? value : Buffer.from(value.buffer || value);
       default:

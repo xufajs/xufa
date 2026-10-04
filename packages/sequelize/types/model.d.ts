@@ -666,6 +666,11 @@ export type Includeable = ModelType | Association | IncludeOptions | { all: true
  */
 export interface IncludeOptions extends Filterable<any>, Projectable, Paranoid {
   /**
+   * bulkCreate: the fields of the rows of the include updated when they are there (Sequelize 7).
+   */
+  updateOnDuplicate?: string[];
+
+  /**
    * Mark the include as duplicating, will prevent a subquery from being used.
    */
   duplicating?: boolean;
@@ -863,6 +868,11 @@ export interface FindOptions<TAttributes = any>
   skipLocked?: boolean;
 
   /**
+   * Fails at once (NOWAIT) on rows locked by others, instead of waiting for them (Sequelize 7, PostgreSQL).
+   */
+  noWait?: boolean;
+
+  /**
    * Return raw result. See sequelize.query for more information.
    */
   raw?: boolean;
@@ -879,6 +889,12 @@ export interface FindOptions<TAttributes = any>
    * See {@link FindOptions#limit} for more information.
    */
   subQuery?: boolean;
+
+  /**
+   * As Sequelize 7: the values of the rows that no attribute has (`[literal(...), 'name']` in `attributes`) are
+   * properties of the instances too (`user.name`), not only values of `get()`.
+   */
+  enableRuntimeAttributes?: boolean;
 }
 
 export interface NonNullFindOptions<TAttributes = any> extends FindOptions<TAttributes> {
@@ -1022,6 +1038,16 @@ export interface FindOrBuildOptions<TAttributes = any, TCreationAttributes = TAt
  */
 export interface UpsertOptions<TAttributes = any> extends Logging, Transactionable, SearchPathable, Hookable {
   /**
+   * What a row there gets instead of the values inserted (Sequelize 7): values, or SQL (literal('count + 1')).
+   */
+  updateValues?: { [key in keyof TAttributes]?: unknown };
+
+  /**
+   * The row there is updated only when it holds: ON CONFLICT ... DO UPDATE ... WHERE (Sequelize 7).
+   */
+  onConflictUpdateWhere?: WhereOptions<TAttributes> | Literal;
+
+  /**
    * The fields to insert / update. Defaults to all fields
    */
   fields?: (keyof TAttributes)[];
@@ -1080,7 +1106,12 @@ export interface BulkCreateOptions<TAttributes = any> extends Logging, Transacti
    * Fields to update if row key already exists (on duplicate key update)? (only supported by MySQL,
    * MariaDB, SQLite >= 3.24.0 & Postgres >= 9.5).
    */
-  updateOnDuplicate?: (keyof TAttributes)[];
+  updateOnDuplicate?: Array<keyof TAttributes | [keyof TAttributes, unknown]>;
+
+  /**
+   * The rows there are updated only when it holds: ON CONFLICT ... DO UPDATE ... WHERE (Sequelize 7).
+   */
+  onConflictUpdateWhere?: WhereOptions<TAttributes> | Literal;
 
   /**
    * Include options. See `find` for details
@@ -1171,6 +1202,11 @@ export interface RestoreOptions<TAttributes = any> extends Logging, Transactiona
  * Options used for Model.update
  */
 export interface UpdateOptions<TAttributes = any> extends Logging, Transactionable, Paranoid, Hookable {
+  /**
+   * The rows whose includes are there (required, or with a where) are updated (Sequelize 7).
+   */
+  include?: Includeable | Includeable[];
+
   /**
    * Options to describe the scope of the search.
    */
@@ -1604,6 +1640,16 @@ export interface ModelAttributeColumnReferencesOptions {
  */
 export interface ModelAttributeColumnOptions<M extends Model = Model> extends ColumnOptions {
   /**
+   * A generated column (Sequelize 7): the SQL of its value, which the database makes.
+   */
+  generatedAs?: Literal | string;
+
+  /**
+   * How a generated column is kept: STORED (the default) or VIRTUAL.
+   */
+  generatedColumn?: 'STORED' | 'VIRTUAL';
+
+  /**
    * A string or a data type
    */
   type: DataType;
@@ -1710,6 +1756,16 @@ export type Identifier = number | bigint | string | Buffer;
  * Options for model definition
  */
 export interface ModelOptions<M extends Model = Model> {
+  /**
+   * The default of `enableRuntimeAttributes` of the finds of the model (Sequelize 7).
+   */
+  enableRuntimeAttributes?: boolean;
+
+  /**
+   * A STRICT table of SQLite: its columns hold values of their types only (Sequelize 7).
+   */
+  strict?: boolean;
+
   /**
    * Define the default search scope to use for this model. Scopes have the same form as the options passed to
    * find / findAll.
@@ -2213,6 +2269,16 @@ export abstract class Model<
    * Search for a single instance by its primary key. This applies LIMIT 1, so the listener will
    * always be called with a single instance.
    */
+  /**
+   * The instances of several primary keys, in one query (Sequelize 7): values, or objects of the attributes of a
+   * composite key.
+   */
+  public static findByPks<M extends Model>(
+    this: ModelStatic<M>,
+    identifiers: Array<Identifier | Record<string, unknown>>,
+    options?: Omit<FindOptions<Attributes<M>>, 'where'> & { where?: WhereOptions<Attributes<M>> }
+  ): Promise<M[]>;
+
   public static findByPk<M extends Model>(
     this: ModelStatic<M>,
     identifier: Identifier,

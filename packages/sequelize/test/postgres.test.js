@@ -3,7 +3,7 @@ const { defineSuite } = require('./suite');
 const { url, available } = require('../../pg/test/server');
 
 describe.skipIf(!available)('postgres', () => {
-  defineSuite('postgres', () => new Sequelize(url, { logging: false, pool: { max: 5 } }));
+  defineSuite('postgres', (options) => new Sequelize(url, { logging: false, pool: { max: 5 }, ...options }));
 
   it('stores infinite dates, also as defaults and as the deletedAt of paranoid models', async () => {
     const sequelize = new Sequelize(url, { logging: false, pool: { max: 2 } });
@@ -198,6 +198,296 @@ describe.skipIf(!available)('postgres', () => {
       expect(await reloptions()).toBeNull();
       await Plain.drop();
       expect(() => define({ fillfactor: 5 })).toThrow('fillfactor must be an integer from 10 to 100');
+    } finally {
+      await sequelize.close();
+    }
+  });
+
+  it('shares named enum types among tables (ENUM({ values, name, schema }), as Sequelize 7)', async () => {
+    const sequelize = new Sequelize(url, { logging: false, pool: { max: 2 } });
+    const types = async () =>
+      (
+        await sequelize.query(
+          "SELECT n.nspname || '.' || t.typname AS name FROM pg_type t JOIN pg_namespace n ON n.oid = t.typnamespace WHERE t.typname IN ('shared_mood', 'shared_other') ORDER BY 1",
+          { type: 'SELECT' }
+        )
+      ).map((row) => row.name);
+    const mood = (values = ['happy', 'sad']) => DataTypes.ENUM({ values, name: 'shared_mood' });
+    try {
+      expect(() => DataTypes.ENUM({ values: ['a'], name: '' })).toThrow('The name of an ENUM is a text');
+      const A = sequelize.define('MoodA', { mood: mood(), moods: DataTypes.ARRAY(mood()) });
+      const B = sequelize.define('MoodB', {
+        mood: mood(),
+        other: DataTypes.ENUM({ values: ['x'], name: 'shared_other', schema: 'shared_enums' }),
+      });
+      await A.sync({ force: true });
+      await B.sync({ force: true });
+      await A.create({ mood: 'happy', moods: ['sad', 'happy'] });
+      await B.create({ mood: 'sad', other: 'x' });
+      expect(await types()).toEqual(['public.shared_mood', 'shared_enums.shared_other']);
+      // Another model of the type with more values: they are added to it.
+      const C = sequelize.define('MoodC', { mood: mood(['happy', 'sad', 'calm']) });
+      await C.sync({ force: true });
+      await C.create({ mood: 'calm' });
+      // Dropping a table keeps the named types.
+      await A.sync({ force: true });
+      expect(await types()).toEqual(['public.shared_mood', 'shared_enums.shared_other']);
+      expect((await B.findOne()).mood).toBe('sad');
+      expect((await sequelize.getQueryInterface().describeTable('MoodBs')).other.special).toEqual(['x']);
+      await C.drop();
+      await B.drop();
+      await A.drop();
+    } finally {
+      await sequelize.query('DROP TYPE IF EXISTS shared_mood CASCADE');
+      await sequelize.query('DROP SCHEMA IF EXISTS shared_enums CASCADE');
+      await sequelize.close();
+    }
+  });
+
+  it('keeps the copies of a model in schemas apart, also before the model is used (schema(), sync({ schema }))', async () => {
+    const sequelize = new Sequelize(url, { logging: false, pool: { max: 4 } });
+    const drop = () =>
+      Promise.all(['copies_one', 'copies_two'].map((name) => sequelize.query(`DROP SCHEMA IF EXISTS ${name} CASCADE`)));
+    try {
+      await drop();
+      const Shop = sequelize.define('Shop', { name: DataTypes.STRING }, { tableName: 'shops' });
+      const Clerk = sequelize.define('Clerk', { name: DataTypes.STRING }, { tableName: 'clerks' });
+      Shop.hasMany(Clerk, { foreignKey: 'shop_id', constraints: false });
+      // Copies made before the models were used: each one its own table.
+      const ShopOne = Shop.schema('copies_one');
+      const ShopTwo = Shop.schema('copies_two');
+      expect(Shop.schema('copies_one')).toBe(ShopOne);
+      expect(ShopOne.schema(null)).toBe(Shop);
+      await Promise.all([sequelize.createSchema('copies_one'), sequelize.createSchema('copies_two')]);
+      await Promise.all([ShopOne.sync({ force: true }), ShopTwo.sync({ force: true })]);
+      await ShopOne.create({ name: 'one' });
+      await ShopTwo.create({ name: 'two' });
+      expect((await ShopOne.findAll()).map((shop) => shop.name)).toEqual(['one']);
+      expect((await ShopTwo.findAll()).map((shop) => shop.name)).toEqual(['two']);
+      expect(Shop._schema).toBeNull();
+      // Includes of copies read their tables; getters take the schema.
+      const ClerkOne = Clerk.schema('copies_one');
+      await ClerkOne.sync({ force: true });
+      const shop = await ShopOne.findOne();
+      await ClerkOne.create({ name: 'ann', shop_id: shop.id });
+      const found = await ShopOne.findOne({ include: [{ model: ClerkOne, as: 'Clerks' }] });
+      expect(found.Clerks.map((clerk) => clerk.name)).toEqual(['ann']);
+      expect((await found.getClerks({ schema: 'copies_one' })).map((clerk) => clerk.name)).toEqual(['ann']);
+      // sync({ schema }): the table in the schema, its references to the tables there.
+      const Owner = sequelize.define('Owner', { name: DataTypes.STRING });
+      const Pet = sequelize.define('Pet', { name: DataTypes.STRING });
+      Pet.belongsTo(Owner);
+      await Owner.sync({ force: true, schema: 'copies_two' });
+      await Pet.sync({ force: true, schema: 'copies_two' });
+      const [reference] = await sequelize
+        .getQueryInterface()
+        .getForeignKeyReferencesForTable({ tableName: 'Pets', schema: 'copies_two' });
+      expect([reference.referencedTableSchema, reference.referencedTableName]).toEqual(['copies_two', 'Owners']);
+      const owner = await Owner.schema('copies_two').create({ name: 'o' });
+      const pet = await Pet.schema('copies_two').create({ name: 'p' });
+      await pet.setOwner(owner);
+      expect((await pet.getOwner({ schema: 'copies_two' })).name).toBe('o');
+    } finally {
+      await drop();
+      await sequelize.close();
+    }
+  });
+
+  it('reads on the replicas and writes on the primary (replication)', async () => {
+    const server = { host: '127.0.0.1', port: 5432, username: 'xufa', password: 'xufa', database: 'xufa_test' };
+    const sequelize = new Sequelize('xufa_test', 'xufa', 'xufa', {
+      dialect: 'postgres',
+      logging: false,
+      replication: { write: server, read: [server, server] },
+    });
+    const Reading = sequelize.define('Reading', { value: DataTypes.INTEGER }, { tableName: 'replication_readings' });
+    const { read, write } = sequelize.connectionManager.pool;
+    const replicas = [read.acquire(), read.acquire()];
+    const primary = write.acquire();
+    const counts = () => {
+      const calls = { read: 0, write: 0 };
+      const take = (pool, kind) => {
+        const query = pool.query.bind(pool);
+        const connect = pool.connect.bind(pool);
+        pool.query = (...args) => {
+          calls[kind] += 1;
+          return query(...args);
+        };
+        pool.connect = () => {
+          calls[kind] += 1;
+          return connect();
+        };
+      };
+      replicas.forEach((pool) => take(pool, 'read'));
+      take(primary, 'write');
+      return calls;
+    };
+    try {
+      await Reading.sync({ force: true });
+      const calls = counts();
+      await Reading.create({ value: 1 });
+      expect(calls).toEqual({ read: 0, write: 1 });
+      await Reading.findAll();
+      await Reading.count();
+      await Reading.max('value');
+      await sequelize.query('SELECT 1', { type: 'SELECT' });
+      expect(calls).toEqual({ read: 4, write: 1 });
+      // useMaster, raw queries not of type SELECT, and transactions not read-only: on the primary.
+      await Reading.findAll({ useMaster: true });
+      await sequelize.query('SELECT 1');
+      await sequelize.transaction(async (transaction) => Reading.findAll({ transaction }));
+      expect(calls).toEqual({ read: 4, write: 4 });
+      await sequelize.transaction({ readOnly: true }, async (transaction) => Reading.findAll({ transaction }));
+      expect(calls).toEqual({ read: 5, write: 4 });
+      await Reading.drop();
+    } finally {
+      await sequelize.close();
+    }
+  });
+
+  it('fails at once on rows locked by others with noWait (as Sequelize 7)', async () => {
+    const sequelize = new Sequelize(url, { logging: false, pool: { max: 3 } });
+    const Slot = sequelize.define('Slot', { n: DataTypes.INTEGER }, { tableName: 'nowait_slots' });
+    try {
+      await Slot.sync({ force: true });
+      await Slot.create({ n: 1 });
+      const holder = await sequelize.transaction();
+      try {
+        await Slot.findAll({ lock: true, transaction: holder });
+        const other = await sequelize.transaction();
+        try {
+          const error = await Slot.findAll({ lock: true, noWait: true, transaction: other }).catch((err) => err);
+          expect(error.parent.code).toBe('55P03');
+        } finally {
+          await other.rollback();
+        }
+      } finally {
+        await holder.rollback();
+      }
+      await expect(Slot.findAll({ lock: true, skipLocked: true, noWait: true })).rejects.toThrow(
+        'both skipLocked and noWait'
+      );
+      await Slot.drop();
+    } finally {
+      await sequelize.close();
+    }
+  });
+
+  it('makes the schemas of the tables when they are not there (sync, as Sequelize 7)', async () => {
+    const sequelize = new Sequelize(url, { logging: false, pool: { max: 2 } });
+    try {
+      await sequelize.query('DROP SCHEMA IF EXISTS made_by_sync CASCADE');
+      const Thing = sequelize.define('Thing', { kind: DataTypes.ENUM('a', 'b') }, { schema: 'made_by_sync' });
+      await sequelize.sync();
+      await Thing.create({ kind: 'a' });
+      expect(await Thing.count()).toBe(1);
+      await sequelize.query('DROP SCHEMA made_by_sync CASCADE');
+      await Thing.sync();
+      expect(await Thing.count()).toBe(0);
+    } finally {
+      await sequelize.query('DROP SCHEMA IF EXISTS made_by_sync CASCADE');
+      await sequelize.close();
+    }
+  });
+
+  it('describes the method, collations and INCLUDE columns of indexes', async () => {
+    const sequelize = new Sequelize(url, { logging: false, pool: { max: 2 } });
+    const qi = sequelize.getQueryInterface();
+    try {
+      await qi.createTable('method_indexes', {
+        id: { type: DataTypes.INTEGER, primaryKey: true },
+        a: DataTypes.STRING,
+        'we,ird': DataTypes.STRING,
+        c: DataTypes.JSONB,
+      });
+      await sequelize.query('CREATE INDEX method_coll ON method_indexes (a COLLATE "C" DESC, "we,ird") INCLUDE (id)');
+      await sequelize.query('CREATE INDEX method_gin ON method_indexes USING gin (c)');
+      const indexes = await qi.showIndex('method_indexes');
+      const byName = Object.fromEntries(indexes.map((index) => [index.name, index]));
+      expect(byName.method_coll).toMatchObject({
+        method: 'BTREE',
+        includes: ['id'],
+        fields: [
+          { name: 'a', collate: 'C', order: 'DESC' },
+          { name: 'we,ird', collate: undefined },
+        ],
+      });
+      expect(byName.method_gin).toMatchObject({ method: 'GIN', includes: [], fields: [{ name: 'c' }] });
+      expect(byName.method_indexes_pkey).toMatchObject({ primary: true, method: 'BTREE' });
+    } finally {
+      await qi.dropTable('method_indexes').catch(() => {});
+      await sequelize.close();
+    }
+  });
+
+  it('changes enum columns, keeping their types', async () => {
+    const sequelize = new Sequelize(url, { logging: false, pool: { max: 2 } });
+    const qi = sequelize.getQueryInterface();
+    const types = async () =>
+      (
+        await sequelize.query("SELECT typname FROM pg_type WHERE typname LIKE 'enum_enum_changes%' ORDER BY 1", {
+          type: 'SELECT',
+        })
+      ).map((row) => row.typname);
+    const describe = async (column) => (await qi.describeTable('enum_changes'))[column];
+    try {
+      const Thing = sequelize.define(
+        'Thing',
+        { kind: { type: DataTypes.ENUM('a', 'b', 'c'), defaultValue: 'a' }, note: DataTypes.STRING },
+        { tableName: 'enum_changes', timestamps: false }
+      );
+      await Thing.sync({ force: true });
+      await Thing.create({ kind: 'b', note: 'on' });
+      // sync({ alter }) leaves an enum column as it is (it made it VARCHAR(255) before).
+      await Thing.sync({ alter: true });
+      expect(await describe('kind')).toMatchObject({ type: 'USER-DEFINED', special: ['a', 'b', 'c'] });
+      // Values added, then one left out: the type is made again, its default kept.
+      await qi.changeColumns('enum_changes', { kind: { type: DataTypes.ENUM('a', 'b', 'c', 'd') } });
+      expect((await describe('kind')).special).toEqual(['a', 'b', 'c', 'd']);
+      await qi.changeColumns('enum_changes', { kind: { type: DataTypes.ENUM('a', 'b', 'd') } });
+      expect(await describe('kind')).toMatchObject({ special: ['a', 'b', 'd'], defaultValue: 'a' });
+      // A value the rows have cannot be left out: nothing changes.
+      await expect(qi.changeColumns('enum_changes', { kind: { type: DataTypes.ENUM('a', 'd') } })).rejects.toThrow();
+      expect((await describe('kind')).special).toEqual(['a', 'b', 'd']);
+      expect(await types()).toEqual(['enum_enum_changes_kind']);
+      // A text column made an enum; and changeColumn (Sequelize 6) keeps the enum type too.
+      await qi.changeColumns('enum_changes', { note: { type: DataTypes.ENUM('on', 'off') } });
+      expect(await describe('note')).toMatchObject({ type: 'USER-DEFINED', special: ['on', 'off'] });
+      await qi.changeColumn('enum_changes', 'kind', { type: DataTypes.ENUM('a', 'b', 'd') });
+      expect(await describe('kind')).toMatchObject({ type: 'USER-DEFINED', defaultValue: null });
+      // autoIncrement on a column.
+      await qi.changeColumns('enum_changes', { id: { autoIncrement: true } });
+      await sequelize.query("INSERT INTO enum_changes (kind) VALUES ('a')");
+      expect(
+        (await sequelize.query('SELECT id FROM enum_changes ORDER BY id', { type: 'SELECT' })).map((row) => row.id)
+      ).toEqual([1, 2]);
+    } finally {
+      await qi.dropTable('enum_changes').catch(() => {});
+      for (const type of await types()) await sequelize.query(`DROP TYPE "${type}"`);
+      await sequelize.close();
+    }
+  });
+
+  it('does not make a unique column unique again on each sync({ alter })', async () => {
+    const sequelize = new Sequelize(url, { logging: false, pool: { max: 2 } });
+    const unique = async () => {
+      const [rows] = await sequelize.query(
+        "SELECT count(*)::int AS n FROM pg_index WHERE indrelid = 'alter_emails'::regclass AND indisunique AND NOT indisprimary"
+      );
+      return rows[0].n;
+    };
+    const Email = sequelize.define(
+      'Email',
+      { address: { type: DataTypes.STRING, unique: true } },
+      { tableName: 'alter_emails' }
+    );
+    try {
+      await Email.sync({ force: true });
+      const created = await unique();
+      await Email.sync({ alter: true });
+      await Email.sync({ alter: true });
+      expect(await unique()).toBe(created);
+      await Email.drop();
     } finally {
       await sequelize.close();
     }

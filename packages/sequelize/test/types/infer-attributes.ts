@@ -17,8 +17,10 @@ class Project extends Model<InferAttributes<Project>> {
   declare id: number;
 }
 
-class User extends Model<InferAttributes<User, { omit: 'omittedAttribute' | 'omittedAttributeArray' }>,
-  InferCreationAttributes<User, { omit: 'omittedAttribute' | 'omittedAttributeArray' }>> {
+class User extends Model<
+  InferAttributes<User, { omit: 'omittedAttribute' | 'omittedAttributeArray' }>,
+  InferCreationAttributes<User, { omit: 'omittedAttribute' | 'omittedAttributeArray' }>
+> {
   declare optionalAttribute: CreationOptional<number>;
   declare mandatoryAttribute: string;
 
@@ -38,21 +40,22 @@ class User extends Model<InferAttributes<User, { omit: 'omittedAttribute' | 'omi
   declare joinedEntity?: NonAttribute<Project>;
   declare projectId: CreationOptional<ForeignKey<number>>;
 
-  instanceMethod() {
-  }
+  instanceMethod() {}
 
-  static staticMethod() {
-  }
+  static staticMethod() {}
 }
 
-User.init({
-  mandatoryArrayAttribute: DataTypes.ARRAY(DataTypes.STRING),
-  mandatoryAttribute: DataTypes.STRING,
-  // projectId is omitted but still works, because it is branded with 'ForeignKey'
-  nullableOptionalAttribute: DataTypes.STRING,
-  optionalArrayAttribute: DataTypes.ARRAY(DataTypes.STRING),
-  optionalAttribute: DataTypes.INTEGER,
-}, { sequelize: new Sequelize() });
+User.init(
+  {
+    mandatoryArrayAttribute: DataTypes.ARRAY(DataTypes.STRING),
+    mandatoryAttribute: DataTypes.STRING,
+    // projectId is omitted but still works, because it is branded with 'ForeignKey'
+    nullableOptionalAttribute: DataTypes.STRING,
+    optionalArrayAttribute: DataTypes.ARRAY(DataTypes.STRING),
+    optionalAttribute: DataTypes.INTEGER,
+  },
+  { sequelize: new Sequelize() }
+);
 
 type UserAttributes = Attributes<User>;
 type UserCreationAttributes = CreationAttributes<User>;
@@ -71,7 +74,9 @@ expectTypeOf<UserCreationAttributes['optionalArrayAttribute']>().toBeNullable();
 
 type NonUndefined<T> = T extends undefined ? never : T;
 
-expectTypeOf<UserCreationAttributes['nullableOptionalAttribute']>().not.toEqualTypeOf<NonUndefined<UserCreationAttributes['nullableOptionalAttribute']>>();
+expectTypeOf<UserCreationAttributes['nullableOptionalAttribute']>().not.toEqualTypeOf<
+  NonUndefined<UserCreationAttributes['nullableOptionalAttribute']>
+>();
 
 expectTypeOf<UserAttributes['mandatoryArrayAttribute']>().not.toBeNullable();
 expectTypeOf<UserCreationAttributes['mandatoryArrayAttribute']>().not.toBeNullable();

@@ -1,5 +1,5 @@
 // Ported from sequelize (test/types/attributes.ts, MIT License) by tools/port-types/port.js: do not edit, change the tool.
-import { Model } from "sequelize";
+import { Model } from 'sequelize';
 
 interface UserCreationAttributes {
   name: string;
@@ -26,9 +26,7 @@ interface ProjectAttributes extends ProjectCreationAttributes {
   id: number;
 }
 
-class Project
-  extends Model<ProjectAttributes, ProjectCreationAttributes>
-  implements ProjectAttributes {
+class Project extends Model<ProjectAttributes, ProjectCreationAttributes> implements ProjectAttributes {
   declare id: number;
   declare ownerId: number;
   declare name: string;

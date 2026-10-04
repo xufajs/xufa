@@ -51,6 +51,8 @@
           <li><a href="#models">Models and options</a></li>
           <li><a href="#fields">Fields</a></li>
           <li><a href="#postgres-fields">Arrays, hstore, geometries</a></li>
+          <li><a href="#ttl">TTL indexes</a></li>
+          <li><a href="#encrypted">Encrypted fields</a></li>
           <li><a href="#relations">Relations</a></li>
           <li><a href="#keys">Primary keys</a></li>
           <li><a href="#objects">Objects</a></li>
@@ -70,6 +72,7 @@
           <li><a href="#tenants">Tenants</a></li>
           <li><a href="#cache">Caches</a></li>
           <li><a href="#http">With @xufa/http</a></li>
+          <li><a href="#resources">Resources</a></li>
           <li><a href="#typescript">TypeScript</a></li>
           <li><a href="#same">The same on every backend</a></li>
         </ul>
@@ -237,6 +240,62 @@ await Place.objects.filter({ tags: ['cafe', 'quiet'] }).count(); // arrays and m
             SRID. Coordinates must be numbers: text that is not one is refused, not stored as 0. The database needs the
             extension <code>postgis</code>.
           </li>
+        </ul>
+
+        <h2 id="ttl">TTL indexes</h2>
+        <p>
+          An index of one datetime field with <code>expireAfter</code> (seconds, or text as <code>'30d'</code>) is a TTL
+          index, as MongoDB's: its objects expire that long after the date of the field (<code>0</code>: at the date).
+        </p>
+        <pre><code class="language-js">class LogEntry extends Model {
+  static fields = { message: fields.text(), createdAt: fields.datetime({ autoNowAdd: true }) };
+
+  static options = { indexes: [{ fields: ['createdAt'], expireAfter: '30d' }] }; // deleted 30 days after createdAt
+}
+
+class Session extends Model {
+  static fields = { token: fields.string(), expiresAt: fields.datetime() };
+
+  static options = { indexes: [{ fields: ['expiresAt'], expireAfter: 0 }] }; // deleted at expiresAt
+}
+
+app.register(orm.plugin, { database: db, sync: true, expire: true }); // db.expire() every minute while the app runs</code></pre>
+        <p>
+          MongoDB deletes them itself (<code>expireAfterSeconds</code>). In every backend, <code>db.expire()</code> deletes
+          the objects that expired as QuerySets delete them, with their relations as <code>onDelete</code> says (MongoDB's own
+          deletes do not), and <code>db.startExpiry({ interval: '1m' })</code> or the plugin's <code>expire</code> call it
+          on an interval. Objects that expired are found until they are deleted. In a cluster any process can do it; for
+          tenants, start it in their <code>setup</code>.
+        </p>
+
+        <h2 id="encrypted">Encrypted fields</h2>
+        <p>
+          <code>fields.encrypted(field, options)</code> keeps the values of a field encrypted in the database with
+          AES-256-GCM: the objects have their values, and the database has text it cannot read
+          (<code>$xenc$1$&lt;key id&gt;$&lt;iv&gt;$&lt;ciphertext&gt;</code>) in a <code>TEXT</code> column. The memory
+          backend keeps the values as they are.
+        </p>
+        <pre><code class="language-js">setEncryptionKeys({ keys: { k1: process.env.ENCRYPTION_KEY } }); // or XUFA_ENCRYPTION_KEYS='k1:&lt;base64&gt;'
+
+class Patient extends Model {
+  static fields = {
+    name: fields.string(),
+    ssn: fields.encrypted(fields.string({ maxLength: 11 })),
+    email: fields.encrypted(fields.string(), { deterministic: true, unique: true }),
+    history: fields.encrypted(fields.json(), { null: true }),
+  };
+}
+
+await Patient.objects.create({ name: 'Ada', ssn: '123-45-6789', email: 'ada@example.com', history: { allergies: [] } });
+const ada = await Patient.objects.get({ email: 'ada@example.com' }); // deterministic: found by equality
+ada.ssn; // '123-45-6789'
+// Patient.objects.filter({ ssn: '123-45-6789' }) throws: ssn takes isnull only</code></pre>
+        <ul>
+          <li><strong>Keys</strong> are 32 random bytes (<code>generateEncryptionKey()</code>), in base64 or hex, by id: the first (or <code>current</code>) encrypts, all of them decrypt. Set them with <code>setEncryptionKeys()</code> or <code>XUFA_ENCRYPTION_KEYS='k2:&lt;base64&gt;,k1:&lt;base64&gt;'</code>.</li>
+          <li><strong>Authenticated and bound to their column</strong>: a value changed in the database, or copied to another column or table, is refused with <code>EncryptionError</code>. <code>context</code> keeps the old <code>'table.column'</code> after a rename.</li>
+          <li><strong>Queries</strong>: encrypted fields take <code>isnull</code>, and no orders nor aggregates other than <code>Count</code>. With <code>deterministic: true</code> the same value gives the same text, so they also take <code>exact</code> and <code>in</code> and can be unique or indexed; the database can then tell which rows share a value, not what it is.</li>
+          <li><strong>Rotating keys</strong>: add the new key as the current one, <code>await reencrypt(Model)</code>, then remove the old one.</li>
+          <li><strong>Encrypting a field with values</strong>: <code>acceptPlaintext: true</code> reads the values written before; migrate (the column becomes <code>TEXT</code>), <code>reencrypt(Model)</code>, and remove the option.</li>
         </ul>
 
         <h2 id="relations">Relations</h2>
@@ -490,9 +549,50 @@ app.register(orm.plugin, { database: db, migrate: { dir: 'migrations' } });
         <p>
           The plugin connects the database when the app starts (migrating it when asked), gives it as
           <code>app.db</code>, and closes it with the app. A <code>ValidationError</code> is answered with 400 and the
-          messages of each field (<code>errors</code>); <code>get()</code> of nothing with 404. With tenants, a request
+          messages of each field (<code>errors</code>), a duplicate of a unique field (<code>UniqueError</code>) with 409
+          and its <code>fields</code>, and <code>get()</code> of nothing with 404. With tenants, a request
           without one gets 400 (unless <code>required: false</code>), and one of a tenant that does not exist, 404.
         </p>
+
+        <h2 id="resources">Resources</h2>
+        <p>
+          <code>orm.resource(Model, options)</code> makes the routes of the objects of a model, as the ModelViewSets of
+          Django REST framework: list, get, create, update (PUT and PATCH) and delete, registered with a prefix.
+        </p>
+        <pre><code class="language-js">app.register(
+  orm.resource(Book, {
+    filters: { author: ['exact', 'in'], pages: ['gte', 'lte'] },
+    ordering: ['title', 'pages'],
+    search: ['title', 'author__name'],
+    related: ['author'],
+    readOnly: ['owner'],
+    auth: { list: false, get: false, create: true, update: true, delete: 'admin' }, // rules of @xufa/auth
+    hooks: { beforeCreate: (values, request) =&gt; ({ ...values, owner: request.user.sub }) },
+  }),
+  { prefix: '/books' }
+);
+app.register(orm.resource(Author, { actions: ['list', 'get'] }), { prefix: '/authors' });</code></pre>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Route</th><th>Action</th><th>Answer</th></tr></thead>
+            <tbody>
+              <tr><td><code>GET /books</code></td><td><code>list</code></td><td><code>{ count, limit, offset, results }</code>, with <code>?limit=&amp;offset=</code>, <code>?ordering=-pages</code>, <code>?search=</code> and the filters (<code>?pages__gte=100</code>, <code>?author__in=1,2</code>)</td></tr>
+              <tr><td><code>GET /books/:id</code></td><td><code>get</code></td><td>The object, or 404</td></tr>
+              <tr><td><code>POST /books</code></td><td><code>create</code></td><td>201 and the object</td></tr>
+              <tr><td><code>PUT /books/:id</code></td><td><code>update</code></td><td>Every writable field set (those not given take their default)</td></tr>
+              <tr><td><code>PATCH /books/:id</code></td><td><code>update</code></td><td>The fields given set</td></tr>
+              <tr><td><code>DELETE /books/:id</code></td><td><code>delete</code></td><td>204</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <ul>
+          <li><code>queryset(request)</code>: the objects of a request (all by default); one out of it is not found by any route, so <code>(request) =&gt; Book.objects.filter({ owner: request.user.sub })</code> gives each user theirs.</li>
+          <li><code>fields</code> or <code>exclude</code>: what is answered; <code>serialize(object, request)</code> answers something else.</li>
+          <li><code>writable</code> or <code>readOnly</code>: what bodies set (all but the primary key and the fields the ORM sets). Other fields of the model in a body are ignored; keys that are no field are a 400.</li>
+          <li><code>filters</code>, <code>ordering</code> and <code>search</code>: the query parameters lists take (others are a 400); <code>pageSize</code> (50), <code>maxPageSize</code> (500), <code>pagination: false</code>, <code>lookup</code> (the field of <code>/:id</code>).</li>
+          <li><code>auth</code>: the rule of <a href="auth.html">@xufa/auth</a> for every action, or one by action. <code>hooks</code>: <code>beforeCreate</code>, <code>afterCreate</code>, <code>beforeUpdate</code>, <code>afterUpdate</code>, <code>beforeDelete</code>.</li>
+          <li>Errors are answered with their status: 400 (with the messages of each field), 404, and 409 for duplicates and protected objects.</li>
+        </ul>
 
         <h2 id="typescript">TypeScript</h2>
         <p>

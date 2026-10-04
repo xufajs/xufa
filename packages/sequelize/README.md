@@ -38,6 +38,18 @@ back together), and big bulkCreates use COPY.
 - `new Sequelize(url, options)`, `new Sequelize(database, username, password, options)`, `new Sequelize(options)`;
   dialects `postgres` and `sqlite` (`sqlite::memory:`, `storage`); `define`, `models`, `model()`, `isDefined()`,
   `authenticate()`, `sync({ force })`, `drop()`, `close()`, `logging` (console.log by default, as in Sequelize).
+- Connections (PostgreSQL), as Sequelize makes them: the `dialectOptions` it gives pg (`ssl`, `application_name`,
+  `statement_timeout`, `query_timeout`, `lock_timeout`, `idle_in_transaction_session_timeout`, `keepAlive`,
+  `options`...), `ssl`, `client_min_messages` (`warning` by default; `clientMinMessages`, `false` or `'IGNORE'` to
+  leave the server's), `pool` (`max`, `idle`); `replication: { write, read: [...] }`, with finds, counts, aggregates
+  and queries of type SELECT on the replicas in turn (not with `useMaster`), read-only transactions too, and the rest
+  on the primary; the errors of connections by their cause (`ConnectionRefusedError`, `HostNotFoundError`,
+  `HostNotReachableError`...); the hooks `beforePoolAcquire` and `afterPoolAcquire`; and the numbers of the pool in
+  `connectionManager.pool` (`size`, `available`, `using`, `waiting`). `quoteIdentifiers: false` makes the names of
+  tables and columns those PostgreSQL makes of names not quoted (lower case), so SQL without quotes names them.
+- Types of your own, as Sequelize takes them: `DataTypes.DATE.parse = (value) => ...` (the values read) and
+  `DataTypes.DATE.prototype.stringify` or `bindParam` (the values written), after `sequelize.refreshTypes()`; the
+  parse functions of types a dialect cannot parse are an error there, as in Sequelize.
 - Models: `Model.init` and `sequelize.define`, table names as Sequelize makes them (plural, `freezeTableName`,
   `tableName`, `underscored`), `timestamps` (`createdAt`, `updatedAt`, custom names or false), `paranoid`, `indexes`,
   `unique` (and named composite uniques), `defaultValue` (values, functions, `NOW`, `UUIDV4`), getters and setters of
@@ -124,6 +136,69 @@ rawErrors })`. As in Sequelize, replacements are written in the SQL, escaped; bi
 - Errors: `ValidationError`, `UniqueConstraintError` (with `fields`), `ForeignKeyConstraintError`, `DatabaseError`,
   `EmptyResultError`, `ConnectionError`, `TimeoutError`...
 
+## From Sequelize 7
+
+The API is Sequelize 6's: code written for it runs as it is. What Sequelize 7 improves is taken where it does not
+change what code for Sequelize 6 does:
+
+- `queryInterface.changeColumns(table, { column: definition })`: several columns in one `ALTER TABLE` (one rebuild of
+  the table in SQLite), and only what a definition gives changes (`allowNull` when it is true or false, the default
+  when `defaultValue` is given, or dropped with `dropDefaultValue: true`; the type, `unique`, `references`, `comment`
+  and `autoIncrement` when given). In PostgreSQL an `ENUM` keeps the type of its column: the values it lacks are added
+  to it, and it is made again when values are left out (it fails, changing nothing, when rows have them). A text
+  column can become an enum. `changeColumn` stays as in Sequelize 6 (the column gets the definition given: `NULL`
+  allowed and no default unless given), and keeps the enum type of the column too.
+- Paths inside JSON attributes in conditions: keys in double quotes (`'data."a.b"'`, `{ data: { '"x.y"': 1 } }`, the
+  empty key `'data.""'`), keys named as operators (`{ data: { in: 1 } }`), indexes up to 2^31 - 1 (larger ones throw,
+  as in Sequelize 7, instead of matching nothing), and casts checked (`::123` throws).
+- Attribute names with any character (`first-name`, `a b`, `café`...) in conditions, orders and
+  `$include.attribute$`.
+- Attributes computed by the database: `DataTypes.VIRTUAL(type, (includeAs) => [literal(...), 'name'])` (or the
+  literal alone) is selected when it is in `attributes`, of the find or of an include, `includeAs` naming the table of
+  its model in the query:
+  ``posts: DataTypes.VIRTUAL(DataTypes.INTEGER, (as) => literal(`(SELECT COUNT(*) FROM posts p WHERE p.user_id = ${as}.id)`))``.
+- Runtime attributes: with `enableRuntimeAttributes: true` (of the find, or of the model), the values selected with
+  names of their own (`attributes: [[literal('...'), 'score']]`) are properties of the instances (`user.score`), not
+  only values of `get()`.
+- `build(saved.toJSON(), { isNewRecord: false })` keeps the timestamps, and `toJSON()` gives the values of virtual
+  attributes in the order of the attributes.
+- `showIndexes()`, as Sequelize 7: `{ name, unique, primary, fields: [{ name, order, collate }] }` (with `method` and
+  `includes` in PostgreSQL), the order and collation of every field in SQLite too. `showIndex()` stays as in Sequelize
+  6, and gives `method` (`BTREE`, `GIN`...) and `includes` (the columns of `INCLUDE`) in PostgreSQL too.
+- The enum values of `describeTable()` are those of the schema of the column.
+- BIGINT values as bigints: `new Sequelize(url, { bigint: 'bigint' })` (or `'string'`; see [Differences](#differences)).
+- `Model.findByPks(keys, options)`: the instances of several primary keys in one query (objects of the attributes of
+  a composite key); none for an empty list, without a query.
+- `sync()` makes the schemas of the tables (and of named enums) that are not there.
+- `DataTypes.UUIDV7`: defaults of UUIDs of version 7 (the time first: they sort as they are made, and stay in order
+  within a millisecond).
+- `noWait: true` with `lock`: an error (55P03) at once on rows locked by others, instead of waiting (PostgreSQL).
+- `onConflictUpdateWhere` (`bulkCreate` with `updateOnDuplicate`, and `upsert`): ON CONFLICT ... DO UPDATE ... WHERE,
+  the rows there updated only when it holds. Rows a conflict leaves out (ignored or not updated) get no key, and the
+  others theirs (`ignoreDuplicates` too).
+- `updateOnDuplicate` takes `[attribute, value]` pairs too, a value or SQL (`['hits', literal('"Usage"."hits" + 1')]`;
+  in PostgreSQL the columns are named with the model or its table, or `excluded.`, as the bare ones are ambiguous),
+  and the includes of `bulkCreate` take it for their rows. `upsert(values, { updateValues })`: what a row there gets
+  instead of the values inserted (`{ hits: literal('"Usage"."hits" + 1') }`).
+- Named enums (PostgreSQL): `DataTypes.ENUM({ values, name, schema })` is one type for every column of it (and of
+  arrays of it), made once (with its schema) and given the values it lacks; dropping a table keeps it.
+- Foreign keys indexed: `new Sequelize(url, { indexForeignKeys: true })` indexes the keys associations make, and
+  `foreignKey: { index: true | false | { unique, name } }` says it for one (Sequelize 7 indexes them by default; here
+  it is asked for, so `sync()` makes what it made).
+- STRICT tables of SQLite: `define(name, attributes, { strict: true })` (and `queryInterface.createTable(..., { strict:
+true })`), the columns of the types STRICT has (INTEGER, REAL, TEXT, BLOB; dates, decimals and json are text);
+  tables made again for changes stay STRICT. Other dialects refuse it.
+- Generated columns: `{ type, generatedAs: literal('"price" * "quantity"'), generatedColumn: 'STORED' | 'VIRTUAL' }`.
+  Their values are not written (those given are left out), and are read back after `create` and `save`; `sync({
+alter })` and the tables SQLite makes again keep them.
+- Instances of classes as values (`create(new Input())`, `build`, `upsert`, `update`, `bulkCreate`): the values
+  of their getters for the attributes and associations of the model.
+- Plain objects in `set` and `add` of hasMany and belongsToMany are targets to create (`user.setTasks([task,
+{ title: 'new' }])`), and `createTasks(records)` creates several at once (for associations whose plural is not
+  their singular).
+- `Model.update(values, { where, include })`: the rows whose includes are there (required, or with a where), as a
+  find gives them.
+
 ## TypeScript and ES modules
 
 The declarations are Sequelize's own (6.37.8), ported with their type tests by
@@ -162,7 +237,10 @@ As Sequelize, the package is also an ES module with named exports (`import { Seq
 
 ## Differences
 
-- `BIGINT` values are numbers when they are safe integers (bigints otherwise), not strings.
+- `BIGINT` values are numbers when they are safe integers (bigints otherwise), not strings. The option `bigint` of
+  the Sequelize instance changes it: `'bigint'` (always bigints, as Sequelize 7 goes) or `'string'` (as Sequelize 6
+  gives them in PostgreSQL), for the values read and those set, `BIGINT` keys (`autoIncrement` too) and the foreign
+  keys to them.
 - `NULL`s sort first in ascending order and last in descending order, in every database (as @xufa/orm); orders by
   the rows of includes of many keep the order of the database.
 - Foreign keys are not indexed unless an index says so (as in Sequelize).
@@ -172,8 +250,9 @@ As Sequelize, the package is also an ES module with named exports (`import { Seq
   references another table is not a relation of @xufa/orm. Primary keys of several attributes are composite keys (and those of
   the through models Sequelize makes, as Sequelize does); no foreign key points to such a model unless to a unique key.
 - `hasMany`, `hasOne` and `belongsToMany` includes are loaded with queries of their own: `count` with them counts
-  the parents (as `distinct: true` does) and literals cannot name their columns; orders by their attributes are
-  subqueries.
+  the parents (as `distinct: true` does) and literals cannot name their columns; orders by their attributes, at any
+  depth (`[[Country, { model: Person, as: 'residents' }, 'lastName', 'ASC']]`), are subqueries of the first of their
+  rows (limits too).
 - Polymorphic keys (one key of associations to several models, by scopes) are columns, not relations: required
   includes of them are found first, and conditions across them (`$comments.title$`) are not supported.
 - Right joins (`include: [{ right: true }]`) are not made: `right` is ignored, as Sequelize does in the dialects
@@ -185,12 +264,19 @@ As Sequelize, the package is also an ES module with named exports (`import { Seq
 The integration tests of Sequelize 6 (its v6 branch, `test/integration`) run against this package, each file in a
 process of its own, with `sequelize` resolved to this package; the same harness runs them against Sequelize 6.37.8
 itself, to tell the failures of the tests and of the environment from those of the package (the harness is
-[`tools/sequelize-compat`](../../tools/sequelize-compat)). Latest runs:
+[`tools/sequelize-compat`](../../tools/sequelize-compat)). The tests both runs ran (a test that fails in a hook
+leaves the rest of its file out, and the features a dialect says it supports decide which tests run), in the latest
+runs:
 
-| Database                                    | @xufa/sequelize          | Sequelize 6.37.8        |
-| ------------------------------------------- | ------------------------ | ----------------------- |
-| SQLite                                      | 1,707 passed, 54 failed  | 1,737 passed, 5 failed  |
-| PostgreSQL 18 (PostGIS, hstore, btree_gist) | 1,939 passed, 105 failed | 1,968 passed, 39 failed |
+| Database                                    | Tests run by both | @xufa/sequelize         | Sequelize 6.37.8        |
+| ------------------------------------------- | ----------------- | ----------------------- | ----------------------- |
+| SQLite                                      | 1,739             | 1,709 passed, 30 failed | 1,735 passed, 4 failed  |
+| PostgreSQL 18 (PostGIS, hstore, btree_gist) | 2,004             | 1,947 passed, 57 failed | 1,966 passed, 38 failed |
+
+Of the failures, 3 (SQLite) and 8 (PostgreSQL) fail on Sequelize too. In all, this package runs 1,766 tests in
+SQLite (1,729 pass: those of separate includes and groupedLimit, which Sequelize skips in SQLite, too) and 2,061 in
+PostgreSQL (1,999 pass); Sequelize runs 1,747 and 2,007 (a test of concurrency of its own crashes its database in
+PostgreSQL, and leaves the rest of its file out).
 
 What fails here and passes in Sequelize checks its internals (the parsers of its data types, its connection manager
 and query generator), the SQL text it writes, or the differences listed above (bigints as bigints, hasMany includes

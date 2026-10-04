@@ -160,6 +160,14 @@ function defineSuite(name, makeSequelize) {
         const json = found.toJSON();
         expect(json).toMatchObject({ id: ada.id, name: 'Ada L.', email: 'ada@lovelace.com', active: true });
         expect(JSON.parse(JSON.stringify(found)).name).toBe('Ada L.');
+        // Virtual attributes in the order of the attributes (as Sequelize 7).
+        expect(Object.keys(json).slice(0, 5)).toEqual(['id', 'name', 'email', 'active', 'fullName']);
+        // A saved instance built again from its JSON keeps its timestamps (as Sequelize 7).
+        const rebuilt = Author.build(found.toJSON(), { isNewRecord: false });
+        expect(rebuilt.createdAt).toEqual(found.createdAt);
+        expect(rebuilt.updatedAt).toEqual(found.updatedAt);
+        rebuilt.set('createdAt', new Date(0));
+        expect(rebuilt.createdAt).toEqual(found.createdAt);
       });
 
       it('saves only the attributes changed', async () => {
@@ -250,6 +258,10 @@ function defineSuite(name, makeSequelize) {
         expect(Object.keys(error.fields)).toEqual(['name']);
         const missing = await Book.create({ title: 'X', authorId: 99999 }).catch((err) => err);
         expect(missing).toBeInstanceOf(ForeignKeyConstraintError);
+        if (sequelize.getDialect() === 'postgres') {
+          expect(missing.fields).toEqual(['author_id']);
+          expect(missing.value).toEqual(['99999']);
+        }
       });
     });
 
@@ -354,6 +366,19 @@ function defineSuite(name, makeSequelize) {
         expect(await count({ [Op.and]: [Sequelize.where(Sequelize.json('data.meta.year'), Op.lt, 2000)] })).toBe(1);
         expect(await count(Sequelize.where(Sequelize.col('pages'), '>', 200))).toBe(2);
         expect(await count({ data: { flags: { 0: 'a' } } })).toBe(1);
+        // Keys named as lookups or with __, keys in double quotes (dots in them), and indexes up to 2^31 - 1.
+        await Book.create({ title: 'J3', authorId: ada.id, data: { in: 1, a__b: 2, 'x.y': 3, '': 4, list: [5] } });
+        expect(await count({ data: { in: 1 } })).toBe(1);
+        expect(await count({ 'data.in': { [Op.gte]: 1 } })).toBe(1);
+        expect(await count({ data: { a__b: 2 } })).toBe(1);
+        expect(await count({ data: { '"x.y"': 3 } })).toBe(1);
+        expect(await count({ 'data."x.y"': 3 })).toBe(1);
+        expect(await count({ 'data.""': 4 })).toBe(1);
+        expect(await count({ 'data.list[0]::integer': 5 })).toBe(1);
+        expect(await count(Sequelize.json('data."x.y"', 3))).toBe(1);
+        await expect(Book.count({ where: { data: { 'list[2147483648]': 1 } } })).rejects.toThrow('indexes go up to');
+        await expect(Book.count({ where: { data: { 'level::123': 1 } } })).rejects.toThrow('Invalid cast type');
+        await expect(Book.count({ where: { data: { 'a..b': 1 } } })).rejects.toThrow('Invalid json path');
       });
 
       it('takes literals and functions in conditions, orders and attributes', async () => {
@@ -618,6 +643,25 @@ function defineSuite(name, makeSequelize) {
         await Tag.bulkCreate([{ name: 'z' }], { updateOnDuplicate: ['name'] });
         expect(await Tag.count()).toBe(5);
         expect(await Tag.count({ where: { name: 'z' } })).toBe(1);
+        // create with ignoreDuplicates: no error, nor a key, for a row that is there.
+        const ignored = await Tag.create({ name: 'z' }, { ignoreDuplicates: true });
+        expect(ignored.isNewRecord).toBe(false);
+        expect(ignored.id).toBeNull();
+        expect(await Tag.count()).toBe(5);
+      });
+
+      it('upserts what beforeUpsert changes', async () => {
+        const { Tag } = models;
+        Tag.addHook('beforeUpsert', (values) => {
+          values.name = `${values.name}!`;
+        });
+        try {
+          const [tag] = await Tag.upsert({ name: 'hooked' });
+          expect(tag.name).toBe('hooked!');
+          expect(await Tag.count({ where: { name: 'hooked!' } })).toBe(1);
+        } finally {
+          Tag.xufaHooks = {};
+        }
       });
 
       it('runs hooks', async () => {
@@ -767,7 +811,13 @@ function defineSuite(name, makeSequelize) {
         const page = await qi().select(Tag, 'Tags', { order: [['name', 'ASC']], offset: 1 });
         expect(page[0]).toBeInstanceOf(Tag);
         expect(page.map((item) => item.name)).toEqual(['b', 'c']);
-        const [upserted] = await qi().upsert('Tags', { id: row.id, name: 'z' }, { name: 'z' }, { id: row.id }, { model: Tag });
+        const [upserted] = await qi().upsert(
+          'Tags',
+          { id: row.id, name: 'z' },
+          { name: 'z' },
+          { id: row.id },
+          { model: Tag }
+        );
         expect(upserted).toBeInstanceOf(Tag);
         expect((await Tag.findByPk(row.id)).name).toBe('z');
         await qi().delete(null, 'Tags', { name: 'z' });
@@ -803,6 +853,644 @@ function defineSuite(name, makeSequelize) {
         expect(Array.isArray(keys.books)).toBe(true);
         if (name === 'postgres') expect(keys.books.length).toBeGreaterThan(0);
         expect(qi().quoteIdentifiers('a.b')).toBe('"a"."b"');
+      });
+    });
+
+    describe('changeColumns (Sequelize 7)', () => {
+      it('changes only what is given, of several columns', async () => {
+        const qi = sequelize.getQueryInterface();
+        await qi.createTable('changed_columns', {
+          id: { type: DataTypes.INTEGER, primaryKey: true },
+          a: { type: DataTypes.STRING, allowNull: false, defaultValue: 'x' },
+          b: { type: DataTypes.INTEGER, defaultValue: 3 },
+        });
+        try {
+          await qi.changeColumns('changed_columns', { a: { type: DataTypes.TEXT }, b: { allowNull: false } });
+          let columns = await qi.describeTable('changed_columns');
+          expect(columns.a).toMatchObject({ type: 'TEXT', allowNull: false, defaultValue: 'x' });
+          expect(columns.b).toMatchObject({ allowNull: false });
+          expect(String(columns.b.defaultValue)).toBe('3');
+          await qi.changeColumns('changed_columns', { b: { dropDefaultValue: true } });
+          columns = await qi.describeTable('changed_columns');
+          expect(columns.b.defaultValue ?? null).toBeNull();
+          await expect(
+            qi.changeColumns('changed_columns', { c: DataTypes.STRING, d: DataTypes.STRING })
+          ).rejects.toThrow("doesn't have the columns c, d");
+        } finally {
+          await qi.dropTable('changed_columns');
+        }
+      });
+    });
+
+    describe('names and indexes (Sequelize 7)', () => {
+      it('orders parents by the rows of includes several levels down, with limits', async () => {
+        const Continent = sequelize.define('Continent', { name: DataTypes.STRING });
+        const Country = sequelize.define('Country', { name: DataTypes.STRING });
+        const Person = sequelize.define('Person', { lastName: DataTypes.STRING });
+        const Label = sequelize.define('Label', { text: DataTypes.STRING });
+        Continent.hasMany(Country);
+        Country.hasMany(Person, { as: 'residents' });
+        Person.belongsToMany(Label, { through: 'PersonLabels' });
+        await Continent.sync({ force: true });
+        await Country.sync({ force: true });
+        await Person.sync({ force: true });
+        await Label.sync({ force: true });
+        await sequelize.models.PersonLabels.sync({ force: true });
+        try {
+          // Inserted so that the first continent is not the one of the first resident.
+          const [asia, europe] = await Continent.bulkCreate([{ name: 'Asia' }, { name: 'Europe' }]);
+          const [china, france] = await Country.bulkCreate([
+            { name: 'China', ContinentId: asia.id },
+            { name: 'France', ContinentId: europe.id },
+          ]);
+          const [zhang, adams] = await Person.bulkCreate([
+            { lastName: 'Zhang', CountryId: china.id },
+            { lastName: 'Adams', CountryId: france.id },
+          ]);
+          const [z, a] = await Label.bulkCreate([{ text: 'z' }, { text: 'a' }]);
+          await zhang.addLabel(a);
+          await adams.addLabel(z);
+          const include = [{ model: Country, include: [{ model: Person, as: 'residents', include: [Label] }] }];
+          const names = async (path, direction) =>
+            (await Continent.findAll({ include, order: [[...path, direction]], limit: 5 })).map((row) => row.name);
+          const byResident = [{ model: Country }, { model: Person, as: 'residents' }, 'lastName'];
+          const byLabel = [{ model: Country }, { model: Person, as: 'residents' }, { model: Label }, 'text'];
+          expect(await names(byResident, 'ASC')).toEqual(['Europe', 'Asia']);
+          expect(await names(byResident, 'DESC')).toEqual(['Asia', 'Europe']);
+          expect(await names(byLabel, 'ASC')).toEqual(['Asia', 'Europe']);
+          expect(await names(byLabel, 'DESC')).toEqual(['Europe', 'Asia']);
+        } finally {
+          await sequelize.models.PersonLabels.drop();
+          await Label.drop();
+          await Person.drop();
+          await Country.drop();
+          await Continent.drop();
+        }
+      });
+
+      it('takes attribute names with __ (the separator of paths of @xufa/orm)', async () => {
+        const Spaced = sequelize.define('Spaced', { a__b: DataTypes.STRING, n__count: DataTypes.INTEGER });
+        await Spaced.sync({ force: true });
+        try {
+          await Spaced.bulkCreate([
+            { a__b: 'v', n__count: 3 },
+            { a__b: 'w', n__count: 5 },
+          ]);
+          expect(await Spaced.count({ where: { a__b: 'v' } })).toBe(1);
+          expect(await Spaced.count({ where: { n__count: { [Op.gt]: 4 } } })).toBe(1);
+          expect((await Spaced.findAll({ order: [['n__count', 'DESC']] })).map((row) => row.a__b)).toEqual(['w', 'v']);
+          const [made, created] = await Spaced.findOrCreate({ where: { a__b: 'x' }, defaults: { n__count: 1 } });
+          expect([made.a__b, created]).toEqual(['x', true]);
+          expect(await Spaced.sum('n__count')).toBe(9);
+        } finally {
+          await Spaced.drop();
+        }
+      });
+
+      it('takes attribute names with any character in conditions and orders', async () => {
+        const Odd = sequelize.define('Odd', {
+          'first-name': DataTypes.STRING,
+          'a b': DataTypes.STRING,
+          café: DataTypes.STRING,
+        });
+        await Odd.sync({ force: true });
+        try {
+          await Odd.create({ 'first-name': 'Ada', 'a b': 'x', café: 'y' });
+          expect(await Odd.count({ where: { 'first-name': 'Ada', 'a b': 'x', café: { [Op.like]: 'y%' } } })).toBe(1);
+          expect((await Odd.findAll({ order: [['café', 'DESC']] })).length).toBe(1);
+        } finally {
+          await Odd.drop();
+        }
+      });
+
+      it('describes the order and collation of the fields of indexes', async () => {
+        const qi = sequelize.getQueryInterface();
+        await qi.createTable('described_indexes', {
+          id: { type: DataTypes.INTEGER, primaryKey: true },
+          a: DataTypes.STRING,
+          b: DataTypes.INTEGER,
+        });
+        try {
+          await qi.addIndex('described_indexes', [{ name: 'a', order: 'DESC' }, 'b'], { name: 'described_ab' });
+          const index = (await qi.showIndex('described_indexes')).find((item) => item.name === 'described_ab');
+          // The keys of Sequelize 6 (with the order in PostgreSQL); the name of Sequelize 7 is not enumerable.
+          expect(index.fields.map((field) => [field.attribute, field.name])).toEqual([
+            ['a', 'a'],
+            ['b', 'b'],
+          ]);
+          const postgres = sequelize.getDialect() === 'postgres';
+          expect(Object.keys(index.fields[0]).sort()).toEqual(
+            postgres ? ['attribute', 'collate', 'length', 'order'] : ['attribute', 'length', 'order']
+          );
+          expect(index.fields[0].order).toBe(postgres ? 'DESC' : undefined);
+          // showIndexes (Sequelize 7): the order of every field, in SQLite too.
+          const info = (await qi.showIndexes('described_indexes')).find((item) => item.name === 'described_ab');
+          expect(info).toEqual({
+            name: 'described_ab',
+            ...(postgres ? { method: 'BTREE', includes: [] } : {}),
+            unique: false,
+            primary: false,
+            fields: [
+              { name: 'a', order: 'DESC', collate: undefined },
+              { name: 'b', order: 'ASC', collate: undefined },
+            ],
+          });
+        } finally {
+          await qi.dropTable('described_indexes');
+        }
+      });
+    });
+
+    describe('attributes computed by the database (Sequelize 7)', () => {
+      it('selects VIRTUALs made by SQL (include as), in includes too, and exposes runtime attributes', async () => {
+        const { literal } = Sequelize;
+        const Writer = sequelize.define('Writer', {
+          name: DataTypes.STRING,
+          essays: DataTypes.VIRTUAL(DataTypes.INTEGER, (as) => [
+            literal(`(SELECT COUNT(*) FROM "Essays" e WHERE e."WriterId" = "${as}"."id")`),
+            'essays',
+          ]),
+          loud: DataTypes.VIRTUAL(DataTypes.STRING, (as) => literal(`upper(${as}.name)`)),
+        });
+        const Essay = sequelize.define('Essay', { title: DataTypes.STRING });
+        Writer.hasMany(Essay);
+        Essay.belongsTo(Writer, { as: 'author', foreignKey: 'WriterId' });
+        await Writer.sync({ force: true });
+        await Essay.sync({ force: true });
+        try {
+          const writer = await Writer.create({ name: 'ada' });
+          await Essay.bulkCreate([
+            { title: 'a', WriterId: writer.id },
+            { title: 'b', WriterId: writer.id },
+          ]);
+          const [found] = await Writer.findAll({ attributes: ['id', 'essays', 'loud'] });
+          expect([Number(found.essays), found.loud]).toEqual([2, 'ADA']);
+          // Not selected unless asked for.
+          expect((await Writer.findByPk(writer.id)).essays).toBeUndefined();
+          const [essay] = await Essay.findAll({
+            include: [{ model: Writer, as: 'author', attributes: ['id', 'loud'] }],
+          });
+          expect(essay.author.loud).toBe('ADA');
+          const [withEssays] = await Writer.findAll({ include: [{ model: Essay, attributes: ['id', 'title'] }] });
+          expect(withEssays.Essays).toHaveLength(2);
+          // Runtime attributes: properties of the instances with enableRuntimeAttributes.
+          const attributes = ['id', [literal('7'), 'seven']];
+          const [plain] = await Writer.findAll({ attributes });
+          expect([plain.get('seven'), plain.seven]).toEqual([7, undefined]);
+          const [runtime] = await Writer.findAll({ attributes, enableRuntimeAttributes: true });
+          expect(runtime.seven).toBe(7);
+          runtime.seven = 8;
+          expect(runtime.get('seven')).toBe(8);
+        } finally {
+          await Essay.drop();
+          await Writer.drop();
+        }
+      });
+    });
+
+    describe('the bigint option', () => {
+      it('gives BIGINT values as numbers (the default), bigints or strings', async () => {
+        const read = async (bigint) => {
+          const other = makeSequelize(bigint ? { bigint } : {});
+          try {
+            const Counter = other.define('BigCounter', {
+              id: { type: DataTypes.BIGINT, primaryKey: true, autoIncrement: true },
+              n: DataTypes.BIGINT,
+            });
+            const Tick = other.define('BigTick', { at: DataTypes.STRING });
+            Counter.hasMany(Tick);
+            Tick.belongsTo(Counter);
+            await Counter.sync({ force: true });
+            await Tick.sync({ force: true });
+            const small = await Counter.create({ n: 5 });
+            await Counter.create({ n: '9007199254740993' });
+            await Tick.create({ at: 'now', BigCounterId: small.id });
+            const rows = await Counter.findAll({ order: [['id', 'ASC']], include: [Tick] });
+            const count = await Counter.count({ where: { n: 9007199254740993n } });
+            const tick = await Tick.findOne({ include: [Counter] });
+            await Tick.drop();
+            await Counter.drop();
+            // The keys (BIGINT and autoIncrement) and the foreign keys to them in the same mode; includes find them.
+            return [
+              small.n,
+              rows[0].n,
+              rows[1].n,
+              count,
+              small.id,
+              tick.BigCounterId,
+              tick.BigCounter.id,
+              rows[0].BigTicks.length,
+            ];
+          } finally {
+            await other.close();
+          }
+        };
+        expect(await read()).toEqual([5, 5, 9007199254740993n, 1, 1, 1, 1, 1]);
+        expect(await read('bigint')).toEqual([5n, 5n, 9007199254740993n, 1, 1n, 1n, 1n, 1]);
+        expect(await read('string')).toEqual(['5', '5', '9007199254740993', 1, '1', '1', '1', 1]);
+        expect(() => makeSequelize({ bigint: 'text' })).toThrow('The bigint option is number, bigint or string');
+      });
+    });
+
+    describe('features of Sequelize 7', () => {
+      it('writes SELECTs (queryGenerator.selectQuery) and compares with subqueries (Op.in of a literal)', async () => {
+        const { Tag } = models;
+        await Tag.bulkCreate([{ name: 'sub-a' }, { name: 'sub-b' }, { name: 'sub-c' }]);
+        const generator = sequelize.getQueryInterface().queryGenerator;
+        const counted = generator.selectQuery('Tags', {
+          attributes: [[Sequelize.literal('count(*)'), 'cnt']],
+          where: { name: { [Op.like]: 'sub-%' } },
+        });
+        expect(counted).toMatch(/^SELECT count\(\*\) AS "cnt" FROM "Tags" AS "Tags" WHERE/);
+        expect(Number((await sequelize.query(counted, { plain: true })).cnt)).toBe(3);
+        const ids = generator
+          .selectQuery('Tags', { attributes: ['id'], where: { name: ['sub-b', 'sub-c'] } })
+          .slice(0, -1);
+        const inside = await Tag.findAll({
+          where: { id: { [Op.in]: Sequelize.literal(`(${ids})`) } },
+          order: [['name', 'ASC']],
+        });
+        expect(inside.map((tag) => tag.name)).toEqual(['sub-b', 'sub-c']);
+        const outside = await Tag.findAll({
+          where: { name: { [Op.like]: 'sub-%' }, id: { [Op.notIn]: Sequelize.literal(ids) } },
+        });
+        expect(outside.map((tag) => tag.name)).toEqual(['sub-a']);
+      });
+
+      it('finds by several primary keys (findByPks)', async () => {
+        const { Tag } = models;
+        const tags = await Tag.bulkCreate([{ name: 'pk1' }, { name: 'pk2' }, { name: 'pk3' }]);
+        const found = await Tag.findByPks([tags[2].id, tags[0].id, 999999], { order: [['id', 'ASC']] });
+        expect(found.map((tag) => tag.name)).toEqual(['pk1', 'pk3']);
+        expect(await Tag.findByPks([tags[0].id, tags[1].id], { where: { name: 'pk2' } })).toHaveLength(1);
+        expect(await Tag.findByPks([])).toEqual([]);
+        await expect(Tag.findByPks(tags[0].id)).rejects.toThrow('takes an array');
+        const Pair = sequelize.define('KeyPair', {
+          a: { type: DataTypes.INTEGER, primaryKey: true },
+          b: { type: DataTypes.INTEGER, primaryKey: true },
+        });
+        await Pair.sync({ force: true });
+        try {
+          await Pair.bulkCreate([
+            { a: 1, b: 1 },
+            { a: 1, b: 2 },
+            { a: 2, b: 1 },
+          ]);
+          const pairs = await Pair.findByPks(
+            [
+              { a: 1, b: 2 },
+              { a: 2, b: 1 },
+            ],
+            { order: [['a', 'ASC']] }
+          );
+          expect(pairs.map((pair) => [pair.a, pair.b])).toEqual([
+            [1, 2],
+            [2, 1],
+          ]);
+          await expect(Pair.findByPks([1])).rejects.toThrow('are objects of a, b');
+        } finally {
+          await Pair.drop();
+        }
+      });
+
+      it('indexes the foreign keys of associations when asked (indexForeignKeys, foreignKey.index)', async () => {
+        const indexed = (options) => {
+          const other = makeSequelize(options);
+          const Writer = other.define('FkWriter', { name: DataTypes.STRING });
+          const Note = other.define('FkNote', { text: DataTypes.STRING });
+          Note.belongsTo(Writer);
+          Note.belongsTo(Writer, { as: 'editor', foreignKey: { name: 'editorId', index: false } });
+          Note.belongsTo(Writer, {
+            as: 'reviewer',
+            foreignKey: { name: 'reviewerId', index: { unique: true, name: 'one_review' } },
+          });
+          return { other, Note };
+        };
+        const names = async (options) => {
+          const { other, Note } = indexed(options);
+          try {
+            await other.sync({ force: true });
+            const indexes = await other.getQueryInterface().showIndex(Note.tableName);
+            await other.drop();
+            return indexes
+              .filter((index) => !index.primary)
+              .map((index) => `${index.name}${index.unique ? '!' : ''}`)
+              .sort();
+          } finally {
+            await other.close();
+          }
+        };
+        expect(await names({})).toEqual(['one_review!']);
+        expect(await names({ indexForeignKeys: true })).toEqual(['fk_notes_fk_writer_id', 'one_review!']);
+      });
+
+      it('makes STRICT tables of SQLite (strict)', async () => {
+        if (sequelize.getDialect() !== 'sqlite') {
+          expect(() => sequelize.define('Strict', { a: DataTypes.STRING }, { strict: true })).toThrow(
+            'The STRICT tables of SQLite'
+          );
+          return;
+        }
+        const Veg = sequelize.define(
+          'Veg',
+          { name: DataTypes.STRING, n: DataTypes.INTEGER, ok: DataTypes.BOOLEAN, at: DataTypes.DATE },
+          { strict: true }
+        );
+        await Veg.sync({ force: true });
+        try {
+          const definition = async () =>
+            (await sequelize.query("SELECT sql FROM sqlite_master WHERE name = 'Vegs'", { type: 'SELECT' }))[0].sql;
+          expect(await definition()).toMatch(/"name" TEXT, "n" INTEGER, "ok" INTEGER, "at" TEXT.*\) STRICT$/);
+          const made = await Veg.create({ name: 'a', n: 1, ok: true, at: new Date() });
+          const found = await Veg.findByPk(made.id);
+          expect([found.ok, found.at instanceof Date]).toEqual([true, true]);
+          await expect(
+            sequelize.query(`INSERT INTO "Vegs" (name, n, "createdAt", "updatedAt") VALUES ('b', 'x', '', '')`)
+          ).rejects.toThrow('cannot store TEXT value in INTEGER column');
+          // A table made again for a change stays STRICT.
+          await sequelize
+            .getQueryInterface()
+            .changeColumn('Vegs', 'name', { type: DataTypes.STRING(20), allowNull: false });
+          expect(await definition()).toMatch(/\) STRICT$/);
+        } finally {
+          await Veg.drop();
+        }
+      });
+
+      it('has generated columns (generatedAs, generatedColumn)', async () => {
+        const Line = sequelize.define('Line', {
+          price: DataTypes.INTEGER,
+          quantity: DataTypes.INTEGER,
+          total: { type: DataTypes.INTEGER, allowNull: false, generatedAs: Sequelize.literal('"price" * "quantity"') },
+          half: { type: DataTypes.FLOAT, generatedAs: Sequelize.literal('"price" / 2.0'), generatedColumn: 'VIRTUAL' },
+        });
+        await Line.sync({ force: true });
+        try {
+          const line = await Line.create({ price: 3, quantity: 4 });
+          expect([line.total, line.half]).toEqual([12, 1.5]);
+          line.quantity = 5;
+          await line.save();
+          expect(line.total).toBe(15);
+          // Values given for them are not written: the database makes them.
+          await Line.bulkCreate([{ price: 10, quantity: 1, total: 999 }]);
+          await Line.update({ price: 4 }, { where: { id: line.id } });
+          const rows = await Line.findAll({ order: [['id', 'ASC']] });
+          expect(rows.map((row) => row.total)).toEqual([20, 10]);
+          expect(await Line.count({ where: { total: { [Op.gt]: 15 } } })).toBe(1);
+          // sync({ alter }) and changes of the other columns keep them (SQLite makes the table again).
+          await Line.sync({ alter: true });
+          await sequelize
+            .getQueryInterface()
+            .changeColumn('Lines', 'price', { type: DataTypes.INTEGER, allowNull: true });
+          expect((await Line.findByPk(line.id)).total).toBe(20);
+          expect(() =>
+            sequelize.define('BadLine', {
+              a: { type: DataTypes.INTEGER, generatedAs: Sequelize.literal('1'), defaultValue: 2 },
+            })
+          ).toThrow('cannot have a defaultValue');
+          expect(() =>
+            sequelize.define('BadLine', {
+              a: { type: DataTypes.INTEGER, generatedAs: Sequelize.literal('1'), generatedColumn: 'X' },
+            })
+          ).toThrow('is STORED or VIRTUAL');
+        } finally {
+          await Line.drop();
+        }
+      });
+
+      it('takes instances of classes as values (their getters)', async () => {
+        const Person = sequelize.define('ClassPerson', {
+          name: { type: DataTypes.STRING, unique: true },
+          age: DataTypes.INTEGER,
+        });
+        await Person.sync({ force: true });
+        try {
+          class Input {
+            constructor(n) {
+              this.n = n;
+            }
+
+            get name() {
+              return `ada${this.n}`;
+            }
+
+            get age() {
+              return 36;
+            }
+          }
+          const made = await Person.create(new Input(1));
+          expect([made.name, made.age]).toEqual(['ada1', 36]);
+          const [upserted] = await Person.upsert(new Input(1));
+          expect(upserted.id).toBe(made.id);
+          await Person.update(
+            new (class {
+              get age() {
+                return 40;
+              }
+            })(),
+            { where: { id: made.id } }
+          );
+          expect((await Person.findByPk(made.id)).age).toBe(40);
+          expect(Person.build(new Input(2)).name).toBe('ada2');
+          expect((await Person.bulkCreate([new Input(3)]))[0].name).toBe('ada3');
+        } finally {
+          await Person.drop();
+        }
+      });
+
+      it('sets values and SQL of their own on conflicts (updateOnDuplicate pairs, updateValues, includes)', async () => {
+        const Usage = sequelize.define('Usage', {
+          actor: { type: DataTypes.STRING, unique: true },
+          hits: { type: DataTypes.INTEGER, defaultValue: 1 },
+          last: DataTypes.STRING,
+        });
+        await Usage.sync({ force: true });
+        try {
+          await Usage.bulkCreate([{ actor: 'a' }, { actor: 'b' }]);
+          await Usage.bulkCreate(
+            [
+              { actor: 'a', last: 'r1' },
+              { actor: 'c', last: 'r2' },
+            ],
+            {
+              conflictAttributes: ['actor'],
+              updateOnDuplicate: ['last', ['hits', Sequelize.literal('"Usage"."hits" + 1')]],
+            }
+          );
+          await Usage.bulkCreate([{ actor: 'a' }], {
+            conflictAttributes: ['actor'],
+            updateOnDuplicate: [
+              ['hits', Sequelize.literal('"Usages"."hits" + excluded."hits"')],
+              ['last', "it's"],
+            ],
+          });
+          const rows = await Usage.findAll({ order: [['actor', 'ASC']] });
+          expect(rows.map((row) => [row.actor, row.hits, row.last])).toEqual([
+            ['a', 3, "it's"],
+            ['b', 1, null],
+            ['c', 1, 'r2'],
+          ]);
+          // upsert: what a row there gets (updateValues), not the values inserted.
+          const counted = { updateValues: { hits: Sequelize.literal('"Usage"."hits" + 1') } };
+          const [first] = await Usage.upsert({ actor: 'd', last: 'x' }, counted);
+          const [second] = await Usage.upsert({ actor: 'd', last: 'y' }, counted);
+          expect([first.hits, second.hits, second.last]).toEqual([1, 2, 'y']);
+          // updateOnDuplicate of includes, for their rows.
+          const Player = sequelize.define('Player', {
+            code: { type: DataTypes.STRING, primaryKey: true },
+            name: DataTypes.STRING,
+          });
+          const Team = sequelize.define('Team', {
+            code: { type: DataTypes.STRING, primaryKey: true },
+            country: DataTypes.STRING,
+          });
+          Team.hasMany(Player, { as: 'players' });
+          await Team.sync({ force: true });
+          await Player.sync({ force: true });
+          const data = (v) => [{ code: 'T1', country: `ES${v}`, players: [{ code: 'P1', name: `Ann${v}` }] }];
+          await Team.bulkCreate(data(1), { include: [{ model: Player, as: 'players' }] });
+          await Team.bulkCreate(data(2), {
+            updateOnDuplicate: ['country'],
+            include: [{ model: Player, as: 'players', updateOnDuplicate: ['name'] }],
+          });
+          const team = await Team.findByPk('T1', { include: ['players'] });
+          expect([team.country, team.players.map((player) => player.name)]).toEqual(['ES2', ['Ann2']]);
+          await Player.drop();
+          await Team.drop();
+        } finally {
+          await Usage.drop();
+        }
+      });
+
+      it('creates targets given as objects to set() and add(), and several at once (createChores)', async () => {
+        const Owner = sequelize.define('Owner', { name: DataTypes.STRING });
+        const Chore = sequelize.define('Chore', { title: DataTypes.STRING });
+        const Badge = sequelize.define('Badge', { label: DataTypes.STRING });
+        Owner.hasMany(Chore, { as: 'chores' });
+        Owner.belongsToMany(Badge, { through: 'OwnerBadges', as: 'badges' });
+        await Owner.sync({ force: true });
+        await Chore.sync({ force: true });
+        await Badge.sync({ force: true });
+        await sequelize.models.OwnerBadges.sync({ force: true });
+        try {
+          const owner = await Owner.create({ name: 'a' });
+          const old = await Chore.create({ title: 'old' });
+          await owner.setChores([old, { title: 't1' }]);
+          await owner.addChore({ title: 't2' });
+          const many = await owner.createChores([{ title: 't3' }, { title: 't4' }]);
+          expect(many.map((chore) => typeof chore.id)).toEqual(['number', 'number']);
+          const titles = async () => (await owner.getChores({ order: [['id', 'ASC']] })).map((chore) => chore.title);
+          expect(await titles()).toEqual(['old', 't1', 't2', 't3', 't4']);
+          await owner.setChores([{ title: 'only' }]);
+          expect(await titles()).toEqual(['only']);
+          await owner.setBadges([{ label: 'admin' }]);
+          await owner.addBadges([{ label: 'dev' }, await Badge.create({ label: 'ops' })]);
+          const made = await owner.createBadges([{ label: 'qa' }]);
+          expect(made[0].label).toBe('qa');
+          expect((await owner.getBadges()).map((badge) => badge.label).sort()).toEqual(['admin', 'dev', 'ops', 'qa']);
+        } finally {
+          await sequelize.models.OwnerBadges.drop();
+          await Badge.drop();
+          await Chore.drop();
+          await Owner.drop();
+        }
+      });
+
+      it('updates the rows whose includes are there (update with include)', async () => {
+        const Writer = sequelize.define('UpdWriter', { name: DataTypes.STRING });
+        const Article = sequelize.define('UpdArticle', { title: DataTypes.STRING, flag: DataTypes.STRING });
+        const Remark = sequelize.define('UpdRemark', { text: DataTypes.STRING });
+        Article.belongsTo(Writer, { as: 'writer' });
+        Article.hasMany(Remark, { as: 'remarks' });
+        await Writer.sync({ force: true });
+        await Article.sync({ force: true });
+        await Remark.sync({ force: true });
+        try {
+          const [john, ann] = await Writer.bulkCreate([{ name: 'John' }, { name: 'Ann' }]);
+          const articles = await Article.bulkCreate([
+            { title: 'a', writerId: john.id },
+            { title: 'b', writerId: ann.id },
+            { title: 'c', writerId: john.id },
+          ]);
+          await Remark.create({ text: 'spam!', UpdArticleId: articles[2].id });
+          const [byJohn] = await Article.update(
+            { flag: 'john' },
+            { where: {}, include: [{ model: Writer, as: 'writer', where: { name: 'John' } }] }
+          );
+          const [spammed] = await Article.update(
+            { flag: 'spam' },
+            { where: {}, include: [{ model: Remark, as: 'remarks', where: { text: { [Op.like]: '%spam%' } } }] }
+          );
+          expect([byJohn, spammed]).toEqual([2, 1]);
+          const rows = await Article.findAll({ order: [['title', 'ASC']] });
+          expect(rows.map((row) => row.flag)).toEqual(['john', null, 'spam']);
+        } finally {
+          await Remark.drop();
+          await Article.drop();
+          await Writer.drop();
+        }
+      });
+
+      it('makes UUIDs of version 7, in order', async () => {
+        const Event = sequelize.define('Event7', {
+          id: { type: DataTypes.UUID, primaryKey: true, defaultValue: DataTypes.UUIDV7 },
+          n: DataTypes.INTEGER,
+        });
+        await Event.sync({ force: true });
+        try {
+          const ids = [];
+          for (let i = 0; i < 20; i += 1) ids.push((await Event.create({ n: i })).id);
+          expect(
+            ids.every((id) => /^[0-9a-f]{8}-[0-9a-f]{4}-7[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/.test(id))
+          ).toBe(true);
+          expect([...ids].sort()).toEqual(ids);
+          const found = await Event.findAll({ order: [['id', 'ASC']] });
+          expect(found.map((event) => event.n)).toEqual(ids.map((_, i) => i));
+        } finally {
+          await Event.drop();
+        }
+      });
+
+      it('updates rows of conflicts only where a condition holds (onConflictUpdateWhere)', async () => {
+        const Score = sequelize.define('Score', {
+          name: { type: DataTypes.STRING, unique: true },
+          points: DataTypes.INTEGER,
+          day: DataTypes.INTEGER,
+        });
+        await Score.sync({ force: true });
+        try {
+          await Score.bulkCreate([
+            { name: 'a', points: 1, day: 5 },
+            { name: 'b', points: 1, day: 1 },
+          ]);
+          const made = await Score.bulkCreate(
+            [
+              { name: 'a', points: 9, day: 6 },
+              { name: 'b', points: 9, day: 2 },
+              { name: 'c', points: 9, day: 9 },
+            ],
+            {
+              conflictAttributes: ['name'],
+              updateOnDuplicate: ['points', 'day'],
+              onConflictUpdateWhere: { day: { [Op.gte]: 3 } },
+            }
+          );
+          const rows = await Score.findAll({ order: [['name', 'ASC']] });
+          expect(rows.map((row) => `${row.name}${row.points}`)).toEqual(['a9', 'b1', 'c9']);
+          // The keys of the rows inserted or updated; none for the row left as it was.
+          expect(made.map((row) => row.id)).toEqual([rows[0].id, null, rows[2].id]);
+          const [kept] = await Score.upsert(
+            { name: 'a', points: 2, day: 3 },
+            { onConflictUpdateWhere: Sequelize.literal('excluded."points" > "Scores"."points"') }
+          );
+          expect(kept.points).toBe(9);
+          // ignoreDuplicates: the keys of the rows inserted.
+          const ignored = await Score.bulkCreate([{ name: 'a' }, { name: 'd' }], { ignoreDuplicates: true });
+          expect(ignored[0].id).toBeNull();
+          expect(ignored[1].id).toBe((await Score.findOne({ where: { name: 'd' } })).id);
+        } finally {
+          await Score.drop();
+        }
       });
     });
 
