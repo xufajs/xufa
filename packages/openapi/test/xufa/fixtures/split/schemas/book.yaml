@@ -1,0 +1,11 @@
+Book:
+  type: object
+  required: [title]
+  properties:
+    title: { type: string, minLength: 1 }
+    author:
+      $ref: ./author.yaml
+    example:
+      type: string
+      example:
+        $ref: "this is data, not a reference"

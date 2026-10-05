@@ -130,6 +130,17 @@ function compileParamsFactory(names) {
   )(NullObject);
 }
 
+// The same, with the values as arguments: what the compiled walk calls, with its parameters in locals.
+function compileParamsArgsFactory(names) {
+  const args = names.map((_, i) => `v${i}`);
+  const lines = names.map((name, i) => `params[${JSON.stringify(name)}] = v${i};`);
+  // eslint-disable-next-line no-new-func
+  return new Function(
+    'NullObject',
+    `return function createParamsArgs(${args.join(', ')}) {\n  const params = new NullObject();\n  ${lines.join('\n  ')}\n  return params;\n}`
+  )(NullObject);
+}
+
 const MAX_HANDLERS = 31;
 
 class HandlerStorage {
@@ -154,6 +165,7 @@ class HandlerStorage {
       handler: route.handler,
       store: route.store || null,
       createParams: compileParamsFactory(route.params),
+      createParamsArgs: compileParamsArgsFactory(route.params),
     };
     // find-my-way's name of createParams, kept for code reading it
     handler._createParamsObject = handler.createParams;

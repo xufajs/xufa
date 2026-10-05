@@ -1,0 +1,120 @@
+<!--{
+  "file": "netcache.html",
+  "name": "@xufa/netcache",
+  "title": "@xufa/netcache",
+  "description": "@xufa/netcache: a cache shared by the machines of a service, a copy in each and every write sent to all over sealed TCP, for the models of @xufa/orm, the lockouts of @xufa/auth and more.",
+  "groups": [
+    ["Using it", [["start", "Quick start"], ["right", "How it stays right"], ["options", "Options"], ["api", "API"]]],
+    ["With xufa", [["orm", "With @xufa/orm"], ["cluster", "With @xufa/cluster"], ["auth", "With @xufa/auth"]]],
+    ["More", [["security", "Security"], ["limits", "What it is not"], ["typescript", "TypeScript"]]]
+  ]
+}-->
+        <h1>@xufa/netcache</h1>
+        <p class="intro">
+          A cache shared by the machines of a service. Each node keeps a copy, so reads do not leave the machine, and every
+          set, delete and clear is sent to the other nodes over TCP; the nodes find each other with
+          <a href="discovery.html">@xufa/discovery</a>. It has the methods of the caches of @xufa/orm, so the models of a
+          database, the lockouts of @xufa/auth or anything else can be cached once for every machine.
+        </p>
+
+        <h2 id="start">Quick start</h2>
+        <pre><code class="language-sh">npm install @xufa/netcache</code></pre>
+        <pre><code class="language-js">const { NetCache } = require('@xufa/netcache');
+
+const cache = await new NetCache({ secret: process.env.CACHE_SECRET, service: 'shop' }).start();
+
+await cache.set('rates', { eur: 1.08 }, 60000); // every machine, for a minute
+await cache.get('rates'); // a copy, from this machine
+await cache.delete('rates'); // gone from every machine
+await cache.clear('book:'); // the keys of a prefix, everywhere</code></pre>
+
+        <h2 id="right">How it stays right</h2>
+        <ul>
+          <li><strong>Versions.</strong> Every write carries a version of a hybrid clock (the time of the machine, a counter, the node): two writes of one key on two machines end the same on every machine, the later winning.</li>
+          <li><strong>Deletes and clears are remembered</strong> for <code>tombstoneTtl</code> (a minute): a write older than them that arrives late does not bring the value back.</li>
+          <li><strong>Nothing is lost quietly.</strong> Each node keeps the writes it sent to each peer until the peer acknowledges them. A broken connection is opened again; the peer says the last write it applied, and the rest is sent. When that is not possible (more writes missed than <code>queue</code>, or a node wrote before it knew of a peer that was there), the peer empties its copy: an empty cache asks the database, a stale one would answer wrong.</li>
+          <li><strong>Warm start.</strong> A node that starts gets the entries of its first peer, and <code>start()</code> resolves once the nodes there are connected.</li>
+          <li><strong>Values</strong> are kept serialized by v8: Dates, Buffers, BigInts, Maps and Sets come back as they were, and each read is a copy.</li>
+        </ul>
+
+        <h2 id="options">Options</h2>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Option</th><th>Default</th><th>What it does</th></tr></thead>
+            <tbody>
+              <tr><td><code>secret</code></td><td></td><td>16 bytes or more: required, unless <code>insecure: true</code>.</td></tr>
+              <tr><td><code>service</code></td><td><code>'xufa'</code></td><td>Nodes of other services are not peers.</td></tr>
+              <tr><td><code>max</code></td><td><code>10000</code></td><td>Keys kept in each copy, the least used dropped first.</td></tr>
+              <tr><td><code>ttl</code></td><td><code>0</code></td><td>Milliseconds values live by default (0: until dropped).</td></tr>
+              <tr><td><code>port</code>, <code>host</code></td><td><code>0</code>, all</td><td>The TCP port and address this node listens on.</td></tr>
+              <tr><td><code>advertise</code></td><td></td><td>The address the others connect to, when it is not the one they see (NAT, containers).</td></tr>
+              <tr><td><code>queue</code></td><td><code>10000</code></td><td>Writes kept for each peer until it acknowledges them.</td></tr>
+              <tr><td><code>sync</code></td><td><code>true</code></td><td>A node that starts gets the entries of its first peer.</td></tr>
+              <tr><td><code>settle</code></td><td><code>300</code></td><td>Milliseconds <code>start()</code> waits for the nodes there to answer.</td></tr>
+              <tr><td><code>tombstoneTtl</code></td><td><code>60000</code></td><td>Milliseconds deletes and clears are remembered.</td></tr>
+              <tr><td><code>maxFrame</code></td><td>16 MiB</td><td>The largest frame accepted.</td></tr>
+              <tr><td><code>marshal</code></td><td></td><td><code>true</code> or a Registry of <a href="marshal.html">@xufa/marshal</a>: values keep their classes on every machine (nodes with and without it read each other).</td></tr>
+              <tr><td><code>discovery</code></td><td><code>{}</code></td><td>The options of <a href="discovery.html">@xufa/discovery</a> (in clouds: <code>{ transport: 'unicast', seeds }</code>), or a <code>Discovery</code> of the app.</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h2 id="api">API</h2>
+        <p>
+          <code>start()</code>, <code>stop()</code>; <code>get(key)</code>, <code>set(key, value, ttl)</code>,
+          <code>delete(keys)</code>, <code>clear(prefix)</code>; <code>size</code>, <code>connected</code> (the ids of the
+          peers connected), <code>stats</code> (<code>sent</code>, <code>applied</code>, <code>ignored</code>,
+          <code>resent</code>, <code>resets</code>, <code>snapshots</code>). Events: <code>peer</code> (id,
+          <code>'connected'</code> or <code>'disconnected'</code>), <code>change</code> (a write of another node applied),
+          <code>reset</code>, <code>synced</code>, <code>error</code>.
+        </p>
+
+        <h2 id="orm">With @xufa/orm</h2>
+        <p>
+          The cache of a database: the models with the option <code>cache</code> are read from the copy of the machine,
+          and what one machine saves, updates or deletes, every copy forgets.
+        </p>
+        <pre><code class="language-js">const db = new Database({ backend: 'postgres', url: process.env.DATABASE_URL, cache });</code></pre>
+
+        <h2 id="cluster">With @xufa/cluster</h2>
+        <p>One NetCache by machine, in the primary; the workers reach it through the bus with the <code>SharedCache</code> of @xufa/orm and its option <code>store</code>:</p>
+        <pre><code class="language-js">const { start, bus } = require('@xufa/cluster');
+const { SharedCache, Database } = require('@xufa/orm');
+const { NetCache } = require('@xufa/netcache');
+
+start({
+  primary: async ({ onShutdown }) =&gt; {
+    const store = await new NetCache({ secret, service: 'shop' }).start();
+    new SharedCache({ bus, store }); // the copy of this machine, for its workers
+    onShutdown(() =&gt; store.stop());
+  },
+  worker: async () =&gt; {
+    const db = new Database({ backend: 'postgres', url, cache: new SharedCache({ bus }) });
+  },
+});</code></pre>
+
+        <h2 id="auth">With @xufa/auth</h2>
+        <p>
+          <code>new Lockout({ store: cache })</code>: failed logins are counted on every machine, so an attacker gains
+          nothing by spreading attempts among them.
+        </p>
+
+        <h2 id="security">Security</h2>
+        <p>
+          Connections are authenticated with the secret: each side proves it knows it, and the key of each connection is
+          derived from the secret and random values of both sides (HKDF). Every frame is sealed with AES-256-GCM under a
+          counter, so it cannot be read, changed, dropped, reordered or replayed; the discovery of the nodes is sealed with
+          the same secret. Without a secret (<code>insecure: true</code>), any machine of the network can read and write the
+          cache.
+        </p>
+
+        <h2 id="limits">What it is not</h2>
+        <p>
+          A cache, not a database: the copies agree within the time a write takes to cross the network, and a counter
+          updated on two machines at the same instant (read, then write) can lose one of the two. Every node holds every
+          key (up to <code>max</code>), so the memory of the cache is that of one machine. Nodes should run the same major
+          version of Node.js (values are serialized by v8).
+        </p>
+
+        <h2 id="typescript">TypeScript</h2>
+        <p>Declarations included: <code>cache.get&lt;Book&gt;(key)</code> is a <code>Promise&lt;Book | undefined&gt;</code>.</p>

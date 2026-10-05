@@ -1,0 +1,58 @@
+<!--{
+  "file": "yaml.html",
+  "name": "@xufa/yaml",
+  "title": "@xufa/yaml",
+  "description": "@xufa/yaml: YAML 1.2 for Node.js with no dependencies: the code and the test suite of js-yaml 4.1.0.",
+  "groups": [
+    ["Using it", [["start", "Quick start"], ["load", "Loading"], ["dump", "Writing"], ["types", "Types of your own"]]],
+    ["More", [["from-js-yaml", "Coming from js-yaml"], ["tests", "Tests"], ["typescript", "TypeScript"]]]
+  ]
+}-->
+        <h1>@xufa/yaml</h1>
+        <p class="intro">
+          YAML 1.2 for Node.js with no dependencies: the code of <a href="https://github.com/nodeca/js-yaml">js-yaml</a>
+          4.1.0 and its test suite. <a href="openapi.html">@xufa/openapi</a> reads and writes OpenAPI documents with it.
+        </p>
+
+        <h2 id="start">Quick start</h2>
+        <pre><code class="language-sh">npm install @xufa/yaml</code></pre>
+        <pre><code class="language-js">const yaml = require('@xufa/yaml');
+
+const doc = yaml.load(fs.readFileSync('openapi.yaml', 'utf8'));
+const text = yaml.dump(doc, { noRefs: true, lineWidth: -1 });</code></pre>
+
+        <h2 id="load">Loading</h2>
+        <p>
+          <code>load(text, { schema, filename, json, onWarning })</code> reads one document; <code>loadAll(text)</code> every
+          document of a stream. Loading runs no code. The default schema has the types of YAML 1.2 and the ones of js-yaml
+          (timestamps as dates, binary, sets, ordered maps, merge keys); <code>CORE_SCHEMA</code>, <code>JSON_SCHEMA</code>
+          and <code>FAILSAFE_SCHEMA</code> have fewer (with <code>CORE_SCHEMA</code>, dates stay strings). Errors are
+          <code>YAMLException</code>s with the line and column (<code>mark</code>) and a snippet of the text.
+        </p>
+
+        <h2 id="dump">Writing</h2>
+        <p>
+          <code>dump(value, options)</code>: <code>indent</code>, <code>flowLevel</code>, <code>sortKeys</code>,
+          <code>lineWidth</code> (-1: no folding), <code>noRefs</code> (no anchors for objects used twice),
+          <code>quotingType</code>, <code>forceQuotes</code>, <code>replacer</code>, <code>skipInvalid</code>.
+        </p>
+
+        <h2 id="types">Types of your own</h2>
+        <pre><code class="language-js">const Point = new yaml.Type('!point', { kind: 'sequence', construct: ([x, y]) =&gt; ({ x, y }) });
+const schema = yaml.DEFAULT_SCHEMA.extend([Point]);
+yaml.load('at: !point [1, 2]', { schema }); // { at: { x: 1, y: 2 } }</code></pre>
+
+        <h2 id="from-js-yaml">Coming from js-yaml</h2>
+        <p>
+          <code>require('js-yaml')</code> can be replaced by <code>require('@xufa/yaml')</code>: it is js-yaml 4.1.0, and its
+          documentation applies.
+        </p>
+
+        <h2 id="tests">Tests</h2>
+        <p>
+          The suite of js-yaml (units, samples of loading and of load errors, the dumper, a fuzzy dumper with fast-check,
+          and its issues), ported to vyntra by <code>tools/port-yaml</code>.
+        </p>
+
+        <h2 id="typescript">TypeScript</h2>
+        <p>The declarations of @types/js-yaml 4.0.9, with <code>types</code> (the types of the default schema).</p>

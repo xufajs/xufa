@@ -1,0 +1,6 @@
+Id:
+  name: id
+  in: path
+  required: true
+  schema:
+    $ref: ./schemas/id.yaml

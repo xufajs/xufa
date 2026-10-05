@@ -345,6 +345,57 @@ describe.skipIf(!available)('postgres', () => {
     }
   });
 
+  it('gives connections of the pool, opened through _connect, and times out acquiring them (pool.acquire)', async () => {
+    const sequelize = new Sequelize(url, { logging: false, pool: { max: 1, acquire: 200 } });
+    const cm = sequelize.connectionManager;
+    const opened = [];
+    const connect = cm._connect.bind(cm);
+    cm._connect = (options) => {
+      opened.push(options.host);
+      return connect(options);
+    };
+    try {
+      const connection = await cm.getConnection();
+      expect(typeof connection.processID).toBe('number');
+      expect((await connection.query('SELECT 1 AS ok')).rows).toEqual([{ ok: 1 }]);
+      expect(opened).toHaveLength(1);
+      expect(cm.pool.size).toBe(1);
+      expect(cm.validate(connection)).toBe(true);
+      // The only connection is taken: what needs another waits pool.acquire, then fails.
+      await expect(sequelize.query('SELECT 1')).rejects.toBeInstanceOf(Sequelize.ConnectionAcquireTimeoutError);
+      await cm.releaseConnection(connection);
+      expect(await sequelize.query('SELECT 1 AS ok', { type: 'SELECT' })).toEqual([{ ok: 1 }]);
+      // An error of a connection: it is not valid, and leaves the pool.
+      const broken = await cm.getConnection();
+      broken.emit('error', new Error('ECONNRESET'));
+      expect(cm.validate(broken)).toBe(false);
+      const next = await cm.getConnection();
+      expect(next.processID).not.toBe(broken.processID);
+      await cm.releaseConnection(next);
+    } finally {
+      await sequelize.close();
+    }
+  });
+
+  it('closes the connection of a transaction whose COMMIT fails', async () => {
+    const sequelize = new Sequelize(url, { logging: false, pool: { max: 2 } });
+    try {
+      await sequelize.query('SELECT 1');
+      const size = sequelize.connectionManager.pool.size;
+      const qi = sequelize.getQueryInterface();
+      const commit = qi.commitTransaction;
+      qi.commitTransaction = async () => {
+        throw new Error('Oh no');
+      };
+      const transaction = await sequelize.transaction();
+      await expect(transaction.commit()).rejects.toThrow('Oh no');
+      qi.commitTransaction = commit;
+      expect(sequelize.connectionManager.pool.size).toBe(Math.max(0, size - 1));
+    } finally {
+      await sequelize.close();
+    }
+  });
+
   it('fails at once on rows locked by others with noWait (as Sequelize 7)', async () => {
     const sequelize = new Sequelize(url, { logging: false, pool: { max: 3 } });
     const Slot = sequelize.define('Slot', { n: DataTypes.INTEGER }, { tableName: 'nowait_slots' });

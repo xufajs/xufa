@@ -229,6 +229,55 @@ function toAjvErrors(errors, schema, resolveRef) {
 }
 
 // Whether the value validated by a schema may be converted itself: schemas of other types than objects.
+// The keywords of OpenAPI that describe a schema without checking anything: fastify's ajv ignores unknown keywords,
+// and route schemas written for @fastify/swagger (@xufa/openapi) have them. They are declared to schiva as annotations
+// (its option `keywords`), with every `x-` extension the schemas have, so other unknown keywords still throw (typos).
+const OPENAPI_ANNOTATIONS = ['style', 'explode', 'allowReserved', 'example', 'externalDocs', 'xml'];
+
+// The formats checked with formats: true: the built-in ones of schiva, and those of OpenAPI that fastify knows from
+// ajv-formats. byte is base64 (as ajv-formats checks it); binary and password are any string; int32, int64, float
+// and double are known but not checked (schiva checks formats of strings only, where ajv-formats checks the range of
+// numbers).
+let defaultFormats = null;
+
+function formatsOf(given) {
+  if (given !== true) return given;
+  if (defaultFormats === null) {
+    defaultFormats = {
+      ...loadSchiva().builtInFormats(),
+      byte: /^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$/,
+      binary: false,
+      password: false,
+      int32: false,
+      int64: false,
+      float: false,
+      double: false,
+    };
+  }
+  return defaultFormats;
+}
+
+function withAnnotations(keywords, schemas) {
+  const found = new Set(OPENAPI_ANNOTATIONS);
+  const seen = new Set();
+  const walk = (node) => {
+    if (node === null || typeof node !== 'object' || seen.has(node)) return;
+    seen.add(node);
+    if (Array.isArray(node)) {
+      node.forEach(walk);
+      return;
+    }
+    for (const key of Object.keys(node)) {
+      if (key.startsWith('x-')) found.add(key);
+      walk(node[key]);
+    }
+  };
+  schemas.forEach(walk);
+  const given = Array.isArray(keywords) ? keywords : [];
+  for (const item of given) if (typeof item === 'string') found.delete(item);
+  return given.concat([...found]);
+}
+
 function coercesRoot(schema) {
   if (schema === null || typeof schema !== 'object' || schema.type === undefined) return false;
   const types = Array.isArray(schema.type) ? schema.type : [schema.type];
@@ -245,9 +294,28 @@ class ValidatorCompiler {
     if (options.schivaOptions) Object.assign(this.options, options.schivaOptions);
     this.externalSchemas = Object.values(externalSchemas || {});
     this.cache = new Map();
+    this.constructorArgs = [externalSchemas, options];
+    this.forResponses = null;
   }
 
-  buildValidatorFunction({ schema }) {
+  // The compiler of the validators of responses: the same schemas and options, without changing the data.
+  responseCompiler() {
+    if (this.forResponses === null) {
+      const [externalSchemas, options] = this.constructorArgs;
+      const customOptions = {
+        ...options.customOptions,
+        coerceTypes: false,
+        useDefaults: false,
+        removeAdditional: false,
+      };
+      this.forResponses = new ValidatorCompiler(externalSchemas, { ...options, customOptions });
+    }
+    return this.forResponses;
+  }
+
+  buildValidatorFunction({ schema, httpPart }) {
+    // A response (validated by @xufa/openapi) is checked as it is: nothing converted, filled nor removed.
+    if (httpPart === 'response') return this.responseCompiler().buildValidatorFunction({ schema });
     // Schemas with an $id are compiled once.
     if (schema && typeof schema === 'object' && schema.$id && this.cache.has(schema.$id)) {
       return this.cache.get(schema.$id);
@@ -255,6 +323,11 @@ class ValidatorCompiler {
     const { compileJsonSchema } = loadSchiva();
     const externals = this.externalSchemas.filter((external) => !(schema && external.$id === schema.$id));
     const resolveRef = buildResolver(schema, externals);
+    const formats = formatsOf(this.options.formats);
+    const keywords =
+      this.options.strict === false
+        ? this.options.keywords
+        : withAnnotations(this.options.keywords, [schema, ...externals]);
     // schiva converts a value it is given only for the validation, where ajv (given the request as parent) converts
     // the request part itself. A schema of something else than an object (a body of "10" for a number) is checked
     // inside a holder object, so that the converted value can be given back.
@@ -262,7 +335,7 @@ class ValidatorCompiler {
       const id = typeof schema.$id === 'string' && schema.$id[0] !== '#' ? schema.$id : 'xufa:validated-value';
       const documents = id === schema.$id ? externals.concat([schema]) : externals.concat([{ ...schema, $id: id }]);
       const holderSchema = { type: 'object', properties: { value: { $ref: id } } };
-      const options = { ...this.options, schemas: documents };
+      const options = { ...this.options, formats, keywords, schemas: documents };
       const isValid = compileJsonSchema(holderSchema, { ...options, errors: false });
       let withErrors = null;
       const validateHeld = function validate(data) {
@@ -287,7 +360,7 @@ class ValidatorCompiler {
       validateHeld.schema = schema;
       return validateHeld;
     }
-    const options = { ...this.options, schemas: externals };
+    const options = { ...this.options, formats, keywords, schemas: externals };
     const isValid = compileJsonSchema(schema, { ...options, errors: false });
     let withErrors = null;
     function validate(data) {

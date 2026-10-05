@@ -69,3 +69,27 @@ describe('bus in one process', () => {
     await expect(bus.request('fails')).rejects.toThrow('bad');
   });
 });
+
+describe('start({ marshal })', () => {
+  it('sends instances of registered classes, and errors of handlers, as themselves', () => {
+    const result = spawnSync(process.execPath, [path.join(__dirname, 'fixtures', 'marshal.js')], { timeout: 30000 });
+    const lines = result.stdout
+      .toString()
+      .trim()
+      .split('\n')
+      .filter(Boolean)
+      .map((line) => JSON.parse(line))
+      .sort((a, b) => a.worker - b.worker);
+    expect(result.status).toBe(0);
+    expect(lines).toHaveLength(2);
+    for (const line of lines) {
+      expect(line).toMatchObject({
+        scaledIsPoint: true,
+        scaled: [3, 6],
+        errorIsNotFound: true,
+        error: ['NotFound', 'book not found', 'book'],
+        sharedKept: true,
+      });
+    }
+  });
+});

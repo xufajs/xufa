@@ -1,0 +1,160 @@
+<!--{
+  "file": "router.html",
+  "name": "@xufa/router",
+  "title": "@xufa/router",
+  "description": "@xufa/router: a fast HTTP router with the API of find-my-way, with no dependencies. Parametric, regexp and wildcard routes, constraints of version and host, and match() for frameworks.",
+  "groups": [
+    ["Using it", [["start", "Quick start"], ["routes", "Routes"], ["handlers", "Handlers and stores"], ["finding", "Finding a route"]]],
+    ["More", [["constraints", "Constraints"], ["options", "Options"], ["match", "match()"], ["managing", "Managing routes"], ["helpers", "Helpers"]]],
+    ["About it", [["performance", "Performance"], ["from-fmw", "Coming from find-my-way"], ["typescript", "TypeScript"]]]
+  ]
+}-->
+        <h1>@xufa/router</h1>
+        <p class="intro">
+          A fast HTTP router with the API of <a href="https://github.com/delvedor/find-my-way">find-my-way</a>, and no
+          dependencies: a radix tree of routes, with static paths found in a map before the tree is walked. It is the
+          router of <a href="http.html">@xufa/http</a>, passes find-my-way's test suite, and works on its own with
+          <code>node:http</code> or any server.
+        </p>
+
+        <h2 id="start">Quick start</h2>
+        <pre><code class="language-sh">npm install @xufa/router</code></pre>
+        <pre><code class="language-js">const http = require('node:http');
+const router = require('@xufa/router')({
+  ignoreTrailingSlash: true,
+  defaultRoute: (req, res) =&gt; { res.statusCode = 404; res.end('Not found'); },
+});
+
+router.get('/users/:id', (req, res, params, store, searchParams) =&gt; res.end(`user ${params.id}`));
+router.on(['GET', 'HEAD'], '/files/*', (req, res, params) =&gt; res.end(params['*']));
+
+http.createServer((req, res) =&gt; router.lookup(req, res)).listen(3000);</code></pre>
+
+        <h2 id="routes">Routes</h2>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Path</th><th>Matches</th><th>params</th></tr></thead>
+            <tbody>
+              <tr><td><code>/users</code></td><td><code>/users</code></td><td></td></tr>
+              <tr><td><code>/users/:id</code></td><td><code>/users/7</code></td><td><code>{ id: '7' }</code></td></tr>
+              <tr><td><code>/flights/:from-:to</code></td><td><code>/flights/MAD-LHR</code></td><td><code>{ from: 'MAD', to: 'LHR' }</code></td></tr>
+              <tr><td><code>/img/:name.:ext</code></td><td><code>/img/logo.png</code></td><td><code>{ name: 'logo', ext: 'png' }</code></td></tr>
+              <tr><td><code>/num/:id(^\\d+$)</code></td><td><code>/num/42</code>, not <code>/num/x</code></td><td><code>{ id: '42' }</code></td></tr>
+              <tr><td><code>/files/*</code></td><td><code>/files/a/b/c.txt</code></td><td><code>{ '*': 'a/b/c.txt' }</code></td></tr>
+              <tr><td><code>/users/:id?</code></td><td><code>/users</code> and <code>/users/7</code></td><td>an optional last parameter</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p>
+          Static parts win over parameters, and parameters over wildcards. Regexps are checked for catastrophic
+          backtracking when they are added (<code>allowUnsafeRegex</code> skips it). Parameters are decoded
+          (<code>%20</code>), and longer than <code>maxParamLength</code> they do not match.
+        </p>
+
+        <h2 id="handlers">Handlers and stores</h2>
+        <pre><code class="language-js">router.on('GET', '/admin/:page', { constraints: { host: 'admin.example.com' } }, handler, { auth: 'admin' });
+router.get('/x', handler);   // and put, post, delete, head, patch, options, trace, connect, all
+router.all('/health', ok);   // every method</code></pre>
+        <p>
+          <code>on(method, path, [options], handler, [store])</code>: the method can be a list; the store is any value,
+          given back to the handler (and by <code>find()</code>). Handlers are called as
+          <code>handler(req, res, params, store, searchParams)</code>, with <code>this</code> the context given to
+          <code>lookup()</code>.
+        </p>
+
+        <h2 id="finding">Finding a route</h2>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Method</th><th>What it does</th></tr></thead>
+            <tbody>
+              <tr><td><code>lookup(req, res, [ctx])</code></td><td>Finds the route of the request and calls its handler (or <code>defaultRoute</code>).</td></tr>
+              <tr><td><code>find(method, path, [constraints])</code></td><td><code>{ handler, params, store, searchParams }</code>, or <code>null</code>; the query string is parsed.</td></tr>
+              <tr><td><code>findRoute(method, path, [constraints])</code></td><td>The route as it was added (<code>'/users/:id'</code>): its handler, store and parameter names.</td></tr>
+              <tr><td><code>hasRoute(method, path, [constraints])</code></td><td>Whether that route was added.</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h2 id="constraints">Constraints</h2>
+        <pre><code class="language-js">router.on('GET', '/api', { constraints: { version: '1.2.0' } }, v1);
+router.on('GET', '/api', { constraints: { version: '2.0.0' } }, v2);
+router.lookup(req, res); // Accept-Version: 2.x =&gt; v2
+
+router.on('GET', '/', { constraints: { host: /.*\.example\.com/ } }, tenantHome);
+
+// A strategy of your own:
+const Router = require('@xufa/router');
+const router2 = Router({
+  constraints: {
+    region: {
+      name: 'region',
+      storage: () =&gt; { const map = new Map(); return { get: (k) =&gt; map.get(k), set: (k, v) =&gt; map.set(k, v) }; },
+      deriveConstraint: (req) =&gt; req.headers['x-region'],
+      mustMatchWhenDerived: true,
+    },
+  },
+});</code></pre>
+        <p><code>version</code> (semver ranges of <code>Accept-Version</code>) and <code>host</code> (strings or regexps) are there; routes with constraints win over the same route without them.</p>
+
+        <h2 id="options">Options</h2>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Option</th><th>Default</th><th>What it does</th></tr></thead>
+            <tbody>
+              <tr><td><code>ignoreTrailingSlash</code></td><td><code>false</code></td><td><code>/a/</code> and <code>/a</code> are the same route.</td></tr>
+              <tr><td><code>ignoreDuplicateSlashes</code></td><td><code>false</code></td><td><code>//a//b</code> is <code>/a/b</code>.</td></tr>
+              <tr><td><code>caseSensitive</code></td><td><code>true</code></td><td><code>false</code>: paths in any case (parameters keep theirs).</td></tr>
+              <tr><td><code>maxParamLength</code></td><td><code>100</code></td><td>Longer parameters do not match (<code>onMaxParamLength</code>).</td></tr>
+              <tr><td><code>allowUnsafeRegex</code></td><td><code>false</code></td><td>Regexps that can backtrack catastrophically are allowed.</td></tr>
+              <tr><td><code>querystringParser</code></td><td><code>node:querystring</code></td><td>Parses <code>searchParams</code>.</td></tr>
+              <tr><td><code>useSemicolonDelimiter</code></td><td><code>false</code></td><td><code>;</code> separates the query too.</td></tr>
+              <tr><td><code>defaultRoute(req, res)</code></td><td></td><td>When no route matches.</td></tr>
+              <tr><td><code>onBadUrl(path, req, res)</code></td><td></td><td>For paths that cannot be decoded.</td></tr>
+              <tr><td><code>constraints</code></td><td></td><td>Strategies of your own.</td></tr>
+              <tr><td><code>buildPrettyMeta(route)</code></td><td></td><td>What <code>prettyPrint({ includeMeta })</code> shows of a route.</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h2 id="match">match()</h2>
+        <p>
+          What xufa calls for every request: it finds the route without calling its handler, and leaves the query string
+          as it is, to be parsed only if it is read. The result has <code>status</code> (<code>FOUND</code>,
+          <code>BAD_URL</code> or <code>MAX_PARAM_LENGTH</code>), <code>handler</code>, <code>store</code>,
+          <code>params</code> and the unparsed <code>querystring</code>. The result object is reused: read it before the
+          next call.
+        </p>
+        <pre><code class="language-js">const Router = require('@xufa/router');
+const found = router.match('GET', '/users/7?full=true');
+if (found !== null &amp;&amp; found.status === Router.FOUND) found.handler(req, res, found.params, found.store);</code></pre>
+
+        <h2 id="managing">Managing routes</h2>
+        <pre><code class="language-js">router.off('GET', '/users/:id');           // removes a route (with constraints: those)
+router.reset();                              // removes every route
+console.log(router.prettyPrint({ commonPrefix: false, includeMeta: true }));</code></pre>
+        <pre><code class="language-text">└── /
+    ├── users/
+    │   └── :id (GET) {"version":"1.2.0"}
+    │       :id (GET)
+    ├── files/
+    │   └── * (GET)
+    └── img/
+        └── :name.:ext (GET)</code></pre>
+
+        <h2 id="helpers">Helpers</h2>
+        <p>
+          <code>httpMethods</code> (the methods it knows, <code>QUERY</code> included), <code>safeDecodeURI</code>,
+          <code>safeDecodeURIComponent</code>, <code>isSafeRegex</code>, <code>sanitizeUrlPath</code>,
+          <code>removeDuplicateSlashes</code> and <code>trimLastSlash</code>.
+        </p>
+
+<!--generated: router-performance-->
+
+        <h2 id="from-fmw">Coming from find-my-way</h2>
+        <ul>
+          <li>The API and the behaviour are find-my-way's (its test suite passes); <code>require('find-my-way')</code> can be replaced by <code>require('@xufa/router')</code>.</li>
+          <li>Added: <code>match()</code>, the map of static paths, the method <code>QUERY</code>, and the helpers.</li>
+        </ul>
+
+        <h2 id="typescript">TypeScript</h2>
+        <p>find-my-way's declarations, with <code>match()</code>, <code>MatchResult</code> and the helpers.</p>

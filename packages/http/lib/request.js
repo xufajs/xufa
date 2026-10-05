@@ -14,6 +14,7 @@ const {
   kRequestOriginalUrl,
   kRequestSignal,
   kOnAbort,
+  kRequestResponse,
   kRequestQuery,
   kRequestQuerystring,
 } = require('./symbols');
@@ -44,6 +45,25 @@ function Request(id, params, req, query, log, context) {
 Request.props = [];
 Request.instanceProperties = new Set(['id', 'params', 'raw', 'query', 'log', 'body']);
 
+// Calls onAbort when the client goes away before the response is written: the response closes before it finishes.
+// (The request itself is not watched: its 'close' comes once its body is read, while the handler still runs, and
+// never again if the client leaves after.) Without a response (or after it), the request's own 'close'.
+// The listener, for the reply to remove when the response is written.
+function onClientGone(request, onAbort) {
+  const res = request[kRequestResponse];
+  if (!res || typeof res.on !== 'function') {
+    request.raw.on('close', onAbort);
+    return onAbort;
+  }
+  const finished = () => (res.writableFinished !== undefined ? res.writableFinished : res.finished === true);
+  const onClose = () => {
+    if (!finished()) onAbort();
+  };
+  if (res.destroyed && !finished()) onAbort();
+  else res.on('close', onClose);
+  return onClose;
+}
+
 function getTrustProxyFn(trustProxy) {
   if (typeof trustProxy === 'function') return trustProxy;
   if (trustProxy === true) return () => true;
@@ -68,6 +88,7 @@ function buildRegularRequest(R) {
     this[kRequestQuery] = query;
     this.log = log;
     this.body = undefined;
+    this[kRequestResponse] = null;
     for (let i = 0; i < props.length; i += 1) {
       const prop = props[i];
       this[prop.key] = prop.value;
@@ -215,8 +236,7 @@ Object.defineProperties(Request.prototype, {
       const onAbort = () => {
         if (!controller.signal.aborted) controller.abort();
       };
-      this.raw.on('close', onAbort);
-      this[kOnAbort] = onAbort;
+      this[kOnAbort] = onClientGone(this, onAbort);
       return controller.signal;
     },
   },
@@ -334,3 +354,4 @@ Object.defineProperties(Request.prototype, {
 
 module.exports = Request;
 module.exports.buildRequest = buildRequest;
+module.exports.onClientGone = onClientGone;

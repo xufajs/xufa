@@ -205,7 +205,8 @@ async function main() {
   const args = parseArgs(process.argv.slice(2));
   process.stdout.write(
     `Node ${process.version}, ${os.cpus()[0].model}, in process: ${args.concurrency} requests in flight, ` +
-      `${args.rounds} rounds of ${args.duration} s (+${args.warmup} s warmup), median shown\n\n`
+      `${args.rounds} rounds of ${args.duration} s (+${args.warmup} s warmup), the frameworks taking turns (a round ` +
+      `each in a process of its own), median shown\n\n`
   );
   const lines = [
     `| Scenario | ${args.frameworks.map((fw) => `${fw} req/s | ${fw} µs/req`).join(' | ')} | xufa / fastify |`,
@@ -215,18 +216,32 @@ async function main() {
   for (const name of args.scenarios) {
     const scenario = require(path.join(SCENARIO_DIR, `${name}.js`));
     const summary = {};
-    for (const fw of args.frameworks) {
-      if (fw === 'node' && !scenario.node) continue;
-      const result = await measure(fw, name, args);
-      if (result.failed) {
-        summary[fw] = { failed: result.failed };
-        process.stdout.write(`  ${name} ${fw}: FAILED ${result.failed}\n`);
-        continue;
+    const frameworks = args.frameworks.filter((fw) => fw !== 'node' || scenario.node);
+    const rounds = Object.fromEntries(frameworks.map((fw) => [fw, []]));
+    // The frameworks take turns, a round each in a process of its own: a moment the machine is busy falls on one round
+    // of one of them, not on all the rounds of one.
+    for (let round = 0; round < args.rounds; round += 1) {
+      for (const fw of frameworks) {
+        if (summary[fw] && summary[fw].failed) continue;
+        const result = await measure(fw, name, {
+          ...args,
+          rounds: 1,
+          warmup: round === 0 ? args.warmup : args.warmup / 2,
+        });
+        if (result.failed) {
+          summary[fw] = { failed: result.failed };
+          process.stdout.write(`  ${name} ${fw}: FAILED ${result.failed}\n`);
+          continue;
+        }
+        rounds[fw].push(result.rounds[0]);
       }
+    }
+    for (const fw of frameworks) {
+      if (summary[fw]) continue;
       summary[fw] = {
-        rps: median(result.rounds.map((r) => r.rps)),
-        cpuPerReq: median(result.rounds.map((r) => r.cpuPerReq)),
-        rounds: result.rounds,
+        rps: median(rounds[fw].map((r) => r.rps)),
+        cpuPerReq: median(rounds[fw].map((r) => r.cpuPerReq)),
+        rounds: rounds[fw],
       };
       process.stdout.write(
         `  ${name} ${fw}: ${fmt(summary[fw].rps)} req/s, ${summary[fw].cpuPerReq.toFixed(2)} µs/req\n`

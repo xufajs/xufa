@@ -44,10 +44,36 @@ function isoTimeNano() {
   return `,"time":"${iso.slice(0, 19)}.${nanos}Z"`;
 }
 
+// The time of a line changes once a millisecond: its text is made once a millisecond. Made from two numbers small
+// enough to be integers for V8 (a count of milliseconds since 1970 is not), so written without the conversion of a
+// double.
+let epochMs = -1;
+let epochPart = '';
+function epochTime() {
+  const now = Date.now();
+  if (now !== epochMs) {
+    epochMs = now;
+    const low = now % 1000000;
+    epochPart = `,"time":${(now - low) / 1000000}${low < 100000 ? `${low}`.padStart(6, '0') : low}`;
+  }
+  return epochPart;
+}
+
+let isoMs = -1;
+let isoPart = '';
+function isoTime() {
+  const now = Date.now();
+  if (now !== isoMs) {
+    isoMs = now;
+    isoPart = `,"time":"${new Date(now).toISOString()}"`;
+  }
+  return isoPart;
+}
+
 const stdTimeFunctions = {
-  epochTime: () => `,"time":${Date.now()}`,
+  epochTime,
   unixTime: () => `,"time":${Math.round(Date.now() / 1000)}`,
-  isoTime: () => `,"time":"${new Date().toISOString()}"`,
+  isoTime,
   isoTimeNano,
   nullTime: () => '',
 };
@@ -67,7 +93,8 @@ function members(obj) {
 }
 
 // The logging function of one level, shared by every logger: logger.info(obj?, msg?, ...args).
-function createLogFunction(levelVal) {
+// `levelPart` is the start of its lines, made once: {"level":30 (or what formatters.level makes of it).
+function createLogFunction(levelVal, levelPart) {
   return function LOG(a, b) {
     const config = this[configSym];
     if (config.logMethod !== null) {
@@ -97,7 +124,7 @@ function createLogFunction(levelVal) {
     } else {
       msg = typeof a === 'string' && argc > 1 ? format(a, arguments, 1) : a;
     }
-    this[writeSym](obj, msg, levelVal);
+    this[writeSym](obj, msg, levelVal, levelPart);
   };
 }
 
@@ -118,13 +145,41 @@ function Logger() {
   this[serializersSym] = null;
   this[redactSym] = null;
   this[msgPrefixSym] = '';
-  this[levelSym] = '';
-  this[levelValSym] = 0;
 }
 
-Logger.prototype[writeSym] = function writeLine(obj, msg, levelVal) {
+// The level of a logger is in its prototype: one object per level of a configuration, with the level and the function
+// of every level name (noop below the level), shared by every logger set at that level; a change of level is a change
+// of prototype. A child without a level of its own has its parent as prototype, as in pino: it follows the level of
+// its parent, changes included, until a level is set on it.
+function levelPrototype(config, value, label) {
+  let proto = config.levelPrototypes.get(value);
+  if (proto === undefined) {
+    proto = Object.create(Logger.prototype);
+    proto[levelSym] = label;
+    proto[levelValSym] = value;
+    const { values } = config.levels;
+    for (const name of config.levelNames) {
+      proto[name] = config.enabled && values[name] >= value ? config.logFunctions[values[name]] : noop;
+    }
+    config.levelPrototypes.set(value, proto);
+  }
+  return proto;
+}
+
+// A logger of a configuration at a level, with its own members to be set.
+function newLogger(config, proto) {
+  const logger = Object.create(proto);
+  logger[configSym] = config;
+  logger[chindingsSym] = '';
+  logger[serializersSym] = null;
+  logger[redactSym] = null;
+  logger[msgPrefixSym] = '';
+  return logger;
+}
+
+Logger.prototype[writeSym] = function writeLine(obj, msg, levelVal, levelPart) {
   const config = this[configSym];
-  let line = config.levelPart(levelVal) + config.time() + this[chindingsSym];
+  let line = (levelPart === undefined ? config.levelPart(levelVal) : levelPart) + config.time() + this[chindingsSym];
   if (config.slow || this[redactSym] !== null) {
     line += members(transform(this, config, obj, levelVal));
   } else if (obj !== undefined) {
@@ -202,12 +257,11 @@ Object.defineProperties(Logger.prototype, {
         value = values[label];
       }
       if (value === undefined) throw new Error(`unknown level ${label}`);
-      this[levelSym] = label;
-      this[levelValSym] = value;
-      const names = config.levelNames;
-      for (let i = 0; i < names.length; i += 1) {
-        const name = names[i];
-        this[name] = config.enabled && values[name] >= value ? config.logFunctions[values[name]] : noop;
+      const proto = levelPrototype(config, value, label);
+      if (Object.getPrototypeOf(this) !== proto) Object.setPrototypeOf(this, proto);
+      // Functions of level names set on the logger itself give way to the ones of the level, as they did in pino.
+      for (const name of config.levelNames) {
+        if (Object.prototype.hasOwnProperty.call(this, name)) this[name] = proto[name];
       }
     },
   },
@@ -236,11 +290,44 @@ Logger.prototype.isLevelEnabled = function isLevelEnabled(label) {
   return value !== undefined && value >= this[levelValSym];
 };
 
+// The configuration of a child, as pino: a formatters.bindings applies to the bindings of the logger it is given to
+// only (its own, and those of setBindings()), so a child has none but its own; a formatters.log of a child replaces
+// the one of its parent. formatters.level is the parent's (pino ignores it in a child too). A derived configuration
+// shares the level functions and prototypes of the one it comes from.
+function childConfig(config, formatters) {
+  if (formatters == null) {
+    if (config.formatBindings === null) return config;
+    if (config.unboundConfig === null) config.unboundConfig = deriveConfig(config, null, config.formatLog);
+    return config.unboundConfig;
+  }
+  const formatBindings = typeof formatters.bindings === 'function' ? formatters.bindings : null;
+  const formatLog = typeof formatters.log === 'function' ? formatters.log : config.formatLog;
+  if (formatBindings === config.formatBindings && formatLog === config.formatLog) return config;
+  return deriveConfig(config, formatBindings, formatLog);
+}
+
+function deriveConfig(config, formatBindings, formatLog) {
+  const derived = { ...config, formatBindings, formatLog, unboundConfig: null };
+  derived.slow = derived.mixin !== null || formatLog !== null || derived.nestedKey !== null;
+  return derived;
+}
+
 Logger.prototype.child = function child(bindings, options) {
   if (!bindings || typeof bindings !== 'object') throw new Error('missing bindings for child Pino');
-  const config = this[configSym];
-  const instance = new Logger();
-  instance[configSym] = config;
+  const config = childConfig(this[configSym], options == null ? undefined : options.formatters);
+  // The parent as prototype: the child follows its level (a level set on the child gives it a prototype of its own).
+  const proto = this;
+  if (options == null) {
+    const instance = Object.create(proto);
+    instance[configSym] = config;
+    instance[chindingsSym] = this[chindingsSym] + serializeBindings(this, config, bindings);
+    instance[serializersSym] = this[serializersSym];
+    instance[redactSym] = this[redactSym];
+    instance[msgPrefixSym] = this[msgPrefixSym];
+    if (config.onChild !== null) config.onChild(instance);
+    return instance;
+  }
+  const instance = newLogger(config, proto);
   let serializers = this[serializersSym];
   if (options && options.serializers) {
     serializers = Object.assign(Object.create(null), serializers);
@@ -252,14 +339,26 @@ Logger.prototype.child = function child(bindings, options) {
   instance[redactSym] = options && options.redact ? createRedactor(options.redact) : this[redactSym];
   instance[chindingsSym] = this[chindingsSym] + serializeBindings(instance, config, bindings);
   instance[msgPrefixSym] = options && options.msgPrefix ? this[msgPrefixSym] + options.msgPrefix : this[msgPrefixSym];
-  instance.level = options && options.level ? options.level : this[levelSym];
+  if (options.level) instance.level = options.level;
   if (config.onChild !== null) config.onChild(instance);
   return instance;
 };
 
 function serializeBindings(logger, config, bindings) {
-  let values = config.formatBindings !== null ? config.formatBindings(bindings) : bindings;
   const serializers = logger[serializersSym];
+  // Most bindings: one pass, each value serialized and written.
+  if (config.formatBindings === null && logger[redactSym] === null) {
+    let out = '';
+    for (const key in bindings) {
+      let value = bindings[key];
+      if (value === undefined || !Object.prototype.hasOwnProperty.call(bindings, key)) continue;
+      if (serializers[key] !== undefined) value = serializers[key](value);
+      const json = stringify(value, bindings);
+      if (json !== undefined) out += `,${asKey(key)}:${json}`;
+    }
+    return out;
+  }
+  let values = config.formatBindings !== null ? config.formatBindings(bindings) : bindings;
   let copied = false;
   for (const key in values) {
     if (serializers[key] !== undefined && Object.prototype.hasOwnProperty.call(values, key)) {
@@ -349,11 +448,13 @@ function createLogger(options, destination) {
     end: opts.crlf ? '}\r\n' : '}\n',
     formatBindings: typeof formatters.bindings === 'function' ? formatters.bindings : null,
     formatLog: typeof formatters.log === 'function' ? formatters.log : null,
+    unboundConfig: null,
     mixin: typeof opts.mixin === 'function' ? opts.mixin : null,
     mixinMergeStrategy: typeof opts.mixinMergeStrategy === 'function' ? opts.mixinMergeStrategy : null,
     logMethod: opts.hooks && typeof opts.hooks.logMethod === 'function' ? opts.hooks.logMethod : null,
     streamWrite: opts.hooks && typeof opts.hooks.streamWrite === 'function' ? opts.hooks.streamWrite : null,
     onChild: typeof opts.onChild === 'function' ? opts.onChild : null,
+    levelPrototypes: new Map(),
     metadata: stream[needsMetadataGsym] === true,
     slow: false,
     levelPart(levelVal) {
@@ -370,11 +471,10 @@ function createLogger(options, destination) {
   config.slow = config.mixin !== null || config.formatLog !== null || config.nestedKey !== null;
   for (const name of config.levelNames) {
     const value = levels.values[name];
-    config.logFunctions[value] = createLogFunction(value);
+    config.logFunctions[value] = createLogFunction(value, config.levelPart(value));
   }
 
-  const logger = new Logger();
-  logger[configSym] = config;
+  const logger = newLogger(config, Logger.prototype);
   logger[serializersSym] = Object.assign(
     Object.create(null),
     { err: stdSerializers.err, [config.errorKey]: stdSerializers.err },

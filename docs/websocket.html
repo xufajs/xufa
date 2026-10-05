@@ -1,0 +1,201 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>@xufa/websocket · xufa</title>
+    <meta
+      name="description"
+      content="@xufa/websocket: WebSockets with no dependencies: the client and server of ws, WebSocket routes for @xufa/http, and rooms that reach every worker and machine."
+    />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%23d9502b'/%3E%3Ctext x='16' y='22.5' font-family='monospace' font-size='18' font-weight='700' fill='white' text-anchor='middle'%3Ex%3C/text%3E%3C/svg%3E"
+    />
+    <link rel="stylesheet" href="style.css?v=0.1.0" />
+    <script src="main.js?v=0.1.0"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js" defer></script>
+  </head>
+  <body>
+    <header class="header">
+      <div class="header-inner">
+        <a class="logo" href="./"><span class="logo-mark">x</span>xufa</a>
+        <nav class="nav">
+          <a href="guide.html">Guide</a>
+          <a href="http.html">HTTP</a>
+          <a href="orm.html">ORM</a>
+          <a class="hide-small" href="auth.html">Auth</a>
+          <a class="hide-small" href="sequelize.html">Sequelize</a>
+          <a class="hide-small" href="packages.html" aria-current="page">Packages</a>
+          <a class="hide-small" href="benchmarks.html">Benchmarks</a>
+          <a href="https://github.com/xufajs/xufa">GitHub</a>
+          <button class="theme-toggle" type="button" aria-label="Switch between light and dark theme">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+              <path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z" />
+            </svg>
+          </button>
+        </nav>
+      </div>
+    </header>
+
+    <div class="docs">
+      <button class="menu-toggle" type="button" aria-expanded="false">☰ Contents</button>
+      <aside class="sidebar">
+        <h4>Using it</h4>
+        <ul>
+          <li><a href="#start">Quick start</a></li>
+          <li><a href="#routes">WebSocket routes</a></li>
+          <li><a href="#hub">Rooms everywhere</a></li>
+          <li><a href="#ws">The client and server of ws</a></li>
+        </ul>
+        <h4>More</h4>
+        <ul>
+          <li><a href="#from-ws">Coming from ws</a></li>
+          <li><a href="#tests">Tests</a></li>
+          <li><a href="#typescript">TypeScript</a></li>
+        </ul>
+        <h4>Packages</h4>
+        <ul>
+          <li><a href="websocket.html" aria-current="page">@xufa/websocket</a></li>
+          <li><a href="openapi.html">@xufa/openapi</a></li>
+          <li><a href="client.html">@xufa/client</a></li>
+          <li><a href="pg.html">@xufa/pg</a></li>
+          <li><a href="mongo.html">@xufa/mongo</a></li>
+          <li><a href="expression.html">@xufa/expression</a></li>
+          <li><a href="template.html">@xufa/template</a></li>
+          <li><a href="cluster.html">@xufa/cluster</a></li>
+          <li><a href="discovery.html">@xufa/discovery</a></li>
+          <li><a href="netcache.html">@xufa/netcache</a></li>
+          <li><a href="marshal.html">@xufa/marshal</a></li>
+          <li><a href="yaml.html">@xufa/yaml</a></li>
+          <li><a href="jwt.html">@xufa/jwt</a></li>
+          <li><a href="logger.html">@xufa/logger</a></li>
+          <li><a href="router.html">@xufa/router</a></li>
+          <li><a href="serializer.html">@xufa/serializer</a></li>
+          <li><a href="inject.html">@xufa/inject</a></li>
+          <li><a href="boot.html">@xufa/boot</a></li>
+          <li><a href="errors.html">@xufa/errors</a></li>
+          <li><a href="packages.html">All the packages</a></li>
+        </ul>
+      </aside>
+
+      <article class="content">
+<h1>@xufa/websocket</h1>
+        <p class="intro">
+          WebSockets for Node.js, with no dependencies: the client and server of
+          <a href="https://github.com/websockets/ws">ws</a> (RFC 6455, permessage-deflate), WebSocket routes for
+          <a href="http.html">@xufa/http</a> (and fastify), and rooms of sockets that reach every worker of a
+          <a href="cluster.html">cluster</a> and every machine.
+        </p>
+
+        <h2 id="start">Quick start</h2>
+        <pre><code class="language-sh">npm install @xufa/websocket</code></pre>
+        <pre><code class="language-js">const xufa = require('xufa');
+
+const app = xufa();
+app.register(require('@xufa/websocket/plugin'));
+
+app.get('/chat', { websocket: true }, (socket, request) =&gt; {
+  socket.on('message', (message) =&gt; socket.send(`echo: ${message}`));
+});
+
+await app.listen({ port: 3000 });</code></pre>
+
+        <h2 id="routes">WebSocket routes</h2>
+        <p>
+          The upgrade of a request goes through the routing like any request: its hooks run first (authentication, rate
+          limits, a <code>preValidation</code> that answers 401), and only then is the socket handed to the route.
+          <code>request.ws</code> says whether a request is an upgrade.
+        </p>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Option of the plugin</th><th>What it does</th></tr></thead>
+            <tbody>
+              <tr><td><code>options</code></td><td>The options of the server of ws: <code>maxPayload</code>, <code>perMessageDeflate</code>, <code>verifyClient</code>...</td></tr>
+              <tr><td><code>errorHandler(error, socket, request, reply)</code></td><td>Errors of handlers and of open sockets (the default logs and terminates).</td></tr>
+              <tr><td><code>preClose</code></td><td>What closing the app does with the sockets (the default closes them).</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p>
+          <code>wsHandler</code> in the options of a route answers its upgrades while <code>handler</code> answers HTTP;
+          <code>app.websocketServer</code> is the server of ws; <code>app.injectWS('/chat')</code> opens a socket to a route
+          in tests, without a network. The behavior is the one of
+          <a href="https://github.com/fastify/fastify-websocket">@fastify/websocket</a>.
+        </p>
+
+        <h2 id="hub">Rooms everywhere</h2>
+        <pre><code class="language-js">const { Hub } = require('@xufa/websocket/hub');
+
+const hub = new Hub({ bus, cache }); // the bus of @xufa/cluster, a NetCache of @xufa/netcache: as there are
+
+app.get('/chat', { websocket: true }, (socket, request) =&gt; {
+  hub.add(socket, { rooms: ['lobby', `user:${request.user.id}`] }); // until it closes
+  socket.on('message', (text) =&gt; hub.to('lobby').except(socket).send({ from: request.user.id, text: String(text) }));
+});
+
+hub.to('user:42').send({ notice: 'You have mail' }); // every socket of user 42, in any worker of any machine</code></pre>
+        <p>
+          A message is serialized once where it is sent (strings and bytes as they are, other values as JSON), and every
+          process sends it to its sockets of the rooms. In a <a href="cluster.html">cluster</a>, the primary has a hub too:
+          it relays what a worker sends to the other workers and, with a <a href="netcache.html">NetCache</a>, to the other
+          machines (through its pub/sub: the machines connected at that moment), and what comes from other machines to
+          every worker.
+        </p>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Method</th><th>What it does</th></tr></thead>
+            <tbody>
+              <tr><td><code>add(socket, { rooms })</code></td><td>A socket in the hub (and its rooms), until it closes: its id.</td></tr>
+              <tr><td><code>join(socket, ...rooms)</code>, <code>leave(socket, ...rooms)</code>, <code>roomsOf(socket)</code></td><td>The rooms of a socket.</td></tr>
+              <tr><td><code>to(...rooms).except(...sockets).send(data)</code></td><td>The sockets of those rooms, in every process and machine (<code>except</code>: sockets, or ids of sockets of other processes).</td></tr>
+              <tr><td><code>send(data)</code></td><td>Every socket.</td></tr>
+              <tr><td><code>local(room)</code></td><td>The ids of the sockets of this process in a room.</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h2 id="ws">The client and server of ws</h2>
+        <pre><code class="language-js">const { WebSocket, WebSocketServer } = require('@xufa/websocket');
+
+const wss = new WebSocketServer({ port: 8080, perMessageDeflate: true });
+wss.on('connection', (socket) =&gt; socket.on('message', (data) =&gt; socket.send(data)));
+
+const ws = new WebSocket('ws://localhost:8080');
+ws.on('open', () =&gt; ws.send('hello'));</code></pre>
+
+        <h2 id="from-ws">Coming from ws</h2>
+        <ul>
+          <li><code>require('ws')</code> can be replaced by <code>require('@xufa/websocket')</code>, and <code>import { WebSocketServer } from 'ws'</code> by <code>'@xufa/websocket'</code>: the code is the one of ws 8.22.0.</li>
+          <li>For Node.js 22 and later: UTF-8 is validated by <code>buffer.isUtf8</code>, native, so <code>utf-8-validate</code> is left out. <code>bufferutil</code> is used as ws uses it: when the application has installed it (<code>npm i bufferutil</code>), unless <code>WS_NO_BUFFER_UTIL</code> is set. It is not a dependency; without it, frames are masked 8 bytes at a time in JavaScript.</li>
+          <li><code>require('@fastify/websocket')</code> can be replaced by <code>require('@xufa/websocket/plugin')</code>, on @xufa/http or fastify.</li>
+        </ul>
+
+        <h2 id="tests">Tests</h2>
+        <p>
+          The suites of ws (438 tests) and @fastify/websocket (62, run on @xufa/http) are ported to vyntra by
+          <code>tools/port-ws</code> from checkouts of their repositories. The tests of the hub run it in one process,
+          between two machines (two NetCaches) and in a cluster of two workers.
+        </p>
+
+        <h2 id="typescript">TypeScript</h2>
+        <p>
+          The declarations of ws (<code>@types/ws</code>), of @fastify/websocket for @xufa/http
+          (<code>@xufa/websocket/plugin</code>: <code>{ websocket: true }</code> routes, <code>request.ws</code>,
+          <code>app.websocketServer</code>) and of the hub.
+        </p>
+      </article>
+    </div>
+
+    <footer class="footer">
+      <div class="container">
+        <span>xufa is MIT licensed. &copy; Jes&uacute;s Seijas</span>
+        <span>
+          <a href="guide.html">Guide</a> &middot; <a href="http.html">HTTP</a> &middot; <a href="orm.html">ORM</a> &middot; <a href="auth.html">Auth</a> &middot;
+          <a href="sequelize.html">Sequelize</a> &middot; <a href="packages.html">Packages</a> &middot;
+          <a href="benchmarks.html">Benchmarks</a> &middot; <a href="https://github.com/xufajs/xufa">GitHub</a>
+        </span>
+      </div>
+    </footer>
+  </body>
+</html>

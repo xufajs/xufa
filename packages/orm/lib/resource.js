@@ -19,6 +19,7 @@ const createError = require('@xufa/errors');
 const { Q, or, LOOKUPS } = require('./query');
 const { QuerySet } = require('./queryset');
 const { QueryError, FieldError, LookupError, NotFoundError } = require('./errors');
+const { resourceDocs } = require('./resource-openapi');
 
 const BadRequest = createError('XUFA_ORM_ERR_BAD_REQUEST', '%s', 400);
 
@@ -80,6 +81,7 @@ function resource(model, options = {}) {
     auth,
     hooks = {},
     serialize,
+    openapi = true,
   } = options;
   const unknownAction = actions.find((action) => !ACTIONS.includes(action));
   if (unknownAction) throw new TypeError(`Unknown action ${unknownAction} (${ACTIONS.join(', ')})`);
@@ -89,9 +91,10 @@ function resource(model, options = {}) {
   const lookupField = lookup === 'pk' ? meta.pk : meta.field(lookup);
   if (!lookupField) throw new TypeError(`The lookup ${lookup} of the resource of ${model.name} is not a field`);
 
-  // The fields a body can set: every field but the primary key and those set by the ORM (autoNow...), or `writable`,
-  // without `readOnly`. Foreign keys by their name or attname (author or authorId).
+  // The fields a body can set: every field but the primary key and those set by the ORM (autoNow, computed...), or
+  // `writable`, without `readOnly`. Foreign keys by their name or attname (author or authorId).
   const writableFields = meta.fields.filter((field) => {
+    if (field.computed !== null) return false;
     if (writable) return writable.includes(field.name) || writable.includes(field.attname);
     return !field.primaryKey && !field.auto && !readOnly.includes(field.name) && !readOnly.includes(field.attname);
   });
@@ -109,7 +112,12 @@ function resource(model, options = {}) {
     const unknown = [];
     for (const [key, value] of Object.entries(body)) {
       if (writableNames.has(key)) values[key] = value;
-      else if (!meta.field(key) && key !== 'pk' && !meta.manyToMany.some((field) => field.name === key))
+      else if (
+        !meta.field(key) &&
+        !meta.computedField(key) &&
+        key !== 'pk' &&
+        !meta.manyToMany.some((field) => field.name === key)
+      )
         unknown.push(key);
     }
     if (unknown.length) throw new BadRequest(`${model.name} has no field ${unknown.join(', ')}`);
@@ -198,12 +206,32 @@ function resource(model, options = {}) {
     return number;
   }
 
+  // The documentation of the routes for @xufa/openapi (openapi: false leaves it out; { tag } names their tag).
+  const docs = openapi
+    ? resourceDocs(model, {
+        filterMap,
+        orderings,
+        search,
+        pagination,
+        pageSize,
+        maxPageSize,
+        lookupField,
+        writableFields,
+        shown,
+        exclude,
+        serialize,
+        tag: openapi && openapi.tag,
+      })
+    : null;
+
   // The configuration of the route of an action: { auth } for @xufa/auth (auth: a rule for every action, or a rule
-  // by action).
-  const configOf = (action) => {
-    if (auth === undefined) return {};
+  // by action), and { openapi }, its documentation (`partial`: the PATCH of update).
+  const configOf = (action, partial = false) => {
+    const config = {};
     const rule = auth && typeof auth === 'object' && !Array.isArray(auth) ? auth[action] : auth;
-    return rule === undefined ? {} : { config: { auth: rule } };
+    if (rule !== undefined) config.auth = rule;
+    if (docs) config.openapi = docs(action, partial);
+    return Object.keys(config).length ? { config } : {};
   };
 
   async function plugin(app) {
@@ -255,7 +283,7 @@ function resource(model, options = {}) {
         return output(updated, request);
       };
       app.put('/:id', configOf('update'), update(false));
-      app.patch('/:id', configOf('update'), update(true));
+      app.patch('/:id', configOf('update', true), update(true));
     }
     if (actions.includes('delete')) {
       app.delete('/:id', configOf('delete'), async (request, reply) => {

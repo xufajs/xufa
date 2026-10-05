@@ -5,6 +5,7 @@
 // single lookup by path.
 const { METHODS } = require('node:http');
 const { StaticNode, NODE_TYPES } = require('./lib/node');
+const { compileTree } = require('./lib/compile');
 const { Constrainer, NullObject } = require('./lib/constraints');
 const { prettyPrintTree } = require('./lib/pretty-print');
 const { isSafeRegex } = require('./lib/safe-regex');
@@ -92,6 +93,9 @@ class Router {
     this.treeGET = null;
     this.staticGET = null;
     this.staticIndexDirty = false;
+    // The compiled walks of the trees (lib/compile.js), by method: compiled once a tree is walked COMPILE_AFTER times.
+    this.tiers = Object.create(null);
+    this.tierGET = null;
     // What match() returns, reused for every request.
     this.result = { status: FOUND, handler: null, store: null, params: null, querystring: '', path: '' };
   }
@@ -180,6 +184,8 @@ class Router {
       route.staticKey = walk.staticKey;
     }
     this.staticIndexDirty = true;
+    this.tiers = Object.create(null);
+    this.tierGET = null;
   }
 
   // Walks the pattern of a route through the tree, creating its nodes when `create`. Gives the last node, the names
@@ -311,6 +317,8 @@ class Router {
     this.treeGET = null;
     this.staticGET = null;
     this.staticIndexDirty = false;
+    this.tiers = Object.create(null);
+    this.tierGET = null;
     this.routes = [];
   }
 
@@ -366,6 +374,11 @@ class Router {
       statics = this.staticRoutes[method];
     }
     if (root == null) return null;
+    // The root (/), the most common route: found before any work on the URL.
+    if (rawUrl === '/' && root.prefixLength === 1 && root.isLeafNode) {
+      const handle = root.handlerStorage.getMatchingHandler(derivedConstraints);
+      if (handle !== null) return this.found(handle, '');
+    }
     if (this.staticIndexDirty) {
       this.buildStaticIndex();
       statics = this.staticRoutes[method];
@@ -410,19 +423,33 @@ class Router {
 
     const result = this.result;
     const pathLength = path.length;
+    // The root (/): found here, without the call of the compiled walk, which is too large to be inlined.
+    if (pathLength === root.prefixLength && root.isLeafNode) {
+      const handle = root.handlerStorage.getMatchingHandler(derivedConstraints);
+      if (handle !== null) return this.found(handle, querystring);
+    }
     const staticNode = pathLength > 255 || statics.lengths[pathLength] === 1 ? statics.map.get(path) : undefined;
     if (staticNode !== undefined) {
       const handle = staticNode.handlerStorage.getMatchingHandler(derivedConstraints);
-      if (handle !== null) {
-        result.status = FOUND;
-        result.handler = handle.handler;
-        result.store = handle.store;
-        result.params = handle.createParams(EMPTY);
-        result.querystring = querystring;
-        return result;
-      }
+      if (handle !== null) return this.found(handle, querystring);
     }
 
+    let tier = method === 'GET' ? this.tierGET : this.tiers[method];
+    if (tier == null) tier = this.newTier(method);
+    const status =
+      tier.walk !== null || ((tier.walks += 1) > Router.COMPILE_AFTER && this.compileTier(tier, root))
+        ? tier.walk(path, originPath, pathLength, derivedConstraints, decodeParams, result)
+        : this.walkTree(root, path, originPath, derivedConstraints, decodeParams, result);
+    if (status === 0) {
+      result.status = FOUND;
+      result.querystring = querystring;
+      return result;
+    }
+    return this.notFound(status === 2, originPath);
+  }
+
+  // The walk of a tree before it is compiled: the same as the compiled one (lib/compile.js), and the same results.
+  walkTree(root, path, originPath, derivedConstraints, decodeParams, result) {
     const maxParamLength = this.maxParamLength;
     let currentNode = root;
     let pathIndex = currentNode.prefix.length;
@@ -435,18 +462,16 @@ class Router {
       if (pathIndex === pathLen && currentNode.isLeafNode) {
         const handle = currentNode.handlerStorage.getMatchingHandler(derivedConstraints);
         if (handle !== null) {
-          result.status = FOUND;
           result.handler = handle.handler;
           result.store = handle.store;
           result.params = handle.createParams(params);
-          result.querystring = querystring;
-          return result;
+          return 0;
         }
       }
 
       let node = currentNode.getNextNode(path, pathIndex, stack, params.length);
       if (node === null) {
-        if (stack.length === 0) return this.notFound(maxParamLengthExceeded, originPath);
+        if (stack.length === 0) return maxParamLengthExceeded ? 2 : 1;
         params.length = stack.pop();
         pathIndex = stack.pop();
         node = stack.pop();
@@ -492,7 +517,7 @@ class Router {
         }
 
         if (failed) {
-          if (stack.length === 0) return this.notFound(maxParamLengthExceeded, originPath);
+          if (stack.length === 0) return maxParamLengthExceeded ? 2 : 1;
           params.length = stack.pop();
           pathIndex = stack.pop();
           currentNode = stack.pop();
@@ -502,6 +527,21 @@ class Router {
         break;
       }
     }
+  }
+
+  newTier(method) {
+    const tier = { walks: 0, walk: null };
+    this.tiers[method] = tier;
+    if (method === 'GET') this.tierGET = tier;
+    return tier;
+  }
+
+  // Compiles the walk of a tree; false (and not tried again) when the tree is too large for it.
+  compileTier(tier, root) {
+    tier.walk = compileTree(root, this.maxParamLength);
+    if (tier.walk !== null) return true;
+    tier.walks = -Infinity;
+    return false;
   }
 
   // The static routes reached faster by their path than by the tree: the ones whose walk goes through several nodes
@@ -531,6 +571,17 @@ class Router {
     this.staticGET = this.staticRoutes.GET || null;
   }
 
+  // The result of a static route: no parameters.
+  found(handle, querystring) {
+    const result = this.result;
+    result.status = FOUND;
+    result.handler = handle.handler;
+    result.store = handle.store;
+    result.params = handle.createParams(EMPTY);
+    result.querystring = querystring;
+    return result;
+  }
+
   badUrl(path) {
     const result = this.result;
     result.status = BAD_URL;
@@ -551,6 +602,21 @@ class Router {
 
   // find-my-way's find(): a new object, with the query string parsed.
   find(method, path, derivedConstraints) {
+    // The root, the most common route, found here: match() is too large to be inlined, and its call costs as much.
+    if (path === '/' && this.querystringParser === defaultQuerystringParser) {
+      const root = method === 'GET' ? this.treeGET : this.trees[method];
+      if (root != null && root.prefixLength === 1 && root.isLeafNode) {
+        const handle = root.handlerStorage.getMatchingHandler(derivedConstraints);
+        if (handle !== null) {
+          return {
+            handler: handle.handler,
+            store: handle.store,
+            params: handle.createParams(EMPTY),
+            searchParams: new NullObject(),
+          };
+        }
+      }
+    }
     const result = this.match(method, path, derivedConstraints);
     if (result === null) return null;
     if (result.status === BAD_URL) {
@@ -568,7 +634,10 @@ class Router {
       handler: result.handler,
       store: result.store,
       params: result.params,
-      searchParams: this.querystringParser(result.querystring),
+      searchParams:
+        result.querystring.length === 0 && this.querystringParser === defaultQuerystringParser
+          ? new NullObject()
+          : this.querystringParser(result.querystring),
     };
   }
 
@@ -676,14 +745,33 @@ function firstDelimiter(path, semicolon) {
   return end;
 }
 
+function addQueryValue(out, key, value) {
+  const existing = out[key];
+  if (existing === undefined) out[key] = value;
+  else if (Array.isArray(existing)) existing.push(value);
+  else out[key] = [existing, value];
+}
+
+// The query string as an object, as URLSearchParams reads it. Most query strings have nothing to decode: they are
+// split here, much faster; the others (%, +, a leading ?, text that is not well formed) go to URLSearchParams.
 function defaultQuerystringParser(query) {
   const out = new NullObject();
-  if (query.length === 0) return out;
-  for (const [key, value] of new URLSearchParams(query)) {
-    const existing = out[key];
-    if (existing === undefined) out[key] = value;
-    else if (Array.isArray(existing)) existing.push(value);
-    else out[key] = [existing, value];
+  const length = query.length;
+  if (length === 0) return out;
+  if (query.charCodeAt(0) === 63 || query.indexOf('%') !== -1 || query.indexOf('+') !== -1 || !query.isWellFormed()) {
+    for (const [key, value] of new URLSearchParams(query)) addQueryValue(out, key, value);
+    return out;
+  }
+  let start = 0;
+  while (start <= length) {
+    let end = query.indexOf('&', start);
+    if (end === -1) end = length;
+    if (end > start) {
+      const equals = query.indexOf('=', start);
+      if (equals === -1 || equals > end) addQueryValue(out, query.slice(start, end), '');
+      else addQueryValue(out, query.slice(start, equals), query.slice(equals + 1, end));
+    }
+    start = end + 1;
   }
   return out;
 }
@@ -702,6 +790,9 @@ Router.sanitizeUrlPath = function sanitizeUrlPath(rawUrl, useSemicolonDelimiter)
   const decoded = url.safeDecodeURI(rawUrl, useSemicolonDelimiter);
   return decoded.shouldDecodeParam ? decodeParam(decoded.path) : decoded.path;
 };
+
+// Walks of a tree by match() before it is compiled: compiling costs more than a few walks.
+Router.COMPILE_AFTER = 16;
 
 module.exports = createRouter;
 module.exports.Router = Router;

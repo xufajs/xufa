@@ -396,11 +396,14 @@ class Pool extends EventEmitter {
     const {
       max = 10,
       idleTimeoutMillis = 10000,
+      acquireTimeoutMillis = 0,
       ...rest
     } = typeof config === 'string' ? { connectionString: config } : config;
     this.options = parseConfig(rest);
     this.max = max;
     this.idleTimeoutMillis = idleTimeoutMillis;
+    // How long a query or connect() waits for a connection (a free one, or one being opened): 0 for no limit.
+    this.acquireTimeoutMillis = acquireTimeoutMillis;
     // Connections, those given by connect() included (taken), and those being opened.
     this.connections = [];
     this.opening = 0;
@@ -425,7 +428,7 @@ class Pool extends EventEmitter {
     this.opening += 1;
     let connection;
     try {
-      connection = await traceConnect(this.options, () => connectTo(this.options));
+      connection = await traceConnect(this.options, () => this.openConnection(this.options));
     } finally {
       this.opening -= 1;
     }
@@ -441,6 +444,36 @@ class Pool extends EventEmitter {
     this.connections.push(connection);
     this.emit('connect', connection);
     return connection;
+  }
+
+  // A new connection of the pool (a Connection that logged in). Replaceable, to open them in another way.
+  openConnection(options) {
+    return connectTo(options);
+  }
+
+  // What acquires a connection, limited to acquireTimeoutMillis: after it, an error (code ACQUIRE_TIMEOUT), and what
+  // comes late is given back (late).
+  acquiring(promise, late) {
+    if (!this.acquireTimeoutMillis) return promise;
+    let timer;
+    let timedOut = false;
+    const timeout = new Promise((resolve, reject) => {
+      timer = setTimeout(() => {
+        timedOut = true;
+        const err = new PgError(
+          `Timeout of ${this.acquireTimeoutMillis} ms exceeded when trying to acquire a connection`
+        );
+        err.code = 'ACQUIRE_TIMEOUT';
+        reject(err);
+      }, this.acquireTimeoutMillis);
+    });
+    promise.then(
+      (value) => {
+        if (timedOut && late) late(value);
+      },
+      () => {}
+    );
+    return Promise.race([promise, timeout]).finally(() => clearTimeout(timer));
   }
 
   remove(connection) {
@@ -503,7 +536,7 @@ class Pool extends EventEmitter {
 
   async query(textOrConfig, values) {
     const connection = this.connections.length ? this.pick() : null;
-    return runQuery(connection || (await this.shared()), textOrConfig, values);
+    return runQuery(connection || (await this.acquiring(this.shared())), textOrConfig, values);
   }
 
   // The path of most queries: an idle connection (or the least busy when the pool is full), without awaiting.
@@ -549,7 +582,7 @@ class Pool extends EventEmitter {
 
   // A connection for one user until release(): the transactions run in it (traced as pg:pool:connect).
   connect() {
-    return tracePoolConnect(this, () => this.connectUntraced());
+    return tracePoolConnect(this, () => this.acquiring(this.connectUntraced(), (client) => client.release()));
   }
 
   async connectUntraced() {

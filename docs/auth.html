@@ -46,11 +46,14 @@
           <li><a href="#app">An app with logins</a></li>
           <li><a href="#plugin">The plugin</a></li>
           <li><a href="#login">Login routes</a></li>
+          <li><a href="#strategies">Strategies</a></li>
+          <li><a href="#passport">Passport</a></li>
         </ul>
         <h4>Parts</h4>
         <ul>
           <li><a href="#passwords">Passwords</a></li>
           <li><a href="#jwt">JSON Web Tokens</a></li>
+          <li><a href="#vault">Keys per tenant</a></li>
           <li><a href="#totp">One-time codes</a></li>
           <li><a href="#lockout">Lockout</a></li>
           <li><a href="#refresh">Refresh tokens</a></li>
@@ -64,8 +67,9 @@
         <p class="intro">
           <code>@xufa/auth</code> (or <code>xufa/auth</code>) is the authentication of xufa, with no dependencies:
           everything is <code>node:crypto</code>. Passwords hashed with scrypt, JSON Web Tokens with keys that rotate,
-          one-time codes of authenticator apps, logins locked after failures, refresh tokens that rotate, and the
-          plugin of <a href="http.html"><code>@xufa/http</code></a> that puts them together.
+          one-time codes of authenticator apps, logins locked after failures, refresh tokens that rotate, API keys,
+          HTTP Basic, the strategies of Passport, and the plugin of <a href="http.html"><code>@xufa/http</code></a> that
+          puts them together.
         </p>
 
         <h2 id="app">An app with logins</h2>
@@ -122,7 +126,8 @@ POST /auth/logout   { "refreshToken": "..." }   -&gt; 204</code></pre>
 
         <h2 id="plugin">The plugin</h2>
         <ul>
-          <li><code>keys</code>: a secret, a <code>KeySet</code> (or its options), or a function of the request that gives them: a <code>KeySet</code> per tenant, <code>(request) =&gt; keysOf(request.tenant)</code>.</li>
+          <li><code>keys</code>: a secret, a <code>KeySet</code> (or its options), or a function of the request that gives them: a <code>KeySet</code> per tenant, <code>(request) =&gt; keysOf(request.tenant)</code>. Needed by the strategy <code>'jwt'</code>, logins and refresh tokens.</li>
+          <li><code>strategies</code>: how requests say who they are, tried in order on every request (<code>['jwt']</code> when <code>keys</code> are given): see <a href="#strategies">Strategies</a>.</li>
           <li><code>accessToken</code>: <code>expiresIn</code> (<code>'15m'</code>), <code>issuer</code>, <code>audience</code>, <code>algorithms</code>, <code>clockTolerance</code>.</li>
           <li><code>token</code>: where tokens are read from: the Authorization header (<code>Bearer</code>), then the cookie <code>cookie</code> and the query parameter <code>query</code>, when they are given.</li>
           <li><code>user(claims, request)</code>: the user of a valid token (its claims by default; null refuses it).</li>
@@ -150,10 +155,88 @@ POST /auth/logout   { "refreshToken": "..." }   -&gt; 204</code></pre>
           <li><code>fields</code>: the names of the fields of the body (<code>username</code>, <code>password</code>, <code>code</code>).</li>
         </ul>
         <p>
-          <code>refresh</code>: <code>RefreshTokens</code> or its options (<code>false</code>: none). <code>refreshCookie: true</code>
+          <code>refresh</code>: <code>RefreshTokens</code> or its options (<code>false</code>: none; given without
+          <code>login</code>, for the logins of Passport, it adds <code>/refresh</code> and <code>/logout</code>). <code>refreshCookie: true</code>
           keeps the refresh token in an HttpOnly, Secure, SameSite=Strict cookie of the path of the prefix, instead of the body.
           A login answers the same <code>Invalid credentials</code> (401) for a user that does not exist and for a wrong
           password, and verifies a password in both cases, so neither the answer nor its time tells which.
+        </p>
+
+        <h2 id="strategies">Strategies</h2>
+        <p>
+          Each request is tried with the strategies of <code>strategies</code>, in order, until one identifies its user:
+          <code>request.user</code>, <code>request.auth</code> (what the strategy knows: the claims of a JWT,
+          <code>{ apiKey: id }</code>, <code>{ username }</code>) and <code>request.authStrategy</code> (its name).
+          Credentials that are not valid make <code>request.authError</code>, and a route that needs a user answers 401
+          with the <code>WWW-Authenticate</code> challenges of the strategies.
+        </p>
+        <pre><code class="language-js">app.register(auth.plugin, {
+  keys: process.env.JWT_KEY,
+  strategies: [
+    'jwt',
+    auth.apiKey({
+      find: (id) =&gt; ApiKey.objects.filter({ id }).first(), // static fields = auth.apiKeyFields(fields)
+      user: (key) =&gt; User.objects.get({ id: key.subject }),
+    }),
+    auth.basic({ findUser: (email) =&gt; User.objects.filter({ email }).first() }),
+  ],
+});
+
+app.get('/reports', { config: { auth: { strategy: 'apiKey' } } }, handler); // only API keys
+app.get('/admin', { config: { auth: { strategy: ['jwt', 'basic'], roles: 'admin' } } }, handler);</code></pre>
+        <ul>
+          <li><code>auth.apiKey({ find, user, header, scheme, query })</code>: keys from <code>x-api-key</code>, <code>Authorization: &lt;scheme&gt; &lt;key&gt;</code> or a query parameter (off by default: URLs end in logs). A key is <code>&lt;id&gt;.&lt;secret&gt;</code>: <code>find(id, request)</code> gives its record (<code>{ hash }</code>), refused when its <code>expiresAt</code> passed or it has a <code>revokedAt</code>; <code>user(record, request)</code> gives its user.</li>
+          <li><code>auth.generateApiKey({ prefix: 'xk_' })</code>: <code>{ key, id, hash }</code>. Give <code>key</code> once and keep <code>id</code> and <code>hash</code>: only a SHA-256 of the 32 random bytes of the secret is kept, compared in constant time. <code>auth.apiKeyFields(fields)</code>: the fields of a model of keys.</li>
+          <li><code>auth.basic({ findUser, password, lockout, cache })</code>: HTTP Basic against the scrypt hashes of the users, with a <code>Lockout</code>. A checked password is remembered for <code>cache</code> (<code>'5m'</code>), so requests do not pay scrypt each time; a changed password is checked again.</li>
+          <li>Your own: <code>{ name, challenge, authenticate(request, reply) }</code>, whose promise is <code>{ user, info }</code>, <code>{ fail: { message, challenge } }</code> or <code>null</code> (no credentials of its kind).</li>
+        </ul>
+        <p>
+          A route says which strategies may identify its user with <code>config: { auth: { strategy, roles, check } }</code>,
+          or the hook <code>app.auth.authenticateWith('apiKey', 'basic')</code>. Each strategy runs once per request. With
+          <a href="openapi.html">@xufa/openapi</a>, the strategies are the security schemes of the document (each has its
+          <code>openapi</code>: bearer JWT, API keys, Basic, OAuth 2.0 of Passport), and routes with <code>config.auth</code>
+          get their security.
+        </p>
+
+        <h2 id="passport">Passport</h2>
+        <p>
+          The strategies of <a href="https://www.passportjs.org/">Passport</a> work unchanged, without Passport:
+          <code>auth.passport(strategy)</code> gives them what Passport would (<code>success</code>, <code>fail</code>,
+          <code>redirect</code>, <code>pass</code>, <code>error</code>, and a request with what Express has that they read).
+          Tested with passport-local, passport-http, passport-http-bearer, passport-headerapikey, passport-jwt and
+          passport-oauth2.
+        </p>
+        <pre><code class="language-js">const { Strategy: BearerStrategy } = require('passport-http-bearer');
+const { Strategy: GitHubStrategy } = require('passport-github2');
+
+// Credentials in every request: one more strategy.
+app.register(auth.plugin, {
+  keys: process.env.JWT_KEY,
+  refresh: true,
+  strategies: ['jwt', auth.passport(new BearerStrategy(verifyToken))],
+});
+
+// Logins: the redirect to the provider and its callback, in routes.
+const github = auth.passport(
+  new GitHubStrategy(
+    { clientID, clientSecret, callbackURL: '/auth/github/callback', store: auth.oauthState({ secret: process.env.STATE_KEY }) },
+    (accessToken, refreshToken, profile, done) =&gt; findOrCreateUser(profile).then((user) =&gt; done(null, user))
+  )
+);
+app.get('/auth/github', github.login({ scope: ['user:email'] }));
+app.get('/auth/github/callback', github.login());</code></pre>
+        <p>
+          There are no sessions: <code>login({ onLogin, onFailure, claims })</code> answers a login with the tokens of the
+          plugin (<code>app.auth.issue(claims(user))</code>: the access token, and a refresh token when there are refresh
+          tokens), or with what <code>onLogin(user, info, request, reply)</code> returns (a redirect to the app, a
+          cookie...). Failures are 401 (or the status the strategy gives) unless <code>onFailure(failure, request,
+          reply)</code> answers. The options of the strategy (<code>scope</code>...) go with them.
+        </p>
+        <p>
+          <code>auth.oauthState({ secret })</code> is the <code>store</code> of OAuth 2.0 strategies: the state sent to the
+          provider is a random handle, and a cookie keeps it, with the code verifier of PKCE, sealed with AES-256-GCM, for
+          10 minutes, used once (HttpOnly, Secure, SameSite=Lax: the redirect of the provider carries it). A strategy that
+          keeps other things in <code>req.session</code> needs a plugin that gives requests a session.
         </p>
 
         <h2 id="passwords">Passwords</h2>
@@ -172,13 +255,65 @@ const claims = auth.verifyJwt(token, keys, { issuer: 'app' }); // or a TokenErro
           A <code>KeySet</code> has keys by id: the current one signs (its id is the <code>kid</code> of the tokens) and all
           of them verify, so keys rotate without logging anyone out. A key is a secret (32 bytes or more, HS256/384/512)
           or a PEM or KeyObject: RSA (RS256, PS256...), EC (ES256, ES384, ES512) or Ed25519 (EdDSA). A set of public keys
-          only verifies, as another service would; <code>keys.toJWKS()</code> publishes them.
+          only verifies, as another service would; <code>keys.toJWKS()</code> publishes them. <code>signJwtAsync()</code> and
+          <code>verifyJwtAsync()</code> are the same as Promises: RSA keys sign in libuv's thread pool, so the event loop does
+          not wait for their half a millisecond; the rest takes 20 to 90 &micro;s and is done on the loop. The plugin uses
+          them. The tokens are signed and
+          verified by <a href="jwt.html">@xufa/jwt</a> (the checks and tests of jsonwebtoken): RSA keys under 2048 bits do
+          not sign, and tokens with critical extensions (<code>crit</code>) are refused.
         </p>
         <p>
           <code>verifyJwt()</code> takes only the algorithms of its keys (a token cannot choose <code>none</code>, nor HMAC
           with a public key), checks <code>exp</code> and <code>nbf</code> (with <code>clockTolerance</code>) and, when they
           are given, <code>issuer</code>, <code>audience</code>, <code>subject</code> and <code>maxAge</code>. Its
           <code>TokenError</code> (401) says why in <code>reason</code>.
+        </p>
+
+        <h2 id="vault">Keys per tenant</h2>
+        <p>
+          A <code>KeyVault</code> keeps the keys of each tenant in a store: its tokens are signed with its keys, and a
+          token of one tenant is no token of another. The private keys are kept encrypted, with keys derived from the
+          secret of the vault, the tenant and the key: a copy of the store is no key, and the keys of one tenant cannot
+          be moved to another.
+        </p>
+        <pre><code class="language-js">const { KeyVault, vaultModelStore, vaultFields } = require('@xufa/auth');
+
+class TenantKeys extends Model {
+  static fields = vaultFields(fields);
+}
+
+const vault = new KeyVault({ secret: process.env.VAULT_SECRET, store: vaultModelStore(TenantKeys) });
+await vault.create('acme'); // when the tenant is made: its first key (ES256 by default)
+
+app.register(auth.plugin, { keys: (request) =&gt; vault.keys(tenantOf(request)), login });
+app.get('/.well-known/jwks.json', (request) =&gt; vault.jwks(tenantOf(request)));
+
+await vault.rotate('acme'); // a new key</code></pre>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Method</th><th>What it does</th></tr></thead>
+            <tbody>
+              <tr><td><code>keys(tenant)</code></td><td>The KeySet of the tenant, kept <code>ttl</code> in memory.</td></tr>
+              <tr><td><code>create(tenant, { algorithm })</code></td><td>Its first key: HS, RS, PS, ES or EdDSA.</td></tr>
+              <tr><td><code>rotate(tenant, { algorithm, immediate })</code></td><td>A new key: it verifies at once, and signs after <code>ttl</code> (<code>immediate</code>: at once). The key it replaces verifies <code>keep</code> more.</td></tr>
+              <tr><td><code>revoke(tenant, keyId)</code></td><td>Removes a key that leaked (not the one that signs: rotate first).</td></tr>
+              <tr><td><code>jwks(tenant)</code>, <code>remove(tenant)</code>, <code>invalidate(tenant)</code></td><td>Its public keys; all its keys gone; forgotten in this process.</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p>
+          Options: <code>secret</code> (32 bytes or more), <code>store</code> (a <code>MemoryKeyStore</code> by default),
+          <code>algorithm</code> (<code>'ES256'</code>), <code>ttl</code> (<code>'5m'</code>), <code>keep</code>
+          (<code>'1d'</code>), <code>rotateAfter</code> (keys older are rotated when used), <code>max</code> (tenants in
+          memory) and <code>autoCreate</code> (false: a tenant without keys is an error, since tenants may come from what
+          clients send).
+        </p>
+        <p>
+          <strong>Rotation in a cluster.</strong> Each process keeps the keys of a tenant <code>ttl</code>; a new key is
+          published at once and signs only <code>ttl</code> after, when every process has loaded it, so no process meets a
+          token of a key it does not know. Two processes that change the keys of a tenant at once do not lose a key: the
+          records change by compare-and-swap on their version. A <code>KeySet</code> also takes an encrypted private key
+          as <code>{ key, passphrase }</code>.
         </p>
 
         <h2 id="totp">One-time codes</h2>
@@ -202,7 +337,7 @@ ok ? await lockout.succeed(email) : await lockout.fail(email);</code></pre>
         <p>
           The failures are kept in a store with <code>get</code>, <code>set</code> and <code>delete</code>: one of the
           process by default, or a cache of the ORM. With a <code>SharedCache</code> they are in the primary of a
-          <a href="packages.html#cluster">cluster</a>, so every worker counts the same failures.
+          <a href="cluster.html">cluster</a>, so every worker counts the same failures.
         </p>
 
         <h2 id="refresh">Refresh tokens</h2>
@@ -224,7 +359,7 @@ await refresh.revokeSubject(user.id); // logout everywhere (a changed password)<
         <p>
           <code>TokenError</code> (401, <code>XUFA_AUTH_INVALID_TOKEN</code>, with its <code>reason</code>),
           <code>Unauthorized</code> (401), <code>TotpRequired</code> (401), <code>Forbidden</code> (403) and
-          <code>Locked</code> (429, with <code>retryAfter</code>), all made with <a href="packages.html#errors"><code>@xufa/errors</code></a>.
+          <code>Locked</code> (429, with <code>retryAfter</code>), all made with <a href="errors.html"><code>@xufa/errors</code></a>.
         </p>
 
         <h2 id="typescript">TypeScript</h2>

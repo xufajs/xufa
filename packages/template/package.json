@@ -1,0 +1,58 @@
+{
+  "name": "@xufa/template",
+  "version": "0.1.0",
+  "description": "Templates of text and HTML with safe expressions, blocks, filters and partials, compiled once, with no dependencies",
+  "main": "./index.js",
+  "types": "./index.d.ts",
+  "type": "commonjs",
+  "exports": {
+    ".": {
+      "types": "./index.d.ts",
+      "default": "./index.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "index.js",
+    "index.d.ts",
+    "lib"
+  ],
+  "scripts": {
+    "test": "vyntra",
+    "test:types": "tsd"
+  },
+  "keywords": [
+    "template",
+    "templates",
+    "html",
+    "mustache",
+    "handlebars"
+  ],
+  "author": "Jesús Seijas <jseijas@gmail.com>",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/xufajs/xufa.git",
+    "directory": "packages/template"
+  },
+  "homepage": "https://github.com/xufajs/xufa/tree/main/packages/template#readme",
+  "bugs": {
+    "url": "https://github.com/xufajs/xufa/issues"
+  },
+  "engines": {
+    "node": ">=22"
+  },
+  "dependencies": {
+    "@xufa/expression": "workspace:*"
+  },
+  "devDependencies": {
+    "vyntra": "^0.6.0",
+    "@xufa/http": "workspace:*"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "tsd": {
+    "directory": "test/types"
+  }
+}

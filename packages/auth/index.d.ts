@@ -47,7 +47,8 @@ export type Algorithm =
 
 /** A key: a secret (HMAC), a PEM or a KeyObject (the private key signs, its public key verifies). */
 export type KeyInput = string | Buffer | KeyObject;
-export type KeyEntry = KeyInput | { key: KeyInput; algorithm?: Algorithm };
+/** A key, with its algorithm; an encrypted private key in PEM with its passphrase. */
+export type KeyEntry = KeyInput | { key: KeyInput; algorithm?: Algorithm; passphrase?: string | Buffer };
 
 export interface KeySetOptions {
   /** The id of the key that signs (the first one by default). */
@@ -76,6 +77,89 @@ export class KeySet {
 }
 
 export type Keys = KeySet | KeyEntry | KeySetOptions;
+
+/** What a KeyVault keeps of a tenant: its keys (private keys encrypted), and the version of the record. */
+export interface VaultRecord {
+  version: number;
+  keys: Array<{
+    id: string;
+    algorithm: Algorithm;
+    createdAt: number;
+    activeAt: number;
+    retiredAt: number | null;
+    secret?: string;
+    privateKey?: string;
+    publicKey?: string;
+  }>;
+}
+
+/** Where a KeyVault keeps the records: put() writes only when the record has that version (null: when none). */
+export interface VaultStore {
+  get(tenant: string): Promise<VaultRecord | null>;
+  put(tenant: string, record: VaultRecord, version: number | null): Promise<boolean>;
+  delete(tenant: string): Promise<void>;
+}
+
+export interface KeyVaultOptions {
+  /** 32 bytes or more: the private keys of the store are encrypted with keys derived from it. */
+  secret: string | Buffer;
+  /** A MemoryKeyStore by default; vaultModelStore(Model) for @xufa/orm. */
+  store?: VaultStore;
+  /** Of the keys made ('ES256'). */
+  algorithm?: Algorithm;
+  /** How long a KeySet is kept in memory, and how long a new key waits to sign ('5m'). */
+  ttl?: number | string;
+  /** How long a key verifies after it stops signing ('1d'). */
+  keep?: number | string;
+  /** Keys older are rotated when their tenant is used (none). */
+  rotateAfter?: number | string;
+  /** Tenants kept in memory (1000). */
+  max?: number;
+  /** keys() of a tenant without keys makes them (false). */
+  autoCreate?: boolean;
+}
+
+/** The keys of the JWTs of each tenant, encrypted in a store, rotated without failures. */
+export class KeyVault {
+  constructor(options: KeyVaultOptions);
+  /** The KeySet of a tenant (kept ttl in memory). */
+  keys(tenant: string): Promise<KeySet>;
+  /** The public keys of a tenant as a JWKS. */
+  jwks(tenant: string): Promise<ReturnType<KeySet['toJWKS']>>;
+  /** The first key of a tenant. */
+  create(tenant: string, options?: { algorithm?: Algorithm }): Promise<KeySet>;
+  /** A new key: it verifies at once and signs after ttl (immediate: at once). */
+  rotate(tenant: string, options?: { algorithm?: Algorithm; immediate?: boolean }): Promise<KeySet>;
+  /** Removes a key at once (not the one that signs). */
+  revoke(tenant: string, keyId: string): Promise<void>;
+  /** Removes every key of a tenant. */
+  remove(tenant: string): Promise<void>;
+  /** Forgets the KeySet of a tenant (or of every tenant) in this process. */
+  invalidate(tenant?: string): void;
+}
+
+export class MemoryKeyStore implements VaultStore {
+  get(tenant: string): Promise<VaultRecord | null>;
+  put(tenant: string, record: VaultRecord, version: number | null): Promise<boolean>;
+  delete(tenant: string): Promise<void>;
+}
+
+/** A store on a model of @xufa/orm with the fields of vaultFields(fields). */
+export function vaultModelStore(Model: any): VaultStore;
+/** The fields of a model of the keys of the tenants, made with the fields of @xufa/orm. */
+export function vaultFields(fields: any): Record<string, unknown>;
+
+export class VaultError extends Error {
+  code:
+    | 'XUFA_AUTH_VAULT_SECRET'
+    | 'XUFA_AUTH_VAULT_ALGORITHM'
+    | 'XUFA_AUTH_VAULT_OPTIONS'
+    | 'XUFA_AUTH_VAULT_NO_KEYS'
+    | 'XUFA_AUTH_VAULT_EXISTS'
+    | 'XUFA_AUTH_VAULT_CURRENT'
+    | 'XUFA_AUTH_VAULT_CONFLICT'
+    | 'XUFA_AUTH_VAULT_TENANT';
+}
 
 export interface Claims {
   iss?: string;
@@ -121,6 +205,14 @@ export interface VerifyOptions {
 export function signJwt(payload: Record<string, unknown>, keys: Keys, options?: SignOptions): string;
 /** The claims of a token, or a TokenError (401) whose reason says why not. */
 export function verifyJwt<T extends Claims = Claims>(token: string, keys: Keys, options?: VerifyOptions): T;
+/** signJwt() as a Promise: RSA keys sign in libuv's thread pool, so the event loop does not wait (about 0.5 ms). */
+export function signJwtAsync(payload: Record<string, unknown>, keys: Keys, options?: SignOptions): Promise<string>;
+/** verifyJwt() as a Promise (done on the event loop: 20 to 90 µs); it rejects with the same TokenError. */
+export function verifyJwtAsync<T extends Claims = Claims>(
+  token: string,
+  keys: Keys,
+  options?: VerifyOptions
+): Promise<T>;
 /** The parts of a token, without verifying it (null when it is no JWT). */
 export function decodeJwt(
   token: string
@@ -300,9 +392,170 @@ export const Locked: XufaErrorConstructor<{ code: 'XUFA_AUTH_LOCKED'; statusCode
 
 // The plugin of @xufa/http
 
-/** A check of a route: an authenticated user, a role, roles (any of them) or a function of the user. */
+/** A check of a route: an authenticated user, a role, roles (any of them), a function of the user, or which
+ * strategies may identify the user (with roles or a check). */
 export type AuthRule<User = any> =
-  true | string | string[] | ((user: User, request: any) => boolean | Promise<boolean>);
+  true | string | string[] | ((user: User, request: any) => boolean | Promise<boolean>) | AuthRuleOf<User>;
+
+type AuthCheck<User> = (user: User, request: any) => boolean | Promise<boolean>;
+
+/** Which strategies may identify the user (by name: the others are refused), and any of some roles or a check. One
+ * of them at least. */
+export type AuthRuleOf<User = any> =
+  | { strategy: string | string[]; roles?: string | string[]; check?: AuthCheck<User> }
+  | { strategy?: string | string[]; roles: string | string[]; check?: AuthCheck<User> }
+  | { strategy?: string | string[]; roles?: string | string[]; check: AuthCheck<User> };
+
+// Strategies: ways a request says who it is.
+
+/** What a strategy finds in a request: a user, credentials that are not valid, or none of its kind (null). */
+export type StrategyResult<User = any> =
+  | { user: User; info?: unknown }
+  | { fail: { challenge?: string; message?: string; status?: number; error?: Error } }
+  | null;
+
+export interface Strategy<User = any> {
+  readonly name: string;
+  /** The WWW-Authenticate challenge of a 401 when there were no credentials. */
+  readonly challenge?: string;
+  /** Its security scheme of OpenAPI (for @xufa/openapi): { type: 'http', scheme: 'bearer' }... */
+  readonly openapi?: Record<string, unknown>;
+  authenticate(request: any, reply: any): Promise<StrategyResult<User>>;
+}
+
+export interface ApiKeyRecord {
+  /** The hash of the secret of the key (hashApiKey). */
+  hash: string;
+  expiresAt?: Date | number | string | null;
+  revokedAt?: Date | number | string | null;
+  [field: string]: any;
+}
+
+export interface ApiKeyOptions<User = any, R extends ApiKeyRecord = ApiKeyRecord> {
+  /** Its security scheme of OpenAPI (from where the key is read by default). */
+  openapi?: Record<string, unknown>;
+  /** 'apiKey' */
+  name?: string;
+  /** The header of the key ('x-api-key'; null: none). */
+  header?: string | null;
+  /** The scheme of the key in the Authorization header ('ApiKey': Authorization: ApiKey <key>). */
+  scheme?: string | null;
+  /** A query parameter of the key (none by default: URLs end in logs). */
+  query?: string | null;
+  /** The record of the id of a key, or null. */
+  find(id: string, request: any): R | null | undefined | Promise<R | null | undefined>;
+  /** The user of a record (record.user, or the record). */
+  user?(record: R, request: any): User | null | undefined | Promise<User | null | undefined>;
+}
+
+/** The strategy of API keys ('<id>.<secret>' of generateApiKey). request.auth is { apiKey: id }. */
+export function apiKey<User = any, R extends ApiKeyRecord = ApiKeyRecord>(
+  options: ApiKeyOptions<User, R>
+): Strategy<User>;
+
+/** A new API key: give `key` to its owner once; keep `id` and `hash` (the key cannot be made from them). */
+export function generateApiKey(options?: { prefix?: string }): { key: string; id: string; hash: string };
+export function hashApiKey(secret: string): string;
+export function parseApiKey(key: string): { id: string; secret: string } | null;
+/** Whether a secret is the one of a hash, in constant time. */
+export function verifyApiKey(secret: string, hash: string): boolean;
+/** The fields of a model of API keys, made with the fields of @xufa/orm. */
+export function apiKeyFields(
+  fields: any
+): Record<'id' | 'hash' | 'subject' | 'name' | 'scopes' | 'createdAt' | 'expiresAt' | 'revokedAt', any>;
+
+export interface BasicOptions<User = any> {
+  /** Its security scheme of OpenAPI ({ type: 'http', scheme: 'basic' }). */
+  openapi?: Record<string, unknown>;
+  /** 'basic' */
+  name?: string;
+  /** 'api' */
+  realm?: string;
+  findUser(username: string, request: any): User | null | undefined | Promise<User | null | undefined>;
+  /** The hash of the password of a user (user.password). */
+  password?(user: User): string | null | undefined;
+  passwordOptions?: PasswordOptions;
+  /** A Lockout, its options, or false (no lockout). */
+  lockout?: Lockout | LockoutOptions | false;
+  /** How long a checked password is remembered, so requests do not pay scrypt each time ('5m'; 0: never). */
+  cache?: Duration;
+  /** Passwords remembered at most (10000). */
+  maxCached?: number;
+}
+
+/** The strategy of HTTP Basic, against the scrypt hashes of the users. request.auth is { username }. */
+export function basic<User = any>(options: BasicOptions<User>): Strategy<User>;
+
+/** A strategy of Passport: an object with authenticate(req, options), and its name. */
+export interface PassportStrategy {
+  name?: string;
+  authenticate(this: any, req: any, options?: any): any;
+}
+
+export interface PassportFailure {
+  challenge?: string;
+  message?: string;
+  status?: number;
+}
+
+export interface PassportLoginOptions<User = any> {
+  /** The answer of a login (the tokens of the plugin by default, of claims). */
+  onLogin?(user: User, info: unknown, request: any, reply: any): unknown;
+  /** The answer of a failure (401, or the status the strategy gives, by default). */
+  onFailure?(failure: PassportFailure, request: any, reply: any): unknown;
+  /** The claims of the tokens of a user ({ sub: String(user.id) }). */
+  claims?(user: User, request: any): Claims | Promise<Claims>;
+  /** Options of the authenticate() of the strategy (scope...). */
+  [option: string]: unknown;
+}
+
+export interface PassportAdapter<User = any> extends Strategy<User> {
+  readonly strategy: PassportStrategy;
+  /** The handler of a route of login: redirects (OAuth), failures, and the user given to onLogin. */
+  login(options?: PassportLoginOptions<User>): (request: any, reply: any) => Promise<unknown>;
+}
+
+/** A strategy of Passport for the plugin (in `strategies`) or for routes of login (login()). */
+export function passport<User = any>(
+  strategy: PassportStrategy,
+  options?: {
+    name?: string;
+    options?: Record<string, unknown>;
+    /** Its security scheme of OpenAPI (guessed from the strategy: OAuth 2.0, bearer, API keys, Basic), or false. */
+    openapi?: Record<string, unknown> | false;
+  }
+): PassportAdapter<User>;
+
+export interface OAuthStateOptions {
+  /** The key of the cookies (16 characters or more). */
+  secret: string;
+  /** 'xufa_oauth_state' */
+  name?: string;
+  /** Seconds (600). */
+  maxAge?: number;
+  path?: string;
+  secure?: boolean;
+  sameSite?: 'Lax' | 'Strict' | 'None';
+}
+
+export interface OAuthStateStore {
+  store(
+    req: any,
+    verifier: string | undefined,
+    state: unknown,
+    meta: unknown,
+    callback: (err: Error | null, handle?: string) => void
+  ): void;
+  verify(
+    req: any,
+    providedState: string,
+    meta: unknown,
+    callback: (err: Error | null, ok?: string | boolean, state?: unknown) => void
+  ): void;
+}
+
+/** The state of OAuth 2.0 logins in a sealed cookie (the store option of passport-oauth2 strategies), with PKCE. */
+export function oauthState(options: OAuthStateOptions): OAuthStateStore;
 
 export interface LoginOptions<User = any> {
   /** The user of a username (an email...), or null. */
@@ -330,8 +583,12 @@ export interface LoginOptions<User = any> {
 }
 
 export interface PluginOptions<User = any> {
-  /** The keys of the tokens, or a function of the request that gives them (a KeySet per tenant). */
-  keys: Keys | ((request: any) => Keys | Promise<Keys>);
+  /** The keys of the tokens, or a function of the request that gives them (a KeySet per tenant). Needed by the
+   * strategy 'jwt', logins and refresh tokens. */
+  keys?: Keys | ((request: any) => Keys | Promise<Keys>);
+  /** The strategies tried on every request, in order (['jwt'] when keys are given): 'jwt' (the access tokens of the
+   * plugin), apiKey(), basic(), passport(strategy), or your own. */
+  strategies?: Array<'jwt' | Strategy<User>>;
   accessToken?: {
     /** '15m' */
     expiresIn?: Duration;
@@ -349,8 +606,11 @@ export interface PluginOptions<User = any> {
   /** The routes of login, refresh and logout, under prefix ('/auth'). */
   login?: LoginOptions<User>;
   prefix?: string;
-  /** The refresh tokens of the login routes: RefreshTokens, its options, or false (none). */
-  refresh?: RefreshTokens | RefreshTokensOptions | false;
+  /** The refresh tokens of logins (on with login; given, for the logins of Passport): RefreshTokens, its options, true,
+   * or false (none). With them, the routes of refresh and logout. */
+  refresh?: RefreshTokens | RefreshTokensOptions | boolean;
+  /** The claims of a refresh when there is no login (login.reload otherwise), or null when the user can no longer. */
+  reload?(subject: string, data: Claims, request: any): Claims | null | Promise<Claims | null>;
   /** Keep the refresh token in a cookie (HttpOnly, Secure, SameSite=Strict, the path of prefix), not in the body. */
   refreshCookie?: boolean | ({ name?: string } & Omit<CookieOptions, 'maxAge'>);
 }
@@ -361,6 +621,18 @@ export interface AuthApi<User = any> {
   sign(claims: Claims, request?: any, options?: SignOptions): Promise<string>;
   verify(token: string, request?: any): Promise<Claims>;
   authenticate(request: any, reply: any): Promise<void>;
+  /** The hook of routes that need a user identified by one of some strategies (by name). */
+  authenticateWith(...names: Array<string | string[]>): (request: any, reply: any) => Promise<void>;
+  /** The tokens of a login: the access token, and the refresh token when there are refresh tokens. */
+  issue(
+    claims: Claims,
+    request: any,
+    reply: any,
+    previous?: string
+  ): Promise<{ accessToken: string; tokenType: 'Bearer'; expiresIn: number; refreshToken?: string }>;
+  /** The strategies by name. */
+  strategies: Map<string, Strategy<User>>;
+  refresh: RefreshTokens | null;
   authorize(
     ...rules: Array<string | string[] | ((user: User, request: any) => boolean | Promise<boolean>)>
   ): (request: any, reply: any) => Promise<void>;
@@ -373,11 +645,12 @@ export interface AuthApi<User = any> {
 
 /**
  * The plugin for @xufa/http (and fastify). It decorates the app with auth, authenticate and authorize, and the
- * requests with user, auth (the claims) and authError. To type them:
+ * requests with user, auth (the claims of a JWT, or what the strategy knows), authStrategy and authError. To type
+ * them:
  *
  *   declare module '@xufa/http' {
  *     interface XufaInstance { auth: AuthApi<User>; authenticate: AuthApi['authenticate']; authorize: AuthApi['authorize'] }
- *     interface XufaRequest { user: User | null; auth: Claims | null }
+ *     interface XufaRequest { user: User | null; auth: Claims | null; authStrategy: string | null }
  *     interface XufaContextConfig { auth?: AuthRule<User> }
  *   }
  */

@@ -53,6 +53,8 @@
           <li><a href="#postgres-fields">Arrays, hstore, geometries</a></li>
           <li><a href="#ttl">TTL indexes</a></li>
           <li><a href="#encrypted">Encrypted fields</a></li>
+          <li><a href="#computed">Computed fields</a></li>
+          <li><a href="#rules">Validation rules</a></li>
           <li><a href="#relations">Relations</a></li>
           <li><a href="#keys">Primary keys</a></li>
           <li><a href="#objects">Objects</a></li>
@@ -70,6 +72,7 @@
           <li><a href="#migrations">Migrations</a></li>
           <li><a href="#databases">Several databases</a></li>
           <li><a href="#tenants">Tenants</a></li>
+          <li><a href="#tenant-databases">Several databases in a tenant</a></li>
           <li><a href="#cache">Caches</a></li>
           <li><a href="#http">With @xufa/http</a></li>
           <li><a href="#resources">Resources</a></li>
@@ -92,9 +95,10 @@
             <thead><tr><th>Backend</th><th>Database</th><th>Made with</th></tr></thead>
             <tbody>
               <tr><td><code>memory</code></td><td>In memory, for tests and prototypes</td><td>JavaScript</td></tr>
+              <tr><td><code>fs</code></td><td>Files (JSON) in a folder</td><td><code>node:fs</code></td></tr>
               <tr><td><code>sqlite</code></td><td>SQLite</td><td><code>node:sqlite</code> (Node.js 22.5+)</td></tr>
-              <tr><td><code>postgres</code></td><td>PostgreSQL</td><td><a href="packages.html#pg"><code>@xufa/pg</code></a></td></tr>
-              <tr><td><code>mongodb</code></td><td>MongoDB</td><td><a href="packages.html#mongo"><code>@xufa/mongo</code></a></td></tr>
+              <tr><td><code>postgres</code></td><td>PostgreSQL</td><td><a href="pg.html"><code>@xufa/pg</code></a></td></tr>
+              <tr><td><code>mongodb</code></td><td>MongoDB</td><td><a href="mongo.html"><code>@xufa/mongo</code></a></td></tr>
             </tbody>
           </table>
         </div>
@@ -102,8 +106,41 @@
 
 new Database({ backend: 'sqlite', filename: 'app.db' }); // ':memory:' for a database in memory
 new Database({ backend: 'postgres', url: 'postgres://user:password@localhost:5432/app', max: 10 });
+// The options of the pool of @xufa/pg too: acquireTimeoutMillis, idleTimeoutMillis... and onError(err), for the
+// connections the server or the network closes while idle (the pool opens others).
 new Database({ backend: 'mongodb', url: 'mongodb://localhost:27017/app' });
-new Database({ backend: 'memory' });</code></pre>
+new Database({ backend: 'memory' });
+new Database({ backend: 'fs', dir: 'data' }); // data/&lt;table&gt;.json; layout: 'files' for data/&lt;table&gt;/&lt;key&gt;.json</code></pre>
+        <p>
+          The <code>fs</code> backend keeps the objects in files, for content, settings and small catalogs that live with
+          the application, or where there is no database. Queries run in memory with everything the memory backend does;
+          what changes is written after each operation, or when a transaction commits (nothing when it rolls back), and
+          read back when the database connects. With <code>layout: 'files'</code> each object is a file, and only the
+          objects that changed are written. Files are written to a temporary file and renamed; dates, bytes and bigints
+          keep their type; encrypted fields are written encrypted. One process writes a folder (a lock file,
+          <code>.xufa.lock</code>, refuses another one). With tenants or several databases, a collection can live in
+          files while the others are in a database.
+        </p>
+        <p>
+          <code>watch: true</code> (or <code>{ delay }</code>, 50 ms by default) reads again the files changed from
+          outside while the database is open (edits by hand, a deploy, <code>git pull</code>): the collections whose
+          files changed, or with <code>layout: 'files'</code> only the objects whose files were changed, added or
+          removed. What changes while a transaction is open is read when it ends. <code>onChange(tables)</code> is called
+          after, and the cached objects of those models are dropped; <code>onError(err)</code> is called when a file
+          cannot be read (JSON half saved by an editor), and the data stays as it was until the file changes again. When
+          the application writes a file before its change from outside is read, the two are merged by object: the
+          objects changed only from outside keep that change, and an object changed on both sides keeps the
+          application's, with an <code>onError</code> error of code <code>XUFA_ORM_ERR_FS_CONFLICT</code> (with
+          <code>table</code> and <code>keys</code>). Only the objects that changed are serialized again, and with
+          <code>layout: 'files'</code> only their files are written.
+        </p>
+        <pre><code class="language-js">new Database({
+  backend: 'fs',
+  dir: 'content',
+  layout: 'files',
+  watch: true,
+  onChange: (tables) =&gt; console.log('changed', tables),
+});</code></pre>
 
         <h2 id="tour">A quick tour</h2>
         <pre><code class="language-js">const { Database, Model, fields, or, F, Count, Sum } = require('@xufa/orm');
@@ -194,7 +231,8 @@ await Book.objects.values('author__name').annotate({ books: Count(), pages: Sum(
         <p>
           Every field takes <code>null</code>, <code>default</code> (a value or a function), <code>unique</code>,
           <code>index</code>, <code>primaryKey</code>, <code>choices</code>, <code>column</code> and
-          <code>validate</code> (functions that return a message, or false, when a value is not valid). In SQL databases a
+          <code>validate</code> (rules of the value: functions or expressions that give a message, or false, when it is
+          not valid; see <a href="#rules">Validation rules</a>). In SQL databases a
           field can also say its column exactly: <code>sqlType</code> (<code>'VARCHAR(255)'</code>) and
           <code>dbDefault</code> (a <code>DEFAULT</code> of the column).
         </p>
@@ -272,8 +310,8 @@ app.register(orm.plugin, { database: db, sync: true, expire: true }); // db.expi
         <p>
           <code>fields.encrypted(field, options)</code> keeps the values of a field encrypted in the database with
           AES-256-GCM: the objects have their values, and the database has text it cannot read
-          (<code>$xenc$1$&lt;key id&gt;$&lt;iv&gt;$&lt;ciphertext&gt;</code>) in a <code>TEXT</code> column. The memory
-          backend keeps the values as they are.
+          (<code>$xenc$1$&lt;key id&gt;$&lt;iv&gt;$&lt;ciphertext&gt;</code>) in a <code>TEXT</code> column (and in the
+          files of the fs backend). The memory backend keeps the values as they are.
         </p>
         <pre><code class="language-js">setEncryptionKeys({ keys: { k1: process.env.ENCRYPTION_KEY } }); // or XUFA_ENCRYPTION_KEYS='k1:&lt;base64&gt;'
 
@@ -296,6 +334,85 @@ ada.ssn; // '123-45-6789'
           <li><strong>Queries</strong>: encrypted fields take <code>isnull</code>, and no orders nor aggregates other than <code>Count</code>. With <code>deterministic: true</code> the same value gives the same text, so they also take <code>exact</code> and <code>in</code> and can be unique or indexed; the database can then tell which rows share a value, not what it is.</li>
           <li><strong>Rotating keys</strong>: add the new key as the current one, <code>await reencrypt(Model)</code>, then remove the old one.</li>
           <li><strong>Encrypting a field with values</strong>: <code>acceptPlaintext: true</code> reads the values written before; migrate (the column becomes <code>TEXT</code>), <code>reencrypt(Model)</code>, and remove the option.</li>
+        </ul>
+
+        <h2 id="computed">Computed fields</h2>
+        <p>
+          A field with <code>computed</code> has the value it computes from the other fields of its object: an
+          expression of <a href="expression.html">@xufa/expression</a> on them, or a function of the object. Its field
+          (<code>decimal</code>, <code>string</code>...) gives the type of the value, which is coerced and validated as
+          any other.
+        </p>
+        <pre><code class="language-js">class Line extends Model {
+  static fields = {
+    product: fields.string(),
+    price: fields.decimal({ precision: 10, scale: 2 }),
+    quantity: fields.integer(),
+    discount: fields.integer({ default: 0 }),
+    // Stored: a column, set by the ORM, which queries can use.
+    total: fields.decimal({ precision: 12, scale: 2, computed: 'price * quantity * (100 - discount) / 100', stored: true }),
+    // Not stored: computed when it is read.
+    label: fields.string({ computed: '`${quantity} x ${product}`' }),
+    big: fields.boolean({ computed: 'Number(total) >= 100' }),
+    // A function: what it reads is given in `uses`.
+    code: fields.string({ computed: (line) => `${line.product.toUpperCase()}-${line.quantity}`, uses: ['product', 'quantity'], stored: true }),
+  };
+}
+
+const line = await Line.objects.create({ product: 'pen', price: '2.50', quantity: 4 });
+line.total; // '10.00'
+line.label; // '4 x pen'
+await Line.objects.filter({ total__gte: '100' }).orderBy('-total'); // stored: a column like any other
+await Line.objects.filter({ product: 'pen' }).update({ quantity: 50 }); // total and code computed again</code></pre>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th></th><th>Not stored (default)</th><th><code>stored: true</code></th></tr></thead>
+            <tbody>
+              <tr><td>The value</td><td>Computed each time it is read, from the values of the object then</td><td>Computed when the object is saved, and kept in a column</td></tr>
+              <tr><td>Queries</td><td>None: <code>filter</code>, <code>orderBy</code> and <code>values</code> refuse it (<code>QueryError</code>)</td><td>As any field: filters, orders, aggregates, indexes, unique</td></tr>
+              <tr><td><code>update()</code></td><td>Nothing to do</td><td>When it changes a field the computed field reads, the objects updated are computed again (in the same transaction)</td></tr>
+              <tr><td>In <code>toJSON()</code></td><td>Yes</td><td>Yes</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <ul>
+          <li><strong>What an expression reads</strong>: the fields of its object by name (and foreign keys by their attname, <code>authorId</code>), other computed fields, relations once loaded (<code>author?.name</code>), and the globals of the expressions (<code>Math</code>, <code>Number</code>...). The ORM finds the fields it reads, so an update of other fields does not compute it again. A function says it in <code>uses</code>; without it, every update computes it again.</li>
+          <li><strong>Decimals are text</strong> (<code>'2.50'</code>): <code>price * quantity</code> is a number, but <code>price + 1</code> joins text, so write <code>Number(price) + 1</code>. A number computed for a decimal field is rounded to its <code>scale</code>, half away from zero.</li>
+          <li><strong>Set by the ORM only</strong>: giving one to <code>create()</code> or <code>new Model()</code>, setting one that is not stored, or naming one in <code>update()</code> throws. The resources of <a href="#resources">orm.resource()</a> ignore them in bodies, and <code>jsonSchema()</code> marks them <code>readOnly</code>.</li>
+          <li><strong><code>recompute()</code></strong> computes again the stored fields of a QuerySet and saves those that changed (their number): after adding a stored computed field to a table with rows (as any new column, with <code>null: true</code> or a <code>default</code> for the migration), or when what it reads was changed outside the ORM. A stored field that reads relations is computed when its object is saved; <code>recompute()</code> brings it up to date after the related objects change.</li>
+          <li><strong>The expressions are code of the model</strong>: they run on its objects, so they can call the methods of the values they read. Expressions written by users go to <a href="expression.html">@xufa/expression</a> with contexts of data instead.</li>
+        </ul>
+
+        <h2 id="rules">Validation rules</h2>
+        <p>
+          The rules of a field (<code>validate</code>) and of a model (<code>options.rules</code>) can be expressions of
+          <a href="expression.html">@xufa/expression</a>, functions, or either with its message. A rule gives true when
+          the value is valid, false when it is not (its message, or a default one), or a string: the message.
+        </p>
+        <pre><code class="language-js">class Event extends Model {
+  static fields = {
+    name: fields.string({ validate: { rule: 'value.trim().length >= 3', message: 'At least 3 characters.' } }),
+    seats: fields.integer({ validate: ['value >= 1', 'value <= 100 || "100 seats at most."'] }),
+    start: fields.date(),
+    end: fields.date(),
+  };
+
+  static options = {
+    rules: [
+      { rule: 'end >= start', message: 'The end cannot come before the start.', field: 'end' },
+      'seats <= 10 || !name.startsWith("Small") || "A small event has 10 seats at most."',
+      (event) => event.name !== 'cancelled',
+    ],
+  };
+}
+
+await Event.objects.create({ name: 'Small talk', seats: 20, start: '2026-10-05', end: '2026-10-06' });
+// ValidationError (400): errors { __all__: ['A small event has 10 seats at most.'] }</code></pre>
+        <ul>
+          <li><strong>A rule of a field</strong> reads its value as <code>value</code>, once coerced; it is not run on nulls (<code>null: true</code> says whether they are allowed).</li>
+          <li><strong>A rule of a model</strong> reads the fields of the object by name (and its computed fields). Its message goes to the errors of <code>field</code>, or to <code>__all__</code> (as in Django) without one. The rules of the parents of a model are its rules too.</li>
+          <li><strong>When they run</strong>: in <code>validate()</code>, so on <code>save()</code>, <code>create()</code> and <code>bulkCreate()</code> (not with <code>validate: false</code>). The rules of a model run once the fields are valid, as Django's <code>clean()</code> after <code>clean_fields()</code>. <code>update()</code> runs the rules of the fields it sets, not those of the model: it does not load the objects.</li>
+          <li><strong>Mistakes</strong>: an expression that does not compile throws when the model is first used; a rule that throws when it runs (<code>text.length</code> of a null) throws its error, as a mistake of the rule and not of the object (<code>text?.length</code> reads nulls).</li>
         </ul>
 
         <h2 id="relations">Relations</h2>
@@ -488,23 +605,75 @@ module.exports = {
         </p>
 
         <h2 id="databases">Several databases</h2>
-        <pre><code class="language-js">const { Databases } = require('@xufa/orm');
+        <p>
+          An app can keep its models in several databases, even of different backends: the books in PostgreSQL, the
+          events in MongoDB, the sessions in memory. It takes three steps:
+        </p>
+        <ol>
+          <li><strong>Name the databases.</strong> One of them is called <code>default</code>: every model that is not sent elsewhere goes there.</li>
+          <li><strong>Send the models that do not go to <code>default</code></strong>, by name in <code>routes</code>, or in the model itself with the option <code>database</code>. Only the exceptions are written down.</li>
+          <li><strong>Register the models</strong> in the <code>Databases</code>: each one is put in its database, and <code>Book.objects</code> queries it from then on.</li>
+        </ol>
+        <pre><code class="language-js">const { Databases, Model, fields } = require('@xufa/orm');
+
+class Session extends Model {
+  static fields = { token: fields.string() };
+  static options = { database: 'cache' }; // this model says where it goes
+}
 
 const dbs = new Databases(
-  { default: { backend: 'postgres', url: process.env.DATABASE_URL }, events: { backend: 'mongodb', url: process.env.EVENTS_URL } },
-  { routes: { Event: 'events' } }
+  {
+    // 1. The databases, by name.
+    default: { backend: 'postgres', url: process.env.DATABASE_URL },
+    events: { backend: 'mongodb', url: process.env.MONGO_URL, database: 'events' },
+    cache: { backend: 'memory' },
+  },
+  // 2. The exceptions.
+  { routes: { Event: 'events', AuditLog: 'events' } }
 );
-dbs.register(Author, Book, Event);
+dbs.register(Author, Book, Event, AuditLog, Session); // 3. Author and Book go to default
 await dbs.connect();
-await dbs.migrate({ dir: 'migrations' }); // migrations/default, migrations/events
+await dbs.migrate({ dir: 'migrations' }); // migrations/default, migrations/events, migrations/cache
+
+await Event.objects.create({ kind: 'login' }); // in MongoDB
+await Book.objects.filter({ author__name: 'Ada' }); // in PostgreSQL
 await dbs.transaction('default', async () =&gt; { /* ... */ });</code></pre>
+        <p>Where each model of that example goes:</p>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Model</th><th>Database</th><th>Because</th></tr></thead>
+            <tbody>
+              <tr><td><code>Author</code>, <code>Book</code></td><td><code>default</code> (PostgreSQL)</td><td>Nothing sends them elsewhere.</td></tr>
+              <tr><td><code>Event</code>, <code>AuditLog</code></td><td><code>events</code> (MongoDB)</td><td>Their route.</td></tr>
+              <tr><td><code>Session</code></td><td><code>cache</code> (memory)</td><td>Its option <code>database</code>.</td></tr>
+            </tbody>
+          </table>
+        </div>
         <p>
-          A model goes to the database of its option <code>database</code>, or of its route, or to the default one.
-          <code>Model.objects.using(db)</code> runs one QuerySet elsewhere. Relations between models of different
-          databases are followed with more queries; a query cannot join them.
+          The database of a model is, in this order: its option <code>database</code>; its route in <code>routes</code>;
+          the route <code>'*'</code> when there is one (a database for every model not named); and <code>default</code>
+          (another name with <code>new Databases(config, { defaultName: 'main' })</code>). A model sent to a database that
+          is not in the list is an error when the models are registered.
+        </p>
+        <p>
+          <code>Model.objects.using(db)</code> runs one QuerySet in another database. Relations between models of
+          different databases are followed with more queries (<code>prefetchRelated</code>, <code>load()</code>, the
+          reverse accessors), but a query cannot join them: with <code>Event</code> in MongoDB,
+          <code>Book.objects.filter({ events__kind: 'login' })</code> is an error. A foreign key to a model of another
+          database needs <code>dbConstraint: false</code>, as no database can check it, and a transaction is of one
+          database.
         </p>
 
         <h2 id="tenants">Tenants</h2>
+        <p>
+          With <code>Tenants</code>, each tenant (a customer, an organization) has its own data: <code>config(id)</code>
+          says where, and code run in a tenant uses its databases. The databases of a tenant are opened (and set up) the
+          first time it is used, and those of the last <code>max</code> tenants used are kept open. With the HTTP plugin,
+          each request runs in its tenant (see <a href="#http">With @xufa/http</a>).
+        </p>
+
+        <h3 id="tenant-database">One database per tenant</h3>
+        <p><code>config</code> gives the options of one database: every model of the tenant is in it.</p>
         <pre><code class="language-js">const { Tenants } = require('@xufa/orm');
 
 const tenants = new Tenants({
@@ -515,10 +684,59 @@ const tenants = new Tenants({
 });
 
 await tenants.run('acme', () =&gt; Book.objects.count()); // the books of acme</code></pre>
+
+        <h3 id="tenant-databases">Several databases in a tenant</h3>
         <p>
-          The database of a tenant is opened (and set up) the first time it is used. Code run in a tenant, including
-          what it awaits, uses its database. With the HTTP plugin, each request runs in its tenant (see
-          <a href="#http">With @xufa/http</a>).
+          A tenant can have several databases too, as in <a href="#databases">Several databases</a> above:
+          <code>config</code> gives <code>databases</code> (by name, one of them <code>default</code>) instead of the
+          options of one database, and the models go to them by the same rules. Routes can be given once for every tenant
+          (<code>routes</code> of <code>Tenants</code>), and changed for one tenant (<code>routes</code> in what
+          <code>config</code> gives).
+        </p>
+        <pre><code class="language-js">class Session extends Model {
+  static fields = { token: fields.string() };
+  static options = { database: 'cache' }; // in every tenant
+}
+
+const tenants = new Tenants({
+  models: [Author, Book, Event, AuditLog, Session],
+  routes: { Event: 'events', AuditLog: 'events' }, // for every tenant
+  config: async (id) =&gt; ({
+    databases: {
+      default: { backend: 'postgres', url: `postgres://app@db:5432/tenant_${id}` },
+      events: { backend: 'mongodb', url: 'mongodb://db:27017', database: `events_${id}` },
+      cache: { backend: 'memory' },
+    },
+    // Only for this tenant (optional): a small customer keeps its audit log in PostgreSQL.
+    routes: id === 'small' ? { AuditLog: 'default' } : {},
+  }),
+  setup: (db) =&gt; db.sync(), // db: the Databases of the tenant; each of its databases is set up
+});
+
+await tenants.run('acme', async () =&gt; {
+  await Event.objects.create({ kind: 'login' }); // MongoDB, database events_acme
+  await Session.objects.create({ token: 't' }); // memory
+  return Book.objects.filter({ author__name: 'Ada' }); // PostgreSQL, database tenant_acme
+});</code></pre>
+        <p>Where each model goes:</p>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Model</th><th>Tenant <code>acme</code></th><th>Tenant <code>small</code></th><th>Because</th></tr></thead>
+            <tbody>
+              <tr><td><code>Author</code>, <code>Book</code></td><td><code>default</code></td><td><code>default</code></td><td>Nothing sends them elsewhere.</td></tr>
+              <tr><td><code>Event</code></td><td><code>events</code></td><td><code>events</code></td><td>The route of every tenant.</td></tr>
+              <tr><td><code>AuditLog</code></td><td><code>events</code></td><td><code>default</code></td><td>The route of every tenant, changed by the route of <code>small</code>.</td></tr>
+              <tr><td><code>Session</code></td><td><code>cache</code></td><td><code>cache</code></td><td>Its option <code>database</code>, which comes before any route.</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p>
+          Every database a model is sent to must be in the <code>databases</code> of the tenant: a tenant without
+          <code>cache</code> fails when it is opened (<em>its database cache is not one of default, events</em>). A tenant
+          whose <code>config</code> gives one database (no <code>databases</code>) keeps every model in it, whatever the
+          routes, so <code>config</code> can give one database to some tenants and several to others. As with
+          <code>Databases</code>, a query cannot join models of two databases of a tenant, and relations between them are
+          followed with more queries.
         </p>
 
         <h2 id="cache">Caches</h2>
@@ -533,13 +751,34 @@ await tenants.run('acme', () =&gt; Book.objects.count()); // the books of acme</
             <thead><tr><th>Cache</th><th>Where</th></tr></thead>
             <tbody>
               <tr><td><code>MemoryCache({ max, ttl })</code></td><td>In the process: an LRU of <code>max</code> keys. The default.</td></tr>
-              <tr><td><code>SharedCache({ bus })</code></td><td>One copy in the primary of a <a href="packages.html#cluster">cluster</a>, asked by the workers.</td></tr>
+              <tr><td><code>SharedCache({ bus, store })</code></td><td>One copy in the primary of a <a href="cluster.html">cluster</a>, asked by the workers; <code>store</code> (in the primary): where it keeps them, a <code>MemoryCache</code> by default.</td></tr>
               <tr><td><code>LocalCache({ bus })</code></td><td>A copy in each process, with invalidations sent to the others: reads never leave the process.</td></tr>
+              <tr><td><code>NetCache</code> of <a href="netcache.html">@xufa/netcache</a></td><td>A copy in each machine, every write sent to the others: the cache of several machines. In a cluster, the store of the <code>SharedCache</code> of the primary (<code>new SharedCache({ bus, store })</code>).</td></tr>
             </tbody>
           </table>
         </div>
         <pre><code class="language-js">const { bus } = require('@xufa/cluster');
 const db = new Database({ backend: 'postgres', url, cache: new LocalCache({ bus, max: 50000 }) });</code></pre>
+        <h3>Cached querysets</h3>
+        <p>
+          <code>.cached({ ttl })</code> keeps the results of a queryset (objects, <code>values()</code>, <code>count()</code>,
+          <code>exists()</code>, <code>aggregate()</code>, <code>first()</code>...) until a model it reads is written: every
+          write to a model with the option <code>cache</code>, from anywhere in the app, gives it a new version, and results
+          are kept by the versions of the models they read (those of its conditions, orders and values too:
+          <code>writer__name</code> reads Writer). With a SharedCache or a NetCache the versions are shared, so a write in
+          one process is seen by all. Every model it reads needs the option <code>cache</code>. Inside transactions nothing
+          is read nor kept, and a commit gives its models new versions again. Objects with related ones are not kept:
+          cache their <code>values()</code>.
+        </p>
+        <pre><code class="language-js">const top = await Book.objects.filter({ author__country: 'ES' }).orderBy('-sales').limit(10).cached({ ttl: 60000 });</code></pre>
+        <h3>Functions</h3>
+        <p>
+          <code>orm.cached(fn, { key, ttl, cache, name })</code> keeps the results of a function of yours: the same
+          arguments (whatever the order of the keys of objects) give the result kept for <code>ttl</code> ms, calls made
+          while one runs wait for it, and errors are not kept. <code>fn.invalidate(...args)</code> and
+          <code>fn.clear()</code> forget them; a shared <code>cache</code> needs a <code>name</code>.
+        </p>
+        <pre><code class="language-js">const rates = orm.cached(async (currency) =&gt; fetchRates(currency), { ttl: 600000 });</code></pre>
 
         <h2 id="http">With @xufa/http</h2>
         <pre><code class="language-js">const orm = require('@xufa/orm');
@@ -553,6 +792,15 @@ app.register(orm.plugin, { database: db, migrate: { dir: 'migrations' } });
           and its <code>fields</code>, and <code>get()</code> of nothing with 404. With tenants, a request
           without one gets 400 (unless <code>required: false</code>), and one of a tenant that does not exist, 404.
         </p>
+        <p>
+          With <code>cancel: true</code>, the reads of a request stop when its client goes away (<code>request.signal</code>):
+          the queries that have not started throw (an <code>AbortError</code>), and PostgreSQL cancels the one that runs,
+          so the server stops working for nobody. Writes are not stopped (one the client did not wait for may still be
+          wanted), nor the statements of a transaction. Outside requests, <code>QuerySet.signal(signal)</code> and
+          <code>orm.withSignal(signal, fn)</code> do the same:
+        </p>
+        <pre><code class="language-js">const books = await Book.objects.filter({ pages__gte: 100 }).signal(AbortSignal.timeout(2000));
+await orm.withSignal(signal, async () =&gt; report());</code></pre>
 
         <h2 id="resources">Resources</h2>
         <p>
@@ -592,6 +840,7 @@ app.register(orm.resource(Author, { actions: ['list', 'get'] }), { prefix: '/aut
           <li><code>filters</code>, <code>ordering</code> and <code>search</code>: the query parameters lists take (others are a 400); <code>pageSize</code> (50), <code>maxPageSize</code> (500), <code>pagination: false</code>, <code>lookup</code> (the field of <code>/:id</code>).</li>
           <li><code>auth</code>: the rule of <a href="auth.html">@xufa/auth</a> for every action, or one by action. <code>hooks</code>: <code>beforeCreate</code>, <code>afterCreate</code>, <code>beforeUpdate</code>, <code>afterUpdate</code>, <code>beforeDelete</code>.</li>
           <li>Errors are answered with their status: 400 (with the messages of each field), 404, and 409 for duplicates and protected objects.</li>
+          <li><code>openapi</code>: with <a href="openapi.html">@xufa/openapi</a>, the routes are documented (operations, parameters, bodies from <code>Model.jsonSchema()</code>, responses, security): <code>{ tag }</code> names their tag, <code>false</code> leaves them out. Only documented: what they accept and answer does not change.</li>
         </ul>
 
         <h2 id="typescript">TypeScript</h2>
@@ -618,10 +867,12 @@ const books: Book[] = await Book.query().filter({ author__name: 'Ada' }); // boo
           <li>Unique fields allow many nulls (partial unique indexes in MongoDB).</li>
           <li>JSON values, arrays and maps are compared as wholes.</li>
           <li>A sum of no values is <code>null</code>; groups of a missing field and of a null are the same group.</li>
+          <li>Decimals are compared, ordered and summed as numbers, exactly (MongoDB keeps them as <code>Decimal128</code>); sums and averages are numbers.</li>
         </ul>
         <p>What differs, as it does between the databases:</p>
         <ul>
           <li>Transactions: MongoDB has them on replica sets and sharded clusters only, and has no savepoints.</li>
+          <li>Decimals in MongoDB have 34 digits at most (<code>Decimal128</code>): a decimal field with a larger <code>precision</code> is refused. Decimals written as strings by earlier versions of the ORM are read as they are but compared as text: <code>await db.migrateDecimals()</code> converts them in the server (the number of values, by model).</li>
           <li>Foreign keys are constraints in SQL; in MongoDB, a key can point to nothing.</li>
           <li>The order of strings is the collation of the database.</li>
           <li>Raw queries: <code>db.backend.raw(sql, params)</code> in SQL; <code>db.backend.db</code> is the <code>@xufa/mongo</code> database in MongoDB.</li>

@@ -6,7 +6,9 @@ const {
   needsRehash,
   KeySet,
   signJwt,
+  signJwtAsync,
   verifyJwt,
+  verifyJwtAsync,
   decodeJwt,
   TokenError,
   base32Encode,
@@ -93,6 +95,26 @@ describe('JSON Web Tokens', () => {
     }
   });
 
+  it('keeps the header and iat it is given, but not alg nor kid', () => {
+    const keys = new KeySet(secret);
+    expect(decodeJwt(signJwt({ a: 1 }, keys, { timestamp: false })).payload.iat).toBe(undefined);
+    expect(decodeJwt(signJwt({ a: 1, iat: 5 }, keys, { timestamp: false })).payload.iat).toBe(5);
+    const { header } = decodeJwt(signJwt({ a: 1 }, keys, { header: { alg: 'none', kid: 'evil', x: 'kept' } }));
+    expect(header).toEqual({ alg: 'HS256', typ: 'JWT', kid: 'default', x: 'kept' });
+  });
+
+  it('refuses tokens with critical extensions, and signs and verifies with EdDSA', () => {
+    const keys = new KeySet(secret);
+    const encode = (value) => Buffer.from(JSON.stringify(value)).toString('base64url');
+    const input = `${encode({ alg: 'HS256', typ: 'JWT', kid: 'default', crit: ['x'] })}.${encode({ a: 1 })}`;
+    const signature = crypto.createHmac('sha256', keys.get('default').secret).update(input).digest('base64url');
+    expect(() => verifyJwt(`${input}.${signature}`, keys)).toThrow('critical extensions');
+    const ed = new KeySet({ keys: { e1: crypto.generateKeyPairSync('ed25519').privateKey } });
+    const token = signJwt({ sub: '7' }, ed);
+    expect(decodeJwt(token).header.alg).toBe('EdDSA');
+    expect(verifyJwt(token, ed).sub).toBe('7');
+  });
+
   it('checks the times and the claims', () => {
     const keys = new KeySet(secret);
     const token = signJwt({ role: 'admin' }, keys, {
@@ -125,6 +147,26 @@ describe('JSON Web Tokens', () => {
     expect(reasonOf({ audience: 'mobile' })).toBe('audience');
     expect(reasonOf({ subject: '7' })).toBe('subject');
     expect(reasonOf({ maxAge: 5 })).toBe('maxAge');
+    expect(reasonOf({ maxAge: '10s' })).toBe('maxAge');
+    expect(reasonOf({ maxAge: '11s' })).toBe(null);
+    expect(reasonOf({ audience: [/^we/, 'mobile'], issuer: ['x', /^app$/], maxAge: '1m' })).toBe(null);
+  });
+
+  it('a RegExp audience does not take a token without aud, and maxAge: 0 is a limit', () => {
+    const keys = new KeySet(secret);
+    const token = signJwt({ sub: '1' }, keys, { now: 1000 });
+    const reasonOf = (options) => {
+      try {
+        verifyJwt(token, keys, { now: 1001, ...options });
+        return null;
+      } catch (err) {
+        return err.reason;
+      }
+    };
+    expect(reasonOf({ audience: /.*/ })).toBe('audience');
+    expect(reasonOf({ maxAge: 0 })).toBe('maxAge');
+    expect(reasonOf({ issuer: /.*/ })).toBe('issuer');
+    expect(reasonOf({})).toBe(null);
   });
 
   it('refuses tokens that choose their algorithm or are changed', () => {
@@ -240,5 +282,85 @@ describe('one-time codes', () => {
     expect(new Set(codes).size).toBe(8);
     for (const code of codes) expect(code).toMatch(/^[a-z2-7]{4}-[a-z2-7]{4}$/);
     expect(hashRecoveryCode(codes[0].toUpperCase().replace('-', ' '))).toBe(hashRecoveryCode(codes[0]));
+  });
+});
+
+describe('signJwtAsync and verifyJwtAsync', () => {
+  const rsa = crypto.generateKeyPairSync('rsa', { modulusLength: 2048 });
+  const ec = crypto.generateKeyPairSync('ec', { namedCurve: 'P-256' });
+  const secret = 'a secret of thirty-two bytes or more!';
+  const reasonOf = async (promise) => {
+    try {
+      await promise;
+      return null;
+    } catch (err) {
+      expect(err).toBeInstanceOf(TokenError);
+      return err.reason;
+    }
+  };
+
+  for (const [name, key] of [
+    ['RSA', rsa.privateKey],
+    ['EC', ec.privateKey],
+    ['HMAC', secret],
+  ]) {
+    it(`${name}: the same tokens and reasons as the sync ones`, async () => {
+      const keys = new KeySet(key);
+      const options = { expiresIn: '15m', issuer: 'app', audience: 'api', now: 1000 };
+      const token = await signJwtAsync({ sub: '42' }, keys, options);
+      expect(verifyJwt(token, keys, { now: 1010, issuer: 'app' }).sub).toBe('42');
+      expect((await verifyJwtAsync(signJwt({ sub: '7' }, keys, options), keys, { now: 1010 })).sub).toBe('7');
+      for (const verifyOptions of [
+        { now: 1900 },
+        { now: 1010, issuer: 'other' },
+        { now: 1010, audience: 'web' },
+        { now: 1010, subject: '7' },
+        { now: 1010, maxAge: 5 },
+        { now: 1010, algorithms: ['HS512'] },
+      ]) {
+        let syncReason = null;
+        try {
+          verifyJwt(token, keys, verifyOptions);
+        } catch (err) {
+          syncReason = err.reason;
+        }
+        expect(await reasonOf(verifyJwtAsync(token, keys, verifyOptions))).toBe(syncReason);
+        expect(syncReason).not.toBe(null);
+      }
+      expect(await reasonOf(verifyJwtAsync(`${token.slice(0, -6)}AAAAAA`, keys, { now: 1010 }))).toBe('signature');
+      expect(await reasonOf(verifyJwtAsync('not a token', keys))).toBe('malformed');
+    });
+  }
+
+  it('tries the keys that may have signed, as verifyJwt', async () => {
+    const other = crypto.generateKeyPairSync('ec', { namedCurve: 'P-256' });
+    const old = new KeySet({ current: 'a', keys: { a: other.privateKey } });
+    const token = await signJwtAsync({ sub: '1' }, old);
+    const rotated = new KeySet({ current: 'b', keys: { b: ec.privateKey, a: other.privateKey } });
+    expect((await verifyJwtAsync(token, rotated)).sub).toBe('1');
+    // Without a kid, every key of the algorithm is tried.
+    const noKid = new KeySet({ current: 'b', keys: { b: ec.privateKey } });
+    const elsewhere = signJwt({ sub: '2' }, new KeySet({ current: 'z', keys: { z: other.privateKey } }));
+    expect(await reasonOf(verifyJwtAsync(elsewhere, noKid))).toBe(
+      (() => {
+        try {
+          verifyJwt(elsewhere, noKid);
+          return null;
+        } catch (err) {
+          return err.reason;
+        }
+      })()
+    );
+  });
+});
+
+describe('KeySet with an encrypted private key', () => {
+  it('takes { key, passphrase }', () => {
+    const { privateKey } = crypto.generateKeyPairSync('ec', { namedCurve: 'P-256' });
+    const key = privateKey.export({ type: 'pkcs8', format: 'pem', cipher: 'aes-256-cbc', passphrase: 'pw' });
+    const keys = new KeySet({ keys: { k: { key, passphrase: 'pw' } } });
+    expect(verifyJwt(signJwt({ sub: '1' }, keys), keys).sub).toBe('1');
+    expect(() => new KeySet({ keys: { k: { key, passphrase: 'wrong' } } })).toThrow();
+    expect(() => new KeySet({ keys: { k: key } })).toThrow();
   });
 });

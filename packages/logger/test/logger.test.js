@@ -189,13 +189,43 @@ describe('child loggers', () => {
     expect(log.level).toBe('warn');
   });
 
-  it('keeps its level when the parent changes', () => {
+  it('follows the level of its parent, as in pino', () => {
     const out = sink();
     const log = createLogger(out);
     const child = log.child({ a: 1 });
+    log.level = 'debug';
+    expect(child.level).toBe('debug');
+    child.debug('raised');
     log.level = 'error';
-    child.info('still');
-    expect(out.last.msg).toBe('still');
+    expect(child.level).toBe('error');
+    expect(child.isLevelEnabled('info')).toBe(false);
+    child.info('lowered');
+    expect(out.all.map((line) => line.msg)).toEqual(['raised']);
+  });
+
+  it('keeps a level of its own, given or set, when the parent changes', () => {
+    const out = sink();
+    const log = createLogger(out);
+    const given = log.child({ a: 1 }, { level: 'debug' });
+    const set = log.child({ b: 2 });
+    set.level = 'warn';
+    log.level = 'error';
+    given.debug('given');
+    set.warn('set');
+    log.warn('parent');
+    expect(out.all.map((line) => line.msg)).toEqual(['given', 'set']);
+    expect(log.level).toBe('error');
+  });
+
+  it('children of children follow the root, and new children start at its level', () => {
+    const out = sink();
+    const log = createLogger(out);
+    const grandchild = log.child({ a: 1 }).child({ b: 2 });
+    log.level = 'debug';
+    grandchild.debug('deep');
+    log.level = 'warn';
+    log.child({ c: 3 }).info('new');
+    expect(out.all.map((line) => line.msg)).toEqual(['deep']);
   });
 
   it('adds serializers of its own', () => {
@@ -478,5 +508,164 @@ describe('pino compatibility', () => {
     expect(time).toMatch(/^,"time":"\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d\.\d{9}Z"$/);
     const parsed = Date.parse(JSON.parse(`{${time.slice(1)}}`).time);
     expect(Math.abs(parsed - Date.now())).toBeLessThan(1000);
+  });
+});
+
+describe('levels of child loggers', () => {
+  it('starts at the level of its parent, and each keeps its own after a change', () => {
+    const out = sink();
+    const log = createLogger({ level: 'warn' }, out);
+    const child = log.child({ a: 1 });
+    expect(child.level).toBe('warn');
+    expect(child.levelVal).toBe(40);
+    child.info('no');
+    expect(out.lines.length).toBe(0);
+    child.level = 'debug';
+    expect(log.level).toBe('warn');
+    child.debug('yes');
+    expect(out.last).toMatchObject({ a: 1, msg: 'yes', level: 20 });
+    log.level = 'error';
+    expect(child.level).toBe('debug');
+    expect(child.isLevelEnabled('debug')).toBe(true);
+    expect(log.isLevelEnabled('warn')).toBe(false);
+  });
+
+  it('takes the level of its options', () => {
+    const out = sink();
+    const log = createLogger(out);
+    const child = log.child({ a: 1 }, { level: 'error' });
+    expect(child.level).toBe('error');
+    expect(log.level).toBe('info');
+    child.warn('no');
+    log.warn('yes');
+    expect(out.all.map((line) => line.msg)).toEqual(['yes']);
+  });
+
+  it('children of children keep the bindings and the level', () => {
+    const out = sink();
+    const log = createLogger({ level: 'debug' }, out);
+    const grandchild = log.child({ a: 1 }).child({ b: 2 });
+    grandchild.debug('deep');
+    expect(out.last).toMatchObject({ a: 1, b: 2, msg: 'deep', level: 20 });
+    expect(grandchild.bindings()).toEqual({ a: 1, b: 2 });
+  });
+
+  it('applies the serializers to the bindings of a child', () => {
+    const out = sink();
+    const log = createLogger({ serializers: { user: (user) => user.id } }, out);
+    log.child({ user: { id: 7, secret: 'x' }, skipped: undefined }).info('hi');
+    expect(out.last).toMatchObject({ user: 7, msg: 'hi' });
+    expect(out.last).not.toHaveProperty('skipped');
+  });
+
+  it('replaces a level function set on a logger when its level changes', () => {
+    const out = sink();
+    const log = createLogger(out);
+    log.info = () => {};
+    log.level = 'debug';
+    log.info('written');
+    expect(out.last.msg).toBe('written');
+  });
+});
+
+describe('time and keys', () => {
+  it('writes the epoch time of each millisecond', () => {
+    const out = sink();
+    const log = createLogger(out);
+    const realNow = Date.now;
+    try {
+      for (const now of [1759660000000, 1759660000001, 1759660012345, 1759660999999, 1759661000000]) {
+        Date.now = () => now;
+        log.info('t');
+        expect(out.lines[out.lines.length - 1]).toContain(`"time":${now},`);
+      }
+    } finally {
+      Date.now = realNow;
+    }
+  });
+
+  it('writes the ISO time of each millisecond', () => {
+    const out = sink();
+    const log = createLogger({ timestamp: createLogger.stdTimeFunctions.isoTime }, out);
+    const realNow = Date.now;
+    try {
+      Date.now = () => 1759660012345;
+      log.info('a');
+      expect(out.last.time).toBe('2025-10-05T10:26:52.345Z');
+      Date.now = () => 1759660012346;
+      log.info('b');
+      expect(out.last.time).toBe('2025-10-05T10:26:52.346Z');
+    } finally {
+      Date.now = realNow;
+    }
+  });
+
+  it('escapes keys and short and long messages as JSON', () => {
+    const out = sink();
+    const log = createLogger(out);
+    const long = `${'x'.repeat(100)}"\n`;
+    log.info({ 'a"b': 1, 'new\nline': 2, 'émoji 😀': 3 }, 'say "hi"\t');
+    expect(out.last).toMatchObject({ 'a"b': 1, 'new\nline': 2, 'émoji 😀': 3, msg: 'say "hi"\t' });
+    log.info(long);
+    expect(out.last.msg).toBe(long);
+    log.info('lone \ud800 surrogate');
+    expect(out.lines[out.lines.length - 1]).toContain(String.raw`lone \ud800 surrogate`);
+  });
+});
+
+describe('formatters of child loggers', () => {
+  // The raw line: duplicated keys show, which JSON.parse would hide.
+  const raw = (out) => out.lines[out.lines.length - 1].replace(/"time":\d+,"pid":\d+,"hostname":"[^"]*",/, '').trim();
+  const rootOptions = {
+    formatters: { bindings: (b) => ({ ...b, rootB: true }), log: (o) => ({ ...o, rootLog: true }) },
+  };
+
+  it('formats the bindings of a logger with its own formatter only', () => {
+    const out = sink();
+    const log = createLogger(rootOptions, out);
+    log.child({ a: 1 }).info('plain');
+    expect(raw(out)).toBe('{"level":30,"rootB":true,"a":1,"rootLog":true,"msg":"plain"}');
+    const child = log.child({ c: 3 }, { formatters: { bindings: (b) => ({ ...b, childB: true }) } });
+    child.info('own');
+    expect(raw(out)).toBe('{"level":30,"rootB":true,"c":3,"childB":true,"rootLog":true,"msg":"own"}');
+    child.setBindings({ d: 4 });
+    child.child({ g: 7 }).info('grandchild');
+    expect(raw(out)).toBe(
+      '{"level":30,"rootB":true,"c":3,"childB":true,"d":4,"childB":true,"g":7,"rootLog":true,"msg":"grandchild"}'
+    );
+  });
+
+  it('replaces the log formatter of its parent, for its children too', () => {
+    const out = sink();
+    const log = createLogger(rootOptions, out);
+    const child = log.child({ e: 5 }, { formatters: { log: (o) => ({ ...o, childLog: true }) } });
+    child.info({ x: 1 }, 'child');
+    expect(raw(out)).toBe('{"level":30,"rootB":true,"e":5,"x":1,"childLog":true,"msg":"child"}');
+    child.child({ f: 6 }).info('grandchild');
+    expect(out.last).toMatchObject({ childLog: true, f: 6 });
+    expect(out.last).not.toHaveProperty('rootLog');
+    log.info('root');
+    expect(out.last).toMatchObject({ rootLog: true });
+  });
+
+  it('adds formatters to a logger that had none, and keeps the level of the parent', () => {
+    const out = sink();
+    const log = createLogger(out);
+    const child = log.child({ a: 1 }, { formatters: { log: (o) => ({ ...o, tagged: true }) }, redact: ['secret'] });
+    child.info({ secret: 'x' }, 'hi');
+    expect(out.last).toMatchObject({ a: 1, tagged: true, secret: '[Redacted]', msg: 'hi' });
+    log.level = 'warn';
+    child.info('no');
+    expect(out.last.msg).toBe('hi');
+    log.info('no');
+    expect(out.lines.length).toBe(1);
+  });
+
+  it('keeps the level formatter of the parent, as pino', () => {
+    const out = sink();
+    const log = createLogger(out);
+    log.child({ a: 1 }, { formatters: { level: (label) => ({ lvl: label }) } }).info('x');
+    expect(out.last.level).toBe(30);
+    expect(out.last).not.toHaveProperty('lvl');
   });
 });

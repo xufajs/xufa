@@ -13,6 +13,7 @@ const {
 const { normalizeSchema } = require('./schemas');
 const { parseHeadOnSendHandlers } = require('./head-route');
 const { defaultInitOptions } = require('./config');
+const { onClientGone } = require('./request');
 const { compileSchemasForValidation, compileSchemasForSerialization } = require('./validation');
 const {
   XUFA_ERR_SCH_VALIDATION_BUILD,
@@ -457,8 +458,7 @@ function buildRouting(options) {
         if (!controller.signal.aborted) controller.abort();
         clearTimeout(request[kTimeoutTimer]);
       };
-      req.on('close', onAbort);
-      request[kOnAbort] = onAbort;
+      request[kOnAbort] = onClientGone(request, onAbort);
     }
 
     if (hasLogger === true || context.onResponse !== null || handlerTimeout > 0) setupResponseListeners(reply);

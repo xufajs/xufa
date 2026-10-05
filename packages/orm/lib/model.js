@@ -69,7 +69,11 @@ class Model {
       if (meta.manyToManyRelation(keys[i])) {
         throw new QueryError(`${keys[i]} is a many-to-many relation: set it after saving (with ${keys[i]}.set())`);
       }
-      if (!meta.field(keys[i]) || keys[i] === 'pk') throw new FieldError(keys[i], meta.name);
+      const given = meta.field(keys[i]) || meta.computedField(keys[i]);
+      if (given && given.computed !== null) {
+        throw new QueryError(`${keys[i]} is computed: it is not given, the ORM computes it`);
+      }
+      if (!given || keys[i] === 'pk') throw new FieldError(keys[i], meta.name);
     }
     for (let i = 0; i < meta.fields.length; i += 1) {
       const field = meta.fields[i];
@@ -93,8 +97,12 @@ class Model {
   // The database of the model: that of the tenant of the code running when the model is in it, or the one it was
   // registered in first.
   static get db() {
+    // In a tenant: its database (or, when the tenant has several, the one of the model).
     const tenant = currentDatabase();
-    if (tenant && tenant.models.get(this.name) === this) return tenant;
+    if (tenant) {
+      const database = tenant.databaseOf ? tenant.databaseOf(this) : tenant;
+      if (database && database.models.get(this.name) === this) return database;
+    }
     const { db } = this.meta;
     if (!db) throw new NotRegisteredError(this.name);
     return db;
@@ -139,12 +147,16 @@ class Model {
   static jsonSchema({ exclude = [], partial = false } = {}) {
     const properties = {};
     const required = [];
-    this.meta.fields.forEach((field) => {
+    [...this.meta.fields, ...this.meta.computedMap.values()].forEach((field) => {
       if (exclude.includes(field.name) || exclude.includes(field.attname)) return;
-      const schema = field.jsonSchema();
+      let schema = field.jsonSchema();
       if (field.choices) schema.enum = field.choices;
-      properties[field.attname] = field.null ? { ...schema, nullable: true } : schema;
-      if (!partial && !field.null && !field.auto && !field.hasDefault()) required.push(field.attname);
+      if (field.null) schema = { ...schema, nullable: true };
+      // Computed fields are in the objects, never in what is given.
+      if (field.computed !== null) schema = { ...schema, readOnly: true };
+      properties[field.attname] = schema;
+      const given = !field.null && !field.auto && !field.hasDefault() && field.computed === null;
+      if (!partial && given) required.push(field.attname);
     });
     const schema = { type: 'object', properties };
     if (required.length) schema.required = required;
@@ -185,6 +197,7 @@ class Model {
     const errors = {};
     for (let i = 0; i < meta.fields.length; i += 1) {
       const field = meta.fields[i];
+      if (field.stored) continue; // computed below, from the values cleaned
       let value;
       try {
         value = field.clean(this[field.attname]);
@@ -196,16 +209,43 @@ class Model {
       const messages = field.check(value);
       if (messages.length) errors[field.name] = messages;
     }
+    for (let i = 0; i < meta.storedComputed.length; i += 1) {
+      const field = meta.storedComputed[i];
+      let value;
+      try {
+        value = field.clean(field.compute(this));
+      } catch (err) {
+        errors[field.name] = [err.message];
+        continue;
+      }
+      this[field.attname] = value;
+      const messages = field.check(value);
+      if (messages.length) errors[field.name] = messages;
+    }
+    // The rules of the model, on an object whose fields are valid (as Django's clean() after clean_fields()). A rule
+    // that throws is a mistake of the rule, not of the object: the error goes up as it is.
+    if (meta.rules.length && Object.keys(errors).length === 0) {
+      for (let i = 0; i < meta.rules.length; i += 1) {
+        const { check, field } = meta.rules[i];
+        const message = check(this);
+        if (message !== null) (errors[field] || (errors[field] = [])).push(message);
+      }
+    }
     if (Object.keys(errors).length) throw ValidationError(meta.name, errors);
   }
 
-  // Sets the dates of autoNow and autoNowAdd fields before a save.
+  // Sets the dates of autoNow and autoNowAdd fields before a save, and the values of the stored computed fields
+  // (validate() computes them again from the values it cleans).
   prepareSave(adding) {
-    const { fields } = this.constructor.meta;
+    const { fields, storedComputed } = this.constructor.meta;
     const now = new Date();
     for (let i = 0; i < fields.length; i += 1) {
       const field = fields[i];
       if (field.autoNow || (adding && field.autoNowAdd && this[field.attname] === null)) this[field.attname] = now;
+    }
+    for (let i = 0; i < storedComputed.length; i += 1) {
+      const field = storedComputed[i];
+      this[field.attname] = field.compute(this);
     }
   }
 
@@ -243,7 +283,10 @@ class Model {
       let saved = meta.fields.filter((field) => !field.primaryKey);
       if (fields) {
         const names = new Set(fields);
-        saved = saved.filter((field) => names.has(field.name) || names.has(field.attname) || field.autoNow);
+        // Stored computed fields too: they follow the fields saved.
+        saved = saved.filter(
+          (field) => names.has(field.name) || names.has(field.attname) || field.autoNow || field.stored
+        );
       }
       const assignments = saved.map((field) => ({ field, value: this[field.attname] }));
       if (assignments.length) {
@@ -309,6 +352,9 @@ class Model {
     const json = {};
     meta.fields.forEach((field) => {
       json[field.attname] = this[field.attname];
+    });
+    meta.computedMap.forEach((field, name) => {
+      json[name] = this[name];
     });
     this[STATE].related.forEach((value, name) => {
       json[name] = Array.isArray(value) ? value.map((item) => item.toJSON()) : value.toJSON();

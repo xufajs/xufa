@@ -264,7 +264,10 @@ function defineSuite(name, makeDatabase) {
         expect(await Publisher.objects.filter({ name: 'Unique' }).count()).toBe(1);
         // Updates and saves too, and duplicate primary keys.
         const other = await Publisher.objects.create({ name: 'Other' });
-        const updated = await Publisher.objects.filter({ pk: other.pk }).update({ name: 'Unique' }).catch((e) => e);
+        const updated = await Publisher.objects
+          .filter({ pk: other.pk })
+          .update({ name: 'Unique' })
+          .catch((e) => e);
         expect(updated).toMatchObject({ code: 'XUFA_ORM_ERR_UNIQUE', fields: ['name'] });
         other.name = 'Unique';
         expect((await other.save().catch((e) => e)).fields).toEqual(['name']);
@@ -404,7 +407,10 @@ function defineSuite(name, makeDatabase) {
       it('gives bigints in the mode of their field', async () => {
         const { Tally } = models;
         const huge = '9007199254740993';
-        await Tally.objects.bulkCreate([{ auto: 5, big: 5, text: 5 }, { auto: huge, big: huge, text: huge }]);
+        await Tally.objects.bulkCreate([
+          { auto: 5, big: 5, text: 5 },
+          { auto: huge, big: huge, text: huge },
+        ]);
         const rows = await Tally.objects.orderBy('pk');
         expect(rows.map((row) => [row.auto, row.big, row.text])).toEqual([
           [5, 5n, '5'],
@@ -434,7 +440,12 @@ function defineSuite(name, makeDatabase) {
         expect(await names(jsonPath('data', ['list', 1], 20))).toEqual(['a']);
         expect(await names(jsonPath('data', ["it's"], true))).toEqual(['a']);
         expect(await names(jsonPath('data', ['gt'], true, 'isnull'))).toEqual(['b']);
-        expect(await Document.objects.exclude(jsonPath('data', ['in'], 1)).filter({ name__in: ['a', 'b'] }).count()).toBe(1);
+        expect(
+          await Document.objects
+            .exclude(jsonPath('data', ['in'], 1))
+            .filter({ name__in: ['a', 'b'] })
+            .count()
+        ).toBe(1);
         expect(() => jsonPath('data', ['list', 2 ** 31], 1)).toThrow(QueryError);
         expect(() => jsonPath('data', [], 1)).toThrow(QueryError);
         expect(() => Document.objects.filter(jsonPath('name', ['x'], 1))).toThrow('is not a json field');
@@ -1754,7 +1765,10 @@ function defineSuite(name, makeDatabase) {
       const deleted = await db.expire({ now: at('2026-10-04T10:00:00Z') });
       expect(deleted).toEqual({ Log: 1, Session: 1 });
       expect((await Log.objects.values('message')).map((row) => row.message)).toEqual(['recent']);
-      expect((await Session.objects.orderBy('token').values('token')).map((row) => row.token)).toEqual(['b', 'forever']);
+      expect((await Session.objects.orderBy('token').values('token')).map((row) => row.token)).toEqual([
+        'b',
+        'forever',
+      ]);
       // Deleted as QuerySets delete: their relations as onDelete says.
       expect(await Visit.objects.count()).toBe(0);
     });
@@ -1969,6 +1983,196 @@ function defineSuite(name, makeDatabase) {
         setEncryptionKeys({ keys: { k1: KEY1 } });
         await expect(Secret.objects.get({ pk: ada.pk })).rejects.toThrow('not in the keyring');
       }
+    });
+  });
+
+  describe(`${name} backend: decimals`, () => {
+    let db;
+    let Price;
+
+    beforeAll(async () => {
+      Price = class Price extends Model {
+        static fields = { amount: fields.decimal({ precision: 12, scale: 2 }) };
+
+        static options = { table: 'dec_price' };
+      };
+      db = makeDatabase();
+      db.register(Price);
+      await db.connect();
+      await db.drop();
+      await db.sync();
+      await Price.objects.bulkCreate(['6', '100.5', '20', '-3.25', '0.75'].map((amount) => ({ amount })));
+    });
+
+    afterAll(async () => {
+      if (db) {
+        await db.drop();
+        await db.close();
+      }
+    });
+
+    it('compares, orders and sums them as numbers', async () => {
+      const amounts = async (query) => (await query).map((price) => Number(price.amount));
+      expect(await amounts(Price.objects.filter({ amount__gt: '10' }).orderBy('amount'))).toEqual([20, 100.5]);
+      expect(await amounts(Price.objects.filter({ amount__range: ['0.5', '20'] }).orderBy('amount'))).toEqual([
+        0.75, 6, 20,
+      ]);
+      expect(await amounts(Price.objects.orderBy('-amount'))).toEqual([100.5, 20, 6, 0.75, -3.25]);
+      expect(await amounts(Price.objects.filter({ amount: '20.00' }))).toEqual([20]);
+      const totals = await Price.objects.aggregate({ sum: Sum('amount'), min: Min('amount'), max: Max('amount') });
+      expect([Number(totals.sum), Number(totals.min), Number(totals.max)]).toEqual([124, -3.25, 100.5]);
+    });
+  });
+
+  describe(`${name} backend: computed fields`, () => {
+    let db;
+    let Line;
+    let RawLine;
+
+    beforeAll(async () => {
+      Line = class Line extends Model {
+        static fields = {
+          product: fields.string({ maxLength: 50 }),
+          price: fields.decimal({ precision: 10, scale: 2 }),
+          quantity: fields.integer(),
+          discount: fields.integer({ default: 0 }),
+          // Stored: a column, set by the ORM.
+          total: fields.decimal({
+            precision: 12,
+            scale: 2,
+            computed: 'price * quantity * (100 - discount) / 100',
+            stored: true,
+          }),
+          // Stored, from a function: what it reads is given.
+          code: fields.string({
+            maxLength: 60,
+            computed: (line) => `${line.product.toUpperCase()}-${line.quantity}`,
+            uses: ['product', 'quantity'],
+            stored: true,
+          }),
+          // Not stored: computed when read, from a stored one too.
+          label: fields.string({ computed: '`${quantity} x ${product} = ${total}`' }),
+          big: fields.boolean({ computed: 'Number(total) >= 100' }),
+        };
+
+        static options = { table: 'computed_line' };
+      };
+      RawLine = class RawLine extends Model {
+        static fields = {
+          product: fields.string({ maxLength: 50 }),
+          price: fields.decimal({ precision: 10, scale: 2 }),
+          quantity: fields.integer(),
+          discount: fields.integer({ default: 0 }),
+          total: fields.decimal({ precision: 12, scale: 2 }),
+          code: fields.string({ maxLength: 60 }),
+        };
+
+        static options = { table: 'computed_line' };
+      };
+      db = makeDatabase();
+      db.register(Line);
+      await db.connect();
+      await db.drop();
+      await db.sync();
+      db.register(RawLine);
+    });
+
+    afterAll(async () => {
+      if (db) {
+        await db.drop();
+        await db.close();
+      }
+    });
+
+    beforeEach(async () => {
+      await Line.objects.delete();
+    });
+
+    // Decimals as numbers: SQLite gives them back without their zeros (6 for 6.00).
+    const num = (value) => (value === null ? null : Number(value));
+
+    it('sets stored fields on create, bulkCreate and save, from the values cleaned', async () => {
+      const pen = await Line.objects.create({ product: 'pen', price: '2.50', quantity: '4' });
+      expect([pen.total, pen.code, pen.label, pen.big]).toEqual(['10.00', 'PEN-4', '4 x pen = 10.00', false]);
+      await Line.objects.bulkCreate([
+        { product: 'desk', price: '120', quantity: 1, discount: 10 },
+        { product: 'cup', price: '0.10', quantity: 3 },
+      ]);
+      const saved = await Line.objects.orderBy('product');
+      expect(saved.map((line) => [line.product, num(line.total), line.code])).toEqual([
+        ['cup', 0.3, 'CUP-3'],
+        ['desk', 108, 'DESK-1'],
+        ['pen', 10, 'PEN-4'],
+      ]);
+      pen.quantity = 50;
+      await pen.save({ fields: ['quantity'] });
+      const again = await Line.objects.get({ pk: pen.pk });
+      expect([num(again.total), again.code, again.big]).toEqual([125, 'PEN-50', true]);
+      expect(again.toJSON()).toMatchObject({ code: 'PEN-50', big: true });
+      expect(num(again.toJSON().total)).toBe(125);
+    });
+
+    it('filters, orders and aggregates by stored fields', async () => {
+      await Line.objects.bulkCreate([
+        { product: 'desk', price: '120', quantity: 1 },
+        { product: 'cup', price: '3', quantity: 2 },
+        { product: 'pen', price: '2.5', quantity: 4 },
+      ]);
+      const products = (lines) => lines.map((line) => line.product);
+      expect(products(await Line.objects.filter({ code: 'CUP-2' }))).toEqual(['cup']);
+      expect(products(await Line.objects.filter({ total__gt: '9' }).orderBy('-total'))).toEqual(['desk', 'pen']);
+      expect(Number((await Line.objects.aggregate({ sum: Sum('total') })).sum)).toBe(136);
+    });
+
+    it('sets stored fields again when an update changes what they read', async () => {
+      await Line.objects.bulkCreate([
+        { product: 'desk', price: '120', quantity: 1 },
+        { product: 'cup', price: '3', quantity: 2 },
+        { product: 'pen', price: '2.5', quantity: 4 },
+      ]);
+      // The update moves the objects out of what its conditions select: they are still computed again.
+      expect(await Line.objects.filter({ quantity__gt: 1 }).update({ quantity: 1 })).toBe(2);
+      let lines = await Line.objects.orderBy('product');
+      expect(lines.map((line) => [line.product, num(line.total), line.code])).toEqual([
+        ['cup', 3, 'CUP-1'],
+        ['desk', 120, 'DESK-1'],
+        ['pen', 2.5, 'PEN-1'],
+      ]);
+      // F expressions too.
+      await Line.objects.filter({ product: 'desk' }).update({ discount: F('discount').add(50) });
+      expect(num((await Line.objects.get({ product: 'desk' })).total)).toBe(60);
+      // A field read by the code only.
+      await Line.objects.filter({ product: 'cup' }).update({ product: 'mug' });
+      lines = await Line.objects.orderBy('product');
+      expect(lines.map((line) => line.code)).toEqual(['DESK-1', 'MUG-1', 'PEN-1']);
+    });
+
+    it('computes again what was changed outside the ORM (recompute)', async () => {
+      await Line.objects.bulkCreate([
+        { product: 'desk', price: '120', quantity: 1 },
+        { product: 'cup', price: '3', quantity: 2 },
+      ]);
+      await RawLine.objects.filter({ product: 'cup' }).update({ quantity: 7 });
+      expect(num((await Line.objects.get({ product: 'cup' })).total)).toBe(6);
+      expect(await Line.objects.recompute()).toBe(1);
+      const cup = await Line.objects.get({ product: 'cup' });
+      expect([num(cup.total), cup.code]).toEqual([21, 'CUP-7']);
+      expect(await Line.objects.recompute()).toBe(0);
+    });
+
+    it('refuses to set computed fields or to query those not stored', async () => {
+      expect(() => new Line({ product: 'x', price: '1', quantity: 1, total: '5' })).toThrow(QueryError);
+      const line = await Line.objects.create({ product: 'x', price: '1', quantity: 1 });
+      expect(() => {
+        line.label = 'other';
+      }).toThrow(TypeError);
+      await expect(Line.objects.update({ total: '1' })).rejects.toThrow(QueryError);
+      expect(() => Line.objects.filter({ label: 'x' }).toQuery()).toThrow(QueryError);
+      expect(() => Line.objects.orderBy('big').toQuery()).toThrow(QueryError);
+      const schema = Line.jsonSchema();
+      expect(schema.properties.total.readOnly).toBe(true);
+      expect(schema.properties.label.readOnly).toBe(true);
+      expect(schema.required).toEqual(['product', 'price', 'quantity']);
     });
   });
 }

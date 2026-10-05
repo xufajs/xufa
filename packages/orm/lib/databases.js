@@ -34,6 +34,23 @@ class Databases {
     return options.database || this.routes[model.name] || this.routes['*'] || this.defaultName;
   }
 
+  // The database a model is registered in (or null): in tenants with several databases, the one of the tenant.
+  databaseOf(model) {
+    const database = this.databases.get(this.route(model));
+    if (database && database.models.get(model.name) === model) return database;
+    // Models registered where their route does not say (the through models of many-to-many relations, in the
+    // database of their relation).
+    for (const other of this.databases.values()) if (other.models.get(model.name) === model) return other;
+    return null;
+  }
+
+  // The models of every database (by name), as Database.models gives them.
+  get models() {
+    const models = new Map();
+    this.databases.forEach((database) => database.models.forEach((model, name) => models.set(name, model)));
+    return models;
+  }
+
   register(...models) {
     const groups = new Map();
     models.forEach((model) => {
@@ -41,7 +58,15 @@ class Databases {
       if (!groups.has(name)) groups.set(name, []);
       groups.get(name).push(model);
     });
-    groups.forEach((group, name) => this.get(name).register(...group));
+    groups.forEach((group, name) => {
+      if (!this.databases.has(name)) {
+        throw new ModelError(
+          group[0].name,
+          `its database ${name} is not one of ${[...this.databases.keys()].join(', ')}`
+        );
+      }
+      this.get(name).register(...group);
+    });
     return this;
   }
 

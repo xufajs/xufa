@@ -1,0 +1,237 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>@xufa/cluster · xufa</title>
+    <meta
+      name="description"
+      content="@xufa/cluster: an app in a cluster of processes, workers forked again when they die, graceful shutdown, and a bus of events and requests between the processes. No dependencies."
+    />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%23d9502b'/%3E%3Ctext x='16' y='22.5' font-family='monospace' font-size='18' font-weight='700' fill='white' text-anchor='middle'%3Ex%3C/text%3E%3C/svg%3E"
+    />
+    <link rel="stylesheet" href="style.css?v=0.1.0" />
+    <script src="main.js?v=0.1.0"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js" defer></script>
+  </head>
+  <body>
+    <header class="header">
+      <div class="header-inner">
+        <a class="logo" href="./"><span class="logo-mark">x</span>xufa</a>
+        <nav class="nav">
+          <a href="guide.html">Guide</a>
+          <a href="http.html">HTTP</a>
+          <a href="orm.html">ORM</a>
+          <a class="hide-small" href="auth.html">Auth</a>
+          <a class="hide-small" href="sequelize.html">Sequelize</a>
+          <a class="hide-small" href="packages.html" aria-current="page">Packages</a>
+          <a class="hide-small" href="benchmarks.html">Benchmarks</a>
+          <a href="https://github.com/xufajs/xufa">GitHub</a>
+          <button class="theme-toggle" type="button" aria-label="Switch between light and dark theme">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+              <path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z" />
+            </svg>
+          </button>
+        </nav>
+      </div>
+    </header>
+
+    <div class="docs">
+      <button class="menu-toggle" type="button" aria-expanded="false">☰ Contents</button>
+      <aside class="sidebar">
+        <h4>Using it</h4>
+        <ul>
+          <li><a href="#start">Quick start</a></li>
+          <li><a href="#how">How it runs</a></li>
+          <li><a href="#options">Options of start</a></li>
+          <li><a href="#context">The context</a></li>
+        </ul>
+        <h4>Stopping</h4>
+        <ul>
+          <li><a href="#shutdown">Graceful shutdown</a></li>
+          <li><a href="#restarts">Workers that die</a></li>
+        </ul>
+        <h4>The bus</h4>
+        <ul>
+          <li><a href="#bus">Events and requests</a></li>
+          <li><a href="#bus-api">API of the bus</a></li>
+          <li><a href="#single">In one process</a></li>
+        </ul>
+        <h4>With xufa</h4>
+        <ul>
+          <li><a href="#shared">Shared state</a></li>
+        </ul>
+        <h4>Packages</h4>
+        <ul>
+          <li><a href="websocket.html">@xufa/websocket</a></li>
+          <li><a href="openapi.html">@xufa/openapi</a></li>
+          <li><a href="client.html">@xufa/client</a></li>
+          <li><a href="pg.html">@xufa/pg</a></li>
+          <li><a href="mongo.html">@xufa/mongo</a></li>
+          <li><a href="expression.html">@xufa/expression</a></li>
+          <li><a href="template.html">@xufa/template</a></li>
+          <li><a href="cluster.html" aria-current="page">@xufa/cluster</a></li>
+          <li><a href="discovery.html">@xufa/discovery</a></li>
+          <li><a href="netcache.html">@xufa/netcache</a></li>
+          <li><a href="marshal.html">@xufa/marshal</a></li>
+          <li><a href="yaml.html">@xufa/yaml</a></li>
+          <li><a href="jwt.html">@xufa/jwt</a></li>
+          <li><a href="logger.html">@xufa/logger</a></li>
+          <li><a href="router.html">@xufa/router</a></li>
+          <li><a href="serializer.html">@xufa/serializer</a></li>
+          <li><a href="inject.html">@xufa/inject</a></li>
+          <li><a href="boot.html">@xufa/boot</a></li>
+          <li><a href="errors.html">@xufa/errors</a></li>
+          <li><a href="packages.html">All the packages</a></li>
+        </ul>
+      </aside>
+
+      <article class="content">
+<h1>@xufa/cluster</h1>
+        <p class="intro">
+          Runs an app in a cluster of processes, one by CPU, so it uses every core: the primary forks the workers, forks
+          again those that die, and stops them all gracefully. A bus carries events and requests between the processes,
+          so a worker can ask the primary for what only it keeps (counters, caches, locks), and the same code runs in
+          one process in development and tests. No dependencies.
+        </p>
+
+        <h2 id="start">Quick start</h2>
+        <pre><code class="language-sh">npm install @xufa/cluster</code></pre>
+        <pre><code class="language-js">const { start, bus } = require('@xufa/cluster');
+const xufa = require('xufa');
+
+start({
+  workers: 4, // os.availableParallelism() by default; 0 runs everything in one process
+  primary: async ({ bus }) =&gt; {
+    const counts = new Map();
+    bus.on('hit', (path) =&gt; counts.set(path, (counts.get(path) || 0) + 1));
+    bus.on('hits', () =&gt; Object.fromEntries(counts)); // a request: its result is the reply
+  },
+  worker: async ({ id, onShutdown }) =&gt; {
+    const app = xufa();
+    app.addHook('onRequest', async (request) =&gt; bus.send('hit', request.url));
+    app.get('/stats', () =&gt; bus.request('hits'));
+    await app.listen({ port: 3000 }); // every worker listens on the same port
+    onShutdown(() =&gt; app.close());
+  },
+});</code></pre>
+
+        <h2 id="how">How it runs</h2>
+        <p>
+          The same file runs in every process. In the primary, <code>start()</code> runs <code>primary</code> and forks
+          the workers; in each worker, it runs <code>worker</code>. Workers listening on the same port share it (Node.js
+          gives each connection to one of them). With <code>workers: 0</code> there is one process, which runs both
+          functions: the bus delivers its messages in that process, so nothing else changes.
+        </p>
+
+        <h2 id="options">Options of start</h2>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Option</th><th>Default</th><th>What it does</th></tr></thead>
+            <tbody>
+              <tr><td><code>workers</code></td><td><code>os.availableParallelism()</code></td><td>How many workers; <code>0</code> (or <code>false</code>): one process.</td></tr>
+              <tr><td><code>primary(context)</code></td><td></td><td>Runs in the primary, before the workers are forked: handlers of the bus, what the primary keeps.</td></tr>
+              <tr><td><code>worker(context)</code></td><td></td><td>Runs in each worker: the app.</td></tr>
+              <tr><td><code>shutdownTimeout</code></td><td><code>10000</code></td><td>Milliseconds a worker has to stop before it is killed.</td></tr>
+              <tr><td><code>restart</code></td><td><code>true</code></td><td>Workers that die are forked again.</td></tr>
+              <tr><td><code>onWorkerExit({ id, code, signal, delay })</code></td><td></td><td>Called when a worker dies (and how long until the next).</td></tr>
+              <tr><td><code>signals</code></td><td><code>true</code></td><td><code>SIGINT</code> and <code>SIGTERM</code> stop the cluster; <code>false</code> leaves them to you.</td></tr>
+              <tr><td><code>env</code>, <code>exec</code></td><td></td><td>Variables of the workers; another file for them.</td></tr>
+              <tr><td><code>marshal</code></td><td></td><td><code>true</code> or a Registry of <a href="marshal.html">@xufa/marshal</a>: the data of the bus keeps its classes, and errors thrown by the handlers of requests arrive as their class.</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h2 id="context">The context</h2>
+        <p>
+          <code>primary</code> and <code>worker</code> get <code>{ bus, id, isPrimary, isWorker, onShutdown }</code>:
+          <code>id</code> is the id of the worker (0 in the primary). The module also gives <code>isPrimary</code> and
+          <code>isWorker</code>, and <code>stop()</code>.
+        </p>
+
+        <h2 id="shutdown">Graceful shutdown</h2>
+        <p>
+          <code>stop()</code>, <code>SIGINT</code> or <code>SIGTERM</code> (Ctrl+C, a container stopping) stop the
+          cluster: the primary asks every worker to stop; each runs its shutdown functions
+          (<code>onShutdown(fn)</code>, in reverse order of registration: close the server first, then the database)
+          and exits; those that do not exit in <code>shutdownTimeout</code> are killed; then the primary runs its own.
+        </p>
+        <pre><code class="language-js">worker: async ({ onShutdown }) =&gt; {
+  const db = await new Database(config).connect();
+  onShutdown(() =&gt; db.close()); // runs second
+  const app = makeApp(db);
+  await app.listen({ port: 3000 });
+  onShutdown(() =&gt; app.close()); // runs first: no new requests, the ones in flight end
+};</code></pre>
+
+        <h2 id="restarts">Workers that die</h2>
+        <p>
+          A worker that dies is forked again. One that dies soon after it started (in less than 5 seconds) was failing,
+          so the next waits: half a second, then twice as long each time, up to 30 seconds, so a broken deploy does not
+          fork thousands of processes. <code>onWorkerExit</code> tells you each time.
+        </p>
+
+        <h2 id="bus">Events and requests</h2>
+        <pre><code class="language-js">// In the primary: handlers. Their result (or the promise of it) is the reply of a request.
+bus.on('lock', async ({ key }, worker) =&gt; locks.acquire(key, worker.id));
+
+// In a worker:
+bus.send('hit', '/books'); // an event to the primary
+const granted = await bus.request('lock', { key: 'report' }, { timeout: 5000 }); // a request and its reply
+bus.broadcast('invalidate', { model: 'Book' }, { others: true }); // to every other worker, through the primary
+
+// In the primary:
+bus.sendTo(3, 'reload', {}); // to worker 3
+bus.broadcast('config', newConfig); // to every worker</code></pre>
+        <p>
+          Messages use the IPC of <code>node:cluster</code> with the advanced serialization (structured clone): Dates,
+          Maps, Sets, BigInts, typed arrays and shared references arrive as they were sent. An error thrown by the
+          handler of a request rejects the request with a <code>BusError</code> with its message, name and code.
+        </p>
+
+        <h2 id="bus-api">API of the bus</h2>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Member</th><th>What it does</th></tr></thead>
+            <tbody>
+              <tr><td><code>on(event, handler)</code>, <code>off(event, handler)</code></td><td><code>handler(data, sender)</code>: the sender is the worker (in the primary) or <code>null</code>.</td></tr>
+              <tr><td><code>send(event, data)</code></td><td>An event to the primary.</td></tr>
+              <tr><td><code>request(event, data, { timeout })</code></td><td>The reply of the primary's handler (30 s by default; <code>0</code>: no limit).</td></tr>
+              <tr><td><code>sendTo(workerId, event, data)</code></td><td>An event to a worker (from the primary).</td></tr>
+              <tr><td><code>broadcast(event, data, { except, others })</code></td><td>An event to every worker: from the primary, or from a worker (<code>others</code> leaves the sender out).</td></tr>
+              <tr><td><code>workers</code>, <code>clustered</code>, <code>isPrimary</code></td><td>The ids of the workers; whether messages go to other processes.</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p><code>bus</code> is the same object in every module of a process; <code>new Bus()</code> makes another.</p>
+
+        <h2 id="single">In one process</h2>
+        <p>
+          With <code>workers: 0</code>, or without <code>start()</code> (tests), the same calls deliver the messages to
+          the handlers of the same process: <code>request()</code> gives the reply of the local handler,
+          <code>broadcast()</code> runs the local handlers. Code written for a cluster runs as it is.
+        </p>
+
+        <h2 id="shared">Shared state</h2>
+        <p>Other packages of xufa use the bus for what the workers must share:</p>
+        <ul>
+          <li><a href="orm.html">@xufa/orm</a>: <code>SharedCache({ bus })</code> keeps the cache of the models in the primary, one copy for every worker; <code>LocalCache({ bus })</code> keeps one in each worker and invalidates the others.</li>
+          <li><a href="auth.html">@xufa/auth</a>: the lockout of logins can keep its counts in the primary, so every worker counts the same failures.</li>
+        </ul>
+      </article>
+    </div>
+
+    <footer class="footer">
+      <div class="container">
+        <span>xufa is MIT licensed. &copy; Jes&uacute;s Seijas</span>
+        <span>
+          <a href="guide.html">Guide</a> &middot; <a href="http.html">HTTP</a> &middot; <a href="orm.html">ORM</a> &middot; <a href="auth.html">Auth</a> &middot;
+          <a href="sequelize.html">Sequelize</a> &middot; <a href="packages.html">Packages</a> &middot;
+          <a href="benchmarks.html">Benchmarks</a> &middot; <a href="https://github.com/xufajs/xufa">GitHub</a>
+        </span>
+      </div>
+    </footer>
+  </body>
+</html>

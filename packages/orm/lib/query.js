@@ -185,7 +185,14 @@ function resolvePath(model, path, allowRest = true, reverse = false) {
     }
     current = target;
   }
-  if (fields.length === 0) throw new FieldError(parts[0], model.name);
+  if (fields.length === 0) {
+    if (model.meta.computedField && model.meta.computedField(parts[0])) {
+      throw new QueryError(
+        `${parts[0]} is a computed field that is not stored: queries cannot use it (stored: true makes it a column)`
+      );
+    }
+    throw new FieldError(parts[0], model.name);
+  }
   const rest = parts.slice(i);
   // In conditions, the names after a json field are a path inside its values (data__owner__name), and the last one
   // can be a lookup (data__pages__gte).

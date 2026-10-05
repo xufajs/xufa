@@ -64,7 +64,7 @@
           <code>@xufa/sequelize</code> is the API of <a href="https://sequelize.org">Sequelize</a> 6 over xufa's
           <a href="orm.html">ORM</a>. Code written for Sequelize runs with <code>require('@xufa/sequelize')</code>
           instead of <code>require('sequelize')</code>, faster, and with no dependencies: PostgreSQL through
-          <a href="packages.html#pg"><code>@xufa/pg</code></a>, SQLite through <code>node:sqlite</code>.
+          <a href="pg.html"><code>@xufa/pg</code></a>, SQLite through <code>node:sqlite</code>.
         </p>
 
         <h2 id="switching">Switching</h2>
@@ -100,19 +100,19 @@ const books = await Book.findAll({
           <div class="chart">
             <h3>PostgreSQL</h3>
             <p class="subtitle">Operations per second, relative to Sequelize 6. More is better.</p>
-            <div class="chart-row us"><span class="name">findByPk, 64 at once</span><span class="track"><span class="fill" style="width: 100%"></span></span><span class="value">8.0&times;</span></div>
-            <div class="chart-row us"><span class="name">findAll with a join</span><span class="track"><span class="fill" style="width: 44%"></span></span><span class="value">3.5&times;</span></div>
-            <div class="chart-row us"><span class="name">findAll, 10k rows</span><span class="track"><span class="fill" style="width: 35%"></span></span><span class="value">2.8&times;</span></div>
-            <div class="chart-row us"><span class="name">create</span><span class="track"><span class="fill" style="width: 32%"></span></span><span class="value">2.5&times;</span></div>
+            <div class="chart-row us win"><span class="name">findByPk, 64 at once</span><span class="track"><span class="fill" style="width: 100%"></span></span><span class="value">8.0&times;</span></div>
+            <div class="chart-row us win"><span class="name">findAll with a join</span><span class="track"><span class="fill" style="width: 44%"></span></span><span class="value">3.5&times;</span></div>
+            <div class="chart-row us win"><span class="name">findAll, 10k rows</span><span class="track"><span class="fill" style="width: 35%"></span></span><span class="value">2.8&times;</span></div>
+            <div class="chart-row us win"><span class="name">create</span><span class="track"><span class="fill" style="width: 32%"></span></span><span class="value">2.5&times;</span></div>
             <div class="chart-row"><span class="name">Sequelize 6</span><span class="track"><span class="fill" style="width: 12.5%"></span></span><span class="value">1&times;</span></div>
           </div>
           <div class="chart">
             <h3>SQLite</h3>
             <p class="subtitle">Operations per second, relative to Sequelize 6. More is better.</p>
-            <div class="chart-row us"><span class="name">findByPk, 64 at once</span><span class="track"><span class="fill" style="width: 100%"></span></span><span class="value">18.2&times;</span></div>
-            <div class="chart-row us"><span class="name">findByPk</span><span class="track"><span class="fill" style="width: 87%"></span></span><span class="value">15.9&times;</span></div>
-            <div class="chart-row us"><span class="name">create</span><span class="track"><span class="fill" style="width: 59%"></span></span><span class="value">10.8&times;</span></div>
-            <div class="chart-row us"><span class="name">findAll with a join</span><span class="track"><span class="fill" style="width: 21%"></span></span><span class="value">3.9&times;</span></div>
+            <div class="chart-row us win"><span class="name">findByPk, 64 at once</span><span class="track"><span class="fill" style="width: 100%"></span></span><span class="value">18.2&times;</span></div>
+            <div class="chart-row us win"><span class="name">findByPk</span><span class="track"><span class="fill" style="width: 87%"></span></span><span class="value">15.9&times;</span></div>
+            <div class="chart-row us win"><span class="name">create</span><span class="track"><span class="fill" style="width: 59%"></span></span><span class="value">10.8&times;</span></div>
+            <div class="chart-row us win"><span class="name">findAll with a join</span><span class="track"><span class="fill" style="width: 21%"></span></span><span class="value">3.9&times;</span></div>
             <div class="chart-row"><span class="name">Sequelize 6</span><span class="track"><span class="fill" style="width: 5.5%"></span></span><span class="value">1&times;</span></div>
           </div>
         </div>
@@ -137,8 +137,8 @@ const books = await Book.findAll({
           <table class="numbers">
             <thead><tr><th>Database (tests run by both)</th><th>@xufa/sequelize</th><th>Sequelize 6.37.8</th></tr></thead>
             <tbody>
-              <tr><td>SQLite (1,739)</td><td>1,709 passed, 30 failed</td><td>1,735 passed, 4 failed</td></tr>
-              <tr><td>PostgreSQL 18, with PostGIS, hstore and btree_gist (2,004)</td><td>1,947 passed, 57 failed</td><td>1,966 passed, 38 failed</td></tr>
+              <tr><td>SQLite (1,746)</td><td>1,720 passed, 21 failed</td><td>1,737 passed, 4 failed</td></tr>
+              <tr><td>PostgreSQL 18, with PostGIS, hstore and btree_gist (2,006)</td><td>1,971 passed, 35 failed</td><td>1,968 passed, 38 failed</td></tr>
             </tbody>
           </table>
         </div>
@@ -201,7 +201,18 @@ const books = await Book.findAll({
           </li>
           <li>
             <strong>Transactions</strong>: managed and not managed, nested as savepoints, isolation levels, row locks,
-            <code>afterCommit</code>, CLS (<code>Sequelize.useCLS()</code>), <code>searchPath</code>.
+            <code>afterCommit</code>, CLS (<code>Sequelize.useCLS()</code>), <code>searchPath</code>. Transactions not
+            managed end with <code>queryInterface.commitTransaction()</code> or <code>rollbackTransaction()</code>
+            (<code>COMMIT;</code> and <code>ROLLBACK;</code> through <code>sequelize.query</code>, logged with the id of the
+            transaction), and one whose end fails is rolled back and its connection closed.
+          </li>
+          <li>
+            <strong>Connections</strong>: <code>pool.acquire</code> (60 s, then <code>ConnectionAcquireTimeoutError</code>),
+            and <code>connectionManager</code> as Sequelize has it: the numbers of its <code>pool</code>,
+            <code>getConnection()</code> and <code>releaseConnection()</code> (a client of <code>@xufa/pg</code>),
+            <code>validate()</code>, and <code>_connect()</code>, which opens every connection.
+            <code>operatorsAliases</code>, and <code>queryGenerator.handleSequelizeMethod()</code> and
+            <code>getForeignKeysQuery()</code>.
           </li>
           <li>
             <strong>QueryInterface</strong>: <code>createTable</code>, <code>describeTable</code>,

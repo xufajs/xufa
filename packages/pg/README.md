@@ -31,8 +31,11 @@ await pool.end();
   several statements runs as a simple query (it may have several statements: their results are an array).
 - `Pool(config)`: `query()`, `connect()` (a `PoolClient`: `query()`, `release(err)`), `end()` (it waits for the queries
   sent and for the clients given by `connect()` to be released), `totalCount`, `idleCount`, `waitingCount`; options
-  `max` (10) and `idleTimeoutMillis` (10000). `using client = await pool.connect()` releases the client at the end of
-  its block, and `await using` ends a `Client` or a `Pool` (explicit resource management).
+  `max` (10), `idleTimeoutMillis` (10000) and `acquireTimeoutMillis` (how long a query or `connect()` waits for a
+  connection, free or being opened; 0, the default, for no limit; past it, an error of code `ACQUIRE_TIMEOUT`).
+  `pool.openConnection(options)` opens its connections: it can be replaced. `using client = await pool.connect()`
+  releases the client at the end of its block, and `await using` ends a `Client` or a `Pool` (explicit resource
+  management).
 - Config: a connection string, or `host` (a unix socket by its directory: `/var/run/postgresql`), `port`, `user`,
   `password` (both can be functions, sync or async, asked for every connection: tokens of AWS RDS IAM...),
   `database`, `ssl` (true or the options of `tls.connect`), `application_name`, `options`, `connectionTimeoutMillis`

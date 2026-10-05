@@ -11,6 +11,7 @@
 // header, the user...): the models use the database of the tenant. Requests without a tenant are answered with 400
 // when it is required (the default), and those of a tenant that does not exist with 404.
 const { ValidationError, UniqueError } = require('./errors');
+const { cancellation } = require('./context');
 
 async function ormPlugin(app, options = {}) {
   const {
@@ -22,6 +23,7 @@ async function ormPlugin(app, options = {}) {
     errorHandler = true,
     tenants,
     expire,
+    cancel = false,
   } = options;
   if (!database && !tenants) throw new TypeError('The orm plugin needs a database (or tenants)');
   if (database) {
@@ -55,6 +57,14 @@ async function ormPlugin(app, options = {}) {
       );
     });
     if (close) app.addHook('onClose', () => registry.close());
+  }
+  // cancel: the reads of a request stop when its client goes away (request.signal): those that have not started
+  // throw, and PostgreSQL cancels the one that runs. Entered now (before any await), so the handler runs with it.
+  if (cancel) {
+    app.addHook('onRequest', (request, reply, done) => {
+      cancellation.enterWith({ request });
+      done();
+    });
   }
   if (errorHandler) {
     app.setErrorHandler((err, request, reply) => {

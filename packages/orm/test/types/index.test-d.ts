@@ -1,6 +1,8 @@
-import { expectType, expectError } from 'tsd';
+import { expectType, expectError, expectAssignable, expectNotAssignable } from 'tsd';
 import {
   Database,
+  Databases,
+  Tenants,
   Model,
   fields,
   Field,
@@ -22,6 +24,14 @@ import {
   reencrypt,
   resource,
   UniqueError,
+  MemoryCache,
+  SharedCache,
+  LocalCache,
+  Cache,
+  CacheBus,
+  ModelOptions,
+  withSignal,
+  cached as keep,
 } from '../..';
 
 const tagFields = { name: fields.string({ unique: true }) };
@@ -88,9 +98,23 @@ async function main() {
   );
   expectType<{ n: number; total: number | null }>(await Book.query().aggregate({ n: Count(), total: Sum('pages') }));
   expectType<[Author, boolean]>(await Author.query().getOrCreate({ name: 'Ada' }));
+  expectType<number>(await Book.query().recompute());
+  // Computed fields: an expression or a function, stored or not.
+  fields.decimal({ precision: 12, scale: 2, computed: 'price * quantity', stored: true });
+  // Validation rules: expressions, functions, with messages.
+  fields.integer({ validate: 'value >= 0' });
+  fields.string({ validate: [{ rule: 'value.length >= 3', message: 'Too short.' }, (value: string) => value !== 'x'] });
+  expectError(fields.integer({ validate: 3 }));
+  const ruled: import('../../index').ModelOptions = {
+    rules: ['end > start', { rule: 'seats <= 10', field: 'seats', message: 'Too many.' }, () => true],
+  };
+  expectType<number>(ruled.rules!.length);
+  fields.string({ computed: (line: { product: string }) => line.product.toUpperCase(), uses: ['product'] });
+  expectError(fields.integer({ computed: 1 }));
   for await (const item of Author.query()) expectType<Author>(item);
   expectType<Author>(await Author.create({ name: 'Ada' }));
   expectType<Promise<string[]>>(db.migrate({ dir: 'migrations' }));
+  expectType<Promise<Record<string, number>>>(db.migrateDecimals());
   expectType<number>(await db.transaction(async () => 1));
   expectError(Author.query().limit('ten'));
   expectType<Record<string, string[]>>(new ValidationError('x', {}).errors);
@@ -164,3 +188,97 @@ expectError(jsonPath('data', [true], 1));
 expectType<Field<number | bigint, false>>(fields.bigint());
 expectType<Field<bigint, false>>(fields.bigint({ mode: 'bigint' }));
 expectType<Field<string, true>>(fields.bigint({ mode: 'string', null: true }));
+
+// Tenants with several databases (a provider for each collection).
+const tenants = new Tenants({
+  models: [],
+  routes: { Event: 'events' },
+  config: (id) => ({ databases: { default: { backend: 'sqlite' }, events: { backend: 'memory' } }, routes: id === 'a' ? {} : { Event: 'default' } }),
+});
+expectType<Promise<number>>(tenants.run('acme', async () => 1));
+expectType<Databases>(new Databases({ default: { backend: 'memory' } }, { routes: { Event: 'events' } }));
+
+// The fs backend and its options.
+expectType<Database>(new Database({ backend: 'fs', dir: 'data', layout: 'files', pretty: true, lock: false }));
+expectError(new Database({ backend: 'fs', dir: 'data', layout: 'rows' }));
+expectType<Database>(
+  new Database({
+    backend: 'fs',
+    dir: 'content',
+    watch: { delay: 100 },
+    onChange: (tables) => expectType<string[]>(tables),
+    onError: (err) => expectType<Error>(err),
+  })
+);
+expectError(new Database({ backend: 'fs', dir: 'content', watch: 'yes' }));
+
+// Caches: of a Database (`cache`, `name`), and of models (`cache`: true or { ttl, indexes }).
+const memory = new MemoryCache({ max: 1000, ttl: 60000 });
+expectAssignable<Cache>(memory);
+expectType<number>(memory.size);
+expectType<Promise<unknown>>(memory.get('key'));
+expectType<unknown>(memory.getNow('key'));
+expectType<Promise<void>>(memory.set('key', { a: 1 }, 1000));
+expectType<Promise<void>>(memory.delete(['a', 'b']));
+expectType<Promise<void>>(memory.clear('db1:'));
+expectError(new MemoryCache({ max: '10' }));
+
+declare const bus: CacheBus;
+expectAssignable<Cache>(new SharedCache({ bus }));
+expectAssignable<Cache>(new SharedCache({ bus, name: 'sessions', store: memory }));
+expectAssignable<Cache>(new LocalCache({ bus, max: 100, ttl: 5000 }));
+expectType<void>(new LocalCache({ bus }).deleteNow('key'));
+expectError(new SharedCache({}));
+expectError(new LocalCache());
+
+// Any object of the four methods is a cache (the NetCache of @xufa/netcache: its own type tests).
+const custom = {
+  async get<T = unknown>(key: string): Promise<T | undefined> {
+    return undefined;
+  },
+  async set(key: string, value: unknown, ttl?: number) {},
+  async delete(keys: string | string[]) {},
+  async clear(prefix?: string) {},
+};
+expectAssignable<Cache>(custom);
+expectNotAssignable<Cache>({ get: async (key: string) => undefined });
+
+const cached = new Database({ backend: 'memory', name: 'main', cache: new SharedCache({ bus }) });
+expectType<Cache | null>(cached.cache);
+expectType<string>(cached.name);
+expectError(new Database({ backend: 'memory', cache: 'memory' }));
+
+expectAssignable<ModelOptions>({ cache: true });
+expectAssignable<ModelOptions>({ cache: { ttl: 60000, indexes: ['email'] }, database: 'cache' });
+expectNotAssignable<ModelOptions>({ cache: { indexes: 'email' } });
+expectNotAssignable<ModelOptions>({ cache: 'yes' });
+class CachedUser extends Model {
+  static fields = { email: fields.string({ unique: true }) };
+  static options: ModelOptions = { cache: { ttl: 30000, indexes: ['email'] } };
+}
+expectAssignable<ModelOptions>(CachedUser.options);
+
+// The documentation of resources for @xufa/openapi.
+resource(Tag, { openapi: { tag: 'Tags' } });
+resource(Tag, { openapi: false });
+expectError(resource(Tag, { openapi: 'yes' }));
+
+// Reads that stop with a signal.
+const controller = new AbortController();
+expectType<QuerySet<Tag>>(Tag.query().signal(controller.signal));
+expectType<QuerySet<Tag>>(Tag.query().filter({ name: 'a' }).signal(null));
+expectType<Promise<number>>(withSignal(controller.signal, () => Tag.objects.count()));
+expectError(Tag.objects.signal('abort'));
+expectType<Promise<void>>(plugin({}, { database: new Database(), cancel: true }));
+expectType<Promise<void>>(plugin({}, { tenants: { tenants, resolve: (request) => request.headers.tenant } }));
+expectError(plugin({}, { database: new Database(), cancel: 'yes' }));
+
+// Results kept in caches.
+expectType<QuerySet<Tag>>(Tag.query().filter({ name: 'a' }).cached({ ttl: 60000 }));
+expectError(Tag.query().cached({ ttl: '1m' }));
+const rates = keep(async (currency: string, day: Date) => ({ currency, rate: 1 }), { ttl: 1000, key: (currency) => currency });
+expectType<Promise<{ currency: string; rate: number }>>(rates('EUR', new Date()));
+expectType<Promise<void>>(rates.invalidate('EUR', new Date()));
+expectType<Promise<void>>(rates.clear());
+expectError(rates(1, new Date()));
+keep(async () => 1, { cache: new MemoryCache(), name: "one" });

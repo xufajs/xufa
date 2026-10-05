@@ -8,14 +8,26 @@
 //     setup: (db) => db.migrate({ dir: 'migrations' }),
 //   });
 //   await tenants.run('acme', () => Book.objects.count());
+//
+// A tenant can have several databases, its models routed to them as in Databases: config gives { databases: { name:
+// options }, routes: { Model: name } } (over the routes of the Tenants), and each model goes to the database of its
+// option `database`, of its route, or to the default one (default):
+//
+//   config: (id) => ({
+//     databases: { default: { backend: 'postgres', url }, events: { backend: 'mongodb', url: mongoUrl } },
+//     routes: { Event: 'events' },
+//   }),
 const { Database } = require('./database');
+const { Databases } = require('./databases');
 const { ModelError } = require('./errors');
 const { current, currentDatabase } = require('./context');
 
 class Tenants {
-  constructor({ models = [], config, setup, max = 100 } = {}) {
+  // `routes`: the databases of the models in tenants with several (as those of Databases), for every tenant.
+  constructor({ models = [], config, setup, max = 100, routes = {} } = {}) {
     if (typeof config !== 'function') throw new TypeError('Tenants needs config(tenantId)');
     this.models = models;
+    this.routes = routes;
     this.config = config;
     this.setup = setup;
     this.max = max;
@@ -38,7 +50,7 @@ class Tenants {
     opening = (async () => {
       const options = await this.config(id);
       if (!options) throw new ModelError('Tenants', `there is no tenant ${id}`);
-      const db = new Database({ name: `tenant:${id}`, ...options }).register(...this.models);
+      const db = this.open(id, options).register(...this.models);
       await db.connect();
       if (this.setup) await this.setup(db, id);
       return db;
@@ -47,6 +59,23 @@ class Tenants {
     opening.catch(() => this.databases.delete(id));
     this.evict();
     return opening;
+  }
+
+  // The database of a tenant from its options: a Database (or Databases) given, the databases of `databases` with the
+  // models routed to them, or the options of one Database.
+  open(id, options) {
+    if (options instanceof Database || options instanceof Databases) return options;
+    if (options.databases) {
+      const config = {};
+      Object.entries(options.databases).forEach(([name, settings]) => {
+        config[name] = settings instanceof Database ? settings : { ...settings, name: `tenant:${id}:${name}` };
+      });
+      return new Databases(config, {
+        routes: { ...this.routes, ...options.routes },
+        defaultName: options.defaultName || 'default',
+      });
+    }
+    return new Database({ name: `tenant:${id}`, ...options });
   }
 
   // Closes the databases of the tenants used least, beyond `max`.

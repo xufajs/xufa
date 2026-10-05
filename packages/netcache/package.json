@@ -1,0 +1,59 @@
+{
+  "name": "@xufa/netcache",
+  "version": "0.1.0",
+  "description": "A cache shared by the machines of a service: a copy in each, writes sent to all over TCP (sealed with a secret), nodes found by @xufa/discovery",
+  "main": "./index.js",
+  "types": "./index.d.ts",
+  "type": "commonjs",
+  "exports": {
+    ".": {
+      "types": "./index.d.ts",
+      "default": "./index.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "index.js",
+    "index.d.ts",
+    "lib"
+  ],
+  "scripts": {
+    "test": "vyntra",
+    "test:types": "tsd"
+  },
+  "keywords": [
+    "cache",
+    "distributed cache",
+    "replicated",
+    "cluster",
+    "shared"
+  ],
+  "author": "Jesús Seijas <jseijas@gmail.com>",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/xufajs/xufa.git",
+    "directory": "packages/netcache"
+  },
+  "homepage": "https://github.com/xufajs/xufa/tree/main/packages/netcache#readme",
+  "bugs": {
+    "url": "https://github.com/xufajs/xufa/issues"
+  },
+  "engines": {
+    "node": ">=22"
+  },
+  "tsd": {
+    "directory": "test/types"
+  },
+  "devDependencies": {
+    "@xufa/orm": "workspace:*",
+    "vyntra": "^0.6.0"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "dependencies": {
+    "@xufa/discovery": "workspace:*",
+    "@xufa/marshal": "workspace:*"
+  }
+}

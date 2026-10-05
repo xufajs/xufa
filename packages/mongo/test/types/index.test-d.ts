@@ -1,5 +1,6 @@
 import { expectType, expectError } from 'tsd';
 import { MongoClient, Collection, Cursor, ObjectId, MongoServerError, InsertManyResult, Document } from '../..';
+import { Decimal128 } from '../..';
 
 interface User {
   _id?: ObjectId;
@@ -36,3 +37,9 @@ async function main() {
 }
 
 void main;
+
+// Decimal128: texts and parts.
+const price = Decimal128.fromString('19.99');
+expectType<string>(price.toString());
+expectType<number | bigint>(price.toParts().coefficient);
+expectType<Decimal128>(Decimal128.fromParts(false, 1999n, -2));

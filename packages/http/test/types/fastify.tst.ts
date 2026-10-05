@@ -246,6 +246,7 @@ expect(xufa({
   }
 })).type.toBeAssignableTo<XufaInstance>()
 expect(xufa({ return503OnClosing: true })).type.toBeAssignableTo<XufaInstance>()
+expect(xufa({ fastHead: false })).type.toBeAssignableTo<XufaInstance>()
 expect(xufa({ frameworkErrors: () => { } })).type.toBeAssignableTo<XufaInstance>()
 expect(xufa({
   rewriteUrl: function (req) {

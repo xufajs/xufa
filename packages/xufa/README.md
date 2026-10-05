@@ -21,13 +21,16 @@ await app.listen({ port: 3000 });
 ## For now
 
 xufa is its HTTP layer: this package gives [`@xufa/http`](../http) (the API of fastify) as it is, its ORM as
-`xufa/orm` ([`@xufa/orm`](../orm)) and its authentication as `xufa/auth` ([`@xufa/auth`](../auth)). The rest of the framework will be given from here as it is built; the packages
+`xufa/orm` ([`@xufa/orm`](../orm)) its authentication as `xufa/auth` ([`@xufa/auth`](../auth)), and its expressions and templates as
+`xufa/expression` ([`@xufa/expression`](../expression)) and `xufa/template` ([`@xufa/template`](../template)). The rest of the framework will be given from here as it is built; the packages
 it is made of can be used alone:
 
 - [`@xufa/http`](../http): the HTTP framework
 - [`@xufa/orm`](../orm): the ORM, over SQLite, PostgreSQL ([`@xufa/pg`](../pg)), MongoDB ([`@xufa/mongo`](../mongo)) and memory
 - [`@xufa/auth`](../auth): passwords, JSON Web Tokens, TOTP, lockouts, refresh tokens and the plugin that puts them
   together
+- [`@xufa/expression`](../expression): safe JavaScript expressions, compiled once
+- [`@xufa/template`](../template): templates of text and HTML (blocks, filters, partials) over those expressions
 - [`@xufa/logger`](../logger), [`@xufa/router`](../router), [`@xufa/serializer`](../serializer),
   [`@xufa/inject`](../inject), [`@xufa/boot`](../boot), [`@xufa/errors`](../errors): its parts
 

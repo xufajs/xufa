@@ -120,9 +120,148 @@ class Timestamp {
   }
 }
 
+// IEEE 754-2008 decimal128, as BSON keeps it (binary integer decimal): a sign, an exponent of 14 bits biased by 6176
+// and a coefficient of up to 34 digits, in two 64-bit words, the low one first, both little-endian.
+const DECIMAL_BIAS = 6176;
+const DECIMAL_MAX_EXPONENT = 6111;
+const DECIMAL_MIN_EXPONENT = -6176;
+const DECIMAL_MAX_DIGITS = 34;
+const DECIMAL_MAX_COEFFICIENT = 10n ** 34n - 1n;
+const WORD = (1n << 64n) - 1n;
+const DECIMAL_TEXT = /^([+-])?(?:(\d+)(?:\.(\d*))?|\.(\d+))(?:[eE]([+-]?\d+))?$/;
+
 class Decimal128 {
   constructor(bytes) {
     this.bytes = Buffer.from(bytes);
+  }
+
+  // The decimal of a text ('12.50', '-1E+3', 'Infinity', 'NaN'), exactly: a value that needs more than 34 digits or an
+  // exponent out of the range of decimal128 throws a RangeError (rounding would change it).
+  static fromString(text) {
+    const value = String(text).trim();
+    const special = /^([+-])?(inf|infinity|nan)$/i.exec(value);
+    if (special) {
+      const negative = special[1] === '-';
+      const high = special[2].toLowerCase() === 'nan' ? 0x7c00000000000000n : 0x7800000000000000n;
+      return Decimal128.fromParts(negative && high !== 0x7c00000000000000n, 0n, 0, high);
+    }
+    const match = DECIMAL_TEXT.exec(value);
+    if (!match) throw new TypeError(`${JSON.stringify(text)} is not a decimal number`);
+    const negative = match[1] === '-';
+    const integer = match[2] !== undefined ? match[2] : '';
+    const fraction = match[3] !== undefined ? match[3] : match[4] || '';
+    let exponent = (match[5] === undefined ? 0 : Number(match[5])) - fraction.length;
+    let digits = `${integer}${fraction}`.replace(/^0+(?=\d)/, '');
+    if (digits === '') digits = '0';
+    // Zeros at the end that do not fit are dropped by raising the exponent (the same value).
+    while (digits.length > DECIMAL_MAX_DIGITS && digits.endsWith('0')) {
+      digits = digits.slice(0, -1);
+      exponent += 1;
+    }
+    if (digits.length > DECIMAL_MAX_DIGITS) {
+      throw new RangeError(`${value} has more than ${DECIMAL_MAX_DIGITS} digits: a decimal128 cannot keep it exactly`);
+    }
+    // A large exponent is brought down by adding zeros to the coefficient, while it has room for them.
+    while (exponent > DECIMAL_MAX_EXPONENT && digits !== '0' && digits.length < DECIMAL_MAX_DIGITS) {
+      digits += '0';
+      exponent -= 1;
+    }
+    if (digits === '0') exponent = Math.min(Math.max(exponent, DECIMAL_MIN_EXPONENT), DECIMAL_MAX_EXPONENT);
+    if (exponent > DECIMAL_MAX_EXPONENT || exponent < DECIMAL_MIN_EXPONENT) {
+      throw new RangeError(`${value} is out of the range of a decimal128`);
+    }
+    // Up to 15 digits (most decimals): the coefficient is a number, written without BigInt.
+    if (digits.length <= 15) {
+      const coefficient = Number(digits);
+      const bytes = Buffer.alloc(16);
+      bytes.writeUInt32LE(coefficient % 0x100000000, 0);
+      bytes.writeUInt32LE(Math.floor(coefficient / 0x100000000), 4);
+      // The high word: sign (bit 63), exponent (bits 62 to 49), nothing of the coefficient (bits 48 to 0).
+      bytes.writeUInt32LE(((negative ? 0x80000000 : 0) | ((exponent + DECIMAL_BIAS) << 17)) >>> 0, 12);
+      return new Decimal128(bytes);
+    }
+    return Decimal128.fromParts(negative, BigInt(digits), exponent);
+  }
+
+  // The decimal of a sign, a coefficient (a BigInt of up to 34 digits) and an exponent: (-1)^sign * coefficient * 10^exponent.
+  static fromParts(negative, coefficient, exponent, special = null) {
+    let high;
+    let low;
+    if (special !== null) {
+      high = special;
+      low = 0n;
+    } else {
+      if (coefficient < 0n || coefficient > DECIMAL_MAX_COEFFICIENT)
+        throw new RangeError('The coefficient has 34 digits at most');
+      high = (BigInt(exponent + DECIMAL_BIAS) << 49n) | (coefficient >> 64n);
+      low = coefficient & WORD;
+    }
+    if (negative) high |= 1n << 63n;
+    const bytes = Buffer.alloc(16);
+    bytes.writeBigUInt64LE(low, 0);
+    bytes.writeBigUInt64LE(high, 8);
+    return new Decimal128(bytes);
+  }
+
+  // { negative, coefficient (BigInt), exponent, special: null, 'Infinity' or 'NaN' }. Coefficients that are not
+  // canonical (larger than 34 digits) are zero, as the standard says.
+  toParts() {
+    // A coefficient in the low word only, under 2^53 (most decimals): read without BigInt.
+    const { bytes } = this;
+    const top = bytes.readUInt32LE(12);
+    const lowHigh = bytes.readUInt32LE(4);
+    if (
+      (top & 0x60000000) !== 0x60000000 &&
+      (top & 0x1ffff) === 0 &&
+      bytes.readUInt32LE(8) === 0 &&
+      lowHigh < 0x200000
+    ) {
+      return {
+        negative: top >>> 31 === 1,
+        coefficient: lowHigh * 0x100000000 + bytes.readUInt32LE(0),
+        exponent: ((top >>> 17) & 0x3fff) - DECIMAL_BIAS,
+        special: null,
+      };
+    }
+    const low = this.bytes.readBigUInt64LE(0);
+    const high = this.bytes.readBigUInt64LE(8);
+    const negative = high >> 63n === 1n;
+    const combination = (high >> 58n) & 0x1fn;
+    if (combination === 0x1fn) return { negative: false, coefficient: 0n, exponent: 0, special: 'NaN' };
+    if (combination === 0x1en) return { negative, coefficient: 0n, exponent: 0, special: 'Infinity' };
+    let exponent;
+    let coefficient;
+    if (((high >> 61n) & 3n) === 3n) {
+      // The form of coefficients of more than 113 bits: none is canonical.
+      exponent = Number((high >> 47n) & 0x3fffn) - DECIMAL_BIAS;
+      coefficient = 0n;
+    } else {
+      exponent = Number((high >> 49n) & 0x3fffn) - DECIMAL_BIAS;
+      coefficient = ((high & ((1n << 49n) - 1n)) << 64n) | low;
+      if (coefficient > DECIMAL_MAX_COEFFICIENT) coefficient = 0n;
+    }
+    return { negative, coefficient, exponent, special: null };
+  }
+
+  // The text of the standard (to-scientific-string), as the other drivers write it: '12.50', '1E+3', '-0.0001'.
+  toString() {
+    const { negative, coefficient, exponent, special } = this.toParts();
+    const sign = negative ? '-' : '';
+    if (special) return `${sign}${special}`;
+    const digits = coefficient.toString();
+    const adjusted = exponent + digits.length - 1;
+    if (exponent <= 0 && adjusted >= -6) {
+      if (exponent === 0) return `${sign}${digits}`;
+      const point = digits.length + exponent;
+      if (point > 0) return `${sign}${digits.slice(0, point)}.${digits.slice(point)}`;
+      return `${sign}0.${'0'.repeat(-point)}${digits}`;
+    }
+    const mantissa = digits.length > 1 ? `${digits[0]}.${digits.slice(1)}` : digits;
+    return `${sign}${mantissa}E${adjusted >= 0 ? '+' : ''}${adjusted}`;
+  }
+
+  toJSON() {
+    return { $numberDecimal: this.toString() };
   }
 }
 

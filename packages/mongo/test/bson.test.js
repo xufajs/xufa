@@ -292,3 +292,65 @@ describe('bson', () => {
     }
   });
 });
+
+describe('Decimal128', () => {
+  const { Decimal128 } = require('..');
+  // [text, bytes (hex), the text of the standard]: the same as the official bson gives.
+  const VECTORS = [
+    ['0', '00000000000000000000000000004030', '0'],
+    ['-0', '000000000000000000000000000040b0', '-0'],
+    ['1', '01000000000000000000000000004030', '1'],
+    ['-1', '010000000000000000000000000040b0', '-1'],
+    ['0.1', '01000000000000000000000000003e30', '0.1'],
+    ['12.50', 'e2040000000000000000000000003c30', '12.50'],
+    ['-0.0001', '010000000000000000000000000038b0', '-0.0001'],
+    ['1E+3', '01000000000000000000000000004630', '1E+3'],
+    ['1.23E-7', '7b000000000000000000000000002e30', '1.23E-7'],
+    ['9999999999999999999999999999999999', 'ffffffff638e8d37c087adbe09ed4130', '9999999999999999999999999999999999'],
+    ['1234567890.123456789', '1581e97df41022110000000000002e30', '1234567890.123456789'],
+    ['Infinity', '00000000000000000000000000000078', 'Infinity'],
+    ['-Infinity', '000000000000000000000000000000f8', '-Infinity'],
+    ['NaN', '0000000000000000000000000000007c', 'NaN'],
+    ['0E-6176', '00000000000000000000000000000000', '0E-6176'],
+    ['1E+6144', '000000000a5bc138938d44c64d31fe5f', '1.000000000000000000000000000000000E+6144'],
+    ['100', '64000000000000000000000000004030', '100'],
+    ['2.675', '730a0000000000000000000000003a30', '2.675'],
+  ];
+
+  it('converts texts to bytes and back, as the standard says', () => {
+    for (const [text, hex, standard] of VECTORS) {
+      const decimal = Decimal128.fromString(text);
+      expect([text, decimal.bytes.toString('hex')]).toEqual([text, hex]);
+      expect([text, new Decimal128(Buffer.from(hex, 'hex')).toString()]).toEqual([text, standard]);
+    }
+  });
+
+  it('gives its parts, and makes a decimal of them', () => {
+    expect(Decimal128.fromString('-12.50').toParts()).toEqual({
+      negative: true,
+      coefficient: 1250,
+      exponent: -2,
+      special: null,
+    });
+    const big = Decimal128.fromString('9999999999999999999999999999999999').toParts();
+    expect(big.coefficient).toBe(9999999999999999999999999999999999n);
+    expect(Decimal128.fromParts(false, 1250n, -2).toString()).toBe('12.50');
+  });
+
+  it('refuses what it cannot keep exactly', () => {
+    expect(() => Decimal128.fromString('12345678901234567890123456789012345')).toThrow(RangeError);
+    expect(() => Decimal128.fromString('1E+7000')).toThrow(RangeError);
+    expect(() => Decimal128.fromString('abc')).toThrow(TypeError);
+    // Zeros at the end that do not fit change nothing: they are dropped.
+    expect(Decimal128.fromString('12345678901234567890123456789012340').toString()).toBe(
+      '1.234567890123456789012345678901234E+34'
+    );
+  });
+
+  it('goes through serialize and deserialize', () => {
+    const doc = deserialize(serialize({ price: Decimal128.fromString('19.99') }));
+    expect(doc.price).toBeInstanceOf(Decimal128);
+    expect(doc.price.toString()).toBe('19.99');
+    expect(JSON.stringify(doc.price)).toBe('{"$numberDecimal":"19.99"}');
+  });
+});

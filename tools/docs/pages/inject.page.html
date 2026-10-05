@@ -1,0 +1,119 @@
+<!--{
+  "file": "inject.html",
+  "name": "@xufa/inject",
+  "title": "@xufa/inject",
+  "description": "@xufa/inject: fake HTTP requests to a Node.js request handler, without a socket, with the API of light-my-request and no dependencies. The inject() of xufa and of your tests.",
+  "groups": [
+    ["Using it", [["start", "Quick start"], ["xufa", "In xufa"], ["options", "Options of a request"], ["response", "The response"]]],
+    ["More", [["chain", "Chained requests"], ["payloads", "Payloads"], ["simulate", "Simulating failures"], ["helpers", "isInjection"]]],
+    ["About it", [["from-lmr", "Coming from light-my-request"], ["typescript", "TypeScript"]]]
+  ]
+}-->
+        <h1>@xufa/inject</h1>
+        <p class="intro">
+          Fake HTTP requests to a Node.js request handler, without a socket: the handler gets a real
+          <code>IncomingMessage</code> and <code>ServerResponse</code>, and you get the response. It has the API of
+          <a href="https://github.com/fastify/light-my-request">light-my-request</a> and passes its test suite, has no
+          dependencies, and is <code>app.inject()</code> of <a href="http.html">@xufa/http</a>: tests run in the process,
+          in microseconds, without ports.
+        </p>
+
+        <h2 id="start">Quick start</h2>
+        <pre><code class="language-sh">npm install @xufa/inject</code></pre>
+        <pre><code class="language-js">const inject = require('@xufa/inject');
+
+const handler = (req, res) =&gt; {
+  res.writeHead(200, { 'content-type': 'text/plain' });
+  res.end(`${req.method} ${req.url}`);
+};
+
+const res = await inject(handler, { method: 'POST', url: '/items?x=1', payload: { a: 1 } });
+res.statusCode; // 200
+res.payload; // 'POST /items?x=1'</code></pre>
+        <p>Any <code>(req, res)</code> handler: <code>node:http</code>, Express, Koa's <code>app.callback()</code>...</p>
+
+        <h2 id="xufa">In xufa</h2>
+        <pre><code class="language-js">const app = require('./app'); // a xufa app, not listening
+
+test('creates a user', async () =&gt; {
+  const res = await app.inject({ method: 'POST', url: '/users', payload: { name: 'Ada' } });
+  expect(res.statusCode).toBe(201);
+  expect(res.json()).toMatchObject({ name: 'Ada' });
+});</code></pre>
+        <p><code>app.inject()</code> waits for the app to be ready (its plugins loaded) before the request.</p>
+
+        <h2 id="options">Options of a request</h2>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Option</th><th>What it is</th></tr></thead>
+            <tbody>
+              <tr><td><code>url</code> (or <code>path</code>)</td><td>A string, or <code>{ pathname, protocol, hostname, port, query }</code>.</td></tr>
+              <tr><td><code>method</code></td><td><code>GET</code> by default.</td></tr>
+              <tr><td><code>headers</code></td><td>The headers of the request.</td></tr>
+              <tr><td><code>query</code></td><td>A string or an object, added to the query of the URL.</td></tr>
+              <tr><td><code>payload</code> (or <code>body</code>)</td><td>A string, a Buffer, an object (sent as JSON) or a stream.</td></tr>
+              <tr><td><code>cookies</code></td><td>Cookies by name.</td></tr>
+              <tr><td><code>remoteAddress</code>, <code>authority</code></td><td>The address of the client (<code>127.0.0.1</code>), the host.</td></tr>
+              <tr><td><code>signal</code></td><td>An AbortSignal that aborts the request.</td></tr>
+              <tr><td><code>simulate</code></td><td>See <a href="#simulate">Simulating failures</a>.</td></tr>
+              <tr><td><code>server</code></td><td>The server the request comes to (<code>req.socket.server</code>).</td></tr>
+              <tr><td><code>payloadAsStream</code></td><td>The response is given as a stream, not read whole.</td></tr>
+              <tr><td><code>validate</code></td><td><code>false</code> skips the checks of the options.</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p>The options can be a string, the URL of a <code>GET</code>.</p>
+
+        <h2 id="response">The response</h2>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Member</th><th>What it is</th></tr></thead>
+            <tbody>
+              <tr><td><code>statusCode</code>, <code>statusMessage</code></td><td>The status.</td></tr>
+              <tr><td><code>headers</code>, <code>trailers</code></td><td>The headers and trailers sent.</td></tr>
+              <tr><td><code>payload</code> (or <code>body</code>)</td><td>The body, as text.</td></tr>
+              <tr><td><code>rawPayload</code></td><td>The body, as a Buffer.</td></tr>
+              <tr><td><code>json()</code></td><td>The body, parsed.</td></tr>
+              <tr><td><code>stream()</code></td><td>The body, as a readable stream.</td></tr>
+              <tr><td><code>cookies</code></td><td>The cookies set: <code>{ name, value, expires, maxAge, secure, httpOnly, sameSite, path, domain }</code>.</td></tr>
+              <tr><td><code>raw.req</code>, <code>raw.res</code></td><td>The request and response objects the handler got.</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h2 id="chain">Chained requests</h2>
+        <pre><code class="language-js">const res = await inject(handler)
+  .post('/login')
+  .headers({ 'x-tenant': 'acme' })
+  .cookies({ session: 's1' })
+  .query({ next: '/home' })
+  .body({ user: 'ada', password: 'secret' })
+  .end();</code></pre>
+        <p>
+          <code>get</code>, <code>post</code>, <code>put</code>, <code>patch</code>, <code>delete</code>,
+          <code>head</code>, <code>options</code>, <code>trace</code>, then <code>headers</code>, <code>query</code>,
+          <code>cookies</code>, <code>body</code> (or <code>payload</code>); <code>end()</code> sends it (or
+          <code>await</code> the chain).
+        </p>
+
+        <h2 id="payloads">Payloads</h2>
+        <pre><code class="language-js">await inject(handler, { method: 'POST', url: '/upload', payload: fs.createReadStream('photo.jpg'),
+  headers: { 'content-type': 'image/jpeg' } });
+await inject(handler, { method: 'POST', url: '/form', payload: 'a=1&amp;b=2',
+  headers: { 'content-type': 'application/x-www-form-urlencoded' } });</code></pre>
+        <p>Objects are sent as JSON with <code>content-type: application/json</code>; <code>content-length</code> is set for strings and Buffers.</p>
+
+        <h2 id="simulate">Simulating failures</h2>
+        <pre><code class="language-js">await inject(handler, { method: 'POST', url: '/', payload: 'data', simulate: { split: true } }); // two chunks
+await inject(handler, { method: 'POST', url: '/', payload: 'data', simulate: { close: true } }); // the client goes away
+await inject(handler, { method: 'POST', url: '/', payload: 'data', simulate: { error: true } }); // the request errors
+await inject(handler, { method: 'POST', url: '/', payload: 'data', simulate: { end: false } }); // never ends</code></pre>
+
+        <h2 id="helpers">isInjection</h2>
+        <p><code>inject.isInjection(req)</code> (or of the response) tells whether a request came from inject.</p>
+
+        <h2 id="from-lmr">Coming from light-my-request</h2>
+        <p>The API is light-my-request's, and so are its tests; <code>require('light-my-request')</code> can be replaced by <code>require('@xufa/inject')</code>.</p>
+
+        <h2 id="typescript">TypeScript</h2>
+        <p>light-my-request's declarations: <code>InjectOptions</code>, <code>Response</code>, <code>Chain</code>.</p>

@@ -18,7 +18,10 @@
     "lintfix": "eslint --fix .",
     "bench": "node bench/run.js",
     "bench:quick": "node bench/run.js --duration 3 --warmup 1 --rounds 1",
-    "test:types": "pnpm -r --filter \"./packages/**\" test:types"
+    "docs": "node tools/docs/build.js",
+    "docs:check": "node tools/docs/build.js --check",
+    "test:types": "pnpm -r --filter \"./packages/**\" test:types",
+    "bench:linux": "node tools/bench-linux/run.js"
   },
   "engines": {
     "node": ">=22"

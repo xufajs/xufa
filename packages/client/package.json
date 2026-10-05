@@ -1,0 +1,59 @@
+{
+  "name": "@xufa/client",
+  "version": "0.1.0",
+  "description": "A client of HTTP APIs on the fetch of Node.js, with no dependencies: base URLs, JSON, timeouts, retries with backoff, errors by status, hooks, logs, and the cancellation of the request that calls",
+  "main": "./index.js",
+  "types": "./index.d.ts",
+  "type": "commonjs",
+  "exports": {
+    ".": {
+      "types": "./index.d.ts",
+      "default": "./index.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "index.js",
+    "index.d.ts",
+    "lib",
+    "LICENSE"
+  ],
+  "scripts": {
+    "test": "vyntra",
+    "test:types": "tsd"
+  },
+  "keywords": [
+    "http",
+    "client",
+    "fetch",
+    "retry",
+    "rest",
+    "api"
+  ],
+  "author": "Jesús Seijas <jseijas@gmail.com>",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/xufajs/xufa.git",
+    "directory": "packages/client"
+  },
+  "homepage": "https://github.com/xufajs/xufa/tree/main/packages/client#readme",
+  "bugs": {
+    "url": "https://github.com/xufajs/xufa/issues"
+  },
+  "engines": {
+    "node": ">=22"
+  },
+  "devDependencies": {
+    "@xufa/http": "workspace:*",
+    "@xufa/logger": "workspace:*",
+    "tsd": "^0.33.0",
+    "vyntra": "^0.6.0"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "tsd": {
+    "directory": "test/types"
+  }
+}

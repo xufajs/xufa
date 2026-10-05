@@ -1,0 +1,25 @@
+openapi: 3.1.0
+info:
+  title: Split
+  version: 1.0.0
+paths:
+  /books:
+    $ref: ./paths/books.yaml
+  /books/{id}:
+    get:
+      operationId: getBook
+      parameters:
+        - $ref: ./parameters.yaml#/Id
+      responses:
+        "200":
+          description: A book
+          content:
+            application/json:
+              schema:
+                $ref: ./schemas/book.yaml#/Book
+components:
+  schemas:
+    Error:
+      type: object
+      properties:
+        message: { type: string }

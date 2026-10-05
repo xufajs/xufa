@@ -48,6 +48,9 @@ export interface ClientConfig {
 export interface PoolConfig extends ClientConfig {
   max?: number;
   idleTimeoutMillis?: number;
+  // How long a query or connect() waits for a connection, free or being opened (0: no limit); past it, an error of
+  // code ACQUIRE_TIMEOUT.
+  acquireTimeoutMillis?: number;
 }
 
 export interface FieldDef {
@@ -176,6 +179,8 @@ export declare class Pool extends EventEmitter implements Queryable {
     columns: string[],
     rows: Iterable<unknown[] | Record<string, unknown>>
   ): Promise<number>;
+  // Opens the connections of the pool (replaceable, to open them in another way).
+  openConnection(options: ClientConfig): Promise<unknown>;
   // Ends the pool after the queries sent and once the clients given by connect() are released.
   end(): Promise<void>;
   [Symbol.asyncDispose](): Promise<void>;

@@ -73,24 +73,31 @@ const SHARED = 'xufa:cache';
 const INVALIDATE = 'xufa:cache:invalidate';
 
 // The cache of a cluster in its primary: every process (the primary too) creates a SharedCache with the bus; in the
-// primary it holds the data and answers the workers.
+// primary it holds the data and answers the workers. `store` (in the primary): where it holds them, a MemoryCache by
+// default, or any cache (get, set, delete, clear), such as the NetCache of @xufa/netcache, shared with other machines.
+// The events served in each process (by bus): in one process (workers: 0), the primary and the worker both make a
+// SharedCache, and the second one asks the first.
+const serving = new WeakMap();
+
 class SharedCache {
-  constructor({ bus, max, ttl, name = 'default' } = {}) {
+  constructor({ bus, max, ttl, name = 'default', store } = {}) {
     if (!bus) throw new TypeError('SharedCache needs the bus of @xufa/cluster');
     this.bus = bus;
     this.event = `${SHARED}:${name}`;
-    if (bus.isPrimary) {
-      this.store = new MemoryCache({ max, ttl });
+    if (!serving.has(bus)) serving.set(bus, new Set());
+    if (bus.isPrimary && !serving.get(bus).has(this.event)) {
+      serving.get(bus).add(this.event);
+      this.store = store || new MemoryCache({ max, ttl });
       bus.on(this.event, ({ op, key, value, ttl: time }) => {
         switch (op) {
           case 'get':
-            return this.store.getNow(key);
+            return this.store.get(key);
           case 'set':
-            return this.store.setNow(key, value, time);
+            return this.store.set(key, value, time);
           case 'delete':
-            return this.store.deleteNow(key);
+            return this.store.delete(key);
           default:
-            return this.store.clearNow(key);
+            return this.store.clear(key);
         }
       });
     }

@@ -1,0 +1,57 @@
+{
+  "name": "@xufa/marshal",
+  "version": "0.1.0",
+  "description": "Values as JSON that keeps classes (a registry), shared references, cycles, and Date, Map, Set, BigInt, Error, Buffer, undefined...; safe to parse from outside, with no dependencies",
+  "main": "./index.js",
+  "types": "./index.d.ts",
+  "type": "commonjs",
+  "exports": {
+    ".": {
+      "types": "./index.d.ts",
+      "default": "./index.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "index.js",
+    "index.d.ts",
+    "lib"
+  ],
+  "scripts": {
+    "test": "vyntra",
+    "test:types": "tsd"
+  },
+  "keywords": [
+    "serialize",
+    "serialization",
+    "structured clone",
+    "classes",
+    "references",
+    "cycles",
+    "marshal"
+  ],
+  "author": "Jesús Seijas <jseijas@gmail.com>",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/xufajs/xufa.git",
+    "directory": "packages/marshal"
+  },
+  "homepage": "https://github.com/xufajs/xufa/tree/main/packages/marshal#readme",
+  "bugs": {
+    "url": "https://github.com/xufajs/xufa/issues"
+  },
+  "engines": {
+    "node": ">=22"
+  },
+  "tsd": {
+    "directory": "test/types"
+  },
+  "devDependencies": {
+    "tsd": "^0.33.0",
+    "vyntra": "^0.6.0"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}

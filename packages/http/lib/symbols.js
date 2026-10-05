@@ -36,6 +36,7 @@ const names = [
   'kHandlerTimeout',
   'kTimeoutTimer',
   'kOnAbort',
+  'kRequestResponse',
   'kFourOhFour',
   'kCanSetNotFoundHandler',
   'kFourOhFourLevelInstance',

@@ -1,51 +1,67 @@
 // @xufa/logger against pino, writing to a stream that drops the lines: only the cost of the loggers is measured.
-// node bench/micro/logger.js [iterations]
-const pino = require('pino');
-const xufaLogger = require('@xufa/logger');
+// Each logger and case runs in a process of its own, so that no case inherits the type feedback of another (in one
+// process, the call sites of the harness see every logger and case, and the last cases pay for it).
+// node bench/micro/logger.js [rounds]
+const { execFileSync } = require('node:child_process');
 
-const iterations = Number(process.argv[2]) || 300000;
-const devNull = { write() {} };
 const err = new Error('something failed');
 const deep = { user: { id: 1, name: 'Ada', roles: ['admin', 'author'] }, items: [1, 2, 3], flag: true };
 
 const cases = {
   message: (log) => log.info('hello world'),
+  // request.log of a server is a child logger
+  'message, child': (log) => log.info('hello world'),
   'object + message': (log) => log.info({ a: 1, b: 'two', c: true }, 'hello world'),
   printf: (log) => log.info('user %s did %d things', 'ada', 42),
   'deep object': (log) => log.info(deep),
   error: (log) => log.error(err),
   'child + message': (log) => log.child({ reqId: 'req-1' }).info('incoming request'),
   'disabled level': (log) => log.debug({ a: 1 }, 'not written'),
+  'disabled level, child': (log) => log.debug({ a: 1 }, 'not written'),
 };
 
+const devNull = { write() {} };
 const loggers = {
-  pino: () => pino({}, devNull),
-  xufa: () => xufaLogger({}, devNull),
+  pino: () => require('pino')({}, devNull),
+  xufa: () => require('@xufa/logger')({}, devNull),
 };
 
-function measure(fn, log) {
-  for (let i = 0; i < 20000; i += 1) fn(log);
+// Calls a second: batches until a quarter of a second has gone, after a warm-up.
+function child(loggerName, caseName) {
+  const fn = cases[caseName];
+  let log = loggers[loggerName]();
+  if (caseName.endsWith(', child')) log = log.child({ reqId: 'req-1' });
+  const batch = 20000;
+  for (let i = 0; i < batch * 10; i += 1) fn(log);
+  let calls = 0;
   const start = process.hrtime.bigint();
-  for (let i = 0; i < iterations; i += 1) fn(log);
-  const ns = Number(process.hrtime.bigint() - start);
-  return (iterations / ns) * 1e9;
-}
-
-const rows = [];
-for (const [name, fn] of Object.entries(cases)) {
-  const ops = {};
-  // Alternate a few times and keep the best of each.
-  for (let round = 0; round < 3; round += 1) {
-    for (const [loggerName, create] of Object.entries(loggers)) {
-      const value = measure(fn, create());
-      ops[loggerName] = Math.max(ops[loggerName] || 0, value);
-    }
+  let ns = 0;
+  while (ns < 250e6) {
+    for (let i = 0; i < batch; i += 1) fn(log);
+    calls += batch;
+    ns = Number(process.hrtime.bigint() - start);
   }
-  rows.push({ case: name, ...ops, ratio: ops.xufa / ops.pino });
+  process.stdout.write(String((calls / ns) * 1e9));
 }
 
-const fmt = (n) => Math.round(n).toLocaleString('en-US');
-process.stdout.write('| Case | pino ops/s | @xufa/logger ops/s | xufa / pino |\n| --- | ---: | ---: | ---: |\n');
-for (const row of rows) {
-  process.stdout.write(`| ${row.case} | ${fmt(row.pino)} | ${fmt(row.xufa)} | ${row.ratio.toFixed(2)}x |\n`);
+function main() {
+  const rounds = Number(process.argv[2]) || 5;
+  const fmt = (n) => Math.round(n).toLocaleString('en-US');
+  process.stdout.write('| Case | pino ops/s | @xufa/logger ops/s | xufa / pino |\n| --- | ---: | ---: | ---: |\n');
+  for (const caseName of Object.keys(cases)) {
+    const ops = {};
+    // The loggers take turns; the best round of each is kept.
+    for (let round = 0; round < rounds; round += 1) {
+      for (const name of Object.keys(loggers)) {
+        const out = execFileSync(process.execPath, [__filename, '--child', name, caseName], { cwd: __dirname });
+        ops[name] = Math.max(ops[name] || 0, Number(out));
+      }
+    }
+    process.stdout.write(
+      `| ${caseName} | ${fmt(ops.pino)} | ${fmt(ops.xufa)} | ${(ops.xufa / ops.pino).toFixed(2)}x |\n`
+    );
+  }
 }
+
+if (process.argv[2] === '--child') child(process.argv[3], process.argv[4]);
+else main();

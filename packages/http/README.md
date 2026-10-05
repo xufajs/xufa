@@ -109,6 +109,20 @@ Routes with a response schema whose output can be large (arrays, maps, recursive
 bytes and send that Buffer, without making a string first. When the route has `onSend` hooks, they get a string, as in
 fastify.
 
+### The head of responses
+
+For most responses, xufa writes the status line and the headers itself, as one string, instead of calling
+`res.writeHead()` (where Node checks and assembles every header: most of what a small response costs). They are the
+same bytes: a self-test compares them with those of Node when the first route is made, and turns this off for good if
+they differ; names and values are checked as Node checks them. It covers HTTP/1.1 responses kept alive with any status
+from 200, with a body of known length or none (`HEAD`, 204, 304, empty replies), and headers set on `reply.raw` too,
+merged as `writeHead()` merges them. Node writes the others: streams, trailers, HTTP/1.0 and connections that close.
+
+- `reply.raw.getHeaders()` gives what it gives after `writeHead()`: the headers set on `reply.raw`, and those of the
+  reply too when there were some. Code that wraps Node's `res.writeHead()` (some tracing tools do) does not see these
+  responses go through it.
+- `xufa({ fastHead: false })` leaves every head to Node.
+
 ## TypeScript
 
 The declarations are fastify's with the names of xufa: `XufaInstance`, `XufaRequest`, `XufaReply`,

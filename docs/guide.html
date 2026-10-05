@@ -400,7 +400,7 @@ await User.objects.get({ email: 'ada@example.com' }); // the cache</code></pre>
 
         <h2 id="cluster">Running in a cluster</h2>
         <p>
-          <a href="packages.html#cluster"><code>@xufa/cluster</code></a> runs an app in a process per CPU: it forks the
+          <a href="cluster.html"><code>@xufa/cluster</code></a> runs an app in a process per CPU: it forks the
           workers, forks again those that die, and stops them all gracefully on <code>SIGINT</code> and
           <code>SIGTERM</code>. Its bus carries messages between the processes.
         </p>

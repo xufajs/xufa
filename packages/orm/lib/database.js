@@ -10,6 +10,8 @@ const { lowerFirst, snakeCase } = require('./meta');
 const { BackendError, ModelError } = require('./errors');
 const { seconds } = require('./duration');
 const migrations = require('./migrations');
+const modelCache = require('./model-cache');
+const { followWrites, inTransaction } = require('./query-cache');
 
 const backends = new Map();
 let nextName = 0;
@@ -30,6 +32,10 @@ class Database {
     } else if (typeof backend === 'function') this.backend = new backend(rest);
     else this.backend = backend;
     this.models = new Map();
+    // Tables changed from outside (the fs backend watching its folder): the cached objects of their models go.
+    this.backend.changedOutside = (tables) => this.changedOutside(tables);
+    // Writes give new versions to the models with the option cache (the results of cached() querysets: lib/query-cache.js).
+    followWrites(this);
     this.expiryTimer = null;
   }
 
@@ -124,6 +130,15 @@ class Database {
     return this.models.get(name);
   }
 
+  changedOutside(tables) {
+    const keys = new Set(tables);
+    return Promise.all(
+      [...this.models.values()]
+        .filter((model) => keys.has(model.meta.key))
+        .map((model) => modelCache.clear(this, model))
+    );
+  }
+
   async connect() {
     await this.backend.connect();
     return this;
@@ -150,6 +165,19 @@ class Database {
       }
     }
     return deleted;
+  }
+
+  // MongoDB: converts the values of decimal fields written as strings (before decimals were Decimal128) to Decimal128,
+  // in the server. The number of values converted, by model; values that are not numbers are left as they are. Other
+  // backends keep decimals as they always did: nothing to convert.
+  async migrateDecimals() {
+    const converted = {};
+    if (typeof this.backend.convertDecimals !== 'function') return converted;
+    for (const model of this.models.values()) {
+      const fields = model.meta.fields.filter((field) => field.dbType === 'decimal');
+      if (fields.length) converted[model.name] = await this.backend.convertDecimals(model.meta, fields);
+    }
+    return converted;
   }
 
   // Calls expire() every `interval` (seconds or text: '1m' by default) until stopExpiry() or close(). A run does not
@@ -225,7 +253,7 @@ class Database {
   // runs (in its async context) are part of it; transactions inside it are savepoints. options.mode is the mode of
   // SQLite transactions (DEFERRED, IMMEDIATE or EXCLUSIVE).
   transaction(fn, options) {
-    return this.backend.transaction(fn, options);
+    return inTransaction(this, () => this.backend.transaction(fn, options));
   }
 }
 

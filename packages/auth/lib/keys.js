@@ -5,7 +5,8 @@
 //
 // A key is a secret (a string or Buffer, for HS256/384/512), or a KeyObject or PEM of node:crypto (RS, PS, ES and
 // EdDSA: the private key signs, and its public key verifies). Each key has its algorithm: given ({ key, algorithm }),
-// or HS256 for secrets and the algorithm its type has (RS256 for RSA, ES256/384/512 for its curve, EdDSA).
+// or HS256 for secrets and the algorithm its type has (RS256 for RSA, ES256/384/512 for its curve, EdDSA). An
+// encrypted private key in PEM is given with its passphrase: { key, passphrase }.
 const crypto = require('node:crypto');
 
 const HMAC = { HS256: 'sha256', HS384: 'sha384', HS512: 'sha512' };
@@ -28,7 +29,7 @@ function normalizeKey(id, given) {
     given && typeof given === 'object' && !Buffer.isBuffer(given) && !(given instanceof crypto.KeyObject)
       ? given
       : { key: given };
-  const { key, algorithm } = entry;
+  const { key, algorithm, passphrase } = entry;
   if (key === undefined || key === null || key === '') throw new TypeError(`The key ${id} is empty`);
   if (key instanceof crypto.KeyObject ? key.type === 'secret' : !isPem(key)) {
     const secret = key instanceof crypto.KeyObject ? key.export() : Buffer.from(key);
@@ -49,7 +50,8 @@ function normalizeKey(id, given) {
       publicKey = crypto.createPublicKey(key);
     } else publicKey = key;
   } else if (/-----BEGIN (RSA |EC |ENCRYPTED )?PRIVATE KEY-----/.test(key)) {
-    privateKey = crypto.createPrivateKey(key);
+    // An encrypted private key (PKCS#8 with a passphrase, as the KeyVault keeps them): { key, passphrase }.
+    privateKey = crypto.createPrivateKey(passphrase === undefined ? key : { key, passphrase });
     publicKey = crypto.createPublicKey(privateKey);
   } else publicKey = crypto.createPublicKey(key);
   const type = publicKey.asymmetricKeyType;

@@ -4,8 +4,17 @@
 // eslint-disable-next-line no-control-regex
 const NEEDS_ESCAPE = /[\u0000-\u001f"\\\ud800-\udfff]/;
 
+// Short strings are checked a character at a time, cheaper than the regular expression; longer ones by it.
 function asString(str) {
-  if (str.length < 2048 && !NEEDS_ESCAPE.test(str)) return `"${str}"`;
+  const length = str.length;
+  if (length < 64) {
+    for (let i = 0; i < length; i += 1) {
+      const code = str.charCodeAt(i);
+      if (code < 32 || code === 34 || code === 92 || (code >= 0xd800 && code <= 0xdfff)) return JSON.stringify(str);
+    }
+    return `"${str}"`;
+  }
+  if (length < 2048 && !NEEDS_ESCAPE.test(str)) return `"${str}"`;
   return JSON.stringify(str);
 }
 
@@ -48,10 +57,7 @@ function stringify(value, parent) {
   }
 }
 
-// The JSON of a key, quoted.
-const SIMPLE_KEY = /^[\w$\-.@:]*$/;
-function asKey(key) {
-  return SIMPLE_KEY.test(key) ? `"${key}"` : JSON.stringify(key);
-}
+// A key is quoted as any string.
+const asKey = asString;
 
 module.exports = { asString, asKey, stringify, safeStringify };

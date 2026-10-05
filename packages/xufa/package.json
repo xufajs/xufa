@@ -20,7 +20,27 @@
       "types": "./auth.d.ts",
       "default": "./auth.js"
     },
-    "./package.json": "./package.json"
+    "./expression": {
+      "types": "./expression.d.ts",
+      "default": "./expression.js"
+    },
+    "./template": {
+      "types": "./template.d.ts",
+      "default": "./template.js"
+    },
+    "./package.json": "./package.json",
+    "./openapi": {
+      "types": "./openapi.d.ts",
+      "default": "./openapi.js"
+    },
+    "./openapi/ui": {
+      "types": "./openapi-ui.d.ts",
+      "default": "./openapi-ui.js"
+    },
+    "./client": {
+      "types": "./client.d.ts",
+      "default": "./client.js"
+    }
   },
   "files": [
     "index.js",
@@ -29,7 +49,17 @@
     "orm.js",
     "orm.d.ts",
     "auth.js",
-    "auth.d.ts"
+    "auth.d.ts",
+    "expression.js",
+    "expression.d.ts",
+    "template.js",
+    "template.d.ts",
+    "openapi.js",
+    "openapi.d.ts",
+    "openapi-ui.js",
+    "openapi-ui.d.ts",
+    "client.js",
+    "client.d.ts"
   ],
   "scripts": {
     "test": "vyntra"
@@ -40,7 +70,8 @@
     "http",
     "orm",
     "django",
-    "fastify"
+    "fastify",
+    "template"
   ],
   "author": "Jesús Seijas <jseijas@gmail.com>",
   "license": "MIT",
@@ -58,8 +89,12 @@
   },
   "dependencies": {
     "@xufa/auth": "workspace:*",
+    "@xufa/expression": "workspace:*",
     "@xufa/http": "workspace:*",
-    "@xufa/orm": "workspace:*"
+    "@xufa/orm": "workspace:*",
+    "@xufa/template": "workspace:*",
+    "@xufa/openapi": "workspace:*",
+    "@xufa/client": "workspace:*"
   },
   "peerDependencies": {
     "schiva": ">=0.7.0"

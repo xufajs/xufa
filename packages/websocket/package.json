@@ -1,0 +1,90 @@
+{
+  "name": "@xufa/websocket",
+  "version": "0.1.0",
+  "description": "WebSockets (RFC 6455, permessage-deflate): client and server with the API and the tests of ws, with no dependencies",
+  "main": "./index.js",
+  "types": "./index.d.ts",
+  "type": "commonjs",
+  "exports": {
+    ".": {
+      "import": {
+        "types": "./index.d.mts",
+        "default": "./wrapper.mjs"
+      },
+      "require": {
+        "types": "./index.d.ts",
+        "default": "./index.js"
+      }
+    },
+    "./plugin": {
+      "types": "./plugin.d.ts",
+      "default": "./lib/plugin.js"
+    },
+    "./package.json": "./package.json",
+    "./hub": {
+      "types": "./hub.d.ts",
+      "default": "./lib/hub.js"
+    }
+  },
+  "files": [
+    "index.js",
+    "index.d.ts",
+    "plugin.d.ts",
+    "wrapper.mjs",
+    "lib",
+    "LICENSE",
+    "LICENSE.ws",
+    "hub.d.ts",
+    "index.d.mts"
+  ],
+  "scripts": {
+    "test": "vyntra",
+    "test:types": "tsd"
+  },
+  "keywords": [
+    "websocket",
+    "websockets",
+    "ws",
+    "rfc6455",
+    "realtime",
+    "server",
+    "client"
+  ],
+  "author": "Jesús Seijas <jseijas@gmail.com>",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/xufajs/xufa.git",
+    "directory": "packages/websocket"
+  },
+  "homepage": "https://github.com/xufajs/xufa/tree/main/packages/websocket#readme",
+  "bugs": {
+    "url": "https://github.com/xufajs/xufa/issues"
+  },
+  "engines": {
+    "node": ">=22"
+  },
+  "tsd": {
+    "directory": "test/types"
+  },
+  "devDependencies": {
+    "@xufa/http": "workspace:*",
+    "tsd": "^0.33.0",
+    "vyntra": "^0.6.0",
+    "split2": "^4.2.0",
+    "@xufa/cluster": "workspace:*",
+    "@xufa/netcache": "workspace:*",
+    "bufferutil": "^4.1.0"
+  },
+  "peerDependencies": {
+    "bufferutil": ">=4.0.0"
+  },
+  "peerDependenciesMeta": {
+    "bufferutil": {
+      "optional": true
+    }
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}

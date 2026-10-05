@@ -99,7 +99,39 @@ public keys as a JWKS, to publish them.
 public key), and checks `exp` and `nbf` (with `clockTolerance` seconds of leeway) and, when they are given, `issuer`
 and `audience` (values or lists, strings or RegExps), `subject` and `maxAge`. The `reason` of its TokenError is
 `malformed`, `algorithm`, `signature`, `expired`, `notBefore`, `issuer`, `audience`, `subject` or `maxAge`.
-`decodeJwt(token)` gives the header and claims without verifying.
+`decodeJwt(token)` gives the header and claims without verifying. `signJwtAsync()` and `verifyJwtAsync()` are the same
+as Promises: RSA keys (RS, PS) sign in libuv's thread pool, so the event loop does not wait for their half a
+millisecond; the other signatures and every verification take 20 to 90 µs, about what the hand-off to the pool costs,
+and are done on the loop. The plugin uses them.
+
+The tokens are signed and verified by [@xufa/jwt](../jwt) (the checks and tests of jsonwebtoken, jws and jwa): RSA
+keys under 2048 bits do not sign, and tokens with critical extensions (`crit`) are refused.
+
+## Keys per tenant
+
+A `KeyVault` keeps the keys of each tenant in a store, the private keys encrypted with keys derived from its secret,
+the tenant and the key (a copy of the store is no key, and keys cannot be moved between tenants):
+
+```js
+const { KeyVault, vaultModelStore, vaultFields } = require('@xufa/auth');
+
+class TenantKeys extends Model {
+  static fields = vaultFields(fields);
+}
+const vault = new KeyVault({ secret: process.env.VAULT_SECRET, store: vaultModelStore(TenantKeys) });
+await vault.create('acme'); // its first key (ES256 by default; HS, RS, PS, ES or EdDSA)
+
+app.register(auth.plugin, { keys: (request) => vault.keys(tenantOf(request)), login });
+app.get('/.well-known/jwks.json', (request) => vault.jwks(tenantOf(request)));
+await vault.rotate('acme'); // verifies at once, signs after ttl; the old key verifies `keep` more
+```
+
+`keys(tenant)` is kept `ttl` (5 minutes) in memory; a rotated key signs only after `ttl`, when every process has
+loaded it, so no process meets a token of a key it does not know (`rotate(tenant, { immediate: true })` for a key that
+leaked, then `revoke(tenant, keyId)`). Records change by compare-and-swap on their version: processes that rotate at
+once lose no key. `rotateAfter` rotates old keys when they are used; `autoCreate` (false) makes the keys of unknown
+tenants, which is unwise when tenants come from what clients send. A `KeySet` takes an encrypted private key as
+`{ key, passphrase }`.
 
 ## One-time codes (TOTP)
 
@@ -158,7 +190,9 @@ the fields of `refreshTokenFields(fields)`. A [TTL index](../orm#ttl-indexes) on
 `app.register(auth.plugin, options)`:
 
 - `keys`: a secret, a `KeySet` (or its options), or a function of the request that gives them (a `KeySet` per tenant:
-  `(request) => keysOf(request.tenant)`).
+  `(request) => keysOf(request.tenant)`). Needed by the strategy `'jwt'`, logins and refresh tokens.
+- `strategies`: how requests say who they are, tried in order on every request (`['jwt']` when `keys` are given): see
+  [Strategies](#strategies).
 - `accessToken`: `expiresIn` (`'15m'`), `issuer`, `audience`, `algorithms`, `clockTolerance`.
 - `token`: where tokens are read from: the Authorization header (`Bearer`; `header: false` to not read it), then the
   cookie `cookie` and the query parameter `query`, when they are given.
@@ -185,11 +219,107 @@ With `login`, the plugin adds `POST <prefix>/login`, `/refresh` and `/logout` (`
   Without it, the claims of the login are kept.
 - `fields`: the names of the fields of the body (`username`, `password`, `code`).
 
-`refresh`: `RefreshTokens` or its options (`false`: no refresh tokens). `refreshCookie: true` (or its options) keeps
+`refresh`: `RefreshTokens` or its options (`false`: no refresh tokens; given without `login`, for the logins of
+Passport, it adds `/refresh` and `/logout`, with `reload` as an option of the plugin). `refreshCookie: true` (or its options) keeps
 the refresh token in an HttpOnly, Secure, SameSite=Strict cookie of the path of the prefix, instead of the body.
 
 A login answers the same `Invalid credentials` (401) for a user that does not exist and a wrong password, and verifies
 a password in both cases, so neither the answer nor its time tells which.
+
+## Strategies
+
+Each request is tried with the strategies of `strategies`, in order, until one identifies its user: `request.user`,
+`request.auth` (what the strategy knows: the claims of a JWT, `{ apiKey: id }`, `{ username }`) and
+`request.authStrategy` (its name). Credentials that are not valid make `request.authError`, and a route that needs a
+user answers 401 with the `WWW-Authenticate` challenges of the strategies.
+
+```js
+const { ApiKey } = require('./models'); // static fields = auth.apiKeyFields(fields)
+
+app.register(auth.plugin, {
+  keys: process.env.JWT_KEY,
+  strategies: [
+    'jwt',
+    auth.apiKey({
+      find: (id) => ApiKey.objects.filter({ id }).first(),
+      user: (key) => User.objects.get({ id: key.subject }),
+    }),
+    auth.basic({ findUser: (email) => User.objects.filter({ email }).first() }),
+  ],
+});
+
+app.get('/reports', { config: { auth: { strategy: 'apiKey' } } }, handler); // only API keys
+app.get('/admin', { config: { auth: { strategy: ['jwt', 'basic'], roles: 'admin' } } }, handler);
+```
+
+- `auth.apiKey({ find, user, header, scheme, query, name })`: keys from `x-api-key` (`header`), `Authorization:
+<scheme> <key>` (`scheme`) or a query parameter (`query`, off by default: URLs end in logs). A key is
+  `<id>.<secret>`: `find(id, request)` gives its record (`{ hash }` and what you keep), refused when its
+  `expiresAt` passed or it has a `revokedAt`; `user(record, request)` gives its user (`record.user`, or the record).
+- `auth.generateApiKey({ prefix: 'xk_' })`: `{ key, id, hash }`. Give `key` once and keep `id` and `hash`: only a
+  SHA-256 of the 32 random bytes of the secret is kept (enough for a random secret, and fast on every request), and it
+  is compared in constant time. `auth.apiKeyFields(fields)`: the fields of a model of keys (`id`, `hash`,
+  `subject`, `name`, `scopes`, `createdAt`, `expiresAt`, `revokedAt`).
+- `auth.basic({ findUser, password, lockout, cache, realm, name })`: HTTP Basic against the scrypt hashes of the users,
+  with the answer of unknown users taking as long, and a `Lockout` (`false`: none). A checked password is remembered
+  for `cache` (`'5m'`; `0`: never), so requests do not pay scrypt each time; another password, or a changed hash, is
+  checked again.
+- Your own: `{ name, challenge, authenticate(request, reply) }`, whose promise is `{ user, info }`, `{ fail: { message,
+challenge } }` or `null` (no credentials of its kind).
+
+A route says which strategies may identify its user with `config: { auth: { strategy, roles, check } }`, or the hook
+`app.auth.authenticateWith('apiKey', 'basic')`. Each strategy runs once per request. With
+[@xufa/openapi](../openapi), the strategies are the security schemes of the document (each has its `openapi`:
+bearer JWT, API keys, Basic, OAuth 2.0 of Passport; give `openapi` to a strategy to change it), and routes with
+`config.auth` get their security.
+
+## Passport
+
+The strategies of [Passport](https://www.passportjs.org/) work unchanged, without Passport: `auth.passport(strategy)`
+gives them what Passport would (`success`, `fail`, `redirect`, `pass`, `error`, and a request with what Express
+has that they read). Tested with passport-local, passport-http, passport-http-bearer, passport-headerapikey,
+passport-jwt and passport-oauth2.
+
+```js
+const { Strategy: BearerStrategy } = require('passport-http-bearer');
+const { Strategy: GitHubStrategy } = require('passport-github2');
+
+// Credentials in every request: one more strategy.
+app.register(auth.plugin, {
+  keys: process.env.JWT_KEY,
+  refresh: true,
+  strategies: [
+    'jwt',
+    auth.passport(new BearerStrategy((token, done) => findByToken(token).then((user) => done(null, user || false)))),
+  ],
+});
+
+// Logins: the redirect to the provider and its callback, in routes.
+const github = auth.passport(
+  new GitHubStrategy(
+    {
+      clientID,
+      clientSecret,
+      callbackURL: '/auth/github/callback',
+      store: auth.oauthState({ secret: process.env.STATE_KEY }),
+    },
+    (accessToken, refreshToken, profile, done) => findOrCreateUser(profile).then((user) => done(null, user))
+  )
+);
+app.get('/auth/github', github.login({ scope: ['user:email'] }));
+app.get('/auth/github/callback', github.login());
+```
+
+There are no sessions: `login({ onLogin, onFailure, claims, ...options })` answers a login with the tokens of the
+plugin (`app.auth.issue(claims(user))`: the access token, and a refresh token when there are refresh tokens), or with
+what `onLogin(user, info, request, reply)` returns (a redirect to the app, a cookie...). Failures are 401 (or the
+status the strategy gives) unless `onFailure(failure, request, reply)` answers. The options of the strategy's
+authenticate() (`scope`...) go with them.
+
+`auth.oauthState({ secret })` is the `store` of OAuth 2.0 strategies (passport-oauth2 and those made on it): the state
+sent to the provider is a random handle, and a cookie keeps it, with the code verifier of PKCE (`pkce: true`), sealed
+with AES-256-GCM, for 10 minutes (`maxAge`), used once. HttpOnly, Secure and SameSite=Lax (the redirect of the provider
+carries it). A strategy that keeps other things in `req.session` needs a plugin that gives requests a session.
 
 ## Errors
 

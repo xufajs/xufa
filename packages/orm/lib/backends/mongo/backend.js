@@ -17,11 +17,23 @@ function noComposite(meta) {
     throw new BackendError(`Composite primary keys (${meta.name}) are not supported by MongoDB`);
 }
 
+// Decimals are Decimal128, of 34 digits at most.
+function decimalsFit(meta) {
+  meta.fields.forEach((field) => {
+    if (field.dbType === 'decimal' && field.precision > 34) {
+      throw new BackendError(
+        `${meta.name}.${field.name} has a precision of ${field.precision}: MongoDB keeps decimals of 34 digits at most`
+      );
+    }
+  });
+}
+
 class MongoBackend extends Backend {
   constructor(options = {}) {
     super(options);
     const mongo = require('@xufa/mongo');
     this.ObjectId = mongo.ObjectId;
+    this.Decimal128 = mongo.Decimal128;
     this.ownClient = !options.client;
     this.client =
       options.client || new mongo.MongoClient(options.url || 'mongodb://127.0.0.1:27017', options.clientOptions);
@@ -72,7 +84,39 @@ class MongoBackend extends Backend {
       if (typeof value === 'string' && this.ObjectId.isValid(value)) return new this.ObjectId(value);
       return value;
     }
+    // Decimals are Decimal128: MongoDB compares, sorts and sums them as numbers, exactly.
+    if (field.dbType === 'decimal') return this.toDecimal128(value);
     return value;
+  }
+
+  toDecimal128(value) {
+    if (value instanceof this.Decimal128) return value;
+    try {
+      return this.Decimal128.fromString(typeof value === 'number' ? String(value) : value);
+    } catch (err) {
+      throw new BackendError(`MongoDB keeps decimals of 34 digits at most: ${err.message}`);
+    }
+  }
+
+  // The text of a Decimal128, without exponent (the text the decimal fields give): '1E+3' is '1000'. Decimals written
+  // as strings before they were Decimal128 are given as they are.
+  decimalText(value) {
+    if (!(value instanceof this.Decimal128)) return typeof value === 'string' ? value : String(value);
+    const { negative, coefficient, exponent, special } = value.toParts();
+    if (special) return `${negative ? '-' : ''}${special}`;
+    let digits = String(coefficient);
+    if (exponent > 0) digits += '0'.repeat(exponent);
+    else if (exponent < 0) {
+      const places = -exponent;
+      if (digits.length <= places) digits = `0.${'0'.repeat(places - digits.length)}${digits}`;
+      else digits = `${digits.slice(0, digits.length - places)}.${digits.slice(digits.length - places)}`;
+    }
+    return negative && coefficient != 0 ? `-${digits}` : digits; // eslint-disable-line eqeqeq
+  }
+
+  // A number of an aggregate (sums and averages of decimals are Decimal128).
+  numberOf(value) {
+    return value instanceof this.Decimal128 ? Number(this.decimalText(value)) : Number(value);
   }
 
   decode(field, value) {
@@ -92,6 +136,8 @@ class MongoBackend extends Backend {
       }
       case 'bytes':
         return Buffer.isBuffer(value) ? value : Buffer.from(value.buffer || value);
+      case 'decimal':
+        return this.decimalText(value);
       default:
         return value;
     }
@@ -130,13 +176,13 @@ class MongoBackend extends Backend {
         if (item.distinct) {
           const values = (value || []).filter((entry) => entry !== null);
           if (item.fn === 'count') value = values.length;
-          else value = values.length ? values.reduce((total, entry) => total + entry, 0) : null;
+          else value = values.length ? values.reduce((total, entry) => total + this.numberOf(entry), 0) : null;
           if (item.fn === 'avg' && value !== null) value /= values.length;
         } else if (!item.fields || item.fn === 'count') value = value || 0;
         else if (item.fn === 'sum' && !doc[`n${i}`]) value = null;
         if (value === undefined) value = null;
         if (item.fn === 'min' || item.fn === 'max') value = this.decode(lastOf(item.fields), value);
-        else if (value !== null) value = Number(value);
+        else if (value !== null) value = this.numberOf(value);
         row[item.key] = value;
       });
       return row;
@@ -202,8 +248,26 @@ class MongoBackend extends Backend {
     return result.deletedCount;
   }
 
+  // The values of these decimal fields that are strings, as Decimal128 (db.migrateDecimals()): one update of each
+  // field, in the server. Strings that are not numbers stay as they are. The number of values converted.
+  async convertDecimals(meta, fields) {
+    const collection = this.collection(meta);
+    let converted = 0;
+    for (const field of fields) {
+      const key = column(field);
+      const result = await collection.updateMany(
+        { [key]: { $type: 'string' } },
+        [{ $set: { [key]: { $convert: { input: `$${key}`, to: 'decimal', onError: `$${key}` } } } }],
+        { session: this.session }
+      );
+      converted += result.modifiedCount;
+    }
+    return converted;
+  }
+
   async createSchema(metas) {
     metas.forEach(noComposite);
+    metas.forEach(decimalsFit);
     const existing = new Set((await this.db.listCollections({}, { nameOnly: true })).map((item) => item.name));
     for (let i = 0; i < metas.length; i += 1) {
       const meta = metas[i];

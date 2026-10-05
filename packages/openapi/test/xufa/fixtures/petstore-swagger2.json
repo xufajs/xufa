@@ -1,0 +1,57 @@
+{
+  "swagger": "2.0",
+  "info": { "title": "Petstore", "version": "1.0.0" },
+  "host": "pets.example.com",
+  "basePath": "/v1",
+  "schemes": ["https"],
+  "consumes": ["application/json"],
+  "produces": ["application/json"],
+  "securityDefinitions": { "key": { "type": "apiKey", "in": "header", "name": "x-api-key" } },
+  "paths": {
+    "/pets": {
+      "get": {
+        "operationId": "listPets",
+        "parameters": [
+          { "name": "limit", "in": "query", "type": "integer", "maximum": 50 },
+          { "name": "tags", "in": "query", "type": "array", "items": { "type": "string" }, "collectionFormat": "multi" }
+        ],
+        "responses": { "200": { "description": "Pets", "schema": { "type": "array", "items": { "$ref": "#/definitions/Pet" } } } }
+      },
+      "post": {
+        "operationId": "createPet",
+        "security": [{ "key": [] }],
+        "parameters": [{ "name": "pet", "in": "body", "required": true, "schema": { "$ref": "#/definitions/Pet" } }],
+        "responses": { "201": { "description": "Created", "schema": { "$ref": "#/definitions/Pet" } } }
+      }
+    },
+    "/pets/{petId}": {
+      "parameters": [{ "$ref": "#/parameters/PetId" }],
+      "get": {
+        "operationId": "getPet",
+        "responses": { "200": { "description": "A pet", "schema": { "$ref": "#/definitions/Pet" } }, "404": { "$ref": "#/responses/NotFound" } }
+      }
+    },
+    "/pets/{petId}/photo": {
+      "parameters": [{ "$ref": "#/parameters/PetId" }],
+      "post": {
+        "operationId": "uploadPhoto",
+        "consumes": ["multipart/form-data"],
+        "parameters": [
+          { "name": "caption", "in": "formData", "type": "string", "required": true },
+          { "name": "file", "in": "formData", "type": "file" }
+        ],
+        "responses": { "204": { "description": "Uploaded" } }
+      }
+    }
+  },
+  "parameters": { "PetId": { "name": "petId", "in": "path", "required": true, "type": "integer" } },
+  "responses": { "NotFound": { "description": "Not found", "schema": { "$ref": "#/definitions/Error" } } },
+  "definitions": {
+    "Pet": {
+      "type": "object",
+      "required": ["name"],
+      "properties": { "id": { "type": "integer", "readOnly": true }, "name": { "type": "string" }, "tag": { "type": "string", "x-nullable": true } }
+    },
+    "Error": { "type": "object", "properties": { "message": { "type": "string" } } }
+  }
+}

@@ -1,0 +1,353 @@
+<!--{
+  "file": "pg.html",
+  "name": "@xufa/pg",
+  "title": "@xufa/pg",
+  "description": "@xufa/pg: a PostgreSQL driver with the API of pg (node-postgres), with no dependencies: prepared statements, binary values, pipelining, COPY, cancellation, SCRAM and TLS as libpq, several hosts, tracing.",
+  "groups": [
+    ["Using it", [["start", "Quick start"], ["client", "Client"], ["pool", "Pool"], ["transactions", "Transactions"]]],
+    ["Connecting", [["config", "Options"], ["urls", "Connection strings and PG*"], ["tls", "TLS"], ["auth", "Authentication"], ["hosts", "Several hosts"]]],
+    ["Data", [["types", "Types"], ["copy", "COPY"]]],
+    ["More", [["cancel", "Cancelling and timeouts"], ["describe", "Describing a query"], ["notify", "LISTEN and NOTIFY"], ["schema", "After changes of the schema"], ["tracing", "Tracing"], ["errors", "Errors"]]],
+    ["About it", [["performance", "Performance"], ["from-pg", "Coming from pg"], ["typescript", "TypeScript"]]]
+  ]
+}-->
+        <h1>@xufa/pg</h1>
+        <p class="intro">
+          A PostgreSQL driver with the API of <a href="https://node-postgres.com">pg</a> (node-postgres) for what
+          applications use, <code>Client</code>, <code>Pool</code> and <code>query(text, values)</code>, and no
+          dependencies. It prepares statements, sends and reads values in the binary format and pipelines queries on a
+          connection, so the same code runs from 1.3 to 5 times faster than on pg. The PostgreSQL backend of
+          <a href="orm.html">@xufa/orm</a> is made with it.
+        </p>
+
+        <h2 id="start">Quick start</h2>
+        <pre><code class="language-sh">npm install @xufa/pg</code></pre>
+        <pre><code class="language-js">const { Pool } = require('@xufa/pg');
+
+const pool = new Pool({ connectionString: 'postgres://user:password@localhost:5432/app', max: 10 });
+
+const { rows } = await pool.query('SELECT id, name FROM users WHERE name ILIKE $1', ['a%']);
+console.log(rows); // [{ id: 1, name: 'Ada' }]
+
+await pool.end();</code></pre>
+        <p>
+          Code written for pg runs as it is: <code>require('pg')</code> can be replaced by
+          <code>require('@xufa/pg')</code>. The differences are few and listed in <a href="#from-pg">Coming from pg</a>.
+        </p>
+
+        <h2 id="client">Client</h2>
+        <p>One connection, opened by <code>connect()</code>.</p>
+        <pre><code class="language-js">const { Client } = require('@xufa/pg');
+
+const client = new Client('postgres://user:password@localhost:5432/app');
+await client.connect();
+const { rows, rowCount, fields } = await client.query('SELECT $1::int + 1 AS n', [41]);
+const asArrays = await client.query({ text: 'SELECT 1, 2', rowMode: 'array' }); // rows: [[1, 2]]
+await client.end();</code></pre>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Member</th><th>What it does</th></tr></thead>
+            <tbody>
+              <tr><td><code>connect()</code></td><td>Opens the connection and logs in.</td></tr>
+              <tr><td><code>query(text, values)</code>, <code>query(config)</code></td><td>Runs a query: <code>{ rows, rowCount, fields, command }</code>. The config takes <code>text</code>, <code>values</code>, <code>rowMode: 'array'</code>, <code>prepare</code>, <code>signal</code>, <code>timeout</code>, <code>name</code> and <code>describe</code>. A text of several statements runs as a simple query, and gives an array of results.</td></tr>
+              <tr><td><code>end()</code></td><td>Ends the connection after the queries already sent (the server runs them); new ones are refused.</td></tr>
+              <tr><td><code>copyFrom()</code>, <code>copyTo()</code>, <code>copyRows()</code></td><td><a href="#copy">COPY</a>.</td></tr>
+              <tr><td><code>forgetStatements()</code></td><td>See <a href="#schema">After changes of the schema</a>.</td></tr>
+              <tr><td><code>escapeIdentifier(name)</code>, <code>escapeLiteral(text)</code></td><td><code>"identifier"</code> and <code>'literal'</code> as pg writes them (also exported as functions).</td></tr>
+              <tr><td><code>processID</code></td><td>The id of the process of the server.</td></tr>
+              <tr><td>Events</td><td><code>notification</code> (<a href="#notify">LISTEN/NOTIFY</a>), <code>notice</code>, <code>error</code>, <code>end</code>.</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p>
+          <code>await using client = ...</code> (explicit resource management) ends a client at the end of its block.
+        </p>
+
+        <h2 id="pool">Pool</h2>
+        <p>
+          Connections opened when they are needed, up to <code>max</code>. <code>pool.query()</code> sends a query to the
+          least busy connection without waiting for the ones before it (they are pipelined: pg runs one query at a time
+          on a connection), and opens another only when every connection is busy.
+        </p>
+        <pre><code class="language-js">const pool = new Pool({ connectionString: process.env.DATABASE_URL, max: 20, idleTimeoutMillis: 30_000 });
+pool.on('error', (err) =&gt; log.warn(err)); // a connection closed while idle: the pool opens another
+
+await Promise.all(ids.map((id) =&gt; pool.query('SELECT * FROM users WHERE id = $1', [id])));</code></pre>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Member</th><th>What it does</th></tr></thead>
+            <tbody>
+              <tr><td><code>query(text, values)</code></td><td>A query on a connection of the pool.</td></tr>
+              <tr><td><code>connect()</code></td><td>A <code>PoolClient</code>: a connection of its own (for a transaction) until <code>release()</code>. <code>release(err)</code> (or <code>true</code>) closes it instead. <code>using client = await pool.connect()</code> releases it at the end of its block.</td></tr>
+              <tr><td><code>end()</code></td><td>Ends the pool: it waits for the queries sent and for the clients given by <code>connect()</code> to be released.</td></tr>
+              <tr><td><code>totalCount</code>, <code>idleCount</code>, <code>waitingCount</code></td><td>The connections, those idle, and who waits for one.</td></tr>
+              <tr><td><code>openConnection(options)</code></td><td>Opens the connections of the pool: replace it to wrap them (the layer of Sequelize does, for <code>_connect</code>).</td></tr>
+              <tr><td>Events</td><td><code>connect</code>, <code>notice</code>, and <code>error</code> for connections closed by the server or the network while idle. Listen to it: an <code>error</code> event without a listener ends the process.</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Option</th><th>Default</th><th>What it does</th></tr></thead>
+            <tbody>
+              <tr><td><code>max</code></td><td><code>10</code></td><td>The most connections.</td></tr>
+              <tr><td><code>idleTimeoutMillis</code></td><td><code>10000</code></td><td>A connection idle this long is closed.</td></tr>
+              <tr><td><code>acquireTimeoutMillis</code></td><td><code>0</code></td><td>How long a query or <code>connect()</code> waits for a connection, free or being opened (0: no limit). Past it, an error of code <code>ACQUIRE_TIMEOUT</code>; a connection that comes late is given back.</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p>And every option of a <a href="#config">Client</a>, for each connection.</p>
+
+        <h2 id="transactions">Transactions</h2>
+        <p>A transaction needs a connection of its own: take one with <code>connect()</code>.</p>
+        <pre><code class="language-js">const client = await pool.connect();
+try {
+  await client.query('BEGIN');
+  await client.query('UPDATE accounts SET balance = balance - $1 WHERE id = $2', [100, 1]);
+  await client.query('UPDATE accounts SET balance = balance + $1 WHERE id = $2', [100, 2]);
+  await client.query('COMMIT');
+} catch (err) {
+  await client.query('ROLLBACK');
+  throw err;
+} finally {
+  client.release();
+}</code></pre>
+        <p>
+          A connection given back in a transaction (or broken) is closed, not given to anyone else.
+        </p>
+
+        <h2 id="config">Options</h2>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Option</th><th>What it does</th></tr></thead>
+            <tbody>
+              <tr><td><code>connectionString</code></td><td>A URL (see <a href="#urls">Connection strings</a>); the options given go over it.</td></tr>
+              <tr><td><code>host</code>, <code>port</code></td><td>A host, or the directory of a unix socket (<code>/var/run/postgresql</code>); lists for <a href="#hosts">several hosts</a>.</td></tr>
+              <tr><td><code>user</code>, <code>password</code></td><td>Strings, or functions (sync or async) asked for every connection: tokens of AWS RDS IAM and the like.</td></tr>
+              <tr><td><code>database</code>, <code>application_name</code>, <code>options</code></td><td>As in libpq (<code>options: '-c search_path=app'</code>).</td></tr>
+              <tr><td><code>ssl</code></td><td><code>true</code>, or the options of <code>tls.connect</code> (see <a href="#tls">TLS</a>).</td></tr>
+              <tr><td><code>connectionTimeoutMillis</code></td><td>To connect and log in (30000; 0: no limit).</td></tr>
+              <tr><td><code>statement_timeout</code>, <code>lock_timeout</code>, <code>idle_in_transaction_session_timeout</code></td><td>Settings of the session, in milliseconds.</td></tr>
+              <tr><td><code>query_timeout</code></td><td>Every query is cancelled after this many milliseconds (see <a href="#cancel">Cancelling</a>).</td></tr>
+              <tr><td><code>types</code></td><td>Parsers by type oid (a Map or an object), as pg's <code>setTypeParser</code>: those types are read as text. A parser that throws fails its query, not the connection.</td></tr>
+              <tr><td><code>prepare</code></td><td><code>false</code>: statements are not prepared.</td></tr>
+              <tr><td><code>binary</code></td><td><code>false</code>: only the text format.</td></tr>
+              <tr><td><code>require_auth</code>, <code>channel_binding</code>, <code>oauthBearerToken</code></td><td>See <a href="#auth">Authentication</a>.</td></tr>
+              <tr><td><code>target_session_attrs</code>, <code>load_balance_hosts</code></td><td>See <a href="#hosts">Several hosts</a>.</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h2 id="urls">Connection strings and PG*</h2>
+        <p>
+          Connection strings are read as libpq reads them:
+          <code>postgres://user:password@host:port/database?...</code>, with <code>host</code>, <code>port</code>,
+          <code>dbname</code>, <code>user</code>, <code>password</code>, <code>application_name</code>,
+          <code>options</code> and <code>connect_timeout</code> (seconds) as parameters too, and the parameters of TLS
+          below. The variables of libpq are read as well:
+        </p>
+        <pre><code class="language-sh">PGHOST PGPORT PGUSER PGPASSWORD PGDATABASE PGAPPNAME PGOPTIONS PGCONNECT_TIMEOUT
+PGSSLMODE PGSSLCERT PGSSLKEY PGSSLROOTCERT PGREQUIREAUTH PGCHANNELBINDING</code></pre>
+
+        <h2 id="tls">TLS</h2>
+        <p><code>sslmode</code> has its meaning in libpq:</p>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>sslmode</th><th>What it does</th></tr></thead>
+            <tbody>
+              <tr><td><code>disable</code></td><td>No TLS.</td></tr>
+              <tr><td><code>allow</code>, <code>prefer</code></td><td>TLS when the server has it.</td></tr>
+              <tr><td><code>require</code></td><td>Encrypted, without checking the certificate (unless <code>sslrootcert</code> is given).</td></tr>
+              <tr><td><code>verify-ca</code></td><td>The chain of the certificate is checked.</td></tr>
+              <tr><td><code>verify-full</code></td><td>The chain and the host (an IP address too).</td></tr>
+              <tr><td><code>no-verify</code></td><td>pg's: encrypted, nothing checked.</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p>
+          With <code>ssl=true|false</code>, <code>sslcert</code>, <code>sslkey</code>, <code>sslrootcert</code> (files;
+          <code>system</code> for the authorities of the system) and <code>sslpassword</code>. Data a server sends before
+          TLS is set up is refused, as libpq does since CVE-2021-23222.
+        </p>
+
+        <h2 id="auth">Authentication</h2>
+        <p>
+          SCRAM-SHA-256 (bound to the TLS channel, SCRAM-SHA-256-PLUS, when the server offers it), MD5 and cleartext
+          passwords, and OAuth tokens (<code>oauthBearerToken</code>, a string or a function: OAUTHBEARER of PostgreSQL
+          18). As in libpq, <code>require_auth</code> names the methods the server may ask for
+          (<code>scram-sha-256</code>, <code>password,md5</code>, <code>!password</code>, <code>none</code>...) and
+          <code>channel_binding</code> (<code>prefer</code> by default, <code>require</code>, <code>disable</code>)
+          whether SCRAM is bound to the channel: with <code>require</code>, a server that asks for a password instead is
+          refused without sending it.
+        </p>
+        <p>
+          Every request of the server is checked before it is answered: a server that asks twice is refused, and so is
+          one that makes the connection usable without authenticating it.
+        </p>
+        <pre><code class="language-js">new Pool({
+  connectionString: 'postgres://app@db.internal/app?sslmode=verify-full',
+  require_auth: 'scram-sha-256',
+  channel_binding: 'require',
+  password: async () =&gt; secrets.get('db-password'), // asked for every connection
+});</code></pre>
+
+        <h2 id="hosts">Several hosts</h2>
+        <p>
+          <code>host</code> and <code>port</code> as lists (<code>'db1,db2'</code>, arrays, or
+          <code>postgres://u@db1:5432,db2:5433/app</code>) are tried in order until one connects.
+          <code>target_session_attrs</code> skips the hosts that are not what is asked for:
+          <code>read-write</code>, <code>read-only</code>, <code>primary</code>, <code>standby</code> or
+          <code>prefer-standby</code> (read from what PostgreSQL 14 and later report, or asked to older servers);
+          <code>load_balance_hosts=random</code> tries them in a random order. Each connection of a pool finds its host.
+        </p>
+        <pre><code class="language-js">const writes = new Pool({ connectionString: 'postgres://app@db1,db2,db3/app?target_session_attrs=read-write' });
+const reads = new Pool({ connectionString: 'postgres://app@db1,db2,db3/app?target_session_attrs=prefer-standby&amp;load_balance_hosts=random' });</code></pre>
+
+        <h2 id="types">Types</h2>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>PostgreSQL</th><th>JavaScript</th></tr></thead>
+            <tbody>
+              <tr><td><code>int2</code>, <code>int4</code>, <code>float4</code>, <code>float8</code></td><td>number</td></tr>
+              <tr><td><code>int8</code> (bigint)</td><td>number while it is a safe integer, bigint beyond (pg gives strings)</td></tr>
+              <tr><td><code>numeric</code></td><td>string (exact)</td></tr>
+              <tr><td><code>boolean</code></td><td>boolean</td></tr>
+              <tr><td><code>json</code>, <code>jsonb</code></td><td>the parsed value</td></tr>
+              <tr><td><code>bytea</code></td><td>Buffer</td></tr>
+              <tr><td><code>timestamptz</code></td><td>Date</td></tr>
+              <tr><td><code>date</code>, <code>timestamp</code></td><td>Date (local)</td></tr>
+              <tr><td>arrays of them</td><td>arrays</td></tr>
+              <tr><td>other types</td><td>string</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p>
+          Parameters: strings, numbers, bigints, booleans, Dates, Buffers (binary), arrays (arrays of PostgreSQL),
+          objects (JSON) and values with <code>toPostgres()</code>. Floats are exact in the text format of servers before
+          PostgreSQL 12 too (the connection sets <code>extra_float_digits</code> to 3 there).
+        </p>
+
+        <h2 id="copy">COPY</h2>
+        <p>On <code>Client</code>, <code>PoolClient</code> and <code>Pool</code> (which takes a connection for it):</p>
+        <pre><code class="language-js">// Rows (arrays, or objects by column): binary COPY when every column has a binary encoder.
+const count = await pool.copyRows('users', ['id', 'name', 'joined'], [
+  [1, 'Ada', new Date()],
+  { id: 2, name: 'Grace', joined: new Date() },
+]);
+
+// COPY ... FROM STDIN with data in the format of the COPY: a Buffer, a string, or an (async) iterable of them.
+await pool.copyFrom('COPY events FROM STDIN (FORMAT csv)', fs.createReadStream('events.csv'));
+
+// COPY ... TO STDOUT as an async iterator of Buffers (the socket waits while too much is unread).
+for await (const chunk of pool.copyTo('COPY events TO STDOUT (FORMAT csv)')) out.write(chunk);</code></pre>
+        <p>
+          <code>copyRows(table, columns, rows)</code> reads the types of the columns from the table and sends the rows in
+          the binary format of COPY (the server parses nothing) when every column has a binary encoder: numbers,
+          booleans, text, json and jsonb, dates and timestamps, bytea, uuid, and arrays of them; in the text format
+          otherwise. The table is <code>'schema.table'</code>, or <code>[schema, table]</code> for names with dots. An
+          error of the data fails the whole COPY: nothing is copied.
+        </p>
+
+        <h2 id="cancel">Cancelling and timeouts</h2>
+        <pre><code class="language-js">const controller = new AbortController();
+setTimeout(() =&gt; controller.abort(), 1000);
+await pool.query({ text: 'SELECT pg_sleep(10)', signal: controller.signal }); // AbortError
+
+await pool.query({ text: 'SELECT slow()', timeout: 500 }); // code QUERY_TIMEOUT
+new Pool({ query_timeout: 2000 }); // for every query</code></pre>
+        <p>
+          The query rejects at once, and the server is asked to stop it (a CancelRequest). Such a query has its
+          connection to itself (it is not pipelined), so the cancel stops it and no other. When the server has ended
+          it, the connection is given to whoever waits for it.
+        </p>
+
+        <h2 id="describe">Describing a query</h2>
+        <pre><code class="language-js">const { params, fields } = await pool.query({ text: 'SELECT id, name FROM users WHERE id = $1', describe: true });
+// params: [23] (the oid of int4); fields: [{ name: 'id', dataTypeID: 23, ... }, { name: 'name', ... }]</code></pre>
+        <p>The types of the parameters and the columns of a text, without running it.</p>
+
+        <h2 id="notify">LISTEN and NOTIFY</h2>
+        <pre><code class="language-js">const client = new Client(process.env.DATABASE_URL);
+await client.connect();
+client.on('notification', ({ channel, payload, processId }) =&gt; console.log(channel, payload));
+await client.query('LISTEN orders');
+// elsewhere: NOTIFY orders, 'order 42 paid'</code></pre>
+
+        <h2 id="schema">After changes of the schema</h2>
+        <p>
+          Prepared statements remember the types of their tables. After tables or types are dropped and made again,
+          <code>forgetStatements()</code> (of a client or a pool) makes every connection prepare its statements again
+          before its next query, so queries, in a transaction too, find the new types instead of failing. Statements
+          that fail with type errors after such changes are prepared again by themselves. The ORM calls it after its
+          migrations.
+        </p>
+
+        <h2 id="tracing">Tracing</h2>
+        <p>
+          <code>node:diagnostics_channel</code>, with the channels of pg: <code>pg:query</code>,
+          <code>pg:connection</code> and <code>pg:pool:connect</code> (tracing channels: their contexts have the query,
+          the client and the result or the error), and <code>pg:pool:release</code> and <code>pg:pool:remove</code>.
+          Nothing is made when no one subscribes.
+        </p>
+        <pre><code class="language-js">const dc = require('node:diagnostics_channel');
+dc.tracingChannel('pg:query').subscribe({
+  start: (ctx) =&gt; (ctx.started = performance.now()),
+  asyncEnd: (ctx) =&gt; metrics.observe(ctx.query.text, performance.now() - ctx.started),
+});</code></pre>
+
+        <h2 id="errors">Errors</h2>
+        <p>
+          <code>DatabaseError</code>, with the fields of pg: <code>code</code> (the SQLSTATE: <code>23505</code> for a
+          unique violation), <code>detail</code>, <code>hint</code>, <code>constraint</code>, <code>table</code>,
+          <code>column</code>, <code>position</code>... <code>ConnectionError</code> for the connection, and
+          <code>PgError</code> for both. Pool timeouts have the code <code>ACQUIRE_TIMEOUT</code>, and query timeouts
+          <code>QUERY_TIMEOUT</code>.
+        </p>
+
+        <h2 id="performance">Performance</h2>
+        <ul>
+          <li>Queries are prepared once per connection the second time their text runs: after that, only their values are sent. A text that runs once (with its values written in it, as Sequelize does) runs as in pg, so it does not fill the cache of statements (up to 1000 by connection).</li>
+          <li>Prepared queries send parameters and read results in the binary format for the types that have it (integers, floats, booleans, timestamps, dates, bytea, uuid): the server neither formats nor parses them as text.</li>
+          <li>Queries are pipelined on the connections of a pool.</li>
+          <li>Values are parsed from the bytes of the rows (numbers and dates without making strings), and rows are made by a function compiled for their columns.</li>
+        </ul>
+        <div class="pairs">
+          <div class="pair">
+            <div class="head"><span>select $1, 64 at once</span><span class="times">5.09&times;</span></div>
+            <div class="chart-row us"><span class="name">@xufa/pg</span><span class="track"><span class="fill" style="width: 100%"></span></span><span class="value">152k</span></div>
+            <div class="chart-row"><span class="name">pg</span><span class="track"><span class="fill" style="width: 19.6%"></span></span><span class="value">30k</span></div>
+          </div>
+          <div class="pair">
+            <div class="head"><span>decode 1000 rows of 8 types</span><span class="times">1.97&times;</span></div>
+            <div class="chart-row us"><span class="name">@xufa/pg</span><span class="track"><span class="fill" style="width: 100%"></span></span><span class="value">563k</span></div>
+            <div class="chart-row"><span class="name">pg</span><span class="track"><span class="fill" style="width: 50.8%"></span></span><span class="value">286k</span></div>
+          </div>
+          <div class="pair">
+            <div class="head"><span>copy rows (50k)</span><span class="times">1.92&times;</span></div>
+            <div class="chart-row us"><span class="name">@xufa/pg</span><span class="track"><span class="fill" style="width: 100%"></span></span><span class="value">217k</span></div>
+            <div class="chart-row"><span class="name">pg</span><span class="track"><span class="fill" style="width: 52%"></span></span><span class="value">113k</span></div>
+          </div>
+          <div class="pair">
+            <div class="head"><span>select by id, one at a time</span><span class="times">1.69&times;</span></div>
+            <div class="chart-row us"><span class="name">@xufa/pg</span><span class="track"><span class="fill" style="width: 100%"></span></span><span class="value">13k</span></div>
+            <div class="chart-row"><span class="name">pg</span><span class="track"><span class="fill" style="width: 59.1%"></span></span><span class="value">7.7k</span></div>
+          </div>
+        </div>
+        <p>Operations or rows a second; every workload is in <a href="benchmarks.html#pg">Benchmarks</a>, and <code>node bench/postgres.js</code> measures them on a server of yours.</p>
+
+        <h2 id="from-pg">Coming from pg</h2>
+        <ul>
+          <li><strong>bigint</strong> (int8) is a number while it is a safe integer, and a bigint beyond; pg gives strings. Code that expects strings can pass a parser in <code>types</code> (oid 20).</li>
+          <li>Queries are prepared the second time their text runs, without a <code>name</code> (pg prepares only named queries). <code>prepare: false</code> turns it off, for poolers in transaction mode (PgBouncer before 1.21).</li>
+          <li><code>pool.query()</code> pipelines on a connection: queries no longer wait for the ones before them on a busy connection.</li>
+          <li>The text format of the values is used only for the types without a binary one; custom parsers (<code>types</code>) get text, as in pg.</li>
+          <li>Not there: <code>pg-native</code>, <code>pg-cursor</code> and <code>pg-query-stream</code> (use <code>copyTo</code> for large exports).</li>
+        </ul>
+
+        <h2 id="typescript">TypeScript</h2>
+        <p>Declarations are in the package: <code>Client</code>, <code>Pool</code>, <code>PoolClient</code>, <code>QueryResult&lt;R&gt;</code>, <code>QueryConfig</code>, <code>DatabaseError</code>...</p>
+        <pre><code class="language-ts">import { Pool, QueryResult } from '@xufa/pg';
+
+interface User { id: number; name: string }
+const pool = new Pool({ connectionString: process.env.DATABASE_URL });
+const { rows }: QueryResult&lt;User&gt; = await pool.query&lt;User&gt;('SELECT id, name FROM users');</code></pre>

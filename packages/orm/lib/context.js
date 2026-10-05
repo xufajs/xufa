@@ -9,4 +9,20 @@ function currentDatabase() {
   return store ? store.db : null;
 }
 
-module.exports = { current, currentDatabase };
+// The signal of the code running: the request of the plugin with `cancel` (read when a query starts, so requests
+// without queries make none), or the one of withSignal(). Reads that start after it is aborted throw its reason, and
+// PostgreSQL cancels the read that runs. Writes are not stopped: one the client did not wait for may still be wanted.
+const cancellation = new AsyncLocalStorage();
+
+function currentSignal() {
+  const store = cancellation.getStore();
+  if (!store) return null;
+  return store.request ? store.request.signal : store.signal || null;
+}
+
+/** Runs fn with the reads of its queries stopped when `signal` is aborted. */
+function withSignal(signal, fn) {
+  return cancellation.run({ signal }, fn);
+}
+
+module.exports = { current, currentDatabase, cancellation, currentSignal, withSignal };

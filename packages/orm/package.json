@@ -46,6 +46,7 @@
   },
   "dependencies": {
     "@xufa/errors": "workspace:*",
+    "@xufa/expression": "workspace:*",
     "@xufa/mongo": "workspace:*",
     "@xufa/pg": "workspace:*"
   },

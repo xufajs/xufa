@@ -786,4 +786,119 @@ module.exports = [
     dir: 'tools/sequelize-compat',
     files: (source) => tree(source, 'test/types', 'test/types', '.ts', { patch: patchSequelizeTest }),
   },
+  {
+    // @xufa/openapi: the declarations of @fastify/swagger, on @xufa/http, with openapi-types written in (types/).
+    target: 'openapi',
+    upstream: '@fastify/swagger',
+    renames: [
+      [/(['"])fastify\1/g, "'@xufa/http'"],
+      [/(['"])openapi-types\1/g, "'./types/openapi-types'"],
+      [/\bFastify(?=[A-Z0-9_]|\b)/g, 'Xufa'],
+    ],
+    files: [
+      {
+        from: 'types/index.d.ts',
+        to: 'index.d.ts',
+        // What @xufa/openapi adds (lib/xufa/xufa.js): routes documented by their config `openapi`, and `xufa: false`.
+        patch: (code) =>
+          code
+            .replace(
+              '  interface XufaContextConfig {\n    swaggerTransform?:',
+              '  interface XufaContextConfig {\n' +
+                '    /** Documentation of the route (@xufa/openapi): a schema only described, under its own schema. */\n' +
+                '    openapi?: XufaSchema & Record<string, unknown>;\n' +
+                '    swaggerTransform?:'
+            )
+            .replace(
+              "declare module '@xufa/http' {\n",
+              "declare module '@xufa/http' {\n" +
+                '  interface XufaRequest {\n' +
+                '    /** The operation of a route of openapi.operations (null on other routes). */\n' +
+                '    operation: {\n' +
+                '      id: string;\n' +
+                '      /** Throws the error of the validation of the request (with attachValidation: true). */\n' +
+                '      validateRequest(): void;\n' +
+                '      /** Throws a ResponseValidationError when the payload does not match the schema of the status (200). */\n' +
+                '      validateResponse(payload: unknown, status?: number): void;\n' +
+                '    } | null;\n' +
+                '  }\n\n'
+            )
+            .replace(
+              "    mode?: 'dynamic';\n",
+              "    mode?: 'dynamic';\n" +
+                '    /** false: without what xufa adds (config.openapi of routes, security of @xufa/auth). */\n' +
+                '    xufa?: boolean;\n'
+            )
+            .replace(
+              '  export function formatParamUrl (paramUrl: string): string\n',
+              '  export function formatParamUrl (paramUrl: string): string\n\n' +
+                '  /** A handler of an operation, or the options of its route (with its handler). */\n' +
+                '  export type OperationHandler =\n' +
+                '    | RouteOptions["handler"]\n' +
+                '    | (Partial<RouteOptions> & { handler: RouteOptions["handler"]; /** Checks its responses (validateResponses by default). */ validateResponse?: boolean });\n\n' +
+                '  export interface OperationsOptions {\n' +
+                '    /** The OpenAPI 3 (or Swagger 2.0) document, or the path of its file (JSON or YAML); its $refs to other files are taken in. */\n' +
+                '    document?: OpenAPIV3.Document | OpenAPIV3_1.Document | Record<string, unknown>;\n' +
+                '    path?: string;\n' +
+                '    /** The handlers by operationId (or "METHOD /path"): the others answer 501. */\n' +
+                '    handlers?: Record<string, OperationHandler>;\n' +
+                "    /** 'throw': every operation needs a handler. */\n" +
+                "    missing?: 'answer' | 'throw';\n" +
+                '    /** Before the names of the shared schemas of components.schemas. */\n' +
+                '    schemaPrefix?: string;\n' +
+                '    /** The strategy of @xufa/auth of each security scheme (its own name by default). */\n' +
+                '    security?: Record<string, string>;\n' +
+                '    /** The folder the relative $refs of a document given are of (the working directory). */\n' +
+                '    baseDir?: string;\n' +
+                '    /** $refs to URLs are fetched (false: they are refused). */\n' +
+                '    remote?: boolean;\n' +
+                '    /** What a handler answers is checked against the schema of its status (a 500 when it does not match). */\n' +
+                '    validateResponses?: boolean;\n' +
+                '    /** What operations without a handler answer (501). */\n' +
+                '    missingStatus?: 501 | 404;\n' +
+                '    /** The header the id of each request is answered in (x-request-id). */\n' +
+                '    requestIdHeader?: string;\n' +
+                '    prefix?: string;\n' +
+                '  }\n\n' +
+                '  /** Routes made from an OpenAPI 3 document (design first). */\n' +
+                '  export const operations: XufaPluginCallback<OperationsOptions>;\n\n' +
+                '  export class OpenapiError extends Error {}\n\n' +
+                '  /** A document split in files as one: schemas of other files in its schemas, the rest written in. */\n' +
+                '  export function bundle(\n' +
+                '    source: string | Record<string, unknown>,\n' +
+                '    options?: { baseDir?: string; remote?: boolean; fetch?: typeof globalThis.fetch }\n' +
+                '  ): Promise<OpenAPIV3.Document & Record<string, unknown>>;\n' +
+                '  export class BundleError extends Error {}\n\n' +
+                '  /** A Swagger 2.0 document as OpenAPI 3.0.3. */\n' +
+                '  export function fromSwagger2(document: OpenAPIV2.Document | Record<string, unknown>): OpenAPIV3.Document;\n\n' +
+                '  /** A response out of its contract (500). */\n' +
+                '  export class ResponseValidationError extends OpenapiError {\n' +
+                "    code: 'XUFA_OPENAPI_INVALID_RESPONSE';\n" +
+                '    statusCode: 500;\n' +
+                '    errors: Array<{ instancePath: string; message?: string; keyword: string; params: Record<string, unknown> }>;\n' +
+                '  }\n'
+            ),
+      },
+      ...[
+        'http2-types.tst.ts',
+        'imports.tst.ts',
+        'minimal-openapiV3-document.ts',
+        'openapi-info-extensions.tst.ts',
+        'swagger-ui-vendor-extensions.tst.ts',
+        'types.tst.ts',
+      ].map((name) => ({
+        from: `types/${name}`,
+        to: `test/types/${name}`,
+        renames: [
+          [/(from|import) '\.\.'/g, "$1 '../..'"],
+          [/(['"])openapi-types\1/g, "'../../types/openapi-types'"],
+        ],
+      })),
+    ],
+  },
+  {
+    target: 'openapi',
+    upstream: 'openapi-types',
+    files: [{ from: 'dist/index.d.ts', to: 'types/openapi-types.d.ts' }],
+  },
 ];

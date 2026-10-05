@@ -1,0 +1,103 @@
+openapi: 3.0.3
+info:
+  title: Books
+  version: 1.0.0
+security:
+  - bearer: []
+paths:
+  /books:
+    get:
+      operationId: listBooks
+      security: []
+      parameters:
+        - name: limit
+          in: query
+          schema: { type: integer, format: int32, minimum: 1, maximum: 100 }
+        - name: x-trace
+          in: header
+          schema: { type: string }
+      responses:
+        "200":
+          description: The books
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/Book" }
+    post:
+      operationId: createBook
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/Book" }
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Book" }
+  /books/{id}:
+    parameters:
+      - $ref: "#/components/parameters/Id"
+    get:
+      operationId: getBook
+      security: []
+      responses:
+        "200":
+          description: A book
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Book" }
+        "404":
+          $ref: "#/components/responses/NotFound"
+    patch:
+      operationId: updateBook
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                title: { type: string }
+              additionalProperties: false
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Book" }
+components:
+  securitySchemes:
+    bearer: { type: http, scheme: bearer }
+  parameters:
+    Id:
+      name: id
+      in: path
+      required: true
+      schema: { type: integer }
+  responses:
+    NotFound:
+      description: Not found
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/Error" }
+  schemas:
+    Book:
+      type: object
+      required: [id, title]
+      properties:
+        id: { type: integer, readOnly: true }
+        title: { type: string, minLength: 1, example: Dune }
+        published: { type: string, format: date, nullable: true }
+        author: { $ref: "#/components/schemas/Author" }
+        secret: { type: string, writeOnly: true }
+    Author:
+      type: object
+      properties:
+        name: { type: string }
+        mentor: { $ref: "#/components/schemas/Author" }
+    Error:
+      type: object
+      properties:
+        message: { type: string }

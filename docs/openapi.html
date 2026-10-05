@@ -1,0 +1,233 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>@xufa/openapi · xufa</title>
+    <meta
+      name="description"
+      content="@xufa/openapi: OpenAPI documents of the routes of an app, with the API and tests of @fastify/swagger, resources of the ORM and security of @xufa/auth documented, and an explorer."
+    />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%23d9502b'/%3E%3Ctext x='16' y='22.5' font-family='monospace' font-size='18' font-weight='700' fill='white' text-anchor='middle'%3Ex%3C/text%3E%3C/svg%3E"
+    />
+    <link rel="stylesheet" href="style.css?v=0.1.0" />
+    <script src="main.js?v=0.1.0"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js" defer></script>
+  </head>
+  <body>
+    <header class="header">
+      <div class="header-inner">
+        <a class="logo" href="./"><span class="logo-mark">x</span>xufa</a>
+        <nav class="nav">
+          <a href="guide.html">Guide</a>
+          <a href="http.html">HTTP</a>
+          <a href="orm.html">ORM</a>
+          <a class="hide-small" href="auth.html">Auth</a>
+          <a class="hide-small" href="sequelize.html">Sequelize</a>
+          <a class="hide-small" href="packages.html" aria-current="page">Packages</a>
+          <a class="hide-small" href="benchmarks.html">Benchmarks</a>
+          <a href="https://github.com/xufajs/xufa">GitHub</a>
+          <button class="theme-toggle" type="button" aria-label="Switch between light and dark theme">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+              <path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z" />
+            </svg>
+          </button>
+        </nav>
+      </div>
+    </header>
+
+    <div class="docs">
+      <button class="menu-toggle" type="button" aria-expanded="false">☰ Contents</button>
+      <aside class="sidebar">
+        <h4>Using it</h4>
+        <ul>
+          <li><a href="#start">Quick start</a></li>
+          <li><a href="#routes">Documenting routes</a></li>
+          <li><a href="#xufa">What xufa adds</a></li>
+          <li><a href="#design">From a document</a></li>
+          <li><a href="#explorer">The explorer</a></li>
+          <li><a href="#static">A document of yours</a></li>
+        </ul>
+        <h4>More</h4>
+        <ul>
+          <li><a href="#from-swagger">Coming from @fastify/swagger</a></li>
+          <li><a href="#tests">Tests</a></li>
+          <li><a href="#typescript">TypeScript</a></li>
+        </ul>
+        <h4>Packages</h4>
+        <ul>
+          <li><a href="websocket.html">@xufa/websocket</a></li>
+          <li><a href="openapi.html" aria-current="page">@xufa/openapi</a></li>
+          <li><a href="client.html">@xufa/client</a></li>
+          <li><a href="pg.html">@xufa/pg</a></li>
+          <li><a href="mongo.html">@xufa/mongo</a></li>
+          <li><a href="expression.html">@xufa/expression</a></li>
+          <li><a href="template.html">@xufa/template</a></li>
+          <li><a href="cluster.html">@xufa/cluster</a></li>
+          <li><a href="discovery.html">@xufa/discovery</a></li>
+          <li><a href="netcache.html">@xufa/netcache</a></li>
+          <li><a href="marshal.html">@xufa/marshal</a></li>
+          <li><a href="yaml.html">@xufa/yaml</a></li>
+          <li><a href="jwt.html">@xufa/jwt</a></li>
+          <li><a href="logger.html">@xufa/logger</a></li>
+          <li><a href="router.html">@xufa/router</a></li>
+          <li><a href="serializer.html">@xufa/serializer</a></li>
+          <li><a href="inject.html">@xufa/inject</a></li>
+          <li><a href="boot.html">@xufa/boot</a></li>
+          <li><a href="errors.html">@xufa/errors</a></li>
+          <li><a href="packages.html">All the packages</a></li>
+        </ul>
+      </aside>
+
+      <article class="content">
+<h1>@xufa/openapi</h1>
+        <p class="intro">
+          OpenAPI documents of the routes of an app of <a href="http.html">@xufa/http</a> (and fastify), and an explorer
+          to read and try them, with no dependencies but <a href="yaml.html">@xufa/yaml</a>. The code and the tests are
+          those of <a href="https://github.com/fastify/fastify-swagger">@fastify/swagger</a> 9.9.1; what xufa adds documents
+          the resources of the <a href="orm.html">ORM</a> and the security of <a href="auth.html">@xufa/auth</a> with
+          nothing to write.
+        </p>
+
+        <h2 id="start">Quick start</h2>
+        <pre><code class="language-sh">npm install @xufa/openapi</code></pre>
+        <pre><code class="language-js">const xufa = require('xufa');
+const openapi = require('@xufa/openapi');
+
+const app = xufa();
+await app.register(openapi, { openapi: { info: { title: 'Books', version: '1.0.0' } } });
+await app.register(require('@xufa/openapi/ui'), { routePrefix: '/docs' });
+
+app.register(orm.resource(Book, { filters: ['author'], ordering: ['pages'] }), { prefix: '/books' });
+
+await app.listen({ port: 3000 }); // http://localhost:3000/docs</code></pre>
+        <p>
+          Register it (awaited) before the routes it documents: it sees them as they are added. <code>app.swagger()</code>
+          is the document, and <code>app.swagger({ yaml: true })</code> the same as YAML.
+        </p>
+
+        <h2 id="routes">Documenting routes</h2>
+        <p>
+          A route is described by its schema: <code>params</code>, <code>querystring</code>, <code>headers</code>,
+          <code>body</code> and <code>response</code>, with <code>tags</code>, <code>summary</code>, <code>description</code>,
+          <code>operationId</code>, <code>deprecated</code>, <code>security</code> and <code>hide</code> in it. Shared schemas
+          (<code>app.addSchema({ $id })</code>) become <code>components.schemas</code>.
+        </p>
+        <pre><code class="language-js">app.get('/books/:id', {
+  schema: {
+    tags: ['books'],
+    summary: 'A book',
+    params: { type: 'object', properties: { id: { type: 'integer' } } },
+    response: { 200: { $ref: 'Book#' }, 404: { description: 'Not found', type: 'null' } },
+  },
+}, handler);</code></pre>
+        <ul>
+          <li><code>openapi</code>: the document to start from (<code>info</code>, <code>servers</code>, <code>components</code>, <code>security</code>, <code>tags</code>), or <code>swagger</code> for Swagger 2.</li>
+          <li><code>transform({ schema, url, route })</code> and <code>transformObject({ openapiObject })</code> change what is written; a route's <code>config.swaggerTransform</code> replaces <code>transform</code> for it.</li>
+          <li><code>hideUntagged</code>, <code>hiddenTag</code>, <code>exposeHeadRoutes</code>, <code>stripBasePath</code>, <code>refResolver</code>, <code>decorator</code>.</li>
+        </ul>
+        <p>
+          Route schemas can have the keywords of OpenAPI (<code>style</code>, <code>explode</code>, <code>example</code>,
+          <code>x-</code> extensions): @xufa/http accepts them as annotations, as fastify does, and still refuses other
+          unknown keywords, so typos are caught.
+        </p>
+
+        <h2 id="xufa">What xufa adds</h2>
+        <p>In OpenAPI 3 documents (<code>xufa: false</code> leaves it out):</p>
+        <ul>
+          <li><strong>Resources of the ORM</strong>: each route of <code>orm.resource(Book)</code> gets its tags, summary and operationId (<code>listBook</code>, <code>getBook</code>, <code>createBook</code>, <code>updateBook</code>, <code>partialUpdateBook</code>, <code>deleteBook</code>), its parameters (the filters, ordering, search and page of the list), its body (the writable fields, from <code>Book.jsonSchema()</code>) and its responses (the object as it is answered, the page, the errors). The resource's option <code>openapi</code> names their tag (<code>{ tag: 'Library' }</code>) or leaves them out (<code>false</code>).</li>
+          <li><strong>Any route</strong> can be documented by its <code>config.openapi</code>: a schema that only describes it, under its own schema (which wins). It is never used to validate or serialize, so documenting a route does not change what it accepts or answers.</li>
+          <li><strong>The strategies of @xufa/auth</strong> become <code>components.securitySchemes</code>: the access tokens (<code>http</code> bearer JWT), API keys (<code>apiKey</code> in their header or query), HTTP Basic, and the strategies of Passport (OAuth 2.0 with their URLs, bearer, API keys). A route with <code>config.auth</code> gets the <code>security</code> of its strategies: those of the rule, or any of them.</li>
+        </ul>
+
+        <h2 id="design">From a document (design first)</h2>
+        <p>
+          <code>openapi.operations</code> makes the routes of an OpenAPI 3 document you wrote first: each operation is a
+          route with the schemas of its parameters, body and responses (validated and serialized by @xufa/http), and the
+          handler of its <code>operationId</code>. Operations without a handler answer 501, so the API can be served, and
+          tried in the explorer, before it is written.
+        </p>
+        <pre><code class="language-js">await app.register(openapi, { mode: 'static', specification: { path: './openapi.yaml' } });
+await app.register(require('@xufa/openapi/ui'));
+await app.register(openapi.operations, {
+  path: './openapi.yaml', // or document: { openapi: '3.1.0', ... }
+  handlers: {
+    listBooks: async (request) =&gt; Book.objects.all(),
+    getBook: { preHandler: app.auth.authorize('reader'), handler: async (request) =&gt; Book.objects.get({ pk: request.params.id }) },
+  },
+  prefix: '/api',
+});</code></pre>
+        <ul>
+          <li><code>components.schemas</code> become shared schemas, and the <code>$ref</code>s to them follow: recursive schemas work. In requests, <code>readOnly</code> properties are not required; in responses, <code>writeOnly</code> ones (passwords) are not answered.</li>
+          <li>Parameters in path, query and headers are validated; an optional JSON body may be left out (the handler gets <code>null</code>); responses with JSON are serialized by their schemas.</li>
+          <li>Security of the operation (or of the document) is the <code>config.auth</code> of its route for <a href="auth.html">@xufa/auth</a>: the strategies of its schemes (<code>security: { bearer: 'jwt' }</code> maps names); <code>security: []</code> is public. Without @xufa/auth, an app with secured operations does not start.</li>
+          <li><code>handlers</code> by <code>operationId</code> (or <code>'GET /path'</code>): a handler or the options of its route; a handler of no operation is an error, and <code>missing: 'throw'</code> makes every operation need one.</li>
+          <li>The formats of OpenAPI (<code>int32</code>, <code>byte</code>, <code>binary</code>, <code>password</code>...) are known to @xufa/http (<code>byte</code> is checked as base64).</li>
+          <li><code>validateResponses: true</code> (or <code>validateResponse</code> of a handler): what a handler answers is checked against the schema of its status; one out of its contract is a 500 with the errors, instead of reaching the client. <code>request.operation</code>: its <code>id</code>, <code>validateResponse(payload, status)</code> and <code>validateRequest()</code> (with <code>attachValidation: true</code>).</li>
+          <li><code>missingStatus</code> (501, or 404) and <code>requestIdHeader</code> (<code>x-request-id</code>).</li>
+          <li>Documents split in files are read whole: <code>$ref</code>s to other files are followed (to URLs with <code>remote: true</code>), schemas become schemas of the document. <code>openapi.bundle(path)</code> gives that document, to serve it too. Swagger 2.0 documents are read as OpenAPI 3 (<code>openapi.fromSwagger2()</code>).</li>
+        </ul>
+
+        <h2 id="explorer">The explorer</h2>
+        <p>
+          <code>@xufa/openapi/ui</code> serves the document and an explorer, by default at <code>/documentation</code>: the
+          page, <code>/json</code>, <code>/yaml</code>, and <code>/initializer.js</code> (what starts it: a file, not inline,
+          so strict Content Security Policies allow it). Its routes are not in the document.
+        </p>
+        <ul>
+          <li><code>ui</code>: <code>'swagger'</code> (Swagger UI, the default), <code>'scalar'</code> or <code>'redoc'</code>, from a CDN (<code>cdn</code>) at pinned versions.</li>
+          <li><code>assets</code>: a folder of swagger-ui-dist served at <code>&lt;routePrefix&gt;/static</code> instead of the CDN (needed for OAuth logins from the explorer: its redirect page must be of the same origin).</li>
+          <li><code>uiConfig</code> (the configuration of the explorer, as JSON), <code>initOAuth</code>, <code>title</code>, <code>routePrefix</code>.</li>
+          <li><code>transformSpecification(document, request, reply)</code>: the document of a request (on a copy).</li>
+          <li><code>uiHooks: { onRequest, preHandler }</code>, to protect its routes; <code>csp: true</code> (or a policy) for a Content-Security-Policy.</li>
+        </ul>
+        <pre><code class="language-js">app.register(require('@xufa/openapi/ui'), {
+  routePrefix: '/docs',
+  ui: 'scalar',
+  uiHooks: { onRequest: app.auth.authorize('staff') },
+  csp: true,
+});</code></pre>
+
+        <h2 id="static">A document of yours</h2>
+        <p>
+          <code>mode: 'static'</code> serves a document instead of making one: <code>specification: { path, baseDir }</code>
+          (a JSON or YAML file, read with @xufa/yaml) or <code>{ document }</code>; <code>postProcessor(document)</code>
+          changes it.
+        </p>
+
+        <h2 id="from-swagger">Coming from @fastify/swagger</h2>
+        <ul>
+          <li><code>require('@fastify/swagger')</code> can be replaced by <code>require('@xufa/openapi')</code>: same options, same <code>app.swagger()</code>, and the same documents (its test suite runs on it).</li>
+          <li><code>@fastify/swagger-ui</code>: <code>@xufa/openapi/ui</code> has its routes (<code>/documentation</code>, <code>/json</code>, <code>/yaml</code>) and main options (<code>routePrefix</code>, <code>uiConfig</code>, <code>initOAuth</code>, <code>transformSpecification</code>, <code>uiHooks</code>), and loads the explorer from a CDN (or a folder) instead of installing it.</li>
+          <li>json-schema-resolver, rfdc and yaml are written in (yaml as @xufa/yaml).</li>
+        </ul>
+
+        <h2 id="tests">Tests</h2>
+        <p>
+          The suite of @fastify/swagger (290 tests: OpenAPI 3 and Swagger 2, dynamic and static, every document checked by
+          swagger-parser) is ported to vyntra by <code>tools/port-swagger</code>; <code>test/xufa</code> tests what xufa adds
+          and the explorer.
+        </p>
+
+        <h2 id="typescript">TypeScript</h2>
+        <p>
+          The declarations of @fastify/swagger on @xufa/http, with the types of openapi-types written in, and of the
+          explorer (<code>@xufa/openapi/ui</code>); <code>config.openapi</code> is typed in the config of routes.
+        </p>
+      </article>
+    </div>
+
+    <footer class="footer">
+      <div class="container">
+        <span>xufa is MIT licensed. &copy; Jes&uacute;s Seijas</span>
+        <span>
+          <a href="guide.html">Guide</a> &middot; <a href="http.html">HTTP</a> &middot; <a href="orm.html">ORM</a> &middot; <a href="auth.html">Auth</a> &middot;
+          <a href="sequelize.html">Sequelize</a> &middot; <a href="packages.html">Packages</a> &middot;
+          <a href="benchmarks.html">Benchmarks</a> &middot; <a href="https://github.com/xufajs/xufa">GitHub</a>
+        </span>
+      </div>
+    </footer>
+  </body>
+</html>

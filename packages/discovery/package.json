@@ -1,0 +1,55 @@
+{
+  "name": "@xufa/discovery",
+  "version": "0.1.0",
+  "description": "The nodes of a service found on the network by UDP (multicast, broadcast or seeds), sealed with a secret, with no dependencies",
+  "main": "./index.js",
+  "types": "./index.d.ts",
+  "type": "commonjs",
+  "exports": {
+    ".": {
+      "types": "./index.d.ts",
+      "default": "./index.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "index.js",
+    "index.d.ts",
+    "lib"
+  ],
+  "scripts": {
+    "test": "vyntra",
+    "test:types": "tsd"
+  },
+  "keywords": [
+    "discovery",
+    "udp",
+    "multicast",
+    "cluster",
+    "service discovery"
+  ],
+  "author": "Jesús Seijas <jseijas@gmail.com>",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/xufajs/xufa.git",
+    "directory": "packages/discovery"
+  },
+  "homepage": "https://github.com/xufajs/xufa/tree/main/packages/discovery#readme",
+  "bugs": {
+    "url": "https://github.com/xufajs/xufa/issues"
+  },
+  "engines": {
+    "node": ">=22"
+  },
+  "tsd": {
+    "directory": "test/types"
+  },
+  "devDependencies": {
+    "tsd": "^0.33.0",
+    "vyntra": "^0.6.0"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}

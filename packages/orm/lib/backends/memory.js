@@ -29,6 +29,39 @@ function compare(a, b) {
   return x > y ? 1 : 0;
 }
 
+// The parts of a decimal (its values are text): sign, integer digits and fraction digits, without the zeros that
+// do not count.
+function decimalParts(value) {
+  let text = String(value).trim();
+  let negative = text.charCodeAt(0) === 45;
+  if (negative || text.charCodeAt(0) === 43) text = text.slice(1);
+  const dot = text.indexOf('.');
+  const integer = (dot === -1 ? text : text.slice(0, dot)).replace(/^0+/, '');
+  const fraction = dot === -1 ? '' : text.slice(dot + 1).replace(/0+$/, '');
+  if (integer === '' && fraction === '') negative = false;
+  return { negative, integer, fraction };
+}
+
+// Decimals compared by their digits, exactly (as numbers, not as text).
+function compareDecimals(a, b) {
+  if (a === null || a === undefined) return b === null || b === undefined ? 0 : -1;
+  if (b === null || b === undefined) return 1;
+  const x = decimalParts(a);
+  const y = decimalParts(b);
+  if (x.negative !== y.negative) return x.negative ? -1 : 1;
+  const sign = x.negative ? -1 : 1;
+  if (x.integer.length !== y.integer.length) return x.integer.length > y.integer.length ? sign : -sign;
+  if (x.integer !== y.integer) return x.integer > y.integer ? sign : -sign;
+  const length = Math.max(x.fraction.length, y.fraction.length);
+  const xf = x.fraction.padEnd(length, '0');
+  const yf = y.fraction.padEnd(length, '0');
+  if (xf === yf) return 0;
+  return xf > yf ? sign : -sign;
+}
+
+// How the values of a field compare.
+const compareOf = (field) => (field && field.dbType === 'decimal' ? compareDecimals : compare);
+
 function copy(value) {
   if (value === null || value === undefined) return null;
   if (value instanceof Date) return new Date(value.getTime());
@@ -70,6 +103,16 @@ class MemoryBackend extends Backend {
 
   get name() {
     return 'memory';
+  }
+
+  // A value as it is kept (stored) and as it is given back (given). Backends that keep their tables elsewhere encrypt
+  // the values of encrypted fields here.
+  stored(field, value) {
+    return encode(field, value);
+  }
+
+  given(field, value) {
+    return copy(value);
   }
 
   table(meta) {
@@ -145,21 +188,29 @@ class MemoryBackend extends Backend {
     if (lookup === 'isnull') return (actual === null) === node.value;
     if (actual === null) return false;
     const expected = this.evaluate(row, node.value);
+    const order = compareOf(field);
     switch (lookup) {
       case 'exact':
-        return expected !== null && equals(actual, encode(field, expected));
+        return (
+          expected !== null &&
+          (order === compareDecimals ? order(actual, expected) === 0 : equals(actual, this.stored(field, expected)))
+        );
       case 'gt':
-        return expected !== null && compare(actual, expected) > 0;
+        return expected !== null && order(actual, expected) > 0;
       case 'gte':
-        return expected !== null && compare(actual, expected) >= 0;
+        return expected !== null && order(actual, expected) >= 0;
       case 'lt':
-        return expected !== null && compare(actual, expected) < 0;
+        return expected !== null && order(actual, expected) < 0;
       case 'lte':
-        return expected !== null && compare(actual, expected) <= 0;
+        return expected !== null && order(actual, expected) <= 0;
       case 'in':
-        return expected.some((item) => equals(actual, encode(field, item)));
+        return expected.some((item) =>
+          order === compareDecimals
+            ? item !== null && order(actual, item) === 0
+            : equals(actual, this.stored(field, item))
+        );
       case 'range':
-        return compare(actual, expected[0]) >= 0 && compare(actual, expected[1]) <= 0;
+        return order(actual, expected[0]) >= 0 && order(actual, expected[1]) <= 0;
       case 'iexact':
         return actual.toLowerCase() === expected.toLowerCase();
       case 'contains':
@@ -203,7 +254,8 @@ class MemoryBackend extends Backend {
     return (a, b) => {
       for (let i = 0; i < orderBy.length; i += 1) {
         const { fields, desc, jsonPath } = orderBy[i];
-        const result = compare(this.valueAt(a, fields, jsonPath), this.valueAt(b, fields, jsonPath));
+        const order = jsonPath ? compare : compareOf(lastOf(fields));
+        const result = order(this.valueAt(a, fields, jsonPath), this.valueAt(b, fields, jsonPath));
         if (result !== 0) return desc ? -result : result;
       }
       return 0;
@@ -222,7 +274,7 @@ class MemoryBackend extends Backend {
   output(row, fields, related) {
     const result = {};
     fields.forEach((field) => {
-      result[field.attname] = copy(row[field.attname]);
+      result[field.attname] = this.given(field, row[field.attname]);
     });
     related.forEach((chain) => {
       let source = row;
@@ -249,7 +301,9 @@ class MemoryBackend extends Backend {
         return rows.map((row) => {
           const result = {};
           query.values.forEach(({ key, fields, jsonPath }) => {
-            result[key] = copy(this.valueAt(row, fields, jsonPath));
+            result[key] = jsonPath
+              ? copy(this.valueAt(row, fields, jsonPath))
+              : this.given(lastOf(fields), this.valueOf(row, fields));
           });
           return result;
         });
@@ -279,8 +333,8 @@ class MemoryBackend extends Backend {
       if (!groupBy && groups.size === 0) groups.set('[]', { values: [], rows: [] });
       let results = [...groups.values()].map((group) => {
         const result = {};
-        (groupBy || []).forEach(({ key }, i) => {
-          result[key] = copy(group.values[i]);
+        (groupBy || []).forEach(({ key, fields }, i) => {
+          result[key] = fields && fields.length ? this.given(lastOf(fields), group.values[i]) : copy(group.values[i]);
         });
         aggregates.forEach((item) => {
           result[item.key] = this.computeAggregate(item, group.rows);
@@ -305,6 +359,8 @@ class MemoryBackend extends Backend {
 
   computeAggregate(item, rows) {
     if (!item.fields) return rows.length;
+    const decimal = lastOf(item.fields).dbType === 'decimal';
+    const order = decimal ? compareDecimals : compare;
     let values = rows.map((row) => this.valueOf(row, item.fields)).filter((value) => value !== null);
     if (item.distinct) {
       const seen = new Set();
@@ -319,13 +375,16 @@ class MemoryBackend extends Backend {
       case 'count':
         return values.length;
       case 'sum':
-        return values.length ? values.reduce((total, value) => total + value, 0) : null;
+        // Decimals are summed as numbers, as SQL databases give them.
+        return values.length ? values.reduce((total, value) => total + (decimal ? Number(value) : value), 0) : null;
       case 'avg':
-        return values.length ? values.reduce((total, value) => total + value, 0) / values.length : null;
+        return values.length
+          ? values.reduce((total, value) => total + (decimal ? Number(value) : value), 0) / values.length
+          : null;
       case 'min':
-        return values.length ? copy(values.reduce((a, b) => (compare(a, b) <= 0 ? a : b))) : null;
+        return values.length ? copy(values.reduce((a, b) => (order(a, b) <= 0 ? a : b))) : null;
       default:
-        return values.length ? copy(values.reduce((a, b) => (compare(a, b) >= 0 ? a : b))) : null;
+        return values.length ? copy(values.reduce((a, b) => (order(a, b) >= 0 ? a : b))) : null;
     }
   }
 
@@ -352,7 +411,7 @@ class MemoryBackend extends Backend {
         return rows.map((row) => {
           const stored = {};
           meta.fields.forEach((field) => {
-            stored[field.attname] = encode(field, row[field.attname]);
+            stored[field.attname] = this.stored(field, row[field.attname]);
           });
           // No primary key: a number of its own.
           if (!pk) {
@@ -413,7 +472,7 @@ class MemoryBackend extends Backend {
       const updated = rows.map((row) => {
         const next = { ...row };
         assignments.forEach(({ field, value }) => {
-          next[field.attname] = encode(field, this.evaluate(row, value));
+          next[field.attname] = this.stored(field, this.evaluate(row, value));
         });
         if (!meta.pk) this.rowKeys.set(next, this.rowKeys.get(row));
         return next;

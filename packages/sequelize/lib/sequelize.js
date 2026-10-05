@@ -15,6 +15,7 @@ const { Validator } = require('./validate');
 const { QueryTypes, formatQuery, nestRow } = require('./query');
 const { QueryInterface, literal } = require('./query-interface');
 const DIALECT_INFO = require('./dialects.json');
+const { ConnectionManager } = require('./connection-manager');
 const associations = require('./associations');
 const inflection = require('./utils');
 
@@ -109,27 +110,6 @@ function pgDialectOptions(options) {
   return result;
 }
 
-// The numbers of a pool of @xufa/pg as those of sequelize-pool (connectionManager.pool.size...).
-function poolNumbers(pool) {
-  return {
-    get size() {
-      return pool.totalCount;
-    },
-    get available() {
-      return pool.idleCount;
-    },
-    get using() {
-      return pool.totalCount - pool.idleCount;
-    },
-    get waiting() {
-      return pool.waitingCount;
-    },
-    get maxSize() {
-      return pool.max;
-    },
-  };
-}
-
 // The errors of connections by their cause, as Sequelize gives them.
 const CONNECTION_ERRORS = {
   ECONNREFUSED: errors.ConnectionRefusedError,
@@ -139,6 +119,8 @@ const CONNECTION_ERRORS = {
   ENETUNREACH: errors.HostNotReachableError,
   EINVAL: errors.InvalidConnectionError,
   ETIMEDOUT: errors.ConnectionTimedOutError,
+  // No connection of the pool in time (pool.acquire).
+  ACQUIRE_TIMEOUT: errors.ConnectionAcquireTimeoutError,
 };
 
 class Sequelize {
@@ -157,10 +139,25 @@ class Sequelize {
       dialect: 'sqlite',
       logging: console.log, // eslint-disable-line no-console
       define: {},
+      replication: false,
+      // The version of the server, as Sequelize keeps it (0: not known yet).
+      databaseVersion: 0,
       ...options,
       hooks: {},
     };
-    this.config = config;
+    // The configuration of the connections, as Sequelize gives it.
+    this.config = {
+      ...config,
+      pool: this.options.pool,
+      protocol: this.options.protocol,
+      native: this.options.native,
+      ssl: this.options.ssl,
+      replication: this.options.replication,
+      dialectModule: this.options.dialectModule,
+      dialectModulePath: this.options.dialectModulePath,
+      keepDefaultTimezone: this.options.keepDefaultTimezone,
+      dialectOptions: this.options.dialectOptions,
+    };
     // How BIGINT values are given: numbers while they are safe integers (bigints beyond), bigints, or strings (as
     // Sequelize 6 gives them in PostgreSQL).
     if (this.options.bigint !== undefined && !['number', 'bigint', 'string'].includes(this.options.bigint)) {
@@ -175,6 +172,13 @@ class Sequelize {
     this.dialectName = dialect;
     // What the dialect is and supports, as Sequelize tells it (sequelize.dialect.supports).
     this.dialect = { ...(DIALECT_INFO[dialect] || { name: dialect, supports: {} }) };
+    // The oldest version of the server Sequelize supports, and the query generator (that of the query interface, with
+    // the operatorsAliases as OperatorsAliasMap).
+    this.dialect.defaultVersion = dialect === 'postgres' ? '9.5.0' : '3.8.0';
+    Object.defineProperty(this.dialect, 'queryGenerator', {
+      get: () => this.getQueryInterface().queryGenerator,
+      configurable: true,
+    });
     this.models = {};
     this.modelManager = {
       models: [],
@@ -205,6 +209,8 @@ class Sequelize {
     this.xufaIsReady = false;
     this.xufaPending = false;
     this.xufaConnecting = null;
+    this.xufaConnectionManager = new ConnectionManager(this);
+    if (this.xufaDb.backend.pool) this.xufaConnectionManager.xufaOpenThrough(this.xufaDb.backend.pool);
     this.installLogging();
     this.installReplication();
     this.installPoolHooks();
@@ -314,6 +320,8 @@ class Sequelize {
     const pool = options.pool || {};
     const connection = { ...pgDialectOptions(options), max: pool.max || 10 };
     if (pool.idle !== undefined) connection.idleTimeoutMillis = pool.idle;
+    // How long a query waits for a connection of the pool (pool.acquire, 60 s by default as in Sequelize).
+    connection.acquireTimeoutMillis = pool.acquire !== undefined ? pool.acquire : 60000;
     if (options.url && !server.host) {
       // The options of the connection string (?options=-c...) go with those made here (client_min_messages).
       let given = null;
@@ -344,36 +352,32 @@ class Sequelize {
     const { replication } = this.options;
     const { pool } = this.xufaDb.backend;
     const reads = replication && Array.isArray(replication.read) ? replication.read : [];
-    if (this.dialectName !== 'postgres' || !pool || reads.length === 0) {
-      // The numbers of the pool, as sequelize-pool gives them (size, available, using, waiting).
-      this.xufaConnectionManager =
-        pool && pool.totalCount !== undefined ? { ...CONNECTION_MANAGER, pool: poolNumbers(pool) } : CONNECTION_MANAGER;
-      return;
-    }
-    // Pools of the class of the pool of the primary (that of @xufa/pg).
+    if (this.dialectName !== 'postgres' || !pool || reads.length === 0) return;
+    // Pools of the class of the pool of the primary (that of @xufa/pg), whose connections are opened by
+    // connectionManager._connect too.
     const Pool = pool.constructor;
     this.xufaReadPools = reads.map((server) => {
       const { url, ...settings } = this.pgServerOptions(server);
-      return new Pool(url ? { connectionString: url, ...settings } : settings);
+      const read = new Pool(url ? { connectionString: url, ...settings } : settings);
+      read.on('error', () => {});
+      this.xufaConnectionManager.xufaOpenThrough(read);
+      return read;
     });
     const query = pool.query.bind(pool);
     const connect = pool.connect.bind(pool);
     const write = { query, connect };
     let next = 0;
-    const manager = {
-      ...CONNECTION_MANAGER,
-      pool: {
-        read: {
-          acquire: () => {
-            const chosen = this.xufaReadPools[next % this.xufaReadPools.length];
-            next += 1;
-            return chosen;
-          },
+    const manager = this.xufaConnectionManager;
+    manager.xufaPools = {
+      read: {
+        acquire: () => {
+          const chosen = this.xufaReadPools[next % this.xufaReadPools.length];
+          next += 1;
+          return chosen;
         },
-        write: { acquire: () => write },
       },
+      write: { acquire: () => write },
     };
-    this.xufaConnectionManager = manager;
     const target = () => (this.xufaReplica.getStore() === 'read' ? manager.pool.read : manager.pool.write).acquire();
     pool.query = (...args) => target().query(...args);
     pool.connect = () => target().connect();
@@ -912,6 +916,8 @@ class Sequelize {
   // Raw SQL: replacements (? or :name, written as parameters) or bind ($1 or $name). The type says what is given:
   // SELECT gives the rows (instances of options.model with mapToModel), RAW (by default) [rows, metadata].
   async query(sql, options = {}) {
+    // The end of a transaction (queryInterface.commitTransaction, rollbackTransaction): logged, and done.
+    if (options && options.xufaControl && options.transaction) return this.xufaControlQuery(sql, options);
     // Queries of type SELECT read (on a replica, with replication).
     if (this.xufaReadPools && options && options.type === 'SELECT' && !this.xufaReplica.getStore()) {
       return this.xufaReading(options, () => this.query(sql, options));
@@ -964,6 +970,23 @@ class Sequelize {
     }
   }
 
+  xufaControlQuery(sql, options) {
+    const { transaction } = options;
+    const store = {
+      logging: options.logging,
+      benchmark: options.benchmark,
+      options,
+      transactionId: transaction.id,
+    };
+    const end = () => transaction.xufaControl(options.xufaControl);
+    return this.xufaLogContext
+      .run(store, () => this.xufaLogged(String(sql), [], end))
+      .then(
+        () => [[], 0],
+        (err) => Promise.reject(this.xufaError(err))
+      );
+  }
+
   xufaRawQuery(query, params, type, options) {
     const { backend } = this.xufaDb;
     // After changes of the schema, prepared statements are prepared again (PostgreSQL).
@@ -1000,6 +1023,8 @@ class Sequelize {
         return options.plain ? result[0] || null : result;
       }
       if (type === QueryTypes.INSERT) return [rows, rows.length];
+      // The foreign keys of a table (queryGenerator.getForeignKeysQuery): in PostgreSQL, from their definitions.
+      if (type === QueryTypes.FOREIGNKEYS) return this.dialectName === 'postgres' ? rows.map(foreignKeyRow) : rows;
       // As Sequelize in PostgreSQL: SHOW and DESCRIBE give their rows.
       if (this.dialectName === 'postgres' && /^\s*(show|describe)\b/i.test(query)) return rows;
       return [rows, rows];
@@ -1021,7 +1046,7 @@ class Sequelize {
   }
 
   get connectionManager() {
-    return this.xufaConnectionManager || CONNECTION_MANAGER;
+    return this.xufaConnectionManager;
   }
 
   getQueryInterface() {
@@ -1260,6 +1285,22 @@ const Utils = {
   },
 };
 
+// A foreign key of PostgreSQL (constraint_name, condef) as Sequelize gives it: id, table, from, to, on_update,
+// on_delete.
+function foreignKeyRow(row) {
+  const parts =
+    row.condef !== undefined &&
+    row.condef.match(
+      /FOREIGN KEY \((.+)\) REFERENCES (.+)\((.+)\)( ON (UPDATE|DELETE) (CASCADE|RESTRICT))?( ON (UPDATE|DELETE) (CASCADE|RESTRICT))?/
+    );
+  if (!parts) return row;
+  const result = { ...row, id: row.constraint_name, table: parts[2], from: parts[1], to: parts[3] };
+  for (let i = 5; i <= 8; i += 3) {
+    if (/(UPDATE|DELETE)/.test(parts[i] || '')) result[`on_${parts[i].toLowerCase()}`] = parts[i + 1];
+  }
+  return result;
+}
+
 // The rows of raw queries with columns renamed to attributes (by fieldMap, or the fields of the model).
 function mapFields(model, row, fieldMap) {
   if (!fieldMap && !(model && model.xufaColumns)) return row;
@@ -1313,7 +1354,6 @@ Object.assign(Sequelize, {
 });
 
 // What code that resets the type parsers of Sequelize's connection manager calls (nothing to do here).
-const CONNECTION_MANAGER = Object.freeze({ _clearTypeParser() {}, refreshTypeParser() {} });
 
 // sequelize.Sequelize: the class (its data types, Op...), as Sequelize gives it on the instances.
 Object.defineProperty(Sequelize.prototype, 'Sequelize', {

@@ -201,6 +201,15 @@ export declare class Timestamp {
 export declare class Decimal128 {
   constructor(bytes: Uint8Array);
   bytes: Buffer;
+  /** The decimal of a text ('12.50', '1E+3', 'NaN'), exactly: more than 34 digits or an exponent out of range throws. */
+  static fromString(text: string): Decimal128;
+  /** (-1)^negative * coefficient * 10^exponent, with a coefficient of up to 34 digits. */
+  static fromParts(negative: boolean, coefficient: bigint, exponent: number): Decimal128;
+  /** Its sign, coefficient (a number under 2^53, a bigint above) and exponent, or what special value it is. */
+  toParts(): { negative: boolean; coefficient: number | bigint; exponent: number; special: null | 'Infinity' | 'NaN' };
+  /** The text of the standard: '12.50', '1E+3', '-0.0001'. */
+  toString(): string;
+  toJSON(): { $numberDecimal: string };
 }
 
 export declare class MinKey {}

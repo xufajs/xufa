@@ -1,0 +1,59 @@
+{
+  "name": "@xufa/jwt",
+  "version": "0.1.0",
+  "description": "JSON Web Tokens with the API of jsonwebtoken (and jws, jwa) and their test suites, without dependencies",
+  "main": "./index.js",
+  "types": "./index.d.ts",
+  "type": "commonjs",
+  "exports": {
+    ".": {
+      "types": "./index.d.ts",
+      "default": "./index.js"
+    },
+    "./jws": "./lib/jws.js",
+    "./jwa": "./lib/jwa.js",
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "index.js",
+    "lib",
+    "index.d.ts"
+  ],
+  "scripts": {
+    "test": "vyntra",
+    "test:types": "tsd"
+  },
+  "keywords": [
+    "jwt",
+    "jws",
+    "jwa",
+    "jsonwebtoken",
+    "token"
+  ],
+  "author": "Jesús Seijas <jseijas@gmail.com>",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/xufajs/xufa.git",
+    "directory": "packages/jwt"
+  },
+  "homepage": "https://github.com/xufajs/xufa/tree/main/packages/jwt#readme",
+  "bugs": {
+    "url": "https://github.com/xufajs/xufa/issues"
+  },
+  "engines": {
+    "node": ">=22"
+  },
+  "devDependencies": {
+    "chai": "^4.1.2",
+    "ecdsa-sig-formatter": "^1.0.11",
+    "sinon": "^6.0.0",
+    "vyntra": "^0.6.0"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "tsd": {
+    "directory": "test/types"
+  }
+}

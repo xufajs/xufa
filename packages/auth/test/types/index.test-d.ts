@@ -1,4 +1,4 @@
-import { expectType, expectError } from 'tsd';
+import { expectType, expectError, expectAssignable } from 'tsd';
 import { generateKeyPairSync } from 'node:crypto';
 import xufa, { type XufaInstance } from '@xufa/http';
 import {
@@ -6,8 +6,11 @@ import {
   verifyPassword,
   needsRehash,
   KeySet,
+  KeyVault,
   signJwt,
+  signJwtAsync,
   verifyJwt,
+  verifyJwtAsync,
   decodeJwt,
   Claims,
   generateSecret,
@@ -22,6 +25,15 @@ import {
   plugin,
   AuthApi,
   AuthRule,
+  Strategy,
+  apiKey,
+  basic,
+  generateApiKey,
+  verifyApiKey,
+  parseApiKey,
+  passport,
+  oauthState,
+  PassportAdapter,
 } from '../..';
 
 // Passwords
@@ -31,7 +43,10 @@ expectType<boolean>(needsRehash('$scrypt$...'));
 expectError(hashPassword('secret', { cost: 2 }));
 
 // JWTs
-const keys = new KeySet({ current: 'v2', keys: { v2: 'a secret of thirty-two bytes or more', v1: { key: 'old', algorithm: 'HS512' } } });
+const keys = new KeySet({
+  current: 'v2',
+  keys: { v2: 'a secret of thirty-two bytes or more', v1: { key: 'old', algorithm: 'HS512' } },
+});
 const { privateKey } = generateKeyPairSync('ed25519');
 new KeySet({ keys: { ed: privateKey } });
 const token = signJwt({ sub: '1', role: 'admin' }, keys, { expiresIn: '15m', audience: ['api'], jwtId: true });
@@ -111,3 +126,80 @@ app.get('/admin', { config: { auth: ['admin'] } }, async () => 'ok');
 app.get('/own', { config: { auth: (user: User) => user.role === 'admin' } }, async () => 'ok');
 app.get('/check', { preHandler: app.authorize('admin', 'staff') }, async () => 'ok');
 expectError(app.get('/bad', { config: { auth: 42 } }, async () => 'ok'));
+
+// The async versions of signJwt and verifyJwt.
+expectType<Promise<string>>(signJwtAsync({ sub: '1' }, keys, { expiresIn: '15m' }));
+expectType<Promise<{ sub: string }>>(verifyJwtAsync<{ sub: string }>('token', keys));
+
+// The KeyVault, and encrypted keys in a KeySet.
+const vault = new KeyVault({ secret: 'a secret of 32 bytes or more, at least!', algorithm: 'EdDSA', keep: '7d' });
+expectType<Promise<KeySet>>(vault.keys('acme'));
+expectType<Promise<KeySet>>(vault.rotate('acme', { immediate: true }));
+expectType<Promise<void>>(vault.revoke('acme', 'k1'));
+new KeySet({ keys: { k: { key: '-----BEGIN ENCRYPTED PRIVATE KEY-----', passphrase: 'pw' } } });
+expectError(new KeyVault({}));
+
+// Strategies: API keys, HTTP Basic, Passport, and routes that ask for some of them.
+const { key, id, hash } = generateApiKey({ prefix: 'live_' });
+expectType<string>(key);
+expectType<boolean>(verifyApiKey('secret', hash));
+expectType<{ id: string; secret: string } | null>(parseApiKey(key));
+const keyStrategy = apiKey<User>({
+  header: 'x-api-key',
+  find: async (given) => (given === id ? { hash, subject: '1' } : null),
+  user: (record) => ({ id: Number(record.subject), email: 'a@b.c', password: '', role: 'user' }),
+});
+expectAssignable<Strategy<User>>(keyStrategy);
+expectError(apiKey({ header: 'x-api-key' }));
+const basicStrategy = basic<User>({ findUser: async () => null, cache: '1m', lockout: false });
+
+// A strategy of Passport (structurally: what passport-http-bearer and the others are).
+class FakeStrategy {
+  name = 'fake';
+  authenticate(this: any, req: any) {
+    this.success({ id: 1, role: 'user' });
+  }
+}
+const fake = passport<User>(new FakeStrategy());
+expectType<PassportAdapter<User>>(fake);
+expectError(passport({ name: 'x' }));
+const github = passport(new FakeStrategy(), { name: 'github' });
+const login = github.login({
+  scope: ['user:email'],
+  claims: (user) => ({ sub: '1' }),
+  onFailure: (failure, request, reply) => expectType<string | undefined>(failure.message),
+});
+expectType<(request: any, reply: any) => Promise<unknown>>(login);
+const state = oauthState({ secret: 'a secret for the state', maxAge: 300, sameSite: 'Lax' });
+expectError(oauthState({}));
+
+const withStrategies = xufa();
+withStrategies.register(plugin, { strategies: [keyStrategy, basicStrategy, fake] });
+withStrategies.register(plugin, { keys: 'secret', strategies: ['jwt', keyStrategy], refresh: true });
+expectError(withStrategies.register(plugin, { strategies: ['session'] }));
+withStrategies.get('/keys', { config: { auth: { strategy: 'apiKey' } } }, async () => 'ok');
+withStrategies.get(
+  '/admins',
+  { config: { auth: { strategy: ['apiKey', 'basic'], roles: 'admin' } } },
+  async () => 'ok'
+);
+withStrategies.get('/mine', { config: { auth: { check: (user: User) => user.id === 1 } } }, async () => 'ok');
+expectError(withStrategies.get('/none', { config: { auth: {} } }, async () => 'ok'));
+withStrategies.get('/github/callback', login);
+withStrategies.get(
+  '/either',
+  { preHandler: withStrategies.auth.authenticateWith('apiKey', 'basic') },
+  async () => 'ok'
+);
+withStrategies.get('/token', async (request, reply) => {
+  const tokens = await withStrategies.auth.issue({ sub: '1' }, request, reply);
+  expectType<string>(tokens.accessToken);
+  expectType<string | undefined>(tokens.refreshToken);
+  return tokens;
+});
+
+// Security schemes of OpenAPI of the strategies.
+expectType<Record<string, unknown> | undefined>(keyStrategy.openapi);
+apiKey({ find: () => null, openapi: { type: 'apiKey', in: 'header', name: 'x-key' } });
+passport(new FakeStrategy(), { openapi: false });
+expectError(passport(new FakeStrategy(), { openapi: 'bearer' }));

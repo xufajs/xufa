@@ -10,6 +10,13 @@
 
 /// <reference types="node" />
 
+/**
+ * A validation rule: an expression of @xufa/expression (on `value` for a field, on the fields of the object for a
+ * model), a function, or either with its message. It gives true (valid), false (not valid) or a message.
+ */
+export type ValidationRule<S> = string | ((subject: S) => string | boolean | void);
+export type RuleSpec<S> = ValidationRule<S> | { rule: ValidationRule<S>; message?: string };
+
 export interface FieldOptions<T> {
   null?: boolean;
   default?: T | (() => T);
@@ -18,7 +25,17 @@ export interface FieldOptions<T> {
   primaryKey?: boolean;
   choices?: readonly T[];
   column?: string;
-  validate?: ((value: T) => string | boolean | void) | Array<(value: T) => string | boolean | void>;
+  /** Rules of the value: functions, expressions on `value` ('value >= 0'), or { rule, message }. */
+  validate?: RuleSpec<T> | Array<RuleSpec<T>>;
+  /**
+   * A computed field: an expression of @xufa/expression on the other fields of its object ('price * quantity'), or a
+   * function of the object. Not stored by default: computed when it is read, and no query can use it.
+   */
+  computed?: string | ((object: any) => unknown);
+  /** A computed field kept in a column: set on save and update, so queries can filter, order and aggregate by it. */
+  stored?: boolean;
+  /** The fields a computed function reads (an expression's are found by the ORM): updates of others skip it. */
+  uses?: readonly string[];
 }
 
 export interface StringOptions extends FieldOptions<string> {
@@ -206,6 +223,12 @@ export interface ModelOptions {
   // a model without one (its objects are only inserted; querysets update and delete its rows).
   primaryKey?: string[] | false;
   ordering?: string | string[];
+  /**
+   * Rules of the objects, checked by validate() (save, create, bulkCreate) once their fields are valid: expressions on
+   * their fields ('end > start'), functions of the object, or { rule, message, field } (field: whose errors get the
+   * message; __all__ otherwise).
+   */
+  rules?: Array<RuleSpec<any> | { rule: ValidationRule<any>; message?: string; field?: string }>;
   // expireAfter (seconds, or text as '30d'; 0: at the date): a TTL index of one datetime field. Its objects expire
   // that long after the date: native in MongoDB, deleted by db.expire() / db.startExpiry() in every backend.
   indexes?: Array<
@@ -215,6 +238,20 @@ export interface ModelOptions {
   fillfactor?: number;
   // SQLite: a STRICT table (its columns hold values of their types only).
   strict?: boolean;
+  /**
+   * Objects kept in the cache of their database (`cache` of the Database; a MemoryCache when none is given): get() by
+   * the primary key, or by a field of `indexes` (unique fields), is answered from it; `ttl` in ms. Saving or deleting
+   * an object removes it, update() and delete() of querysets clear the model, and transactions neither read nor fill
+   * it.
+   */
+  cache?: boolean | ModelCacheOptions;
+  // In Databases: the name of the database of the model (before the routes and the default one).
+  database?: string;
+}
+
+export interface ModelCacheOptions {
+  ttl?: number;
+  indexes?: string[];
 }
 
 export interface Meta {
@@ -322,6 +359,11 @@ export declare class QuerySet<T> implements PromiseLike<T[]>, AsyncIterable<T> {
   ): QuerySet<Record<string, unknown> & AggregateResult<A>>;
   using(db: Database): QuerySet<T>;
   // Locks the rows selected until the end of the transaction (PostgreSQL).
+  // Its reads stop when the signal is aborted: they throw its reason, and PostgreSQL cancels the one that runs.
+  signal(signal: AbortSignal | null): QuerySet<T>;
+  // Its results kept in the cache of the database until a model it reads is written (every one needs the option
+  // cache); ttl in ms (the ttl of the option cache of the model by default).
+  cached(options?: { ttl?: number }): QuerySet<T>;
   selectForUpdate(options?: {
     skipLocked?: boolean;
     noWait?: boolean;
@@ -348,6 +390,8 @@ export declare class QuerySet<T> implements PromiseLike<T[]>, AsyncIterable<T> {
   updateOrCreate(conditions: Record<string, unknown>, defaults?: Record<string, unknown>): Promise<[T, boolean]>;
   bulkCreate(items: Array<T | Record<string, unknown>>, options?: { validate?: boolean }): Promise<T[]>;
   update(values: Record<string, unknown>): Promise<number>;
+  /** Computes again the stored computed fields of the objects, saving those that changed: their number. */
+  recompute(): Promise<number>;
   delete(): Promise<number>;
 }
 
@@ -366,14 +410,111 @@ export interface MigrationOperation {
 
 export interface DatabaseOptions {
   backend?:
-    'memory' | 'sqlite' | 'postgres' | 'mongodb' | Backend | (new (options: Record<string, unknown>) => Backend);
+    'memory' | 'fs' | 'sqlite' | 'postgres' | 'mongodb' | Backend | (new (options: Record<string, unknown>) => Backend);
+  /** fs: the folder of the files. */
+  dir?: string;
+  /** fs: a file for each collection (the default), or a folder for each collection and a file for each object. */
+  layout?: 'collection' | 'files';
+  /** fs: JSON written indented. */
+  pretty?: boolean;
+  /** fs: false leaves out the lock file that keeps other processes out of the folder. */
+  lock?: boolean;
+  /** fs: reads again the files changed from outside while the database is open (delay: ms to gather changes). */
+  watch?: boolean | { delay?: number };
+  /** fs: called with the tables read again after a change from outside. */
+  onChange?: (tables: string[]) => void | Promise<void>;
+  /** fs: called when a file changed from outside cannot be read (or the folder cannot be watched). */
+  onError?: (err: Error) => void;
+  /** The name of the database, in the keys of its cache: databases sharing a cache need different names ('db1'...). */
+  name?: string;
+  /** Where the objects of models with the option `cache` are kept: a MemoryCache when not given. */
+  cache?: Cache;
   [option: string]: unknown;
+}
+
+// --- Caches (the option `cache` of a Database). Values are copied in and out: what is cached cannot be changed by
+// the objects read from it.
+
+/** What a Database keeps cached objects in: these four (MemoryCache, SharedCache, LocalCache, the NetCache of
+ * @xufa/netcache, or one of your own). */
+export interface Cache {
+  get(key: string): Promise<unknown>;
+  /** `ttl`: ms (the default of the cache when not given). */
+  set(key: string, value: unknown, ttl?: number): Promise<void>;
+  delete(keys: string | string[]): Promise<void>;
+  /** The keys of a prefix ('' for all). */
+  clear(prefix?: string): Promise<void>;
+}
+
+export interface MemoryCacheOptions {
+  /** Keys kept at most; the least recently used go first (10000). */
+  max?: number;
+  /** ms a value is kept (0: until evicted). */
+  ttl?: number;
+}
+
+/** In the process: an LRU of `max` keys, whose values expire after `ttl` ms. */
+export declare class MemoryCache implements Cache {
+  constructor(options?: MemoryCacheOptions);
+  readonly max: number;
+  readonly ttl: number;
+  readonly size: number;
+  get(key: string): Promise<unknown>;
+  set(key: string, value: unknown, ttl?: number): Promise<void>;
+  delete(keys: string | string[]): Promise<void>;
+  clear(prefix?: string): Promise<void>;
+  /** The same, synchronous. */
+  getNow(key: string): unknown;
+  setNow(key: string, value: unknown, ttl?: number): void;
+  deleteNow(keys: string | string[]): void;
+  clearNow(prefix?: string): void;
+}
+
+/** The bus of @xufa/cluster (`bus` of its start()), as the caches use it. */
+export interface CacheBus {
+  readonly isPrimary: boolean;
+  on(event: string, handler: (data: any) => unknown): unknown;
+  request(event: string, data?: unknown, options?: { timeout?: number }): Promise<any>;
+  broadcast(event: string, data?: unknown, options?: { except?: number; others?: boolean }): unknown;
+}
+
+export interface SharedCacheOptions extends MemoryCacheOptions {
+  bus: CacheBus;
+  /** Caches of different names do not share their keys ('default'). */
+  name?: string;
+  /** In the primary: where the values are held (a MemoryCache of `max` and `ttl` by default), such as a NetCache,
+   * shared with other machines. */
+  store?: Cache;
+}
+
+/** In the primary of a cluster: the workers ask it, one copy shared by all. Created in every process with the bus. */
+export declare class SharedCache implements Cache {
+  constructor(options: SharedCacheOptions);
+  get(key: string): Promise<unknown>;
+  set(key: string, value: unknown, ttl?: number): Promise<void>;
+  delete(keys: string | string[]): Promise<void>;
+  clear(prefix?: string): Promise<void>;
+}
+
+export interface LocalCacheOptions extends MemoryCacheOptions {
+  bus: CacheBus;
+  /** Caches of different names do not share their invalidations ('default'). */
+  name?: string;
+}
+
+/** A copy in each process (reads do not leave it); deletes and clears reach the copies of the others. */
+export declare class LocalCache extends MemoryCache {
+  constructor(options: LocalCacheOptions);
 }
 
 export declare class Database {
   constructor(options?: DatabaseOptions);
   static registerBackend(name: string, factory: () => new (options: Record<string, unknown>) => Backend): void;
   readonly backend: Backend;
+  /** The name of the database (in the keys of its cache). */
+  readonly name: string;
+  /** Where cached objects are kept: the option `cache`, or a MemoryCache made at the first use (null until then). */
+  cache: Cache | null;
   readonly models: Map<string, ModelClass>;
   register(...models: ModelClass<any>[]): this;
   model<M extends Model = Model>(name: string): ModelClass<M> | undefined;
@@ -391,9 +532,87 @@ export declare class Database {
   showMigrations(options: { dir: string }): Promise<Array<{ name: string; applied: boolean }>>;
   // Deletes the objects of TTL indexes that expired: the number deleted, by model.
   expire(options?: { now?: Date }): Promise<Record<string, number>>;
+  // MongoDB: converts the decimals written as strings to Decimal128, in the server; the number of values by model.
+  migrateDecimals(): Promise<Record<string, number>>;
   // Calls expire() every interval (seconds or text: '1m') until stopExpiry() or close().
   startExpiry(options?: { interval?: number | string; onError?: (err: Error) => void }): this;
   stopExpiry(): void;
+}
+
+// Several databases by name, and the models routed to them: the option `database` of a model, its route, or the
+// default one. Relations across them are followed with more queries; a query cannot join them.
+export declare class Databases {
+  constructor(
+    config: Record<string, DatabaseOptions | Database>,
+    options?: { routes?: Record<string, string>; defaultName?: string }
+  );
+  readonly databases: Map<string, Database>;
+  readonly models: Map<string, ModelClass>;
+  get(name?: string): Database;
+  // The name of the database of a model, and the database it is registered in (null when none).
+  route(model: ModelClass<any>): string;
+  databaseOf(model: ModelClass<any>): Database | null;
+  register(...models: ModelClass<any>[]): this;
+  connect(): Promise<this>;
+  close(): Promise<void>;
+  sync(): Promise<void>;
+  makeMigrations(options: { dir: string; name?: string }): Promise<Record<string, unknown>>;
+  migrate(options: { dir: string }): Promise<Record<string, string[]>>;
+  transaction<R>(name: string, fn: () => R | Promise<R>): Promise<R>;
+}
+
+// What config(tenantId) gives: the options of one database, a Database, a Databases, or several databases with the
+// routes of the models (over those of the Tenants).
+export type TenantConfig =
+  | DatabaseOptions
+  | Database
+  | Databases
+  | { databases: Record<string, DatabaseOptions | Database>; routes?: Record<string, string>; defaultName?: string };
+
+// A database (or several) for each tenant, opened the first time it is used; code run in a tenant uses it.
+export interface CachedOptions<A extends unknown[]> {
+  /** What of the arguments is the key (the arguments by default). */
+  key?(...args: A): unknown;
+  /** ms a result is kept (0: until evicted). */
+  ttl?: number;
+  /** Where (a MemoryCache of its own by default); a cache of yours needs a name. */
+  cache?: Cache;
+  name?: string;
+  /** The keys of its own MemoryCache. */
+  max?: number;
+}
+
+export type CachedFunction<F extends (...args: any[]) => Promise<any>> = F & {
+  /** Forgets the result of some arguments. */
+  invalidate(...args: Parameters<F>): Promise<void>;
+  /** Forgets every result. */
+  clear(): Promise<void>;
+};
+
+// A function whose results are kept: the same arguments give the result kept, and calls made while one runs wait
+// for it. Errors are not kept.
+export declare function cached<F extends (...args: any[]) => Promise<any>>(
+  fn: F,
+  options?: CachedOptions<Parameters<F>>
+): CachedFunction<F>;
+
+// Runs fn with the reads of its queries stopped when the signal is aborted (writes are not stopped).
+export declare function withSignal<R>(signal: AbortSignal, fn: () => R): R;
+
+export declare class Tenants {
+  constructor(options: {
+    models?: ModelClass<any>[];
+    config: (tenantId: string) => TenantConfig | null | undefined | Promise<TenantConfig | null | undefined>;
+    setup?: (db: Database | Databases, tenantId: string) => unknown;
+    // The databases of tenants kept open (the last used).
+    max?: number;
+    // The databases of the models, for the tenants with several.
+    routes?: Record<string, string>;
+  });
+  database(tenantId: string): Promise<Database | Databases>;
+  run<R>(tenantId: string, fn: () => R | Promise<R>): Promise<R>;
+  enter(tenantId: string): Promise<Database | Databases>;
+  close(): Promise<void>;
 }
 
 export declare class Backend {
@@ -462,7 +681,13 @@ export declare function reencrypt(
 ): Promise<number>;
 
 export interface PluginOptions {
-  database: Database;
+  // The database of the app (app.db), or tenants (a database for each).
+  database?: Database;
+  // Each request in its tenant (resolve gives its id); without one, 400 when required (the default), 404 when unknown.
+  tenants?: { tenants: Tenants; resolve(request: any): string | number | null | undefined; required?: boolean };
+  // The reads of a request stop when its client goes away (request.signal): those not started throw, and PostgreSQL
+  // cancels the one that runs. Writes are not stopped.
+  cancel?: boolean;
   connect?: boolean;
   close?: boolean;
   migrate?: { dir: string; to?: string };
@@ -478,6 +703,9 @@ export interface ResourceOptions<T extends Model = Model> {
   // The actions given (all of them by default): list (GET /), get (GET /:id), create (POST /), update (PUT and PATCH
   // /:id) and delete (DELETE /:id).
   actions?: ResourceAction[];
+  // The documentation of its routes for @xufa/openapi (their config openapi): true by default; { tag } names their
+  // tag (the name of the model by default); false leaves it out.
+  openapi?: boolean | { tag?: string };
   // The objects of a request (all by default): those out of it are not found by any route.
   queryset?(request: any): QuerySet<T>;
   // The fields answered (all of them by default), or all but `exclude`.

@@ -52,9 +52,11 @@
           <li><a href="#validation">Validation: schiva</a></li>
           <li><a href="#names">Names and error codes</a></li>
           <li><a href="#plugins">Plugins</a></li>
+          <li><a href="#websockets">WebSockets</a></li>
           <li><a href="#logger">Logger</a></li>
           <li><a href="#bytes">Responses as bytes</a></li>
           <li><a href="#speed">Where it is faster</a></li>
+          <li><a href="#fast-head">The head of responses</a></li>
         </ul>
         <h4>More</h4>
         <ul>
@@ -122,12 +124,12 @@ await app.listen({ port: 3000 });</code></pre>
           <table>
             <thead><tr><th>fastify uses</th><th>xufa uses</th></tr></thead>
             <tbody>
-              <tr><td><code>pino</code></td><td><a href="packages.html#logger"><code>@xufa/logger</code></a></td></tr>
-              <tr><td><code>find-my-way</code></td><td><a href="packages.html#router"><code>@xufa/router</code></a></td></tr>
-              <tr><td><code>fast-json-stringify</code></td><td><a href="packages.html#serializer"><code>@xufa/serializer</code></a></td></tr>
-              <tr><td><code>light-my-request</code></td><td><a href="packages.html#inject"><code>@xufa/inject</code></a></td></tr>
-              <tr><td><code>avvio</code></td><td><a href="packages.html#boot"><code>@xufa/boot</code></a></td></tr>
-              <tr><td><code>@fastify/error</code></td><td><a href="packages.html#errors"><code>@xufa/errors</code></a></td></tr>
+              <tr><td><code>pino</code></td><td><a href="logger.html"><code>@xufa/logger</code></a></td></tr>
+              <tr><td><code>find-my-way</code></td><td><a href="router.html"><code>@xufa/router</code></a></td></tr>
+              <tr><td><code>fast-json-stringify</code></td><td><a href="serializer.html"><code>@xufa/serializer</code></a></td></tr>
+              <tr><td><code>light-my-request</code></td><td><a href="inject.html"><code>@xufa/inject</code></a></td></tr>
+              <tr><td><code>avvio</code></td><td><a href="boot.html"><code>@xufa/boot</code></a></td></tr>
+              <tr><td><code>@fastify/error</code></td><td><a href="errors.html"><code>@xufa/errors</code></a></td></tr>
               <tr><td><code>fastify-plugin</code></td><td><code>xufa.plugin</code></td></tr>
               <tr><td><code>ajv</code></td><td><a href="https://www.npmjs.com/package/schiva">schiva</a> (an optional peer dependency)</td></tr>
             </tbody>
@@ -189,9 +191,19 @@ module.exports = plugin(
           <code>decorators.fastify</code> counts as <code>decorators.xufa</code>.
         </p>
 
+        <h2 id="websockets">WebSockets</h2>
+        <p>
+          <a href="websocket.html">@xufa/websocket</a> is @fastify/websocket for xufa: routes with
+          <code>{ websocket: true }</code>, whose upgrades go through the hooks of the route first.
+        </p>
+        <pre><code class="language-js">app.register(require('@xufa/websocket/plugin'));
+app.get('/chat', { websocket: true }, (socket, request) =&gt; {
+  socket.on('message', (message) =&gt; socket.send(`echo: ${message}`));
+});</code></pre>
+
         <h2 id="logger">Logger</h2>
         <p>
-          <code>logger: true</code>, or logger options, create an <a href="packages.html#logger"><code>@xufa/logger</code></a>:
+          <code>logger: true</code>, or logger options, create an <a href="logger.html"><code>@xufa/logger</code></a>:
           pino's options and API, without transports. Give it a stream (<code>logger: { stream }</code>), or a logger of
           your own as <code>loggerInstance</code> (pino works). To pretty-print in development, pipe the output:
           <code>node app.js | pino-pretty</code>.
@@ -207,15 +219,37 @@ module.exports = plugin(
 
         <h2 id="speed">Where it is faster</h2>
         <ul>
-          <li>The router matches static paths with one map lookup, before walking its tree.</li>
+          <li>xufa writes the head of most responses itself (<a href="#fast-head">below</a>), where Node.js checks and assembles every header of every response: most of what a small response costs.</li>
+          <li>The router matches static paths with one map lookup, and compiles its tree into one function once it is hot: 1.15&times; to 1.67&times; find-my-way on routes with parameters (<a href="router.html#performance">Router performance</a>).</li>
           <li>The query string is left unparsed until <code>request.query</code> is read.</li>
           <li>Serializers write large responses as bytes (above): about 1.4&times; fastify on a big JSON response.</li>
           <li>Validation is compiled by schiva.</li>
         </ul>
         <p>
-          On small responses over the network, xufa and fastify are about even: the socket and the HTTP parser of
-          Node.js take most of the time. See <a href="benchmarks.html#http">Benchmarks</a>.
+          On Linux, xufa answers from 1.06&times; to 1.96&times; the requests of fastify in the process, and from
+          1.02&times; to 1.66&times; over the loopback (1.11&times; on a small JSON response). On Windows, whose loopback
+          is slower, the socket takes most of the time of a small response and the two are about even there. See
+          <a href="benchmarks.html#http">Benchmarks</a>.
         </p>
+
+        <h2 id="fast-head">The head of responses</h2>
+        <p>
+          For most responses, xufa writes the status line and the headers itself, as one string, instead of calling
+          <code>res.writeHead()</code>: they are the same bytes (a self-test compares them with those of Node.js when
+          the server starts, and turns this off for good if they differ), and the names and values of the headers are
+          checked as Node.js checks them. It covers HTTP/1.1 responses kept alive with any status from 200, with a body of
+          known length or none (<code>HEAD</code>, 204, 304, empty replies), and headers set on <code>reply.raw</code>
+          too, merged as <code>writeHead()</code> merges them. Node.js writes the others: streams, trailers, HTTP/1.0 and
+          connections that close.
+        </p>
+        <ul>
+          <li>
+            <code>reply.raw.getHeaders()</code> gives what it gives after <code>writeHead()</code>: the headers set on
+            <code>reply.raw</code>, and those of the reply too when there were some. Code that wraps
+            <code>res.writeHead()</code> of Node.js (some tracing tools do) does not see these responses go through it.
+          </li>
+          <li><code>xufa({ fastHead: false })</code> leaves every head to Node.js.</li>
+        </ul>
 
         <h2 id="typescript">TypeScript</h2>
         <p>

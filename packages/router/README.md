@@ -35,6 +35,11 @@ find-my-way's test suite.
   ```
 
 - **Static paths in a map**: routes without parameters are found with one lookup, before the tree is walked.
+- **Compiled trees**: once the tree of a method has been walked `Router.COMPILE_AFTER` times (16), it is compiled into
+  one function, with comparisons of character codes for the static parts, slices for the parameters and no call per
+  node; it finds the same routes, with the same order of backtracking. Routes found a second, `match()` against
+  find-my-way's `find()` (`bench/results/router-2.md`): 1.36× with one parameter, 1.67× with two, 2.36× on a deep
+  static path, 2.76× with a query string.
 - The `QUERY` method, and the helpers `safeDecodeURI`, `safeDecodeURIComponent`, `isSafeRegex`, `httpMethods`.
 
 ## TypeScript

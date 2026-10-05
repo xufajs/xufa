@@ -21,12 +21,14 @@ const {
   kRouteContext,
   kTimeoutTimer,
   kOnAbort,
+  kRequestResponse,
   kRequestSignal,
   kLogController,
 } = require('./symbols');
 const { onSendHookRunner, onResponseHookRunner, preHandlerHookRunner, preSerializationHookRunner } = require('./hooks');
 const { handleError } = require('./error-handler');
 const { getSchemaSerializer } = require('./schemas');
+const { fastHead } = require('./fast-head');
 const {
   XUFA_ERR_REP_INVALID_PAYLOAD_TYPE,
   XUFA_ERR_REP_RESPONSE_BODY_CONSUMED,
@@ -60,6 +62,14 @@ function now() {
   return performance.now();
 }
 
+// The listener of the abort signal of a request (lib/request.js onClientGone): on its response, or on itself.
+function removeAbortListener(request) {
+  const listener = request[kOnAbort];
+  if (request[kRequestResponse]) request[kRequestResponse].removeListener('close', listener);
+  request.raw.removeListener('close', listener);
+  request[kOnAbort] = null;
+}
+
 function Reply(res, request, log) {
   this.raw = res;
   this[kReplySerializer] = null;
@@ -67,6 +77,7 @@ function Reply(res, request, log) {
   this[kReplyIsError] = false;
   this[kReplyIsRunningOnErrorHook] = false;
   this.request = request;
+  if (request) request[kRequestResponse] = res;
   this[kReplyHeaders] = {};
   this[kReplyTrailers] = null;
   this[kReplyHasStatusCode] = false;
@@ -132,8 +143,7 @@ Reply.prototype.hijack = function hijack() {
     clearTimeout(request[kTimeoutTimer]);
     request[kTimeoutTimer] = null;
     if (request[kOnAbort]) {
-      request.raw.removeListener('close', request[kOnAbort]);
-      request[kOnAbort] = null;
+      removeAbortListener(request);
     }
   }
   const socket = request.raw.socket;
@@ -531,7 +541,7 @@ function onSendEnd(reply, payloadArg) {
     ) {
       headers['content-length'] = '0';
     }
-    safeWriteHead(reply, statusCode);
+    writeHead(reply, statusCode);
     sendTrailer(payload, res, reply);
     return;
   }
@@ -541,7 +551,7 @@ function onSendEnd(reply, payloadArg) {
     if (statusCode !== 304) reply.removeHeader('content-type');
     reply.removeHeader('content-length');
     if (statusCode === 205) headers['content-length'] = '0';
-    safeWriteHead(reply, statusCode);
+    writeHead(reply, statusCode);
     sendTrailer(undefined, res, reply);
     if (typeof payload.resume === 'function') {
       payload.on('error', noop);
@@ -571,8 +581,20 @@ function onSendEnd(reply, payloadArg) {
       if (Number(contentLength) !== length) headers['content-length'] = `${length}`;
     }
   }
-  safeWriteHead(reply, statusCode);
+  writeHead(reply, statusCode);
   writePayload(payload, res, reply);
+}
+
+// The head of a response: written by xufa when it can (lib/fast-head.js), by Node's writeHead() otherwise. Either way
+// it is sent with the first write of the body, or by end().
+function writeHead(reply, statusCode) {
+  const context = reply[kRouteContext];
+  if (context && context.fastHead === true && reply[kReplyTrailers] === null) {
+    const headers = reply[kReplyHeaders];
+    const length = headers['content-length'];
+    if (fastHead(reply.raw, reply.request.raw, statusCode, headers, length === undefined ? null : length)) return;
+  }
+  safeWriteHead(reply, statusCode);
 }
 
 function isHttp2Reply(reply) {
@@ -786,8 +808,7 @@ function setupResponseListeners(reply) {
       clearTimeout(request[kTimeoutTimer]);
       request[kTimeoutTimer] = null;
       if (request[kOnAbort]) {
-        request.raw.removeListener('close', request[kOnAbort]);
-        request[kOnAbort] = null;
+        removeAbortListener(request);
       }
     }
     // Keep-alive sockets do not keep the request and reply once the response is written.

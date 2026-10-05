@@ -1,0 +1,186 @@
+<!--{
+  "file": "jwt.html",
+  "name": "@xufa/jwt",
+  "title": "@xufa/jwt",
+  "description": "@xufa/jwt: JSON Web Tokens with the API of jsonwebtoken (and jws, jwa), their test suites and tests of attacks, with EdDSA, ES256K and no dependencies.",
+  "groups": [
+    ["Using it", [["start", "Quick start"], ["sign", "sign()"], ["verify", "verify()"], ["decode", "decode()"]]],
+    ["More", [["algorithms", "Algorithms"], ["refused", "What verify() refuses"], ["errors", "Errors"], ["jws", "jws and jwa"]]],
+    ["About it", [["from-jsonwebtoken", "Coming from jsonwebtoken"], ["performance", "Performance"], ["tests", "Tests"], ["typescript", "TypeScript"]]]
+  ]
+}-->
+        <h1>@xufa/jwt</h1>
+        <p class="intro">
+          JSON Web Tokens with the API of <a href="https://github.com/auth0/node-jsonwebtoken">jsonwebtoken</a>, and of
+          jws and jwa below it, without dependencies: everything is done by <code>node:crypto</code>. It passes the test
+          suites of the three (607 tests, with the vectors of RFC 7515 and checks against <code>openssl</code>) and
+          tests of its own on attacks on verification. <a href="auth.html">@xufa/auth</a> signs and verifies its tokens
+          with it.
+        </p>
+
+        <h2 id="start">Quick start</h2>
+        <pre><code class="language-sh">npm install @xufa/jwt</code></pre>
+        <pre><code class="language-js">const jwt = require('@xufa/jwt');
+
+const token = jwt.sign({ sub: '42', role: 'admin' }, process.env.JWT_SECRET, { expiresIn: '15m', issuer: 'app' });
+const claims = jwt.verify(token, process.env.JWT_SECRET, { algorithms: ['HS256'], issuer: 'app' });
+claims.sub; // '42'
+
+// Asymmetric keys: the private one signs, the public one verifies.
+const signed = jwt.sign({ sub: '42' }, privateKey, { algorithm: 'ES256', keyid: 'k1' });
+jwt.verify(signed, publicKey); // an EC key takes ES256/384/512 only: never HMAC nor none</code></pre>
+
+        <h2 id="sign">sign()</h2>
+        <p><code>sign(payload, secretOrPrivateKey, options, callback)</code>: the token, or with a callback <code>(err, token)</code>.</p>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Option</th><th>What it does</th></tr></thead>
+            <tbody>
+              <tr><td><code>algorithm</code></td><td><code>HS256</code> by default; see <a href="#algorithms">Algorithms</a>.</td></tr>
+              <tr><td><code>expiresIn</code>, <code>notBefore</code></td><td><code>exp</code> and <code>nbf</code>: seconds, or a span as text (<code>'15m'</code>, <code>'2 days'</code>).</td></tr>
+              <tr><td><code>audience</code>, <code>issuer</code>, <code>subject</code>, <code>jwtid</code></td><td><code>aud</code>, <code>iss</code>, <code>sub</code>, <code>jti</code> (a payload that has them already is refused).</td></tr>
+              <tr><td><code>keyid</code>, <code>header</code></td><td><code>kid</code>, and more fields of the header.</td></tr>
+              <tr><td><code>noTimestamp</code></td><td>No <code>iat</code>.</td></tr>
+              <tr><td><code>mutatePayload</code></td><td>Sets the claims on the payload given (not on a copy).</td></tr>
+              <tr><td><code>encoding</code></td><td>Of a payload given as text (<code>utf8</code>).</td></tr>
+              <tr><td><code>allowInsecureKeySizes</code></td><td>RSA keys under 2048 bits.</td></tr>
+              <tr><td><code>allowInvalidAsymmetricKeyTypes</code></td><td>Keys of another kind than the algorithm.</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p>The key: a string or Buffer (a secret, or a key in PEM), a <code>KeyObject</code>, or <code>{ key, passphrase }</code>.</p>
+
+        <h2 id="verify">verify()</h2>
+        <p>
+          <code>verify(token, secretOrPublicKey, options, callback)</code>: the payload (or
+          <code>{ header, payload, signature }</code> with <code>complete: true</code>). The key can be a function
+          <code>(header, callback)</code> that finds it (with the <code>kid</code> of the header), when verify() is given a
+          callback.
+        </p>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Option</th><th>What it checks</th></tr></thead>
+            <tbody>
+              <tr><td><code>algorithms</code></td><td>The ones taken; without it, those of the kind of the key.</td></tr>
+              <tr><td><code>audience</code></td><td><code>aud</code>: a value or a list, strings or RegExps.</td></tr>
+              <tr><td><code>issuer</code>, <code>subject</code>, <code>jwtid</code>, <code>nonce</code></td><td><code>iss</code> (a value or a list), <code>sub</code>, <code>jti</code>, <code>nonce</code>.</td></tr>
+              <tr><td><code>type</code></td><td>The <code>typ</code> of the header (RFC 8725), such as <code>'at+jwt'</code> for access tokens: a value or a list, ignoring case and <code>application/</code>.</td></tr>
+              <tr><td><code>maxAge</code></td><td>The age of <code>iat</code>: seconds or text.</td></tr>
+              <tr><td><code>clockTolerance</code>, <code>clockTimestamp</code></td><td>Seconds of leeway for <code>exp</code>, <code>nbf</code> and <code>maxAge</code>; the time taken as now.</td></tr>
+              <tr><td><code>ignoreExpiration</code>, <code>ignoreNotBefore</code></td><td>Not <code>exp</code>, not <code>nbf</code>.</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h2 id="decode">decode()</h2>
+        <p>
+          <code>decode(token, { complete, json })</code>: the payload (or header, payload and signature) <strong>without
+          verifying anything</strong>: for reading the <code>kid</code> before choosing a key, never for trusting the
+          claims.
+        </p>
+
+        <h2 id="algorithms">Algorithms</h2>
+        <p>
+          HS256/384/512 (HMAC), RS256/384/512 (RSASSA-PKCS1-v1_5), PS256/384/512 (RSASSA-PSS), ES256/384/512 (ECDSA),
+          <code>none</code> (only when it is in <code>algorithms</code> and no key is given), and
+          two jsonwebtoken does not have: <strong>EdDSA</strong> (Ed25519 and Ed448, RFC 8037) and <strong>ES256K</strong>
+          (ECDSA on secp256k1, RFC 8812).
+        </p>
+
+        <h2 id="refused">What verify() refuses</h2>
+        <ul>
+          <li>An algorithm the options do not take. Without <code>algorithms</code>, those of the kind of the key: a secret takes HS*, RSA keys RS* and PS*, EC keys ES*, Ed25519 and Ed448 EdDSA; so a token cannot choose HMAC with a public key as its secret (algorithm confusion), nor <code>none</code>.</li>
+          <li>A key of another kind than the algorithm: an EC key of another curve, RSA-PSS keys of other parameters.</li>
+          <li>A signature that is not valid (HMAC compared in constant time) or of the wrong size (ECDSA: an all-zero signature is not valid either).</li>
+          <li><code>exp</code> passed and <code>nbf</code> not reached, and the claims of the options (a RegExp audience never takes a token without <code>aud</code>).</li>
+          <li>A header with <code>crit</code>: RFC 7515 (4.1.11) says extensions that are not understood must be refused. jsonwebtoken does not look at it.</li>
+        </ul>
+
+        <h2 id="errors">Errors</h2>
+        <p>
+          <code>JsonWebTokenError</code> (<code>message</code>: <code>'invalid signature'</code>,
+          <code>'jwt malformed'</code>, <code>'invalid algorithm'</code>...), <code>TokenExpiredError</code>
+          (<code>expiredAt</code>) and <code>NotBeforeError</code> (<code>date</code>), as jsonwebtoken has them. A key of
+          another kind than the algorithm throws an <code>Error</code> that says which algorithms it takes.
+        </p>
+
+        <h2 id="jws">jws and jwa</h2>
+        <pre><code class="language-js">const jws = require('@xufa/jwt/jws'); // sign, verify, decode, isValid, createSign, createVerify (streams)
+const jwa = require('@xufa/jwt/jwa'); // jwa('ES256') is { sign(input, key), verify(input, signature, key) }</code></pre>
+
+        <h2 id="from-jsonwebtoken">Coming from jsonwebtoken</h2>
+        <ul>
+          <li><code>require('jsonwebtoken')</code> can be replaced by <code>require('@xufa/jwt')</code>: the options, the checks, the messages and the errors are those of jsonwebtoken 9.</li>
+          <li>Added: EdDSA and ES256K; the option <code>type</code> of verify(); named imports from ES modules (<code>import { sign } from '@xufa/jwt'</code>).</li>
+          <li>Stricter: tokens with <code>crit</code> are refused; a RegExp in <code>audience</code> tests strings only (jsonwebtoken tests a missing <code>aud</code> as the text <code>"undefined"</code>, which <code>/.*/</code> takes); <code>maxAge: 0</code> is a limit; <code>clockTolerance</code> must be a number of seconds (jsonwebtoken joins a string such as <code>'5'</code> to <code>exp</code> as text, and takes <code>Infinity</code>); <code>exp</code>, <code>nbf</code> and <code>iat</code> of <code>Infinity</code> or <code>NaN</code>, and empty payloads, are refused when signing.</li>
+          <li>Fixed: an <code>iat</code> of 0 is kept; a payload with keys such as <code>toString</code> signs; a payload that is not JSON and an ECDSA signature of the wrong size are <code>JsonWebTokenError</code>s, not a <code>SyntaxError</code> or <code>TypeError</code>; <code>decode()</code> of a payload that is not JSON is <code>null</code>, as any token that is not one.</li>
+          <li>From the open pull requests of jws: <code>jws.decode(token, { encoding })</code> reads the payload in the encoding it was signed with, and <code>createVerify()</code> passes its <code>encoding</code> and <code>json</code> to it.</li>
+          <li>These come from the open pull requests of jsonwebtoken, jws and jwa that hold; the tests of jsonwebtoken that assert the old behaviour are changed by <code>tools/port-jwt</code> (a list of the deviations, checked on each port).</li>
+          <li>No dependencies (jsonwebtoken has jws, jwa, ms, semver and seven of lodash).</li>
+        </ul>
+
+        <h2 id="performance">Performance</h2>
+        <p>
+          Operations a second against jsonwebtoken 9, the best of 5 rounds (<code>node bench/micro/jwt.js</code>, Node.js
+          22, Windows 11, i7-13700H), with keys given as text:
+        </p>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Case</th><th>jsonwebtoken</th><th>@xufa/jwt</th><th>@xufa/jwt / jsonwebtoken</th></tr></thead>
+            <tbody>
+              <tr><td>HS256 sign</td><td>36,108</td><td>163,734</td><td>4.53x</td></tr>
+              <tr><td>HS256 verify</td><td>29,784</td><td>148,351</td><td>4.98x</td></tr>
+              <tr><td>RS256 sign</td><td>1,029</td><td>1,766</td><td>1.72x</td></tr>
+              <tr><td>RS256 verify</td><td>17,478</td><td>35,945</td><td>2.06x</td></tr>
+              <tr><td>ES256 sign</td><td>10,911</td><td>31,912</td><td>2.92x</td></tr>
+              <tr><td>ES256 verify</td><td>8,478</td><td>13,442</td><td>1.59x</td></tr>
+              <tr><td>decode</td><td>286,184</td><td>398,189</td><td>1.39x</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p>
+          The signatures are the same work, done by <code>node:crypto</code>; the difference is the key. jsonwebtoken
+          tries a secret as a PEM key first (which throws: two thirds of the time of HS256) and parses a PEM key again on
+          each call. @xufa/jwt does not try what has no <code>-----BEGIN</code>, and keeps the KeyObject of each key given
+          as a string. Given KeyObjects, both are as fast (RS256 verify: 35,549 and 36,278). Decoding (and so verifying)
+          parses the header once and splits the token once, where jws does each two and three times. On Linux (WSL2, same
+          machine) the gains are a little smaller: 3.8&times; and 4.1&times; for HS256, 1.6&times; and 1.7&times; for
+          RS256, 2.6&times; and 1.5&times; for ES256, 1.3&times; for decoding.
+        </p>
+        <h3>With a callback: RSA signatures in the thread pool</h3>
+        <p>
+          With a callback, <code>sign()</code> makes RSA signatures (RS, PS) in libuv's thread pool, so the event loop
+          does not wait for their half a millisecond; jsonwebtoken makes them on the loop. The rest is done on the loop,
+          with a callback too: it takes 20 to 90 &micro;s, about what the hand-off to the pool costs. 64 tokens at a time
+          (<code>node bench/micro/jwt-async.js</code>; <code>bench/results/jwt-async-1.md</code> on Windows,
+          <code>jwt-async-linux-1.md</code> on Linux), in the pool against on the loop:
+        </p>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Case</th><th>Tokens a second, 4 threads (1 thread)</th><th>Stall of the loop, p99</th><th>One token alone</th></tr></thead>
+            <tbody>
+              <tr><td>RS256 sign, Windows</td><td>3.35&times; (1.02&times;)</td><td>42.4 &rarr; 0.7 ms</td><td>538 &rarr; 573 &micro;s</td></tr>
+              <tr><td>RS256 sign, Linux</td><td>3.33&times; (1.00&times;)</td><td>42.1 &rarr; 0.7 ms</td><td>557 &rarr; 604 &micro;s</td></tr>
+              <tr><td>RS256 verify, Linux</td><td>1.37&times; (0.65&times;)</td><td>1.2 &rarr; 0.4 ms</td><td>20 &rarr; 56 &micro;s</td></tr>
+              <tr><td>ES256 sign, Linux</td><td>1.45&times; (0.66&times;)</td><td>1.7 &rarr; 0.3 ms</td><td>23 &rarr; 62 &micro;s</td></tr>
+              <tr><td>EdDSA verify, Linux</td><td>2.84&times; (0.91&times;)</td><td>5.7 &rarr; 0.2 ms</td><td>91 &rarr; 125 &micro;s</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p>
+          An RSA signature gains everywhere: no stall, and 3.3&times; as many tokens a second when cores are free. The
+          others stall the loop a few milliseconds for 64 tokens at most, and in the pool they lose up to a third of their
+          speed when every core is busy (one thread: a server of a cluster), so they stay on the loop.
+        </p>
+
+        <h2 id="tests">Tests</h2>
+        <p>
+          The suites of jsonwebtoken, jws and jwa, ported to vyntra by <code>tools/port-jwt</code> from checkouts of their
+          repositories (requires and mocha's hooks rewritten, tests unchanged): the vectors of RFC 7515, and signatures
+          made by <code>openssl</code> verified, and the other way. And <code>test/security.test.js</code>: algorithm
+          confusion, <code>none</code>, signatures taken off or of other tokens, headers and payloads changed,
+          all-zero ECDSA signatures (CVE-2022-21449) and critical extensions.
+        </p>
+
+        <h2 id="typescript">TypeScript</h2>
+        <p>The declarations of jsonwebtoken (<code>@types/jsonwebtoken</code>), with EdDSA and ES256K among the algorithms, and <code>type</code>.</p>

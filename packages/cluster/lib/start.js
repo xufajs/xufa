@@ -130,6 +130,8 @@ function createStarter(bus) {
   }
 
   async function start(options = {}) {
+    // Data written by @xufa/marshal (true: its default registry; or a Registry): classes arrive as themselves.
+    if (options.marshal) bus.useMarshal(options.marshal === true ? undefined : options.marshal);
     if (options.signals !== false && cluster.isPrimary) {
       process.once('SIGINT', onSignal);
       process.once('SIGTERM', onSignal);

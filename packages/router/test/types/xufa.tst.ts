@@ -17,4 +17,5 @@ if (result !== null) {
 expect(Router.safeDecodeURI('/a%20b?x=1')).type.toBe<{ path: string; querystring: string; shouldDecodeParam: boolean }>();
 expect(Router.httpMethods).type.toBe<Router.HTTPMethod[]>();
 expect(new Router.Router()).type.toBe<Router.Instance<Router.HTTPVersion.V1>>();
+expect(Router.Router.COMPILE_AFTER).type.toBe<number>();
 expect(router.match).type.not.toBeCallableWith('NOPE', '/');

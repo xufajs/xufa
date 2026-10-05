@@ -1181,7 +1181,7 @@ function defineSuite(name, makeSequelize) {
           }
         };
         expect(await names({})).toEqual(['one_review!']);
-        expect(await names({ indexForeignKeys: true })).toEqual(['fk_notes_fk_writer_id', 'one_review!']);
+        expect(await names({ indexForeignKeys: true })).toEqual(['fk_notes__fk_writer_id', 'one_review!']);
       });
 
       it('makes STRICT tables of SQLite (strict)', async () => {
@@ -1495,6 +1495,41 @@ function defineSuite(name, makeSequelize) {
     });
 
     describe('the rest of the API of Sequelize', () => {
+      it('names tables, columns and indexes as Sequelize does (its inflection)', () => {
+        const names = {
+          User1: 'User1s',
+          Task2: 'Task2s',
+          Person: 'People',
+          Category: 'Categories',
+          Status: 'Statuses',
+          Leaf: 'Leafs',
+          Criterion: 'Criteria',
+          Octopus: 'Octopuses',
+          Bus: 'Buses',
+          Analysis: 'Analyses',
+          Equipment: 'Equipment',
+          UserXYZ: 'UserXYZs',
+        };
+        Object.entries(names).forEach(([model, table]) => {
+          expect(Sequelize.Utils.pluralize(model)).toBe(table);
+          // (inflection gives AnalyAsis for Analyses: Sequelize too.)
+          if (model !== 'Analysis') expect(Sequelize.Utils.singularize(table)).toBe(model);
+        });
+        // The rules apply to the whole name (as in Sequelize): a prefix changes what matches.
+        expect(sequelize.define('NamingCriterion', {}).tableName).toBe('NamingCriterions');
+        expect(sequelize.define('NamingUser1', {}).tableName).toBe('NamingUser1s');
+        const Upper = sequelize.define(
+          'HTTPServer',
+          { serverName: DataTypes.STRING, IOStream: DataTypes.STRING },
+          { underscored: true }
+        );
+        expect(Upper.tableName).toBe('h_t_t_p_servers');
+        expect(Upper.rawAttributes.serverName.field).toBe('server_name');
+        expect(Upper.rawAttributes.IOStream.field).toBe('i_o_stream');
+        expect(Sequelize.Utils.camelize('user_id')).toBe('userId');
+        expect(Sequelize.Utils.camelize('a b')).toBe('aB');
+      });
+
       it('has the types, errors, hints and helpers of Sequelize', () => {
         const { Author } = models;
         expect(DataTypes.INTEGER(11)).toBeInstanceOf(DataTypes.NUMBER);
@@ -1571,6 +1606,88 @@ function defineSuite(name, makeSequelize) {
         expect(mapped[0].name).toBe('a');
         const [rows] = await sequelize.query('SELECT COUNT(*) AS n FROM "Tags"');
         expect(Number(rows[0].n)).toBe(3);
+      });
+    });
+
+    describe('as Sequelize does it inside', () => {
+      it('ends transactions with COMMIT; and ROLLBACK; of sequelize.query, logged with their id', async () => {
+        const logs = [];
+        const query = sequelize.query.bind(sequelize);
+        const calls = [];
+        sequelize.query = (sql, options) => {
+          calls.push(options && options.transaction);
+          return query(sql, options);
+        };
+        try {
+          const committed = await sequelize.transaction({ logging: (line) => logs.push(line) });
+          await committed.commit();
+          const rolledBack = await sequelize.transaction({ logging: (line) => logs.push(line) });
+          await rolledBack.rollback();
+          expect(logs).toEqual([
+            `Executing (${committed.id}): COMMIT;`,
+            `Executing (${rolledBack.id}): ROLLBACK;`,
+          ]);
+          expect(calls).toEqual([committed, rolledBack]);
+        } finally {
+          sequelize.query = query;
+        }
+        await expect(new Sequelize.Transaction(sequelize).rollback()).rejects.toThrow(
+          'Transaction cannot be rolled back because it never started'
+        );
+      });
+
+      it('counts through aggregate(), without limit, offset nor order', async () => {
+        const { Tag } = models;
+        await Tag.bulkCreate([{ name: 'a' }, { name: 'b' }]);
+        const aggregate = Tag.aggregate;
+        const seen = [];
+        Tag.aggregate = function counted(attribute, fn, options) {
+          seen.push([attribute, fn, options.limit, options.where]);
+          return aggregate.call(this, attribute, fn, options);
+        };
+        try {
+          expect(await Tag.count({ where: { name: 'a' }, limit: 5 })).toBe(1);
+          expect(seen).toEqual([['*', 'count', null, { name: 'a' }]]);
+        } finally {
+          Tag.aggregate = aggregate;
+        }
+      });
+
+      it('takes operatorsAliases, and writes fragments as SQL (queryGenerator)', async () => {
+        const aliased = new Sequelize({
+          ...sequelize.options,
+          hooks: undefined,
+          operatorsAliases: { $gt: Op.gt, $in: Op.in },
+        });
+        try {
+          const Item = aliased.define('AliasedItem', { n: DataTypes.INTEGER });
+          await Item.sync({ force: true });
+          await Item.bulkCreate([{ n: 1 }, { n: 2 }, { n: 3 }]);
+          expect(await Item.count({ where: { n: { $gt: 1 } } })).toBe(2);
+          expect(await Item.count({ where: { n: { $in: [1, 3] } } })).toBe(2);
+          expect(aliased.dialect.queryGenerator.OperatorsAliasMap).toEqual({ $gt: Op.gt, $in: Op.in });
+          await Item.drop();
+        } finally {
+          await aliased.close();
+        }
+        const generator = sequelize.getQueryInterface().queryGenerator;
+        const json = Sequelize.json('meta.size', 'L');
+        const extract =
+          sequelize.getDialect() === 'postgres' ? '("meta"#>>\'{size}\') = \'L\'' : 'json_extract("meta",\'$.size\') = \'L\'';
+        expect(generator.handleSequelizeMethod(json)).toBe(extract);
+        expect(generator.handleSequelizeMethod(Sequelize.fn('lower', Sequelize.col('Tags.name')))).toBe('lower("Tags"."name")');
+        expect(generator.handleSequelizeMethod(Sequelize.cast(Sequelize.literal('1'), 'text'))).toBe('CAST(1 AS TEXT)');
+        expect(sequelize.dialect.defaultVersion).toMatch(/^\d+\.\d+\.\d+$/);
+        expect(sequelize.options.databaseVersion).toBe(0);
+      });
+
+      it('gives the foreign keys of a table (queryGenerator.getForeignKeysQuery)', async () => {
+        const { Book } = models;
+        const keys = await sequelize.query(sequelize.getQueryInterface().queryGenerator.getForeignKeysQuery(Book.getTableName()), {
+          type: Sequelize.QueryTypes.FOREIGNKEYS,
+        });
+        const columns = keys.map((key) => key.from.replace(/"/g, '')).sort();
+        expect(columns).toContain(Book.rawAttributes.authorId.field);
       });
     });
   });

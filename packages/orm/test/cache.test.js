@@ -174,6 +174,40 @@ describe('caches of clusters in one process', () => {
     await local.clear();
     expect(await local.get('b')).toBeUndefined();
   });
+
+  it('keep the values of the primary in the store given (such as a NetCache)', async () => {
+    const calls = [];
+    const store = new MemoryCache();
+    const recorded = {
+      get: (key) => (calls.push(['get', key]), store.get(key)),
+      set: (key, value, ttl) => (calls.push(['set', key, ttl]), store.set(key, value, ttl)),
+      delete: (keys) => (calls.push(['delete', keys]), store.delete(keys)),
+      clear: (prefix) => (calls.push(['clear', prefix]), store.clear(prefix)),
+    };
+    const shared = new SharedCache({ bus: new Bus(), name: 'stored', store: recorded });
+    await shared.set('a', { n: 1 }, 1000);
+    expect(await shared.get('a')).toEqual({ n: 1 });
+    await shared.delete('a');
+    await shared.clear('x:');
+    expect(calls).toEqual([
+      ['set', 'a', 1000],
+      ['get', 'a'],
+      ['delete', 'a'],
+      ['clear', 'x:'],
+    ]);
+  });
+
+  it('in one process, the SharedCache of the worker asks the one of the primary (and its store)', async () => {
+    const bus = new Bus();
+    const store = new MemoryCache();
+    const primary = new SharedCache({ bus, store, name: 'one-process' });
+    const worker = new SharedCache({ bus, name: 'one-process' });
+    await store.set('from-the-network', 1);
+    expect(await worker.get('from-the-network')).toBe(1);
+    await worker.set('from-the-worker', 2);
+    expect(await store.get('from-the-worker')).toBe(2);
+    expect(await primary.get('from-the-worker')).toBe(2);
+  });
 });
 
 describe('caches of clusters', () => {

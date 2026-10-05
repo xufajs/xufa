@@ -1,0 +1,145 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>@xufa/yaml · xufa</title>
+    <meta
+      name="description"
+      content="@xufa/yaml: YAML 1.2 for Node.js with no dependencies: the code and the test suite of js-yaml 4.1.0."
+    />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%23d9502b'/%3E%3Ctext x='16' y='22.5' font-family='monospace' font-size='18' font-weight='700' fill='white' text-anchor='middle'%3Ex%3C/text%3E%3C/svg%3E"
+    />
+    <link rel="stylesheet" href="style.css?v=0.1.0" />
+    <script src="main.js?v=0.1.0"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js" defer></script>
+  </head>
+  <body>
+    <header class="header">
+      <div class="header-inner">
+        <a class="logo" href="./"><span class="logo-mark">x</span>xufa</a>
+        <nav class="nav">
+          <a href="guide.html">Guide</a>
+          <a href="http.html">HTTP</a>
+          <a href="orm.html">ORM</a>
+          <a class="hide-small" href="auth.html">Auth</a>
+          <a class="hide-small" href="sequelize.html">Sequelize</a>
+          <a class="hide-small" href="packages.html" aria-current="page">Packages</a>
+          <a class="hide-small" href="benchmarks.html">Benchmarks</a>
+          <a href="https://github.com/xufajs/xufa">GitHub</a>
+          <button class="theme-toggle" type="button" aria-label="Switch between light and dark theme">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+              <path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z" />
+            </svg>
+          </button>
+        </nav>
+      </div>
+    </header>
+
+    <div class="docs">
+      <button class="menu-toggle" type="button" aria-expanded="false">☰ Contents</button>
+      <aside class="sidebar">
+        <h4>Using it</h4>
+        <ul>
+          <li><a href="#start">Quick start</a></li>
+          <li><a href="#load">Loading</a></li>
+          <li><a href="#dump">Writing</a></li>
+          <li><a href="#types">Types of your own</a></li>
+        </ul>
+        <h4>More</h4>
+        <ul>
+          <li><a href="#from-js-yaml">Coming from js-yaml</a></li>
+          <li><a href="#tests">Tests</a></li>
+          <li><a href="#typescript">TypeScript</a></li>
+        </ul>
+        <h4>Packages</h4>
+        <ul>
+          <li><a href="websocket.html">@xufa/websocket</a></li>
+          <li><a href="openapi.html">@xufa/openapi</a></li>
+          <li><a href="client.html">@xufa/client</a></li>
+          <li><a href="pg.html">@xufa/pg</a></li>
+          <li><a href="mongo.html">@xufa/mongo</a></li>
+          <li><a href="expression.html">@xufa/expression</a></li>
+          <li><a href="template.html">@xufa/template</a></li>
+          <li><a href="cluster.html">@xufa/cluster</a></li>
+          <li><a href="discovery.html">@xufa/discovery</a></li>
+          <li><a href="netcache.html">@xufa/netcache</a></li>
+          <li><a href="marshal.html">@xufa/marshal</a></li>
+          <li><a href="yaml.html" aria-current="page">@xufa/yaml</a></li>
+          <li><a href="jwt.html">@xufa/jwt</a></li>
+          <li><a href="logger.html">@xufa/logger</a></li>
+          <li><a href="router.html">@xufa/router</a></li>
+          <li><a href="serializer.html">@xufa/serializer</a></li>
+          <li><a href="inject.html">@xufa/inject</a></li>
+          <li><a href="boot.html">@xufa/boot</a></li>
+          <li><a href="errors.html">@xufa/errors</a></li>
+          <li><a href="packages.html">All the packages</a></li>
+        </ul>
+      </aside>
+
+      <article class="content">
+<h1>@xufa/yaml</h1>
+        <p class="intro">
+          YAML 1.2 for Node.js with no dependencies: the code of <a href="https://github.com/nodeca/js-yaml">js-yaml</a>
+          4.1.0 and its test suite. <a href="openapi.html">@xufa/openapi</a> reads and writes OpenAPI documents with it.
+        </p>
+
+        <h2 id="start">Quick start</h2>
+        <pre><code class="language-sh">npm install @xufa/yaml</code></pre>
+        <pre><code class="language-js">const yaml = require('@xufa/yaml');
+
+const doc = yaml.load(fs.readFileSync('openapi.yaml', 'utf8'));
+const text = yaml.dump(doc, { noRefs: true, lineWidth: -1 });</code></pre>
+
+        <h2 id="load">Loading</h2>
+        <p>
+          <code>load(text, { schema, filename, json, onWarning })</code> reads one document; <code>loadAll(text)</code> every
+          document of a stream. Loading runs no code. The default schema has the types of YAML 1.2 and the ones of js-yaml
+          (timestamps as dates, binary, sets, ordered maps, merge keys); <code>CORE_SCHEMA</code>, <code>JSON_SCHEMA</code>
+          and <code>FAILSAFE_SCHEMA</code> have fewer (with <code>CORE_SCHEMA</code>, dates stay strings). Errors are
+          <code>YAMLException</code>s with the line and column (<code>mark</code>) and a snippet of the text.
+        </p>
+
+        <h2 id="dump">Writing</h2>
+        <p>
+          <code>dump(value, options)</code>: <code>indent</code>, <code>flowLevel</code>, <code>sortKeys</code>,
+          <code>lineWidth</code> (-1: no folding), <code>noRefs</code> (no anchors for objects used twice),
+          <code>quotingType</code>, <code>forceQuotes</code>, <code>replacer</code>, <code>skipInvalid</code>.
+        </p>
+
+        <h2 id="types">Types of your own</h2>
+        <pre><code class="language-js">const Point = new yaml.Type('!point', { kind: 'sequence', construct: ([x, y]) =&gt; ({ x, y }) });
+const schema = yaml.DEFAULT_SCHEMA.extend([Point]);
+yaml.load('at: !point [1, 2]', { schema }); // { at: { x: 1, y: 2 } }</code></pre>
+
+        <h2 id="from-js-yaml">Coming from js-yaml</h2>
+        <p>
+          <code>require('js-yaml')</code> can be replaced by <code>require('@xufa/yaml')</code>: it is js-yaml 4.1.0, and its
+          documentation applies.
+        </p>
+
+        <h2 id="tests">Tests</h2>
+        <p>
+          The suite of js-yaml (units, samples of loading and of load errors, the dumper, a fuzzy dumper with fast-check,
+          and its issues), ported to vyntra by <code>tools/port-yaml</code>.
+        </p>
+
+        <h2 id="typescript">TypeScript</h2>
+        <p>The declarations of @types/js-yaml 4.0.9, with <code>types</code> (the types of the default schema).</p>
+      </article>
+    </div>
+
+    <footer class="footer">
+      <div class="container">
+        <span>xufa is MIT licensed. &copy; Jes&uacute;s Seijas</span>
+        <span>
+          <a href="guide.html">Guide</a> &middot; <a href="http.html">HTTP</a> &middot; <a href="orm.html">ORM</a> &middot; <a href="auth.html">Auth</a> &middot;
+          <a href="sequelize.html">Sequelize</a> &middot; <a href="packages.html">Packages</a> &middot;
+          <a href="benchmarks.html">Benchmarks</a> &middot; <a href="https://github.com/xufajs/xufa">GitHub</a>
+        </span>
+      </div>
+    </footer>
+  </body>
+</html>

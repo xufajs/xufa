@@ -90,7 +90,11 @@ declare namespace Router {
   /** A constructor of objects without a prototype, faster to create than Object.create(null). */
   const NullObject: { new (): { [key: string]: any } };
   /** The class of the routers (the default export creates one). */
-  const Router: { new <V extends HTTPVersion = HTTPVersion.V1>(config?: Config<V>): Instance<V> };
+  const Router: {
+    new <V extends HTTPVersion = HTTPVersion.V1>(config?: Config<V>): Instance<V>;
+    /** Walks of a tree by match() before it is compiled to one function (16; 0 compiles at the first walk). */
+    COMPILE_AFTER: number;
+  };
 
   interface Config<V extends HTTPVersion> {
     ignoreTrailingSlash?: boolean;

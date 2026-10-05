@@ -5,6 +5,8 @@
 //   const books = await Book.objects.filter({ author__name: 'Ada', pages__gte: 100 }).orderBy('-pages').limit(10);
 const { ForeignKey } = require('./fields');
 const { STATE } = require('./meta');
+const { currentSignal } = require('./context');
+const { cachedQuery } = require('./query-cache');
 const {
   Q,
   F,
@@ -25,6 +27,7 @@ const {
 const modelCache = require('./model-cache');
 const { NotFoundError, MultipleObjectsError, QueryError, ProtectedError, ValidationError } = require('./errors');
 const { uniqueErrorOf } = require('./errors');
+const { affects } = require('./computed');
 
 const MAX_GET_RESULTS = 21;
 
@@ -45,6 +48,8 @@ const INITIAL = {
   per: null,
   db: null,
   defaults: null,
+  signal: null,
+  cached: null,
 };
 
 class QuerySet {
@@ -60,6 +65,14 @@ class QuerySet {
 
   get db() {
     return this.state.db || this.model.db;
+  }
+
+  // The signal of its reads (signal(), or the one of the code running: lib/context.js), after checking it: a read
+  // does not start once it is aborted.
+  readSignal() {
+    const signal = this.state.signal || currentSignal();
+    if (signal) signal.throwIfAborted();
+    return signal;
   }
 
   get backend() {
@@ -165,6 +178,20 @@ class QuerySet {
   // Locks the rows selected until the end of the transaction, as Django's select_for_update(): { skipLocked, noWait,
   // of: 'self' (the rows of the model only, not those of selectRelated), mode: 'update' (default), 'share',
   // 'noKeyUpdate' or 'keyShare' } (PostgreSQL; SQLite locks the whole database).
+  // Its results kept in the cache of the database (lib/query-cache.js), for `ttl` ms (the ttl of the option cache of
+  // the model by default), until a model it reads is written. Every model it reads needs the option cache.
+  cached(options = {}) {
+    if (this.state.lock) throw new QueryError('cached() cannot be used with selectForUpdate()');
+    const settings = this.model.meta.options.cache;
+    const ttl = options.ttl !== undefined ? options.ttl : settings && settings !== true ? settings.ttl : undefined;
+    return this.clone({ cached: { ttl } });
+  }
+
+  // Its reads stop when the signal is aborted: they throw its reason, and PostgreSQL cancels the one that runs.
+  signal(signal) {
+    return this.clone({ signal: signal || null });
+  }
+
   selectForUpdate(options = {}) {
     const { mode = 'update', skipLocked = false, noWait = false, of = null } = options;
     return this.clone({ lock: { mode, skipLocked: Boolean(skipLocked), noWait: Boolean(noWait), of } });
@@ -195,6 +222,7 @@ class QuerySet {
         : null,
       lock: state.lock,
       per: null,
+      signal: state.signal || currentSignal(),
     };
     if (state.per) {
       if (state.lock) throw new QueryError('limitPer() cannot lock rows');
@@ -272,6 +300,36 @@ class QuerySet {
 
   async fetch() {
     if (this.cache) return this.cache;
+    this.readSignal();
+    const { state } = this;
+    if (state.cached) {
+      // Objects are kept as their rows, and made again from them.
+      const objects = !state.annotations && !state.values;
+      if (objects && (state.related.length || state.prefetch.length)) {
+        throw new QueryError(
+          'cached() keeps objects without the related ones: leave out selectRelated() and prefetchRelated(), or use values()'
+        );
+      }
+      const result = await cachedQuery(
+        this,
+        'fetch',
+        () => this.fetchFresh(),
+        objects
+          ? {
+              raw: (items) => items.map((item) => item.toRow()),
+              make: (rows) => rows.map((row) => this.model.fromRow(row, state.db)),
+            }
+          : {}
+      );
+      this.cache = result;
+      return result;
+    }
+    const result = await this.fetchFresh();
+    this.cache = result;
+    return result;
+  }
+
+  async fetchFresh() {
     const { state } = this;
     let result;
     if (state.annotations) result = this.shapeValues(await this.fetchGroups());
@@ -286,7 +344,6 @@ class QuerySet {
         if (state.prefetch.length) await prefetch(this.model, result, state.prefetch, state.db);
       }
     }
-    this.cache = result;
     return result;
   }
 
@@ -397,6 +454,8 @@ class QuerySet {
   async count() {
     if (this.cache) return this.cache.length;
     if (this.state.per) return (await this.fetch()).length;
+    this.readSignal();
+    if (this.state.cached) return cachedQuery(this, 'count', () => this.backend.count(this.toQuery()));
     return this.backend.count(this.toQuery());
   }
 
@@ -411,10 +470,12 @@ class QuerySet {
   // Aggregates of the whole query: aggregate({ pages: Sum('pages'), books: Count() }) gives { pages, books }.
   async aggregate(aggregates) {
     if (this.state.per) throw new QueryError('aggregate() cannot be used with limitPer()');
+    this.readSignal();
     const query = { ...this.toQuery(), orderBy: [] };
     const items = Object.keys(aggregates).map((key) => ({ key, ...resolveAggregate(this.model, aggregates[key]) }));
-    const rows = await this.backend.aggregate(query, items, null);
-    return rows[0];
+    const compute = async () => (await this.backend.aggregate(query, items, null))[0];
+    if (this.state.cached) return cachedQuery(this, 'aggregate', compute, { extra: items });
+    return compute();
   }
 
   // Writing
@@ -502,6 +563,7 @@ class QuerySet {
       const field = model.meta.field(name);
       if (!field) throw new QueryError(`update(): ${model.name} has no field ${name}`);
       if (field.primaryKey) throw new QueryError('update() cannot change the primary key');
+      if (field.computed !== null) throw new QueryError(`update(): ${name} is computed: the ORM sets it`);
       let value = values[name];
       if (value instanceof Raw) {
         // A fragment of SQL as the value (SQL databases).
@@ -522,11 +584,50 @@ class QuerySet {
     });
     if (Object.keys(errors).length) throw ValidationError(model.name, errors);
     if (assignments.length === 0) return 0;
-    const count = await this.backend
-      .update(this.toQuery(), assignments)
-      .catch((err) => Promise.reject(uniqueErrorOf(model.meta, err) || err));
-    await modelCache.clear(this.db, model);
-    return count;
+    const changed = new Set(assignments.map((assignment) => assignment.field));
+    const computed = model.meta.storedComputed.filter((field) => affects(field, changed));
+    if (computed.length === 0) {
+      const count = await this.backend
+        .update(this.toQuery(), assignments)
+        .catch((err) => Promise.reject(uniqueErrorOf(model.meta, err) || err));
+      await modelCache.clear(this.db, model);
+      return count;
+    }
+    // Stored computed fields read a field updated: the objects are found first (the update can change what the
+    // conditions select), updated, and their computed fields set again.
+    requireKey(model, 'update() of fields read by stored computed fields');
+    return this.db.transaction(async () => {
+      const keys = await this.keys();
+      const count = await this.backend
+        .update(this.toQuery(), assignments)
+        .catch((err) => Promise.reject(uniqueErrorOf(model.meta, err) || err));
+      await recomputeKeys(this, keys, computed);
+      await modelCache.clear(this.db, model);
+      return count;
+    });
+  }
+
+  // Computes the stored computed fields of the objects of the query again and saves those that changed (after adding
+  // one to a table with rows, or when what it reads was changed outside the ORM): the number of objects changed.
+  async recompute() {
+    this.checkWritable('recompute');
+    const { model } = this;
+    if (model.meta.storedComputed.length === 0) return 0;
+    requireKey(model, 'recompute()');
+    return this.db.transaction(async () => {
+      const changed = await recomputeKeys(this, await this.keys(), model.meta.storedComputed);
+      await modelCache.clear(this.db, model);
+      return changed;
+    });
+  }
+
+  // The primary keys of the objects of the query.
+  async keys() {
+    const { pk, pkFields } = this.model.meta;
+    const only = pkFields.map((field) => field.name);
+    const keysOnly = { only, related: [], prefetch: [], values: null, list: false, flat: false, annotations: null };
+    const objects = await this.clone(keysOnly).fetch();
+    return objects.map((object) => (pk.composite ? object.pk : object[pk.attname]));
   }
 
   // Deletes every object of the query and, as their foreign keys say (onDelete), the objects related to them: the
@@ -541,6 +642,93 @@ class QuerySet {
       throw new QueryError(`${operation}() cannot be used on a query with limit or offset`);
     }
   }
+}
+
+const RECOMPUTE_BATCH = 500;
+
+// Stored computed fields are set again by the keys of their objects: a model without one cannot.
+function requireKey(model, operation) {
+  if (model.meta.pk) return;
+  throw new QueryError(`${operation} needs a primary key, and ${model.name} has none`);
+}
+
+// Sets again the stored computed fields given of the objects of these keys: loads them in batches, computes the
+// fields, and writes the objects whose values changed with one update for each set of values. The number changed.
+async function recomputeKeys(queryset, keys, fields) {
+  const { model } = queryset;
+  const objects = model.objects.using(queryset.state.db);
+  let changed = 0;
+  for (let start = 0; start < keys.length; start += RECOMPUTE_BATCH) {
+    const batch = await objects
+      .filter({ pk__in: keys.slice(start, start + RECOMPUTE_BATCH) })
+      .orderBy()
+      .fetch();
+    const groups = new Map();
+    for (const object of batch) {
+      const values = [];
+      let same = true;
+      const errors = {};
+      for (const field of fields) {
+        let value;
+        try {
+          value = field.clean(field.compute(object));
+        } catch (err) {
+          errors[field.name] = [err.message];
+          continue;
+        }
+        const messages = field.check(value);
+        if (messages.length) errors[field.name] = messages;
+        // Each field computed is seen by those computed after it.
+        if (!sameValue(field, object[field.attname], value)) same = false;
+        object[field.attname] = value;
+        values.push(value);
+      }
+      if (Object.keys(errors).length) throw ValidationError(model.name, errors);
+      if (same) continue;
+      const key = groupKey(values);
+      const group = groups.get(key);
+      if (group) group.keys.push(object.pk);
+      else groups.set(key, { values, keys: [object.pk] });
+    }
+    for (const { values, keys: groupKeys } of groups.values()) {
+      const assignments = fields.map((field, i) => ({ field, value: values[i] }));
+      await queryset.backend
+        .update(objects.filter({ pk__in: groupKeys }).orderBy().toQuery(), assignments)
+        .catch((err) => Promise.reject(uniqueErrorOf(model.meta, err) || err));
+      changed += groupKeys.length;
+    }
+  }
+  return changed;
+}
+
+// The text of a decimal without the zeros that do not count: databases give 6.00 back as 6.
+function canonicalDecimal(value) {
+  let text = String(value).trim();
+  const negative = text.startsWith('-');
+  if (negative || text.startsWith('+')) text = text.slice(1);
+  if (text.includes('.')) text = text.replace(/0+$/, '').replace(/\.$/, '');
+  text = text.replace(/^0+(?=\d)/, '');
+  return negative && text !== '0' ? `-${text}` : text;
+}
+
+function sameValue(field, a, b) {
+  if (a === null || b === null || a === undefined || b === undefined) return (a ?? null) === (b ?? null);
+  if (field.dbType === 'decimal') return canonicalDecimal(a) === canonicalDecimal(b);
+  if (a instanceof Date && b instanceof Date) return a.getTime() === b.getTime();
+  if (a !== null && b !== null && typeof a === 'object' && typeof b === 'object')
+    return groupKey([a]) === groupKey([b]);
+  return a === b;
+}
+
+// The values of a group of objects as text: objects with the same values are written by one update.
+function groupKey(values) {
+  return JSON.stringify(values, (key, value) => {
+    if (typeof value === 'bigint') return `${value}n`;
+    if (Buffer.isBuffer(value)) return `b:${value.toString('base64')}`;
+    if (value && value.type === 'Buffer' && Array.isArray(value.data))
+      return `b:${Buffer.from(value.data).toString('base64')}`;
+    return value;
+  });
 }
 
 // The QuerySet of a many-to-many accessor (book.tags): the objects linked to `owner`, and the methods that link and
@@ -610,7 +798,15 @@ class RelatedSet extends QuerySet {
 // A query joins the tables of its relations (or $lookup them): they have to be in the database of the model. Across
 // databases, relations are followed with more queries (prefetchRelated, load(), the reverse accessors).
 function checkDatabases(query) {
-  const { db } = query.meta;
+  // The databases where the code runs: those of its tenant, when it runs in one.
+  const dbOf = (model) => {
+    try {
+      return model.db;
+    } catch {
+      return null;
+    }
+  };
+  const db = dbOf(query.model);
   if (!db) return;
   const fail = (model) => {
     throw new QueryError(
@@ -620,12 +816,14 @@ function checkDatabases(query) {
   };
   collectJoins(query).forEach((chain) => {
     chain.forEach((field) => {
-      if (field.target.meta.db && field.target.meta.db !== db) fail(field.target);
+      const other = dbOf(field.target);
+      if (other && other !== db) fail(field.target);
     });
   });
   const visit = (where) =>
     eachExists(where, (node) => {
-      if (node.relation.model.meta.db && node.relation.model.meta.db !== db) fail(node.relation.model);
+      const other = dbOf(node.relation.model);
+      if (other && other !== db) fail(node.relation.model);
       visit(node.where);
     });
   visit(query.where);

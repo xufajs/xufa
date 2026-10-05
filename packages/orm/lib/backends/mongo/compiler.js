@@ -18,7 +18,7 @@ const BSON_TYPES = {
   integer: 'number',
   float: 'number',
   bigint: 'number',
-  decimal: 'string',
+  decimal: 'decimal',
   date: 'string',
   bytes: 'binData',
   boolean: 'bool',

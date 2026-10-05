@@ -235,6 +235,11 @@ declare namespace xufa {
       };
     };
     return503OnClosing?: boolean;
+    /**
+     * xufa writes the head of common HTTP/1.1 responses itself instead of res.writeHead() (faster; on by default).
+     * false leaves every head to Node.
+     */
+    fastHead?: boolean;
     ajv?: Parameters<BuildCompilerFromPool>[1];
     frameworkErrors?: <
       RequestGeneric extends RequestGenericInterface = RequestGenericInterface,

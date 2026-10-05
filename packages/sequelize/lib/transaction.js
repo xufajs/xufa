@@ -5,6 +5,8 @@
 const { randomUUID } = require('node:crypto');
 
 const ROLLBACK = Symbol('xufa.sequelize.rollback');
+// A transaction whose COMMIT or ROLLBACK failed: rolled back, and its connection closed instead of given back.
+const DISCARD = Object.assign(new Error('The transaction was discarded'), { discardConnection: true });
 const ISOLATION = new Set(['READ UNCOMMITTED', 'READ COMMITTED', 'REPEATABLE READ', 'SERIALIZABLE']);
 
 class Transaction {
@@ -63,13 +65,14 @@ class Transaction {
             started();
             const action = await ended;
             if (action === 'rollback') throw ROLLBACK;
+            if (action === 'discard') throw DISCARD;
           },
           // Held open by hand: a savepoint made while others are open nests after them.
           { mode: transaction.options.type, serial: false }
         )
       )
     ).catch((err) => {
-      if (err !== ROLLBACK) throw sequelize.xufaError(err);
+      if (err !== ROLLBACK && err !== DISCARD) throw sequelize.xufaError(err);
     });
     transaction.xufaFinish = finish;
     // A transaction that fails to start (BEGIN) rejects here.
@@ -77,23 +80,52 @@ class Transaction {
     return transaction;
   }
 
+  // As Sequelize: COMMIT and ROLLBACK through queryInterface.commitTransaction() and rollbackTransaction() (run by
+  // sequelize.query, and logged with the id of the transaction). When they fail, the transaction is rolled back and
+  // its connection closed.
   async commit() {
     if (this.finished)
       throw new Error(`Transaction cannot be committed because it has been finished with state: ${this.finished}`);
+    if (!this.xufaFinish) {
+      this.finished = 'commit';
+      return;
+    }
     this.finished = 'commit';
-    this.xufaFinish('commit');
-    await this.xufaRunning;
+    await this.xufaEnd(() => this.sequelize.getQueryInterface().commitTransaction(this, this.options));
     await this.xufaAfterCommit();
   }
 
   async rollback() {
     if (this.finished)
       throw new Error(`Transaction cannot be rolled back because it has been finished with state: ${this.finished}`);
+    if (!this.xufaFinish && !this.xufaStore)
+      throw new Error('Transaction cannot be rolled back because it never started');
     this.finished = 'rollback';
     if (this.xufaFinish) {
-      this.xufaFinish('rollback');
-      await this.xufaRunning;
+      await this.xufaEnd(() => this.sequelize.getQueryInterface().rollbackTransaction(this, this.options));
     }
+  }
+
+  async xufaEnd(fn) {
+    try {
+      await fn();
+    } catch (err) {
+      if (!this.xufaEnded) {
+        this.xufaEnded = true;
+        this.xufaFinish('discard');
+        await this.xufaRunning.catch(() => {});
+      }
+      throw err;
+    }
+  }
+
+  // The end of the transaction: commit or rollback (what COMMIT and ROLLBACK of sequelize.query do here).
+  xufaControl(action) {
+    if (!this.xufaEnded) {
+      this.xufaEnded = true;
+      this.xufaFinish(action);
+    }
+    return this.xufaRunning;
   }
 
   // At the start (PostgreSQL): the isolation level (of the options, or of the Sequelize instance) of a transaction

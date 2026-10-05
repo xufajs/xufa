@@ -35,3 +35,23 @@ describe('xufa/auth', () => {
     expect(require('xufa/auth')).toBe(require('@xufa/auth'));
   });
 });
+
+describe('xufa/expression and xufa/template', () => {
+  it('are @xufa/expression and @xufa/template', () => {
+    expect(require('xufa/expression')).toBe(require('@xufa/expression'));
+    expect(require('xufa/template')).toBe(require('@xufa/template'));
+  });
+});
+
+describe('xufa/openapi', () => {
+  it('is @xufa/openapi, and xufa/openapi/ui its explorer', () => {
+    expect(require('xufa/openapi')).toBe(require('@xufa/openapi'));
+    expect(require('xufa/openapi/ui')).toBe(require('@xufa/openapi/ui'));
+  });
+});
+
+describe('xufa/client', () => {
+  it('is @xufa/client', () => {
+    expect(require('xufa/client')).toBe(require('@xufa/client'));
+  });
+});

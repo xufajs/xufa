@@ -1,0 +1,239 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>@xufa/marshal · xufa</title>
+    <meta
+      name="description"
+      content="@xufa/marshal: values as JSON that keeps classes (a registry), shared references, cycles, BigInt, Date, Map, Set, errors and more; safe to parse from outside. No dependencies."
+    />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%23d9502b'/%3E%3Ctext x='16' y='22.5' font-family='monospace' font-size='18' font-weight='700' fill='white' text-anchor='middle'%3Ex%3C/text%3E%3C/svg%3E"
+    />
+    <link rel="stylesheet" href="style.css?v=0.1.0" />
+    <script src="main.js?v=0.1.0"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js" defer></script>
+  </head>
+  <body>
+    <header class="header">
+      <div class="header-inner">
+        <a class="logo" href="./"><span class="logo-mark">x</span>xufa</a>
+        <nav class="nav">
+          <a href="guide.html">Guide</a>
+          <a href="http.html">HTTP</a>
+          <a href="orm.html">ORM</a>
+          <a class="hide-small" href="auth.html">Auth</a>
+          <a class="hide-small" href="sequelize.html">Sequelize</a>
+          <a class="hide-small" href="packages.html" aria-current="page">Packages</a>
+          <a class="hide-small" href="benchmarks.html">Benchmarks</a>
+          <a href="https://github.com/xufajs/xufa">GitHub</a>
+          <button class="theme-toggle" type="button" aria-label="Switch between light and dark theme">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+              <path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z" />
+            </svg>
+          </button>
+        </nav>
+      </div>
+    </header>
+
+    <div class="docs">
+      <button class="menu-toggle" type="button" aria-expanded="false">☰ Contents</button>
+      <aside class="sidebar">
+        <h4>Using it</h4>
+        <ul>
+          <li><a href="#start">Quick start</a></li>
+          <li><a href="#classes">Classes</a></li>
+          <li><a href="#api">API</a></li>
+          <li><a href="#types">What it keeps</a></li>
+        </ul>
+        <h4>More</h4>
+        <ul>
+          <li><a href="#format">The format</a></li>
+          <li><a href="#safety">Input from outside</a></li>
+          <li><a href="#xufa">With xufa</a></li>
+          <li><a href="#performance">Performance</a></li>
+          <li><a href="#typescript">TypeScript</a></li>
+        </ul>
+        <h4>Packages</h4>
+        <ul>
+          <li><a href="websocket.html">@xufa/websocket</a></li>
+          <li><a href="openapi.html">@xufa/openapi</a></li>
+          <li><a href="client.html">@xufa/client</a></li>
+          <li><a href="pg.html">@xufa/pg</a></li>
+          <li><a href="mongo.html">@xufa/mongo</a></li>
+          <li><a href="expression.html">@xufa/expression</a></li>
+          <li><a href="template.html">@xufa/template</a></li>
+          <li><a href="cluster.html">@xufa/cluster</a></li>
+          <li><a href="discovery.html">@xufa/discovery</a></li>
+          <li><a href="netcache.html">@xufa/netcache</a></li>
+          <li><a href="marshal.html" aria-current="page">@xufa/marshal</a></li>
+          <li><a href="yaml.html">@xufa/yaml</a></li>
+          <li><a href="jwt.html">@xufa/jwt</a></li>
+          <li><a href="logger.html">@xufa/logger</a></li>
+          <li><a href="router.html">@xufa/router</a></li>
+          <li><a href="serializer.html">@xufa/serializer</a></li>
+          <li><a href="inject.html">@xufa/inject</a></li>
+          <li><a href="boot.html">@xufa/boot</a></li>
+          <li><a href="errors.html">@xufa/errors</a></li>
+          <li><a href="packages.html">All the packages</a></li>
+        </ul>
+      </aside>
+
+      <article class="content">
+<h1>@xufa/marshal</h1>
+        <p class="intro">
+          Values as JSON that keeps what JSON loses: the classes of your objects (through a registry), objects referenced
+          twice, cycles, and <code>undefined</code>, <code>NaN</code>, <code>-0</code>, BigInt, Date, RegExp, Map, Set,
+          Buffer, errors and more. It is safe to parse what comes from outside, and has no dependencies.
+        </p>
+
+        <h2 id="start">Quick start</h2>
+        <pre><code class="language-sh">npm install @xufa/marshal</code></pre>
+        <pre><code class="language-js">const { stringify, parse, clone, registry } = require('@xufa/marshal');
+
+class Point {
+  constructor(x, y) {
+    this.x = x;
+    this.y = y;
+  }
+  norm() {
+    return Math.hypot(this.x, this.y);
+  }
+}
+registry.register(Point);
+
+const shared = { n: 1 };
+const back = parse(stringify({ at: new Date(), point: new Point(3, 4), big: 10n, a: shared, b: shared }));
+back.point.norm(); // 5: a Point again
+back.a === back.b; // true: one object, as it was
+
+clone(value); // a deep copy that keeps classes, references and cycles</code></pre>
+
+        <h2 id="classes">Classes</h2>
+        <p>
+          <code>registry.register(Point)</code> (or <code>register(A, B, C)</code>) makes the instances of a class come
+          back as themselves: their own enumerable fields are written, and an instance is made again from the prototype of
+          the class, <strong>without calling its constructor</strong>. A class with state outside its fields (private
+          <code>#fields</code>, a handle) says how it is written:
+        </p>
+        <pre><code class="language-js">const { ENCODE, DECODE } = require('@xufa/marshal');
+
+class Money {
+  #cents;
+  constructor(cents, currency) {
+    this.#cents = cents;
+    this.currency = currency;
+  }
+  static [ENCODE](money) {
+    return [money.#cents, money.currency];
+  }
+  static [DECODE]([cents, currency]) {
+    return new Money(cents, currency);
+  }
+}
+registry.register(Money); // or register(Money, { name: 'money', encode, decode })</code></pre>
+        <p>
+          Classes are known by name (<code>Class.name</code>, or <code>{ name }</code> when two share one). Errors of
+          registered classes come back as their class, with <code>message</code>, <code>stack</code>, <code>cause</code>
+          and their fields. <code>new Registry()</code>, passed as <code>{ registry }</code>, keeps apart the classes of
+          different parts of an app.
+        </p>
+
+        <h2 id="api">API</h2>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Function</th><th>What it does</th></tr></thead>
+            <tbody>
+              <tr><td><code>stringify(value, options)</code>, <code>parse(text, options)</code></td><td>JSON text, and the value again.</td></tr>
+              <tr><td><code>marshal(value, options)</code>, <code>unmarshal(nodes, options)</code></td><td>The same as plain JSON data (an array of nodes), for channels that carry objects (IPC).</td></tr>
+              <tr><td><code>clone(value, options)</code></td><td>A deep copy in the process: every class keeps its prototype (registered or not), functions are kept by reference.</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Option</th><th>Default</th><th>What it does</th></tr></thead>
+            <tbody>
+              <tr><td><code>registry</code></td><td><code>registry</code></td><td>The classes that come back as themselves.</td></tr>
+              <tr><td><code>unknown</code></td><td><code>'object'</code></td><td>Instances of classes not registered: their fields as a plain object, or <code>'error'</code>.</td></tr>
+              <tr><td><code>functions</code></td><td><code>'throw'</code></td><td>A function as a value: an error, or <code>'skip'</code> (a field left out).</td></tr>
+              <tr><td><code>stack</code></td><td><code>true</code></td><td>Whether the stacks of errors are written (<code>false</code> for what goes to clients).</td></tr>
+              <tr><td><code>maxDepth</code>, <code>maxNodes</code></td><td>1000, 10,000,000</td><td>Limits: deeper or larger values are a <code>MarshalError</code>.</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h2 id="types">What it keeps</h2>
+        <p>
+          Everything JSON keeps, and: <code>undefined</code> (in objects and arrays), holes, <code>NaN</code>, the
+          infinities, <code>-0</code>, BigInt, global symbols, Date (invalid ones too), RegExp (source and flags), Map and
+          Set (any keys), Buffer, every typed array, ArrayBuffer, DataView, Error and its built-in kinds and
+          AggregateError (message, stack, cause, fields), URL, URLSearchParams, boxed primitives, objects without
+          prototype, the instances of registered classes, objects referenced twice and cycles. Functions, local symbols,
+          promises and weak collections are an error, as in <code>structuredClone</code>.
+        </p>
+
+        <h2 id="format">The format</h2>
+        <p>
+          <code>stringify({ a: shared, b: shared, at: new Date(0) })</code> is
+          <code>[{"a":1,"b":1,"at":3},{"n":2},1,["Date",0]]</code>: a flat list of nodes (after devalue), the first one the
+          value. A node is a JSON primitive, an array of indexes, an object of indexes, or a tagged array
+          (<code>["Date", ms]</code>, <code>["Map", k, v, ...]</code>, <code>["Class", "Point", {fields}]</code>). Arrays
+          of values hold only numbers, so a string first is always a tag: no string of the data is ever taken for
+          something else.
+        </p>
+
+        <h2 id="safety">Input from outside</h2>
+        <p>
+          <code>parse()</code> looks up no constructor or global by a name of the input (only the registered classes and a
+          fixed list of built-ins), calls no constructor, defines the fields of instances (no setter of a class runs),
+          takes <code>"__proto__"</code> as a field like any other, and has limits of depth and size. Malformed input is
+          always a <code>MarshalError</code>. Its tests include the problems of the serializer it replaces (a string taken
+          for a reference, a function made from the input, the prototype set by the input) and 2,000 random values
+          compared with <code>structuredClone</code>.
+        </p>
+
+        <h2 id="xufa">With xufa</h2>
+        <ul>
+          <li><a href="cluster.html">@xufa/cluster</a>: <code>start({ marshal: registry })</code>: the messages of the bus keep their classes, and errors thrown by the handlers of requests arrive as their class.</li>
+          <li><a href="netcache.html">@xufa/netcache</a>: <code>new NetCache({ marshal: registry })</code>: cached values keep their classes on every machine.</li>
+        </ul>
+
+        <h2 id="performance">Performance</h2>
+        <p>
+          <code>stringify</code> and <code>parse</code>, operations a second, best of 3 rounds
+          (<code>node bench/micro/marshal.js</code>, <code>bench/results/marshal-1.md</code>). JSON loses the Dates, Maps
+          and classes; <code>v8.serialize</code> writes binary (the IPC of node:cluster) and loses the classes.
+        </p>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Case</th><th>JSON</th><th>v8.serialize</th><th>@xufa/marshal</th><th>The serializer replaced</th></tr></thead>
+            <tbody>
+              <tr><td>a small object</td><td>367,974</td><td>204,618</td><td>347,820</td><td>183,088</td></tr>
+              <tr><td>100 rows with Dates</td><td>4,399</td><td>4,729</td><td>3,892</td><td>1,737</td></tr>
+              <tr><td>1000 rows with Dates</td><td>436</td><td>508</td><td>363</td><td>171</td></tr>
+              <tr><td>Map, Set, BigInt</td><td>n/a</td><td>36,081</td><td>27,365</td><td>n/a</td></tr>
+              <tr><td>100 class instances</td><td>53,961</td><td>22,438</td><td>12,292</td><td>6,078</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h2 id="typescript">TypeScript</h2>
+        <p>Declarations included: <code>parse&lt;Order&gt;(text)</code>, <code>clone(value)</code> keeps the type, and <code>register(Class, { encode, decode })</code> types its data.</p>
+      </article>
+    </div>
+
+    <footer class="footer">
+      <div class="container">
+        <span>xufa is MIT licensed. &copy; Jes&uacute;s Seijas</span>
+        <span>
+          <a href="guide.html">Guide</a> &middot; <a href="http.html">HTTP</a> &middot; <a href="orm.html">ORM</a> &middot; <a href="auth.html">Auth</a> &middot;
+          <a href="sequelize.html">Sequelize</a> &middot; <a href="packages.html">Packages</a> &middot;
+          <a href="benchmarks.html">Benchmarks</a> &middot; <a href="https://github.com/xufajs/xufa">GitHub</a>
+        </span>
+      </div>
+    </footer>
+  </body>
+</html>

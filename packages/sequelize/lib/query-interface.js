@@ -289,12 +289,27 @@ function limitSql({ limit, offset }, dialect) {
 
 const unquote = (text) => text.trim().replace(/^["`]|["`]$/g, '');
 
+// The kind of a fragment of Sequelize (ours, or the classes of Sequelize's Utils): literal, col, fn, cast, where,
+// json (null: not one).
+function fragmentKind(value) {
+  if (!value || typeof value !== 'object') return null;
+  if (value.xufaLiteral !== undefined) return 'literal';
+  if (value.xufaCol !== undefined) return 'col';
+  if (value.xufaFn !== undefined) return 'fn';
+  if (value.xufaCast) return 'cast';
+  if (value.xufaWhere) return 'where';
+  if (value.xufaJson !== undefined) return 'json';
+  const kinds = { Literal: 'literal', Col: 'col', Fn: 'fn', Cast: 'cast', Where: 'where', Json: 'json' };
+  return (value.constructor && kinds[value.constructor.name]) || null;
+}
+
 class QueryInterface {
   constructor(sequelize) {
     this.sequelize = sequelize;
     this.queryGenerator = {
       // The options of the Sequelize instance (quoteIdentifiers...).
       options: sequelize.options,
+      OperatorsAliasMap: sequelize.options.operatorsAliases || false,
       _dialect: sequelize.dialect,
       dialect: sequelize.dialect.name,
       quoteIdentifier: (name) => quote(name),
@@ -303,7 +318,67 @@ class QueryInterface {
       addSchema: (options) => this.addSchema(options),
       escape: (value) => literal(value, sequelize.getDialect()),
       selectQuery: (table, options, model) => this.selectQuery(table, options, model),
+      // The query of the foreign keys of a table, run with { type: QueryTypes.FOREIGNKEYS } (as Sequelize's).
+      getForeignKeysQuery: (table) => this.foreignKeysQuery(table),
+      handleSequelizeMethod: (fragment) => this.fragmentSql(fragment),
     };
+  }
+
+  foreignKeysQuery(table) {
+    const name = tableNameOf(table);
+    if (this.dialect === 'sqlite') return `PRAGMA foreign_key_list(${this.qt(name)})`;
+    const relname = String(name.table || name).replace(/'/g, "''");
+    return `SELECT conname as constraint_name, pg_catalog.pg_get_constraintdef(r.oid, true) as condef FROM pg_catalog.pg_constraint r WHERE r.conrelid = (SELECT oid FROM pg_class WHERE relname = '${relname}' LIMIT 1) AND r.contype = 'f' ORDER BY 1;`;
+  }
+
+  // The SQL of a fragment (literal(), col(), fn(), cast(), where(), json()) out of a query, with its values written
+  // as literals, as queryGenerator.handleSequelizeMethod gives it.
+  fragmentSql(fragment) {
+    const { dialect } = this;
+    const escape = (value) => literal(value, dialect);
+    const sqlOf = (value) => (fragmentKind(value) ? this.fragmentSql(value) : escape(value));
+    const columns = (name) => String(name).split('.').map(quote).join('.');
+    // A path in a json column: ("data"#>>'{a,b}') in PostgreSQL, json_extract("data",'$.a.b') in SQLite.
+    const extract = (column, keys) => {
+      if (dialect === 'postgres') return `(${quote(column)}#>>${escape(`{${keys.join(',')}}`)})`;
+      return `json_extract(${quote(column)},${escape(`$.${keys.join('.')}`)})`;
+    };
+    switch (fragmentKind(fragment)) {
+      case 'literal':
+        return String(fragment.val);
+      case 'col':
+        return fragment.col === '*' ? '*' : columns(fragment.col);
+      case 'fn':
+        return `${fragment.fn}(${(fragment.args || []).map(sqlOf).join(', ')})`;
+      case 'cast':
+        return `CAST(${sqlOf(fragment.val)} AS ${String(fragment.type).toUpperCase()})`;
+      case 'where': {
+        const left = typeof fragment.attribute === 'string' ? columns(fragment.attribute) : sqlOf(fragment.attribute);
+        const comparator = typeof fragment.comparator === 'string' ? fragment.comparator : '=';
+        const value = fragment.value !== undefined ? fragment.value : fragment.logic;
+        return value === null ? `${left} IS NULL` : `${left} ${comparator} ${sqlOf(value)}`;
+      }
+      case 'json': {
+        // A path ('data.a.b'; with arrows or SQL of its own, as it is), compared with a value; or conditions of paths.
+        if (typeof fragment.path === 'string') {
+          const { path } = fragment;
+          if (path.includes('->') || path.includes('(')) return path;
+          const [column, ...keys] = path.split('.');
+          const sql = keys.length ? extract(column, keys) : quote(column);
+          return fragment.value === undefined ? sql : `${sql} = ${escape(String(fragment.value))}`;
+        }
+        const conditions = [];
+        const walk = (column, keys, value) => {
+          if (value && typeof value === 'object' && !Array.isArray(value) && !(value instanceof Date)) {
+            Object.entries(value).forEach(([key, item]) => walk(column, [...keys, key], item));
+          } else conditions.push(`${extract(column, keys)} = ${escape(String(value))}`);
+        };
+        Object.entries(fragment.conditions || {}).forEach(([column, value]) => walk(column, [], value));
+        return conditions.join(' AND ');
+      }
+      default:
+        throw new TypeError('handleSequelizeMethod takes a fragment (literal, col, fn, cast, where or json)');
+    }
   }
 
   get backend() {
@@ -1643,6 +1718,18 @@ class QueryInterface {
 
   async dropAllSchemas(options) {
     for (const schema of await this.showAllSchemas(options)) await this.dropSchema(schema, options);
+  }
+
+  // The end of a transaction not managed, as Sequelize runs it: a query (COMMIT; or ROLLBACK;) with the
+  // transaction, which ends the transaction of @xufa/orm (or its savepoint) and is logged.
+  async commitTransaction(transaction, options = {}) {
+    if (!transaction) throw new Error('Unable to commit a transaction without transaction object!');
+    return this.sequelize.query('COMMIT;', { ...options, transaction, xufaControl: 'commit' });
+  }
+
+  async rollbackTransaction(transaction, options = {}) {
+    if (!transaction) throw new Error('Unable to rollback a transaction without transaction object!');
+    return this.sequelize.query('ROLLBACK;', { ...options, transaction, xufaControl: 'rollback' });
   }
 
   databaseVersion() {

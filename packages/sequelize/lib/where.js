@@ -330,8 +330,31 @@ function arrowPath(path) {
   ].join('.');
 }
 
+// operatorsAliases (deprecated in Sequelize 6, as there): string keys of conditions taken as operators
+// ({ $gt: Op.gt }). The conditions are written again with the operators once.
+const ALIASED = new WeakSet();
+
+function withAliases(where, aliases) {
+  if (Array.isArray(where)) return where.map((item) => withAliases(item, aliases));
+  if (!isPlainObject(where) || isFragment(where) || ALIASED.has(where)) return where;
+  const result = {};
+  Object.keys(where).forEach((key) => {
+    const value = withAliases(where[key], aliases);
+    if (Object.prototype.hasOwnProperty.call(aliases, key) && typeof aliases[key] === 'symbol')
+      result[aliases[key]] = value;
+    else result[key] = value;
+  });
+  Object.getOwnPropertySymbols(where).forEach((symbol) => {
+    result[symbol] = withAliases(where[symbol], aliases);
+  });
+  ALIASED.add(result);
+  return result;
+}
+
 function translateWhere(context, where) {
   if (where === undefined || where === null) return null;
+  const aliases = context.model && context.model.sequelize && context.model.sequelize.options.operatorsAliases;
+  if (aliases && typeof where === 'object' && !ALIASED.has(where)) where = withAliases(where, aliases);
   if (where.xufaWhere) return whereCondition(context, where);
   // sequelize.json('data.owner', value), or json({ data: { owner: value } }).
   if (where.xufaJson !== undefined) {

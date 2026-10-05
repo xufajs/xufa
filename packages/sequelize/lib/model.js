@@ -1987,7 +1987,15 @@ class Model {
     if (ready) await ready;
     options = this.xufaScoped(options);
     if (this.hasHook('beforeCount')) await this.runHooks('beforeCount', options);
-    return this.sequelize.xufaReading(options, () => this.xufaCount(options));
+    // As Sequelize: through aggregate(column, 'count'), without limit, offset nor order.
+    return this.aggregate(options.col || '*', 'count', {
+      ...options,
+      limit: null,
+      offset: null,
+      order: null,
+      plain: !options.group,
+      xufaCount: true,
+    });
   }
 
   static xufaCount(options) {
@@ -2027,6 +2035,8 @@ class Model {
   }
 
   static async aggregate(attribute, fn, options = {}) {
+    // A count (count() comes here scoped already).
+    if (options.xufaCount && fn === 'count') return this.sequelize.xufaReading(options, () => this.xufaCount(options));
     const ready = this.xufaReady();
     if (ready) await ready;
     options = this.xufaScoped(options);

@@ -15,9 +15,12 @@ class PostgresBackend extends SqlBackend {
     super(options, postgres);
     const { Pool } = require('@xufa/pg');
     // copyRows: inserts of that number of rows or more use COPY (500; false never).
-    const { url, pool, copyRows, ...rest } = options;
+    const { url, pool, copyRows, onError, ...rest } = options;
     this.ownPool = !pool;
     this.pool = pool || new Pool({ connectionString: url || 'postgres://127.0.0.1:5432/postgres', ...rest });
+    // A connection of the pool closed by the server or the network while idle: the pool drops it and opens another
+    // when one is needed. Its error goes to onError (an error event without a listener would end the process).
+    if (this.ownPool) this.pool.on('error', (err) => (onError ? onError(err) : undefined));
   }
 
   async connect() {
@@ -84,7 +87,11 @@ class PostgresBackend extends SqlBackend {
     return rows.map((row) => row.name);
   }
 
-  async query(sql, params) {
+  // A read with a signal (lib/context.js) is cancelled in the server when it is aborted; not inside a transaction,
+  // whose other statements would fail after it.
+  async query(sql, params, signal) {
+    if (signal && !this.context.getStore())
+      return (await this.target.query({ text: sql, values: params, signal })).rows;
     return (await this.target.query(sql, params)).rows;
   }
 
@@ -123,8 +130,10 @@ class PostgresBackend extends SqlBackend {
       failed = err;
       throw err;
     } finally {
-      // A connection whose ROLLBACK or COMMIT failed is not reused.
-      client.release(failed && client.connection.transactionStatus !== 'I' ? failed : undefined);
+      // A connection whose ROLLBACK or COMMIT failed is not reused (nor one the error asks to close:
+      // err.discardConnection).
+      const discard = failed && (client.connection.transactionStatus !== 'I' || failed.discardConnection);
+      client.release(discard ? failed : undefined);
     }
   }
 

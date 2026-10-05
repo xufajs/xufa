@@ -11,6 +11,8 @@ module.exports = [
       'docs/**',
       'tools/sequelize-compat/test/**',
       'tools/sequelize-compat/.snapshot/**',
+      // js-yaml 4.1.0 as it is (tools/port-yaml): its style is kept, so it can be ported again.
+      'packages/yaml/lib/**',
     ],
   },
   { linterOptions: { reportUnusedDisableDirectives: 'off' } },

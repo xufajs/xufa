@@ -1,7 +1,9 @@
 // What the ORM knows of a model, built once from its class: the fields (its own and those of its parents), the
 // primary key, the table and the options. A model is a class extending Model with `static fields` and, optionally,
 // `static options` ({ table, ordering, indexes, abstract }).
-const { IdField, ForeignKey, ManyToManyField } = require('./fields');
+const { IdField, ForeignKey, ManyToManyField, EncryptedField } = require('./fields');
+const { prepareComputed } = require('./computed');
+const { modelRules } = require('./rules');
 const { seconds } = require('./duration');
 const { ModelError } = require('./errors');
 
@@ -52,6 +54,22 @@ function lineage(model, Base) {
   return chain;
 }
 
+// Defines a computed field that is not stored on the prototype of its model: its value, computed when it is read
+// from the values of the object then. It cannot be set.
+function defineComputedAccessor(model, field) {
+  if (Object.hasOwn(model.prototype, field.name)) return;
+  Object.defineProperty(model.prototype, field.name, {
+    configurable: true,
+    enumerable: false,
+    get() {
+      return field.clean(field.compute(this));
+    },
+    set() {
+      throw new TypeError(`${model.name}.${field.name} is computed: it cannot be set`);
+    },
+  });
+}
+
 // Defines `<name>` on the prototype of a model with a foreign key: it gives the related object once loaded (by
 // selectRelated, prefetchRelated or load()) and sets the key when an object is assigned to it.
 function defineForwardAccessor(model, field) {
@@ -86,8 +104,11 @@ class Meta {
     this.name = model.name;
     const chain = lineage(model, Base);
     const options = {};
+    // Validation rules: those of the parents too (they hold for the objects of the children).
+    const ruleSpecs = [];
     for (let i = 0; i < chain.length; i += 1) {
       const own = Object.hasOwn(chain[i], 'options') ? chain[i].options : undefined;
+      if (own && own.rules) ruleSpecs.push(...[].concat(own.rules));
       // Only the parents' ordering and indexes are inherited, as in Django.
       if (own && i < chain.length - 1) {
         if (own.ordering) options.ordering = own.ordering;
@@ -154,6 +175,9 @@ class Meta {
       }
       if (this.manyToMany.length) throw new ModelError(model.name, 'a model without a primary key has no many-to-many');
     } else if (!keyNames && !entries.some(([, field]) => field.primaryKey)) entries.unshift(['id', new IdField()]);
+    // Computed fields that are not stored have no column: they are kept apart, read on the objects only.
+    this.computedMap = new Map();
+    const bound = [];
     for (let i = 0; i < entries.length; i += 1) {
       const [name, declaredField] = entries[i];
       const field = declaredField.model ? declaredField.clone() : declaredField;
@@ -162,9 +186,26 @@ class Meta {
         field.primaryKey = true;
         field.null = false;
       }
+      bound.push(field);
+      if (field.computed !== null) {
+        if (field instanceof ForeignKey || field instanceof IdField || field instanceof EncryptedField) {
+          throw new ModelError(model.name, `the field ${name} cannot be computed (a relation, key or encrypted field)`);
+        }
+        if (!field.stored) {
+          this.computedMap.set(name, field);
+          continue;
+        }
+      }
       this.fields.push(field);
       this.fieldMap.set(name, field);
     }
+    prepareComputed(this, model, bound);
+    const names = new Set();
+    bound.forEach((field) => {
+      names.add(field.name);
+      names.add(field.attname);
+    });
+    this.rules = modelRules(ruleSpecs, model, names);
     // The primary key: a field, or a composite key of several (its value is the array of theirs).
     this.pkFields = this.fields.filter((field) => field.primaryKey);
     if (keyNames && this.pkFields.length !== keyNames.length) {
@@ -187,6 +228,7 @@ class Meta {
     this.relations = this.fields.filter((field) => field instanceof ForeignKey);
     if (!this.abstract) {
       for (let i = 0; i < this.relations.length; i += 1) defineForwardAccessor(model, this.relations[i]);
+      this.computedMap.forEach((field) => defineComputedAccessor(model, field));
     }
     // TTL indexes (an index of one datetime field with expireAfter): its rows expire that many seconds after the
     // date of the field (0: at the date). `expiry` is [{ field, after }].
@@ -217,6 +259,11 @@ class Meta {
     if (!this.pk) return undefined;
     if (!this.pk.composite) return row[this.pk.attname];
     return JSON.stringify(this.pkFields.map((field) => row[field.attname]));
+  }
+
+  // A computed field that is not stored, by its name (it is no column: field() does not give it).
+  computedField(name) {
+    return this.computedMap.get(name);
   }
 
   // The field of a name or an attname ('author' or 'authorId'); 'pk' is the primary key.

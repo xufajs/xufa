@@ -212,20 +212,27 @@ const books = await Book.findAll({
             <table>
               <thead><tr><th>Package</th><th>Has the API of</th><th>What it is</th></tr></thead>
               <tbody>
-                <tr><td><a href="guide.html"><code>xufa</code></a></td><td></td><td>The framework: <code>@xufa/http</code>, the ORM as <code>xufa/orm</code> and the authentication as <code>xufa/auth</code></td></tr>
+                <tr><td><a href="guide.html"><code>xufa</code></a></td><td></td><td>The framework: <code>@xufa/http</code>, the ORM as <code>xufa/orm</code>, the authentication as <code>xufa/auth</code>, expressions and templates as <code>xufa/expression</code> and <code>xufa/template</code></td></tr>
                 <tr><td><a href="http.html"><code>@xufa/http</code></a></td><td>fastify</td><td>The HTTP framework</td></tr>
+                <tr><td><a href="websocket.html"><code>@xufa/websocket</code></a></td><td>ws, @fastify/websocket</td><td>WebSockets: client, server, routes and rooms</td></tr>
                 <tr><td><a href="orm.html"><code>@xufa/orm</code></a></td><td>Django's ORM</td><td>Models and QuerySets on SQLite, PostgreSQL, MongoDB and memory</td></tr>
                 <tr><td><a href="auth.html"><code>@xufa/auth</code></a></td><td></td><td>Passwords, JWTs, TOTP, lockouts and refresh tokens</td></tr>
+                <tr><td><a href="jwt.html"><code>@xufa/jwt</code></a></td><td>jsonwebtoken</td><td>JSON Web Tokens with the API and tests of jsonwebtoken, jws and jwa, and EdDSA</td></tr>
                 <tr><td><a href="sequelize.html"><code>@xufa/sequelize</code></a></td><td>Sequelize 6</td><td>Sequelize code on the ORM</td></tr>
-                <tr><td><a href="packages.html#pg"><code>@xufa/pg</code></a></td><td>pg</td><td>PostgreSQL driver</td></tr>
-                <tr><td><a href="packages.html#mongo"><code>@xufa/mongo</code></a></td><td>mongodb</td><td>MongoDB driver</td></tr>
-                <tr><td><a href="packages.html#logger"><code>@xufa/logger</code></a></td><td>pino</td><td>JSON logger</td></tr>
-                <tr><td><a href="packages.html#router"><code>@xufa/router</code></a></td><td>find-my-way</td><td>HTTP router</td></tr>
-                <tr><td><a href="packages.html#serializer"><code>@xufa/serializer</code></a></td><td>fast-json-stringify</td><td>JSON serializers compiled from JSON Schema</td></tr>
-                <tr><td><a href="packages.html#inject"><code>@xufa/inject</code></a></td><td>light-my-request</td><td>Fake HTTP requests for tests</td></tr>
-                <tr><td><a href="packages.html#boot"><code>@xufa/boot</code></a></td><td>avvio</td><td>Plugin loading</td></tr>
-                <tr><td><a href="packages.html#errors"><code>@xufa/errors</code></a></td><td>@fastify/error</td><td>Errors with codes</td></tr>
-                <tr><td><a href="packages.html#cluster"><code>@xufa/cluster</code></a></td><td></td><td>Apps in a cluster of processes, and messages between them</td></tr>
+                <tr><td><a href="expression.html"><code>@xufa/expression</code></a></td><td></td><td>Safe JavaScript expressions, compiled once</td></tr>
+                <tr><td><a href="template.html"><code>@xufa/template</code></a></td><td></td><td>Templates of text and HTML: blocks, filters, partials</td></tr>
+                <tr><td><a href="pg.html"><code>@xufa/pg</code></a></td><td>pg</td><td>PostgreSQL driver</td></tr>
+                <tr><td><a href="mongo.html"><code>@xufa/mongo</code></a></td><td>mongodb</td><td>MongoDB driver</td></tr>
+                <tr><td><a href="logger.html"><code>@xufa/logger</code></a></td><td>pino</td><td>JSON logger</td></tr>
+                <tr><td><a href="router.html"><code>@xufa/router</code></a></td><td>find-my-way</td><td>HTTP router</td></tr>
+                <tr><td><a href="serializer.html"><code>@xufa/serializer</code></a></td><td>fast-json-stringify</td><td>JSON serializers compiled from JSON Schema</td></tr>
+                <tr><td><a href="inject.html"><code>@xufa/inject</code></a></td><td>light-my-request</td><td>Fake HTTP requests for tests</td></tr>
+                <tr><td><a href="boot.html"><code>@xufa/boot</code></a></td><td>avvio</td><td>Plugin loading</td></tr>
+                <tr><td><a href="errors.html"><code>@xufa/errors</code></a></td><td>@fastify/error</td><td>Errors with codes</td></tr>
+                <tr><td><a href="cluster.html"><code>@xufa/cluster</code></a></td><td></td><td>Apps in a cluster of processes, and messages between them</td></tr>
+                <tr><td><a href="discovery.html"><code>@xufa/discovery</code></a></td><td></td><td>The nodes of a service found on the network by UDP</td></tr>
+                <tr><td><a href="netcache.html"><code>@xufa/netcache</code></a></td><td></td><td>A cache shared by the machines of a service</td></tr>
+                <tr><td><a href="marshal.html"><code>@xufa/marshal</code></a></td><td></td><td>Values as JSON that keeps classes, references and cycles</td></tr>
               </tbody>
             </table>
           </div>

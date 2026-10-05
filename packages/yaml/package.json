@@ -1,0 +1,57 @@
+{
+  "name": "@xufa/yaml",
+  "version": "0.1.0",
+  "description": "YAML 1.2 parser and writer with the API of js-yaml (4.1.0) and its test suite, without dependencies",
+  "main": "./index.js",
+  "types": "./index.d.ts",
+  "type": "commonjs",
+  "exports": {
+    ".": {
+      "types": "./index.d.ts",
+      "default": "./index.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "index.js",
+    "index.d.ts",
+    "lib",
+    "LICENSE.js-yaml",
+    "LICENSE"
+  ],
+  "scripts": {
+    "test": "vyntra",
+    "test:types": "tsd"
+  },
+  "keywords": [
+    "yaml",
+    "js-yaml",
+    "parser",
+    "dumper"
+  ],
+  "author": "Jesús Seijas <jseijas@gmail.com>",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/xufajs/xufa.git",
+    "directory": "packages/yaml"
+  },
+  "homepage": "https://github.com/xufajs/xufa/tree/main/packages/yaml#readme",
+  "bugs": {
+    "url": "https://github.com/xufajs/xufa/issues"
+  },
+  "engines": {
+    "node": ">=22"
+  },
+  "devDependencies": {
+    "fast-check": "^2.8.0",
+    "tsd": "^0.33.0",
+    "vyntra": "^0.6.0"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "tsd": {
+    "directory": "test/types"
+  }
+}

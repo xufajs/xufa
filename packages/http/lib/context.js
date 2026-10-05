@@ -19,7 +19,9 @@ const {
   kSchemaQuerystring,
   kSchemaBody,
   kSchemaResponse,
+  kOptions,
 } = require('./symbols');
+const { fastHeadWorks } = require('./fast-head');
 
 function Context({
   schema,
@@ -76,6 +78,8 @@ function Context({
   this.serializerCompiler = serializerCompiler || null;
   this.handlerTimeout = handlerTimeout || server[kHandlerTimeout] || 0;
   this.server = server;
+  // Heads of responses written by xufa (lib/fast-head.js), unless the option fastHead is false or Node changed.
+  this.fastHead = Boolean(server[kOptions]) && server[kOptions].fastHead !== false && fastHeadWorks();
   // Compiled validators and serializers, set when the instance is ready.
   this[kSchemaHeaders] = undefined;
   this[kSchemaParams] = undefined;

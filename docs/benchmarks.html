@@ -48,6 +48,14 @@
           <li><a href="#pg">PostgreSQL driver</a></li>
           <li><a href="#mongo">MongoDB driver</a></li>
           <li><a href="#http">HTTP</a></li>
+          <li><a href="#router">Router</a></li>
+          <li><a href="#logger">Logger</a></li>
+          <li><a href="#serializer">Serializer</a></li>
+          <li><a href="#jwt">JWT</a></li>
+          <li><a href="#websocket">WebSocket</a></li>
+          <li><a href="#expressions">Expressions</a></li>
+          <li><a href="#templates">Templates</a></li>
+          <li><a href="#views">Large pages</a></li>
           <li><a href="#run">Run them yourself</a></li>
         </ul>
       </aside>
@@ -59,12 +67,22 @@
           harnesses are in the repository (<code>bench/</code>), and so are the reports these numbers come from
           (<code>bench/results/</code>).
         </p>
+        <div class="stats">
+          <div class="stat"><span class="value">8.6&times;</span><span class="label">Sequelize 6: findByPk, 64 at once (PostgreSQL)</span></div>
+          <div class="stat"><span class="value">5.1&times;</span><span class="label">pg: select $1, 64 at once</span></div>
+          <div class="stat"><span class="value">4.3&times;</span><span class="label">mongodb: findOne by _id, 64 at once</span></div>
+          <div class="stat"><span class="value">2.1&times;</span><span class="label">Eta (no sandbox): a list of 20 rendered</span></div>
+        </div>
 
         <h2 id="how">How they are measured</h2>
         <ul>
           <li>Every library runs every round in a process of its own, the libraries taking turns, and the median of the rounds is shown (5 rounds unless said).</li>
           <li>The databases are local servers: PostgreSQL 18 and MongoDB on the same machine, and SQLite in memory.</li>
-          <li>Machine: Intel Core i7-13700H (20 threads), Windows 11, Node.js 22.21.1.</li>
+          <li>Machine: Intel Core i7-13700H (20 threads), Windows 11, Node.js 22.21.1. HTTP also on Linux on the same machine (Ubuntu 26.04 on WSL2, Node.js 22.21.1), whose numbers it shows first.</li>
+          <li>
+            <strong>Colors</strong>: the bars and badges of xufa are green where it is ahead by 5% or more, red where it is
+            behind by as much, and grey in between, where the difference is within what a run varies.
+          </li>
           <li>
             <strong>⚠</strong> marks a result whose rounds are more than 10% apart: the machine was busy, so read it as
             approximate. A Windows desktop is a noisy place to measure; the ratios hold better than the absolute numbers.
@@ -81,15 +99,15 @@
           <div class="chart">
             <h3>PostgreSQL: findByPk, 64 at once</h3>
             <p class="subtitle">Operations per second. More is better.</p>
-            <div class="chart-row us"><span class="name">@xufa/orm</span><span class="track"><span class="fill" style="width: 100%"></span></span><span class="value">76,651</span></div>
-            <div class="chart-row us"><span class="name">@xufa/sequelize</span><span class="track"><span class="fill" style="width: 92.9%"></span></span><span class="value">71,194</span></div>
+            <div class="chart-row us win"><span class="name">@xufa/orm</span><span class="track"><span class="fill" style="width: 100%"></span></span><span class="value">76,651</span></div>
+            <div class="chart-row us win"><span class="name">@xufa/sequelize</span><span class="track"><span class="fill" style="width: 92.9%"></span></span><span class="value">71,194</span></div>
             <div class="chart-row"><span class="name">Sequelize 6</span><span class="track"><span class="fill" style="width: 11.7%"></span></span><span class="value">8,948</span></div>
           </div>
           <div class="chart">
             <h3>SQLite: create, one at a time</h3>
             <p class="subtitle">Operations per second. More is better.</p>
-            <div class="chart-row us"><span class="name">@xufa/orm</span><span class="track"><span class="fill" style="width: 100%"></span></span><span class="value">49,153</span></div>
-            <div class="chart-row us"><span class="name">@xufa/sequelize</span><span class="track"><span class="fill" style="width: 85%"></span></span><span class="value">41,788</span></div>
+            <div class="chart-row us win"><span class="name">@xufa/orm</span><span class="track"><span class="fill" style="width: 100%"></span></span><span class="value">49,153</span></div>
+            <div class="chart-row us win"><span class="name">@xufa/sequelize</span><span class="track"><span class="fill" style="width: 85%"></span></span><span class="value">41,788</span></div>
             <div class="chart-row"><span class="name">Sequelize 6</span><span class="track"><span class="fill" style="width: 7.9%"></span></span><span class="value">3,886</span></div>
           </div>
         </div>
@@ -137,37 +155,84 @@
 
         <h2 id="pg">PostgreSQL driver</h2>
         <p>
-          <code>@xufa/pg</code> against <code>pg</code> 8.23.1, both through a pool of 10 connections. Driver-bound
-          workloads are those where the server does little, so the driver's own work decides; in server-bound ones,
-          PostgreSQL does most of the work and both drivers wait for it.
+          <code>@xufa/pg</code> against <code>pg</code> 8.23.1, both through a pool of 10 connections, in operations or rows
+          a second (more is better). Driver-bound workloads are those where the server does little, so the driver's own
+          work decides; in server-bound ones, PostgreSQL does most of the work and both drivers wait for it.
         </p>
-        <div class="table-wrap">
-          <table class="numbers">
-            <thead><tr><th>Driver-bound workload</th><th>@xufa/pg</th><th>pg</th><th>xufa / pg</th></tr></thead>
-            <tbody>
-              <tr><td>select $1 (one at a time)</td><td>13,895 ops/s</td><td>10,837 ops/s</td><td><strong>1.28&times;</strong> ⚠</td></tr>
-              <tr><td>select by id (one at a time)</td><td>13,042 ops/s</td><td>7,702 ops/s</td><td><strong>1.69&times;</strong> ⚠</td></tr>
-              <tr><td>insert one row (one at a time)</td><td>6,612 ops/s</td><td>5,039 ops/s</td><td><strong>1.31&times;</strong> ⚠</td></tr>
-              <tr><td>select $1 (64 at once)</td><td>151,905 ops/s</td><td>29,847 ops/s</td><td><strong>5.09&times;</strong> ⚠</td></tr>
-              <tr><td>select by id (64 at once)</td><td>116,172 ops/s</td><td>24,623 ops/s</td><td><strong>4.72&times;</strong> ⚠</td></tr>
-              <tr><td>encode 64 params of 8 types</td><td>11,885 ops/s</td><td>5,100 ops/s</td><td><strong>2.33&times;</strong> ⚠</td></tr>
-              <tr><td>decode 1000 rows of 8 types</td><td>563,294 rows/s</td><td>285,982 rows/s</td><td><strong>1.97&times;</strong> ⚠</td></tr>
-              <tr><td>text of 1 MB, sent and read</td><td>230 ops/s</td><td>156 ops/s</td><td><strong>1.47&times;</strong> ⚠</td></tr>
-              <tr><td>bytea of 1 MB, sent and read</td><td>215 ops/s</td><td>95 ops/s</td><td><strong>2.27&times;</strong> ⚠</td></tr>
-              <tr><td>insert 1000 rows per statement</td><td>122,182 rows/s</td><td>62,787 rows/s</td><td><strong>1.95&times;</strong> ⚠</td></tr>
-              <tr><td>copy rows (50k)</td><td>216,846 rows/s</td><td>112,657 rows/s</td><td><strong>1.92&times;</strong> ⚠</td></tr>
-              <tr><td>select all rows (50k)</td><td>512,305 rows/s</td><td>249,052 rows/s</td><td><strong>2.06&times;</strong> ⚠</td></tr>
-            </tbody>
-          </table>
+        <div class="pairs">
+          <div class="pair win">
+            <div class="head"><span>select $1, one at a time</span><span class="times">1.28&times; ⚠</span></div>
+            <div class="chart-row us"><span class="name">@xufa/pg</span><span class="track"><span class="fill" style="width: 100.0%"></span></span><span class="value">14k</span></div>
+            <div class="chart-row"><span class="name">pg</span><span class="track"><span class="fill" style="width: 78.0%"></span></span><span class="value">11k</span></div>
+          </div>
+          <div class="pair win">
+            <div class="head"><span>select by id, one at a time</span><span class="times">1.69&times; ⚠</span></div>
+            <div class="chart-row us"><span class="name">@xufa/pg</span><span class="track"><span class="fill" style="width: 100.0%"></span></span><span class="value">13k</span></div>
+            <div class="chart-row"><span class="name">pg</span><span class="track"><span class="fill" style="width: 59.1%"></span></span><span class="value">7.7k</span></div>
+          </div>
+          <div class="pair win">
+            <div class="head"><span>insert one row, one at a time</span><span class="times">1.31&times; ⚠</span></div>
+            <div class="chart-row us"><span class="name">@xufa/pg</span><span class="track"><span class="fill" style="width: 100.0%"></span></span><span class="value">6.6k</span></div>
+            <div class="chart-row"><span class="name">pg</span><span class="track"><span class="fill" style="width: 76.2%"></span></span><span class="value">5.0k</span></div>
+          </div>
+          <div class="pair win">
+            <div class="head"><span>select $1, 64 at once</span><span class="times">5.09&times; ⚠</span></div>
+            <div class="chart-row us"><span class="name">@xufa/pg</span><span class="track"><span class="fill" style="width: 100.0%"></span></span><span class="value">152k</span></div>
+            <div class="chart-row"><span class="name">pg</span><span class="track"><span class="fill" style="width: 19.6%"></span></span><span class="value">30k</span></div>
+          </div>
+          <div class="pair win">
+            <div class="head"><span>select by id, 64 at once</span><span class="times">4.72&times; ⚠</span></div>
+            <div class="chart-row us"><span class="name">@xufa/pg</span><span class="track"><span class="fill" style="width: 100.0%"></span></span><span class="value">116k</span></div>
+            <div class="chart-row"><span class="name">pg</span><span class="track"><span class="fill" style="width: 21.2%"></span></span><span class="value">25k</span></div>
+          </div>
+          <div class="pair win">
+            <div class="head"><span>encode 64 params of 8 types</span><span class="times">2.33&times; ⚠</span></div>
+            <div class="chart-row us"><span class="name">@xufa/pg</span><span class="track"><span class="fill" style="width: 100.0%"></span></span><span class="value">12k</span></div>
+            <div class="chart-row"><span class="name">pg</span><span class="track"><span class="fill" style="width: 42.9%"></span></span><span class="value">5.1k</span></div>
+          </div>
+          <div class="pair win">
+            <div class="head"><span>decode 1000 rows of 8 types</span><span class="times">1.97&times; ⚠</span></div>
+            <div class="chart-row us"><span class="name">@xufa/pg</span><span class="track"><span class="fill" style="width: 100.0%"></span></span><span class="value">563k</span></div>
+            <div class="chart-row"><span class="name">pg</span><span class="track"><span class="fill" style="width: 50.8%"></span></span><span class="value">286k</span></div>
+          </div>
+          <div class="pair win">
+            <div class="head"><span>text of 1 MB, sent and read</span><span class="times">1.47&times; ⚠</span></div>
+            <div class="chart-row us"><span class="name">@xufa/pg</span><span class="track"><span class="fill" style="width: 100.0%"></span></span><span class="value">230</span></div>
+            <div class="chart-row"><span class="name">pg</span><span class="track"><span class="fill" style="width: 67.8%"></span></span><span class="value">156</span></div>
+          </div>
+          <div class="pair win">
+            <div class="head"><span>bytea of 1 MB, sent and read</span><span class="times">2.26&times; ⚠</span></div>
+            <div class="chart-row us"><span class="name">@xufa/pg</span><span class="track"><span class="fill" style="width: 100.0%"></span></span><span class="value">215</span></div>
+            <div class="chart-row"><span class="name">pg</span><span class="track"><span class="fill" style="width: 44.2%"></span></span><span class="value">95</span></div>
+          </div>
+          <div class="pair win">
+            <div class="head"><span>insert 1000 rows per statement</span><span class="times">1.95&times; ⚠</span></div>
+            <div class="chart-row us"><span class="name">@xufa/pg</span><span class="track"><span class="fill" style="width: 100.0%"></span></span><span class="value">122k</span></div>
+            <div class="chart-row"><span class="name">pg</span><span class="track"><span class="fill" style="width: 51.4%"></span></span><span class="value">63k</span></div>
+          </div>
+          <div class="pair win">
+            <div class="head"><span>copy rows (50k)</span><span class="times">1.92&times; ⚠</span></div>
+            <div class="chart-row us"><span class="name">@xufa/pg</span><span class="track"><span class="fill" style="width: 100.0%"></span></span><span class="value">217k</span></div>
+            <div class="chart-row"><span class="name">pg</span><span class="track"><span class="fill" style="width: 52.0%"></span></span><span class="value">113k</span></div>
+          </div>
+          <div class="pair win">
+            <div class="head"><span>select all rows (50k)</span><span class="times">2.06&times; ⚠</span></div>
+            <div class="chart-row us"><span class="name">@xufa/pg</span><span class="track"><span class="fill" style="width: 100.0%"></span></span><span class="value">512k</span></div>
+            <div class="chart-row"><span class="name">pg</span><span class="track"><span class="fill" style="width: 48.6%"></span></span><span class="value">249k</span></div>
+          </div>
         </div>
-        <div class="table-wrap">
-          <table class="numbers">
-            <thead><tr><th>Server-bound workload</th><th>@xufa/pg</th><th>pg</th><th>xufa / pg</th></tr></thead>
-            <tbody>
-              <tr><td>aggregate group by (10k rows)</td><td>340 ops/s</td><td>289 ops/s</td><td>1.17&times; ⚠</td></tr>
-              <tr><td>update many (5k of 10k rows)</td><td>72 ops/s</td><td>66 ops/s</td><td>1.08&times; ⚠</td></tr>
-            </tbody>
-          </table>
+        <h3>Server-bound</h3>
+        <div class="pairs">
+          <div class="pair win">
+            <div class="head"><span>aggregate group by (10k rows)</span><span class="times">1.18&times; ⚠</span></div>
+            <div class="chart-row us"><span class="name">@xufa/pg</span><span class="track"><span class="fill" style="width: 100.0%"></span></span><span class="value">340</span></div>
+            <div class="chart-row"><span class="name">pg</span><span class="track"><span class="fill" style="width: 85.0%"></span></span><span class="value">289</span></div>
+          </div>
+          <div class="pair win">
+            <div class="head"><span>update many (5k of 10k rows)</span><span class="times">1.09&times; ⚠</span></div>
+            <div class="chart-row us"><span class="name">@xufa/pg</span><span class="track"><span class="fill" style="width: 100.0%"></span></span><span class="value">72</span></div>
+            <div class="chart-row"><span class="name">pg</span><span class="track"><span class="fill" style="width: 91.7%"></span></span><span class="value">66</span></div>
+          </div>
         </div>
         <p>
           What makes the difference: queries are prepared the second time their text runs, values are read and sent in
@@ -175,59 +240,1044 @@
           For tables updated often, the ORM's <code>fillfactor</code> option helps more than any driver: an update of 5,000
           rows went from 10.5 ms to 6.3 ms with <code>fillfactor: 50</code>.
         </p>
+        <details class="raw">
+          <summary>All numbers (bench/results/postgres-7.md)</summary>
+          <div class="table-wrap">
+            <table class="numbers">
+              <thead><tr><th>Driver-bound workload</th><th>xufa</th><th>pg</th><th>xufa / pg</th></tr></thead>
+              <tbody>
+                <tr><td>select $1, one at a time</td><td>13,895 ops/s</td><td>10,837 ops/s</td><td><strong>1.28&times;</strong> ⚠</td></tr>
+                <tr><td>select by id, one at a time</td><td>13,042 ops/s</td><td>7,702 ops/s</td><td><strong>1.69&times;</strong> ⚠</td></tr>
+                <tr><td>insert one row, one at a time</td><td>6,612 ops/s</td><td>5,039 ops/s</td><td><strong>1.31&times;</strong> ⚠</td></tr>
+                <tr><td>select $1, 64 at once</td><td>151,905 ops/s</td><td>29,847 ops/s</td><td><strong>5.09&times;</strong> ⚠</td></tr>
+                <tr><td>select by id, 64 at once</td><td>116,172 ops/s</td><td>24,623 ops/s</td><td><strong>4.72&times;</strong> ⚠</td></tr>
+                <tr><td>encode 64 params of 8 types</td><td>11,885 ops/s</td><td>5,100 ops/s</td><td><strong>2.33&times;</strong> ⚠</td></tr>
+                <tr><td>decode 1000 rows of 8 types</td><td>563,294 rows/s</td><td>285,982 rows/s</td><td><strong>1.97&times;</strong> ⚠</td></tr>
+                <tr><td>text of 1 MB, sent and read</td><td>230 ops/s</td><td>156 ops/s</td><td><strong>1.47&times;</strong> ⚠</td></tr>
+                <tr><td>bytea of 1 MB, sent and read</td><td>215 ops/s</td><td>95 ops/s</td><td><strong>2.26&times;</strong> ⚠</td></tr>
+                <tr><td>insert 1000 rows per statement</td><td>122,182 rows/s</td><td>62,787 rows/s</td><td><strong>1.95&times;</strong> ⚠</td></tr>
+                <tr><td>copy rows (50k)</td><td>216,846 rows/s</td><td>112,657 rows/s</td><td><strong>1.92&times;</strong> ⚠</td></tr>
+                <tr><td>select all rows (50k)</td><td>512,305 rows/s</td><td>249,052 rows/s</td><td><strong>2.06&times;</strong> ⚠</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="table-wrap">
+            <table class="numbers">
+              <thead><tr><th>Server-bound workload</th><th>xufa</th><th>pg</th><th>xufa / pg</th></tr></thead>
+              <tbody>
+                <tr><td>aggregate group by (10k rows)</td><td>340 ops/s</td><td>289 ops/s</td><td><strong>1.18&times;</strong> ⚠</td></tr>
+                <tr><td>update many (5k of 10k rows)</td><td>72 ops/s</td><td>66 ops/s</td><td>1.09&times; ⚠</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </details>
 
         <h2 id="mongo">MongoDB driver</h2>
-        <p><code>@xufa/mongo</code> against the official <code>mongodb</code> driver 7.7.0, both with 10 connections.</p>
-        <div class="table-wrap">
-          <table class="numbers">
-            <thead><tr><th>Workload</th><th>@xufa/mongo</th><th>mongodb</th><th>xufa / mongodb</th></tr></thead>
-            <tbody>
-              <tr><td>BSON serialize</td><td>1,208,548 docs/s</td><td>630,979 docs/s</td><td><strong>1.92&times;</strong> ⚠</td></tr>
-              <tr><td>BSON deserialize</td><td>1,064,190 docs/s</td><td>452,513 docs/s</td><td><strong>2.35&times;</strong> ⚠</td></tr>
-              <tr><td>insertOne (one at a time)</td><td>8,156 ops/s</td><td>3,982 ops/s</td><td><strong>2.05&times;</strong> ⚠</td></tr>
-              <tr><td>findOne by _id (one at a time)</td><td>8,672 ops/s</td><td>4,480 ops/s</td><td><strong>1.94&times;</strong> ⚠</td></tr>
-              <tr><td>findOne by _id (64 at once)</td><td>50,483 ops/s</td><td>11,735 ops/s</td><td><strong>4.30&times;</strong> ⚠</td></tr>
-              <tr><td>insertMany (1000 per batch)</td><td>193,908 docs/s</td><td>167,400 docs/s</td><td><strong>1.16&times;</strong> ⚠</td></tr>
-              <tr><td>insertMany (50k in one call, ordered)</td><td>202,117 docs/s</td><td>135,052 docs/s</td><td><strong>1.50&times;</strong> ⚠</td></tr>
-              <tr><td>insertMany (50k in one call, unordered)</td><td>534,804 docs/s</td><td>136,775 docs/s</td><td><strong>3.91&times;</strong> ⚠</td></tr>
-              <tr><td>find toArray (all docs)</td><td>350,276 docs/s</td><td>171,309 docs/s</td><td><strong>2.04&times;</strong> ⚠</td></tr>
-              <tr><td>aggregate $group</td><td>92 ops/s</td><td>93 ops/s</td><td>0.98&times; ⚠</td></tr>
-              <tr><td>updateMany $inc</td><td>12 ops/s</td><td>13 ops/s</td><td>0.89&times; ⚠</td></tr>
-            </tbody>
-          </table>
+        <p>
+          <code>@xufa/mongo</code> against the official <code>mongodb</code> driver 7.7.0, both with 10 connections, in
+          operations or documents a second (more is better). The last two are server-bound: MongoDB does the work, and both
+          drivers wait for it.
+        </p>
+        <div class="pairs">
+          <div class="pair win">
+            <div class="head"><span>BSON serialize</span><span class="times">1.92&times; ⚠</span></div>
+            <div class="chart-row us"><span class="name">@xufa/mongo</span><span class="track"><span class="fill" style="width: 100.0%"></span></span><span class="value">1.2M</span></div>
+            <div class="chart-row"><span class="name">mongodb</span><span class="track"><span class="fill" style="width: 52.2%"></span></span><span class="value">631k</span></div>
+          </div>
+          <div class="pair win">
+            <div class="head"><span>BSON deserialize</span><span class="times">2.35&times; ⚠</span></div>
+            <div class="chart-row us"><span class="name">@xufa/mongo</span><span class="track"><span class="fill" style="width: 100.0%"></span></span><span class="value">1.1M</span></div>
+            <div class="chart-row"><span class="name">mongodb</span><span class="track"><span class="fill" style="width: 42.5%"></span></span><span class="value">453k</span></div>
+          </div>
+          <div class="pair win">
+            <div class="head"><span>insertOne, one at a time</span><span class="times">2.05&times; ⚠</span></div>
+            <div class="chart-row us"><span class="name">@xufa/mongo</span><span class="track"><span class="fill" style="width: 100.0%"></span></span><span class="value">8.2k</span></div>
+            <div class="chart-row"><span class="name">mongodb</span><span class="track"><span class="fill" style="width: 48.8%"></span></span><span class="value">4.0k</span></div>
+          </div>
+          <div class="pair win">
+            <div class="head"><span>findOne by _id, one at a time</span><span class="times">1.94&times; ⚠</span></div>
+            <div class="chart-row us"><span class="name">@xufa/mongo</span><span class="track"><span class="fill" style="width: 100.0%"></span></span><span class="value">8.7k</span></div>
+            <div class="chart-row"><span class="name">mongodb</span><span class="track"><span class="fill" style="width: 51.7%"></span></span><span class="value">4.5k</span></div>
+          </div>
+          <div class="pair win">
+            <div class="head"><span>findOne by _id, 64 at once</span><span class="times">4.30&times; ⚠</span></div>
+            <div class="chart-row us"><span class="name">@xufa/mongo</span><span class="track"><span class="fill" style="width: 100.0%"></span></span><span class="value">50k</span></div>
+            <div class="chart-row"><span class="name">mongodb</span><span class="track"><span class="fill" style="width: 23.2%"></span></span><span class="value">12k</span></div>
+          </div>
+          <div class="pair win">
+            <div class="head"><span>insertMany, 1000 per batch</span><span class="times">1.16&times; ⚠</span></div>
+            <div class="chart-row us"><span class="name">@xufa/mongo</span><span class="track"><span class="fill" style="width: 100.0%"></span></span><span class="value">194k</span></div>
+            <div class="chart-row"><span class="name">mongodb</span><span class="track"><span class="fill" style="width: 86.3%"></span></span><span class="value">167k</span></div>
+          </div>
+          <div class="pair win">
+            <div class="head"><span>insertMany, 50k in one call, ordered</span><span class="times">1.50&times; ⚠</span></div>
+            <div class="chart-row us"><span class="name">@xufa/mongo</span><span class="track"><span class="fill" style="width: 100.0%"></span></span><span class="value">202k</span></div>
+            <div class="chart-row"><span class="name">mongodb</span><span class="track"><span class="fill" style="width: 66.8%"></span></span><span class="value">135k</span></div>
+          </div>
+          <div class="pair win">
+            <div class="head"><span>insertMany, 50k in one call, unordered</span><span class="times">3.91&times; ⚠</span></div>
+            <div class="chart-row us"><span class="name">@xufa/mongo</span><span class="track"><span class="fill" style="width: 100.0%"></span></span><span class="value">535k</span></div>
+            <div class="chart-row"><span class="name">mongodb</span><span class="track"><span class="fill" style="width: 25.6%"></span></span><span class="value">137k</span></div>
+          </div>
+          <div class="pair win">
+            <div class="head"><span>find toArray, all docs</span><span class="times">2.04&times; ⚠</span></div>
+            <div class="chart-row us"><span class="name">@xufa/mongo</span><span class="track"><span class="fill" style="width: 100.0%"></span></span><span class="value">350k</span></div>
+            <div class="chart-row"><span class="name">mongodb</span><span class="track"><span class="fill" style="width: 48.9%"></span></span><span class="value">171k</span></div>
+          </div>
+          <div class="pair even">
+            <div class="head"><span>aggregate $group (server-bound)</span><span class="times">0.99&times; ⚠</span></div>
+            <div class="chart-row us"><span class="name">@xufa/mongo</span><span class="track"><span class="fill" style="width: 98.9%"></span></span><span class="value">92</span></div>
+            <div class="chart-row"><span class="name">mongodb</span><span class="track"><span class="fill" style="width: 100.0%"></span></span><span class="value">93</span></div>
+          </div>
+          <div class="pair lose">
+            <div class="head"><span>updateMany $inc (server-bound)</span><span class="times">0.92&times; ⚠</span></div>
+            <div class="chart-row us"><span class="name">@xufa/mongo</span><span class="track"><span class="fill" style="width: 92.3%"></span></span><span class="value">12</span></div>
+            <div class="chart-row"><span class="name">mongodb</span><span class="track"><span class="fill" style="width: 100.0%"></span></span><span class="value">13</span></div>
+          </div>
         </div>
-        <p>The last two are server-bound: MongoDB does the work, and both drivers wait for it.</p>
+        <details class="raw">
+          <summary>All numbers (bench/results/mongo-7.md)</summary>
+          <div class="table-wrap">
+            <table class="numbers">
+              <thead><tr><th>Workload</th><th>xufa</th><th>mongodb</th><th>xufa / mongodb</th></tr></thead>
+              <tbody>
+                <tr><td>BSON serialize</td><td>1,208,548 docs/s</td><td>630,979 docs/s</td><td><strong>1.92&times;</strong> ⚠</td></tr>
+                <tr><td>BSON deserialize</td><td>1,064,190 docs/s</td><td>452,513 docs/s</td><td><strong>2.35&times;</strong> ⚠</td></tr>
+                <tr><td>insertOne, one at a time</td><td>8,156 ops/s</td><td>3,982 ops/s</td><td><strong>2.05&times;</strong> ⚠</td></tr>
+                <tr><td>findOne by _id, one at a time</td><td>8,672 ops/s</td><td>4,480 ops/s</td><td><strong>1.94&times;</strong> ⚠</td></tr>
+                <tr><td>findOne by _id, 64 at once</td><td>50,483 ops/s</td><td>11,735 ops/s</td><td><strong>4.30&times;</strong> ⚠</td></tr>
+                <tr><td>insertMany, 1000 per batch</td><td>193,908 docs/s</td><td>167,400 docs/s</td><td><strong>1.16&times;</strong> ⚠</td></tr>
+                <tr><td>insertMany, 50k in one call, ordered</td><td>202,117 docs/s</td><td>135,052 docs/s</td><td><strong>1.50&times;</strong> ⚠</td></tr>
+                <tr><td>insertMany, 50k in one call, unordered</td><td>534,804 docs/s</td><td>136,775 docs/s</td><td><strong>3.91&times;</strong> ⚠</td></tr>
+                <tr><td>find toArray, all docs</td><td>350,276 docs/s</td><td>171,309 docs/s</td><td><strong>2.04&times;</strong> ⚠</td></tr>
+                <tr><td>aggregate $group (server-bound)</td><td>92 ops/s</td><td>93 ops/s</td><td>0.99&times; ⚠</td></tr>
+                <tr><td>updateMany $inc (server-bound)</td><td>12 ops/s</td><td>13 ops/s</td><td>0.92&times; ⚠</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </details>
 
         <h2 id="http">HTTP</h2>
         <p>
-          <code>@xufa/http</code> against fastify 5.12.5 and <code>node:http</code>, on the same routes: over the loopback
-          with autocannon (100 connections, pipelining 10, 3 rounds), and in the process, without sockets, which shows the
-          cost of the framework alone.
+          <code>@xufa/http</code> against fastify 5.12.5 and <code>node:http</code> (where it can answer the same), in
+          requests a second (more is better), on Linux (Ubuntu 26.04 on WSL2, on the same machine; Windows below). In the
+          process, without sockets, the numbers are the cost of the framework alone; over the loopback (autocannon, 100
+          connections, pipelining 10), the socket and Node.js's HTTP parser are part of the cost of every response.
         </p>
-        <div class="table-wrap">
-          <table class="numbers">
-            <thead><tr><th>Scenario</th><th>Over the loopback: xufa / fastify</th><th>In the process: xufa / fastify</th></tr></thead>
-            <tbody>
-              <tr><td>big-json (a large response)</td><td><strong>1.42&times;</strong></td><td><strong>1.40&times;</strong></td></tr>
-              <tr><td>async</td><td>1.00&times;</td><td><strong>2.17&times;</strong></td></tr>
-              <tr><td>hello-schema</td><td>1.02&times;</td><td><strong>1.12&times;</strong></td></tr>
-              <tr><td>post-json</td><td>0.77&times; ⚠</td><td><strong>1.11&times;</strong></td></tr>
-              <tr><td>query</td><td>1.72&times; ⚠</td><td>1.03&times;</td></tr>
-              <tr><td>headers, hooks, many-routes, not-found, params, text</td><td>0.99&times; to 1.02&times;</td><td>1.02&times; to 1.06&times;</td></tr>
-              <tr><td>error</td><td>0.90&times; ⚠</td><td>1.06&times;</td></tr>
-              <tr><td>plugins</td><td>0.95&times; ⚠</td><td>0.99&times;</td></tr>
-              <tr><td>hello</td><td>1.02&times;</td><td>0.80&times;</td></tr>
-              <tr><td>post-validate</td><td>1.07&times; ⚠</td><td>0.52&times;</td></tr>
-            </tbody>
-          </table>
+        <h3>In the process: the cost of the framework</h3>
+        <div class="pairs">
+          <div class="pair win">
+            <div class="head"><span>big-json</span><span class="times">1.96&times; ⚠</span></div>
+            <div class="chart-row us"><span class="name">xufa</span><span class="track"><span class="fill" style="width: 100.0%"></span></span><span class="value">25k</span></div>
+            <div class="chart-row"><span class="name">fastify</span><span class="track"><span class="fill" style="width: 51.0%"></span></span><span class="value">13k</span></div>
+            <div class="chart-row"><span class="name">node:http</span><span class="track"><span class="fill" style="width: 89.8%"></span></span><span class="value">22k</span></div>
+          </div>
+          <div class="pair win">
+            <div class="head"><span>headers</span><span class="times">1.24&times; ⚠</span></div>
+            <div class="chart-row us"><span class="name">xufa</span><span class="track"><span class="fill" style="width: 100.0%"></span></span><span class="value">363k</span></div>
+            <div class="chart-row"><span class="name">fastify</span><span class="track"><span class="fill" style="width: 80.9%"></span></span><span class="value">293k</span></div>
+          </div>
+          <div class="pair win">
+            <div class="head"><span>post-validate</span><span class="times">1.21&times;</span></div>
+            <div class="chart-row us"><span class="name">xufa</span><span class="track"><span class="fill" style="width: 100.0%"></span></span><span class="value">209k</span></div>
+            <div class="chart-row"><span class="name">fastify</span><span class="track"><span class="fill" style="width: 82.6%"></span></span><span class="value">173k</span></div>
+          </div>
+          <div class="pair win">
+            <div class="head"><span>post-json</span><span class="times">1.18&times;</span></div>
+            <div class="chart-row us"><span class="name">xufa</span><span class="track"><span class="fill" style="width: 100.0%"></span></span><span class="value">216k</span></div>
+            <div class="chart-row"><span class="name">fastify</span><span class="track"><span class="fill" style="width: 84.5%"></span></span><span class="value">183k</span></div>
+          </div>
+          <div class="pair win">
+            <div class="head"><span>hello</span><span class="times">1.18&times;</span></div>
+            <div class="chart-row us"><span class="name">xufa</span><span class="track"><span class="fill" style="width: 99.9%"></span></span><span class="value">506k</span></div>
+            <div class="chart-row"><span class="name">fastify</span><span class="track"><span class="fill" style="width: 84.7%"></span></span><span class="value">430k</span></div>
+            <div class="chart-row"><span class="name">node:http</span><span class="track"><span class="fill" style="width: 100.0%"></span></span><span class="value">507k</span></div>
+          </div>
+          <div class="pair win">
+            <div class="head"><span>many-routes</span><span class="times">1.18&times;</span></div>
+            <div class="chart-row us"><span class="name">xufa</span><span class="track"><span class="fill" style="width: 100.0%"></span></span><span class="value">447k</span></div>
+            <div class="chart-row"><span class="name">fastify</span><span class="track"><span class="fill" style="width: 85.0%"></span></span><span class="value">380k</span></div>
+          </div>
+          <div class="pair win">
+            <div class="head"><span>params</span><span class="times">1.17&times; ⚠</span></div>
+            <div class="chart-row us"><span class="name">xufa</span><span class="track"><span class="fill" style="width: 100.0%"></span></span><span class="value">408k</span></div>
+            <div class="chart-row"><span class="name">fastify</span><span class="track"><span class="fill" style="width: 85.3%"></span></span><span class="value">348k</span></div>
+          </div>
+          <div class="pair win">
+            <div class="head"><span>text</span><span class="times">1.17&times;</span></div>
+            <div class="chart-row us"><span class="name">xufa</span><span class="track"><span class="fill" style="width: 96.5%"></span></span><span class="value">528k</span></div>
+            <div class="chart-row"><span class="name">fastify</span><span class="track"><span class="fill" style="width: 82.5%"></span></span><span class="value">451k</span></div>
+            <div class="chart-row"><span class="name">node:http</span><span class="track"><span class="fill" style="width: 100.0%"></span></span><span class="value">547k</span></div>
+          </div>
+          <div class="pair win">
+            <div class="head"><span>hooks</span><span class="times">1.17&times;</span></div>
+            <div class="chart-row us"><span class="name">xufa</span><span class="track"><span class="fill" style="width: 100.0%"></span></span><span class="value">470k</span></div>
+            <div class="chart-row"><span class="name">fastify</span><span class="track"><span class="fill" style="width: 85.5%"></span></span><span class="value">402k</span></div>
+          </div>
+          <div class="pair win">
+            <div class="head"><span>not-found</span><span class="times">1.16&times; ⚠</span></div>
+            <div class="chart-row us"><span class="name">xufa</span><span class="track"><span class="fill" style="width: 100.0%"></span></span><span class="value">415k</span></div>
+            <div class="chart-row"><span class="name">fastify</span><span class="track"><span class="fill" style="width: 86.1%"></span></span><span class="value">358k</span></div>
+          </div>
+          <div class="pair win">
+            <div class="head"><span>plugins</span><span class="times">1.16&times; ⚠</span></div>
+            <div class="chart-row us"><span class="name">xufa</span><span class="track"><span class="fill" style="width: 100.0%"></span></span><span class="value">447k</span></div>
+            <div class="chart-row"><span class="name">fastify</span><span class="track"><span class="fill" style="width: 86.3%"></span></span><span class="value">386k</span></div>
+          </div>
+          <div class="pair win">
+            <div class="head"><span>async</span><span class="times">1.12&times; ⚠</span></div>
+            <div class="chart-row us"><span class="name">xufa</span><span class="track"><span class="fill" style="width: 100.0%"></span></span><span class="value">458k</span></div>
+            <div class="chart-row"><span class="name">fastify</span><span class="track"><span class="fill" style="width: 89.0%"></span></span><span class="value">408k</span></div>
+          </div>
+          <div class="pair win">
+            <div class="head"><span>hello-schema</span><span class="times">1.12&times; ⚠</span></div>
+            <div class="chart-row us"><span class="name">xufa</span><span class="track"><span class="fill" style="width: 95.7%"></span></span><span class="value">495k</span></div>
+            <div class="chart-row"><span class="name">fastify</span><span class="track"><span class="fill" style="width: 85.2%"></span></span><span class="value">441k</span></div>
+            <div class="chart-row"><span class="name">node:http</span><span class="track"><span class="fill" style="width: 100.0%"></span></span><span class="value">517k</span></div>
+          </div>
+          <div class="pair win">
+            <div class="head"><span>query</span><span class="times">1.12&times;</span></div>
+            <div class="chart-row us"><span class="name">xufa</span><span class="track"><span class="fill" style="width: 100.0%"></span></span><span class="value">345k</span></div>
+            <div class="chart-row"><span class="name">fastify</span><span class="track"><span class="fill" style="width: 89.6%"></span></span><span class="value">310k</span></div>
+          </div>
+          <div class="pair win">
+            <div class="head"><span>error</span><span class="times">1.06&times;</span></div>
+            <div class="chart-row us"><span class="name">xufa</span><span class="track"><span class="fill" style="width: 100.0%"></span></span><span class="value">111k</span></div>
+            <div class="chart-row"><span class="name">fastify</span><span class="track"><span class="fill" style="width: 94.1%"></span></span><span class="value">104k</span></div>
+          </div>
+        </div>
+        <h3>Over the loopback</h3>
+        <div class="pairs">
+          <div class="pair win">
+            <div class="head"><span>big-json</span><span class="times">1.66&times;</span></div>
+            <div class="chart-row us"><span class="name">xufa</span><span class="track"><span class="fill" style="width: 98.7%"></span></span><span class="value">18k</span></div>
+            <div class="chart-row"><span class="name">fastify</span><span class="track"><span class="fill" style="width: 59.6%"></span></span><span class="value">11k</span></div>
+            <div class="chart-row"><span class="name">node:http</span><span class="track"><span class="fill" style="width: 100.0%"></span></span><span class="value">19k</span></div>
+          </div>
+          <div class="pair win">
+            <div class="head"><span>hello-schema</span><span class="times">1.19&times;</span></div>
+            <div class="chart-row us"><span class="name">xufa</span><span class="track"><span class="fill" style="width: 100.0%"></span></span><span class="value">123k</span></div>
+            <div class="chart-row"><span class="name">fastify</span><span class="track"><span class="fill" style="width: 83.8%"></span></span><span class="value">103k</span></div>
+            <div class="chart-row"><span class="name">node:http</span><span class="track"><span class="fill" style="width: 94.7%"></span></span><span class="value">117k</span></div>
+          </div>
+          <div class="pair win">
+            <div class="head"><span>hooks</span><span class="times">1.19&times;</span></div>
+            <div class="chart-row us"><span class="name">xufa</span><span class="track"><span class="fill" style="width: 100.0%"></span></span><span class="value">118k</span></div>
+            <div class="chart-row"><span class="name">fastify</span><span class="track"><span class="fill" style="width: 84.3%"></span></span><span class="value">100k</span></div>
+          </div>
+          <div class="pair win">
+            <div class="head"><span>headers</span><span class="times">1.17&times;</span></div>
+            <div class="chart-row us"><span class="name">xufa</span><span class="track"><span class="fill" style="width: 100.0%"></span></span><span class="value">103k</span></div>
+            <div class="chart-row"><span class="name">fastify</span><span class="track"><span class="fill" style="width: 85.2%"></span></span><span class="value">87k</span></div>
+          </div>
+          <div class="pair win">
+            <div class="head"><span>params</span><span class="times">1.16&times;</span></div>
+            <div class="chart-row us"><span class="name">xufa</span><span class="track"><span class="fill" style="width: 100.0%"></span></span><span class="value">113k</span></div>
+            <div class="chart-row"><span class="name">fastify</span><span class="track"><span class="fill" style="width: 86.1%"></span></span><span class="value">97k</span></div>
+          </div>
+          <div class="pair win">
+            <div class="head"><span>post-json</span><span class="times">1.16&times;</span></div>
+            <div class="chart-row us"><span class="name">xufa</span><span class="track"><span class="fill" style="width: 100.0%"></span></span><span class="value">49k</span></div>
+            <div class="chart-row"><span class="name">fastify</span><span class="track"><span class="fill" style="width: 86.4%"></span></span><span class="value">43k</span></div>
+          </div>
+          <div class="pair win">
+            <div class="head"><span>text</span><span class="times">1.14&times;</span></div>
+            <div class="chart-row us"><span class="name">xufa</span><span class="track"><span class="fill" style="width: 100.0%"></span></span><span class="value">126k</span></div>
+            <div class="chart-row"><span class="name">fastify</span><span class="track"><span class="fill" style="width: 87.8%"></span></span><span class="value">111k</span></div>
+            <div class="chart-row"><span class="name">node:http</span><span class="track"><span class="fill" style="width: 94.9%"></span></span><span class="value">120k</span></div>
+          </div>
+          <div class="pair win">
+            <div class="head"><span>many-routes</span><span class="times">1.13&times;</span></div>
+            <div class="chart-row us"><span class="name">xufa</span><span class="track"><span class="fill" style="width: 100.0%"></span></span><span class="value">105k</span></div>
+            <div class="chart-row"><span class="name">fastify</span><span class="track"><span class="fill" style="width: 88.2%"></span></span><span class="value">93k</span></div>
+          </div>
+          <div class="pair win">
+            <div class="head"><span>async</span><span class="times">1.13&times;</span></div>
+            <div class="chart-row us"><span class="name">xufa</span><span class="track"><span class="fill" style="width: 100.0%"></span></span><span class="value">115k</span></div>
+            <div class="chart-row"><span class="name">fastify</span><span class="track"><span class="fill" style="width: 88.8%"></span></span><span class="value">102k</span></div>
+          </div>
+          <div class="pair win">
+            <div class="head"><span>hello</span><span class="times">1.11&times;</span></div>
+            <div class="chart-row us"><span class="name">xufa</span><span class="track"><span class="fill" style="width: 100.0%"></span></span><span class="value">118k</span></div>
+            <div class="chart-row"><span class="name">fastify</span><span class="track"><span class="fill" style="width: 90.0%"></span></span><span class="value">106k</span></div>
+            <div class="chart-row"><span class="name">node:http</span><span class="track"><span class="fill" style="width: 97.0%"></span></span><span class="value">115k</span></div>
+          </div>
+          <div class="pair win">
+            <div class="head"><span>query</span><span class="times">1.09&times;</span></div>
+            <div class="chart-row us"><span class="name">xufa</span><span class="track"><span class="fill" style="width: 100.0%"></span></span><span class="value">94k</span></div>
+            <div class="chart-row"><span class="name">fastify</span><span class="track"><span class="fill" style="width: 91.8%"></span></span><span class="value">86k</span></div>
+          </div>
+          <div class="pair win">
+            <div class="head"><span>plugins</span><span class="times">1.09&times;</span></div>
+            <div class="chart-row us"><span class="name">xufa</span><span class="track"><span class="fill" style="width: 100.0%"></span></span><span class="value">110k</span></div>
+            <div class="chart-row"><span class="name">fastify</span><span class="track"><span class="fill" style="width: 91.9%"></span></span><span class="value">101k</span></div>
+          </div>
+          <div class="pair win">
+            <div class="head"><span>post-validate</span><span class="times">1.09&times;</span></div>
+            <div class="chart-row us"><span class="name">xufa</span><span class="track"><span class="fill" style="width: 100.0%"></span></span><span class="value">46k</span></div>
+            <div class="chart-row"><span class="name">fastify</span><span class="track"><span class="fill" style="width: 92.1%"></span></span><span class="value">42k</span></div>
+          </div>
+          <div class="pair win">
+            <div class="head"><span>not-found</span><span class="times">1.06&times;</span></div>
+            <div class="chart-row us"><span class="name">xufa</span><span class="track"><span class="fill" style="width: 100.0%"></span></span><span class="value">102k</span></div>
+            <div class="chart-row"><span class="name">fastify</span><span class="track"><span class="fill" style="width: 94.2%"></span></span><span class="value">96k</span></div>
+          </div>
+          <div class="pair even">
+            <div class="head"><span>error</span><span class="times">1.02&times;</span></div>
+            <div class="chart-row us"><span class="name">xufa</span><span class="track"><span class="fill" style="width: 100.0%"></span></span><span class="value">49k</span></div>
+            <div class="chart-row"><span class="name">fastify</span><span class="track"><span class="fill" style="width: 97.6%"></span></span><span class="value">47k</span></div>
+          </div>
         </div>
         <p>
-          Over the network, small responses take about the same time on both: the socket and Node.js's HTTP parser cost
-          about 20&nbsp;µs a request on this machine, and the framework a few. xufa is clearly ahead on large JSON responses,
-          which it writes as bytes. In the process, most scenarios are ahead or even; <code>hello</code> and
-          <code>post-validate</code> are behind. Run the harness on your machine before deciding:
-          on Linux the loopback is faster and the differences show more.
+          In the process, xufa is ahead in every scenario: 1.96&times; on large JSON responses
+          (written as bytes), 1.21&times; on bodies parsed and validated, and from
+          1.06&times; to 1.24&times; on the rest, level with <code>node:http</code> answering by hand on hello: xufa writes the head of most
+          responses itself (<code>fastHead</code>), where Node.js checks and assembles every header. Over the loopback, the
+          socket and the HTTP parser of Node.js are a part of each response that is the same for both, so the frameworks
+          come closer: from 1.02&times; to 1.66&times; where the rounds agree.
         </p>
+        <details class="raw">
+          <summary>All numbers on Linux (bench/results/inproc-linux-2.md; over the loopback, full-linux-2.md)</summary>
+          <div class="table-wrap">
+            <table class="numbers">
+              <thead><tr><th>Scenario</th><th>In the process: xufa / fastify</th><th>Over the loopback: xufa / fastify</th></tr></thead>
+              <tbody>
+                <tr><td>big-json</td><td><strong>1.96&times;</strong> ⚠</td><td><strong>1.66&times;</strong></td></tr>
+                <tr><td>headers</td><td><strong>1.24&times;</strong> ⚠</td><td><strong>1.17&times;</strong></td></tr>
+                <tr><td>post-validate</td><td><strong>1.21&times;</strong></td><td>1.09&times;</td></tr>
+                <tr><td>post-json</td><td><strong>1.18&times;</strong></td><td><strong>1.16&times;</strong></td></tr>
+                <tr><td>hello</td><td><strong>1.18&times;</strong></td><td><strong>1.11&times;</strong></td></tr>
+                <tr><td>many-routes</td><td><strong>1.18&times;</strong></td><td><strong>1.13&times;</strong></td></tr>
+                <tr><td>params</td><td><strong>1.17&times;</strong> ⚠</td><td><strong>1.16&times;</strong></td></tr>
+                <tr><td>text</td><td><strong>1.17&times;</strong></td><td><strong>1.14&times;</strong></td></tr>
+                <tr><td>hooks</td><td><strong>1.17&times;</strong></td><td><strong>1.19&times;</strong></td></tr>
+                <tr><td>not-found</td><td><strong>1.16&times;</strong> ⚠</td><td>1.06&times;</td></tr>
+                <tr><td>plugins</td><td><strong>1.16&times;</strong> ⚠</td><td>1.09&times;</td></tr>
+                <tr><td>async</td><td><strong>1.12&times;</strong> ⚠</td><td><strong>1.13&times;</strong></td></tr>
+                <tr><td>hello-schema</td><td><strong>1.12&times;</strong> ⚠</td><td><strong>1.19&times;</strong></td></tr>
+                <tr><td>query</td><td><strong>1.12&times;</strong></td><td>1.09&times;</td></tr>
+                <tr><td>error</td><td>1.06&times;</td><td>1.02&times;</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </details>
+        <h3>On Windows</h3>
+        <p>
+          The same runs on Windows 11, on the same machine (<code>bench/results/inproc-6.md</code> and
+          <code>full-5.md</code>). Its loopback is slower, so the socket is most of the cost of a small
+          response there, and the frameworks come closer.
+        </p>
+          <div class="table-wrap">
+            <table class="numbers">
+              <thead><tr><th>Scenario</th><th>In the process: xufa / fastify</th><th>Over the loopback: xufa / fastify</th></tr></thead>
+              <tbody>
+                <tr><td>big-json</td><td><strong>1.66&times;</strong></td><td><strong>1.39&times;</strong></td></tr>
+                <tr><td>headers</td><td><strong>1.24&times;</strong></td><td>1.05&times;</td></tr>
+                <tr><td>params</td><td><strong>1.20&times;</strong></td><td>1.02&times;</td></tr>
+                <tr><td>async</td><td><strong>1.20&times;</strong> ⚠</td><td>0.99&times;</td></tr>
+                <tr><td>plugins</td><td><strong>1.19&times;</strong></td><td>1.01&times;</td></tr>
+                <tr><td>many-routes</td><td><strong>1.18&times;</strong></td><td>0.98&times;</td></tr>
+                <tr><td>text</td><td><strong>1.17&times;</strong></td><td>1.01&times; ⚠</td></tr>
+                <tr><td>hooks</td><td><strong>1.17&times;</strong></td><td>0.97&times;</td></tr>
+                <tr><td>post-validate</td><td><strong>1.16&times;</strong></td><td><strong>2.05&times;</strong> ⚠</td></tr>
+                <tr><td>post-json</td><td><strong>1.15&times;</strong> ⚠</td><td>1.00&times;</td></tr>
+                <tr><td>hello-schema</td><td><strong>1.15&times;</strong></td><td>1.02&times;</td></tr>
+                <tr><td>hello</td><td><strong>1.13&times;</strong></td><td>1.02&times;</td></tr>
+                <tr><td>query</td><td><strong>1.11&times;</strong></td><td>0.80&times; ⚠</td></tr>
+                <tr><td>not-found</td><td><strong>1.10&times;</strong></td><td>1.03&times;</td></tr>
+                <tr><td>error</td><td>0.98&times;</td><td>0.92&times;</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h2 id="router">Router</h2>
+        <p>
+          <code>@xufa/router</code> against find-my-way 9.9.0 on the routes of a typical API (10 resources, 74 routes),
+          in routes found a second (more is better): <code>match()</code>, what xufa calls for every request, and
+          <code>find()</code>, find-my-way's API, which parses the query string as find-my-way's does. Each router and case
+          runs in a process of its own; best of 5 rounds.
+        </p>
+        <p class="legend"><span class="us">@xufa/router</span><span>find-my-way</span></p>
+        <div class="pairs">
+          <div class="pair win">
+            <div class="head"><span>the root (/)</span><span class="times">1.11&times;</span></div>
+            <div class="chart-row us"><span class="name">match()</span><span class="track"><span class="fill" style="width: 53.5%"></span></span><span class="value">57.8M</span></div>
+            <div class="chart-row us"><span class="name">find()</span><span class="track"><span class="fill" style="width: 100.0%"></span></span><span class="value">108M</span></div>
+            <div class="chart-row"><span class="name">find-my-way</span><span class="track"><span class="fill" style="width: 48.2%"></span></span><span class="value">52.1M</span></div>
+          </div>
+          <div class="pair win">
+            <div class="head"><span>a deep static path</span><span class="times">2.36&times;</span></div>
+            <div class="chart-row us"><span class="name">match()</span><span class="track"><span class="fill" style="width: 100.0%"></span></span><span class="value">15.8M</span></div>
+            <div class="chart-row us"><span class="name">find()</span><span class="track"><span class="fill" style="width: 91.4%"></span></span><span class="value">14.4M</span></div>
+            <div class="chart-row"><span class="name">find-my-way</span><span class="track"><span class="fill" style="width: 42.3%"></span></span><span class="value">6.7M</span></div>
+          </div>
+          <div class="pair win">
+            <div class="head"><span>one parameter</span><span class="times">1.36&times;</span></div>
+            <div class="chart-row us"><span class="name">match()</span><span class="track"><span class="fill" style="width: 98.2%"></span></span><span class="value">10.6M</span></div>
+            <div class="chart-row us"><span class="name">find()</span><span class="track"><span class="fill" style="width: 100.0%"></span></span><span class="value">10.8M</span></div>
+            <div class="chart-row"><span class="name">find-my-way</span><span class="track"><span class="fill" style="width: 72.4%"></span></span><span class="value">7.8M</span></div>
+          </div>
+          <div class="pair win">
+            <div class="head"><span>two parameters</span><span class="times">1.67&times;</span></div>
+            <div class="chart-row us"><span class="name">match()</span><span class="track"><span class="fill" style="width: 100.0%"></span></span><span class="value">7.5M</span></div>
+            <div class="chart-row us"><span class="name">find()</span><span class="track"><span class="fill" style="width: 95.6%"></span></span><span class="value">7.2M</span></div>
+            <div class="chart-row"><span class="name">find-my-way</span><span class="track"><span class="fill" style="width: 59.8%"></span></span><span class="value">4.5M</span></div>
+          </div>
+          <div class="pair win">
+            <div class="head"><span>a wildcard</span><span class="times">1.37&times;</span></div>
+            <div class="chart-row us"><span class="name">match()</span><span class="track"><span class="fill" style="width: 100.0%"></span></span><span class="value">9.7M</span></div>
+            <div class="chart-row us"><span class="name">find()</span><span class="track"><span class="fill" style="width: 100.0%"></span></span><span class="value">9.7M</span></div>
+            <div class="chart-row"><span class="name">find-my-way</span><span class="track"><span class="fill" style="width: 72.9%"></span></span><span class="value">7.1M</span></div>
+          </div>
+          <div class="pair win">
+            <div class="head"><span>two parameters in a segment</span><span class="times">1.15&times;</span></div>
+            <div class="chart-row us"><span class="name">match()</span><span class="track"><span class="fill" style="width: 100.0%"></span></span><span class="value">6.8M</span></div>
+            <div class="chart-row us"><span class="name">find()</span><span class="track"><span class="fill" style="width: 94.7%"></span></span><span class="value">6.4M</span></div>
+            <div class="chart-row"><span class="name">find-my-way</span><span class="track"><span class="fill" style="width: 87.3%"></span></span><span class="value">5.9M</span></div>
+          </div>
+          <div class="pair win">
+            <div class="head"><span>a regular expression</span><span class="times">1.25&times;</span></div>
+            <div class="chart-row us"><span class="name">match()</span><span class="track"><span class="fill" style="width: 100.0%"></span></span><span class="value">10.0M</span></div>
+            <div class="chart-row us"><span class="name">find()</span><span class="track"><span class="fill" style="width: 91.6%"></span></span><span class="value">9.2M</span></div>
+            <div class="chart-row"><span class="name">find-my-way</span><span class="track"><span class="fill" style="width: 79.9%"></span></span><span class="value">8.0M</span></div>
+          </div>
+          <div class="pair win">
+            <div class="head"><span>with a query string</span><span class="times">2.76&times;</span></div>
+            <div class="chart-row us"><span class="name">match()</span><span class="track"><span class="fill" style="width: 100.0%"></span></span><span class="value">6.5M</span></div>
+            <div class="chart-row us"><span class="name">find()</span><span class="track"><span class="fill" style="width: 38.3%"></span></span><span class="value">2.5M</span></div>
+            <div class="chart-row"><span class="name">find-my-way</span><span class="track"><span class="fill" style="width: 36.3%"></span></span><span class="value">2.4M</span></div>
+          </div>
+          <div class="pair win">
+            <div class="head"><span>an encoded parameter</span><span class="times">1.05&times;</span></div>
+            <div class="chart-row us"><span class="name">match()</span><span class="track"><span class="fill" style="width: 99.0%"></span></span><span class="value">1.9M</span></div>
+            <div class="chart-row us"><span class="name">find()</span><span class="track"><span class="fill" style="width: 100.0%"></span></span><span class="value">1.9M</span></div>
+            <div class="chart-row"><span class="name">find-my-way</span><span class="track"><span class="fill" style="width: 94.4%"></span></span><span class="value">1.8M</span></div>
+          </div>
+          <div class="pair win">
+            <div class="head"><span>not found</span><span class="times">1.11&times;</span></div>
+            <div class="chart-row us"><span class="name">match()</span><span class="track"><span class="fill" style="width: 100.0%"></span></span><span class="value">19.3M</span></div>
+            <div class="chart-row us"><span class="name">find()</span><span class="track"><span class="fill" style="width: 97.1%"></span></span><span class="value">18.7M</span></div>
+            <div class="chart-row"><span class="name">find-my-way</span><span class="track"><span class="fill" style="width: 90.3%"></span></span><span class="value">17.4M</span></div>
+          </div>
+        </div>
+        <p>
+          The badge is <code>match()</code> against find-my-way. Static paths are found with one lookup in a map; a tree
+          walked often is compiled into one function, with comparisons of character codes for its static parts and slices
+          for its parameters, and no call per node. The root is answered before any work on the URL.
+        </p>
+        <details class="raw">
+          <summary>All numbers (bench/results/router-2.md)</summary>
+          <pre><code>| Case | find-my-way find ops/s | xufa find ops/s | xufa match ops/s | find vs fmw | match vs fmw |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| static / | 52.11M | 108.12M | 57.84M | 2.07x | 1.11x |
+| static deep | 6.66M | 14.40M | 15.76M | 2.16x | 2.36x |
+| one param | 7.85M | 10.84M | 10.64M | 1.38x | 1.36x |
+| two params | 4.47M | 7.15M | 7.48M | 1.60x | 1.67x |
+| wildcard | 7.10M | 9.74M | 9.74M | 1.37x | 1.37x |
+| multi param | 5.89M | 6.39M | 6.75M | 1.09x | 1.15x |
+| regex param | 8.01M | 9.19M | 10.03M | 1.15x | 1.25x |
+| with query | 2.36M | 2.49M | 6.50M | 1.06x | 2.76x |
+| encoded param | 1.84M | 1.95M | 1.93M | 1.06x | 1.05x |
+| not found | 17.39M | 18.71M | 19.26M | 1.08x | 1.11x |</code></pre>
+        </details>
+
+        <h2 id="logger">Logger</h2>
+        <p>
+          <code>@xufa/logger</code> against pino 10.3, both writing JSON lines to a stream that drops them, so only the
+          cost of the loggers is measured, in lines a second (more is better). Each logger and case runs in a process of
+          its own; best of 5 rounds.
+        </p>
+        <div class="pairs">
+          <div class="pair win">
+            <div class="head"><span>message</span><span class="times">2.39&times;</span></div>
+            <div class="chart-row us"><span class="name">@xufa/logger</span><span class="track"><span class="fill" style="width: 100.0%"></span></span><span class="value">7.8M</span></div>
+            <div class="chart-row"><span class="name">pino</span><span class="track"><span class="fill" style="width: 41.8%"></span></span><span class="value">3.3M</span></div>
+          </div>
+          <div class="pair even">
+            <div class="head"><span>message, child</span><span class="times">1.00&times;</span></div>
+            <div class="chart-row us"><span class="name">@xufa/logger</span><span class="track"><span class="fill" style="width: 99.8%"></span></span><span class="value">8.0M</span></div>
+            <div class="chart-row"><span class="name">pino</span><span class="track"><span class="fill" style="width: 100.0%"></span></span><span class="value">8.0M</span></div>
+          </div>
+          <div class="pair win">
+            <div class="head"><span>object + message</span><span class="times">1.62&times;</span></div>
+            <div class="chart-row us"><span class="name">@xufa/logger</span><span class="track"><span class="fill" style="width: 100.0%"></span></span><span class="value">2.9M</span></div>
+            <div class="chart-row"><span class="name">pino</span><span class="track"><span class="fill" style="width: 61.8%"></span></span><span class="value">1.8M</span></div>
+          </div>
+          <div class="pair win">
+            <div class="head"><span>printf</span><span class="times">1.55&times;</span></div>
+            <div class="chart-row us"><span class="name">@xufa/logger</span><span class="track"><span class="fill" style="width: 100.0%"></span></span><span class="value">3.0M</span></div>
+            <div class="chart-row"><span class="name">pino</span><span class="track"><span class="fill" style="width: 64.4%"></span></span><span class="value">1.9M</span></div>
+          </div>
+          <div class="pair win">
+            <div class="head"><span>deep object</span><span class="times">1.40&times;</span></div>
+            <div class="chart-row us"><span class="name">@xufa/logger</span><span class="track"><span class="fill" style="width: 100.0%"></span></span><span class="value">1.5M</span></div>
+            <div class="chart-row"><span class="name">pino</span><span class="track"><span class="fill" style="width: 71.6%"></span></span><span class="value">1.1M</span></div>
+          </div>
+          <div class="pair win">
+            <div class="head"><span>error</span><span class="times">1.08&times;</span></div>
+            <div class="chart-row us"><span class="name">@xufa/logger</span><span class="track"><span class="fill" style="width: 100.0%"></span></span><span class="value">445k</span></div>
+            <div class="chart-row"><span class="name">pino</span><span class="track"><span class="fill" style="width: 92.5%"></span></span><span class="value">412k</span></div>
+          </div>
+          <div class="pair win">
+            <div class="head"><span>a child made, and a message</span><span class="times">1.05&times;</span></div>
+            <div class="chart-row us"><span class="name">@xufa/logger</span><span class="track"><span class="fill" style="width: 100.0%"></span></span><span class="value">3.8M</span></div>
+            <div class="chart-row"><span class="name">pino</span><span class="track"><span class="fill" style="width: 95.6%"></span></span><span class="value">3.6M</span></div>
+          </div>
+          <div class="pair win">
+            <div class="head"><span>a call at a disabled level</span><span class="times">8.84&times;</span></div>
+            <div class="chart-row us"><span class="name">@xufa/logger</span><span class="track"><span class="fill" style="width: 100.0%"></span></span><span class="value">2326M</span></div>
+            <div class="chart-row"><span class="name">pino</span><span class="track"><span class="fill" style="width: 11.3%"></span></span><span class="value">263M</span></div>
+          </div>
+          <div class="pair even">
+            <div class="head"><span>a call at a disabled level, child</span><span class="times">1.01&times;</span></div>
+            <div class="chart-row us"><span class="name">@xufa/logger</span><span class="track"><span class="fill" style="width: 100.0%"></span></span><span class="value">2351M</span></div>
+            <div class="chart-row"><span class="name">pino</span><span class="track"><span class="fill" style="width: 99.0%"></span></span><span class="value">2328M</span></div>
+          </div>
+        </div>
+        <p>
+          The rows of a child logger are what a server sees, its <code>request.log</code> being a child. There, a line
+          costs about the same in both (1.00&times;), and so does a call at a disabled level, which
+          V8 makes into nothing in both. pino's root logger is slower than its children (it has many properties of its
+          own, and V8 keeps them as a dictionary): that is most of the difference on the rows of a root logger.
+          A child is made at 1.05&times; pino: as in pino, its parent is its prototype, so it copies
+          nothing but its bindings, written once when it is made; a logger set at a level has a prototype shared with
+          every logger at that level, with the functions of the level. A line
+          adds its level, made once for each level, and its time, made once a millisecond: <code>Date.now()</code> alone
+          is close to half of the cost of a line on this machine.
+        </p>
+        <details class="raw">
+          <summary>All numbers (bench/results/logger-2.md)</summary>
+          <pre><code>| Case | pino ops/s | @xufa/logger ops/s | xufa / pino |
+| --- | ---: | ---: | ---: |
+| message | 3,255,817 | 7,782,840 | 2.39x |
+| message, child | 8,037,961 | 8,019,186 | 1.00x |
+| object + message | 1,781,519 | 2,880,909 | 1.62x |
+| printf | 1,927,450 | 2,992,759 | 1.55x |
+| deep object | 1,108,763 | 1,548,118 | 1.40x |
+| error | 411,804 | 445,349 | 1.08x |
+| child + message | 3,601,977 | 3,767,226 | 1.05x |
+| disabled level | 263,259,255 | 2,326,039,062 | 8.84x |
+| disabled level, child | 2,328,412,010 | 2,350,757,686 | 1.01x |</code></pre>
+        </details>
+
+        <h2 id="serializer">Serializer</h2>
+        <p>
+          <code>@xufa/serializer</code> against fast-json-stringify 7.0.1, which fastify uses, and
+          <code>JSON.stringify</code>, in objects serialized a second with their JSON schema (more is better). Each serializer
+          and case runs in a process of its own; best of 3 rounds.
+        </p>
+        <p class="legend"><span class="us">xufa: @xufa/serializer</span><span>fjs: fast-json-stringify; JSON: JSON.stringify</span></p>
+        <div class="pairs">
+          <div class="pair even">
+            <div class="head"><span>hello world</span><span class="times">0.97&times;</span></div>
+            <div class="chart-row us"><span class="name">xufa</span><span class="track"><span class="fill" style="width: 96.9%"></span></span><span class="value">10.5M</span></div>
+            <div class="chart-row"><span class="name">fjs</span><span class="track"><span class="fill" style="width: 100.0%"></span></span><span class="value">10.9M</span></div>
+            <div class="chart-row"><span class="name">JSON</span><span class="track"><span class="fill" style="width: 74.3%"></span></span><span class="value">8.1M</span></div>
+          </div>
+          <div class="pair win">
+            <div class="head"><span>object, 6 props</span><span class="times">1.69&times;</span></div>
+            <div class="chart-row us"><span class="name">xufa</span><span class="track"><span class="fill" style="width: 100.0%"></span></span><span class="value">2.5M</span></div>
+            <div class="chart-row"><span class="name">fjs</span><span class="track"><span class="fill" style="width: 59.1%"></span></span><span class="value">1.5M</span></div>
+            <div class="chart-row"><span class="name">JSON</span><span class="track"><span class="fill" style="width: 63.4%"></span></span><span class="value">1.6M</span></div>
+          </div>
+          <div class="pair win">
+            <div class="head"><span>array of 100 objects</span><span class="times">2.39&times;</span></div>
+            <div class="chart-row us"><span class="name">xufa</span><span class="track"><span class="fill" style="width: 100.0%"></span></span><span class="value">24k</span></div>
+            <div class="chart-row"><span class="name">fjs</span><span class="track"><span class="fill" style="width: 42.1%"></span></span><span class="value">10k</span></div>
+            <div class="chart-row"><span class="name">JSON</span><span class="track"><span class="fill" style="width: 83.1%"></span></span><span class="value">20k</span></div>
+          </div>
+          <div class="pair even">
+            <div class="head"><span>required + nullable + date</span><span class="times">1.02&times;</span></div>
+            <div class="chart-row us"><span class="name">xufa</span><span class="track"><span class="fill" style="width: 100.0%"></span></span><span class="value">1.1M</span></div>
+            <div class="chart-row"><span class="name">fjs</span><span class="track"><span class="fill" style="width: 98.1%"></span></span><span class="value">1.0M</span></div>
+            <div class="chart-row"><span class="name">JSON</span><span class="track"><span class="fill" style="width: 58.8%"></span></span><span class="value">618k</span></div>
+          </div>
+          <div class="pair even">
+            <div class="head"><span>long string with escapes</span><span class="times">0.99&times;</span></div>
+            <div class="chart-row us"><span class="name">xufa</span><span class="track"><span class="fill" style="width: 91.2%"></span></span><span class="value">208k</span></div>
+            <div class="chart-row"><span class="name">fjs</span><span class="track"><span class="fill" style="width: 92.2%"></span></span><span class="value">211k</span></div>
+            <div class="chart-row"><span class="name">JSON</span><span class="track"><span class="fill" style="width: 100.0%"></span></span><span class="value">228k</span></div>
+          </div>
+          <div class="pair win">
+            <div class="head"><span>anyOf</span><span class="times">2.22&times;</span></div>
+            <div class="chart-row us"><span class="name">xufa</span><span class="track"><span class="fill" style="width: 100.0%"></span></span><span class="value">9.7M</span></div>
+            <div class="chart-row"><span class="name">fjs</span><span class="track"><span class="fill" style="width: 45.1%"></span></span><span class="value">4.3M</span></div>
+            <div class="chart-row"><span class="name">JSON</span><span class="track"><span class="fill" style="width: 44.0%"></span></span><span class="value">4.3M</span></div>
+          </div>
+          <div class="pair win">
+            <div class="head"><span>recursive $ref tree</span><span class="times">1.27&times;</span></div>
+            <div class="chart-row us"><span class="name">xufa</span><span class="track"><span class="fill" style="width: 100.0%"></span></span><span class="value">3.6M</span></div>
+            <div class="chart-row"><span class="name">fjs</span><span class="track"><span class="fill" style="width: 78.7%"></span></span><span class="value">2.9M</span></div>
+            <div class="chart-row"><span class="name">JSON</span><span class="track"><span class="fill" style="width: 68.0%"></span></span><span class="value">2.5M</span></div>
+          </div>
+        </div>
+        <p>
+          The badge is against fast-json-stringify. Three cases are even with it: hello world (0.97&times;), a long string
+          full of characters to escape (0.99&times;, and a little behind <code>JSON.stringify</code>, whose escaping is
+          native) and required + nullable + date (1.02&times;). The others are from 1.27&times; to 2.39&times;, and ahead of
+          <code>JSON.stringify</code> too.
+        </p>
+        <details class="raw">
+          <summary>All numbers (bench/results/serializer-1.md)</summary>
+          <pre><code>| Case | JSON.stringify ops/s | fast-json-stringify ops/s | @xufa/serializer ops/s | xufa vs fjs | xufa vs JSON.stringify |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| hello world | 8.08M | 10.87M | 10.53M | 0.97x | 1.30x |
+| object, 6 props | 1.61M | 1.50M | 2.54M | 1.69x | 1.58x |
+| array of 100 objects | 20.1K | 10.2K | 24.2K | 2.39x | 1.21x |
+| required + nullable + date | 617.6K | 1.03M | 1.05M | 1.02x | 1.69x |
+| long string with escapes | 228.3K | 210.6K | 208.2K | 0.99x | 0.91x |
+| anyOf | 4.25M | 4.35M | 9.65M | 2.22x | 2.27x |
+| recursive $ref tree | 2.46M | 2.85M | 3.62M | 1.27x | 1.47x |</code></pre>
+        </details>
+
+        <h2 id="jwt">JWT</h2>
+        <p>
+          <code>@xufa/jwt</code> against jsonwebtoken 9.0.3, in tokens signed, verified or decoded a second (more is better),
+          with the same claims and options (<code>expiresIn</code>, <code>issuer</code>, <code>audience</code>) and the same
+          keys, given as PEM text as most applications give them. Each library and case runs in a process of its own; best
+          of 5 rounds.
+        </p>
+        <div class="pairs">
+          <div class="pair win">
+            <div class="head"><span>HS256 sign</span><span class="times">4.53&times;</span></div>
+            <div class="chart-row us"><span class="name">@xufa/jwt</span><span class="track"><span class="fill" style="width: 100.0%"></span></span><span class="value">164k</span></div>
+            <div class="chart-row"><span class="name">jsonwebtoken</span><span class="track"><span class="fill" style="width: 22.1%"></span></span><span class="value">36k</span></div>
+          </div>
+          <div class="pair win">
+            <div class="head"><span>HS256 verify</span><span class="times">4.98&times;</span></div>
+            <div class="chart-row us"><span class="name">@xufa/jwt</span><span class="track"><span class="fill" style="width: 100.0%"></span></span><span class="value">148k</span></div>
+            <div class="chart-row"><span class="name">jsonwebtoken</span><span class="track"><span class="fill" style="width: 20.1%"></span></span><span class="value">30k</span></div>
+          </div>
+          <div class="pair win">
+            <div class="head"><span>HS256 decode</span><span class="times">1.39&times;</span></div>
+            <div class="chart-row us"><span class="name">@xufa/jwt</span><span class="track"><span class="fill" style="width: 100.0%"></span></span><span class="value">398k</span></div>
+            <div class="chart-row"><span class="name">jsonwebtoken</span><span class="track"><span class="fill" style="width: 71.9%"></span></span><span class="value">286k</span></div>
+          </div>
+          <div class="pair win">
+            <div class="head"><span>RS256 sign</span><span class="times">1.72&times;</span></div>
+            <div class="chart-row us"><span class="name">@xufa/jwt</span><span class="track"><span class="fill" style="width: 100.0%"></span></span><span class="value">1.8k</span></div>
+            <div class="chart-row"><span class="name">jsonwebtoken</span><span class="track"><span class="fill" style="width: 58.3%"></span></span><span class="value">1.0k</span></div>
+          </div>
+          <div class="pair win">
+            <div class="head"><span>RS256 verify</span><span class="times">2.06&times;</span></div>
+            <div class="chart-row us"><span class="name">@xufa/jwt</span><span class="track"><span class="fill" style="width: 100.0%"></span></span><span class="value">36k</span></div>
+            <div class="chart-row"><span class="name">jsonwebtoken</span><span class="track"><span class="fill" style="width: 48.6%"></span></span><span class="value">17k</span></div>
+          </div>
+          <div class="pair even">
+            <div class="head"><span>RS256 verify, KeyObject</span><span class="times">1.02&times;</span></div>
+            <div class="chart-row us"><span class="name">@xufa/jwt</span><span class="track"><span class="fill" style="width: 100.0%"></span></span><span class="value">36k</span></div>
+            <div class="chart-row"><span class="name">jsonwebtoken</span><span class="track"><span class="fill" style="width: 98.0%"></span></span><span class="value">36k</span></div>
+          </div>
+          <div class="pair win">
+            <div class="head"><span>ES256 sign</span><span class="times">2.92&times;</span></div>
+            <div class="chart-row us"><span class="name">@xufa/jwt</span><span class="track"><span class="fill" style="width: 100.0%"></span></span><span class="value">32k</span></div>
+            <div class="chart-row"><span class="name">jsonwebtoken</span><span class="track"><span class="fill" style="width: 34.2%"></span></span><span class="value">11k</span></div>
+          </div>
+          <div class="pair win">
+            <div class="head"><span>ES256 verify</span><span class="times">1.59&times;</span></div>
+            <div class="chart-row us"><span class="name">@xufa/jwt</span><span class="track"><span class="fill" style="width: 100.0%"></span></span><span class="value">13k</span></div>
+            <div class="chart-row"><span class="name">jsonwebtoken</span><span class="track"><span class="fill" style="width: 63.1%"></span></span><span class="value">8.5k</span></div>
+          </div>
+          <div class="pair">
+            <div class="head"><span>EdDSA sign</span></div>
+            <div class="chart-row us"><span class="name">@xufa/jwt</span><span class="track"><span class="fill" style="width: 100.0%"></span></span><span class="value">25k</span></div>
+            <div class="chart-row"><span class="name">jsonwebtoken</span><span class="track"><span class="fill" style="width: 0.5%"></span></span><span class="value">no EdDSA</span></div>
+          </div>
+          <div class="pair">
+            <div class="head"><span>EdDSA verify</span></div>
+            <div class="chart-row us"><span class="name">@xufa/jwt</span><span class="track"><span class="fill" style="width: 100.0%"></span></span><span class="value">10k</span></div>
+            <div class="chart-row"><span class="name">jsonwebtoken</span><span class="track"><span class="fill" style="width: 0.5%"></span></span><span class="value">no EdDSA</span></div>
+          </div>
+        </div>
+        <p>
+          The signatures are the same work, done by <code>node:crypto</code>; the difference is the key. jsonwebtoken tries
+          a secret as a PEM key first, which throws (two thirds of the time of HS256), and parses a PEM key again on each
+          call; @xufa/jwt does not try what has no <code>-----BEGIN</code>, and keeps the KeyObject of each key given as a
+          string. Given a KeyObject, nothing is parsed by either, and they are even. Decoding, which verifying does first,
+          parses the header once and splits the token once (jws does each two and three times). On Linux
+          (<code>bench/results/jwt-linux-2.md</code>), where a key that fails to parse costs less, the gains are a little
+          smaller: 3.78&times; and 4.12&times; for HS256, 1.63&times; and 1.71&times; for RS256, 2.60&times; and 1.45&times;
+          for ES256, 1.34&times; for decoding.
+        </p>
+        <details class="raw">
+          <summary>All numbers (bench/results/jwt-2.md)</summary>
+          <pre><code>| Case | jsonwebtoken ops/s | @xufa/jwt ops/s | xufa / jsonwebtoken |
+| --- | ---: | ---: | ---: |
+| HS256 sign | 36,108 | 163,734 | 4.53x |
+| HS256 verify | 29,784 | 148,351 | 4.98x |
+| HS256 decode | 286,184 | 398,189 | 1.39x |
+| RS256 sign | 1,029 | 1,766 | 1.72x |
+| RS256 verify | 17,478 | 35,945 | 2.06x |
+| RS256 verify, KeyObject | 35,549 | 36,278 | 1.02x |
+| ES256 sign | 10,911 | 31,912 | 2.92x |
+| ES256 verify | 8,478 | 13,442 | 1.59x |
+| EdDSA sign | n/a | 25,127 | n/a |
+| EdDSA verify | n/a | 10,123 | n/a |</code></pre>
+        </details>
+        <details class="raw">
+          <summary>All numbers (bench/results/jwt-linux-2.md)</summary>
+          <pre><code>| Case | jsonwebtoken ops/s | @xufa/jwt ops/s | xufa / jsonwebtoken |
+| --- | ---: | ---: | ---: |
+| HS256 sign | 50,333 | 190,018 | 3.78x |
+| HS256 verify | 42,095 | 173,407 | 4.12x |
+| HS256 decode | 329,705 | 440,447 | 1.34x |
+| RS256 sign | 1,095 | 1,788 | 1.63x |
+| RS256 verify | 22,211 | 38,025 | 1.71x |
+| RS256 verify, KeyObject | 36,709 | 37,537 | 1.02x |
+| ES256 sign | 13,049 | 33,934 | 2.60x |
+| ES256 verify | 9,028 | 13,077 | 1.45x |
+| EdDSA sign | n/a | 27,347 | n/a |
+| EdDSA verify | n/a | 10,098 | n/a |</code></pre>
+        </details>
+
+        <h2 id="websocket">WebSocket</h2>
+        <p>
+          <code>@xufa/websocket</code> against ws 8.22.0, in messages echoed a second over the loopback (more is better): a
+          client sends to a server that sends each message back, 64 in flight, both ends of the library measured. Both use
+          bufferutil 4.1.0, the native masking, when the application has installed it, so each is measured without it, as
+          they install, and with it. Every echo of the warm-up is checked against what was sent. Each library and case runs
+          in a process of its own; best of 5 rounds.
+        </p>
+        <h3>Without bufferutil</h3>
+        <div class="pairs">
+          <div class="pair even">
+            <div class="head"><span>text, 64 B</span><span class="times">1.01&times;</span></div>
+            <div class="chart-row us"><span class="name">@xufa/websocket</span><span class="track"><span class="fill" style="width: 100.0%"></span></span><span class="value">47k</span></div>
+            <div class="chart-row"><span class="name">ws</span><span class="track"><span class="fill" style="width: 98.6%"></span></span><span class="value">46k</span></div>
+          </div>
+          <div class="pair win">
+            <div class="head"><span>text, 16 KB</span><span class="times">2.27&times;</span></div>
+            <div class="chart-row us"><span class="name">@xufa/websocket</span><span class="track"><span class="fill" style="width: 100.0%"></span></span><span class="value">33k</span></div>
+            <div class="chart-row"><span class="name">ws</span><span class="track"><span class="fill" style="width: 44.0%"></span></span><span class="value">15k</span></div>
+          </div>
+          <div class="pair win">
+            <div class="head"><span>binary, 16 KB</span><span class="times">2.55&times;</span></div>
+            <div class="chart-row us"><span class="name">@xufa/websocket</span><span class="track"><span class="fill" style="width: 100.0%"></span></span><span class="value">37k</span></div>
+            <div class="chart-row"><span class="name">ws</span><span class="track"><span class="fill" style="width: 39.1%"></span></span><span class="value">15k</span></div>
+          </div>
+          <div class="pair win">
+            <div class="head"><span>binary, 1 MB</span><span class="times">2.15&times;</span></div>
+            <div class="chart-row us"><span class="name">@xufa/websocket</span><span class="track"><span class="fill" style="width: 100.0%"></span></span><span class="value">499</span></div>
+            <div class="chart-row"><span class="name">ws</span><span class="track"><span class="fill" style="width: 46.7%"></span></span><span class="value">233</span></div>
+          </div>
+          <div class="pair even">
+            <div class="head"><span>text, 16 KB, deflate</span><span class="times">1.00&times;</span></div>
+            <div class="chart-row us"><span class="name">@xufa/websocket</span><span class="track"><span class="fill" style="width: 100.0%"></span></span><span class="value">7.7k</span></div>
+            <div class="chart-row"><span class="name">ws</span><span class="track"><span class="fill" style="width: 99.5%"></span></span><span class="value">7.6k</span></div>
+          </div>
+          <div class="pair win">
+            <div class="head"><span>binary, 1 MB in 16 fragments</span><span class="times">2.05&times;</span></div>
+            <div class="chart-row us"><span class="name">@xufa/websocket</span><span class="track"><span class="fill" style="width: 100.0%"></span></span><span class="value">456</span></div>
+            <div class="chart-row"><span class="name">ws</span><span class="track"><span class="fill" style="width: 48.9%"></span></span><span class="value">223</span></div>
+          </div>
+          <div class="pair win">
+            <div class="head"><span>binary, 256 KB, deflate</span><span class="times">1.05&times;</span></div>
+            <div class="chart-row us"><span class="name">@xufa/websocket</span><span class="track"><span class="fill" style="width: 100.0%"></span></span><span class="value">149</span></div>
+            <div class="chart-row"><span class="name">ws</span><span class="track"><span class="fill" style="width: 95.3%"></span></span><span class="value">142</span></div>
+          </div>
+        </div>
+        <h3>With bufferutil</h3>
+        <div class="pairs">
+          <div class="pair even">
+            <div class="head"><span>text, 64 B</span><span class="times">1.02&times;</span></div>
+            <div class="chart-row us"><span class="name">@xufa/websocket</span><span class="track"><span class="fill" style="width: 100.0%"></span></span><span class="value">46k</span></div>
+            <div class="chart-row"><span class="name">ws</span><span class="track"><span class="fill" style="width: 98.4%"></span></span><span class="value">46k</span></div>
+          </div>
+          <div class="pair win">
+            <div class="head"><span>text, 16 KB</span><span class="times">1.33&times;</span></div>
+            <div class="chart-row us"><span class="name">@xufa/websocket</span><span class="track"><span class="fill" style="width: 100.0%"></span></span><span class="value">36k</span></div>
+            <div class="chart-row"><span class="name">ws</span><span class="track"><span class="fill" style="width: 75.4%"></span></span><span class="value">27k</span></div>
+          </div>
+          <div class="pair win">
+            <div class="head"><span>binary, 16 KB</span><span class="times">1.36&times;</span></div>
+            <div class="chart-row us"><span class="name">@xufa/websocket</span><span class="track"><span class="fill" style="width: 100.0%"></span></span><span class="value">39k</span></div>
+            <div class="chart-row"><span class="name">ws</span><span class="track"><span class="fill" style="width: 73.5%"></span></span><span class="value">29k</span></div>
+          </div>
+          <div class="pair even">
+            <div class="head"><span>binary, 1 MB</span><span class="times">1.01&times;</span></div>
+            <div class="chart-row us"><span class="name">@xufa/websocket</span><span class="track"><span class="fill" style="width: 100.0%"></span></span><span class="value">535</span></div>
+            <div class="chart-row"><span class="name">ws</span><span class="track"><span class="fill" style="width: 98.5%"></span></span><span class="value">527</span></div>
+          </div>
+          <div class="pair even">
+            <div class="head"><span>text, 16 KB, deflate</span><span class="times">1.00&times;</span></div>
+            <div class="chart-row us"><span class="name">@xufa/websocket</span><span class="track"><span class="fill" style="width: 100.0%"></span></span><span class="value">7.7k</span></div>
+            <div class="chart-row"><span class="name">ws</span><span class="track"><span class="fill" style="width: 99.7%"></span></span><span class="value">7.7k</span></div>
+          </div>
+          <div class="pair even">
+            <div class="head"><span>binary, 1 MB in 16 fragments</span><span class="times">1.04&times;</span></div>
+            <div class="chart-row us"><span class="name">@xufa/websocket</span><span class="track"><span class="fill" style="width: 100.0%"></span></span><span class="value">500</span></div>
+            <div class="chart-row"><span class="name">ws</span><span class="track"><span class="fill" style="width: 96.4%"></span></span><span class="value">482</span></div>
+          </div>
+          <div class="pair even">
+            <div class="head"><span>binary, 256 KB, deflate</span><span class="times">0.99&times;</span></div>
+            <div class="chart-row us"><span class="name">@xufa/websocket</span><span class="track"><span class="fill" style="width: 98.7%"></span></span><span class="value">149</span></div>
+            <div class="chart-row"><span class="name">ws</span><span class="track"><span class="fill" style="width: 100.0%"></span></span><span class="value">151</span></div>
+          </div>
+        </div>
+        <p>
+          Two differences, both in what a client sends, whose frames are masked. Without bufferutil, ws masks byte by byte in
+          JavaScript, and @xufa/websocket from 384 bytes copies natively and masks 8 bytes at a time: about as fast as ws
+          with bufferutil, with no native module to build
+          (0.95&times; to 1.30&times; of it).
+          And a masked frame is a copy of the message, which ws writes into a buffer allocated for it; @xufa/websocket uses
+          the buffers of the frames already written again, as copying into new memory costs from 6 to 22 times more (on
+          Linux, from 2 to 18). That is the gain of 16 KB with bufferutil too; at 1 MB the copy is a smaller part of the
+          time. Small messages are not masked enough to tell, and with deflate zlib takes the time. Received, a message over
+          several chunks of the socket is copied into a buffer of its own by both, as it is the application's.
+        </p>
+        <details class="raw">
+          <summary>All numbers (bench/results/websocket-4.md)</summary>
+          <pre><code>| Case | xufa (JS) msg/s | xufa + bufferutil msg/s | ws (JS) msg/s | ws + bufferutil msg/s | JS: xufa / ws | bufferutil: xufa / ws |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| text 64 B | 46,590 | 46,483 | 45,957 | 45,760 | 1.01x | 1.02x |
+| text 16 KB | 33,428 | 36,256 | 14,713 | 27,330 | 2.27x | 1.33x |
+| binary 16 KB | 37,439 | 39,177 | 14,655 | 28,787 | 2.55x | 1.36x |
+| binary 1 MB | 499 | 535 | 233 | 527 | 2.15x | 1.01x |
+| text 16 KB, deflate | 7,659 | 7,687 | 7,624 | 7,661 | 1.00x | 1.00x |
+| binary 1 MB, fragments | 456 | 500 | 223 | 482 | 2.05x | 1.04x |
+| binary 256 KB, deflate | 149 | 149 | 142 | 151 | 1.05x | 0.99x |</code></pre>
+        </details>
+
+        <h2 id="expressions">Expressions</h2>
+        <p>
+          <code>@xufa/expression</code> against the evaluators of expressions that run without access to the process
+          (jexl 2.3, expr-eval 2.0, filtrex 3.1, SandboxJS 0.9) and against <code>new Function</code>, which is JavaScript
+          compiled by V8 and no sandbox: the bound. Runs a second of each expression compiled once (more is better), on
+          four contexts of different values in turn, so that V8 does not fold the expression on values that do not change.
+          Expressions start as closures, and those run often become one function of JavaScript, whose arrow functions are
+          arrow functions of JavaScript; what must be checked (names, members, calls, keys) is checked there as in the
+          closures, and nothing of the source is code in it.
+        </p>
+        <p class="legend"><span class="us">@xufa/expression</span><span>other sandboxes</span></p>
+        <div class="charts">
+          <div class="chart">
+            <h3><code>a + b * 2</code></h3>
+            <p class="subtitle">Runs a second. JavaScript itself (new Function, no sandbox): 379M.</p>
+            <div class="chart-row us win"><span class="name">@xufa/expression</span><span class="track"><span class="fill" style="width: 100.0%"></span></span><span class="value">131M</span></div>
+            <div class="chart-row"><span class="name">jexl</span><span class="track"><span class="fill" style="width: 0.8%"></span></span><span class="value">1.0M</span></div>
+            <div class="chart-row"><span class="name">expr-eval</span><span class="track"><span class="fill" style="width: 4.4%"></span></span><span class="value">5.8M</span></div>
+            <div class="chart-row"><span class="name">filtrex</span><span class="track"><span class="fill" style="width: 14.2%"></span></span><span class="value">18.6M</span></div>
+            <div class="chart-row"><span class="name">SandboxJS</span><span class="track"><span class="fill" style="width: 0.5%"></span></span><span class="value">307k</span></div>
+          </div>
+          <div class="chart">
+            <h3><code>user.address.city</code></h3>
+            <p class="subtitle">Runs a second. JavaScript itself (new Function, no sandbox): 394M.</p>
+            <div class="chart-row us win"><span class="name">@xufa/expression</span><span class="track"><span class="fill" style="width: 100.0%"></span></span><span class="value">130M</span></div>
+            <div class="chart-row"><span class="name">jexl</span><span class="track"><span class="fill" style="width: 1.9%"></span></span><span class="value">2.5M</span></div>
+            <div class="chart-row"><span class="name">expr-eval</span><span class="track"><span class="fill" style="width: 12.9%"></span></span><span class="value">16.8M</span></div>
+            <div class="chart-row"><span class="name">filtrex</span><span class="track"><span class="fill" style="width: 11.9%"></span></span><span class="value">15.5M</span></div>
+            <div class="chart-row"><span class="name">SandboxJS</span><span class="track"><span class="fill" style="width: 0.5%"></span></span><span class="value">347k</span></div>
+          </div>
+          <div class="chart">
+            <h3><code>a &gt; 2 &amp;&amp; b == 4 ? 'big' : 'small'</code></h3>
+            <p class="subtitle">Runs a second. JavaScript itself (new Function, no sandbox): 385M.</p>
+            <div class="chart-row us win"><span class="name">@xufa/expression</span><span class="track"><span class="fill" style="width: 100.0%"></span></span><span class="value">124M</span></div>
+            <div class="chart-row"><span class="name">jexl</span><span class="track"><span class="fill" style="width: 0.5%"></span></span><span class="value">651k</span></div>
+            <div class="chart-row"><span class="name">expr-eval</span><span class="track"><span class="fill" style="width: 1.8%"></span></span><span class="value">2.2M</span></div>
+            <div class="chart-row"><span class="name">filtrex</span><span class="track"><span class="fill" style="width: 11.7%"></span></span><span class="value">14.4M</span></div>
+            <div class="chart-row"><span class="name">SandboxJS</span><span class="track"><span class="fill" style="width: 0.5%"></span></span><span class="value">253k</span></div>
+          </div>
+          <div class="chart">
+            <h3><code>user.name.toUpperCase()</code></h3>
+            <p class="subtitle">Runs a second. JavaScript itself (new Function, no sandbox): 26.7M. jexl, expr-eval and filtrex cannot write it.</p>
+            <div class="chart-row us win"><span class="name">@xufa/expression</span><span class="track"><span class="fill" style="width: 100.0%"></span></span><span class="value">24.8M</span></div>
+            <div class="chart-row"><span class="name">SandboxJS</span><span class="track"><span class="fill" style="width: 1.0%"></span></span><span class="value">252k</span></div>
+          </div>
+          <div class="chart">
+            <h3><code>items.map(i =&gt; i.price * i.quantity).reduce(...)</code></h3>
+            <p class="subtitle">Runs a second. JavaScript itself (new Function, no sandbox): 46.9M. jexl, expr-eval and filtrex cannot write it.</p>
+            <div class="chart-row us win"><span class="name">@xufa/expression</span><span class="track"><span class="fill" style="width: 100.0%"></span></span><span class="value">32.9M</span></div>
+            <div class="chart-row"><span class="name">SandboxJS</span><span class="track"><span class="fill" style="width: 0.5%"></span></span><span class="value">46k</span></div>
+          </div>
+          <div class="chart">
+            <h3><code>`${user.name} lives in ${user.address.city}`</code></h3>
+            <p class="subtitle">Runs a second. JavaScript itself (new Function, no sandbox): 58.0M. jexl, expr-eval and filtrex cannot write it.</p>
+            <div class="chart-row us win"><span class="name">@xufa/expression</span><span class="track"><span class="fill" style="width: 100.0%"></span></span><span class="value">43.2M</span></div>
+            <div class="chart-row"><span class="name">SandboxJS</span><span class="track"><span class="fill" style="width: 0.5%"></span></span><span class="value">192k</span></div>
+          </div>
+        </div>
+        <p>
+          Method calls run at 93% of the speed of JavaScript, <code>map</code> and <code>reduce</code> with arrow functions
+          at 70%; for the smallest expressions, a third, where the call of the function is most of the cost. Compiled and
+          run each time (one-off expressions), it is ahead of the other sandboxes too:
+        </p>
+        <div class="charts">
+          <div class="chart">
+            <h3><code>a + b * 2</code>, compiled each time</h3>
+            <p class="subtitle">Runs a second. JavaScript itself: 1.6M.</p>
+            <div class="chart-row us win"><span class="name">@xufa/expression</span><span class="track"><span class="fill" style="width: 100.0%"></span></span><span class="value">725k</span></div>
+            <div class="chart-row"><span class="name">jexl</span><span class="track"><span class="fill" style="width: 9.4%"></span></span><span class="value">68k</span></div>
+            <div class="chart-row"><span class="name">expr-eval</span><span class="track"><span class="fill" style="width: 88.9%"></span></span><span class="value">644k</span></div>
+            <div class="chart-row"><span class="name">filtrex</span><span class="track"><span class="fill" style="width: 14.1%"></span></span><span class="value">102k</span></div>
+            <div class="chart-row"><span class="name">SandboxJS</span><span class="track"><span class="fill" style="width: 0.5%"></span></span><span class="value">3.6k</span></div>
+          </div>
+          <div class="chart">
+            <h3><code>user.address.city</code>, compiled each time</h3>
+            <p class="subtitle">Runs a second. JavaScript itself: 1.5M.</p>
+            <div class="chart-row us win"><span class="name">@xufa/expression</span><span class="track"><span class="fill" style="width: 100.0%"></span></span><span class="value">603k</span></div>
+            <div class="chart-row"><span class="name">jexl</span><span class="track"><span class="fill" style="width: 12.9%"></span></span><span class="value">78k</span></div>
+            <div class="chart-row"><span class="name">expr-eval</span><span class="track"><span class="fill" style="width: 37.2%"></span></span><span class="value">224k</span></div>
+            <div class="chart-row"><span class="name">filtrex</span><span class="track"><span class="fill" style="width: 17.4%"></span></span><span class="value">105k</span></div>
+            <div class="chart-row"><span class="name">SandboxJS</span><span class="track"><span class="fill" style="width: 0.6%"></span></span><span class="value">3.5k</span></div>
+          </div>
+          <div class="chart">
+            <h3><code>map and reduce</code>, compiled each time</h3>
+            <p class="subtitle">Runs a second. JavaScript itself: 1.2M.</p>
+            <div class="chart-row us win"><span class="name">@xufa/expression</span><span class="track"><span class="fill" style="width: 100.0%"></span></span><span class="value">140k</span></div>
+            <div class="chart-row"><span class="name">SandboxJS</span><span class="track"><span class="fill" style="width: 1.9%"></span></span><span class="value">2.6k</span></div>
+          </div>
+        </div>
+        <details class="raw">
+          <summary>All numbers (bench/results/expression-4.md)</summary>
+          <pre><code>Compiled once, then run (runs a second):
+
+| Case | xufa | jexl | expr-eval | filtrex | sandboxjs | new Function (no sandbox) |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| arithmetic | 131.10M | 1.04M | 5.75M | 18.58M | 306.9k | 379.19M |
+| member | 130.00M | 2.47M | 16.77M | 15.52M | 347.0k | 394.42M |
+| condition | 123.61M | 650.6k | 2.23M | 14.43M | 252.5k | 385.40M |
+| method call | 24.77M | – | – | – | 251.8k | 26.69M |
+| map and reduce | 32.88M | – | – | – | 45.7k | 46.91M |
+| template literal | 43.23M | – | – | – | 191.7k | 58.05M |
+
+Compiled and run each time (runs a second):
+
+| Case | xufa | jexl | expr-eval | filtrex | sandboxjs | new Function (no sandbox) |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| arithmetic | 725.2k | 68.2k | 644.4k | 102.2k | 3.6k | 1.63M |
+| member | 603.3k | 77.8k | 224.3k | 105.0k | 3.5k | 1.54M |
+| condition | 384.3k | 54.1k | 326.0k | 44.7k | 3.3k | 1.48M |
+| method call | 540.9k | – | – | – | 3.5k | 1.41M |
+| map and reduce | 139.9k | – | – | – | 2.6k | 1.18M |
+| template literal | 341.8k | – | – | – | 3.4k | 1.45M |</code></pre>
+        </details>
+
+        <h2 id="templates">Templates</h2>
+        <p>
+          <code>@xufa/template</code> against Handlebars 4.7, Mustache 4.2 and Nunjucks 3.2, whose expressions are
+          sandboxed as ours, and Eta 4.6 and EJS 7.0, templates of JavaScript that run whatever code they hold. All escape
+          HTML, and each output is checked against ours before it is measured; four contexts of different values in turn.
+          Renders a second (more is better).
+        </p>
+        <p class="legend"><span class="us">@xufa/template</span><span>other sandboxed engines</span><span class="interprets">not a sandbox (runs JavaScript)</span></p>
+        <div class="charts">
+          <div class="chart">
+            <h3>One line, compiled once</h3>
+            <p class="subtitle">Renders a second.</p>
+            <div class="chart-row us win"><span class="name">@xufa/template</span><span class="track"><span class="fill" style="width: 100.0%"></span></span><span class="value">14.1M</span></div>
+            <div class="chart-row"><span class="name">Handlebars</span><span class="track"><span class="fill" style="width: 10.0%"></span></span><span class="value">1.4M</span></div>
+            <div class="chart-row"><span class="name">Mustache</span><span class="track"><span class="fill" style="width: 11.7%"></span></span><span class="value">1.6M</span></div>
+            <div class="chart-row"><span class="name">Nunjucks</span><span class="track"><span class="fill" style="width: 15.3%"></span></span><span class="value">2.1M</span></div>
+            <div class="chart-row interprets"><span class="name">Eta</span><span class="track"><span class="fill" style="width: 82.4%"></span></span><span class="value">11.6M</span></div>
+            <div class="chart-row interprets"><span class="name">EJS</span><span class="track"><span class="fill" style="width: 6.0%"></span></span><span class="value">851k</span></div>
+          </div>
+          <div class="chart">
+            <h3>A list of 20 (each, if), compiled once</h3>
+            <p class="subtitle">Renders a second.</p>
+            <div class="chart-row us win"><span class="name">@xufa/template</span><span class="track"><span class="fill" style="width: 100.0%"></span></span><span class="value">240k</span></div>
+            <div class="chart-row"><span class="name">Handlebars</span><span class="track"><span class="fill" style="width: 28.7%"></span></span><span class="value">69k</span></div>
+            <div class="chart-row"><span class="name">Mustache</span><span class="track"><span class="fill" style="width: 30.7%"></span></span><span class="value">74k</span></div>
+            <div class="chart-row"><span class="name">Nunjucks</span><span class="track"><span class="fill" style="width: 16.8%"></span></span><span class="value">40k</span></div>
+            <div class="chart-row interprets"><span class="name">Eta</span><span class="track"><span class="fill" style="width: 47.5%"></span></span><span class="value">114k</span></div>
+            <div class="chart-row interprets"><span class="name">EJS</span><span class="track"><span class="fill" style="width: 19.2%"></span></span><span class="value">46k</span></div>
+          </div>
+          <div class="chart">
+            <h3>One line, compiled each time</h3>
+            <p class="subtitle">Renders a second.</p>
+            <div class="chart-row us win"><span class="name">@xufa/template</span><span class="track"><span class="fill" style="width: 100.0%"></span></span><span class="value">668k</span></div>
+            <div class="chart-row"><span class="name">Handlebars</span><span class="track"><span class="fill" style="width: 2.8%"></span></span><span class="value">19k</span></div>
+            <div class="chart-row"><span class="name">Mustache</span><span class="track"><span class="fill" style="width: 30.5%"></span></span><span class="value">204k</span></div>
+            <div class="chart-row"><span class="name">Nunjucks</span><span class="track"><span class="fill" style="width: 8.4%"></span></span><span class="value">56k</span></div>
+            <div class="chart-row interprets"><span class="name">Eta</span><span class="track"><span class="fill" style="width: 26.4%"></span></span><span class="value">176k</span></div>
+            <div class="chart-row interprets"><span class="name">EJS</span><span class="track"><span class="fill" style="width: 13.1%"></span></span><span class="value">87k</span></div>
+          </div>
+          <div class="chart">
+            <h3>A list of 20, compiled each time</h3>
+            <p class="subtitle">Renders a second.</p>
+            <div class="chart-row us win"><span class="name">@xufa/template</span><span class="track"><span class="fill" style="width: 100.0%"></span></span><span class="value">98k</span></div>
+            <div class="chart-row"><span class="name">Handlebars</span><span class="track"><span class="fill" style="width: 5.8%"></span></span><span class="value">5.7k</span></div>
+            <div class="chart-row"><span class="name">Mustache</span><span class="track"><span class="fill" style="width: 50.8%"></span></span><span class="value">50k</span></div>
+            <div class="chart-row"><span class="name">Nunjucks</span><span class="track"><span class="fill" style="width: 13.1%"></span></span><span class="value">13k</span></div>
+            <div class="chart-row interprets"><span class="name">Eta</span><span class="track"><span class="fill" style="width: 58.6%"></span></span><span class="value">57k</span></div>
+            <div class="chart-row interprets"><span class="name">EJS</span><span class="track"><span class="fill" style="width: 25.5%"></span></span><span class="value">25k</span></div>
+          </div>
+        </div>
+        <p>
+          Templates start as closures; the parts of a template rendered often become one function of JavaScript, with
+          their paths (<code>{{ user.name }}</code>) read inline, from names the expression engine checked. Templates
+          rendered a few times do not pay for making it.
+        </p>
+        <details class="raw">
+          <summary>All numbers (bench/results/template-5.md)</summary>
+          <pre><code>Compiled once, then rendered (renders a second):
+
+| Case | xufa | handlebars | mustache | nunjucks | eta | ejs |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| one line | 14.07M | 1.41M | 1.65M | 2.15M | 11.59M | 850.5k |
+| list of 20 (each, if) | 239.7k | 68.8k | 73.6k | 40.2k | 113.9k | 46.0k |
+
+Compiled and rendered each time (renders a second):
+
+| Case | xufa | handlebars | mustache | nunjucks | eta | ejs |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: |
+| one line | 667.5k | 18.6k | 203.8k | 56.1k | 176.4k | 87.2k |
+| list of 20 (each, if) | 97.7k | 5.7k | 49.6k | 12.8k | 57.3k | 24.9k |</code></pre>
+        </details>
+
+        <h2 id="views">Large pages</h2>
+        <p>
+          A table of customers in a layout, sent by <code>reply.view</code> on a real server: rendered whole, and with
+          <code>stream: true</code>, in chunks made as the client reads them. Median of 7 requests over the loopback; less
+          is better.
+        </p>
+        <p class="legend"><span class="us">streamed</span><span>rendered whole</span></p>
+        <div class="charts">
+          <div class="chart" data-better="lower" data-compare="previous">
+            <h3>First byte</h3>
+            <p class="subtitle">Milliseconds until the client has the first byte.</p>
+            <div class="chart-row"><span class="name">10k rows, whole</span><span class="track"><span class="fill" style="width: 3.0%"></span></span><span class="value">8 ms</span></div>
+            <div class="chart-row us win"><span class="name">10k rows, stream</span><span class="track"><span class="fill" style="width: 0.8%"></span></span><span class="value">2.2 ms</span></div>
+            <div class="chart-row"><span class="name">50k rows, whole</span><span class="track"><span class="fill" style="width: 19.7%"></span></span><span class="value">52.1 ms</span></div>
+            <div class="chart-row us win"><span class="name">50k rows, stream</span><span class="track"><span class="fill" style="width: 0.9%"></span></span><span class="value">2.4 ms</span></div>
+            <div class="chart-row"><span class="name">200k rows, whole</span><span class="track"><span class="fill" style="width: 100.0%"></span></span><span class="value">264.9 ms</span></div>
+            <div class="chart-row us win"><span class="name">200k rows, stream</span><span class="track"><span class="fill" style="width: 0.9%"></span></span><span class="value">2.3 ms</span></div>
+          </div>
+          <div class="chart" data-better="lower" data-compare="previous">
+            <h3>Whole page</h3>
+            <p class="subtitle">Milliseconds until the client has all of it.</p>
+            <div class="chart-row"><span class="name">10k rows, whole</span><span class="track"><span class="fill" style="width: 3.2%"></span></span><span class="value">9.2 ms</span></div>
+            <div class="chart-row us win"><span class="name">10k rows, stream</span><span class="track"><span class="fill" style="width: 3.0%"></span></span><span class="value">8.5 ms</span></div>
+            <div class="chart-row"><span class="name">50k rows, whole</span><span class="track"><span class="fill" style="width: 20.1%"></span></span><span class="value">57.5 ms</span></div>
+            <div class="chart-row us win"><span class="name">50k rows, stream</span><span class="track"><span class="fill" style="width: 12.5%"></span></span><span class="value">35.9 ms</span></div>
+            <div class="chart-row"><span class="name">200k rows, whole</span><span class="track"><span class="fill" style="width: 100.0%"></span></span><span class="value">286.4 ms</span></div>
+            <div class="chart-row us win"><span class="name">200k rows, stream</span><span class="track"><span class="fill" style="width: 44.5%"></span></span><span class="value">127.4 ms</span></div>
+          </div>
+          <div class="chart" data-better="lower" data-compare="previous">
+            <h3>Memory of the server</h3>
+            <p class="subtitle">Megabytes over its start, at the peak.</p>
+            <div class="chart-row"><span class="name">10k rows, whole</span><span class="track"><span class="fill" style="width: 5.0%"></span></span><span class="value">+2 MB</span></div>
+            <div class="chart-row us win"><span class="name">10k rows, stream</span><span class="track"><span class="fill" style="width: 2.5%"></span></span><span class="value">+1 MB</span></div>
+            <div class="chart-row"><span class="name">50k rows, whole</span><span class="track"><span class="fill" style="width: 25.0%"></span></span><span class="value">+10 MB</span></div>
+            <div class="chart-row us win"><span class="name">50k rows, stream</span><span class="track"><span class="fill" style="width: 5.0%"></span></span><span class="value">+2 MB</span></div>
+            <div class="chart-row"><span class="name">200k rows, whole</span><span class="track"><span class="fill" style="width: 100.0%"></span></span><span class="value">+40 MB</span></div>
+            <div class="chart-row us win"><span class="name">200k rows, stream</span><span class="track"><span class="fill" style="width: 7.5%"></span></span><span class="value">+3 MB</span></div>
+          </div>
+        </div>
+        <p>
+          Streamed, the first byte goes at once whatever the size, the memory does not grow with the page, and a large page
+          is done sooner too: its items are rendered while the first chunks travel.
+        </p>
+        <details class="raw">
+          <summary>All numbers (bench/results/view-1.md)</summary>
+          <pre><code>| Rows | Size | Mode | First byte (ms) | Whole page (ms) | Memory peak of the server |
+| ---: | ---: | --- | ---: | ---: | ---: |
+| 10,000 | 0.9 MB | string | 8.0 | 9.2 | +2 MB |
+| 10,000 | 0.9 MB | stream | 2.2 | 8.5 | +1 MB |
+| 50,000 | 4.8 MB | string | 52.1 | 57.5 | +10 MB |
+| 50,000 | 4.8 MB | stream | 2.4 | 35.9 | +2 MB |
+| 200,000 | 19.6 MB | string | 264.9 | 286.4 | +40 MB |
+| 200,000 | 19.6 MB | stream | 2.3 | 127.4 | +3 MB |</code></pre>
+        </details>
 
         <h2 id="run">Run them yourself</h2>
         <pre><code class="language-sh">git clone https://github.com/xufajs/xufa.git &amp;&amp; cd xufa
@@ -236,7 +1286,14 @@ node bench/orm.js        # the ORM and Sequelize (PostgreSQL and SQLite)
 node bench/postgres.js   # @xufa/pg and pg
 node bench/mongo.js      # @xufa/mongo and mongodb
 node bench/run.js --workers 4   # HTTP over the loopback
-node bench/inproc.js     # HTTP in the process</code></pre>
+node bench/inproc.js     # HTTP in the process
+node bench/micro/router.js       # @xufa/router and find-my-way
+node bench/micro/logger.js       # @xufa/logger and pino
+node bench/micro/serializer.js   # @xufa/serializer, fast-json-stringify and JSON.stringify
+node bench/micro/expression.js   # @xufa/expression and the evaluators of expressions
+node bench/micro/template.js     # @xufa/template and the template engines
+node bench/micro/websocket.js    # @xufa/websocket and ws, without and with bufferutil
+node bench/view.js               # large pages, whole and streamed</code></pre>
         <p>
           The database benchmarks use <code>postgres://xufa:xufa@127.0.0.1:5432/xufa_test</code> and
           <code>mongodb://127.0.0.1:27017/xufa_bench</code> by default (<code>--url</code> to change them), and drop the

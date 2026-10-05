@@ -1,7 +1,7 @@
 {
   "name": "@xufa/router",
   "version": "0.1.0",
-  "description": "A fast HTTP router (radix tree with a map of static routes), with the API of find-my-way and no dependencies",
+  "description": "A fast HTTP router (a radix tree compiled to code, with a map of static routes), with the API of find-my-way and no dependencies",
   "main": "./index.js",
   "types": "./index.d.ts",
   "type": "commonjs",

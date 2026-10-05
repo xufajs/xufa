@@ -867,6 +867,8 @@ class Connection extends EventEmitter {
     return () => {
       this.held = null;
       release();
+      // Free again: who waits for it (the pool) is told.
+      if (this.queue.length === 0) this.emit('drain');
     };
   }
 

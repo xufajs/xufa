@@ -5,6 +5,10 @@
 //   execute(sql, params)  the number of rows changed
 const { Backend } = require('../base');
 const { SqlCompiler } = require('./compiler');
+const { currentSignal } = require('../../context');
+
+// SQL that reads (raw() stops it with the signal of the code running).
+const READ = /^\s*(select|with|values|show|explain|table)\b/i;
 
 // A key the database gives back, as its field makes its values (the mode of keys and bigints).
 function decodeKey(dialect, field, value) {
@@ -31,9 +35,11 @@ class SqlBackend extends Backend {
     throw this.unsupported('execute');
   }
 
-  // Runs SQL of your own: the rows it gives.
+  // Runs SQL of your own: the rows it gives. A read (SELECT, WITH, VALUES...) stops with the signal of the code running.
   raw(sql, params = []) {
-    return this.run(() => this.query(sql, params));
+    const signal = READ.test(sql) ? currentSignal() : null;
+    if (signal) signal.throwIfAborted();
+    return this.run(() => this.query(sql, params, signal));
   }
 
   // limitPer() is a window of the query (ROW_NUMBER()).
@@ -43,14 +49,14 @@ class SqlBackend extends Backend {
 
   async select(query) {
     const { sql, params, decode } = this.compiler.select(query);
-    const rows = await this.run(() => this.query(sql, params));
+    const rows = await this.run(() => this.query(sql, params, query.signal));
     return rows.map(decode);
   }
 
   // The objects of the model of a query (not values()), made from the rows of the driver.
   async selectObjects(query, db) {
     const { sql, params, make } = this.compiler.select(query);
-    const rows = await this.run(() => this.query(sql, params));
+    const rows = await this.run(() => this.query(sql, params, query.signal));
     const objects = new Array(rows.length);
     for (let i = 0; i < rows.length; i += 1) objects[i] = make(rows[i], db);
     return objects;
@@ -58,13 +64,13 @@ class SqlBackend extends Backend {
 
   async count(query) {
     const { sql, params } = this.compiler.count(query);
-    const rows = await this.run(() => this.query(sql, params));
+    const rows = await this.run(() => this.query(sql, params, query.signal));
     return Number(rows[0].n);
   }
 
   async aggregate(query, aggregates, groupBy) {
     const { sql, params, decode } = this.compiler.aggregate(query, aggregates, groupBy);
-    const rows = await this.run(() => this.query(sql, params));
+    const rows = await this.run(() => this.query(sql, params, query.signal));
     return rows.map(decode);
   }
 

@@ -21,6 +21,7 @@ const { Tenants } = require('./lib/tenants');
 const { Q, JsonPath, jsonPath, and, or, not, F, Raw, Count, Sum, Avg, Min, Max } = require('./lib/query');
 const { Backend } = require('./lib/backends/base');
 const { MemoryBackend } = require('./lib/backends/memory');
+const { FsBackend } = require('./lib/backends/fs');
 const { SqlBackend } = require('./lib/backends/sql/backend');
 const { SqlCompiler } = require('./lib/backends/sql/compiler');
 const dialects = require('./lib/backends/sql/dialects');
@@ -30,8 +31,11 @@ const { MemoryCache, SharedCache, LocalCache } = require('./lib/cache');
 const migrations = require('./lib/migrations');
 const { toHstore, parseHstore } = require('./lib/hstore');
 const encryption = require('./lib/encryption');
+const { withSignal } = require('./lib/context');
+const { cached } = require('./lib/query-cache');
 
 Database.registerBackend('memory', () => MemoryBackend);
+Database.registerBackend('fs', () => FsBackend);
 Database.registerBackend('sqlite', () => require('./lib/backends/sqlite').SqliteBackend);
 Database.registerBackend('mongodb', () => require('./lib/backends/mongo/backend').MongoBackend);
 Database.registerBackend('postgres', () => require('./lib/backends/postgres').PostgresBackend);
@@ -42,6 +46,8 @@ module.exports = {
   Database,
   Databases,
   Tenants,
+  withSignal,
+  cached,
   Model,
   QuerySet,
   fields,
@@ -71,5 +77,5 @@ module.exports = {
   generateEncryptionKey: encryption.generateEncryptionKey,
   isEncrypted: encryption.isEncrypted,
   reencrypt: encryption.reencrypt,
-  backends: { Backend, MemoryBackend, SqlBackend, SqlCompiler, dialects },
+  backends: { Backend, MemoryBackend, FsBackend, SqlBackend, SqlCompiler, dialects },
 };

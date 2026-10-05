@@ -44,8 +44,12 @@ back together), and big bulkCreates use COPY.
   leave the server's), `pool` (`max`, `idle`); `replication: { write, read: [...] }`, with finds, counts, aggregates
   and queries of type SELECT on the replicas in turn (not with `useMaster`), read-only transactions too, and the rest
   on the primary; the errors of connections by their cause (`ConnectionRefusedError`, `HostNotFoundError`,
-  `HostNotReachableError`...); the hooks `beforePoolAcquire` and `afterPoolAcquire`; and the numbers of the pool in
-  `connectionManager.pool` (`size`, `available`, `using`, `waiting`). `quoteIdentifiers: false` makes the names of
+  `HostNotReachableError`...); `pool.acquire` (60 s: what waits longer for a connection of the pool fails with
+  `ConnectionAcquireTimeoutError`); the hooks `beforePoolAcquire` and `afterPoolAcquire`; and
+  `connectionManager` as Sequelize has it: the numbers of its `pool` (`size`, `available`, `using`, `waiting`),
+  `getConnection(options)` and `releaseConnection(connection)` (a client of `@xufa/pg` for code of your own: `query()`,
+  `processID`; of a replica for `type: 'SELECT'`), `validate(connection)`, and `_connect(options)`, through which
+  every connection is opened (to wrap it, or stub it in tests). `quoteIdentifiers: false` makes the names of
   tables and columns those PostgreSQL makes of names not quoted (lower case), so SQL without quotes names them.
 - Types of your own, as Sequelize takes them: `DataTypes.DATE.parse = (value) => ...` (the values read) and
   `DataTypes.DATE.prototype.stringify` or `bindParam` (the values written), after `sequelize.refreshTypes()`; the
@@ -119,10 +123,17 @@ back together), and big bulkCreates use COPY.
   (`const t = await sequelize.transaction(); ... await t.commit()`), nested ones as savepoints; as in Sequelize, the
   queries not given `{ transaction: t }` run outside it in PostgreSQL (unless `Sequelize.useCLS()` was called; in
   SQLite they are always part of it); isolation levels (PostgreSQL), transaction types of SQLite (`EXCLUSIVE`...),
-  retried on `SQLITE_BUSY`; row locks (`lock`, `skipLocked`, `lock: { level, of }`).
+  retried on `SQLITE_BUSY`; row locks (`lock`, `skipLocked`, `lock: { level, of }`). As in Sequelize, a transaction
+  not managed ends with `queryInterface.commitTransaction()` or `rollbackTransaction()`, which run `COMMIT;` or
+  `ROLLBACK;` through `sequelize.query` (logged with the id of the transaction); when they fail, the transaction is
+  rolled back and its connection closed, not given back to the pool.
 - Raw SQL: `sequelize.query(sql, { replacements, bind, type, model, mapToModel, plain, nest, fieldMap, retry,
 rawErrors })`. As in Sequelize, replacements are written in the SQL, escaped; binds (`$1`, `$name`) are parameters
   of the database.
+- `operatorsAliases` (deprecated in Sequelize 6, as there): `{ $gt: Op.gt }` makes `{ age: { $gt: 18 } }` a
+  condition. `queryInterface.queryGenerator` (also `sequelize.dialect.queryGenerator`) has
+  `handleSequelizeMethod(fragment)` (the SQL of `literal`, `col`, `fn`, `cast`, `where` and `json`, values written
+  as literals) and `getForeignKeysQuery(table)` (run with `type: QueryTypes.FOREIGNKEYS`).
 - CLS: `Sequelize.useCLS(namespace)` as in Sequelize (the transaction of a managed callback is in the namespace, and
   the queries without `{ transaction }` take it).
 - QueryInterface: tables, columns, indexes and constraints (SQLite tables are made again for the changes it cannot
@@ -270,12 +281,12 @@ runs:
 
 | Database                                    | Tests run by both | @xufa/sequelize         | Sequelize 6.37.8        |
 | ------------------------------------------- | ----------------- | ----------------------- | ----------------------- |
-| SQLite                                      | 1,739             | 1,709 passed, 30 failed | 1,735 passed, 4 failed  |
-| PostgreSQL 18 (PostGIS, hstore, btree_gist) | 2,004             | 1,947 passed, 57 failed | 1,966 passed, 38 failed |
+| SQLite                                      | 1,746             | 1,720 passed, 21 failed | 1,737 passed, 4 failed  |
+| PostgreSQL 18 (PostGIS, hstore, btree_gist) | 2,006             | 1,971 passed, 35 failed | 1,968 passed, 38 failed |
 
 Of the failures, 3 (SQLite) and 8 (PostgreSQL) fail on Sequelize too. In all, this package runs 1,766 tests in
-SQLite (1,729 pass: those of separate includes and groupedLimit, which Sequelize skips in SQLite, too) and 2,061 in
-PostgreSQL (1,999 pass); Sequelize runs 1,747 and 2,007 (a test of concurrency of its own crashes its database in
+SQLite (1,740 pass: those of separate includes and groupedLimit, which Sequelize skips in SQLite, too) and 2,062 in
+PostgreSQL (2,023 pass); Sequelize runs 1,747 and 2,007 (a test of concurrency of its own crashes its database in
 PostgreSQL, and leaves the rest of its file out).
 
 What fails here and passes in Sequelize checks its internals (the parsers of its data types, its connection manager

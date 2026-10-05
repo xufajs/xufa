@@ -104,6 +104,26 @@ describe.skipIf(!available)('postgres', () => {
     fs.rmSync(dir, { recursive: true, force: true });
   });
 
+  it('goes on when the server closes an idle connection of the pool', async () => {
+    const errors = [];
+    const db = new Database({ backend: 'postgres', url, onError: (err) => errors.push(err) });
+    await db.connect();
+    const [{ pid }] = await db.backend.raw('SELECT pg_backend_pid() AS pid');
+    const other = new Database({ backend: 'postgres', url });
+    await other.connect();
+    try {
+      await other.backend.raw('SELECT pg_terminate_backend($1)', [pid]);
+      for (let i = 0; i < 100 && errors.length === 0; i += 1) await new Promise((resolve) => setTimeout(resolve, 20));
+      // The error went to onError (without a listener, it would have ended the process), and a new connection serves.
+      expect(errors).toHaveLength(1);
+      const [row] = await db.backend.raw('SELECT pg_backend_pid() AS pid');
+      expect(row.pid).not.toBe(pid);
+    } finally {
+      await other.close();
+      await db.close();
+    }
+  });
+
   it('rejects fillfactors out of range', () => {
     class Wrong extends Model {
       static fields = { n: fields.integer() };

@@ -1,0 +1,197 @@
+<!--{
+  "file": "logger.html",
+  "name": "@xufa/logger",
+  "title": "@xufa/logger",
+  "description": "@xufa/logger: a fast JSON logger with the API and output of pino, with no dependencies. Levels, child loggers, serializers, redaction, formatters, hooks, multistream and destinations.",
+  "groups": [
+    ["Using it", [["start", "Quick start"], ["methods", "Logging"], ["output", "The output"], ["child", "Child loggers"]]],
+    ["Options", [["options", "Options"], ["levels", "Levels"], ["serializers", "Serializers"], ["redact", "Redaction"], ["formatters", "Formatters, mixins and hooks"]]],
+    ["Where logs go", [["destination", "Destinations"], ["multistream", "Several streams"], ["xufa", "In xufa"]]],
+    ["About it", [["performance", "Performance"], ["from-pino", "Coming from pino"], ["typescript", "TypeScript"]]]
+  ]
+}-->
+        <h1>@xufa/logger</h1>
+        <p class="intro">
+          A fast JSON logger with the API, the options and the output of <a href="https://getpino.io">pino</a>, and no
+          dependencies: one JSON object a line, made by functions compiled for each logger. It is the logger of
+          <a href="http.html">@xufa/http</a> (<code>logger: true</code>), and works on its own.
+        </p>
+
+        <h2 id="start">Quick start</h2>
+        <pre><code class="language-sh">npm install @xufa/logger</code></pre>
+        <pre><code class="language-js">const logger = require('@xufa/logger')({ level: 'debug', redact: ['req.headers.authorization'] });
+
+logger.info('hello %s', 'world');
+logger.child({ requestId: 'r1' }).warn({ user: 7 }, 'slow request');
+logger.error(new Error('failed')); // the error serialized as "err", its message as "msg"</code></pre>
+        <pre><code class="language-json">{"level":30,"time":1759651200000,"pid":4120,"hostname":"web-1","msg":"hello world"}
+{"level":40,"time":1759651200001,"pid":4120,"hostname":"web-1","requestId":"r1","user":7,"msg":"slow request"}
+{"level":50,"time":1759651200002,"pid":4120,"hostname":"web-1","err":{"type":"Error","message":"failed","stack":"Error: failed\n    at ..."},"msg":"failed"}</code></pre>
+
+        <h2 id="methods">Logging</h2>
+        <p>
+          <code>trace</code>, <code>debug</code>, <code>info</code>, <code>warn</code>, <code>error</code> and
+          <code>fatal</code>, each as <code>logger.info(object?, message?, ...args)</code>:
+        </p>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Call</th><th>Writes</th></tr></thead>
+            <tbody>
+              <tr><td><code>logger.info('user %s logged in after %d tries', name, tries)</code></td><td>The message formatted (<code>%s %d %i %f %j %o %O %%</code>).</td></tr>
+              <tr><td><code>logger.info({ user, ms }, 'done')</code></td><td>The properties of the object, and the message.</td></tr>
+              <tr><td><code>logger.error(err)</code>, <code>logger.error(err, 'saving failed')</code></td><td>The error under <code>err</code> (type, message, stack, cause...), and its message or the one given.</td></tr>
+              <tr><td><code>logger.info({ err }, 'retrying')</code></td><td>Errors in objects are serialized too.</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p>
+          <code>logger.level</code> is the lowest level written (read and set it); <code>isLevelEnabled(level)</code> tells
+          whether a level is written, to skip work that only a log needs. <code>flush()</code> writes what a buffered
+          destination holds.
+        </p>
+
+        <h2 id="output">The output</h2>
+        <p>
+          One line of JSON for each log: <code>level</code> (a number: 10 trace, 20 debug, 30 info, 40 warn, 50 error,
+          60 fatal), <code>time</code> (milliseconds), the base bindings (<code>pid</code>, <code>hostname</code>, and
+          <code>name</code> when given), the bindings of child loggers, the properties of the object, and
+          <code>msg</code>. It is pino's output, so pino's tools read it: <code>node app.js | pino-pretty</code>.
+        </p>
+
+        <h2 id="child">Child loggers</h2>
+        <pre><code class="language-js">const requestLog = logger.child({ requestId: req.id }, { level: 'debug', msgPrefix: '[api] ' });
+requestLog.debug('parsing body'); // {"level":20,...,"requestId":"...","msg":"[api] parsing body"}
+requestLog.bindings(); // { requestId: '...' }
+requestLog.setBindings({ user: 7 });</code></pre>
+        <p>
+          A child logs with the bindings of its parent and its own; its options can change <code>level</code>,
+          <code>serializers</code>, <code>redact</code>, <code>msgPrefix</code> and <code>formatters</code>.
+          <code>onChild(child)</code> (an option) is called for every child made.
+        </p>
+        <p>
+          The formatters of a child are pino's: <code>formatters.log</code> replaces the one of its parent, for the child
+          and its own children; <code>formatters.bindings</code> formats the bindings of the logger it is given to only
+          (the base of the root logger; the bindings of a child, and those it gets with <code>setBindings()</code>), so
+          a child has no bindings formatter but its own; <code>formatters.level</code> stays the parent's, as pino
+          ignores it in a child.
+        </p>
+        <p>
+          A child without a level of its own follows the level of its parent, as in pino, changes included: after
+          <code>logger.level = 'debug'</code>, the children made before write their <code>debug</code> lines too. A
+          child given a level (<code>{ level }</code> in its options, or <code>child.level = ...</code>) keeps it,
+          whatever its parent does.
+        </p>
+
+        <h2 id="options">Options</h2>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Option</th><th>Default</th><th>What it does</th></tr></thead>
+            <tbody>
+              <tr><td><code>level</code></td><td><code>'info'</code></td><td>The lowest level written; <code>'silent'</code> writes nothing.</td></tr>
+              <tr><td><code>enabled</code></td><td><code>true</code></td><td><code>false</code>: nothing is written.</td></tr>
+              <tr><td><code>name</code></td><td></td><td>Added to every line.</td></tr>
+              <tr><td><code>base</code></td><td><code>{ pid, hostname }</code></td><td>The bindings of every line; <code>null</code> for none.</td></tr>
+              <tr><td><code>timestamp</code></td><td>milliseconds</td><td><code>false</code>, or a function giving <code>,"time":...</code>: <code>stdTimeFunctions.isoTime</code>, <code>epochTime</code>, <code>unixTime</code>, <code>nullTime</code>.</td></tr>
+              <tr><td><code>messageKey</code>, <code>errorKey</code></td><td><code>'msg'</code>, <code>'err'</code></td><td>The keys of the message and the error.</td></tr>
+              <tr><td><code>nestedKey</code></td><td></td><td>The properties of the object logged go under this key.</td></tr>
+              <tr><td><code>msgPrefix</code></td><td></td><td>Before every message.</td></tr>
+              <tr><td><code>customLevels</code>, <code>useOnlyCustomLevels</code></td><td></td><td>See <a href="#levels">Levels</a>.</td></tr>
+              <tr><td><code>serializers</code></td><td><code>{ err }</code></td><td>See <a href="#serializers">Serializers</a>.</td></tr>
+              <tr><td><code>redact</code></td><td></td><td>See <a href="#redact">Redaction</a>.</td></tr>
+              <tr><td><code>formatters</code>, <code>mixin</code>, <code>mixinMergeStrategy</code>, <code>hooks</code></td><td></td><td>See <a href="#formatters">Formatters</a>.</td></tr>
+              <tr><td><code>crlf</code></td><td><code>false</code></td><td>Lines end with <code>\r\n</code>.</td></tr>
+              <tr><td><code>onChild</code></td><td></td><td>Called with every child logger.</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p>The second argument is the stream to write to (<code>process.stdout</code> by default): a stream, or a <a href="#destination">destination</a>.</p>
+
+        <h2 id="levels">Levels</h2>
+        <pre><code class="language-js">const logger = pino({ customLevels: { audit: 35 }, level: 'debug' });
+logger.audit({ user: 7 }, 'password changed'); // {"level":35,...}
+logger.levels; // { values: { trace: 10, ..., audit: 35, ... }, labels: { ... } }</code></pre>
+        <p><code>useOnlyCustomLevels: true</code> leaves only the custom ones.</p>
+
+        <h2 id="serializers">Serializers</h2>
+        <pre><code class="language-js">const logger = pino({
+  serializers: {
+    user: (user) =&gt; ({ id: user.id }), // only the id of a user goes to the logs
+    req: pino.stdSerializers.req,
+    res: pino.stdSerializers.res,
+  },
+});
+logger.info({ user, req }, 'request');</code></pre>
+        <p>
+          A serializer runs on the property of its name. <code>stdSerializers</code> has <code>err</code> (errors, with
+          their cause and own properties), <code>req</code> and <code>res</code> (of <code>node:http</code>), and their
+          wrappers, as pino-std-serializers.
+        </p>
+
+        <h2 id="redact">Redaction</h2>
+        <pre><code class="language-js">pino({ redact: ['req.headers.authorization', 'user.password', 'cards[*].number'] });
+pino({ redact: { paths: ['secret'], censor: '***' } });
+pino({ redact: { paths: ['token'], remove: true } }); // the key is not written at all</code></pre>
+        <p>
+          Paths with dots, brackets (<code>a["b-c"]</code>) and wildcards (<code>*</code>); the default censor is
+          <code>[Redacted]</code>, and it can be a function of the value and the path.
+        </p>
+
+        <h2 id="formatters">Formatters, mixins and hooks</h2>
+        <pre><code class="language-js">pino({
+  formatters: {
+    level: (label, number) =&gt; ({ level: label }), // "level":"info" instead of 30
+    bindings: (bindings) =&gt; ({ host: bindings.hostname }),
+    log: (object) =&gt; ({ ...object, env: 'prod' }),
+  },
+  mixin: () =&gt; ({ traceId: currentTraceId() }), // added to every line
+  hooks: {
+    logMethod(args, method) { return method.apply(this, args); }, // see or change the arguments of every log
+    streamWrite: (line) =&gt; line, // the line before it is written
+  },
+});</code></pre>
+
+        <h2 id="destination">Destinations</h2>
+        <pre><code class="language-js">const pino = require('@xufa/logger');
+
+const logger = pino(pino.destination({ dest: './app.log', sync: false, minLength: 4096, mkdir: true }));
+process.on('SIGHUP', () =&gt; logger[pino.symbols.streamSym].reopen()); // log rotation
+process.on('exit', () =&gt; logger.flush());</code></pre>
+        <p>
+          <code>destination()</code> writes to a file descriptor (<code>1</code>, stdout, by default) or a file,
+          synchronously (the default) or buffered (<code>{ sync: false, minLength }</code>), as sonic-boom does for pino:
+          <code>reopen()</code> after the file is rotated, <code>flush()</code>, <code>end()</code>.
+        </p>
+
+        <h2 id="multistream">Several streams</h2>
+        <pre><code class="language-js">const logger = pino(
+  { level: 'debug' },
+  pino.multistream([
+    { stream: process.stdout, level: 'info' },
+    { stream: pino.destination('./debug.log'), level: 'debug' },
+    { stream: pino.destination('./errors.log'), level: 'error' },
+  ])
+);</code></pre>
+        <p>Each line goes to the streams whose level is at most its own.</p>
+
+        <h2 id="xufa">In xufa</h2>
+        <p>
+          <code>xufa({ logger: true })</code>, or logger options, makes an @xufa/logger; <code>loggerInstance</code> takes
+          one you made (or a pino). Every request has <code>request.log</code>, a child with its id, and the framework logs
+          requests, responses and errors as fastify does.
+        </p>
+
+<!--generated: logger-performance-->
+
+        <h2 id="from-pino">Coming from pino</h2>
+        <ul>
+          <li>The options, the methods and the output are pino's; <code>require('pino')</code> can be replaced by <code>require('@xufa/logger')</code>.</li>
+          <li><strong>Transports</strong> (<code>transport</code>, <code>pino.transport()</code>) are not there: it throws. Logs go to a stream: give one, or pipe the output of the process (<code>node app.js | pino-pretty</code>, or to your collector).</li>
+          <li>Not there either: the <code>level-change</code> event, <code>levelComparison</code>, <code>depthLimit</code> and <code>edgeLimit</code>, and pino's browser build.</li>
+        </ul>
+
+        <h2 id="typescript">TypeScript</h2>
+        <p>pino's declarations, without transports and with <code>Destination</code>:</p>
+        <pre><code class="language-ts">import pino, { Logger, LoggerOptions } from '@xufa/logger';
+
+const options: LoggerOptions = { level: 'info', redact: ['password'] };
+const logger: Logger = pino(options);</code></pre>

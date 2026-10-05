@@ -355,6 +355,44 @@ describe.skipIf(!available)('Pool', () => {
     clients.forEach((client) => client.release());
     expect((await waiting).rows).toEqual([{ ok: 1 }]);
   });
+
+  it('waits for a connection at most acquireTimeoutMillis, and gives back what comes late', async () => {
+    const limited = new Pool({ connectionString: url, max: 1, acquireTimeoutMillis: 5000 });
+    try {
+      // The first connection opened (logging in can take longer than the limit tested), then the short limit.
+      const client = await limited.connect();
+      limited.acquireTimeoutMillis = 50;
+      await expect(limited.connect()).rejects.toMatchObject({ code: 'ACQUIRE_TIMEOUT' });
+      await expect(limited.query('SELECT 1')).rejects.toMatchObject({ code: 'ACQUIRE_TIMEOUT' });
+      client.release();
+      // The connect() that timed out took the connection when it was free, and gave it back.
+      await new Promise((resolve) => setTimeout(resolve, 20));
+      expect(limited.idleCount).toBe(1);
+      expect((await limited.query('SELECT 1 AS ok')).rows).toEqual([{ ok: 1 }]);
+    } finally {
+      await limited.end();
+    }
+  });
+
+  it('opens its connections with openConnection, which can be replaced', async () => {
+    const opened = [];
+    const custom = new Pool({ connectionString: url, max: 1, acquireTimeoutMillis: 5000 });
+    const open = custom.openConnection.bind(custom);
+    custom.openConnection = (options) => {
+      opened.push(options.host);
+      return open(options);
+    };
+    try {
+      expect((await custom.query('SELECT 1 AS ok')).rows).toEqual([{ ok: 1 }]);
+      expect(opened).toHaveLength(1);
+      // An opening that never ends: queries wait for it until the timeout.
+      const stuck = new Pool({ connectionString: url, max: 1, acquireTimeoutMillis: 30 });
+      stuck.openConnection = () => new Promise(() => {});
+      await expect(stuck.query('SELECT 1')).rejects.toMatchObject({ code: 'ACQUIRE_TIMEOUT' });
+    } finally {
+      await custom.end();
+    }
+  });
 });
 
 describe.skipIf(!available)('ending', () => {
@@ -571,6 +609,21 @@ describe.skipIf(!available)('cancelling queries', () => {
     });
     expect(Date.now() - start).toBeLessThan(2000);
     expect((await pool.query({ text: 'SELECT 1 AS ok', timeout: 1000 })).rows).toEqual([{ ok: 1 }]);
+  });
+
+  it('gives a connection to who waits for it once a query that timed out has ended', async () => {
+    const single = new Pool({ connectionString: url, max: 1, acquireTimeoutMillis: 5000 });
+    try {
+      await expect(single.query({ text: 'SELECT pg_sleep(1)', timeout: 100 })).rejects.toMatchObject({
+        code: 'QUERY_TIMEOUT',
+      });
+      // At once, while the cancelled query ends in the server: connect() waits for it, then takes it.
+      const client = await single.connect();
+      expect((await client.query('SELECT 1 AS ok')).rows).toEqual([{ ok: 1 }]);
+      client.release();
+    } finally {
+      await single.end();
+    }
   });
 
   it('does not send a query aborted before it is sent', async () => {

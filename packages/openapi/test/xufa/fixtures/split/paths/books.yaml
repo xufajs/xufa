@@ -1,0 +1,17 @@
+get:
+  operationId: listBooks
+  responses:
+    "200":
+      description: The books
+      content:
+        application/json:
+          schema:
+            type: array
+            items:
+              $ref: ../schemas/book.yaml#/Book
+    default:
+      description: An error
+      content:
+        application/json:
+          schema:
+            $ref: ../openapi.yaml#/components/schemas/Error

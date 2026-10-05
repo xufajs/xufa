@@ -70,3 +70,6 @@ async function features() {
   expectError(new Client({ channel_binding: 'always' }));
 }
 void features;
+
+const limited = new Pool({ max: 2, acquireTimeoutMillis: 500 });
+expectType<Promise<unknown>>(limited.openConnection({ host: 'db' }));

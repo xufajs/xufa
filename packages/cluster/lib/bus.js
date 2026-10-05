@@ -4,6 +4,9 @@
 //
 // In one process (no workers), the same calls deliver the messages to the handlers of that process, so code written
 // for a cluster runs as it is in development and in tests.
+//
+// With useMarshal() (start({ marshal })), data goes as @xufa/marshal writes it: the instances of registered classes
+// arrive as themselves, and so do the errors thrown by the handlers of requests (their class, cause and fields).
 const cluster = require('node:cluster');
 
 const TAG = '__xufaBus';
@@ -31,6 +34,16 @@ class Bus {
     this.nextId = 1;
     this.listening = false;
     this.local = true;
+    this.marshaller = null;
+  }
+
+  // Sends data written by @xufa/marshal, with `registry` (its default one when not given). The processes that
+  // receive must know the same classes (they run the same code).
+  useMarshal(registry) {
+    const { marshal, unmarshal, registry: fallback } = require('@xufa/marshal'); // eslint-disable-line global-require
+    const options = { registry: registry || fallback };
+    this.marshaller = { write: (value) => marshal(value, options), read: (nodes) => unmarshal(nodes, options) };
+    return this;
   }
 
   get isPrimary() {
@@ -88,7 +101,13 @@ class Bus {
   receive(message, worker) {
     const envelope = message && message[TAG];
     if (!envelope) return;
-    const { kind, event, data, id } = envelope;
+    const { kind, event, id } = envelope;
+    let { data } = envelope;
+    if (envelope.marshalled) {
+      // Written by a bus with useMarshal(): read it so (with this registry, or the default one of @xufa/marshal).
+      if (!this.marshaller) this.useMarshal();
+      data = this.marshaller.read(data);
+    }
     switch (kind) {
       case 'event':
         this.dispatch(event, data, worker).catch((err) => process.emitWarning(err));
@@ -96,8 +115,7 @@ class Bus {
       case 'request':
         this.dispatch(event, data, worker).then(
           (result) => this.post(worker, { kind: 'reply', id, data: result }),
-          (err) =>
-            this.post(worker, { kind: 'reply', id, error: { message: err.message, name: err.name, code: err.code } })
+          (err) => this.post(worker, { kind: 'reply', id, error: err })
         );
         return;
       case 'reply': {
@@ -105,8 +123,9 @@ class Bus {
         if (!request) return;
         this.pending.delete(id);
         clearTimeout(request.timer);
-        if (envelope.error) request.reject(errorOf(envelope.error));
-        else request.resolve(data);
+        if (envelope.error) {
+          request.reject(envelope.marshalled ? this.marshaller.read(envelope.error) : errorOf(envelope.error));
+        } else request.resolve(data);
         return;
       }
       case 'broadcast':
@@ -118,7 +137,15 @@ class Bus {
   }
 
   // Sends to the primary (from a worker), or to a worker (from the primary).
-  post(worker, envelope) {
+  post(worker, given) {
+    let envelope = given;
+    if (this.marshaller) {
+      envelope = { ...given, data: this.marshaller.write(given.data), marshalled: true };
+      if (given.error) envelope.error = this.marshaller.write(given.error);
+    } else if (given.error) {
+      const { message, name, code } = given.error;
+      envelope = { ...given, error: { message, name, code } };
+    }
     const message = { [TAG]: envelope };
     if (worker) {
       if (worker.isConnected()) worker.send(message);

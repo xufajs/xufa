@@ -4,6 +4,7 @@ const { randomUUID } = require('node:crypto');
 const { checkGeometry } = require('./geo');
 const { getKeyring, isEncrypted } = require('./encryption');
 const { EncryptionError } = require('./errors');
+const { fieldValidators } = require('./rules');
 
 const EMPTY = [];
 
@@ -16,8 +17,21 @@ class Field {
     this.index = Boolean(options.index);
     this.primaryKey = Boolean(options.primaryKey);
     this.choices = options.choices;
-    this.validators = options.validate ? [].concat(options.validate) : EMPTY;
+    // Functions of the value, or rules (expressions, { rule, message }) compiled to functions when the field is bound.
+    this.validatorSpecs = options.validate ? [].concat(options.validate) : EMPTY;
+    this.validators = this.validatorSpecs.every((spec) => typeof spec === 'function') ? this.validatorSpecs : EMPTY;
     this.columnName = options.column;
+    // A computed field (lib/computed.js): an expression or a function of the object; virtual unless stored.
+    this.computed = options.computed === undefined ? null : options.computed;
+    this.stored = this.computed !== null && Boolean(options.stored);
+    if (this.computed !== null) {
+      if (this.primaryKey) throw new TypeError('A computed field cannot be a primary key');
+      if (!this.stored && (this.unique || this.index || this.default !== undefined || this.columnName)) {
+        throw new TypeError('A computed field that is not stored has no column: no unique, index, default nor column');
+      }
+    } else if (options.stored !== undefined) {
+      throw new TypeError('stored is an option of computed fields');
+    }
     this.model = undefined;
     this.name = undefined;
     this.attname = undefined;
@@ -43,6 +57,7 @@ class Field {
     this.name = name;
     this.attname = name;
     this.column = this.columnName || name;
+    if (this.validators !== this.validatorSpecs) this.validators = fieldValidators(this.validatorSpecs, model, name);
   }
 
   clone() {

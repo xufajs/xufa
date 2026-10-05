@@ -1,7 +1,7 @@
 {
   "name": "@xufa/auth",
   "version": "0.1.0",
-  "description": "Authentication with no dependencies: scrypt passwords, JSON Web Tokens with rotating keys, TOTP, login lockout, rotating refresh tokens and a plugin for @xufa/http",
+  "description": "Authentication with no dependencies: scrypt passwords, JSON Web Tokens with rotating keys, TOTP, login lockout, rotating refresh tokens, API keys, HTTP Basic, Passport strategies and a plugin for @xufa/http",
   "main": "./index.js",
   "types": "./index.d.ts",
   "type": "commonjs",
@@ -29,7 +29,11 @@
     "2fa",
     "scrypt",
     "password",
-    "refresh-token"
+    "refresh-token",
+    "api-key",
+    "basic-auth",
+    "passport",
+    "oauth2"
   ],
   "author": "Jesús Seijas <jseijas@gmail.com>",
   "license": "MIT",
@@ -46,11 +50,18 @@
     "node": ">=22"
   },
   "dependencies": {
-    "@xufa/errors": "workspace:*"
+    "@xufa/errors": "workspace:*",
+    "@xufa/jwt": "workspace:*"
   },
   "devDependencies": {
     "@xufa/http": "workspace:*",
     "@xufa/orm": "workspace:*",
+    "passport-headerapikey": "^1.2.2",
+    "passport-http": "^0.3.0",
+    "passport-http-bearer": "^1.0.1",
+    "passport-jwt": "^4.0.1",
+    "passport-local": "^1.0.0",
+    "passport-oauth2": "^1.8.0",
     "vyntra": "^0.6.0"
   },
   "publishConfig": {
