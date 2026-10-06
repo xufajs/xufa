@@ -1,0 +1,75 @@
+{
+  "name": "@xufa/schema",
+  "version": "0.1.0",
+  "description": "Schemas of data: written as code (plain JSON Schema, with their TypeScript types), as JSON Schema (draft-04 to 2020-12) or with a builder of types; compiled into fast validators (the validator of the routes of xufa), standalone code, or inferred from samples. No dependencies",
+  "main": "./index.js",
+  "types": "./index.d.ts",
+  "type": "commonjs",
+  "exports": {
+    ".": {
+      "types": "./index.d.ts",
+      "default": "./index.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "index.js",
+    "index.d.ts",
+    "src",
+    "LICENSE"
+  ],
+  "scripts": {
+    "test": "vyntra",
+    "test:types": "tsd && tsc -p test/types-dsl",
+    "build:helpers": "node scripts/generate-standalone-helpers.js && eslint --fix src/standalone-helpers.js"
+  },
+  "keywords": [
+    "json-schema",
+    "schema",
+    "typescript",
+    "type-provider",
+    "validation",
+    "typebox",
+    "validator",
+    "draft-07",
+    "2019-09",
+    "2020-12",
+    "compiler",
+    "fast",
+    "jsonschema",
+    "schema-validation",
+    "dsl",
+    "ajv-alternative",
+    "types"
+  ],
+  "author": "Jesús Seijas <jseijas@gmail.com>",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/xufajs/xufa.git",
+    "directory": "packages/schema"
+  },
+  "homepage": "https://github.com/xufajs/xufa/tree/main/packages/schema#readme",
+  "bugs": {
+    "url": "https://github.com/xufajs/xufa/issues"
+  },
+  "engines": {
+    "node": ">=22"
+  },
+  "devDependencies": {
+    "@xufa/http": "workspace:*",
+    "ajv": "^8.20.0",
+    "ajv-draft-04": "^1.0.0",
+    "fastify": "^5.12.5",
+    "json-schema-test-suite": "github:json-schema-org/JSON-Schema-Test-Suite#5b0ee1613e45fcc2bddac00e07c19cd49b00d8a8",
+    "tsd": "^0.33.0",
+    "typescript": "~6.0.3",
+    "vyntra": "^0.6.0"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "tsd": {
+    "directory": "test/types"
+  }
+}

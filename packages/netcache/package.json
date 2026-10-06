@@ -54,6 +54,7 @@
   },
   "dependencies": {
     "@xufa/discovery": "workspace:*",
+    "@xufa/faults": "workspace:*",
     "@xufa/marshal": "workspace:*"
   }
 }

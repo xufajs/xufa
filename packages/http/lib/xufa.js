@@ -709,8 +709,8 @@ function processOptions(serverOptions, defaultRoute, onBadUrl, onMaxParamLength)
   if (!ajvOptions.plugins || !Array.isArray(ajvOptions.plugins)) {
     throw new XUFA_ERR_AJV_CUSTOM_OPTIONS_OPT_NOT_ARR(typeof ajvOptions.plugins);
   }
-  // Options of schiva itself, for the default validator compiler.
-  if (options.validation) ajvOptions.schivaOptions = options.validation;
+  // Options of @xufa/schema itself, for the default validator compiler.
+  if (options.validation) ajvOptions.validatorOptions = options.validation;
 
   const { logger, hasLogger } = createInstanceLogger(options);
   const logController = createLogController(options);

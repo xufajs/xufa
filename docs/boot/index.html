@@ -1,0 +1,228 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>@xufa/boot · xufa</title>
+    <meta
+      name="description"
+      content="@xufa/boot: loading of plugins, asynchronously and in order, with encapsulation, after/ready/close hooks and timeouts, with the API of avvio and no dependencies."
+    />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%23d9502b'/%3E%3Ctext x='16' y='22.5' font-family='monospace' font-size='18' font-weight='700' fill='white' text-anchor='middle'%3Ex%3C/text%3E%3C/svg%3E"
+    />
+    <link rel="stylesheet" href="../style.css?v=0.1.0" />
+    <script src="../main.js?v=0.1.0"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js" defer></script>
+  </head>
+  <body>
+    <header class="header">
+      <div class="header-inner">
+        <a class="logo" href="../index.html"><span class="logo-mark">x</span>xufa</a>
+        <nav class="nav">
+          <a href="../guide.html">Guide</a>
+          <a href="../playground.html">Playground</a>
+          <a href="../http/index.html">HTTP</a>
+          <a href="../orm/index.html">ORM</a>
+          <a class="hide-small" href="../auth/index.html">Auth</a>
+          <a class="hide-small" href="../sequelize/index.html">Sequelize</a>
+          <a class="hide-small" href="../packages.html" aria-current="page">Packages</a>
+          <a class="hide-small" href="../benchmarks.html">Benchmarks</a>
+          <a href="https://github.com/xufajs/xufa">GitHub</a>
+          <button class="theme-toggle" type="button" aria-label="Switch between light and dark theme">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+              <path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z" />
+            </svg>
+          </button>
+        </nav>
+      </div>
+    </header>
+
+    <div class="docs">
+      <button class="menu-toggle" type="button" aria-expanded="false">☰ Contents</button>
+      <aside class="sidebar">
+        <h4>Using it</h4>
+        <ul>
+          <li><a href="#start">Quick start</a></li>
+          <li><a href="#plugins">Plugins</a></li>
+          <li><a href="#order">Order and after()</a></li>
+          <li><a href="#ready">ready()</a></li>
+          <li><a href="#close">close() and onClose()</a></li>
+        </ul>
+        <h4>More</h4>
+        <ul>
+          <li><a href="#override">Encapsulation</a></li>
+          <li><a href="#options">Options</a></li>
+          <li><a href="#events">Events</a></li>
+          <li><a href="#tree">The tree of plugins</a></li>
+          <li><a href="#errors">Errors</a></li>
+        </ul>
+        <h4>About it</h4>
+        <ul>
+          <li><a href="#from-avvio">Coming from avvio</a></li>
+          <li><a href="#typescript">TypeScript</a></li>
+        </ul>
+        <h4>Packages</h4>
+        <ul>
+          <li><a href="../websocket/index.html">@xufa/websocket</a></li>
+          <li><a href="../openapi/index.html">@xufa/openapi</a></li>
+          <li><a href="../client/index.html">@xufa/client</a></li>
+          <li><a href="../schema/index.html">@xufa/schema</a></li>
+          <li><a href="../pg/index.html">@xufa/pg</a></li>
+          <li><a href="../mongo/index.html">@xufa/mongo</a></li>
+          <li><a href="../expression/index.html">@xufa/expression</a></li>
+          <li><a href="../template/index.html">@xufa/template</a></li>
+          <li><a href="../cluster/index.html">@xufa/cluster</a></li>
+          <li><a href="../scheduler/index.html">@xufa/scheduler</a></li>
+          <li><a href="../config/index.html">@xufa/config</a></li>
+          <li><a href="../discovery/index.html">@xufa/discovery</a></li>
+          <li><a href="../netcache/index.html">@xufa/netcache</a></li>
+          <li><a href="../faults/index.html">@xufa/faults</a></li>
+          <li><a href="../marshal/index.html">@xufa/marshal</a></li>
+          <li><a href="../yaml/index.html">@xufa/yaml</a></li>
+          <li><a href="../jwt/index.html">@xufa/jwt</a></li>
+          <li><a href="../logger/index.html">@xufa/logger</a></li>
+          <li><a href="../router/index.html">@xufa/router</a></li>
+          <li><a href="../serializer/index.html">@xufa/serializer</a></li>
+          <li><a href="../inject/index.html">@xufa/inject</a></li>
+          <li><a href="index.html" aria-current="page">@xufa/boot</a></li>
+          <li><a href="../errors/index.html">@xufa/errors</a></li>
+          <li><a href="../packages.html">All the packages</a></li>
+        </ul>
+      </aside>
+
+      <article class="content">
+<h1>@xufa/boot</h1>
+        <p class="intro">
+          Loading of plugins, asynchronously and in order, with encapsulation, <code>after</code>, <code>ready</code> and
+          <code>close</code> hooks and timeouts. It has the API of <a href="https://github.com/fastify/avvio">avvio</a>,
+          passes its test suite, has no dependencies, and loads the plugins of <a href="../http/index.html">@xufa/http</a>
+          (<code>app.register()</code>). It works on its own, for any object that is set up in steps.
+        </p>
+
+        <h2 id="start">Quick start</h2>
+        <pre><code class="language-sh">npm install @xufa/boot</code></pre>
+        <pre><code class="language-js">const boot = require('@xufa/boot');
+
+const server = { name: 'app' };
+const app = boot(server); // server gets use(), after(), ready(), close() and onClose() too
+
+app.use(async (instance, options) =&gt; {
+  instance.db = await connect(options.url); // instance is server (or what override() gives)
+}, { url: 'postgres://...' });
+
+app.after((err) =&gt; {
+  if (err) throw err;
+  // every plugin registered before after() is loaded: server.db is set
+});
+
+app.onClose((instance, done) =&gt; instance.db.end(done));
+
+await app.ready();
+await app.close();</code></pre>
+
+        <h2 id="plugins">Plugins</h2>
+        <p>A plugin is a function of the instance and its options:</p>
+        <pre><code class="language-js">async function plugin(instance, options) { /* await what it needs */ }
+function callbackPlugin(instance, options, done) { setUp(instance, options); done(); }
+
+app.use(plugin, { level: 1 });
+app.use(plugin, (instance) =&gt; ({ url: instance.config.url })); // options from the instance, when it loads
+app.use(import('./plugin.mjs')); // a promise of a module: its default export</code></pre>
+        <p>
+          A plugin can register plugins of its own; they load before the plugins registered after it. A plugin that
+          throws, or calls <code>done(err)</code>, stops the boot: the error reaches the next <code>after()</code> or
+          <code>ready()</code>.
+        </p>
+
+        <h2 id="order">Order and after()</h2>
+        <pre><code class="language-js">app.use(database);
+app.use(cache);
+app.after(async () =&gt; {
+  // database and cache are loaded
+});
+app.use(routes); // loads after the after() above</code></pre>
+        <p>
+          Plugins load one after the other, in the order they were registered. <code>after(fn)</code> runs when every
+          plugin registered before it is loaded; it takes <code>(err)</code>, <code>(err, done)</code>,
+          <code>(err, instance, done)</code>, or is an async function; called without a function, it gives a promise.
+        </p>
+
+        <h2 id="ready">ready()</h2>
+        <p>
+          <code>await app.ready()</code> (or <code>ready(fn)</code>) when every plugin is loaded; the error of the boot
+          rejects it. With <code>autostart</code> (the default), loading starts on the next tick after the first
+          <code>use()</code>; <code>start()</code> starts it at once.
+        </p>
+
+        <h2 id="close">close() and onClose()</h2>
+        <pre><code class="language-js">app.onClose(async (instance) =&gt; instance.db.end()); // or (instance, done)
+await app.close(); // the onClose functions, in reverse order of registration</code></pre>
+        <p><code>await using app = boot(server)</code> closes it at the end of its block (<code>Symbol.asyncDispose</code>).</p>
+
+        <h2 id="override">Encapsulation</h2>
+        <pre><code class="language-js">app.override = (parent, plugin, options) =&gt; {
+  const child = Object.create(parent); // what the plugin decorates stays in it
+  child.prefix = (parent.prefix || '') + (options.prefix || '');
+  return child;
+};</code></pre>
+        <p>
+          <code>override(instance, plugin, options)</code> gives the instance a plugin gets: return a new object for a
+          scope of its own, or the same one to share it. By default every plugin gets the same instance. xufa's
+          override gives each plugin a scope of its own, unless the plugin has
+          <code>plugin[Symbol.for('skip-override')] = true</code> (what fastify-plugin sets).
+        </p>
+
+        <h2 id="options">Options</h2>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Option</th><th>Default</th><th>What it does</th></tr></thead>
+            <tbody>
+              <tr><td><code>expose</code></td><td></td><td>Other names for the methods put on the server: <code>{ use: 'register', after, ready, close, onClose }</code>.</td></tr>
+              <tr><td><code>autostart</code></td><td><code>true</code></td><td>Loading starts by itself; <code>false</code>: at <code>start()</code> or <code>ready()</code>.</td></tr>
+              <tr><td><code>timeout</code></td><td><code>0</code></td><td>Milliseconds a plugin has to load (0: no limit); past it, <code>BOOT_ERR_PLUGIN_EXEC_TIMEOUT</code>.</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p><code>boot(server, options, done)</code>: <code>done</code> is called when it is ready.</p>
+
+        <h2 id="events">Events</h2>
+        <p><code>start</code> (every plugin is loaded), <code>preReady</code> (before the <code>ready</code> functions run) and <code>close</code>.</p>
+
+        <h2 id="tree">The tree of plugins</h2>
+        <pre><code class="language-js">console.log(app.prettyPrint()); // the plugins, nested, with the milliseconds each one took to load
+app.toJSON(); // the same, as an object</code></pre>
+
+        <h2 id="errors">Errors</h2>
+        <p>
+          <code>boot.errors</code>, made with <a href="../errors/index.html">@xufa/errors</a>: <code>BOOT_ERR_PLUGIN_NOT_VALID</code>,
+          <code>BOOT_ERR_PLUGIN_EXEC_TIMEOUT</code>, <code>BOOT_ERR_READY_TIMEOUT</code>, <code>BOOT_ERR_CALLBACK_NOT_FN</code>,
+          <code>BOOT_ERR_ROOT_PLG_BOOTED</code>, <code>BOOT_ERR_PARENT_PLG_LOADED</code>,
+          <code>BOOT_ERR_EXPOSE_ALREADY_DEFINED</code> and <code>BOOT_ERR_ATTRIBUTE_ALREADY_DEFINED</code>.
+        </p>
+
+        <h2 id="from-avvio">Coming from avvio</h2>
+        <ul>
+          <li>The API and the behaviour are avvio's (its test suite passes).</li>
+          <li>The error codes are <code>BOOT_ERR_*</code> where avvio has <code>AVV_ERR_*</code>.</li>
+          <li>The queue of plugins is part of the package (avvio uses fastq), with the same semantics.</li>
+        </ul>
+
+        <h2 id="typescript">TypeScript</h2>
+        <p>avvio's declarations, with <code>errors</code>, <code>kBoot</code> and <code>kPluginMeta</code>.</p>
+      </article>
+    </div>
+
+    <footer class="footer">
+      <div class="container">
+        <span>xufa is MIT licensed. &copy; Jes&uacute;s Seijas</span>
+        <span>
+          <a href="../guide.html">Guide</a> &middot; <a href="../playground.html">Playground</a> &middot; <a href="../http/index.html">HTTP</a> &middot; <a href="../orm/index.html">ORM</a> &middot; <a href="../auth/index.html">Auth</a> &middot;
+          <a href="../sequelize/index.html">Sequelize</a> &middot; <a href="../packages.html">Packages</a> &middot;
+          <a href="../benchmarks.html">Benchmarks</a> &middot; <a href="https://github.com/xufajs/xufa">GitHub</a>
+        </span>
+      </div>
+    </footer>
+  </body>
+</html>

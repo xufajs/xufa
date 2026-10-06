@@ -98,6 +98,19 @@ start({
 `new Lockout({ store: cache })`: failed logins are counted on every machine, so an attacker gains nothing by spreading
 attempts among them.
 
+## Faults (tests of resilience)
+
+`cache.faults` (of [@xufa/faults](../faults)) makes `get`, `set`, `delete` and `clear` fail, wait or hang
+(`read` and `write` as groups; `keys` by prefix or regular expression):
+
+```js
+cache.faults.down(); // until cache.faults.up()
+cache.faults.fail({ operations: 'read', keys: 'session:', rate: 0.1 });
+```
+
+As the store of [@xufa/orm](../orm), reads and writes that fail are misses (the database answers, and
+`onCacheError` is told); deletes that fail are errors.
+
 ## License
 
 MIT

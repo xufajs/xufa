@@ -13,6 +13,7 @@
 //
 //   const rates = cached(async (currency) => fetchRates(currency), { ttl: 600000 });
 //   await rates('EUR'); // the next calls of the next 10 minutes are answered from the cache
+const { reportCacheError } = require('./cache-errors');
 const crypto = require('node:crypto');
 const { AsyncLocalStorage } = require('node:async_hooks');
 const { MemoryCache } = require('./cache');
@@ -199,13 +200,22 @@ async function cachedQuery(qs, kind, compute, { raw = (value) => value, make = (
     throw new TypeError(`cached() reads ${names}, which has no option cache: its writes would not be followed`);
   }
   const store = storeOf(db);
-  const versions = await versionsOf(db, list);
-  const key = `${db.name}:${qs.model.meta.key}:q:${hash(`${description}|${versions.join(',')}`)}`;
-  const kept = await store.get(key);
-  if (kept !== undefined) return make(kept.value);
+  // A cache that fails to read is a miss, and one that fails to keep keeps nothing: the database answers.
+  let key;
+  try {
+    const versions = await versionsOf(db, list);
+    key = `${db.name}:${qs.model.meta.key}:q:${hash(`${description}|${versions.join(',')}`)}`;
+    const kept = await store.get(key);
+    if (kept !== undefined) return make(kept.value);
+  } catch (err) {
+    reportCacheError(db, err, 'get');
+    return compute();
+  }
   // A write while it is read gives new versions: what is kept here is under the old ones, and not read again.
   const result = await compute();
-  await store.set(key, { value: raw(result) }, qs.state.cached.ttl);
+  await Promise.resolve()
+    .then(() => store.set(key, { value: raw(result) }, qs.state.cached.ttl))
+    .catch((err) => reportCacheError(db, err, 'set'));
   return result;
 }
 
@@ -225,17 +235,26 @@ function cached(fn, options = {}) {
   const store = cache || new MemoryCache({ max: options.max });
   const prefix = `cached:${name || fn.name || 'fn'}:`;
   const running = new Map();
+  // Its errors of the cache: onCacheError, or a warning.
+  const ownHandler = options.onCacheError;
   const keyOf = (args) => `${prefix}${hash(describe(key(...args), new Set()))}`;
 
   async function call(...args) {
     const id = keyOf(args);
-    const kept = await store.get(id);
+    let kept;
+    try {
+      kept = await store.get(id);
+    } catch (err) {
+      reportCacheError(call, err, 'get');
+    }
     if (kept !== undefined) return kept.value;
     if (running.has(id)) return structuredClone(await running.get(id));
     const promise = (async () => {
       try {
         const value = await fn(...args);
-        await store.set(id, { value }, ttl);
+        await Promise.resolve()
+          .then(() => store.set(id, { value }, ttl))
+          .catch((err) => reportCacheError(call, err, 'set'));
         return value;
       } finally {
         running.delete(id);
@@ -244,6 +263,7 @@ function cached(fn, options = {}) {
     running.set(id, promise);
     return promise;
   }
+  call.onCacheError = ownHandler;
   /** Forgets the result of some arguments. */
   call.invalidate = (...args) => store.delete(keyOf(args));
   /** Forgets every result. */

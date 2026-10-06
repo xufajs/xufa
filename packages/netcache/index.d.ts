@@ -1,6 +1,7 @@
 // Type definitions for @xufa/netcache.
 import { EventEmitter } from 'node:events';
 import type { Discovery, DiscoveryOptions } from '@xufa/discovery';
+import type { CacheFaults } from '@xufa/faults';
 
 export interface NetCacheOptions {
   /** 16 bytes or more: connections are authenticated and every frame sealed. Required unless `insecure`. */
@@ -54,6 +55,8 @@ export interface NetCacheEvents {
 /** A cache shared by the machines of a service: a copy in each, every write sent to all. */
 export declare class NetCache extends EventEmitter<NetCacheEvents> {
   constructor(options?: NetCacheOptions);
+  /** Its faults: get, set, delete and clear made to fail, wait or hang. */
+  readonly faults: CacheFaults;
   readonly id: string;
   readonly started: boolean;
   readonly port: number;

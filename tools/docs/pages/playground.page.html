@@ -1,0 +1,56 @@
+<!--{
+  "file": "playground.html",
+  "name": "Playground",
+  "title": "Playground",
+  "nav": "playground",
+  "description": "Try xufa in your browser: schemas and their validation, safe expressions, templates, YAML, marshal and the router, each with examples to start from.",
+  "layout": "tool",
+  "scripts": ["xufa.js", "playground.js"],
+  "groups": []
+}-->
+      <div class="pg-head">
+        <div>
+          <h1>Playground</h1>
+          <p class="pg-intro">
+            Try the packages of xufa that run in a browser: pick one, pick an example, and edit it. The result updates as
+            you type, and nothing leaves your browser.
+          </p>
+        </div>
+      </div>
+
+      <div class="pg-tools">
+        <div class="tab-list" role="tablist" id="tools" aria-label="Packages"></div>
+      </div>
+      <div class="pg-example-row">
+        <p class="pg-tool-about">
+          <a id="tool-name" href="#"></a>: <span id="tool-intro"></span>
+          <a id="tool-more" class="pg-tool-more" href="#" hidden></a>
+        </p>
+        <div class="pg-controls">
+          <label class="pg-field">
+            <span>Example</span>
+            <select id="example"></select>
+          </label>
+          <button class="button" type="button" id="reset">Reset</button>
+          <button class="button primary" type="button" id="share">Copy link</button>
+        </div>
+      </div>
+      <p class="pg-hint"><strong>Try this:</strong> <span id="hint"></span></p>
+
+      <div class="pg-grid">
+        <div id="panels-main"></div>
+        <div class="pg-side" id="panels-side">
+          <section class="pg-panel pg-output" id="output">
+            <div class="pg-panel-head">
+              <h2><span class="pg-step" id="result-step">3</span> Result</h2>
+            </div>
+            <div id="result" class="pg-result" aria-live="polite"></div>
+          </section>
+        </div>
+      </div>
+
+      <p class="pg-footer-note">
+        Each package has its page in <a href="packages.html">the packages</a>; the <a href="guide.html">guide</a> puts them
+        together in an app. What runs on a server (the HTTP layer, the ORM and its databases, the logger, JWTs) is not here:
+        it needs Node.js.
+      </p>

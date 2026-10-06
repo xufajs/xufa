@@ -20,3 +20,8 @@ expectAssignable<Cache>(cache);
 declare const bus: CacheBus;
 expectType<Database>(new Database({ backend: 'memory', cache }));
 expectAssignable<Cache>(new SharedCache({ bus, store: cache }));
+
+// Faults.
+cache.faults.down();
+cache.faults.fail({ operations: ['get'], keys: [/^session:/] });
+expectError(cache.faults.fail({ operations: 'send' }));

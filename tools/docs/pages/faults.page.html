@@ -1,0 +1,121 @@
+<!--{
+  "file": "faults.html",
+  "name": "@xufa/faults",
+  "title": "@xufa/faults",
+  "description": "@xufa/faults: faults made to happen (fail, delay, hang, down) by rules, to test what an app does when its database, caches, the APIs it calls or the bus of its cluster fail. No dependencies.",
+  "groups": [
+    ["Using it", [["start", "Quick start"], ["where", "Where they are"], ["rules", "Rules"], ["tests", "In tests"], ["http", "Over HTTP (staging)"], ["errors", "Errors"]]],
+    ["More", [["own", "Faults of your own"]]]
+  ]
+}-->
+        <h1>@xufa/faults</h1>
+        <p class="intro">
+          Faults made to happen, to see what an app does when what it uses fails: operations that fail, wait, hang or find
+          their service down, by rules that say which operations, how often and how many times. It is the engine of the
+          faults of the database, the caches, the HTTP client and the bus of xufa. No dependencies.
+        </p>
+
+        <h2 id="start">Quick start</h2>
+        <pre><code class="language-js">db.faults.fail({ operations: 'write', models: [Order], rate: 0.2 }); // 1 write of Order in 5 fails
+client.faults.respond({ status: 503, headers: { 'retry-after': '1' }, paths: '/payments', times: 3 });
+cache.faults.down(); // the cache is lost: the database answers
+bus.faults.drop({ events: 'invalidate', rate: 0.1 }); // 1 message in 10 is lost
+const hung = netcache.faults.hang({ keys: 'session:' }); // until hung.release()</code></pre>
+
+        <h2 id="where">Where they are</h2>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Faults</th><th>Operations</th><th>Filters</th></tr></thead>
+            <tbody>
+              <tr><td><code>db.faults</code> of <a href="orm.html#faults">@xufa/orm</a> (and <code>dbs</code>, <code>tenants</code>)</td><td>select, count, aggregate, insert, update, delete, transaction, connect (<code>read</code>, <code>write</code>)</td><td><code>models</code>, <code>tenants</code></td></tr>
+              <tr><td><code>cache.faults</code> of the ORM caches</td><td>get, set, delete, clear (<code>read</code>, <code>write</code>)</td><td><code>keys</code></td></tr>
+              <tr><td><code>client.faults</code> of <a href="client.html#faults">@xufa/client</a></td><td>get, head, options, post, put, patch, delete (<code>read</code>, <code>write</code>); <code>respond()</code></td><td><code>urls</code>, <code>paths</code></td></tr>
+              <tr><td><code>bus.faults</code> of <a href="cluster.html#faults">@xufa/cluster</a></td><td>send, sendTo, broadcast (<code>events</code>), request; <code>drop()</code></td><td><code>events</code></td></tr>
+              <tr><td><code>cache.faults</code> of <a href="netcache.html#faults">@xufa/netcache</a></td><td>get, set, delete, clear (<code>read</code>, <code>write</code>)</td><td><code>keys</code></td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h2 id="rules">Rules</h2>
+        <p>
+          <code>fail(options)</code>, <code>delay({ ms, jitter, ...options })</code>, <code>hang(options)</code> and
+          <code>down(options)</code> (every operation fails until <code>up()</code>) add a rule and give it back;
+          <code>clear()</code> removes them all and lets go what they hold.
+        </p>
+        <ul>
+          <li><code>operations</code>: names or groups; the defaults of those faults when not given.</li>
+          <li>Filters (<code>models</code>, <code>keys</code>, <code>paths</code>...): names, prefixes (keys, paths, urls) or regular expressions; classes by their names. <code>match(context)</code>: a check of your own.</li>
+          <li><code>rate</code>: the chance of each match (<code>faults.random</code> of your own in tests); <code>after</code>: the first matches are left alone; <code>times</code>: removed after that many hits.</li>
+          <li>A rule counts its <code>hits</code>; <code>remove()</code> takes it away; <code>release()</code> lets what it holds go on. Waits end with the signal of the operation: the timeout of a client call ends a hang.</li>
+          <li>Without rules, the operations are as they were: one check of an empty list.</li>
+        </ul>
+
+        <h2 id="tests">In tests</h2>
+        <pre><code class="language-js">// In the setup files of the runner (setupFiles of Jest, Vitest or vyntra; --require of Mocha):
+require('xufa/faults/register'); // or require('@xufa/faults/register')
+
+// Or in a test file:
+const { useFaults } = require('xufa/faults');
+useFaults(); // the afterEach of the runner; useFaults(require('node:test')) for node:test</code></pre>
+        <p>
+          After each test, <code>clearFaults()</code> removes every rule of every faults (the database, its caches, the
+          clients, the bus...) and lets go what they hold, so a test that fails before its <code>clear()</code> leaves no
+          fault to the next one. <code>activeFaults()</code> gives the faults that have rules now.
+          With <code>strict</code> (<code>useFaults({ strict: true })</code>, or <code>xufa/faults/register-strict</code>), a test
+          that ends with faults still set fails, naming them (<code>database: fail of insert (hits 0)</code>); they are cleared all
+          the same.
+        </p>
+
+        <h2 id="http">Over HTTP (staging)</h2>
+        <pre><code class="language-js">const { plugin } = require('xufa/faults');
+
+app.register(plugin, {
+  targets: { db, cache: db.cache, payments, bus }, // faults, or what has them
+  token: process.env.FAULTS_TOKEN, // Authorization: Bearer &lt;token&gt;
+});</code></pre>
+        <pre><code class="language-sh">curl -X POST localhost:3000/_faults/payments/respond -H "authorization: Bearer $FAULTS_TOKEN" \
+  -H 'content-type: application/json' -d '{"status": 503, "paths": "/charges", "rate": 0.2, "for": "10m"}'</code></pre>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Route</th><th>What it does</th></tr></thead>
+            <tbody>
+              <tr><td><code>GET /_faults</code></td><td>The targets: operations, filters, kinds and rules.</td></tr>
+              <tr><td><code>POST /_faults/:target/:kind</code></td><td>A rule (<code>fail</code>, <code>delay</code>, <code>hang</code>, <code>down</code>, <code>respond</code>, <code>drop</code>), its options as JSON.</td></tr>
+              <tr><td><code>DELETE /_faults/:target/rules/:id</code></td><td>That rule removed; <code>POST .../rules/:id/release</code> lets what it holds go on.</td></tr>
+              <tr><td><code>POST /_faults/:target/up</code></td><td>No more <code>down</code>.</td></tr>
+              <tr><td><code>DELETE /_faults/:target</code>, <code>DELETE /_faults</code></td><td>The rules of a target, or of all of them, removed.</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <ul>
+          <li>Options as JSON: <code>operations</code>, <code>rate</code>, <code>after</code>, <code>times</code>, <code>ms</code>, the filters of the target (names, or <code>{ "regex": "..." }</code>); functions cannot be sent, other keys are a 400.</li>
+          <li><code>for</code>: how long the rule stays, never more than <code>maxDuration</code> (1 h); the rules made by the routes go when the app closes.</li>
+          <li>Always protected: <code>token</code> (constant-time), <code>authorize(request)</code> or <code>auth</code> (a rule of <a href="auth.html">@xufa/auth</a>); without one, registering fails. Off in production unless <code>enabled</code> and <code>allowProduction</code>.</li>
+          <li>Every change is logged at warn; the routes are left out of OpenAPI.</li>
+        </ul>
+
+        <h2 id="errors">Errors</h2>
+        <p>
+          The errors of <code>fail</code> and <code>down</code> are <code>FaultError</code>s (code <code>XUFA_FAULT</code>,
+          status 503), the <code>error</code> given, or those of each part: the ORM's <code>FaultError</code>
+          (<code>XUFA_ORM_ERR_FAULT</code>), a refused connection for the client (a <code>RequestError</code>, retried), a
+          <code>BusError</code> for the bus. <code>err instanceof FaultError</code> and <code>isFault(err)</code> are true of all
+          of them: of every error whose code ends in <code>FAULT</code>.
+        </p>
+
+        <h2 id="own">Faults of your own</h2>
+        <pre><code class="language-js">const { Faults, wrap, cacheFaults } = require('@xufa/faults');
+
+const faults = new Faults({
+  operations: ['charge', 'refund'],
+  groups: { money: ['charge', 'refund'] },
+  filters: { customers: 'customer' }, // the option customers matches context.customer
+});
+const charge = (customer, amount) =&gt; faults.apply({ operation: 'charge', customer }, () =&gt; gateway.charge(customer, amount));
+
+faults.add('declined', { operations: 'charge', times: 1 }, { replace: () =&gt; ({ status: 'declined' }) });</code></pre>
+        <ul>
+          <li><code>faults.apply(context, run)</code> runs the operation through the rules; <code>faults.pick(context)</code> gives the rules that act on it at once, for operations that cannot wait.</li>
+          <li><code>faults.add(kind, options, { replace })</code>: a kind of its own; <code>replace(context)</code> is what the operation gives instead.</li>
+          <li><code>wrap(faults, object, methods, contextOf)</code>: the methods of an object go through the faults. <code>cacheFaults(cache, name)</code>: those of an object with <code>get</code>, <code>set</code>, <code>delete</code> and <code>clear</code>.</li>
+        </ul>

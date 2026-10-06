@@ -1,0 +1,60 @@
+{
+  "name": "@xufa/scheduler",
+  "version": "0.1.0",
+  "description": "Jobs on intervals, cron expressions or once, with no dependencies: no overlapping runs, timeouts, failures isolated per job, and each time run once among several machines with a lock in a database",
+  "main": "./index.js",
+  "types": "./index.d.ts",
+  "type": "commonjs",
+  "exports": {
+    ".": {
+      "types": "./index.d.ts",
+      "default": "./index.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "index.js",
+    "index.d.ts",
+    "lib",
+    "LICENSE"
+  ],
+  "scripts": {
+    "test": "vyntra",
+    "test:types": "tsd"
+  },
+  "keywords": [
+    "scheduler",
+    "cron",
+    "jobs",
+    "interval",
+    "timer",
+    "lock"
+  ],
+  "author": "Jesús Seijas <jseijas@gmail.com>",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/xufajs/xufa.git",
+    "directory": "packages/scheduler"
+  },
+  "homepage": "https://github.com/xufajs/xufa/tree/main/packages/scheduler#readme",
+  "bugs": {
+    "url": "https://github.com/xufajs/xufa/issues"
+  },
+  "engines": {
+    "node": ">=22"
+  },
+  "devDependencies": {
+    "@xufa/http": "workspace:*",
+    "@xufa/orm": "workspace:*",
+    "fastify": "^5.12.5",
+    "tsd": "^0.33.0",
+    "vyntra": "^0.6.0"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "tsd": {
+    "directory": "test/types"
+  }
+}

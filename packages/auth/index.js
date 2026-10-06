@@ -16,7 +16,7 @@ const { Lockout, MemoryStore } = require('./lib/lockout');
 const { RefreshTokens, MemoryTokenStore, modelStore, refreshTokenFields } = require('./lib/refresh');
 const { parseCookies, serializeCookie } = require('./lib/cookies');
 const { KeyVault, MemoryKeyStore, vaultModelStore, vaultFields, VaultError } = require('./lib/vault');
-const { authPlugin } = require('./lib/plugin');
+const { authPlugin, rolesOf, tenantsOf, ALL_TENANTS } = require('./lib/plugin');
 const {
   apiKey,
   apiKeyFields,
@@ -31,6 +31,9 @@ const errors = require('./lib/errors');
 
 module.exports = {
   plugin: authPlugin,
+  rolesOf,
+  tenantsOf,
+  ALL_TENANTS,
   hashPassword,
   verifyPassword,
   needsRehash,

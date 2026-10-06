@@ -18,7 +18,7 @@ expect(meta).type.toBeAssignableTo<PluginMetadata>();
 expect(errorCodes.XUFA_ERR_NOT_FOUND).type.not.toBe<never>();
 expect(errorCodes).type.not.toHaveProperty('FST_ERR_NOT_FOUND');
 
-// The validator is schiva: ajv's options it shares, and no ajv plugins.
+// The validator is @xufa/schema: ajv's options it shares, and no ajv plugins.
 expect(xufa({ ajv: { customOptions: { coerceTypes: 'array', removeAdditional: 'all' }, plugins: [] } })).type.toBeAssignableTo<XufaInstance>();
 expect(xufa).type.not.toBeCallableWith({ ajv: { plugins: [() => {}] } });
 expect<ErrorObject>().type.toHaveProperty('instancePath');

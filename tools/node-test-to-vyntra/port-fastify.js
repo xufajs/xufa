@@ -51,7 +51,7 @@ const RENAMES = [
     'see the documentation of xufa for more info.',
   ],
   [/expected '%s' fastify version/g, "expected '%s' xufa version"],
-  // References that can not be resolved, as schiva (not ajv) reports them.
+  // References that can not be resolved, as @xufa/schema (not ajv) reports them.
   [
     /due to error can't resolve reference #notExist from id #/g,
     'due to error Unsupported JSON Schema \\"$ref\\": \\"#notExist\\" at #.properties.name: only references within the schema or to documents in the \\"schemas\\" option are supported',
@@ -68,7 +68,7 @@ const RENAMES = [
   [/\{ fastify \} = require\(/g, '{ xufa: fastify } = require('],
 ];
 
-// Tests of what xufa does not do: plugins and keywords of ajv (xufa validates with schiva), and the files of the
+// Tests of what xufa does not do: plugins and keywords of ajv (xufa validates with @xufa/schema), and the files of the
 // documentation and the types of fastify.
 const SKIPPED_TESTS = {
   'schema-examples.test.js': ['Example - ajv config', 'should return custom error messages with ajv-errors'],

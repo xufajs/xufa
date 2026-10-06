@@ -1,0 +1,87 @@
+<!--{
+  "file": "schema-playground.html",
+  "name": "@xufa/schema",
+  "package": "schema.html",
+  "title": "@xufa/schema: playground",
+  "description": "Try @xufa/schema in your browser: pick an example, edit the schema and the value, and see the errors, the generated code and the speed as you type.",
+  "layout": "tool",
+  "scripts": ["schema.js","schema-playground-examples.js","schema-playground.js"],
+  "groups": []
+}-->
+      <div class="pg-head">
+        <div>
+          <h1>Playground</h1>
+          <p class="pg-intro">
+            Pick an example, then edit the schema or the value: the result updates as you type. Everything runs in your
+            browser.
+          </p>
+        </div>
+        <div class="pg-controls">
+          <label class="pg-field">
+            <span>Example</span>
+            <select id="example">
+              <option value="" hidden>A shared schema</option>
+            </select>
+          </label>
+          <button class="button" type="button" id="reset">Reset</button>
+          <button class="button primary" type="button" id="share">Copy link</button>
+        </div>
+      </div>
+      <p class="pg-hint"><strong>Try this:</strong> <span id="hint"></span></p>
+
+      <div class="pg-grid">
+        <section class="pg-panel pg-schema">
+          <div class="pg-panel-head">
+            <h2><span class="pg-step">1</span> Schema</h2>
+            <span class="pg-badge" id="language"></span>
+          </div>
+          <textarea id="schema" spellcheck="false" autocapitalize="off" autocomplete="off" wrap="off"></textarea>
+        </section>
+
+        <div class="pg-side">
+          <section class="pg-panel">
+            <div class="pg-panel-head">
+              <h2><span class="pg-step">2</span> Value to check</h2>
+              <span class="pg-note">JSON or JavaScript</span>
+            </div>
+            <textarea id="value" class="pg-value" spellcheck="false" autocapitalize="off" autocomplete="off" wrap="off" aria-label="Value to check"></textarea>
+          </section>
+
+          <section class="pg-panel">
+            <div class="pg-panel-head">
+              <h2>Options</h2>
+              <label class="pg-field pg-mode">
+                <span>Return</span>
+                <select id="mode">
+                  <option value="messages">every error message</option>
+                  <option value="first">the first error message</option>
+                  <option value="objects">error objects</option>
+                  <option value="boolean">true or false</option>
+                </select>
+              </label>
+            </div>
+            <textarea id="options" class="pg-options" spellcheck="false" autocapitalize="off" autocomplete="off" wrap="off" aria-label="Compile options"></textarea>
+          </section>
+
+          <section class="pg-panel pg-output">
+            <div class="pg-panel-head">
+              <h2><span class="pg-step">3</span> Result</h2>
+            </div>
+            <div id="result" class="pg-result" aria-live="polite"></div>
+          </section>
+        </div>
+      </div>
+
+      <details class="pg-code" id="code-section">
+        <summary>See the code @xufa/schema generated for this schema</summary>
+        <p>
+          <code>compile()</code> writes a JavaScript function for the schema: this is why it is fast. The helpers it calls
+          (<code>P</code>, <code>H</code>, <code>OP</code>...) are passed to it when it is created.
+        </p>
+        <pre><code id="code" class="language-js"></code></pre>
+      </details>
+
+      <p class="pg-footer-note">
+        New to @xufa/schema? The <a href="schema-guide.html">guide</a> explains every option, and the <a href="schema-api.html">API reference</a>
+        lists every function.
+      </p>

@@ -1,0 +1,250 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>@xufa/scheduler · xufa</title>
+    <meta
+      name="description"
+      content="@xufa/scheduler: jobs on intervals, cron expressions or once, with no dependencies: no overlapping runs, timeouts, failures isolated per job, and each time run once among several machines with a lock in a database."
+    />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%23d9502b'/%3E%3Ctext x='16' y='22.5' font-family='monospace' font-size='18' font-weight='700' fill='white' text-anchor='middle'%3Ex%3C/text%3E%3C/svg%3E"
+    />
+    <link rel="stylesheet" href="../style.css?v=0.1.0" />
+    <script src="../main.js?v=0.1.0"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js" defer></script>
+  </head>
+  <body>
+    <header class="header">
+      <div class="header-inner">
+        <a class="logo" href="../index.html"><span class="logo-mark">x</span>xufa</a>
+        <nav class="nav">
+          <a href="../guide.html">Guide</a>
+          <a href="../playground.html">Playground</a>
+          <a href="../http/index.html">HTTP</a>
+          <a href="../orm/index.html">ORM</a>
+          <a class="hide-small" href="../auth/index.html">Auth</a>
+          <a class="hide-small" href="../sequelize/index.html">Sequelize</a>
+          <a class="hide-small" href="../packages.html" aria-current="page">Packages</a>
+          <a class="hide-small" href="../benchmarks.html">Benchmarks</a>
+          <a href="https://github.com/xufajs/xufa">GitHub</a>
+          <button class="theme-toggle" type="button" aria-label="Switch between light and dark theme">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+              <path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z" />
+            </svg>
+          </button>
+        </nav>
+      </div>
+    </header>
+
+    <div class="docs">
+      <button class="menu-toggle" type="button" aria-expanded="false">☰ Contents</button>
+      <aside class="sidebar">
+        <h4>Using it</h4>
+        <ul>
+          <li><a href="#start">Quick start</a></li>
+          <li><a href="#jobs">Jobs</a></li>
+          <li><a href="#cron">Cron expressions</a></li>
+          <li><a href="#retries">Retries</a></li>
+          <li><a href="#state">State and events</a></li>
+        </ul>
+        <h4>Running</h4>
+        <ul>
+          <li><a href="#history">History and catch-up</a></li>
+          <li><a href="#cluster">Clusters and machines</a></li>
+          <li><a href="#plugin">The plugin</a></li>
+        </ul>
+        <h4>Packages</h4>
+        <ul>
+          <li><a href="../websocket/index.html">@xufa/websocket</a></li>
+          <li><a href="../openapi/index.html">@xufa/openapi</a></li>
+          <li><a href="../client/index.html">@xufa/client</a></li>
+          <li><a href="../schema/index.html">@xufa/schema</a></li>
+          <li><a href="../pg/index.html">@xufa/pg</a></li>
+          <li><a href="../mongo/index.html">@xufa/mongo</a></li>
+          <li><a href="../expression/index.html">@xufa/expression</a></li>
+          <li><a href="../template/index.html">@xufa/template</a></li>
+          <li><a href="../cluster/index.html">@xufa/cluster</a></li>
+          <li><a href="index.html" aria-current="page">@xufa/scheduler</a></li>
+          <li><a href="../config/index.html">@xufa/config</a></li>
+          <li><a href="../discovery/index.html">@xufa/discovery</a></li>
+          <li><a href="../netcache/index.html">@xufa/netcache</a></li>
+          <li><a href="../faults/index.html">@xufa/faults</a></li>
+          <li><a href="../marshal/index.html">@xufa/marshal</a></li>
+          <li><a href="../yaml/index.html">@xufa/yaml</a></li>
+          <li><a href="../jwt/index.html">@xufa/jwt</a></li>
+          <li><a href="../logger/index.html">@xufa/logger</a></li>
+          <li><a href="../router/index.html">@xufa/router</a></li>
+          <li><a href="../serializer/index.html">@xufa/serializer</a></li>
+          <li><a href="../inject/index.html">@xufa/inject</a></li>
+          <li><a href="../boot/index.html">@xufa/boot</a></li>
+          <li><a href="../errors/index.html">@xufa/errors</a></li>
+          <li><a href="../packages.html">All the packages</a></li>
+        </ul>
+      </aside>
+
+      <article class="content">
+<h1>@xufa/scheduler</h1>
+        <p class="intro">
+          Jobs that run every so often, on cron expressions, or once, with no dependencies. Each job has a timer of its
+          own, so a slow job delays no other one and a failure stops none; a run does not overlap the one before it; a
+          timeout aborts the signal of a run, and a run that fails is tried again with backoff; a history records every
+          run (and runs the times missed when a process starts again); and, with a lock in a database, each time of a job
+          runs in one process among those of several machines.
+        </p>
+
+        <h2 id="start">Quick start</h2>
+        <pre><code class="language-sh">npm install @xufa/scheduler</code></pre>
+        <pre><code class="language-js">const { Scheduler } = require('@xufa/scheduler'); // or require('xufa/scheduler')
+
+const scheduler = new Scheduler({ logger, timezone: 'Europe/Madrid' });
+scheduler.add({ name: 'purge sessions', every: '10m', run: () =&gt; Session.objects.filter({ expired: true }).delete() });
+scheduler.add({
+  name: 'daily report',
+  cron: '0 8 * * mon-fri',
+  timeout: '5m',
+  run: async ({ signal, scheduledAt }) =&gt; sendReport({ day: scheduledAt, signal }),
+});
+scheduler.start();
+// ...
+await scheduler.stop(); // waits for the runs going on (10 s), then aborts their signals</code></pre>
+
+        <h2 id="jobs">Jobs</h2>
+        <p><code>scheduler.add(job)</code>: a <code>name</code>, a <code>run(context)</code> function, and one of:</p>
+        <ul>
+          <li><code>every: '10m'</code>: at the multiples of the interval since 1970 (<code>:00</code>, <code>:10</code>, <code>:20</code>...), so processes on other machines agree on the times; <code>align: false</code> counts from the start.</li>
+          <li><code>cron: '0 8 * * mon-fri'</code>: a cron expression, in <code>timezone</code> (of the job, of the scheduler, or the local one).</li>
+          <li><code>at: date</code>: once, at a date (a time past runs at the start); <code>in: '30s'</code>: once, that long after the start.</li>
+        </ul>
+        <p>Durations are milliseconds or texts: <code>'500ms'</code>, <code>'30s'</code>, <code>'10m'</code>, <code>'2h'</code>, <code>'1d'</code>, <code>'1w'</code>, <code>'1h30m'</code>.</p>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Option</th><th>Default</th><th>What it does</th></tr></thead>
+            <tbody>
+              <tr><td><code>overlap</code></td><td><code>'skip'</code></td><td>A time while a run goes on: <code>'skip'</code> leaves it out, <code>'wait'</code> runs once when it ends, <code>'allow'</code> runs both at once</td></tr>
+              <tr><td><code>timeout</code></td><td></td><td>Aborts the signal of a run that goes over it (a <code>TimeoutError</code>); the run is a failure, and the job free again</td></tr>
+              <tr><td><code>immediate</code></td><td><code>false</code></td><td>Runs once when the scheduler starts too</td></tr>
+              <tr><td><code>data</code></td><td></td><td>Given to each run</td></tr>
+              <tr><td><code>lock</code></td><td><code>true</code></td><td><code>false</code>: this job runs in every process, though the scheduler has a lock</td></tr>
+              <tr><td><code>lockTtl</code></td><td>the <code>timeout</code>, or 10 minutes</td><td>How long a claim lasts when its process dies (renewed while the run goes on)</td></tr>
+              <tr><td><code>retries</code></td><td><code>0</code></td><td>How many times more a run that fails (or times out) is tried</td></tr>
+              <tr><td><code>retryDelay</code></td><td><code>'1s'</code></td><td>The wait before the second attempt, multiplied by <code>retryFactor</code> (<code>2</code>) each time, up to <code>maxRetryDelay</code></td></tr>
+              <tr><td><code>catchUp</code></td><td><code>false</code></td><td>When the scheduler starts, the last time missed runs once (<code>every</code> aligned, and <code>cron</code>; with a history)</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p>
+          <code>run</code> gets <code>{ name, scheduledAt, attempt, signal, data, scheduler }</code>; what it returns (or
+          the promise of it) ends the attempt. An attempt that does not stop when its signal is aborted goes on by itself,
+          but its job goes on. Times missed (the process was stopped, or busy) are not run later, but with
+          <code>catchUp</code>.
+        </p>
+
+        <h2 id="cron">Cron expressions</h2>
+        <p>
+          <code>minute hour day-of-month month day-of-week</code>, or six fields with seconds first. Each field is
+          <code>*</code>, a value, a range (<code>1-5</code>), a list (<code>1,15,30</code>) or steps (<code>*/15</code>,
+          <code>0-30/10</code>); months and days of the week by name too (<code>jan</code>, <code>mon-fri</code>;
+          <code>0</code> and <code>7</code> are Sunday); the macros <code>@yearly</code>, <code>@monthly</code>,
+          <code>@weekly</code>, <code>@daily</code> and <code>@hourly</code>. As in Vixie cron, when both the day of the
+          month and of the week are given, a day matching either runs. An expression that can never run
+          (<code>0 0 30 2 *</code>) is an error.
+        </p>
+        <p>
+          In a time zone that changes its clock, a time that does not exist (02:30 when 02:00 is 03:00) is skipped, and an
+          hour that repeats runs once. <code>nextRuns(expression, count, { timezone, from })</code> gives the next times
+          of an expression.
+        </p>
+
+        <h2 id="retries">Retries</h2>
+        <p>
+          With <code>retries</code>, a run that fails (or times out) is tried again after <code>retryDelay</code>, then
+          after that multiplied by <code>retryFactor</code>, up to <code>maxRetryDelay</code>; each attempt gets its
+          number (<code>attempt</code>) and has the <code>timeout</code>. The attempts are one run: the job is running
+          between them (its times are skipped, or wait), it keeps its claim of the lock, and only the last error is a
+          failure. <code>stop()</code> ends the waits between them.
+        </p>
+        <pre><code class="language-js">scheduler.add({ name: 'sync prices', every: '15m', retries: 3, retryDelay: '30s', timeout: '2m', run: syncPrices });</code></pre>
+
+        <h2 id="state">State and events</h2>
+        <p>
+          <code>scheduler.jobs()</code> and <code>scheduler.job(name)</code>: <code>{ name, schedule, next, running, runs,
+          failures, skipped, lastRun, lastDuration, lastError }</code>. <code>remove(name)</code>, <code>has(name)</code>,
+          and <code>runNow(name)</code>: a run now, out of the schedule. Events: <code>'run'</code>, <code>'retry'</code>,
+          <code>'done'</code>, <code>'failure'</code>, <code>'catchUp'</code> and <code>'skip'</code> (with <code>why</code>: <code>'running'</code> or
+          <code>'locked'</code>); <code>onError(error, job)</code> and the logger see every failure.
+        </p>
+
+        <h2 id="history">History and catch-up</h2>
+        <p>
+          With a <code>history</code>, the scheduler records every run: <code>{ name, scheduledAt, startedAt, duration,
+          status, attempts, error, host }</code>, its status <code>'done'</code>, <code>'failed'</code> or
+          <code>'timeout'</code>; <code>scheduler.history(name, { limit })</code> gives them, the last first.
+          <code>memoryHistory({ keep })</code> keeps the last runs of each job in the process; <code>ormHistory(db, {
+          maxAge })</code> keeps them in a table of a database (<code>xufa_scheduler_runs</code>), shared by every machine,
+          and deletes those older than <code>maxAge</code> (30 days).
+        </p>
+        <pre><code class="language-js">const scheduler = new Scheduler({ history: ormHistory(db), lock: ormLock(db) }); // their tables: db.sync()
+scheduler.add({ name: 'invoices', cron: '0 2 * * *', catchUp: true, run: makeInvoices });</code></pre>
+        <p>
+          A job with <code>catchUp</code> runs, when the scheduler starts, the last time due that the history has no run
+          of (once, not every time missed); a new job, with no runs in the history, does not. With a history and a lock in
+          a database, one machine catches up a time, and those that start later do not again.
+        </p>
+
+        <h2 id="cluster">Clusters and machines</h2>
+        <p>
+          A scheduler runs its jobs in its process: in a cluster of <a href="../cluster/index.html">@xufa/cluster</a>, make it in
+          the <code>primary</code> (or in one worker), not in every worker. On several machines, give the schedulers a
+          lock in a database of <a href="../orm/index.html">@xufa/orm</a> (any backend), and each time of a job runs in one of them:
+        </p>
+        <pre><code class="language-js">const config = require('./config'); // loadConfig() of @xufa/config
+
+start({
+  primary: async ({ onShutdown }) =&gt; {
+    const db = new Database({ ...config.database });
+    const scheduler = new Scheduler({ lock: ormLock(db), history: ormHistory(db), timezone: config.timezone }); // db.sync() makes their tables
+    await db.connect();
+    await db.sync();
+    scheduler.add({ name: 'purge', every: config.jobs.purgeEvery, catchUp: true, run: purge }); // a duration of the schema: ms
+    scheduler.start();
+    onShutdown(async () =&gt; {
+      await scheduler.stop();
+      await db.close();
+    });
+  },
+  worker: async () =&gt; { /* the app */ },
+});</code></pre>
+        <p>
+          The times of a job agree between machines (<code>every</code> is aligned to the clock), and a claim is taken by
+          one atomic conditional update. While a run goes on its claim is renewed, and no other machine starts that job;
+          when the process of a run dies, its claim expires after <code>lockTtl</code>. Keep the clocks of the machines
+          in time (NTP). A lock of your own is <code>{ claim, renew, release }</code>; <code>memoryLock()</code> is one in
+          the process.
+        </p>
+
+        <h2 id="plugin">The plugin</h2>
+        <p>
+          For <a href="../http/index.html">@xufa/http</a> and fastify: <code>app.scheduler</code>, started when the app is ready
+          (<code>start: false</code> leaves that to you), and stopped when it closes, its runs waited for. Its options are
+          those of a <code>Scheduler</code> (the logger of the app by default), and <code>jobs</code>, or
+          <code>scheduler</code>: one made before.
+        </p>
+        <pre><code class="language-js">app.register(schedulerPlugin, { jobs: [{ name: 'purge', every: '10m', run: () =&gt; Session.purge() }] });</code></pre>
+      </article>
+    </div>
+
+    <footer class="footer">
+      <div class="container">
+        <span>xufa is MIT licensed. &copy; Jes&uacute;s Seijas</span>
+        <span>
+          <a href="../guide.html">Guide</a> &middot; <a href="../playground.html">Playground</a> &middot; <a href="../http/index.html">HTTP</a> &middot; <a href="../orm/index.html">ORM</a> &middot; <a href="../auth/index.html">Auth</a> &middot;
+          <a href="../sequelize/index.html">Sequelize</a> &middot; <a href="../packages.html">Packages</a> &middot;
+          <a href="../benchmarks.html">Benchmarks</a> &middot; <a href="https://github.com/xufajs/xufa">GitHub</a>
+        </span>
+      </div>
+    </footer>
+  </body>
+</html>

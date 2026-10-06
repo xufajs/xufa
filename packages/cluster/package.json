@@ -42,6 +42,7 @@
     "access": "public"
   },
   "dependencies": {
+    "@xufa/faults": "workspace:*",
     "@xufa/marshal": "workspace:*"
   }
 }

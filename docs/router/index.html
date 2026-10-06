@@ -1,0 +1,324 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>@xufa/router · xufa</title>
+    <meta
+      name="description"
+      content="@xufa/router: a fast HTTP router with the API of find-my-way, with no dependencies. Parametric, regexp and wildcard routes, constraints of version and host, and match() for frameworks."
+    />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%23d9502b'/%3E%3Ctext x='16' y='22.5' font-family='monospace' font-size='18' font-weight='700' fill='white' text-anchor='middle'%3Ex%3C/text%3E%3C/svg%3E"
+    />
+    <link rel="stylesheet" href="../style.css?v=0.1.0" />
+    <script src="../main.js?v=0.1.0"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js" defer></script>
+  </head>
+  <body>
+    <header class="header">
+      <div class="header-inner">
+        <a class="logo" href="../index.html"><span class="logo-mark">x</span>xufa</a>
+        <nav class="nav">
+          <a href="../guide.html">Guide</a>
+          <a href="../playground.html">Playground</a>
+          <a href="../http/index.html">HTTP</a>
+          <a href="../orm/index.html">ORM</a>
+          <a class="hide-small" href="../auth/index.html">Auth</a>
+          <a class="hide-small" href="../sequelize/index.html">Sequelize</a>
+          <a class="hide-small" href="../packages.html" aria-current="page">Packages</a>
+          <a class="hide-small" href="../benchmarks.html">Benchmarks</a>
+          <a href="https://github.com/xufajs/xufa">GitHub</a>
+          <button class="theme-toggle" type="button" aria-label="Switch between light and dark theme">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+              <path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z" />
+            </svg>
+          </button>
+        </nav>
+      </div>
+    </header>
+
+    <div class="docs">
+      <button class="menu-toggle" type="button" aria-expanded="false">☰ Contents</button>
+      <aside class="sidebar">
+        <h4>Using it</h4>
+        <ul>
+          <li><a href="#start">Quick start</a></li>
+          <li><a href="#routes">Routes</a></li>
+          <li><a href="#handlers">Handlers and stores</a></li>
+          <li><a href="#finding">Finding a route</a></li>
+        </ul>
+        <h4>More</h4>
+        <ul>
+          <li><a href="#constraints">Constraints</a></li>
+          <li><a href="#options">Options</a></li>
+          <li><a href="#match">match()</a></li>
+          <li><a href="#managing">Managing routes</a></li>
+          <li><a href="#helpers">Helpers</a></li>
+        </ul>
+        <h4>About it</h4>
+        <ul>
+          <li><a href="#performance">Performance</a></li>
+          <li><a href="#from-fmw">Coming from find-my-way</a></li>
+          <li><a href="#typescript">TypeScript</a></li>
+        </ul>
+        <h4>Packages</h4>
+        <ul>
+          <li><a href="../websocket/index.html">@xufa/websocket</a></li>
+          <li><a href="../openapi/index.html">@xufa/openapi</a></li>
+          <li><a href="../client/index.html">@xufa/client</a></li>
+          <li><a href="../schema/index.html">@xufa/schema</a></li>
+          <li><a href="../pg/index.html">@xufa/pg</a></li>
+          <li><a href="../mongo/index.html">@xufa/mongo</a></li>
+          <li><a href="../expression/index.html">@xufa/expression</a></li>
+          <li><a href="../template/index.html">@xufa/template</a></li>
+          <li><a href="../cluster/index.html">@xufa/cluster</a></li>
+          <li><a href="../scheduler/index.html">@xufa/scheduler</a></li>
+          <li><a href="../config/index.html">@xufa/config</a></li>
+          <li><a href="../discovery/index.html">@xufa/discovery</a></li>
+          <li><a href="../netcache/index.html">@xufa/netcache</a></li>
+          <li><a href="../faults/index.html">@xufa/faults</a></li>
+          <li><a href="../marshal/index.html">@xufa/marshal</a></li>
+          <li><a href="../yaml/index.html">@xufa/yaml</a></li>
+          <li><a href="../jwt/index.html">@xufa/jwt</a></li>
+          <li><a href="../logger/index.html">@xufa/logger</a></li>
+          <li><a href="index.html" aria-current="page">@xufa/router</a></li>
+          <li><a href="../serializer/index.html">@xufa/serializer</a></li>
+          <li><a href="../inject/index.html">@xufa/inject</a></li>
+          <li><a href="../boot/index.html">@xufa/boot</a></li>
+          <li><a href="../errors/index.html">@xufa/errors</a></li>
+          <li><a href="../packages.html">All the packages</a></li>
+        </ul>
+      </aside>
+
+      <article class="content">
+<h1>@xufa/router</h1>
+        <p class="intro">
+          A fast HTTP router with the API of <a href="https://github.com/delvedor/find-my-way">find-my-way</a>, and no
+          dependencies: a radix tree of routes, with static paths found in a map before the tree is walked. It is the
+          router of <a href="../http/index.html">@xufa/http</a>, passes find-my-way's test suite, and works on its own with
+          <code>node:http</code> or any server.
+        </p>
+
+        <h2 id="start">Quick start</h2>
+        <pre><code class="language-sh">npm install @xufa/router</code></pre>
+        <pre><code class="language-js">const http = require('node:http');
+const router = require('@xufa/router')({
+  ignoreTrailingSlash: true,
+  defaultRoute: (req, res) =&gt; { res.statusCode = 404; res.end('Not found'); },
+});
+
+router.get('/users/:id', (req, res, params, store, searchParams) =&gt; res.end(`user ${params.id}`));
+router.on(['GET', 'HEAD'], '/files/*', (req, res, params) =&gt; res.end(params['*']));
+
+http.createServer((req, res) =&gt; router.lookup(req, res)).listen(3000);</code></pre>
+
+        <h2 id="routes">Routes</h2>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Path</th><th>Matches</th><th>params</th></tr></thead>
+            <tbody>
+              <tr><td><code>/users</code></td><td><code>/users</code></td><td></td></tr>
+              <tr><td><code>/users/:id</code></td><td><code>/users/7</code></td><td><code>{ id: '7' }</code></td></tr>
+              <tr><td><code>/flights/:from-:to</code></td><td><code>/flights/MAD-LHR</code></td><td><code>{ from: 'MAD', to: 'LHR' }</code></td></tr>
+              <tr><td><code>/img/:name.:ext</code></td><td><code>/img/logo.png</code></td><td><code>{ name: 'logo', ext: 'png' }</code></td></tr>
+              <tr><td><code>/num/:id(^\\d+$)</code></td><td><code>/num/42</code>, not <code>/num/x</code></td><td><code>{ id: '42' }</code></td></tr>
+              <tr><td><code>/files/*</code></td><td><code>/files/a/b/c.txt</code></td><td><code>{ '*': 'a/b/c.txt' }</code></td></tr>
+              <tr><td><code>/users/:id?</code></td><td><code>/users</code> and <code>/users/7</code></td><td>an optional last parameter</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p>
+          Static parts win over parameters, and parameters over wildcards. Regexps are checked for catastrophic
+          backtracking when they are added (<code>allowUnsafeRegex</code> skips it). Parameters are decoded
+          (<code>%20</code>), and longer than <code>maxParamLength</code> they do not match.
+        </p>
+
+        <h2 id="handlers">Handlers and stores</h2>
+        <pre><code class="language-js">router.on('GET', '/admin/:page', { constraints: { host: 'admin.example.com' } }, handler, { auth: 'admin' });
+router.get('/x', handler);   // and put, post, delete, head, patch, options, trace, connect, all
+router.all('/health', ok);   // every method</code></pre>
+        <p>
+          <code>on(method, path, [options], handler, [store])</code>: the method can be a list; the store is any value,
+          given back to the handler (and by <code>find()</code>). Handlers are called as
+          <code>handler(req, res, params, store, searchParams)</code>, with <code>this</code> the context given to
+          <code>lookup()</code>.
+        </p>
+
+        <h2 id="finding">Finding a route</h2>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Method</th><th>What it does</th></tr></thead>
+            <tbody>
+              <tr><td><code>lookup(req, res, [ctx])</code></td><td>Finds the route of the request and calls its handler (or <code>defaultRoute</code>).</td></tr>
+              <tr><td><code>find(method, path, [constraints])</code></td><td><code>{ handler, params, store, searchParams }</code>, or <code>null</code>; the query string is parsed.</td></tr>
+              <tr><td><code>findRoute(method, path, [constraints])</code></td><td>The route as it was added (<code>'/users/:id'</code>): its handler, store and parameter names.</td></tr>
+              <tr><td><code>hasRoute(method, path, [constraints])</code></td><td>Whether that route was added.</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h2 id="constraints">Constraints</h2>
+        <pre><code class="language-js">router.on('GET', '/api', { constraints: { version: '1.2.0' } }, v1);
+router.on('GET', '/api', { constraints: { version: '2.0.0' } }, v2);
+router.lookup(req, res); // Accept-Version: 2.x =&gt; v2
+
+router.on('GET', '/', { constraints: { host: /.*\.example\.com/ } }, tenantHome);
+
+// A strategy of your own:
+const Router = require('@xufa/router');
+const router2 = Router({
+  constraints: {
+    region: {
+      name: 'region',
+      storage: () =&gt; { const map = new Map(); return { get: (k) =&gt; map.get(k), set: (k, v) =&gt; map.set(k, v) }; },
+      deriveConstraint: (req) =&gt; req.headers['x-region'],
+      mustMatchWhenDerived: true,
+    },
+  },
+});</code></pre>
+        <p><code>version</code> (semver ranges of <code>Accept-Version</code>) and <code>host</code> (strings or regexps) are there; routes with constraints win over the same route without them.</p>
+
+        <h2 id="options">Options</h2>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Option</th><th>Default</th><th>What it does</th></tr></thead>
+            <tbody>
+              <tr><td><code>ignoreTrailingSlash</code></td><td><code>false</code></td><td><code>/a/</code> and <code>/a</code> are the same route.</td></tr>
+              <tr><td><code>ignoreDuplicateSlashes</code></td><td><code>false</code></td><td><code>//a//b</code> is <code>/a/b</code>.</td></tr>
+              <tr><td><code>caseSensitive</code></td><td><code>true</code></td><td><code>false</code>: paths in any case (parameters keep theirs).</td></tr>
+              <tr><td><code>maxParamLength</code></td><td><code>100</code></td><td>Longer parameters do not match (<code>onMaxParamLength</code>).</td></tr>
+              <tr><td><code>allowUnsafeRegex</code></td><td><code>false</code></td><td>Regexps that can backtrack catastrophically are allowed.</td></tr>
+              <tr><td><code>querystringParser</code></td><td><code>node:querystring</code></td><td>Parses <code>searchParams</code>.</td></tr>
+              <tr><td><code>useSemicolonDelimiter</code></td><td><code>false</code></td><td><code>;</code> separates the query too.</td></tr>
+              <tr><td><code>defaultRoute(req, res)</code></td><td></td><td>When no route matches.</td></tr>
+              <tr><td><code>onBadUrl(path, req, res)</code></td><td></td><td>For paths that cannot be decoded.</td></tr>
+              <tr><td><code>constraints</code></td><td></td><td>Strategies of your own.</td></tr>
+              <tr><td><code>buildPrettyMeta(route)</code></td><td></td><td>What <code>prettyPrint({ includeMeta })</code> shows of a route.</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h2 id="match">match()</h2>
+        <p>
+          What xufa calls for every request: it finds the route without calling its handler, and leaves the query string
+          as it is, to be parsed only if it is read. The result has <code>status</code> (<code>FOUND</code>,
+          <code>BAD_URL</code> or <code>MAX_PARAM_LENGTH</code>), <code>handler</code>, <code>store</code>,
+          <code>params</code> and the unparsed <code>querystring</code>. The result object is reused: read it before the
+          next call.
+        </p>
+        <pre><code class="language-js">const Router = require('@xufa/router');
+const found = router.match('GET', '/users/7?full=true');
+if (found !== null &amp;&amp; found.status === Router.FOUND) found.handler(req, res, found.params, found.store);</code></pre>
+
+        <h2 id="managing">Managing routes</h2>
+        <pre><code class="language-js">router.off('GET', '/users/:id');           // removes a route (with constraints: those)
+router.reset();                              // removes every route
+console.log(router.prettyPrint({ commonPrefix: false, includeMeta: true }));</code></pre>
+        <pre><code class="language-text">└── /
+    ├── users/
+    │   └── :id (GET) {"version":"1.2.0"}
+    │       :id (GET)
+    ├── files/
+    │   └── * (GET)
+    └── img/
+        └── :name.:ext (GET)</code></pre>
+
+        <h2 id="helpers">Helpers</h2>
+        <p>
+          <code>httpMethods</code> (the methods it knows, <code>QUERY</code> included), <code>safeDecodeURI</code>,
+          <code>safeDecodeURIComponent</code>, <code>isSafeRegex</code>, <code>sanitizeUrlPath</code>,
+          <code>removeDuplicateSlashes</code> and <code>trimLastSlash</code>.
+        </p>
+
+        <h2 id="performance">Performance</h2>
+        <p>
+          Routes found a second on the routes of a typical API (<code>node bench/micro/router.js</code>,
+          <code>bench/results/router-2.md</code>): <code>match()</code>, what xufa calls for every request, against
+          find-my-way's <code>find()</code>.
+        </p>
+        <div class="pairs">
+          <div class="pair win">
+            <div class="head"><span>with a query string</span><span class="times">2.76&times;</span></div>
+            <div class="chart-row us"><span class="name">match()</span><span class="track"><span class="fill" style="width: 100.0%"></span></span><span class="value">6.5M</span></div>
+            <div class="chart-row"><span class="name">find-my-way</span><span class="track"><span class="fill" style="width: 36.3%"></span></span><span class="value">2.4M</span></div>
+          </div>
+          <div class="pair win">
+            <div class="head"><span>a deep static path</span><span class="times">2.36&times;</span></div>
+            <div class="chart-row us"><span class="name">match()</span><span class="track"><span class="fill" style="width: 100.0%"></span></span><span class="value">15.8M</span></div>
+            <div class="chart-row"><span class="name">find-my-way</span><span class="track"><span class="fill" style="width: 42.3%"></span></span><span class="value">6.7M</span></div>
+          </div>
+          <div class="pair win">
+            <div class="head"><span>two parameters</span><span class="times">1.67&times;</span></div>
+            <div class="chart-row us"><span class="name">match()</span><span class="track"><span class="fill" style="width: 100.0%"></span></span><span class="value">7.5M</span></div>
+            <div class="chart-row"><span class="name">find-my-way</span><span class="track"><span class="fill" style="width: 59.8%"></span></span><span class="value">4.5M</span></div>
+          </div>
+          <div class="pair win">
+            <div class="head"><span>a wildcard</span><span class="times">1.37&times;</span></div>
+            <div class="chart-row us"><span class="name">match()</span><span class="track"><span class="fill" style="width: 100.0%"></span></span><span class="value">9.7M</span></div>
+            <div class="chart-row"><span class="name">find-my-way</span><span class="track"><span class="fill" style="width: 72.9%"></span></span><span class="value">7.1M</span></div>
+          </div>
+          <div class="pair win">
+            <div class="head"><span>one parameter</span><span class="times">1.36&times;</span></div>
+            <div class="chart-row us"><span class="name">match()</span><span class="track"><span class="fill" style="width: 100.0%"></span></span><span class="value">10.6M</span></div>
+            <div class="chart-row"><span class="name">find-my-way</span><span class="track"><span class="fill" style="width: 73.8%"></span></span><span class="value">7.8M</span></div>
+          </div>
+          <div class="pair win">
+            <div class="head"><span>a parameter with a regular expression</span><span class="times">1.25&times;</span></div>
+            <div class="chart-row us"><span class="name">match()</span><span class="track"><span class="fill" style="width: 100.0%"></span></span><span class="value">10.0M</span></div>
+            <div class="chart-row"><span class="name">find-my-way</span><span class="track"><span class="fill" style="width: 79.9%"></span></span><span class="value">8.0M</span></div>
+          </div>
+          <div class="pair win">
+            <div class="head"><span>two parameters in a segment (:name.:ext)</span><span class="times">1.15&times;</span></div>
+            <div class="chart-row us"><span class="name">match()</span><span class="track"><span class="fill" style="width: 100.0%"></span></span><span class="value">6.8M</span></div>
+            <div class="chart-row"><span class="name">find-my-way</span><span class="track"><span class="fill" style="width: 87.3%"></span></span><span class="value">5.9M</span></div>
+          </div>
+          <div class="pair win">
+            <div class="head"><span>the root (/)</span><span class="times">1.11&times;</span></div>
+            <div class="chart-row us"><span class="name">match()</span><span class="track"><span class="fill" style="width: 100.0%"></span></span><span class="value">57.8M</span></div>
+            <div class="chart-row"><span class="name">find-my-way</span><span class="track"><span class="fill" style="width: 90.1%"></span></span><span class="value">52.1M</span></div>
+          </div>
+          <div class="pair win">
+            <div class="head"><span>not found</span><span class="times">1.11&times;</span></div>
+            <div class="chart-row us"><span class="name">match()</span><span class="track"><span class="fill" style="width: 100.0%"></span></span><span class="value">19.3M</span></div>
+            <div class="chart-row"><span class="name">find-my-way</span><span class="track"><span class="fill" style="width: 90.3%"></span></span><span class="value">17.4M</span></div>
+          </div>
+          <div class="pair win">
+            <div class="head"><span>an encoded parameter</span><span class="times">1.05&times;</span></div>
+            <div class="chart-row us"><span class="name">match()</span><span class="track"><span class="fill" style="width: 100.0%"></span></span><span class="value">1.9M</span></div>
+            <div class="chart-row"><span class="name">find-my-way</span><span class="track"><span class="fill" style="width: 95.3%"></span></span><span class="value">1.8M</span></div>
+          </div>
+        </div>
+        <p>
+          Static paths are found with one lookup in a map, before the tree is walked. Once a tree has been walked a few
+          times (<code>Router.COMPILE_AFTER</code>, 16), it is compiled into one function: each static part becomes
+          comparisons of character codes, each parameter a slice, and backtracking falls through to the next child to
+          try, with no call per node. <code>match()</code> leaves the query string to be parsed only if it is read;
+          <code>find()</code>, which parses it as find-my-way's does, is from 1.06&times; to
+          2.16&times; find-my-way's.
+        </p>
+
+        <h2 id="from-fmw">Coming from find-my-way</h2>
+        <ul>
+          <li>The API and the behaviour are find-my-way's (its test suite passes); <code>require('find-my-way')</code> can be replaced by <code>require('@xufa/router')</code>.</li>
+          <li>Added: <code>match()</code>, the map of static paths, the method <code>QUERY</code>, and the helpers.</li>
+        </ul>
+
+        <h2 id="typescript">TypeScript</h2>
+        <p>find-my-way's declarations, with <code>match()</code>, <code>MatchResult</code> and the helpers.</p>
+      </article>
+    </div>
+
+    <footer class="footer">
+      <div class="container">
+        <span>xufa is MIT licensed. &copy; Jes&uacute;s Seijas</span>
+        <span>
+          <a href="../guide.html">Guide</a> &middot; <a href="../playground.html">Playground</a> &middot; <a href="../http/index.html">HTTP</a> &middot; <a href="../orm/index.html">ORM</a> &middot; <a href="../auth/index.html">Auth</a> &middot;
+          <a href="../sequelize/index.html">Sequelize</a> &middot; <a href="../packages.html">Packages</a> &middot;
+          <a href="../benchmarks.html">Benchmarks</a> &middot; <a href="https://github.com/xufajs/xufa">GitHub</a>
+        </span>
+      </div>
+    </footer>
+  </body>
+</html>

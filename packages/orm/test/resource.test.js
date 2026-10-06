@@ -198,3 +198,43 @@ describe('resource', () => {
     ]);
   });
 });
+
+describe('resource with strict: true', () => {
+  it('refuses keys that are not writable, every key refused in one ValidationError (400 with its errors)', async () => {
+    const { app, Book, ada } = await makeApp({ strict: true, readOnly: ['owner'] });
+    const refused = await app.inject({
+      method: 'POST',
+      url: '/books',
+      payload: { title: 'x', author: ada.id, id: 7, createdAt: '2000-01-01T00:00:00Z', owner: 'me', nope: 1 },
+    });
+    expect(refused.statusCode).toBe(400);
+    expect(json(refused)).toMatchObject({
+      code: 'XUFA_ORM_ERR_VALIDATION',
+      errors: {
+        nope: ['Book has no field nope.'],
+        id: ['This field is read-only.'],
+        createdAt: ['This field is read-only.'],
+        owner: ['This field is read-only.'],
+      },
+    });
+    expect(await Book.objects.filter({ title: 'x' }).exists()).toBe(false);
+    const created = await app.inject({ method: 'POST', url: '/books', payload: { title: 'x', author: ada.id } });
+    expect(created.statusCode).toBe(201);
+  });
+
+  it('an update takes read-only keys with the values the object has (the object as it was read)', async () => {
+    const { app } = await makeApp({ strict: true });
+    const read = json(await app.inject({ url: '/books?limit=1' })).results[0];
+    const put = await app.inject({ method: 'PUT', url: `/books/${read.id}`, payload: { ...read, pages: 99 } });
+    expect([put.statusCode, json(put).pages]).toEqual([200, 99]);
+    const changed = await app.inject({ method: 'PATCH', url: `/books/${read.id}`, payload: { id: read.id + 100, createdAt: read.createdAt } });
+    expect(changed.statusCode).toBe(400);
+    expect(json(changed).errors).toEqual({ id: ['This field is read-only.'] });
+  });
+
+  it('without strict, read-only keys are ignored and an unknown key is a message, as before', async () => {
+    const { app, ada } = await makeApp();
+    const res = await app.inject({ method: 'POST', url: '/books', payload: { title: 'y', author: ada.id, id: 7 } });
+    expect([res.statusCode, json(res).id === 7]).toEqual([201, false]);
+  });
+});

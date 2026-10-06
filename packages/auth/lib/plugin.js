@@ -10,6 +10,11 @@
 // The access token is read from the Authorization header (Bearer), then from the cookie `token.cookie` and the query
 // parameter `token.query`, when they are given. A route without auth works with or without credentials (request.user
 // is null without valid ones); one with auth answers 401 without them, and 403 without the roles it needs.
+//
+// Tenants: a user may use the tenants of its claims (tenants: ['acme'], or tenant: 'acme'; '*' is every tenant). A
+// route with { auth: { tenant: true } } needs a user of the tenant of the request (request.tenant, which the plugin of
+// the ORM sets, or options.tenants.of(request)); { tenant: '*' } a user of every tenant. app.auth.canUseTenant(request,
+// id) is that check, for the authorize option of the tenants of the ORM (before the tenant is entered).
 const { KeySet } = require('./keys');
 const { signJwtAsync, verifyJwtAsync } = require('./jwt-keyset');
 const { seconds } = require('./duration');
@@ -34,8 +39,27 @@ function rolesOf(user) {
   return user.role === undefined || user.role === null ? [] : [user.role];
 }
 
+// Every tenant, in the tenants of a user.
+const ALL_TENANTS = '*';
+
+// The tenants of a user: user.tenants (a list) or user.tenant, as texts.
+function tenantsOf(user) {
+  if (!user) return [];
+  if (Array.isArray(user.tenants)) return user.tenants.map(String);
+  return user.tenant === undefined || user.tenant === null ? [] : [String(user.tenant)];
+}
+
+// Whether a user may use a tenant: one of its tenants, or all ('*').
+function memberOf(tenants, tenant) {
+  return tenants.includes(ALL_TENANTS) || (tenant !== undefined && tenant !== null && tenants.includes(String(tenant)));
+}
+
 async function authPlugin(app, options = {}) {
   const { keys, accessToken = {}, token = {}, user: userOf, prefix = '/auth', hook = 'onRequest' } = options;
+  // The tenant of a request, and the tenants of a user (their claims by default).
+  const tenantOptions = options.tenants || {};
+  const tenantOfRequest = tenantOptions.of || ((request) => request.tenant);
+  const tenantsOfUser = tenantOptions.claim || tenantsOf;
   const given = options.strategies || (keys ? ['jwt'] : []);
   if (!keys && (given.includes('jwt') || options.login || options.refresh)) {
     throw new TypeError('The auth plugin needs keys (a secret, a KeySet, or a function of the request)');
@@ -168,7 +192,7 @@ async function authPlugin(app, options = {}) {
     const failures = request[FAILURES] || [];
     const failed = failures.map((failure) => failure.challenge).filter(Boolean);
     const challenges = failed.length ? failed : list.map((strategy) => strategy.challenge).filter(Boolean);
-    if (challenges.length) reply.header('www-authenticate', [...new Set(challenges)].join(', '));
+    if (challenges.length && reply) reply.header('www-authenticate', [...new Set(challenges)].join(', '));
     return request.authError || new Unauthorized('Authentication is required');
   }
 
@@ -193,6 +217,25 @@ async function authPlugin(app, options = {}) {
   async function allows(request, roles, check) {
     if (check) return check(request.user, request);
     return roles.length === 0 || rolesOf(request.user).some((role) => roles.includes(role));
+  }
+
+  // Whether the user of a request may use a tenant: 401 (thrown) without a user, else true or false. For the
+  // authorize option of the tenants of the ORM: (request, id, reply) => app.auth.canUseTenant(request, id, reply).
+  async function canUseTenant(request, tenant, reply = null) {
+    await authenticate(request, reply);
+    return memberOf(await tenantsOfUser(request.user), tenant);
+  }
+
+  // The tenant check of a route: true (a user of the tenant of the request) or '*' (a user of every tenant).
+  async function checkTenant(request, rule) {
+    const tenants = await tenantsOfUser(request.user);
+    if (rule === ALL_TENANTS) {
+      if (!tenants.includes(ALL_TENANTS)) throw new Forbidden('You cannot use every tenant');
+      return;
+    }
+    const tenant = await tenantOfRequest(request);
+    if (tenant === undefined || tenant === null || tenant === '') throw new Forbidden('The request has no tenant');
+    if (!memberOf(tenants, tenant)) throw new Forbidden('You cannot use this tenant');
   }
 
   // The hook of routes that need roles ('admin', or any of a list) or a check of the user (a function of the user
@@ -251,6 +294,8 @@ async function authPlugin(app, options = {}) {
     authenticate,
     authenticateWith,
     authorize,
+    canUseTenant,
+    tenantsOf: (user) => tenantsOfUser(user),
     keys: fixed,
     refresh,
     strategies,
@@ -269,7 +314,8 @@ async function authPlugin(app, options = {}) {
   // Every request is identified (request.user), so routes without auth know the user too.
   if (hook) app.addHook(hook, async (request, reply) => verifyRequest(request, reply));
 
-  // config: { auth: true | 'role' | ['roles'] | (user, request) => boolean | { strategy, roles, check } } on a route:
+  // config: { auth: true | 'role' | ['roles'] | (user, request) => boolean | { strategy, roles, check, tenant } } on a
+  // route:
   // checked before its handler (by a hook of every route, so routes declared before the plugin is loaded have it
   // too).
   const checks = new Map();
@@ -280,14 +326,24 @@ async function authPlugin(app, options = {}) {
         const identifyWith = rule.strategy === undefined ? authenticate : authenticateWith([].concat(rule.strategy));
         const roles = rule.roles === undefined ? [] : [].concat(rule.roles);
         const check = typeof rule.check === 'function' ? rule.check : null;
+        const { tenant } = rule;
+        if (tenant !== undefined && tenant !== true && tenant !== ALL_TENANTS) {
+          throw new TypeError(`The tenant of a rule of auth is true (of the request) or '*' (every tenant): ${tenant}`);
+        }
         checks.set(rule, async (request, reply) => {
           await identifyWith(request, reply);
+          if (tenant !== undefined) await checkTenant(request, tenant);
           if (!(await allows(request, roles, check))) throw new Forbidden('You cannot do this');
         });
       } else checks.set(rule, authorize(rule));
     }
     return checks.get(rule);
   };
+  // The rules of the routes added from now on are made at once: a wrong one stops the app from starting.
+  app.addHook('onRoute', (route) => {
+    const rule = route.config && route.config.auth;
+    if (rule !== undefined && rule !== false && rule !== null) checkOf(rule);
+  });
   app.addHook('preHandler', async (request, reply) => {
     const config = request.routeOptions && request.routeOptions.config;
     const rule = config && config.auth;
@@ -410,4 +466,4 @@ authPlugin[Symbol.for('skip-override')] = true;
 authPlugin[Symbol.for('fastify.display-name')] = '@xufa/auth';
 authPlugin[Symbol.for('plugin-meta')] = { name: '@xufa/auth' };
 
-module.exports = { authPlugin, rolesOf };
+module.exports = { authPlugin, rolesOf, tenantsOf, ALL_TENANTS };

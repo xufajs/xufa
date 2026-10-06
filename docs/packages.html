@@ -19,13 +19,14 @@
   <body>
     <header class="header">
       <div class="header-inner">
-        <a class="logo" href="./"><span class="logo-mark">x</span>xufa</a>
+        <a class="logo" href="index.html"><span class="logo-mark">x</span>xufa</a>
         <nav class="nav">
           <a href="guide.html">Guide</a>
-          <a href="http.html">HTTP</a>
-          <a href="orm.html">ORM</a>
-          <a class="hide-small" href="auth.html">Auth</a>
-          <a class="hide-small" href="sequelize.html">Sequelize</a>
+          <a href="playground.html">Playground</a>
+          <a href="http/index.html">HTTP</a>
+          <a href="orm/index.html">ORM</a>
+          <a class="hide-small" href="auth/index.html">Auth</a>
+          <a class="hide-small" href="sequelize/index.html">Sequelize</a>
           <a class="hide-small" href="packages.html" aria-current="page">Packages</a>
           <a class="hide-small" href="benchmarks.html">Benchmarks</a>
           <a href="https://github.com/xufajs/xufa">GitHub</a>
@@ -43,44 +44,48 @@
       <aside class="sidebar">
         <h4>The framework</h4>
         <ul>
-          <li><a href="http.html">@xufa/http</a></li>
-          <li><a href="websocket.html">@xufa/websocket</a></li>
-          <li><a href="openapi.html">@xufa/openapi</a></li>
-          <li><a href="client.html">@xufa/client</a></li>
-          <li><a href="orm.html">@xufa/orm</a></li>
-          <li><a href="auth.html">@xufa/auth</a></li>
-          <li><a href="sequelize.html">@xufa/sequelize</a></li>
+          <li><a href="http/index.html">@xufa/http</a></li>
+          <li><a href="websocket/index.html">@xufa/websocket</a></li>
+          <li><a href="openapi/index.html">@xufa/openapi</a></li>
+          <li><a href="client/index.html">@xufa/client</a></li>
+          <li><a href="schema/index.html">@xufa/schema</a></li>
+          <li><a href="orm/index.html">@xufa/orm</a></li>
+          <li><a href="auth/index.html">@xufa/auth</a></li>
+          <li><a href="sequelize/index.html">@xufa/sequelize</a></li>
         </ul>
         <h4>Drivers</h4>
         <ul>
-          <li><a href="pg.html">@xufa/pg</a></li>
-          <li><a href="mongo.html">@xufa/mongo</a></li>
+          <li><a href="pg/index.html">@xufa/pg</a></li>
+          <li><a href="mongo/index.html">@xufa/mongo</a></li>
         </ul>
         <h4>Expressions and templates</h4>
         <ul>
-          <li><a href="expression.html">@xufa/expression</a></li>
-          <li><a href="template.html">@xufa/template</a></li>
+          <li><a href="expression/index.html">@xufa/expression</a></li>
+          <li><a href="template/index.html">@xufa/template</a></li>
         </ul>
         <h4>Security</h4>
         <ul>
-          <li><a href="jwt.html">@xufa/jwt</a></li>
+          <li><a href="jwt/index.html">@xufa/jwt</a></li>
         </ul>
         <h4>Running</h4>
         <ul>
-          <li><a href="cluster.html">@xufa/cluster</a></li>
-          <li><a href="discovery.html">@xufa/discovery</a></li>
-          <li><a href="netcache.html">@xufa/netcache</a></li>
-          <li><a href="marshal.html">@xufa/marshal</a></li>
-          <li><a href="yaml.html">@xufa/yaml</a></li>
+          <li><a href="cluster/index.html">@xufa/cluster</a></li>
+          <li><a href="config/index.html">@xufa/config</a></li>
+          <li><a href="scheduler/index.html">@xufa/scheduler</a></li>
+          <li><a href="discovery/index.html">@xufa/discovery</a></li>
+          <li><a href="netcache/index.html">@xufa/netcache</a></li>
+          <li><a href="faults/index.html">@xufa/faults</a></li>
+          <li><a href="marshal/index.html">@xufa/marshal</a></li>
+          <li><a href="yaml/index.html">@xufa/yaml</a></li>
         </ul>
         <h4>The parts of @xufa/http</h4>
         <ul>
-          <li><a href="logger.html">@xufa/logger</a></li>
-          <li><a href="router.html">@xufa/router</a></li>
-          <li><a href="serializer.html">@xufa/serializer</a></li>
-          <li><a href="inject.html">@xufa/inject</a></li>
-          <li><a href="boot.html">@xufa/boot</a></li>
-          <li><a href="errors.html">@xufa/errors</a></li>
+          <li><a href="logger/index.html">@xufa/logger</a></li>
+          <li><a href="router/index.html">@xufa/router</a></li>
+          <li><a href="serializer/index.html">@xufa/serializer</a></li>
+          <li><a href="inject/index.html">@xufa/inject</a></li>
+          <li><a href="boot/index.html">@xufa/boot</a></li>
+          <li><a href="errors/index.html">@xufa/errors</a></li>
         </ul>
       </aside>
 
@@ -96,37 +101,42 @@ npm install @xufa/pg # or only the one you need</code></pre>
 
         <h2 id="framework">The framework</h2>
         <div class="package-cards">
-          <a class="package-card" href="http.html">
+          <a class="package-card" href="http/index.html">
             <h3>@xufa/http</h3>
             <span class="package-replaces">fastify</span>
             <p>The HTTP framework: routes, schemas, hooks, plugins and decorators, with the API of fastify.</p>
           </a>
-          <a class="package-card" href="websocket.html">
+          <a class="package-card" href="websocket/index.html">
             <h3>@xufa/websocket</h3>
             <span class="package-replaces">ws, @fastify/websocket</span>
             <p>WebSockets: the client and server of ws, WebSocket routes, and rooms across workers and machines.</p>
           </a>
-          <a class="package-card" href="openapi.html">
+          <a class="package-card" href="openapi/index.html">
             <h3>@xufa/openapi</h3>
             <span class="package-replaces">@fastify/swagger, @fastify/swagger-ui</span>
             <p>OpenAPI documents of the routes, with resources and security documented, and an explorer.</p>
           </a>
-          <a class="package-card" href="client.html">
+          <a class="package-card" href="client/index.html">
             <h3>@xufa/client</h3>
             <span class="package-replaces">got, axios</span>
             <p>A client of HTTP APIs on fetch: JSON, timeouts, retries, and the cancellation of the request that calls.</p>
           </a>
-          <a class="package-card" href="orm.html">
+          <a class="package-card" href="schema/index.html">
+            <h3>@xufa/schema</h3>
+            <span class="package-replaces">ajv, @sinclair/typebox</span>
+            <p>Schemas as code (plain JSON Schema, typed) or JSON Schema draft-04 to 2020-12, compiled into fast validators.</p>
+          </a>
+          <a class="package-card" href="orm/index.html">
             <h3>@xufa/orm</h3>
             <span class="package-replaces">the Django ORM</span>
-            <p>Models, querysets and migrations for PostgreSQL, MongoDB, memory and files, with tenants and caches.</p>
+            <p>Models, querysets and migrations for PostgreSQL, MongoDB, SQLite, files and stores of objects, with tenants and caches.</p>
           </a>
-          <a class="package-card" href="auth.html">
+          <a class="package-card" href="auth/index.html">
             <h3>@xufa/auth</h3>
             <span class="package-replaces">jsonwebtoken, otplib</span>
             <p>Passwords, JWT, refresh tokens, TOTP and lockout, as a plugin of @xufa/http.</p>
           </a>
-          <a class="package-card" href="sequelize.html">
+          <a class="package-card" href="sequelize/index.html">
             <h3>@xufa/sequelize</h3>
             <span class="package-replaces">Sequelize</span>
             <p>The API of Sequelize 6 over the xufa ORM: existing code runs as it is.</p>
@@ -135,12 +145,12 @@ npm install @xufa/pg # or only the one you need</code></pre>
 
         <h2 id="drivers">Drivers</h2>
         <div class="package-cards">
-          <a class="package-card" href="pg.html">
+          <a class="package-card" href="pg/index.html">
             <h3>@xufa/pg</h3>
             <span class="package-replaces">pg</span>
             <p>A PostgreSQL driver: Client, Pool, transactions, TLS, COPY and LISTEN/NOTIFY.</p>
           </a>
-          <a class="package-card" href="mongo.html">
+          <a class="package-card" href="mongo/index.html">
             <h3>@xufa/mongo</h3>
             <span class="package-replaces">mongodb</span>
             <p>A MongoDB driver with its own BSON: cursors, sessions, transactions and replica sets.</p>
@@ -149,12 +159,12 @@ npm install @xufa/pg # or only the one you need</code></pre>
 
         <h2 id="templates">Expressions and templates</h2>
         <div class="package-cards">
-          <a class="package-card" href="expression.html">
+          <a class="package-card" href="expression/index.html">
             <h3>@xufa/expression</h3>
             <span class="package-replaces">eval, expr-eval</span>
             <p>JavaScript expressions evaluated safely, compiled to closures and to code once they are hot.</p>
           </a>
-          <a class="package-card" href="template.html">
+          <a class="package-card" href="template/index.html">
             <h3>@xufa/template</h3>
             <span class="package-replaces">Handlebars, Mustache</span>
             <p>Templates with expressions, partials, layouts and streaming, and reply.view() for @xufa/http.</p>
@@ -163,7 +173,7 @@ npm install @xufa/pg # or only the one you need</code></pre>
 
         <h2 id="security">Security</h2>
         <div class="package-cards">
-          <a class="package-card" href="jwt.html">
+          <a class="package-card" href="jwt/index.html">
             <h3>@xufa/jwt</h3>
             <span class="package-replaces">jsonwebtoken</span>
             <p>JSON Web Tokens with the API and the tests of jsonwebtoken, jws and jwa, with EdDSA. @xufa/auth signs with it.</p>
@@ -172,27 +182,42 @@ npm install @xufa/pg # or only the one you need</code></pre>
 
         <h2 id="running">Running</h2>
         <div class="package-cards">
-          <a class="package-card" href="cluster.html">
+          <a class="package-card" href="cluster/index.html">
             <h3>@xufa/cluster</h3>
             <span class="package-replaces">node:cluster</span>
             <p>An app in a cluster of processes, restarted when they die, stopped gracefully, with a message bus.</p>
           </a>
-          <a class="package-card" href="discovery.html">
+          <a class="package-card" href="config/index.html">
+            <h3>@xufa/config</h3>
+            <span class="package-replaces">node-config, convict, dotenv, node-vault</span>
+            <p>The configuration from files by environment, .env, variables, HTTP, Consul and Vault, with safe templates, a schema and secrets redacted.</p>
+          </a>
+          <a class="package-card" href="scheduler/index.html">
+            <h3>@xufa/scheduler</h3>
+            <span class="package-replaces">node-cron, agenda</span>
+            <p>Jobs on intervals, cron or once: no overlaps, timeouts, isolated failures, once among machines with a lock.</p>
+          </a>
+          <a class="package-card" href="discovery/index.html">
             <h3>@xufa/discovery</h3>
             <span class="package-replaces">UDP</span>
             <p>The nodes of a service found on the network by multicast, broadcast or seeds, with their meta, sealed with a secret.</p>
           </a>
-          <a class="package-card" href="netcache.html">
+          <a class="package-card" href="netcache/index.html">
             <h3>@xufa/netcache</h3>
             <span class="package-replaces">Redis, as a cache</span>
             <p>A cache shared by the machines of a service: a copy in each, every write sent to all over sealed TCP.</p>
           </a>
-          <a class="package-card" href="marshal.html">
+          <a class="package-card" href="faults/index.html">
+            <h3>@xufa/faults</h3>
+            <span class="package-replaces">Toxiproxy, nock</span>
+            <p>Faults made to happen by rules: the database, caches, API calls or the bus fail, wait or hang, to test resilience.</p>
+          </a>
+          <a class="package-card" href="marshal/index.html">
             <h3>@xufa/marshal</h3>
             <span class="package-replaces">devalue, superjson</span>
             <p>Values as JSON that keeps classes, shared references, cycles, BigInt, Date, Map, Set and errors; safe to parse.</p>
           </a>
-          <a class="package-card" href="yaml.html">
+          <a class="package-card" href="yaml/index.html">
             <h3>@xufa/yaml</h3>
             <span class="package-replaces">js-yaml</span>
             <p>YAML 1.2: load and dump, with the API and the tests of js-yaml.</p>
@@ -201,32 +226,32 @@ npm install @xufa/pg # or only the one you need</code></pre>
 
         <h2 id="parts">The parts of @xufa/http</h2>
         <div class="package-cards">
-          <a class="package-card" href="logger.html">
+          <a class="package-card" href="logger/index.html">
             <h3>@xufa/logger</h3>
             <span class="package-replaces">pino</span>
             <p>A JSON logger with levels, child loggers, redaction, serializers and destinations.</p>
           </a>
-          <a class="package-card" href="router.html">
+          <a class="package-card" href="router/index.html">
             <h3>@xufa/router</h3>
             <span class="package-replaces">find-my-way</span>
             <p>A radix-tree router compiled to code: parameters, wildcards, regular expressions and constraints.</p>
           </a>
-          <a class="package-card" href="serializer.html">
+          <a class="package-card" href="serializer/index.html">
             <h3>@xufa/serializer</h3>
             <span class="package-replaces">fast-json-stringify</span>
             <p>JSON written by functions compiled from JSON schemas.</p>
           </a>
-          <a class="package-card" href="inject.html">
+          <a class="package-card" href="inject/index.html">
             <h3>@xufa/inject</h3>
             <span class="package-replaces">light-my-request</span>
             <p>Fake HTTP requests to a request handler, without a socket: the app.inject() of your tests.</p>
           </a>
-          <a class="package-card" href="boot.html">
+          <a class="package-card" href="boot/index.html">
             <h3>@xufa/boot</h3>
             <span class="package-replaces">avvio</span>
             <p>Loading of plugins, in order, with encapsulation, after/ready/close hooks and timeouts.</p>
           </a>
-          <a class="package-card" href="errors.html">
+          <a class="package-card" href="errors/index.html">
             <h3>@xufa/errors</h3>
             <span class="package-replaces">@fastify/error</span>
             <p>Classes of errors with a code, a status code and a formatted message.</p>
@@ -239,8 +264,8 @@ npm install @xufa/pg # or only the one you need</code></pre>
       <div class="container">
         <span>xufa is MIT licensed. &copy; Jes&uacute;s Seijas</span>
         <span>
-          <a href="guide.html">Guide</a> &middot; <a href="http.html">HTTP</a> &middot; <a href="orm.html">ORM</a> &middot; <a href="auth.html">Auth</a> &middot;
-          <a href="sequelize.html">Sequelize</a> &middot; <a href="packages.html">Packages</a> &middot;
+          <a href="guide.html">Guide</a> &middot; <a href="playground.html">Playground</a> &middot; <a href="http/index.html">HTTP</a> &middot; <a href="orm/index.html">ORM</a> &middot; <a href="auth/index.html">Auth</a> &middot;
+          <a href="sequelize/index.html">Sequelize</a> &middot; <a href="packages.html">Packages</a> &middot;
           <a href="benchmarks.html">Benchmarks</a> &middot; <a href="https://github.com/xufajs/xufa">GitHub</a>
         </span>
       </div>

@@ -23,7 +23,7 @@ compilers), whose type tests are left out.
 
 The ported files say so in their first line, and a new port overwrites them. Written for xufa, and kept:
 
-- `packages/http/types/compilers.d.ts` (the default compilers, on schiva and @xufa/serializer, instead of ajv's);
+- `packages/http/types/compilers.d.ts` (the default compilers, on @xufa/schema and @xufa/serializer, instead of ajv's);
 - the `test/types/xufa.*` type tests of each package;
 - `packages/http/test/types/tsconfig.json`;
 - `packages/sequelize/types/errors/not-supported-error.d.ts` and `packages/sequelize/test/types/tsconfig.json`.

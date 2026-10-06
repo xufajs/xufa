@@ -1,4 +1,4 @@
-// A JSON body validated by a schema (schiva in xufa, ajv in fastify) and a response schema.
+// A JSON body validated by a schema (@xufa/schema in xufa, ajv in fastify) and a response schema.
 const body = JSON.stringify({
   name: 'Ada Lovelace',
   email: 'ada@example.com',

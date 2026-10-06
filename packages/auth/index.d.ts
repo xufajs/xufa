@@ -399,12 +399,23 @@ export type AuthRule<User = any> =
 
 type AuthCheck<User> = (user: User, request: any) => boolean | Promise<boolean>;
 
-/** Which strategies may identify the user (by name: the others are refused), and any of some roles or a check. One
- * of them at least. */
+/** The tenant of a route: true, a user of the tenant of the request; '*', a user of every tenant. */
+export type TenantRule = true | '*';
+
+/** Which strategies may identify the user (by name: the others are refused), any of some roles or a check, and the
+ * tenant the user must be of. One of them at least. */
 export type AuthRuleOf<User = any> =
-  | { strategy: string | string[]; roles?: string | string[]; check?: AuthCheck<User> }
-  | { strategy?: string | string[]; roles: string | string[]; check?: AuthCheck<User> }
-  | { strategy?: string | string[]; roles?: string | string[]; check: AuthCheck<User> };
+  | { strategy: string | string[]; roles?: string | string[]; check?: AuthCheck<User>; tenant?: TenantRule }
+  | { strategy?: string | string[]; roles: string | string[]; check?: AuthCheck<User>; tenant?: TenantRule }
+  | { strategy?: string | string[]; roles?: string | string[]; check: AuthCheck<User>; tenant?: TenantRule }
+  | { strategy?: string | string[]; roles?: string | string[]; check?: AuthCheck<User>; tenant: TenantRule };
+
+/** Every tenant, in the tenants of a user ('*'). */
+export const ALL_TENANTS: '*';
+/** The tenants of a user: user.tenants (a list) or user.tenant, as texts. */
+export function tenantsOf(user: any): string[];
+/** The roles of a user: user.roles (a list) or user.role. */
+export function rolesOf(user: any): string[];
 
 // Strategies: ways a request says who it is.
 
@@ -611,6 +622,12 @@ export interface PluginOptions<User = any> {
   refresh?: RefreshTokens | RefreshTokensOptions | boolean;
   /** The claims of a refresh when there is no login (login.reload otherwise), or null when the user can no longer. */
   reload?(subject: string, data: Claims, request: any): Claims | null | Promise<Claims | null>;
+  /** Tenants: of(request), the tenant of a request (request.tenant, which the plugin of @xufa/orm sets); claim(user),
+   * the tenants a user may use (tenantsOf: its claims tenants or tenant; '*' is every tenant). */
+  tenants?: {
+    of?(request: any): string | number | null | undefined | Promise<string | number | null | undefined>;
+    claim?(user: User): string[] | Promise<string[]>;
+  };
   /** Keep the refresh token in a cookie (HttpOnly, Secure, SameSite=Strict, the path of prefix), not in the body. */
   refreshCookie?: boolean | ({ name?: string } & Omit<CookieOptions, 'maxAge'>);
 }
@@ -636,6 +653,11 @@ export interface AuthApi<User = any> {
   authorize(
     ...rules: Array<string | string[] | ((user: User, request: any) => boolean | Promise<boolean>)>
   ): (request: any, reply: any) => Promise<void>;
+  /** Whether the user of a request may use a tenant (a 401 is thrown without a user): the authorize of the tenants of
+   * @xufa/orm, (request, id, reply) => app.auth.canUseTenant(request, id, reply). */
+  canUseTenant(request: any, tenant: string, reply?: any): Promise<boolean>;
+  /** The tenants a user may use (the claim of the options). */
+  tenantsOf(user: User): Promise<string[]> | string[];
   /** The keys (null when they are a function of the request). */
   keys: KeySet | null;
   hashPassword: typeof hashPassword;

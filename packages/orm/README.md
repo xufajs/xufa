@@ -3,13 +3,16 @@
 The ORM of [xufa](../xufa): models and QuerySets in the spirit of Django, over SQL and NoSQL databases, with no
 dependencies outside xufa. The same models and queries run on every backend:
 
-| Backend    | Database                            | Made with                     |
-| ---------- | ----------------------------------- | ----------------------------- |
-| `memory`   | In memory, for tests and prototypes | JavaScript                    |
-| `fs`       | Files (JSON) in a folder            | `node:fs`                     |
-| `sqlite`   | SQLite                              | `node:sqlite` (Node.js 22.5+) |
-| `postgres` | PostgreSQL                          | [`@xufa/pg`](../pg)           |
-| `mongodb`  | MongoDB                             | [`@xufa/mongo`](../mongo)     |
+| Backend       | Database                            | Made with                     |
+| ------------- | ----------------------------------- | ----------------------------- |
+| `memory`      | In memory, for tests and prototypes | JavaScript                    |
+| `fs`          | Files (JSON) in a folder            | `node:fs`                     |
+| `sqlite`      | SQLite                              | `node:sqlite` (Node.js 22.5+) |
+| `postgres`    | PostgreSQL                          | [`@xufa/pg`](../pg)           |
+| `mongodb`     | MongoDB                             | [`@xufa/mongo`](../mongo)     |
+| `disk`        | Objects (blobs) as files            | `node:fs`                     |
+| `memory-blob` | Objects (blobs) in memory           | JavaScript                    |
+| `s3`          | Objects (blobs) in S3, R2, MinIO... | `fetch` (SigV4 of its own)    |
 
 ```js
 const { Database, Model, fields, or, F, Count, Sum } = require('@xufa/orm'); // or require('xufa/orm')
@@ -63,7 +66,7 @@ case of the class name by default; a name, dots included), `schema` (the schema 
 the table `schema.table`, MongoDB the collection), `ordering`, `indexes` (`[['a', 'b'], { fields: ['c'], unique: true }]`; in SQL
 databases, `condition` is the SQL of the rows of a partial index: `{ fields: ['c'], unique: true, condition:
 '"deleted" IS NULL' }`; `expireAfter` makes a [TTL index](#ttl-indexes)),
-`abstract` (a parent whose fields its children have), `strict` (SQLite: a STRICT table, its columns of the types
+`abstract` (a parent whose fields its children have; `fields.extend(Parent, { ... })` writes them for TypeScript), `strict` (SQLite: a STRICT table, its columns of the types
 STRICT has) and `fillfactor` (PostgreSQL, 10 to 100: room left in the pages
 of the table for the new versions of updated rows, which makes updates of tables updated often about twice as fast
 when they change no indexed column; set when the table is created by `sync()`). A model without a primary key gets `id` (an integer in SQL, an
@@ -134,8 +137,8 @@ models are registered (or given as `through`). `book.tags` is the QuerySet of th
 
 Objects: `save({ fields })` (insert or update; validates first), `delete()`, `refresh()`, `load(name)`, `validate()`
 (throws a `ValidationError` with `errors` by field and the status code 400), `toJSON()` (with the relations loaded)
-and `pk`. Hooks: `Model.on('beforeSave' | 'afterSave' | 'beforeDelete' | 'afterDelete', fn)`. `Model.jsonSchema()`
-gives the JSON Schema of the objects, for the schemas of routes.
+and `pk`. Hooks: `Model.on('beforeSave' | 'afterSave' | 'beforeDelete' | 'afterDelete', fn)`. `Model.schema()` gives
+the schema of the objects, typed, for the schemas of routes ([Schemas of routes](#schemas-of-routes)).
 
 ## TTL indexes
 
@@ -351,9 +354,89 @@ new Database({ backend: 'fs', dir: 'content', layout: 'files', watch: true, onCh
   changed only from outside keep that change, and an object changed on both sides keeps the application's, with an
   `onError` error of code `XUFA_ORM_ERR_FS_CONFLICT` (with `table` and `keys`).
 - Only the objects that changed are serialized again, so a write to a large collection costs the writing of its file;
-  `layout: 'files'` writes only the files of the objects that changed (several at a time).
+  `layout: 'files'` writes only the files of the objects that changed (several at a time). Each new or changed
+  object is a file written (to a temporary file, then renamed): about 0.5 ms an object on Windows (NTFS and the
+  antivirus look at each new file), about 0.1 ms on Linux. Thousands of objects written at once take seconds on
+  Windows: the layout is for content edited a few objects at a time.
 - With tenants or several databases, a collection can live in files while others are in a database
   (`databases: { default: {...}, content: { backend: 'fs', dir: 'content' } }`).
+
+## Stores of objects (blobs)
+
+Stores of objects are backends too: a model is a container (a folder, a bucket), an object of the model is an object
+of the store. Its primary key (a string) is the key of the object; its `fields.blob()` the body; its
+`fields.blobInfo()` what the store knows of it (`size`, `etag`, `updatedAt`, `contentType`); its other fields the
+metadata of the object. The querysets are the same:
+
+```js
+class Upload extends Model {
+  static fields = {
+    key: fields.string({ primaryKey: true }), // the key of the object (its path)
+    content: fields.blob(), // the body
+    size: fields.blobInfo('size'),
+    contentType: fields.blobInfo('contentType'),
+    owner: fields.string({ null: true }), // metadata
+  };
+}
+
+const files = new Database({ backend: 'disk', dir: 'uploads' }).register(Upload); // or { backend: 'memory-blob' }
+
+await Upload.objects.create({ key: 'reports/q3.pdf', content: request.body, owner: 'ada' }); // a stream, a Buffer...
+const report = await Upload.objects.get({ key: 'reports/q3.pdf' });
+reply.type(report.contentType).send(await report.content.stream());
+await Upload.objects.filter({ key__startswith: 'reports/' }).only('key', 'size'); // a listing: no bodies read
+```
+
+- A body is written as a Buffer, a string, a readable stream (a request, a file), a `Blob`, or the body of another
+  object (copied). It is read as a `BlobValue`, whose body is read only when asked: `stream()`, `buffer()`,
+  `text()`, `json()`, and `url()` where the store gives URLs. As JSON it is `{ size, contentType, etag }`.
+- Conditions on the key (`exact`, `in`, `startswith`) are asked to the store: an object, or a listing of a prefix. The
+  rest (conditions, orders, slices, aggregates) run in memory on what the store gives. The metadata of objects is read
+  only when a query needs it (a condition or an output of a metadata field), with a read for each object listed.
+- `save()` of an object read writes its metadata alone, not its body; a new body (`upload.content = stream`) is
+  written. `update()` and `delete()` of querysets work on every object matched.
+- The content type is the one given, or the one of the extension of the key (`application/octet-stream` else).
+- A model of these backends has a primary key that is a string and one `fields.blob()`, and no relations nor unique
+  fields but the key; `fields.blob()` in another backend is an error when the model is registered. There are no
+  transactions: `db.transaction(fn)` runs `fn`, its writes made at once.
+
+Backends:
+
+- `memory-blob`: in memory, for tests.
+- `disk` (`dir`): each object is a file, `<dir>/<table>/<key>`, its body as it is, so the folder can be served,
+  copied or backed up; a key with slashes is a path of folders. Content types and metadata are in
+  `<dir>/.meta/<table>/<key>.json`. Files are written to a temporary file and renamed. Keys stay in their folder:
+  `..`, empty parts, absolute paths, backslashes, colons and the names Windows keeps are refused (to write, read or
+  delete). Files put in the folder by other means are objects too. `url: (table, key) => string` gives the URLs of
+  `url()` where the folder is served.
+- `s3` (`bucket`, `region`): S3, and the stores that speak its API (Cloudflare R2, MinIO, Backblaze B2, Wasabi,
+  DigitalOcean Spaces, Alibaba OSS...), with `fetch` and SigV4 signatures of its own (no SDK). The objects of a model
+  are in the bucket under `<prefix><table>/`. `endpoint` is the URL of a store that is not AWS (the bucket then goes
+  in the path; `forcePathStyle: true` on AWS too); `credentials` (`{ accessKeyId, secretAccessKey, sessionToken }`)
+  are the variables `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY` and `AWS_SESSION_TOKEN` when not given. Streams are
+  sent in parts (a multipart upload of `partSize` parts, 8 MiB, aborted when it fails), so their size need not be
+  known and no more than a part is kept in memory. The metadata is one header (`x-amz-meta-xufa`, at most 2 KB), and
+  changing it alone copies the object on itself (its body is not sent again). `url()` is a signed URL (`expiresIn`:
+  `'15m'` by default, up to 7 days), or the URL under `publicUrl` (a CDN). `createBucket: true` makes the bucket in
+  `sync()`; `drop()` deletes the objects of the models (the bucket stays). Writing a key checks it is not taken first
+  (a HEAD): two processes writing the same new key at once can both write it.
+
+  ```js
+  new Database({ backend: 's3', bucket: 'uploads', region: 'eu-west-1' }); // AWS, credentials of AWS_* variables
+  new Database({
+    backend: 's3',
+    bucket: 'uploads',
+    endpoint: 'https://<account>.r2.cloudflarestorage.com',
+    region: 'auto',
+    credentials,
+  });
+  ```
+
+  Its tests run against a server of the API of S3 that checks every signature (and the examples of the documentation
+  of AWS), and with `XUFA_S3_URL` (`http://<key>:<secret>@<host>:<port>/<bucket>?region=<region>`) against that store.
+
+With tenants, a store can be a database of each tenant:
+`config: (id) => ({ databases: { files: { backend: 'disk', dir: 'files/' + id } }, routes: { Upload: 'files' } })`.
 
 ## Several databases and tenants
 
@@ -385,7 +468,7 @@ await tenants.run('acme', () => Event.objects.create({ kind: 'login' })); // in 
 ```
 
 The database of a model is its option `database`, else its route (of the tenant, else of the Tenants), else the route
-`'*'`, else `default`. The docs (`docs/orm.html`, "Several databases in a tenant") have the whole of it.
+`'*'`, else `default`. The docs (`docs/orm/`, "Several databases in a tenant") have the whole of it.
 
 ## Caches
 
@@ -394,6 +477,11 @@ field of `indexes`, from the cache of its database (`cache` of the Database: a `
 default; a `SharedCache({ bus })` in the primary of a cluster, a `LocalCache({ bus })` in each process, or the
 `NetCache` of [@xufa/netcache](../netcache) between machines). Saving or deleting an object removes it. Values are
 copied in and out.
+
+A cache that fails to read or to write (a NetCache that lost its peers, a bus that does not answer) is a miss: the
+database answers, and `onCacheError(err, { operation })` of the Database (or of `cached()`) is told; without it, a
+warning (code `XUFA_ORM_CACHE`) is emitted once for each database. A delete that fails is an error (what the cache
+keeps would be old): the `save()` or `delete()` that asked for it fails.
 
 ### Cached querysets
 
@@ -428,7 +516,66 @@ const rates = orm.cached(async (currency) => fetchRates(currency), { ttl: 600000
 starts (and migrates it, when asked; `sync: true` creates the tables), gives it as `app.db` and closes it with the
 app. Validation errors are answered with 400 and the messages of each field (`errors`), duplicates of unique fields
 (`UniqueError`, from every backend) with 409 and their `fields`, and `get()` of nothing with 404.
-`Model.jsonSchema({ exclude, partial })` gives the schema of the bodies of routes.
+
+### Schemas of routes
+
+`Model.schema()` gives the JSON Schema of the objects of a model as [@xufa/schema](../schema) makes them, so its
+functions take it and, in TypeScript, it carries the type of the objects (as JSON):
+
+```js
+const { s } = require('@xufa/schema');
+
+const BookOut = Book.schema(); // the objects: replies
+const NewBook = s.omit(Book.schema({ input: true, additionalProperties: false }), ['id', 'createdAt']);
+const BookPatch = s.partial(NewBook); // the body of an update
+
+app.post('/books', { schema: { body: NewBook, response: { 201: BookOut } } }, async (request, reply) => {
+  reply.code(201);
+  return Book.objects.create(request.body); // request.body: { title: string; writerId: number | string; pages?: ... }
+});
+```
+
+- Each field is its JSON: dates and datetimes are strings (`format: date`, `date-time`), bytes base64 strings,
+  decimals strings; `choices` are an `enum`; a field with `null: true` takes null (`type: ['integer', 'null']`).
+- A foreign key is its key (`writerId`, of the type of the primary key it points to). Many-to-many relations and the
+  bodies of blobs are not in it.
+- Required: the fields that must be given. Not required: those that can be null, have a default, are given by the
+  database (the automatic `id`, `autoNow`, what a blob backend knows) or are computed (`readOnly`).
+- `input: true` leaves out what is never given: computed fields, and what a blob backend gives. Other options are
+  those of `s.object()` (`additionalProperties`, `$id`, `title`...).
+- In TypeScript, the type comes from `static fields` (those of its parents too with `fields.extend()`, see
+  [TypeScript](#typescript)): `Infer<typeof BookOut>`,
+  and typed requests with `SchemaTypeProvider`. `choices` give their values as a type when written `as const`.
+- A model without a primary key (`primaryKey: false`) or with a composite one (`primaryKey: ['a', 'b']`) has no
+  automatic `id`, in the schema and in its type when `static options` keeps the literal: `as const`, or
+  `satisfies ModelOptions` (`{ primaryKey: false }` alone is a boolean to TypeScript, and the type keeps an `id` that is
+  not required). `primaryKey` is not inherited (a child of a model without one has its `id`), but TypeScript reads the
+  options of the parent in a child without options of its own.
+
+`Model.schema()` is the one source of the schemas of a model: `Model.jsonSchema({ exclude, partial })` is the same
+schema in the form of OpenAPI 3.0 (`nullable: true`, no `null` type), and the resources of `orm.resource()` document
+their routes with `Model.schema()` (@xufa/openapi writes null as OpenAPI 3.0 or 3.1 asks).
+
+### Tenants of requests
+
+With `tenants: { tenants, resolve, required, authorize }`, each request runs in its tenant: `resolve(request)` gives its
+id (a header, the host, the user). A request without one gets 400 (unless `required: false`), and one of a tenant that
+does not exist, 404. `authorize(request, id, reply)` says whether the request may use that tenant, before it is
+entered (its database is not even looked up): `false` is answered with 403, and an error it throws is sent as it is.
+With [@xufa/auth](../auth), users may use the tenants of their claims:
+
+```js
+app.register(orm.plugin, {
+  tenants: {
+    tenants,
+    resolve: (request) => request.headers['x-tenant'],
+    authorize: (request, id, reply) => app.auth.canUseTenant(request, id, reply), // 401 without a user, 403 if not its
+  },
+});
+```
+
+Without `authorize`, any request may use any tenant it names, and a warning says so when the app starts. `authorize:
+false` is for tenants taken from the user itself (`resolve: (request) => request.user?.tenant`), which need no check.
 
 ### Reads that stop when the client goes away
 
@@ -478,17 +625,57 @@ app.register(orm.resource(Author, { actions: ['list', 'get'] }), { prefix: '/aut
   answers something else.
 - `writable` or `readOnly`: what bodies set (every field but the primary key and those set by the ORM, by default).
   Other fields of the model in a body are ignored (id, createdAt...); keys that are no field are a 400.
+- `strict: true`: those other fields are refused too, and every key refused (read-only or unknown) is in one
+  `ValidationError`: 400 with `errors` by key (`{ id: ['This field is read-only.'], nope: ['Book has no field
+nope.'] }`). In a PUT or PATCH, a read-only key with the value the object has is taken, so a body can be the object
+  as it was read.
 - `filters`, `ordering` and `search` say which query parameters lists take (`?pages__gte=100`, `?author__in=1,2`,
   `?ordering=-pages,title`, `?search=ada`, with `?limit=` and `?offset=`); others are a 400. `pageSize` (50),
   `maxPageSize` (500), `pagination: false` (arrays), `lookup` (the field of `/:id`, `pk` by default).
 - `auth`: the rule of [@xufa/auth](../auth) (`config.auth` of the routes) for every action, or one by action.
-- `openapi`: with [@xufa/openapi](../openapi), the routes are documented (operations, parameters, bodies from
-  `Model.jsonSchema()`, responses, the security of `auth`): `{ tag }` names their tag, `false` leaves them out. Only
-  documented: what they accept and answer does not change.
+- `openapi`: with [@xufa/openapi](../openapi), the routes are documented (operations, parameters, bodies and objects
+  from `Model.schema()`, responses, the security of `auth`): `{ tag }` names their tag, `false` leaves them out. Only
+  documented: what they accept and answer does not change. Bodies are checked by the resource and the model (unknown
+  keys refused, read-only ones ignored or refused with `strict`, 400 with the errors of each field), not by a schema of the route.
 - `hooks`: `beforeCreate(values, request)` and `beforeUpdate(object, values, request)` (they can change the values,
   or throw), `afterCreate`, `afterUpdate` and `beforeDelete(object, request)`.
 - Errors are answered with their status: 400 for values that are not valid (with the messages of each field), 404,
   and 409 for duplicates (`UniqueError`) and for objects others protect (`ProtectedError`).
+
+## Faults (tests of resilience)
+
+`db.faults` makes operations of a database fail, wait or hang, as a database that is down, slow or lost would, to
+see what an app does then (in its tests, or in staging): retries, timeouts, the answers of its routes, its alerts.
+`dbs.faults` does it to every database of `Databases`, and `tenants.faults` to the databases of every tenant (those
+open and those opened after; rules can name tenants).
+
+```js
+db.faults.fail({ operations: 'write', models: [Order], rate: 0.2 }); // 1 write of Order in 5 fails
+db.faults.delay({ operations: 'read', ms: 300, jitter: 200 }); // reads take 300 to 500 ms more
+const hung = db.faults.hang({ models: ['Payment'] }); // they do not end until hung.release()
+tenants.faults.down({ tenants: ['acme'] }); // every operation of acme fails (connect too)
+db.faults.up(); // no more down
+db.faults.clear(); // no more faults
+```
+
+- A rule matches `operations` (`select`, `count`, `aggregate`, `insert`, `update`, `delete`, `transaction`,
+  `connect`; `'read'` and `'write'` for the first six; all but `connect` by default), `models` (classes or names) and
+  `tenants`; `rate` is the chance of each match (`faults.random` is `Math.random`: give it a function of your own,
+  in tests, for results that do not change), `after` leaves the first matches alone, and `times` removes it after
+  that many.
+- Each rule given back counts its `hits`; `remove()` takes it away, and `release()` lets the operations it holds
+  (`hang`) go on.
+- The errors of `fail` and `down` are `FaultError`s (code `XUFA_ORM_ERR_FAULT`, status 503: the HTTP plugin answers
+  503), or the `error` given (an error, or a function of `{ operation, model, tenant }`).
+- Without rules, the operations are as they were (one check of an empty list). Objects that the cache of a model gives
+  do not reach the database, so no fault happens to them.
+- `cache.faults` of `MemoryCache`, `SharedCache` and `LocalCache` (and of `NetCache`) makes the cache fail:
+  `get`, `set`, `delete` and `clear` (`read` and `write`), `keys` by prefix or regular expression.
+  `cache.faults.down()` shows that the app still answers without its cache (see [Caches](#caches)).
+
+The rules are those of [@xufa/faults](../faults), which the faults of [@xufa/client](../client) (calls to APIs) and
+[@xufa/cluster](../cluster) (messages of the bus) use too. `Faults` is exported, and `err instanceof FaultError` is
+true of the errors of all of them.
 
 ## TypeScript
 
@@ -503,6 +690,29 @@ class Book extends Model {
 interface Book extends Fields<typeof bookFields> {}
 const books: Book[] = await Book.query().filter({ author__name: 'Ada' }); // book.title, book.authorId, book.author
 ```
+
+Children of a model: `fields.extend(Parent, { ... })` gives the fields of the parent (and of its parents) with those
+given, as the ORM merges them (theirs replace those of the same name; `null` removes one). The model is the same as
+with its own fields only; TypeScript then knows them all (`Fields<typeof Article.fields>`, `Article.schema()`), and
+the class is accepted as a child of its parent (its `static fields` has the parent's).
+
+```ts
+class Timestamped extends Model {
+  static options = { abstract: true };
+  static fields = { createdAt: fields.datetime({ autoNowAdd: true }), updatedAt: fields.datetime({ autoNow: true }) };
+}
+const articleFields = fields.extend(Timestamped, { title: fields.string() });
+class Article extends Timestamped {
+  static fields = articleFields;
+}
+interface Article extends Fields<typeof articleFields> {} // article.title, article.createdAt...
+```
+
+A child that removes a field of its parent (`null`) is not one TypeScript accepts as its child (`// @ts-expect-error`
+on its class); its fields are still typed without that one.
+
+`Book.schema()` is typed from the same fields: `Infer<typeof schema>` of [@xufa/schema](../schema) is the type of
+its objects as JSON ([Schemas of routes](#schemas-of-routes)).
 
 ## The same on every backend
 

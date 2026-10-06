@@ -35,33 +35,74 @@ its test suite (see [Tests](#tests)).
 
 ## Packages
 
-[`xufa`](packages/xufa) is the framework, which gives its parts together: `@xufa/http`, with the ORM as `xufa/orm`
-and the authentication as `xufa/auth`. Each part is a package of its own, usable alone, and every library fastify
-depends on is replaced by one:
+[`xufa`](packages/xufa) is the framework: it gives `@xufa/http`, and its parts by their paths (`xufa/orm`, `xufa/auth`,
+`xufa/config`, `xufa/schema`...: see [its README](packages/xufa)). Each part is a package of its own, usable alone,
+with no dependencies outside xufa, and every library fastify depends on is replaced by one.
+
+### The framework
+
+| Package                                 | Replaces                                  | What it is                                                                             |
+| --------------------------------------- | ----------------------------------------- | -------------------------------------------------------------------------------------- |
+| [`xufa`](packages/xufa)                 |                                           | The framework: `@xufa/http`, and its parts by their paths (`xufa/orm`, `xufa/auth`...) |
+| [`@xufa/http`](packages/http)           | `fastify`                                 | The HTTP framework, with the API of fastify                                            |
+| [`@xufa/websocket`](packages/websocket) | `ws`, `@fastify/websocket`                | WebSockets: client, server, routes and rooms                                           |
+| [`@xufa/openapi`](packages/openapi)     | `@fastify/swagger`, `@fastify/swagger-ui` | OpenAPI documents of the routes, and an explorer                                       |
+| [`@xufa/client`](packages/client)       | `got`, `axios`                            | A client of HTTP APIs on fetch                                                         |
+| [`@xufa/schema`](packages/schema)       | `ajv`, `@sinclair/typebox`                | Schemas as code or JSON Schema, compiled into fast validators                          |
+| [`@xufa/orm`](packages/orm)             | the Django ORM                            | ORM for SQL and NoSQL databases, files and stores of objects                           |
+| [`@xufa/auth`](packages/auth)           | `otplib`                                  | Passwords, JWTs, TOTP, refresh tokens, as a plugin                                     |
+| [`@xufa/sequelize`](packages/sequelize) | `sequelize`                               | The API of Sequelize 6 over `@xufa/orm`                                                |
+
+### Drivers
+
+| Package                         | Replaces  | What it is                        |
+| ------------------------------- | --------- | --------------------------------- |
+| [`@xufa/pg`](packages/pg)       | `pg`      | PostgreSQL driver                 |
+| [`@xufa/mongo`](packages/mongo) | `mongodb` | MongoDB driver, with its own BSON |
+
+### Expressions and templates
+
+| Package                                   | Replaces                 | What it is                                        |
+| ----------------------------------------- | ------------------------ | ------------------------------------------------- |
+| [`@xufa/expression`](packages/expression) | `expr-eval`, `jexl`      | Safe JavaScript expressions, compiled once        |
+| [`@xufa/template`](packages/template)     | `handlebars`, `mustache` | Templates of text and HTML over those expressions |
+
+### Security
+
+| Package                     | Replaces       | What it is                                              |
+| --------------------------- | -------------- | ------------------------------------------------------- |
+| [`@xufa/jwt`](packages/jwt) | `jsonwebtoken` | JSON Web Tokens, with the API and tests of jsonwebtoken |
+
+### Running
+
+| Package                                 | Replaces                | What it is                                                            |
+| --------------------------------------- | ----------------------- | --------------------------------------------------------------------- |
+| [`@xufa/cluster`](packages/cluster)     | `node:cluster`          | Apps in clusters of processes, with a message bus                     |
+| [`@xufa/config`](packages/config)       | `node-config`, `dotenv` | Configuration by environment, Consul and Vault, with a schema         |
+| [`@xufa/scheduler`](packages/scheduler) | `node-cron`             | Jobs on intervals, cron or once                                       |
+| [`@xufa/discovery`](packages/discovery) |                         | The nodes of a service found on the network (UDP)                     |
+| [`@xufa/netcache`](packages/netcache)   | Redis, as a cache       | A cache shared by the machines of a service                           |
+| [`@xufa/faults`](packages/faults)       | Toxiproxy, `nock`       | Faults by rules for tests of resilience: database, caches, calls, bus |
+| [`@xufa/marshal`](packages/marshal)     | `devalue`, `superjson`  | JSON that keeps classes, references, dates, maps...                   |
+| [`@xufa/yaml`](packages/yaml)           | `js-yaml`               | YAML 1.2, with the API and tests of js-yaml                           |
+
+### The parts of `@xufa/http`
 
 | Package                                   | Replaces              | What it is                                 |
 | ----------------------------------------- | --------------------- | ------------------------------------------ |
-| [`xufa`](packages/xufa)                   |                       | The framework (`xufa/orm`, `xufa/auth`)    |
-| [`@xufa/http`](packages/http)             | `fastify`             | The HTTP framework                         |
 | [`@xufa/logger`](packages/logger)         | `pino`, `sonic-boom`  | JSON logger                                |
 | [`@xufa/router`](packages/router)         | `find-my-way`         | HTTP router                                |
 | [`@xufa/serializer`](packages/serializer) | `fast-json-stringify` | JSON serializers compiled from JSON Schema |
 | [`@xufa/inject`](packages/inject)         | `light-my-request`    | Fake HTTP requests for tests               |
 | [`@xufa/boot`](packages/boot)             | `avvio`               | Plugin loading                             |
 | [`@xufa/errors`](packages/errors)         | `@fastify/error`      | Errors with codes                          |
-| [`@xufa/orm`](packages/orm)               |                       | ORM for SQL and NoSQL databases            |
-| [`@xufa/mongo`](packages/mongo)           | `mongodb`             | MongoDB driver                             |
-| [`@xufa/pg`](packages/pg)                 | `pg`                  | PostgreSQL driver                          |
-| [`@xufa/auth`](packages/auth)             |                       | Passwords, JWTs, TOTP, refresh tokens      |
-| [`@xufa/sequelize`](packages/sequelize)   | `sequelize`           | The API of Sequelize 6 over `@xufa/orm`    |
-| [`@xufa/cluster`](packages/cluster)       |                       | Apps in clusters of processes              |
 
-Validation uses [schiva](https://www.npmjs.com/package/schiva) instead of ajv. It is an optional peer dependency of
-`@xufa/http` (and `xufa`): install it when your routes validate requests with schemas (`npm install schiva`).
+Validation uses [`@xufa/schema`](packages/schema) instead of ajv, a dependency of
+`@xufa/http` (loaded when a route first has a schema).
 
 ## Differences of `@xufa/http` from fastify
 
-- **Validation is schiva.** The ajv options schiva shares are read from `ajv.customOptions` (`coerceTypes`,
+- **Validation is @xufa/schema.** The ajv options it shares are read from `ajv.customOptions` (`coerceTypes`,
   `useDefaults`, `removeAdditional`, `allErrors`, `strict`, `formats`, `keywords`), and validation errors have ajv's
   shape. What only ajv has does not work: ajv plugins (`ajv.plugins` only accepts `[]`), ajv-errors messages, `$async`
   schemas, `$merge`/`$patch`. A `validatorCompiler` of your own can still use ajv.
@@ -75,7 +116,7 @@ Validation uses [schiva](https://www.npmjs.com/package/schiva) instead of ajv. I
 
 Some of what xufa does differently to be faster: the router matches static paths with one map lookup and leaves the
 query string unparsed until `request.query` is read; serializers write large responses as UTF-8 bytes, sent to the
-socket as they are; validation is compiled by schiva. See [bench/](bench) for the harnesses and how to read their
+socket as they are; validation is compiled by @xufa/schema. See [bench/](bench) for the harnesses and how to read their
 numbers: they depend on the machine, so run them on yours.
 
 ## Development

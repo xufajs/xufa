@@ -76,7 +76,23 @@ function assignable(Class) {
   return known;
 }
 
-const bytesOf = (view) => Buffer.from(view.buffer, view.byteOffset, view.byteLength).toString('base64');
+// Buffer where there is one (Node.js); base64 by btoa and atob where there is not (browsers).
+const HAS_BUFFER = typeof Buffer === 'function';
+const isBuffer = (value) => HAS_BUFFER && Buffer.isBuffer(value);
+function bytesOf(view) {
+  if (HAS_BUFFER) return Buffer.from(view.buffer, view.byteOffset, view.byteLength).toString('base64');
+  const bytes = new Uint8Array(view.buffer, view.byteOffset, view.byteLength);
+  let text = '';
+  for (let i = 0; i < bytes.length; i += 1) text += String.fromCharCode(bytes[i]);
+  return globalThis.btoa(text);
+}
+function bytesFrom(text) {
+  if (HAS_BUFFER) return Buffer.from(text, 'base64');
+  const binary = globalThis.atob(text);
+  const bytes = new Uint8Array(binary.length);
+  for (let i = 0; i < binary.length; i += 1) bytes[i] = binary.charCodeAt(i);
+  return bytes;
+}
 
 // --- Encoding.
 
@@ -188,13 +204,13 @@ function marshal(value, options = {}) {
       for (const item of input) node.push(val(item, depth));
       return node;
     }
-    if (Buffer.isBuffer(input)) return ['Buffer', bytesOf(input)];
+    if (isBuffer(input)) return ['Buffer', bytesOf(input)];
     if (ArrayBuffer.isView(input)) {
       if (types.isDataView(input)) return ['DataView', bytesOf(input)];
       const name = typedArrayName(input);
       if (name) return ['TypedArray', name, bytesOf(input)];
     }
-    if (types.isArrayBuffer(input)) return ['ArrayBuffer', Buffer.from(input).toString('base64')];
+    if (types.isArrayBuffer(input)) return ['ArrayBuffer', bytesOf(new Uint8Array(input))];
     if (isError(input)) return errorNode(input, entry, depth);
     if (input instanceof URL) return ['URL', input.href];
     if (input instanceof URLSearchParams) return ['URLSearchParams', input.toString()];
@@ -318,7 +334,7 @@ function unmarshal(nodes, options = {}) {
 
   const bytes = (text) => {
     if (typeof text !== 'string') fail('Bytes must be base64 text');
-    return Buffer.from(text, 'base64');
+    return bytesFrom(text);
   };
 
   function tagged(index, node, depth) {

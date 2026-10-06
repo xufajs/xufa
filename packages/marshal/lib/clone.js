@@ -63,7 +63,7 @@ function clone(value, options = {}) {
       for (const item of input) set.add(copy(item, next));
       return set;
     }
-    if (Buffer.isBuffer(input)) return keep(Buffer.from(input));
+    if (typeof Buffer === 'function' && Buffer.isBuffer(input)) return keep(Buffer.from(input));
     if (ArrayBuffer.isView(input)) {
       const bytes = input.buffer.slice(input.byteOffset, input.byteOffset + input.byteLength);
       if (types.isDataView(input)) return keep(new DataView(bytes));

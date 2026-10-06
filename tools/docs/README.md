@@ -1,24 +1,31 @@
 # docs generators
 
-Makes the generated pages of `docs/` again:
+Makes the generated pages of `docs/` again. Every package has a folder of its own: `docs/<package>/index.html`,
+with its other pages beside it (`docs/schema/guide.html`, `api.html`, `playground.html`...). The pages of the site
+are at the root: `index.html`, `guide.html`, `packages.html`, `benchmarks.html`, `playground.html`, with
+`style.css`, `main.js` and `xufa.js`.
 
-- **The page of every package** (`pg.html`, `mongo.html`, `expression.html`, `template.html`, `cluster.html`,
-  `logger.html`, `router.html`, `serializer.html`, `inject.html`, `boot.html`, `errors.html`) from `pages/*.page.html`:
-  each starts with a comment of JSON (`file`, `name`, `title`, `description`, and the `groups` of its sidebar) and has
-  the content of its `<article>`. The head, the header, the sidebar (its sections, then every package) and the footer
-  are added by `lib/pages.js`, which checks that every section of the sidebar is in the page. A comment
-  `<!--generated: router-performance-->` (or `logger-performance`) is replaced by what that generator makes
-  (`lib/router-performance.js`, `lib/logger-performance.js`, from `bench/results`).
-- **The index of the packages** (`packages.html`): its sidebar and its cards, from the list in `lib/packages-index.js`.
-- **The sections of `benchmarks.html`** from the PostgreSQL driver to "Run them yourself", from the reports of
-  `bench/results` (`lib/benchmarks.js`). The rest of that page is written by hand.
+- **The pages of the packages** from `pages/*.page.html`: each starts with a comment of JSON (`file`, `name`,
+  `title`, `description`, the `groups` of its sidebar, and optionally `package`, `layout`, `scripts`, `nav`) and
+  has the content of its `<article>` (or of its `<main>`, with `layout: 'tool'` or `'home'`). The head, the header,
+  the sidebar, the tabs of a package with several pages (`SECTIONS` in `lib/pages.js`) and the footer are added by
+  `lib/pages.js`, which checks that every section of the sidebar is in the page. A comment
+  `<!--generated: router-performance-->` (or `logger-performance`) is replaced by what that generator makes.
+- **Where every page is** (`lib/paths.js`): the sources name pages by their flat names (`schema-guide.html`,
+  `http.html#routes`, `style.css`), and the build writes each page in its folder with those links as paths from
+  there. The old addresses of the packages (`http.html`...) are small pages that send to their folders.
+- **The index of the packages** (`packages.html`): its sidebar and its cards, from the list in `lib/packages-index.js`,
+  and the table of the packages of `index.html`.
+- **The sections of `benchmarks.html`** from the reports of `bench/results` (`lib/benchmarks.js`).
+- **The scripts for browsers** (`lib/browser-bundle.js`): `schema/schema.js` (@xufa/schema, for its playground) and
+  `xufa.js` (the packages of the playground of the site).
 - **How xufa fares in each chart** (`lib/outcomes.js`), for its colors: a pair card gets `win`, `lose` or `even`
-  from its badge (1.05× or more, 0.95× or less, in between), and each row of ours in a chart from its bar against the
-  best of the others (`data-better="lower"` for times and sizes, `data-compare="previous"` against the row before).
-  Done on the generated pages and on the hand-written ones with charts (`HAND_WRITTEN` in `build.js`).
+  from its badge, and each row of ours in a chart from its bar against the best of the others. Done on the generated
+  pages and on the hand-written ones with charts (`HAND_WRITTEN` in `build.js`).
 
-The other pages of `docs/` (`index.html`, `guide.html`, `http.html`, `orm.html`, `auth.html`, `sequelize.html`) are
-written by hand.
+Written by hand: `index.html` (but its table of packages), `guide.html`, `http/`, `orm/`, `auth/`, `sequelize/`, the
+scripts of the playgrounds (`playground.js`, `schema/playground.js`, `schema/playground-examples.js`,
+`schema/infer.js`) and `style.css`, `main.js`. Their links are paths relative to where they are.
 
 ```sh
 pnpm docs         # writes the pages that changed

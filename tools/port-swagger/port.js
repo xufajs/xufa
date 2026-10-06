@@ -98,6 +98,7 @@ for (const file of walk(path.join(swagger, 'test'))) {
 
 // Changes of single tests that the conversion cannot make.
 function fixups(file, code) {
+  if (file === 'mode/static.test.js') return restorePathJoin(file, code);
   if (file !== 'spec/openapi/route.test.js') return code;
   // node's loose deepEqual ignores symbol keys, and toEqual compares them: the parameters of cookies (which keep a
   // symbol of the plugin) are compared as JSON, as deepEqual compared them.
@@ -121,4 +122,21 @@ function fixups(file, code) {
     "'use strict'\n\nconst asJson = (value) => JSON.parse(JSON.stringify(value))\n"
   );
 }
+// Tests of mode/static.test.js replace path.join (to read a package.json of theirs) and do not put it back: each file
+// of node:test is a process, but files of vyntra share the modules of node in a thread, and a test that reads the
+// package.json after them (the default info of spec/*/option.test.js) got theirs. Put back after each test.
+function restorePathJoin(file, code) {
+  if (!code.includes('path.join = (...args) =>')) throw new Error(`${file}: the fixup of path.join no longer applies`);
+  const restore = [
+    '',
+    '// path.join, as it is: tests here replace it; put back after each (xufa: files share the modules of node).',
+    "const realPathJoin = require('node:path').join",
+    'afterEach(() => {',
+    "  require('node:path').join = realPathJoin",
+    '})',
+    '',
+  ].join('\n');
+  return code.replace("'use strict'\n", `'use strict'\n${restore}`);
+}
+
 console.log(`@fastify/swagger ${version}: ${libFiles} files of lib, ${testFiles} test files, ${todos} TODOs`);

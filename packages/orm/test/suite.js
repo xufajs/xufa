@@ -106,7 +106,9 @@ function defineModels() {
   return { Publisher, Author, Book, Review, Category, Tag, Ledger, Country, City, Document, Tally, Spaced };
 }
 
-function defineSuite(name, makeDatabase) {
+// options.bulkTimeout: the timeout of the test that writes thousands of rows (for backends whose writes are slow by
+// nature: a file for each object, on Windows, takes about 1 ms each).
+function defineSuite(name, makeDatabase, options = {}) {
   describe(`${name} backend`, () => {
     let db;
     let models;
@@ -989,40 +991,44 @@ function defineSuite(name, makeDatabase) {
         expect(await Category.objects.valuesList('name', { flat: true })).toEqual(['other']);
       });
 
-      it('creates many in bulk, with every type (COPY in PostgreSQL)', async () => {
-        const { Author, Book, Publisher } = models;
-        const publisher = await Publisher.objects.create({ name: 'Bulk' });
-        const authors = await Author.objects.bulkCreate(
-          Array.from({ length: 1200 }, (_, i) => ({
-            name: `Author ${i}`,
-            email: i % 3 ? `a${i}@x.com` : null,
-            publisher: i % 2 ? publisher : null,
-          }))
-        );
-        expect(new Set(authors.map((author) => author.pk)).size).toBe(1200);
-        const books = await Book.objects.bulkCreate(
-          authors.map((author, i) => ({
-            title: `Book ${i}`,
-            pages: i + 1,
-            rating: i / 2,
-            author,
-            tags: [`t${i}`, { n: i }],
-          }))
-        );
-        expect(books).toHaveLength(1200);
-        const loaded = await Book.objects.selectRelated('author').get({ pk: books[777].pk });
-        expect(loaded.title).toBe('Book 777');
-        expect(loaded.pages).toBe(778);
-        expect(loaded.rating).toBe(388.5);
-        expect(loaded.tags).toEqual(['t777', { n: 777 }]);
-        expect(loaded.updatedAt).toBeInstanceOf(Date);
-        expect(loaded.author.name).toBe('Author 777');
-        expect(loaded.author.publisherId).toBe(publisher.pk);
-        expect(await Author.objects.filter({ email: null }).count()).toBe(400);
-        // Objects created after a bulk insert get keys of their own.
-        const next = await Author.objects.create({ name: 'After' });
-        expect(authors.some((author) => author.pk === next.pk)).toBe(false);
-      });
+      it(
+        'creates many in bulk, with every type (COPY in PostgreSQL)',
+        async () => {
+          const { Author, Book, Publisher } = models;
+          const publisher = await Publisher.objects.create({ name: 'Bulk' });
+          const authors = await Author.objects.bulkCreate(
+            Array.from({ length: 1200 }, (_, i) => ({
+              name: `Author ${i}`,
+              email: i % 3 ? `a${i}@x.com` : null,
+              publisher: i % 2 ? publisher : null,
+            }))
+          );
+          expect(new Set(authors.map((author) => author.pk)).size).toBe(1200);
+          const books = await Book.objects.bulkCreate(
+            authors.map((author, i) => ({
+              title: `Book ${i}`,
+              pages: i + 1,
+              rating: i / 2,
+              author,
+              tags: [`t${i}`, { n: i }],
+            }))
+          );
+          expect(books).toHaveLength(1200);
+          const loaded = await Book.objects.selectRelated('author').get({ pk: books[777].pk });
+          expect(loaded.title).toBe('Book 777');
+          expect(loaded.pages).toBe(778);
+          expect(loaded.rating).toBe(388.5);
+          expect(loaded.tags).toEqual(['t777', { n: 777 }]);
+          expect(loaded.updatedAt).toBeInstanceOf(Date);
+          expect(loaded.author.name).toBe('Author 777');
+          expect(loaded.author.publisherId).toBe(publisher.pk);
+          expect(await Author.objects.filter({ email: null }).count()).toBe(400);
+          // Objects created after a bulk insert get keys of their own.
+          const next = await Author.objects.create({ name: 'After' });
+          expect(authors.some((author) => author.pk === next.pk)).toBe(false);
+        },
+        options.bulkTimeout
+      );
 
       it('creates in bulk', async () => {
         const { Publisher } = models;

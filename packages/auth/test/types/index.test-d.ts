@@ -25,6 +25,9 @@ import {
   plugin,
   AuthApi,
   AuthRule,
+  PluginOptions as AuthPluginOptions,
+  tenantsOf,
+  ALL_TENANTS,
   Strategy,
   apiKey,
   basic,
@@ -203,3 +206,12 @@ expectType<Record<string, unknown> | undefined>(keyStrategy.openapi);
 apiKey({ find: () => null, openapi: { type: 'apiKey', in: 'header', name: 'x-key' } });
 passport(new FakeStrategy(), { openapi: false });
 expectError(passport(new FakeStrategy(), { openapi: 'bearer' }));
+
+// Tenants.
+expectType<string[]>(tenantsOf({ tenants: ['a'] }));
+expectType<'*'>(ALL_TENANTS);
+const tenantRules: AuthRule[] = [{ tenant: true }, { tenant: '*', roles: 'admin' }, { strategy: 'apiKey', tenant: true }];
+expectError<AuthRule>({ tenant: 'acme' });
+declare const tenantApi: AuthApi;
+expectType<Promise<boolean>>(tenantApi.canUseTenant({}, 'acme', {}));
+const withTenants: AuthPluginOptions = { keys: 'k'.repeat(32), tenants: { of: (request) => request.params.tenant, claim: (user) => user.orgs } };

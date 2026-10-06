@@ -20,19 +20,24 @@ await app.listen({ port: 3000 });
 
 ## For now
 
-xufa is its HTTP layer: this package gives [`@xufa/http`](../http) (the API of fastify) as it is, its ORM as
-`xufa/orm` ([`@xufa/orm`](../orm)) its authentication as `xufa/auth` ([`@xufa/auth`](../auth)), and its expressions and templates as
-`xufa/expression` ([`@xufa/expression`](../expression)) and `xufa/template` ([`@xufa/template`](../template)). The rest of the framework will be given from here as it is built; the packages
-it is made of can be used alone:
+xufa is its HTTP layer: this package gives [`@xufa/http`](../http) (the API of fastify) as it is, and the rest of
+the framework by its paths:
 
-- [`@xufa/http`](../http): the HTTP framework
-- [`@xufa/orm`](../orm): the ORM, over SQLite, PostgreSQL ([`@xufa/pg`](../pg)), MongoDB ([`@xufa/mongo`](../mongo)) and memory
-- [`@xufa/auth`](../auth): passwords, JSON Web Tokens, TOTP, lockouts, refresh tokens and the plugin that puts them
-  together
-- [`@xufa/expression`](../expression): safe JavaScript expressions, compiled once
-- [`@xufa/template`](../template): templates of text and HTML (blocks, filters, partials) over those expressions
-- [`@xufa/logger`](../logger), [`@xufa/router`](../router), [`@xufa/serializer`](../serializer),
-  [`@xufa/inject`](../inject), [`@xufa/boot`](../boot), [`@xufa/errors`](../errors): its parts
+| Path                                  | Package                                                              | What it is                                                     |
+| ------------------------------------- | -------------------------------------------------------------------- | -------------------------------------------------------------- |
+| `xufa/orm`                            | [`@xufa/orm`](../orm)                                                | The ORM, over SQLite, PostgreSQL, MongoDB, files and memory    |
+| `xufa/auth`                           | [`@xufa/auth`](../auth)                                              | Passwords, JWTs, TOTP, lockouts, refresh tokens and its plugin |
+| `xufa/schema`                         | [`@xufa/schema`](../schema)                                          | JSON Schemas as code, typed                                    |
+| `xufa/config`                         | [`@xufa/config`](../config)                                          | The configuration, by environment, with a schema               |
+| `xufa/scheduler`                      | [`@xufa/scheduler`](../scheduler)                                    | Jobs on intervals, cron or once                                |
+| `xufa/client`                         | [`@xufa/client`](../client)                                          | A client of HTTP APIs                                          |
+| `xufa/faults`, `xufa/faults/register` | [`@xufa/faults`](../faults)                                          | Faults for tests of resilience, cleared after each test        |
+| `xufa/openapi`, `xufa/openapi/ui`     | [`@xufa/openapi`](../openapi)                                        | OpenAPI documents of the routes, and their explorer            |
+| `xufa/expression`, `xufa/template`    | [`@xufa/expression`](../expression), [`@xufa/template`](../template) | Safe expressions, and templates over them                      |
+
+The packages it is made of can be used alone; [`@xufa/logger`](../logger), [`@xufa/router`](../router),
+[`@xufa/serializer`](../serializer), [`@xufa/inject`](../inject), [`@xufa/boot`](../boot) and
+[`@xufa/errors`](../errors) are the parts of its HTTP layer.
 
 ## License
 

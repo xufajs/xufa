@@ -1,0 +1,70 @@
+{
+  "name": "@xufa/faults",
+  "version": "0.1.0",
+  "description": "Faults made to happen (fail, delay, hang, down), to test what an app does when what it uses fails: the rules of the faults of the ORM, the HTTP client, the caches and the bus of xufa. No dependencies",
+  "main": "./index.js",
+  "types": "./index.d.ts",
+  "type": "commonjs",
+  "exports": {
+    ".": {
+      "types": "./index.d.ts",
+      "default": "./index.js"
+    },
+    "./register": {
+      "types": "./register.d.ts",
+      "default": "./register.js"
+    },
+    "./register-strict": {
+      "types": "./register-strict.d.ts",
+      "default": "./register-strict.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "index.js",
+    "lib",
+    "index.d.ts",
+    "LICENSE",
+    "register.js",
+    "register.d.ts",
+    "register-strict.js",
+    "register-strict.d.ts"
+  ],
+  "scripts": {
+    "test": "vyntra",
+    "test:types": "tsd"
+  },
+  "keywords": [
+    "faults",
+    "chaos",
+    "resilience",
+    "testing",
+    "fault-injection"
+  ],
+  "author": "Jesús Seijas <jseijas@gmail.com>",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/xufajs/xufa.git",
+    "directory": "packages/faults"
+  },
+  "homepage": "https://github.com/xufajs/xufa/tree/main/packages/faults#readme",
+  "bugs": {
+    "url": "https://github.com/xufajs/xufa/issues"
+  },
+  "engines": {
+    "node": ">=22"
+  },
+  "devDependencies": {
+    "tsd": "^0.33.0",
+    "vyntra": "^0.6.0",
+    "@xufa/http": "workspace:*",
+    "fastify": "^5.12.5"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "tsd": {
+    "directory": "test/types"
+  }
+}

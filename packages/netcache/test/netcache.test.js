@@ -347,3 +347,14 @@ describe('with @xufa/orm', () => {
     await dbB.close();
   });
 });
+
+describe('netcache.faults', () => {
+  it('get, set, delete and clear made to fail (cacheFaults of @xufa/faults)', async () => {
+    const cache = await node();
+    await cache.set('session:1', 'a');
+    cache.faults.fail({ operations: 'read', keys: 'session:', times: 1 });
+    const err = await cache.get('session:1').catch((e) => e);
+    expect(err.message).toBe('A fault of the netcache (injected): get of session:1');
+    expect(await cache.get('session:1')).toBe('a');
+  });
+});

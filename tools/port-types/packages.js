@@ -240,7 +240,7 @@ function dropStatements(code, drop) {
   return statements.filter((statement) => !drop(statement)).join('\n');
 }
 
-// Type tests of what xufa has not: ajv's plugins and instance (it validates with schiva), standalone compilers.
+// Type tests of what xufa has not: ajv's plugins and instance (it validates with @xufa/schema), standalone compilers.
 const XUFA_TEST_PATCHES = {
   'fastify.tst.ts': (code) => dropStatements(code, (s) => /\bajv: \{[\s\S]*\b(plugins|onCreate)\b/.test(s)),
   'schema.tst.ts': (code) =>

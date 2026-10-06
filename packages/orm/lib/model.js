@@ -142,25 +142,18 @@ class Model {
     }
   }
 
-  // The JSON Schema of the objects of the model, to validate or document routes with it. `exclude` leaves fields
-  // out, and `partial` makes no field required (for updates).
-  static jsonSchema({ exclude = [], partial = false } = {}) {
-    const properties = {};
-    const required = [];
-    [...this.meta.fields, ...this.meta.computedMap.values()].forEach((field) => {
-      if (exclude.includes(field.name) || exclude.includes(field.attname)) return;
-      let schema = field.jsonSchema();
-      if (field.choices) schema.enum = field.choices;
-      if (field.null) schema = { ...schema, nullable: true };
-      // Computed fields are in the objects, never in what is given.
-      if (field.computed !== null) schema = { ...schema, readOnly: true };
-      properties[field.attname] = schema;
-      const given = !field.null && !field.auto && !field.hasDefault() && field.computed === null;
-      if (!partial && given) required.push(field.attname);
-    });
-    const schema = { type: 'object', properties };
-    if (required.length) schema.required = required;
-    return schema;
+  // The schema of Model.schema() in the form of OpenAPI 3.0 (null as `nullable: true`), to document routes or
+  // validate with it. `exclude` leaves fields out, and `partial` makes no field required (for updates).
+  static jsonSchema(options) {
+    const { openapiSchema } = require('./model-schema'); // eslint-disable-line global-require
+    return openapiSchema(this, options);
+  }
+
+  // The schema of the objects of the model as @xufa/schema makes them (lib/model-schema.js): typed in TypeScript, and
+  // taken by s.omit(), s.partial()... `input: true` leaves out what is never given (computed fields).
+  static schema(options) {
+    const { modelSchema } = require('./model-schema'); // eslint-disable-line global-require
+    return modelSchema(this, options);
   }
 
   // An object of a row given by a backend: values by attname and, under `$<name>`, the rows of the relations loaded.

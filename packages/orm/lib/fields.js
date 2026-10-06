@@ -781,6 +781,80 @@ class ManyToManyField {
   }
 }
 
+// The body of an object of a blob backend (disk, memory-blob...): what is written is a Buffer, a string, a stream, a
+// Blob of the web or a BlobValue (lib/blob.js); what is read is a BlobValue, whose body is read when asked. A model of
+// a blob backend has one, and a primary key that is a string (the key of the object).
+class BlobField extends Field {
+  get type() {
+    return 'blob';
+  }
+
+  toValue(value) {
+    const { isBody } = require('./blob'); // eslint-disable-line global-require
+    if (!isBody(value)) throw new TypeError('The value must be a Buffer, a string, a stream or a blob.');
+    return value;
+  }
+
+  jsonSchema() {
+    return {
+      type: 'object',
+      readOnly: true,
+      properties: { size: { type: 'integer' }, contentType: { type: 'string' } },
+    };
+  }
+}
+
+// What a blob backend knows of each object, as a field: 'size' (bytes), 'etag', 'updatedAt' (a date) or
+// 'contentType'. They are given by the backend (not required, and not written), except contentType, which is written
+// with the body when it is given.
+const BLOB_INFO = { size: 'integer', etag: 'string', updatedAt: 'datetime', contentType: 'string' };
+
+class BlobInfoField extends Field {
+  constructor(kind, options = {}) {
+    if (!Object.hasOwn(BLOB_INFO, kind)) {
+      throw new TypeError(`fields.blobInfo(kind): kind is ${Object.keys(BLOB_INFO).join(', ')} (it is ${kind})`);
+    }
+    super({ ...options, null: true });
+    this.blobInfo = kind;
+  }
+
+  get type() {
+    return BLOB_INFO[this.blobInfo];
+  }
+
+  get auto() {
+    return true;
+  }
+
+  // Given by the backend: written only contentType.
+  get readOnly() {
+    return this.blobInfo !== 'contentType';
+  }
+
+  toValue(value) {
+    if (this.blobInfo === 'updatedAt') {
+      const date = value instanceof Date ? value : new Date(value);
+      if (Number.isNaN(date.getTime())) throw new TypeError('The value must be a date.');
+      return date;
+    }
+    if (this.blobInfo === 'size') {
+      if (!Number.isInteger(value)) throw new TypeError('The value must be an integer.');
+      return value;
+    }
+    return String(value);
+  }
+
+  jsonSchema() {
+    const schema =
+      this.blobInfo === 'size'
+        ? { type: 'integer' }
+        : this.blobInfo === 'updatedAt'
+          ? { type: 'string', format: 'date-time' }
+          : { type: 'string' };
+    return this.readOnly ? { ...schema, readOnly: true } : schema;
+  }
+}
+
 const fields = {
   Field,
   IdField,
@@ -802,6 +876,8 @@ const fields = {
   UuidField,
   ForeignKey,
   ManyToManyField,
+  BlobField,
+  BlobInfoField,
   id: (options) => new IdField(options),
   string: (options) => new StringField(options),
   text: (options) => new TextField(options),
@@ -822,6 +898,16 @@ const fields = {
   uuid: (options) => new UuidField(options),
   foreignKey: (to, options) => new ForeignKey(to, options),
   manyToMany: (to, options) => new ManyToManyField(to, options),
+  blob: (options) => new BlobField(options),
+  blobInfo: (kind, options) => new BlobInfoField(kind, options),
+  // The fields of a parent model with those of a child (theirs replace those of the same name; null removes one): what
+  // the ORM merges anyway, written so TypeScript knows it (static fields = fields.extend(Timestamped, { ... })).
+  extend(parent, own = {}) {
+    if (typeof parent !== 'function') throw new TypeError('fields.extend(parent, fields): parent is a model');
+    if (own === null || typeof own !== 'object')
+      throw new TypeError('fields.extend(parent, fields): fields is an object');
+    return { ...(parent.fields || {}), ...own };
+  },
 };
 
 module.exports = fields;

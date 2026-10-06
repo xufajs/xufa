@@ -620,6 +620,19 @@ tr:last-child td {
   border-bottom: none;
 }
 
+/* A group of rows (the packages of the home page, by group). */
+tr.group th {
+  padding-top: 1rem;
+  font-size: 0.8rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+tr.group th a {
+  color: inherit;
+  text-decoration: none;
+}
+
 .callout {
   margin: 1.25rem 0;
   padding: 0.9rem 1.1rem;
@@ -1375,4 +1388,592 @@ td small {
   color: var(--text-soft);
   font-size: 0.82em;
   white-space: nowrap;
+}
+
+/* The tabs of the pages of a package (overview, guide, API, playground...). */
+.package-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+  margin: 0 0 1.5rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.package-tabs a {
+  padding: 0.45rem 0.8rem;
+  border-bottom: 2px solid transparent;
+  color: var(--text-soft, inherit);
+  font-size: 0.92rem;
+  text-decoration: none;
+}
+
+.package-tabs a:hover {
+  color: var(--accent);
+}
+
+.package-tabs a[aria-current='page'] {
+  border-bottom-color: var(--accent);
+  color: var(--text);
+  font-weight: 600;
+}
+
+.pg .package-tabs {
+  margin-bottom: 1rem;
+}
+
+/* Playground */
+
+.pg {
+  max-width: 1160px;
+  margin: 0 auto;
+  padding: 2rem 16px 3rem;
+}
+
+.pg-head {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem 2rem;
+  align-items: flex-end;
+  justify-content: space-between;
+}
+
+.pg-head h1 {
+  margin: 0 0 0.25rem;
+  font-size: 2rem;
+  letter-spacing: -0.02em;
+}
+
+.pg-intro {
+  margin: 0;
+  color: var(--text-soft);
+}
+
+.pg-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  align-items: flex-end;
+}
+
+.pg-controls .button {
+  padding: 0.5rem 1rem;
+  font: inherit;
+  font-weight: 600;
+  font-size: 0.92rem;
+  cursor: pointer;
+  background: transparent;
+  color: var(--accent);
+}
+
+.pg-controls .button.primary {
+  background: var(--accent);
+  color: var(--accent-text);
+}
+
+.pg-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--text-soft);
+}
+
+.pg-field select {
+  min-width: 17rem;
+  padding: 0.5rem 0.6rem;
+  font: inherit;
+  font-size: 0.95rem;
+  font-weight: 500;
+  color: var(--text);
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
+
+.pg-mode {
+  flex-direction: row;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.pg-mode select {
+  min-width: 0;
+  padding: 0.25rem 0.4rem;
+  font-size: 0.85rem;
+}
+
+.pg-hint {
+  margin: 1.25rem 0;
+  padding: 0.7rem 1rem;
+  font-size: 0.95rem;
+  background: var(--accent-soft);
+  border-radius: var(--radius);
+}
+
+.pg-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr);
+  gap: 1.25rem;
+  align-items: stretch;
+}
+
+.pg-side {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  min-width: 0;
+}
+
+.pg-panel {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--bg-soft);
+  overflow: hidden;
+}
+
+.pg-panel-head {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.55rem 0.9rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.pg-panel-head h2 {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+  margin: 0;
+  font-size: 0.95rem;
+}
+
+.pg-step {
+  display: inline-grid;
+  place-items: center;
+  width: 1.4rem;
+  height: 1.4rem;
+  border-radius: 50%;
+  background: var(--accent);
+  color: var(--accent-text);
+  font-size: 0.75rem;
+}
+
+.pg-badge,
+.pg-note {
+  font-size: 0.78rem;
+  color: var(--text-soft);
+}
+
+.pg-badge {
+  padding: 0.1rem 0.55rem;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--bg);
+}
+
+.pg textarea {
+  flex: 1;
+  width: 100%;
+  min-height: 7rem;
+  margin: 0;
+  padding: 0.85rem 1rem;
+  font-family: var(--mono);
+  font-size: 0.85rem;
+  line-height: 1.55;
+  tab-size: 2;
+  color: var(--text);
+  background: var(--bg-code);
+  border: 0;
+  outline: none;
+  resize: vertical;
+}
+
+.pg textarea:focus-visible {
+  box-shadow: inset 0 0 0 2px var(--accent);
+}
+
+.pg textarea.pg-invalid {
+  box-shadow: inset 3px 0 0 #e0a100;
+}
+
+.pg-schema textarea {
+  min-height: 34rem;
+}
+
+.pg textarea.pg-value {
+  min-height: 9rem;
+}
+
+.pg textarea.pg-options {
+  flex: none;
+  min-height: 4.2rem;
+  height: 4.2rem;
+}
+
+.pg-output {
+  flex: 1;
+}
+
+.pg-result {
+  flex: 1;
+  padding: 0.9rem 1rem;
+  background: var(--bg);
+}
+
+.pg-status {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+  margin: 0 0 0.6rem;
+  font-size: 1.15rem;
+  font-weight: 700;
+}
+
+.pg-status::before {
+  display: inline-grid;
+  place-items: center;
+  width: 1.6rem;
+  height: 1.6rem;
+  border-radius: 50%;
+  font-size: 0.9rem;
+  color: #ffffff;
+}
+
+.is-valid .pg-status {
+  color: var(--accent);
+}
+
+.is-valid .pg-status::before {
+  content: "\2713";
+  background: var(--accent);
+  color: var(--accent-text);
+}
+
+.is-invalid .pg-status {
+  color: #d64545;
+}
+
+.is-invalid .pg-status::before {
+  content: "\2715";
+  background: #d64545;
+}
+
+.is-problem .pg-status {
+  color: #b27b00;
+}
+
+.is-problem .pg-status::before {
+  content: "!";
+  background: #e0a100;
+}
+
+.pg-errors {
+  margin: 0 0 0.75rem;
+  padding: 0;
+  list-style: none;
+}
+
+.pg-errors li {
+  padding: 0.45rem 0.7rem;
+  margin-bottom: 0.4rem;
+  font-size: 0.95rem;
+  border-left: 3px solid #d64545;
+  border-radius: 0 6px 6px 0;
+  background: color-mix(in srgb, #d64545 7%, var(--bg));
+}
+
+.pg-error-message {
+  display: block;
+  font-weight: 600;
+}
+
+.pg-result pre {
+  margin: 0.4rem 0 0;
+  padding: 0.6rem 0.8rem;
+  font-size: 0.8rem;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.pg-errors pre {
+  background: var(--bg);
+}
+
+.pg-returns,
+.pg-after-title,
+.pg-speed {
+  margin: 0.6rem 0 0;
+  font-size: 0.88rem;
+  color: var(--text-soft);
+}
+
+.pg-speed {
+  padding-top: 0.6rem;
+  border-top: 1px solid var(--border);
+}
+
+.pg-code {
+  margin-top: 1.5rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 0.2rem 1rem;
+}
+
+.pg-code summary {
+  padding: 0.6rem 0;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.pg-code > p {
+  margin: 0.25rem 0 0.5rem;
+  font-size: 0.92rem;
+  color: var(--text-soft);
+}
+
+.pg-code pre {
+  max-height: 32rem;
+  overflow: auto;
+}
+
+.pg-footer-note {
+  margin: 1.5rem 0 0;
+  color: var(--text-soft);
+}
+
+@media (max-width: 900px) {
+  .pg-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .pg-schema textarea {
+    min-height: 18rem;
+  }
+}
+
+@media (max-width: 600px) {
+  .pg {
+    padding: 1.25rem 1rem 2rem;
+  }
+  .pg-field select {
+    min-width: 0;
+    width: 100%;
+  }
+  .pg-controls,
+  .pg-controls .pg-field {
+    width: 100%;
+  }
+}
+
+/* Playground and Schema from JSON: switch between the two tools */
+
+.pg-switch {
+  display: inline-flex;
+  gap: 0.25rem;
+  margin-bottom: 1.25rem;
+  padding: 0.25rem;
+  background: var(--bg-soft);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+}
+
+.pg-switch a {
+  padding: 0.3rem 0.95rem;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--text-soft);
+  border-radius: 999px;
+}
+
+.pg-switch a:hover {
+  text-decoration: none;
+  color: var(--text);
+}
+
+.pg-switch a[aria-current='page'] {
+  color: var(--accent-text);
+  background: var(--accent);
+}
+
+/* Schema from JSON */
+
+.inf-samples {
+  display: flex;
+  flex-direction: column;
+}
+
+.inf-sample + .inf-sample {
+  border-top: 1px solid var(--border);
+}
+
+.inf-sample-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.35rem 0.9rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--text-soft);
+  background: var(--bg-soft);
+}
+
+.inf-remove {
+  padding: 0;
+  font: inherit;
+  color: var(--text-soft);
+  background: none;
+  border: 0;
+  cursor: pointer;
+}
+
+.inf-remove:hover {
+  color: #d64545;
+}
+
+.pg .inf-sample textarea {
+  display: block;
+  min-height: 15rem;
+}
+
+.inf-add {
+  padding: 0.75rem 0.9rem;
+  border-top: 1px solid var(--border);
+}
+
+.inf-add .button,
+.inf-actions .button {
+  padding: 0.45rem 0.95rem;
+  font: inherit;
+  font-weight: 600;
+  font-size: 0.9rem;
+  cursor: pointer;
+  background: transparent;
+  color: var(--accent);
+}
+
+.inf-actions .button.primary {
+  background: var(--accent);
+  color: var(--accent-text);
+}
+
+.inf-actions .button:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.inf-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem 1.5rem;
+  align-items: center;
+  padding: 0.8rem 0.9rem;
+  background: var(--bg);
+}
+
+.inf-check {
+  display: inline-flex;
+  gap: 0.4rem;
+  align-items: center;
+  font-size: 0.88rem;
+  font-weight: 500;
+  color: var(--text);
+  cursor: pointer;
+}
+
+.inf-check input {
+  accent-color: var(--accent);
+}
+
+.inf-tabs .tab-list {
+  margin: 0;
+}
+
+.inf-tabs .tab-list button {
+  padding: 0.2rem 0.75rem;
+  font: inherit;
+  font-size: 0.82rem;
+  color: var(--text-soft);
+  background: none;
+  cursor: pointer;
+}
+
+.inf-output {
+  flex: 1;
+  margin: 0;
+  max-height: 38rem;
+  border: 0;
+  border-radius: 0;
+  overflow: auto;
+}
+
+.inf-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  align-items: center;
+  padding: 0.75rem 0.9rem;
+  border-top: 1px solid var(--border);
+  background: var(--bg);
+}
+
+.pg-output > .pg-result.is-problem {
+  flex: none;
+}
+
+
+/* The playground of xufa: its tools (a package each), and what each one is. */
+.pg-tools .tab-list {
+  flex-wrap: wrap;
+  margin-bottom: 0.75rem;
+}
+
+.pg-tool-about {
+  margin: 0 0 0.75rem;
+  color: var(--text-soft);
+}
+
+.pg-tool-about #tool-name {
+  font-weight: 600;
+}
+
+.pg-tool-more {
+  display: inline-block;
+  margin-left: 0.5rem;
+  font-weight: 600;
+}
+
+.pg-tool-more[hidden] {
+  display: none;
+}
+
+.pg-example-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 0.75rem;
+}
+
+.pg-example-row .pg-tool-about {
+  flex: 1 1 24rem;
+  margin: 0;
+}
+
+.pg-tools {
+  margin-top: 1.25rem;
+}
+
+/* The tabs of a package above a page of sections (its overview). */
+.package-home-tabs {
+  padding-top: 1.5rem;
+}
+
+.package-home-tabs .package-tabs {
+  margin-bottom: 0;
 }

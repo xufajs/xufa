@@ -117,7 +117,43 @@ async function parse(response, type) {
 const isStream = (body) =>
   body && typeof body === 'object' && (typeof body.pipe === 'function' || typeof body.getReader === 'function');
 
-function createClient(defaults = {}) {
+// The faults of a client (and of those made from it: extend(), for()): calls made to fail as a network that refuses
+// them, answer a status (respond), wait or hang, to see what an app does then.
+const METHODS = ['get', 'head', 'options', 'post', 'put', 'patch', 'delete'];
+
+function clientFaults() {
+  const { Faults } = require('@xufa/faults'); // eslint-disable-line global-require
+  const refused = (message) =>
+    Object.assign(new TypeError(message), {
+      cause: Object.assign(new Error('connect ECONNREFUSED (a fault injected)'), { code: 'ECONNREFUSED' }),
+    });
+  const faults = new Faults({
+    name: 'client',
+    operations: METHODS,
+    groups: { read: ['get', 'head', 'options'], write: ['post', 'put', 'patch', 'delete'] },
+    filters: { urls: { field: 'url', prefixes: true }, paths: { field: 'path', prefixes: true } },
+    downMessage: 'fetch failed: the service is down (a fault injected)',
+    error: (rule, context) =>
+      refused(rule.message || `fetch failed (a fault injected): ${context.method} ${context.url}`),
+  });
+  // A reply of a status, without the call: { status, headers, json } or { status, headers, body }.
+  faults.respond = (options = {}) => {
+    const { status = 503, headers = {}, json, body } = options;
+    if (!(status >= 200 && status <= 599)) throw new TypeError('respond(): status is from 200 to 599');
+    return faults.add('respond', options, {
+      replace: () =>
+        json === undefined
+          ? new globalThis.Response(body === undefined ? null : body, { status, headers })
+          : new globalThis.Response(JSON.stringify(json), {
+              status,
+              headers: { 'content-type': 'application/json', ...headers },
+            }),
+    });
+  };
+  return faults;
+}
+
+function createClient(defaults = {}, shared = { faults: null }) {
   const base = merge(DEFAULTS, defaults);
 
   async function send(method, path, given) {
@@ -155,15 +191,24 @@ function createClient(defaults = {}) {
       if (log) log.debug({ client: { method: verb, url, attempt: number } }, 'outgoing request');
       let response;
       try {
-        response = await fetch(call.url, {
-          method: verb,
-          headers: call.headers,
-          body: call.body,
-          signal,
-          redirect: o.redirect,
-          ...(o.dispatcher ? { dispatcher: o.dispatcher } : {}),
-          ...(isStream(call.body) ? { duplex: 'half' } : {}),
-        });
+        const call$ = () =>
+          fetch(call.url, {
+            method: verb,
+            headers: call.headers,
+            body: call.body,
+            signal,
+            redirect: o.redirect,
+            ...(o.dispatcher ? { dispatcher: o.dispatcher } : {}),
+            ...(isStream(call.body) ? { duplex: 'half' } : {}),
+          });
+        const { faults } = shared;
+        if (faults && faults.rules.length) {
+          const target = new URL(call.url);
+          response = await faults.apply(
+            { operation: verb.toLowerCase(), method: verb, url: target.href, path: target.pathname, signal },
+            call$
+          );
+        } else response = await call$();
       } catch (err) {
         // The caller (or the client of the request) went away: its reason, as it is.
         if (outer && outer.aborted) throw outer.reason;
@@ -226,12 +271,20 @@ function createClient(defaults = {}) {
     patch: (path, options) => send('PATCH', path, options),
     delete: (path, options) => send('DELETE', path, options),
     /** A client with more options (its headers, retry and hooks merged), as got.extend(). */
-    extend: (more) => createClient(merge(base, more)),
+    extend: (more) => createClient(merge(base, more), shared),
     /** The client of a request of @xufa/http: cancelled with it, logging with request.log, sending its id. */
-    for: (request) => createClient(merge(base, { request })),
+    for: (request) => createClient(merge(base, { request }), shared),
     /** The options of the client. */
     defaults: base,
   };
+  /** Its faults (shared with the clients made from it), for tests of resilience. */
+  Object.defineProperty(client, 'faults', {
+    enumerable: false,
+    get() {
+      if (!shared.faults) shared.faults = clientFaults();
+      return shared.faults;
+    },
+  });
   return client;
 }
 

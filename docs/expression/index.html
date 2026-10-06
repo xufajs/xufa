@@ -1,0 +1,320 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>@xufa/expression · xufa</title>
+    <meta
+      name="description"
+      content="@xufa/expression: safe JavaScript expressions compiled once and run many times on data, with no dependencies. No access to the process, prototypes or constructors; up to 130 million runs a second."
+    />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%23d9502b'/%3E%3Ctext x='16' y='22.5' font-family='monospace' font-size='18' font-weight='700' fill='white' text-anchor='middle'%3Ex%3C/text%3E%3C/svg%3E"
+    />
+    <link rel="stylesheet" href="../style.css?v=0.1.0" />
+    <script src="../main.js?v=0.1.0"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js" defer></script>
+  </head>
+  <body>
+    <header class="header">
+      <div class="header-inner">
+        <a class="logo" href="../index.html"><span class="logo-mark">x</span>xufa</a>
+        <nav class="nav">
+          <a href="../guide.html">Guide</a>
+          <a href="../playground.html">Playground</a>
+          <a href="../http/index.html">HTTP</a>
+          <a href="../orm/index.html">ORM</a>
+          <a class="hide-small" href="../auth/index.html">Auth</a>
+          <a class="hide-small" href="../sequelize/index.html">Sequelize</a>
+          <a class="hide-small" href="../packages.html" aria-current="page">Packages</a>
+          <a class="hide-small" href="../benchmarks.html">Benchmarks</a>
+          <a href="https://github.com/xufajs/xufa">GitHub</a>
+          <button class="theme-toggle" type="button" aria-label="Switch between light and dark theme">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+              <path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z" />
+            </svg>
+          </button>
+        </nav>
+      </div>
+    </header>
+
+    <div class="docs">
+      <button class="menu-toggle" type="button" aria-expanded="false">☰ Contents</button>
+      <aside class="sidebar">
+        <h4>Using it</h4>
+        <ul>
+          <li><a href="#start">Quick start</a></li>
+          <li><a href="#uses">What it is for</a></li>
+          <li><a href="#api">API</a></li>
+        </ul>
+        <h4>The language</h4>
+        <ul>
+          <li><a href="#language">Expressions</a></li>
+          <li><a href="#arrows">Arrow functions</a></li>
+          <li><a href="#not">What is not there</a></li>
+        </ul>
+        <h4>Safety</h4>
+        <ul>
+          <li><a href="#reach">What an expression can reach</a></li>
+          <li><a href="#globals">Globals</a></li>
+          <li><a href="#limits">Limits</a></li>
+        </ul>
+        <h4>Engines</h4>
+        <ul>
+          <li><a href="#options">Options</a></li>
+          <li><a href="#filters">Filters</a></li>
+          <li><a href="#errors">Errors</a></li>
+        </ul>
+        <h4>About it</h4>
+        <ul>
+          <li><a href="#how">How it runs</a></li>
+          <li><a href="#performance">Performance</a></li>
+          <li><a href="#typescript">TypeScript</a></li>
+        </ul>
+        <h4>Packages</h4>
+        <ul>
+          <li><a href="../websocket/index.html">@xufa/websocket</a></li>
+          <li><a href="../openapi/index.html">@xufa/openapi</a></li>
+          <li><a href="../client/index.html">@xufa/client</a></li>
+          <li><a href="../schema/index.html">@xufa/schema</a></li>
+          <li><a href="../pg/index.html">@xufa/pg</a></li>
+          <li><a href="../mongo/index.html">@xufa/mongo</a></li>
+          <li><a href="index.html" aria-current="page">@xufa/expression</a></li>
+          <li><a href="../template/index.html">@xufa/template</a></li>
+          <li><a href="../cluster/index.html">@xufa/cluster</a></li>
+          <li><a href="../scheduler/index.html">@xufa/scheduler</a></li>
+          <li><a href="../config/index.html">@xufa/config</a></li>
+          <li><a href="../discovery/index.html">@xufa/discovery</a></li>
+          <li><a href="../netcache/index.html">@xufa/netcache</a></li>
+          <li><a href="../faults/index.html">@xufa/faults</a></li>
+          <li><a href="../marshal/index.html">@xufa/marshal</a></li>
+          <li><a href="../yaml/index.html">@xufa/yaml</a></li>
+          <li><a href="../jwt/index.html">@xufa/jwt</a></li>
+          <li><a href="../logger/index.html">@xufa/logger</a></li>
+          <li><a href="../router/index.html">@xufa/router</a></li>
+          <li><a href="../serializer/index.html">@xufa/serializer</a></li>
+          <li><a href="../inject/index.html">@xufa/inject</a></li>
+          <li><a href="../boot/index.html">@xufa/boot</a></li>
+          <li><a href="../errors/index.html">@xufa/errors</a></li>
+          <li><a href="../packages.html">All the packages</a></li>
+        </ul>
+      </aside>
+
+      <article class="content">
+<h1>@xufa/expression</h1>
+        <p class="intro">
+          Expressions of JavaScript, a safe part of it, compiled once and run many times on data of their own: rules,
+          formulas, conditions and templates that users or configuration write. They read the data they are given and
+          nothing else, cannot assign, and cannot reach the process, prototypes or constructors. Compiled to closures,
+          and to JavaScript when they run often, they run at up to 130 million times a second, from 3 to 100 times
+          faster than other sandboxed evaluators. No dependencies.
+        </p>
+
+        <h2 id="start">Quick start</h2>
+        <pre><code class="language-sh">npm install @xufa/expression   # or require('xufa/expression')</code></pre>
+        <pre><code class="language-js">const { compile, evaluate } = require('@xufa/expression');
+
+const total = compile('items.filter(i =&gt; i.price &gt; min).reduce((sum, i) =&gt; sum + i.price * i.quantity, 0)');
+total({ items, min: 10 }); // compiled once, run as often as you like
+
+evaluate('user.name?.toUpperCase() ?? "anonymous"', { user });
+evaluate('`${user.name} has ${user.tags.length} tags`', { user });
+evaluate('user.constructor', { user }); // ExpressionError: XUFA_EXPR_ERR_FORBIDDEN</code></pre>
+
+        <h2 id="uses">What it is for</h2>
+        <ul>
+          <li><strong>Rules and conditions</strong> stored in a database or written by users: <code>order.total &gt; 100 &amp;&amp; customer.country === 'ES'</code>.</li>
+          <li><strong>Formulas</strong> of a spreadsheet, a pricing table, a report.</li>
+          <li><strong>Mappings and transformations</strong> of data, in configuration: <code>row.items.map(i =&gt; ({ sku: i.code, qty: i.n }))</code>.</li>
+          <li><strong>Templates</strong>: <a href="../template/index.html">@xufa/template</a> is made with it.</li>
+        </ul>
+        <p>
+          Where <code>new Function</code> or <code>node:vm</code> would run any code (and <code>vm</code> is not a
+          security boundary), an expression runs only what the language below allows, on the data you give it.
+        </p>
+
+        <h2 id="api">API</h2>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Function</th><th>What it does</th></tr></thead>
+            <tbody>
+              <tr><td><code>compile(source)</code></td><td>A function of the context: <code>fn(context)</code> gives the value. Kept by its source (the next <code>compile</code> of the same text is free). <code>fn.source</code> is its text.</td></tr>
+              <tr><td><code>evaluate(source, context)</code></td><td><code>compile(source)(context)</code>.</td></tr>
+              <tr><td><code>parse(source, { filters })</code></td><td>The tree (nodes as those of ESTree: <code>BinaryExpression</code>, <code>MemberExpression</code>...).</td></tr>
+              <tr><td><code>new Engine(options)</code></td><td>An engine of its own, with <a href="#options">options</a>: <code>compile</code>, <code>evaluate</code>, <code>parse</code>. The module's functions use a default one.</td></tr>
+              <tr><td><code>ExpressionError</code>, <code>GLOBALS</code>, <code>FORBIDDEN</code>, <code>locate(source, position)</code></td><td>The error class, the default globals, the names that cannot be reached, and the line and column of a position.</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p>
+          The context is an object whose properties are the names of the expression (it can be a class instance, with
+          getters). Names that are not there are <code>undefined</code> (<code>strict</code> makes them errors).
+        </p>
+
+        <h2 id="language">Expressions</h2>
+        <p>The expressions of JavaScript, with the same results (the tests compare more than a hundred of them with JavaScript itself):</p>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Kind</th><th>Examples</th></tr></thead>
+            <tbody>
+              <tr><td>Literals</td><td><code>1.5e3</code>, <code>0x1f</code>, <code>0b101</code>, <code>1_000</code>, <code>10n</code>, <code>'text\n'</code>, <code>`${a} and ${b}`</code>, <code>true</code>, <code>null</code>, <code>undefined</code></td></tr>
+              <tr><td>Arrays and objects</td><td><code>[a, ...rest]</code>, <code>{ a, b: 1, [key]: 2, ...other }</code></td></tr>
+              <tr><td>Arithmetic</td><td><code>+ - * / % **</code>, unary <code>- + ~</code></td></tr>
+              <tr><td>Comparisons</td><td><code>== != === !== &lt; &lt;= &gt; &gt;=</code>, <code>in</code></td></tr>
+              <tr><td>Logic</td><td><code>&amp;&amp; || ?? !</code>, <code>cond ? a : b</code></td></tr>
+              <tr><td>Bitwise</td><td><code>&amp; | ^ &lt;&lt; &gt;&gt; &gt;&gt;&gt;</code></td></tr>
+              <tr><td>Members</td><td><code>a.b</code>, <code>a[b]</code>, <code>a?.b</code>, <code>a?.[b]</code></td></tr>
+              <tr><td>Calls</td><td><code>f(x, ...rest)</code>, <code>s.slice(1)</code> (methods are called on their value), <code>a.f?.()</code></td></tr>
+              <tr><td>Others</td><td><code>typeof x</code></td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h2 id="arrows">Arrow functions</h2>
+        <pre><code class="language-js">evaluate('items.map((item, i) =&gt; item.price * i)', { items });
+evaluate('orders.filter(o =&gt; o.total &gt; 100).map(o =&gt; ({ id: o.id, vip: o.total &gt; 1000 }))', { orders });
+evaluate('[1, 2, 3].map(x =&gt; [4, 5].map(y =&gt; x * y))'); // nested, with the names around them</code></pre>
+        <p>
+          With an expression body (an object in parentheses). They are functions of JavaScript, so array methods,
+          <code>JSON.parse</code> revivers and the functions of your context can call them.
+        </p>
+
+        <h2 id="not">What is not there</h2>
+        <p>
+          Statements, assignments (<code>=</code>, <code>+=</code>, <code>++</code>), <code>new</code>,
+          <code>this</code>, <code>function</code>, <code>delete</code>, <code>void</code>, <code>instanceof</code>,
+          comments, tagged templates, methods in object literals and holes in arrays. Each is a syntax error that says
+          where it is.
+        </p>
+
+        <h2 id="reach">What an expression can reach</h2>
+        <p>The context it is given, the parameters of its arrow functions, and its <a href="#globals">globals</a>. It cannot:</p>
+        <ul>
+          <li>read <code>__proto__</code>, <code>constructor</code>, <code>prototype</code>, <code>caller</code>, <code>callee</code>, <code>arguments</code> or the old accessors of <code>Object.prototype</code> (<code>__defineGetter__</code>...), by name or computed: <code>x['__pro' + 'to__']</code> is refused when it runs, and a key is turned to text once, so an object whose <code>toString</code> changes its answer cannot slip one by (<code>XUFA_EXPR_ERR_FORBIDDEN</code>). So no expression reaches <code>Function</code>, and with it the process;</li>
+          <li>assign anything, so it cannot change its context nor the prototypes of the process; the objects it makes have their keys as their own properties (<code>__proto__</code> cannot be a key, and <code>{ ...JSON.parse(...) }</code> keeps a key <code>__proto__</code> as a key);</li>
+          <li>reach <code>process</code>, <code>require</code>, <code>globalThis</code>, timers or modules: they are not names it has.</li>
+        </ul>
+        <p>The functions you put in the context are called as they are: what they can do, the expression can make them do.</p>
+
+        <h2 id="globals">Globals</h2>
+        <p>
+          <code>Math</code>; <code>JSON</code> (<code>parse</code>, <code>stringify</code>); <code>Number</code>,
+          <code>String</code> and <code>Boolean</code> as conversions with their static helpers
+          (<code>Number.isInteger</code>, <code>String.fromCharCode</code>...); <code>Array.isArray</code>;
+          <code>Object.keys</code>, <code>values</code>, <code>entries</code> and <code>fromEntries</code>;
+          <code>Date.now</code> and <code>Date.parse</code>; <code>parseInt</code>, <code>parseFloat</code>,
+          <code>isNaN</code>, <code>isFinite</code>, the URI functions, <code>Infinity</code> and <code>NaN</code>. Nothing
+          that writes: no <code>Object.assign</code>, <code>Object.defineProperty</code>, <code>Array.from</code>.
+        </p>
+        <pre><code class="language-js">const pricing = new Engine({ globals: { tax: (v) =&gt; v * 1.21, round: (v, d) =&gt; +v.toFixed(d) } });
+pricing.evaluate('round(tax(order.total), 2)', { order }); // the context goes over the globals</code></pre>
+
+        <h2 id="limits">Limits</h2>
+        <p>
+          An expression has no loops of its own, so its time and memory follow from its length and its data; but a
+          method can still make a large value (<code>'x'.repeat(1e9)</code>, a <code>map</code> of a large list). For
+          expressions of people you do not trust: give contexts of data (not objects of your application with methods),
+          keep <code>maxLength</code> small, and run them where a slow one does not hold others (a worker with a time
+          limit).
+        </p>
+
+        <h2 id="options">Options</h2>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Option</th><th>Default</th><th>What it does</th></tr></thead>
+            <tbody>
+              <tr><td><code>globals</code></td><td><code>{}</code></td><td>Names over the default globals; the context goes over them.</td></tr>
+              <tr><td><code>builtins</code></td><td><code>true</code></td><td><code>false</code>: only the globals given.</td></tr>
+              <tr><td><code>filters</code></td><td><code>null</code></td><td>Functions by name: <code>|</code> separates them (see <a href="#filters">Filters</a>).</td></tr>
+              <tr><td><code>lenient</code></td><td><code>false</code></td><td>Members of <code>null</code> or <code>undefined</code>, and calls of what is not a function, give <code>undefined</code> instead of an error.</td></tr>
+              <tr><td><code>strict</code></td><td><code>false</code></td><td>Names that are not in the context nor the globals are errors.</td></tr>
+              <tr><td><code>maxLength</code></td><td><code>10000</code></td><td>The longest source (<code>XUFA_EXPR_ERR_LENGTH</code>).</td></tr>
+              <tr><td><code>cacheSize</code></td><td><code>1000</code></td><td>Expressions compiled kept, by source.</td></tr>
+              <tr><td><code>inline</code></td><td><code>true</code></td><td>Expressions run often become one function of JavaScript (see <a href="#how">How it runs</a>); <code>false</code>: closures always.</td></tr>
+              <tr><td><code>inlineAfter</code></td><td><code>64</code></td><td>Runs before an expression becomes that function (0: at once).</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h2 id="filters">Filters</h2>
+        <pre><code class="language-js">const engine = new Engine({ filters: { round: (v, d) =&gt; +v.toFixed(d), money: (v) =&gt; `${v} €` } });
+engine.evaluate('price * quantity | round(2) | money', { price: 1.234, quantity: 3 }); // '3.7 €'
+engine.evaluate('(a || b) | round(1)', { a: 0, b: 2.25 }); // filters in parentheses too</code></pre>
+        <p>The value goes first, then the arguments. With filters, <code>|</code> is not the bitwise or.</p>
+
+        <h2 id="errors">Errors</h2>
+        <p>
+          <code>ExpressionError</code>, with <code>code</code>, <code>position</code>, <code>line</code> and
+          <code>column</code>. The errors of the functions called go through as they are.
+        </p>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Code</th><th>When</th></tr></thead>
+            <tbody>
+              <tr><td><code>XUFA_EXPR_ERR_SYNTAX</code></td><td>The source is not an expression of the language (or a filter is unknown).</td></tr>
+              <tr><td><code>XUFA_EXPR_ERR_FORBIDDEN</code></td><td>A name that cannot be reached.</td></tr>
+              <tr><td><code>XUFA_EXPR_ERR_RUNTIME</code></td><td>A member of <code>null</code>, a call of what is not a function, a name not defined (<code>strict</code>).</td></tr>
+              <tr><td><code>XUFA_EXPR_ERR_LENGTH</code></td><td>A source longer than <code>maxLength</code>.</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <pre><code class="language-js">try {
+  evaluate('user.name +\n  * 2');
+} catch (err) {
+  err.code; // 'XUFA_EXPR_ERR_SYNTAX'
+  err.line; // 2
+  err.column; // 3
+}</code></pre>
+
+        <h2 id="how">How it runs</h2>
+        <ol>
+          <li>The source is read by a parser of its own (no <code>eval</code>, no acorn) into a tree, refused when it has what the language has not.</li>
+          <li>The tree becomes closures, one for each node, made once: the names and keys that cannot be reached are refused here.</li>
+          <li>After <code>inlineAfter</code> runs, the expression becomes one function of JavaScript, whose arrow functions are arrow functions of JavaScript, and V8 compiles it as your code. Nothing of the source is code in it: strings, names and keys are JSON literals, numbers are written by <code>String()</code>, operators come from a fixed list, parameters get names of their own, and what must be checked (names, members, calls, computed keys, optional chains) is checked there as in the closures, with the same errors. With code generation off (<code>--disallow-code-generation-from-strings</code>), the closures go on.</li>
+        </ol>
+
+        <h2 id="performance">Performance</h2>
+        <p class="legend"><span class="us">@xufa/expression</span><span>other sandboxes</span></p>
+        <div class="charts">
+          <div class="chart">
+            <h3><code>a + b * 2</code></h3>
+            <p class="subtitle">Runs a second, compiled once. JavaScript itself: 379M.</p>
+            <div class="chart-row us win"><span class="name">@xufa/expression</span><span class="track"><span class="fill" style="width: 100%"></span></span><span class="value">131M</span></div>
+            <div class="chart-row"><span class="name">filtrex</span><span class="track"><span class="fill" style="width: 14.2%"></span></span><span class="value">18.6M</span></div>
+            <div class="chart-row"><span class="name">expr-eval</span><span class="track"><span class="fill" style="width: 4.4%"></span></span><span class="value">5.8M</span></div>
+            <div class="chart-row"><span class="name">jexl</span><span class="track"><span class="fill" style="width: 0.8%"></span></span><span class="value">1.0M</span></div>
+          </div>
+          <div class="chart">
+            <h3><code>items.map(...).reduce(...)</code></h3>
+            <p class="subtitle">Runs a second. JavaScript itself: 46.9M; jexl, expr-eval and filtrex cannot write it.</p>
+            <div class="chart-row us win"><span class="name">@xufa/expression</span><span class="track"><span class="fill" style="width: 100%"></span></span><span class="value">32.9M</span></div>
+            <div class="chart-row"><span class="name">SandboxJS</span><span class="track"><span class="fill" style="width: 0.5%"></span></span><span class="value">46k</span></div>
+          </div>
+        </div>
+        <p>
+          Method calls run at 93% of the speed of JavaScript, <code>map</code> and <code>reduce</code> at 70%. Every
+          expression is in <a href="../benchmarks.html#expressions">Benchmarks</a>; <code>node bench/micro/expression.js</code>
+          measures them.
+        </p>
+
+        <h2 id="typescript">TypeScript</h2>
+        <pre><code class="language-ts">import { compile, Engine, CompiledExpression } from '@xufa/expression';
+
+const total: CompiledExpression&lt;number&gt; = compile&lt;number&gt;('items.reduce((s, i) =&gt; s + i.price, 0)');
+const value: number = total({ items: [{ price: 2 }] });</code></pre>
+      </article>
+    </div>
+
+    <footer class="footer">
+      <div class="container">
+        <span>xufa is MIT licensed. &copy; Jes&uacute;s Seijas</span>
+        <span>
+          <a href="../guide.html">Guide</a> &middot; <a href="../playground.html">Playground</a> &middot; <a href="../http/index.html">HTTP</a> &middot; <a href="../orm/index.html">ORM</a> &middot; <a href="../auth/index.html">Auth</a> &middot;
+          <a href="../sequelize/index.html">Sequelize</a> &middot; <a href="../packages.html">Packages</a> &middot;
+          <a href="../benchmarks.html">Benchmarks</a> &middot; <a href="https://github.com/xufajs/xufa">GitHub</a>
+        </span>
+      </div>
+    </footer>
+  </body>
+</html>

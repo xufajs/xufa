@@ -15,10 +15,15 @@
 // route, so it is also how a user sees only theirs. Errors are answered with their status: 400 for the values that
 // are not valid (with the messages of each field), 404, and 409 for duplicates of unique fields (UniqueError) and for
 // objects that others protect (ProtectedError).
+//
+// Bodies set the writable fields; the others of the model (id, createdAt, computed ones...) are ignored, and keys that
+// are no field are refused (400). With strict: true, those that are not writable are refused too, and every key
+// refused is in one ValidationError (400, with the errors of each key); in an update, one with the value the object
+// has is accepted (a body that is an object as it was read).
 const createError = require('@xufa/errors');
 const { Q, or, LOOKUPS } = require('./query');
 const { QuerySet } = require('./queryset');
-const { QueryError, FieldError, LookupError, NotFoundError } = require('./errors');
+const { QueryError, FieldError, LookupError, NotFoundError, ValidationError } = require('./errors');
 const { resourceDocs } = require('./resource-openapi');
 
 const BadRequest = createError('XUFA_ORM_ERR_BAD_REQUEST', '%s', 400);
@@ -62,6 +67,11 @@ function paramValue(key, value) {
   return text;
 }
 
+// A value of a body equal to one of an object (as JSON: a date is its text).
+function sameValue(had, given) {
+  return JSON.stringify(had === undefined ? null : had) === JSON.stringify(given === undefined ? null : given);
+}
+
 function resource(model, options = {}) {
   const {
     actions = ACTIONS,
@@ -82,6 +92,7 @@ function resource(model, options = {}) {
     hooks = {},
     serialize,
     openapi = true,
+    strict = false,
   } = options;
   const unknownAction = actions.find((action) => !ACTIONS.includes(action));
   if (unknownAction) throw new TypeError(`Unknown action ${unknownAction} (${ACTIONS.join(', ')})`);
@@ -105,11 +116,14 @@ function resource(model, options = {}) {
   });
 
   // The values of a body for the writable fields; other fields of the model (id, createdAt...) are ignored, and keys
-  // that are no field are refused.
-  function valuesOf(body) {
+  // that are no field are refused. strict: those that are not writable are refused too (unless, in an update, they
+  // have the value of `current`, the object), all in one ValidationError.
+  function valuesOf(body, current = null) {
     if (!body || typeof body !== 'object' || Array.isArray(body)) throw new BadRequest('The body must be an object');
     const values = {};
     const unknown = [];
+    const readOnlyKeys = [];
+    const now = strict && current ? current.toJSON() : null;
     for (const [key, value] of Object.entries(body)) {
       if (writableNames.has(key)) values[key] = value;
       else if (
@@ -119,6 +133,13 @@ function resource(model, options = {}) {
         !meta.manyToMany.some((field) => field.name === key)
       )
         unknown.push(key);
+      else if (strict && !(now && sameValue(key === 'pk' ? current.pk : now[key], value))) readOnlyKeys.push(key);
+    }
+    if (strict && (unknown.length || readOnlyKeys.length)) {
+      const errors = {};
+      for (const key of unknown) errors[key] = [`${model.name} has no field ${key}.`];
+      for (const key of readOnlyKeys) errors[key] = ['This field is read-only.'];
+      throw new ValidationError(model.name, errors);
     }
     if (unknown.length) throw new BadRequest(`${model.name} has no field ${unknown.join(', ')}`);
     return values;
@@ -265,7 +286,7 @@ function resource(model, options = {}) {
     if (actions.includes('update')) {
       const update = (partial) => async (request) => {
         const object = await find(request);
-        let values = valuesOf(request.body);
+        let values = valuesOf(request.body, object);
         if (!partial) {
           // PUT: the writable fields not given take their default (null when they have none).
           for (const field of writableFields) {

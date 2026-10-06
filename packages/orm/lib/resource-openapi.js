@@ -2,9 +2,14 @@
 // as the route config `openapi`, a schema that only describes them. It is never used to validate or serialize, so
 // documenting a resource does not change what it accepts or answers.
 //
+// The schemas are those of Model.schema() (null as a type): @xufa/openapi writes them as OpenAPI 3.0 (nullable: true)
+// or 3.1 (type: ['integer', 'null']), as the document is.
+//
 // Each action gets its tags, summary and operationId, its parameters (the id; the filters, ordering, search and page
-// of the list), its body (the writable fields, from Model.jsonSchema()) and its responses (the object as it is
+// of the list), its body (the writable fields, from Model.schema()) and its responses (the object as it is
 // answered, the page of a list, and the errors).
+
+const { modelSchema } = require('./model-schema');
 
 const ERROR = {
   type: 'object',
@@ -39,7 +44,7 @@ function resourceDocs(model, settings) {
   let object;
   if (serialize) object = { type: 'object', description: `A ${model.name}`, additionalProperties: true };
   else {
-    const full = model.jsonSchema();
+    const full = modelSchema(model, {}, { blobs: true });
     const keep = (name) => {
       if (shown) {
         return shown.some((given) => {
@@ -58,11 +63,11 @@ function resourceDocs(model, settings) {
 
   // A body: the writable fields (required ones required, for a create and a PUT).
   const body = (partial) => {
-    const full = model.jsonSchema({ partial });
+    const full = modelSchema(model, { input: true });
     const names = new Set(writableFields.map((field) => field.attname));
     const properties = Object.fromEntries(Object.entries(full.properties).filter(([name]) => names.has(name)));
     const schema = { type: 'object', properties, additionalProperties: false };
-    const required = (full.required || []).filter((name) => names.has(name));
+    const required = partial ? [] : (full.required || []).filter((name) => names.has(name));
     if (required.length) schema.required = required;
     return schema;
   };

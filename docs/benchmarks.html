@@ -19,13 +19,14 @@
   <body>
     <header class="header">
       <div class="header-inner">
-        <a class="logo" href="./"><span class="logo-mark">x</span>xufa</a>
+        <a class="logo" href="index.html"><span class="logo-mark">x</span>xufa</a>
         <nav class="nav">
           <a href="guide.html">Guide</a>
-          <a href="http.html">HTTP</a>
-          <a href="orm.html">ORM</a>
-          <a class="hide-small" href="auth.html">Auth</a>
-          <a class="hide-small" href="sequelize.html">Sequelize</a>
+          <a href="playground.html">Playground</a>
+          <a href="http/index.html">HTTP</a>
+          <a href="orm/index.html">ORM</a>
+          <a class="hide-small" href="auth/index.html">Auth</a>
+          <a class="hide-small" href="sequelize/index.html">Sequelize</a>
           <a class="hide-small" href="packages.html">Packages</a>
           <a class="hide-small" href="benchmarks.html" aria-current="page">Benchmarks</a>
           <a href="https://github.com/xufajs/xufa">GitHub</a>
@@ -48,6 +49,7 @@
           <li><a href="#pg">PostgreSQL driver</a></li>
           <li><a href="#mongo">MongoDB driver</a></li>
           <li><a href="#http">HTTP</a></li>
+          <li><a href="#openapi">OpenAPI routes</a></li>
           <li><a href="#router">Router</a></li>
           <li><a href="#logger">Logger</a></li>
           <li><a href="#serializer">Serializer</a></li>
@@ -86,6 +88,16 @@
           <li>
             <strong>⚠</strong> marks a result whose rounds are more than 10% apart: the machine was busy, so read it as
             approximate. A Windows desktop is a noisy place to measure; the ratios hold better than the absolute numbers.
+          </li>
+          <li>
+            <strong>A process of its own, for a reason</strong>: what a process does before its first request can make
+            every request after it slower, for as long as it runs. When thousands of objects get properties of their own
+            names first (as the first compile of ajv does, with its meta-schema), V8 optimizes the request path worse:
+            about a third fewer requests a second on fastify, and a seventh fewer on <code>@xufa/http</code>, on every
+            route, though the code that did it never runs again. The same work after the first requests costs nothing.
+            So no server inherits what another did, and xufa's packages do no such work before traffic (the README of the
+            repository has the guideline). V8's profiler (<code>--cpu-prof</code>) puts every process in the slow state,
+            so it cannot show this: compare runs, each in a process of its own.
           </li>
         </ul>
 
@@ -589,6 +601,133 @@
               </tbody>
             </table>
           </div>
+
+        <h2 id="openapi">OpenAPI routes</h2>
+        <p>
+          The routes of an OpenAPI 3 document, made by <code>openapi.operations</code> of <code>@xufa/openapi</code>: the
+          same layer on <code>@xufa/http</code> and on fastify 5, the same document and handlers. Requests a second over
+          the loopback on Linux (autocannon, 100 connections, pipelining 10), more is better; each server runs in a
+          process of its own; the median of 10 rounds (two runs of 5).
+        </p>
+        <div class="pairs">
+          <div class="pair win">
+            <div class="head"><span>A book by id (path and query validated)</span><span class="times">1.05&times; ⚠</span></div>
+            <div class="chart-row us"><span class="name">xufa</span><span class="track"><span class="fill" style="width: 100.0%"></span></span><span class="value">77k</span></div>
+            <div class="chart-row"><span class="name">fastify</span><span class="track"><span class="fill" style="width: 94.8%"></span></span><span class="value">73k</span></div>
+          </div>
+          <div class="pair win">
+            <div class="head"><span>A list of 20 books</span><span class="times">1.16&times; ⚠</span></div>
+            <div class="chart-row us"><span class="name">xufa</span><span class="track"><span class="fill" style="width: 100.0%"></span></span><span class="value">71k</span></div>
+            <div class="chart-row"><span class="name">fastify</span><span class="track"><span class="fill" style="width: 86.0%"></span></span><span class="value">61k</span></div>
+          </div>
+          <div class="pair win">
+            <div class="head"><span>A list of 20 books, its reply validated</span><span class="times">1.19&times; ⚠</span></div>
+            <div class="chart-row us"><span class="name">xufa</span><span class="track"><span class="fill" style="width: 100.0%"></span></span><span class="value">56k</span></div>
+            <div class="chart-row"><span class="name">fastify</span><span class="track"><span class="fill" style="width: 83.7%"></span></span><span class="value">47k</span></div>
+          </div>
+          <div class="pair even">
+            <div class="head"><span>A create (its body validated)</span><span class="times">1.00&times;</span></div>
+            <div class="chart-row us"><span class="name">xufa</span><span class="track"><span class="fill" style="width: 99.9%"></span></span><span class="value">45k</span></div>
+            <div class="chart-row"><span class="name">fastify</span><span class="track"><span class="fill" style="width: 100.0%"></span></span><span class="value">45k</span></div>
+          </div>
+          <div class="pair win">
+            <div class="head"><span>A create, its body and its reply validated</span><span class="times">1.08&times; ⚠</span></div>
+            <div class="chart-row us"><span class="name">xufa</span><span class="track"><span class="fill" style="width: 100.0%"></span></span><span class="value">46k</span></div>
+            <div class="chart-row"><span class="name">fastify</span><span class="track"><span class="fill" style="width: 92.5%"></span></span><span class="value">43k</span></div>
+          </div>
+          <div class="pair win">
+            <div class="head"><span>An id the document refuses (400)</span><span class="times">1.55&times; ⚠</span></div>
+            <div class="chart-row us"><span class="name">xufa</span><span class="track"><span class="fill" style="width: 100.0%"></span></span><span class="value">71k</span></div>
+            <div class="chart-row"><span class="name">fastify</span><span class="track"><span class="fill" style="width: 64.5%"></span></span><span class="value">46k</span></div>
+          </div>
+        </div>
+        <p>
+          On <code>@xufa/http</code>, the routes of the document answer from 1.00&times; to
+          1.55&times; the requests of the same routes on fastify (5 of 6 marked ⚠: their rounds more than 10% apart, so read them as approximate). Validating the
+          replies against the document too (<code>validateResponses</code>) costs what the table says: each reply is
+          checked as plain data before it is serialized (the larger the reply, the more), and the validators are made on
+          the first request of each route, not before (which slows a whole process: see
+          <a href="#how">How they are measured</a>).
+        </p>
+        <div class="table-wrap">
+          <table class="numbers">
+            <thead><tr><th>Replies validated</th><th>Requests a second lost, xufa</th><th>Requests a second lost, fastify</th></tr></thead>
+            <tbody>
+              <tr><td>A list of 20 books</td><td>21%</td><td>23%</td></tr>
+              <tr><td>A create</td><td>none measurable</td><td>4%</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <details class="raw">
+          <summary>All numbers (bench/results/openapi-linux-1.md)</summary>
+          <pre><code>{"node":"v22.21.1","xufa":"0.1.0","fastify":"5.12.5","autocannon":"8.0.0","cpu":"13th Gen Intel(R) Core(TM) i7-13700H","cores":20,"platform":"linux 6.18.40.1-microsoft-standard-WSL2","date":"2026-10-06T18:47:28.995Z","options":{"duration":6,"warmup":2,"rounds":5,"connections":100,"pipelining":10}}
+
+| Scenario | xufa req/s | fastify req/s | xufa / fastify |
+| --- | ---: | ---: | ---: |
+| openapi-get | 81,408 ⚠24% | 83,179 ⚠17% | **0.98x** |
+| openapi-list | 71,317 | 61,429 | **1.16x** |
+| openapi-list-validated | 57,392 | 50,171 | **1.14x** |
+| openapi-post | 45,643 | 45,365 | **1.01x** |
+| openapi-post-validated | 47,200 | 42,752 | **1.10x** |
+| openapi-invalid | 70,429 | 45,003 | **1.57x** |
+
+⚠ marks rounds spread more than 10% apart: the machine was busy, run again.
+
+Server processor time per request (lower is better):
+
+| Scenario | xufa µs/req | fastify µs/req | fastify / xufa |
+| --- | ---: | ---: | ---: |
+| openapi-get | 12.5 | 12.3 | **0.98x** |
+| openapi-list | 14.4 | 16.7 | **1.16x** |
+| openapi-list-validated | 17.8 | 20.4 | **1.14x** |
+| openapi-post | 22.8 | 22.9 | **1.00x** |
+| openapi-post-validated | 22.0 | 24.3 | **1.10x** |
+| openapi-invalid | 14.6 | 22.7 | **1.56x** |
+
+| Scenario | xufa p50 / p99 ms | fastify p50 / p99 ms |
+| --- | ---: | ---: |
+| openapi-get | 13 / 17 | 13 / 18 |
+| openapi-list | 15 / 19 | 18 / 23 |
+| openapi-list-validated | 20 / 24 | 23 / 28 |
+| openapi-post | 17 / 40 | 17 / 38 |
+| openapi-post-validated | 17 / 39 | 19 / 42 |
+| openapi-invalid | 15 / 20 | 25 / 37 |</code></pre>
+        </details>
+        <details class="raw">
+          <summary>All numbers (bench/results/openapi-linux-2.md)</summary>
+          <pre><code>{"node":"v22.21.1","xufa":"0.1.0","fastify":"5.12.5","autocannon":"8.0.0","cpu":"13th Gen Intel(R) Core(TM) i7-13700H","cores":20,"platform":"linux 6.18.40.1-microsoft-standard-WSL2","date":"2026-10-06T18:56:39.650Z","options":{"duration":6,"warmup":2,"rounds":5,"connections":100,"pipelining":10}}
+
+| Scenario | xufa req/s | fastify req/s | xufa / fastify |
+| --- | ---: | ---: | ---: |
+| openapi-get | 75,488 ⚠16% | 66,179 ⚠19% | **1.14x** |
+| openapi-list | 71,957 ⚠24% | 61,861 | **1.16x** |
+| openapi-list-validated | 55,136 ⚠16% | 45,035 ⚠19% | **1.22x** |
+| openapi-post | 44,848 | 44,117 | **1.02x** |
+| openapi-post-validated | 44,144 ⚠11% | 43,531 | **1.01x** |
+| openapi-invalid | 70,848 ⚠30% | 46,128 ⚠14% | **1.54x** |
+
+⚠ marks rounds spread more than 10% apart: the machine was busy, run again.
+
+Server processor time per request (lower is better):
+
+| Scenario | xufa µs/req | fastify µs/req | fastify / xufa |
+| --- | ---: | ---: | ---: |
+| openapi-get | 13.6 | 15.5 | **1.14x** |
+| openapi-list | 14.2 | 16.5 | **1.16x** |
+| openapi-list-validated | 18.7 | 23.0 | **1.23x** |
+| openapi-post | 23.3 | 23.5 | **1.01x** |
+| openapi-post-validated | 23.7 | 23.8 | **1.00x** |
+| openapi-invalid | 14.5 | 22.2 | **1.53x** |
+
+| Scenario | xufa p50 / p99 ms | fastify p50 / p99 ms |
+| --- | ---: | ---: |
+| openapi-get | 14 / 25 | 15 / 29 |
+| openapi-list | 15 / 21 | 18 / 24 |
+| openapi-list-validated | 20 / 29 | 24 / 34 |
+| openapi-post | 18 / 42 | 18 / 40 |
+| openapi-post-validated | 18 / 41 | 19 / 41 |
+| openapi-invalid | 16 / 20 | 24 / 31 |</code></pre>
+        </details>
 
         <h2 id="router">Router</h2>
         <p>
@@ -1307,8 +1446,8 @@ node bench/view.js               # large pages, whole and streamed</code></pre>
       <div class="container">
         <span>xufa is MIT licensed. &copy; Jes&uacute;s Seijas</span>
         <span>
-          <a href="guide.html">Guide</a> &middot; <a href="http.html">HTTP</a> &middot; <a href="orm.html">ORM</a> &middot; <a href="auth.html">Auth</a> &middot;
-          <a href="sequelize.html">Sequelize</a> &middot; <a href="packages.html">Packages</a> &middot;
+          <a href="guide.html">Guide</a> &middot; <a href="playground.html">Playground</a> &middot; <a href="http/index.html">HTTP</a> &middot; <a href="orm/index.html">ORM</a> &middot; <a href="auth/index.html">Auth</a> &middot;
+          <a href="sequelize/index.html">Sequelize</a> &middot; <a href="packages.html">Packages</a> &middot;
           <a href="benchmarks.html">Benchmarks</a> &middot; <a href="https://github.com/xufajs/xufa">GitHub</a>
         </span>
       </div>

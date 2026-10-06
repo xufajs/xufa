@@ -40,6 +40,30 @@
     "./client": {
       "types": "./client.d.ts",
       "default": "./client.js"
+    },
+    "./scheduler": {
+      "types": "./scheduler.d.ts",
+      "default": "./scheduler.js"
+    },
+    "./config": {
+      "types": "./config.d.ts",
+      "default": "./config.js"
+    },
+    "./schema": {
+      "types": "./schema.d.ts",
+      "default": "./schema.js"
+    },
+    "./faults": {
+      "types": "./faults.d.ts",
+      "default": "./faults.js"
+    },
+    "./faults/register": {
+      "types": "./faults-register.d.ts",
+      "default": "./faults-register.js"
+    },
+    "./faults/register-strict": {
+      "types": "./faults-register-strict.d.ts",
+      "default": "./faults-register-strict.js"
     }
   },
   "files": [
@@ -59,7 +83,19 @@
     "openapi-ui.js",
     "openapi-ui.d.ts",
     "client.js",
-    "client.d.ts"
+    "client.d.ts",
+    "scheduler.js",
+    "scheduler.d.ts",
+    "config.js",
+    "config.d.ts",
+    "schema.js",
+    "schema.d.ts",
+    "faults.js",
+    "faults.d.ts",
+    "faults-register.js",
+    "faults-register.d.ts",
+    "faults-register-strict.js",
+    "faults-register-strict.d.ts"
   ],
   "scripts": {
     "test": "vyntra"
@@ -89,20 +125,16 @@
   },
   "dependencies": {
     "@xufa/auth": "workspace:*",
+    "@xufa/client": "workspace:*",
+    "@xufa/config": "workspace:*",
     "@xufa/expression": "workspace:*",
+    "@xufa/faults": "workspace:*",
     "@xufa/http": "workspace:*",
-    "@xufa/orm": "workspace:*",
-    "@xufa/template": "workspace:*",
     "@xufa/openapi": "workspace:*",
-    "@xufa/client": "workspace:*"
-  },
-  "peerDependencies": {
-    "schiva": ">=0.7.0"
-  },
-  "peerDependenciesMeta": {
-    "schiva": {
-      "optional": true
-    }
+    "@xufa/orm": "workspace:*",
+    "@xufa/scheduler": "workspace:*",
+    "@xufa/schema": "workspace:*",
+    "@xufa/template": "workspace:*"
   },
   "devDependencies": {
     "vyntra": "^0.6.0"

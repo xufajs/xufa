@@ -1,4 +1,5 @@
 // The package xufa gives the framework of @xufa/http, in CommonJS and as an ES module.
+require('xufa/faults/register'); // every fault cleared after each test (xufa/faults below)
 const xufa = require('xufa');
 const http = require('@xufa/http');
 
@@ -53,5 +54,56 @@ describe('xufa/openapi', () => {
 describe('xufa/client', () => {
   it('is @xufa/client', () => {
     expect(require('xufa/client')).toBe(require('@xufa/client'));
+  });
+});
+
+describe('xufa/config', () => {
+  it('is @xufa/config', () => {
+    expect(require('xufa/config')).toBe(require('@xufa/config'));
+  });
+});
+
+describe('xufa/schema', () => {
+  it('is @xufa/schema', () => {
+    expect(require('xufa/schema')).toBe(require('@xufa/schema'));
+  });
+});
+
+describe('xufa/scheduler', () => {
+  it('is @xufa/scheduler', () => {
+    expect(require('xufa/scheduler')).toBe(require('@xufa/scheduler'));
+  });
+});
+
+describe('xufa/faults', () => {
+  it('is @xufa/faults; clearFaults() clears those of the ORM, its caches and the clients', async () => {
+    expect(require('xufa/faults')).toBe(require('@xufa/faults'));
+    const { clearFaults, activeFaults } = require('xufa/faults');
+    const { Database, MemoryCache } = require('xufa/orm');
+    const { createClient } = require('xufa/client');
+    const db = new Database({ backend: 'memory' });
+    const cache = new MemoryCache();
+    const client = createClient({ baseUrl: 'http://127.0.0.1:1' });
+    db.faults.down();
+    cache.faults.fail({ operations: 'read' });
+    client.faults.respond({ status: 503 });
+    expect(activeFaults()).toHaveLength(3);
+    expect(clearFaults()).toBe(3);
+    expect([db.faults.rules, cache.faults.rules, client.faults.rules]).toEqual([[], [], []]);
+  });
+
+  // xufa/faults/register (required at the top of this file, as a setup file would): cleared after each test.
+  it('a test that leaves a fault...', () => {
+    const { Database } = require('xufa/orm');
+    new Database({ backend: 'memory' }).faults.down();
+    expect(require('xufa/faults').activeFaults()).toHaveLength(1);
+  });
+
+  it('...leaves none to the next one', () => {
+    expect(require('xufa/faults').activeFaults()).toEqual([]);
+  });
+
+  it('xufa/faults/register-strict is there (a test that leaves faults fails)', () => {
+    expect(require.resolve('xufa/faults/register-strict')).toBe(require.resolve('../faults-register-strict.js'));
   });
 });

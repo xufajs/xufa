@@ -1,0 +1,336 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>@xufa/schema: fast schema validation · xufa</title>
+    <meta
+      name="description"
+      content="Check that your data has the right shape, fast, with clear error messages. A schema DSL and JSON Schema (draft-04 to 2020-12), compiled to generated code. Passes the whole JSON Schema test suite, zero dependencies."
+    />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%23d9502b'/%3E%3Ctext x='16' y='22.5' font-family='monospace' font-size='18' font-weight='700' fill='white' text-anchor='middle'%3Ex%3C/text%3E%3C/svg%3E"
+    />
+    <link rel="stylesheet" href="../style.css?v=0.1.0" />
+    <script src="../main.js?v=0.1.0"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js" defer></script>
+  </head>
+  <body>
+    <header class="header">
+      <div class="header-inner">
+        <a class="logo" href="../index.html"><span class="logo-mark">x</span>xufa</a>
+        <nav class="nav">
+          <a href="../guide.html">Guide</a>
+          <a href="../playground.html">Playground</a>
+          <a href="../http/index.html">HTTP</a>
+          <a href="../orm/index.html">ORM</a>
+          <a class="hide-small" href="../auth/index.html">Auth</a>
+          <a class="hide-small" href="../sequelize/index.html">Sequelize</a>
+          <a class="hide-small" href="../packages.html" aria-current="page">Packages</a>
+          <a class="hide-small" href="../benchmarks.html">Benchmarks</a>
+          <a href="https://github.com/xufajs/xufa">GitHub</a>
+          <button class="theme-toggle" type="button" aria-label="Switch between light and dark theme">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+              <path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z" />
+            </svg>
+          </button>
+        </nav>
+      </div>
+    </header>
+
+    <main>
+      <div class="container package-home-tabs">
+        <nav class="package-tabs" aria-label="@xufa/schema">
+          <a href="index.html" aria-current="page">Overview</a>
+          <a href="guide.html">Guide</a>
+          <a href="api.html">API</a>
+          <a href="playground.html">Playground</a>
+          <a href="infer.html">Schema from JSON</a>
+          <a href="ajv.html">From ajv</a>
+          <a href="benchmarks.html">Benchmarks</a>
+        </nav>
+      </div>
+      <div class="container">
+        <section class="hero">
+          <div>
+            <p class="eyebrow">Schema validation for JavaScript</p>
+            <h1>Check that your data has the <em>right shape</em>.</h1>
+            <p>
+              Describe what a value should look like: an API request, a config file, a form. @xufa/schema tells you what is
+              wrong with it, field by field, in messages you can show as they are. It is the fastest validator we have
+              measured, and it has no dependencies.
+            </p>
+            <div class="actions">
+              <a class="button primary" href="guide.html#getting-started">Get started</a>
+              <a class="button" href="playground.html">Try it in your browser</a>
+            </div>
+            <button class="install" type="button" data-copy="npm install @xufa/schema" aria-label="Copy install command">
+              <span>$</span> <b class="copy-label">npm install @xufa/schema</b>
+            </button>
+          </div>
+
+          <div class="example">
+            <div class="tabs">
+              <div class="tab-list" role="tablist">
+                <button role="tab" id="tab-s" aria-controls="panel-s" aria-selected="true">With s</button>
+                    <button role="tab" id="tab-dsl" aria-controls="panel-dsl" aria-selected="false">Builder of types</button>
+                <button role="tab" id="tab-json" aria-controls="panel-json" aria-selected="false">With JSON Schema</button>
+              </div>
+              <div class="tab-panel" id="panel-s" role="tabpanel" aria-labelledby="tab-s">
+                  <pre><code class="language-js">import { s, compileJsonSchema } from '@xufa/schema';
+
+// 1. Describe the data (plain JSON Schema, typed)
+const person = s.object({
+  id: s.string(),
+  age: s.integer({ minimum: 18 }),
+  tags: s.optional(s.array(s.string())),
+}, { additionalProperties: false });
+
+// 2. Compile it once
+const validate = compileJsonSchema(person);
+
+// 3. Validate values
+validate({ id: 1, age: 10, extra: 1 });</code></pre>
+                </div>
+                <div class="tab-panel" id="panel-dsl" role="tabpanel" aria-labelledby="tab-dsl" hidden>
+                <pre><code class="language-js">import { ClosedSchema, String, Integer, ArrayOf } from '@xufa/schema';
+
+// 1. Describe the data
+const person = new ClosedSchema({
+  id: String(),
+  age: Integer({ min: 18 }),
+  tags: ArrayOf({ type: String(), isMandatory: false }),
+});
+
+// 2. Compile it once
+const validate = person.compile();
+
+// 3. Validate values
+validate({ id: 1, age: 10, extra: 1 });</code></pre>
+              </div>
+              <div class="tab-panel" id="panel-json" role="tabpanel" aria-labelledby="tab-json" hidden>
+                <pre><code class="language-js">import { compileJsonSchema } from '@xufa/schema';
+
+// 1. Describe the data, 2. compile it once
+const validate = compileJsonSchema({
+  type: 'object',
+  required: ['id', 'age'],
+  additionalProperties: false,
+  properties: {
+    id: { type: 'string' },
+    age: { type: 'integer', minimum: 18 },
+    tags: { type: 'array', items: { type: 'string' } },
+  },
+});
+
+// 3. Validate values
+validate({ id: 1, age: 10, extra: 1 });</code></pre>
+              </div>
+            </div>
+            <div class="result" aria-label="What validate returns">
+              <p class="result-title">validate() returns the errors (<code>[]</code> when the value is valid):</p>
+              <ul>
+                <li><code>id</code> must be a string</li>
+                <li><code>age</code> must be at least 18</li>
+                <li>Unexpected key: <code>extra</code></li>
+              </ul>
+            </div>
+          </div>
+        </section>
+      </div>
+
+      <section class="section">
+        <div class="container">
+          <h2>How it works</h2>
+          <p class="lead">
+            Three steps, the same with both ways of writing a schema. Try them with the examples of the
+            <a href="playground.html">playground</a>.
+          </p>
+          <ol class="steps">
+            <li class="step">
+              <span class="step-number">1</span>
+              <h3>Describe your data</h3>
+              <p>
+                Write a schema: in JavaScript, with <code>String()</code>, <code>Integer()</code>...; or in JSON Schema,
+                the standard format that OpenAPI and many tools use.
+              </p>
+            </li>
+            <li class="step">
+              <span class="step-number">2</span>
+              <h3>Compile it once</h3>
+              <p>
+                When your program starts, @xufa/schema turns the schema into a JavaScript function written for it. It takes
+                well under a millisecond.
+              </p>
+            </li>
+            <li class="step">
+              <span class="step-number">3</span>
+              <h3>Validate every value</h3>
+              <p>
+                Call the function with a value. It returns the list of errors, each with the field it is about, or
+                <code>true</code>/<code>false</code> if that is all you need.
+              </p>
+            </li>
+          </ol>
+        </div>
+      </section>
+
+      <section class="section alt">
+        <div class="container">
+          <h2>What it is for</h2>
+          <p class="lead">Anywhere data comes from outside your code and you need to trust its shape.</p>
+          <div class="uses">
+            <div class="use">
+              <h3>API requests</h3>
+              <p>Reject a bad request body with a 400 and one message per wrong field.</p>
+            </div>
+            <div class="use">
+              <h3>Config files</h3>
+              <p>Stop at startup with a clear message instead of failing later in odd ways.</p>
+            </div>
+            <div class="use">
+              <h3>Forms and user input</h3>
+              <p>Error objects give the path of each field, to show the message next to it.</p>
+            </div>
+            <div class="use">
+              <h3>OpenAPI and JSON Schema</h3>
+              <p>Use the schemas you already have or share: every draft from 04 to 2020-12.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="section">
+        <div class="container">
+          <h2>Why @xufa/schema</h2>
+          <p class="lead">Fast, correct and clear, with nothing else to install.</p>
+          <div class="features">
+            <div class="feature">
+              <h3>Fast</h3>
+              <p>
+                Faster than ajv, the most used validator, in every benchmark we run: about twice as fast validating,
+                and more than 40 times faster preparing a schema.
+              </p>
+            </div>
+            <div class="feature">
+              <h3>Correct</h3>
+              <p>
+                Passes all 4,950 tests of the official JSON Schema test suite, for the five versions of the standard.
+                No other library we measured passes them all.
+              </p>
+            </div>
+            <div class="feature">
+              <h3>Clear errors</h3>
+              <p>
+                Each error names the field and the problem, <code>lines[3].price must be at least 0</code>, ready to
+                log or return. Error objects are there too, for code.
+              </p>
+            </div>
+            <div class="feature">
+              <h3>Three ways to write schemas</h3>
+              <p>
+                <code>s</code>, which writes plain JSON Schema with its TypeScript type; JSON Schema itself, for schemas you share with other tools and languages; or the builder of types.
+              </p>
+            </div>
+            <div class="feature">
+              <h3>Safe by default</h3>
+              <p>
+                A typo in a schema, like <code>maxLenght</code>, stops the program when it compiles, instead of being
+                silently ignored.
+              </p>
+            </div>
+            <div class="feature">
+              <h3>Nothing else to install</h3>
+              <p>
+                No dependencies. Runs on Node.js 18 and later and in browsers, even where generating code is not
+                allowed, by writing validators to files when building.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="section alt">
+        <div class="container">
+          <h2>In numbers</h2>
+          <p class="lead">
+            Measured against ajv and nine other JSON Schema validators, each in its own process. The details are on the
+            <a href="benchmarks.html">benchmarks page</a>.
+          </p>
+          <div class="stats">
+            <div class="stat"><span class="value">4,950</span><span class="label">official JSON Schema tests, all passed (ajv: 4,836)</span></div>
+            <div class="stat"><span class="value">2.1&times;</span><span class="label">ajv's speed validating the JSON Schema test suite</span></div>
+            <div class="stat"><span class="value">2.2&times;</span><span class="label">ajv's speed validating realistic payloads, on average</span></div>
+            <div class="stat"><span class="value">44&times;</span><span class="label">ajv's speed preparing (compiling) a schema</span></div>
+          </div>
+          <a class="more-link" href="benchmarks.html">See every benchmark, library by library &rarr;</a>
+        </div>
+      </section>
+
+      <section class="section alt">
+        <div class="container">
+          <h2>In xufa</h2>
+          <p class="lead">It is the validator of the routes of xufa, next to the packages that write schemas and replies.</p>
+          <div class="uses">
+            <div class="use">
+              <h3><a href="../http/index.html#validation">@xufa/http</a></h3>
+              <p>Validates the body, query, params and headers of routes with it, with fastify's options and errors in the shape of ajv's.</p>
+            </div>
+            <div class="use">
+              <h3><a href="../orm/index.html#schemas">@xufa/orm</a></h3>
+              <p><code>Model.schema()</code> gives the schema of the objects of a model, made with <code>s</code> and typed from its fields.</p>
+            </div>
+            <div class="use">
+              <h3><a href="../serializer/index.html">@xufa/serializer</a></h3>
+              <p>Writes the replies from the same schemas, as fast-json-stringify does.</p>
+            </div>
+            <div class="use">
+              <h3><a href="../openapi/index.html">@xufa/openapi</a></h3>
+              <p>Documents the same schemas as OpenAPI 3.0 or 3.1.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="section">
+        <div class="container">
+          <h2>Where to go next</h2>
+          <div class="paths">
+            <a class="path" href="guide.html#getting-started">
+              <span class="path-who">New to @xufa/schema?</span>
+              <span class="path-what">Start with the guide</span>
+              <span class="path-desc">Install it, write a first schema, and learn the options step by step.</span>
+            </a>
+            <a class="path" href="ajv.html">
+              <span class="path-who">Using ajv?</span>
+              <span class="path-what">Migrating from ajv</span>
+              <span class="path-desc">The same schemas; what changes in options, errors and APIs.</span>
+            </a>
+            <a class="path" href="api.html">
+              <span class="path-who">Looking something up?</span>
+              <span class="path-what">API reference</span>
+              <span class="path-desc">Every function, type, option and error message.</span>
+            </a>
+            <a class="path" href="benchmarks.html">
+              <span class="path-who">Choosing a library?</span>
+              <span class="path-what">Benchmarks</span>
+              <span class="path-desc">Tests passed, speed and features of eleven validators.</span>
+            </a>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <footer class="footer">
+      <div class="container">
+        <span>xufa is MIT licensed. &copy; Jes&uacute;s Seijas</span>
+        <span>
+          <a href="../guide.html">Guide</a> &middot; <a href="../playground.html">Playground</a> &middot; <a href="../http/index.html">HTTP</a> &middot; <a href="../orm/index.html">ORM</a> &middot; <a href="../auth/index.html">Auth</a> &middot;
+          <a href="../sequelize/index.html">Sequelize</a> &middot; <a href="../packages.html">Packages</a> &middot;
+          <a href="../benchmarks.html">Benchmarks</a> &middot; <a href="https://github.com/xufajs/xufa">GitHub</a>
+        </span>
+      </div>
+    </footer>
+  </body>
+</html>

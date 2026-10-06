@@ -19,13 +19,14 @@
   <body>
     <header class="header">
       <div class="header-inner">
-        <a class="logo" href="./"><span class="logo-mark">x</span>xufa</a>
+        <a class="logo" href="index.html"><span class="logo-mark">x</span>xufa</a>
         <nav class="nav">
           <a href="guide.html" aria-current="page">Guide</a>
-          <a href="http.html">HTTP</a>
-          <a href="orm.html">ORM</a>
-          <a class="hide-small" href="auth.html">Auth</a>
-          <a class="hide-small" href="sequelize.html">Sequelize</a>
+          <a href="playground.html">Playground</a>
+          <a href="http/index.html">HTTP</a>
+          <a href="orm/index.html">ORM</a>
+          <a class="hide-small" href="auth/index.html">Auth</a>
+          <a class="hide-small" href="sequelize/index.html">Sequelize</a>
           <a class="hide-small" href="packages.html">Packages</a>
           <a class="hide-small" href="benchmarks.html">Benchmarks</a>
           <a href="https://github.com/xufajs/xufa">GitHub</a>
@@ -45,6 +46,7 @@
         <ul>
           <li><a href="#getting-started">Getting started</a></li>
           <li><a href="#first-app">Your first app</a></li>
+          <li><a href="#configuration">Configuration</a></li>
         </ul>
         <h4>Data</h4>
         <ul>
@@ -60,10 +62,11 @@
           <li><a href="#tenants">A database per tenant</a></li>
           <li><a href="#cache">Caching objects</a></li>
           <li><a href="#cluster">Running in a cluster</a></li>
+          <li><a href="#jobs">Jobs</a></li>
           <li><a href="#testing">Testing</a></li>
           <li><a href="#typescript">TypeScript</a></li>
-          <li><a href="http.html">HTTP reference</a></li>
-          <li><a href="orm.html">ORM reference</a></li>
+          <li><a href="http/index.html">HTTP reference</a></li>
+          <li><a href="orm/index.html">ORM reference</a></li>
         </ul>
       </aside>
 
@@ -72,16 +75,15 @@
         <p class="intro">
           This guide builds a small application with xufa: an HTTP API whose data lives in a database, with validation,
           logins, migrations and tests. Each part used here is a package of its own; the
-          <a href="http.html">HTTP</a> and <a href="orm.html">ORM</a> pages have the whole of each.
+          <a href="http/index.html">HTTP</a> and <a href="orm/index.html">ORM</a> pages have the whole of each.
         </p>
 
         <h2 id="getting-started">Getting started</h2>
         <p>xufa needs Node.js 22 or later, and nothing else.</p>
-        <pre><code class="language-sh">npm install xufa
-npm install schiva   # only if your routes validate requests with schemas</code></pre>
+        <pre><code class="language-sh">npm install xufa</code></pre>
         <p>
-          <code>xufa</code> gives the HTTP framework (<a href="http.html"><code>@xufa/http</code></a>) and, as
-          <code>xufa/orm</code>, the ORM (<a href="orm.html"><code>@xufa/orm</code></a>). The ORM talks to SQLite
+          <code>xufa</code> gives the HTTP framework (<a href="http/index.html"><code>@xufa/http</code></a>) and, as
+          <code>xufa/orm</code>, the ORM (<a href="orm/index.html"><code>@xufa/orm</code></a>). The ORM talks to SQLite
           through <code>node:sqlite</code>, and to PostgreSQL and MongoDB through its own drivers: there is no driver
           to install.
         </p>
@@ -128,6 +130,58 @@ module.exports = plugin(
   { name: 'mailer', xufa: '0.x' }
 );</code></pre>
 
+        <h2 id="configuration">Configuration</h2>
+        <p>
+          <code>xufa/config</code> (<a href="config/index.html"><code>@xufa/config</code></a>) reads the configuration of the
+          app from layers: <code>config/default.*</code>, the file of the environment (<code>config/production.yaml</code>
+          when <code>NODE_ENV</code> is <code>production</code>), local files of the machine, <code>.env</code> files and
+          the variables of the environment. Its schema converts the values (the <code>PORT</code> of the environment is a
+          text; <code>server.port</code> is a number), fills in defaults, and stops the app with every error at once. Put
+          it in a module of its own, and require it where it is needed:
+        </p>
+        <pre><code class="language-js">// config.js
+const { loadConfig } = require('xufa/config');
+
+module.exports = loadConfig({
+  envPrefix: 'APP', // APP__SERVER__PORT=8080 sets server.port
+  schema: {
+    server: { port: { type: 'port', default: 3000, env: 'PORT' } },
+    database: {
+      backend: { type: 'string', values: ['sqlite', 'postgres', 'mongodb'], default: 'sqlite' },
+      filename: { type: 'string', default: 'app.db' },
+      url: { type: 'url', env: 'DATABASE_URL', sensitive: true },
+    },
+    auth: { jwtKey: { type: 'string', env: 'JWT_KEY', required: true, min: 32, sensitive: true } },
+    jobs: { purgeEvery: { type: 'duration', default: '1h' } },
+  },
+});</code></pre>
+        <pre><code class="language-yaml"># config/production.yaml
+database:
+  backend: postgres
+jobs:
+  purgeEvery: 10m</code></pre>
+        <pre><code class="language-sh"># .env: of this machine, for development (keep it out of git)
+JWT_KEY=a-key-for-development-only-32-bytes-or-more</code></pre>
+        <p>
+          The configuration is frozen, and <code>config.get('database.url')</code> fails for a key that is not there.
+          <code>console.log(config)</code> and <code>JSON.stringify(config)</code> show it without its secrets (the keys
+          <code>sensitive</code>, and those named as secrets: <code>password</code>, <code>token</code>...). Missing the key
+          in production, the app does not start:
+        </p>
+        <pre><code>The configuration (production) has errors:
+  - auth.jwtKey: is required (set JWT_KEY)</code></pre>
+        <p>
+          Values can be templates of the variables and of other keys:
+          <code>url: 'http://{{ config.server.host }}:{{ config.server.port }}'</code>. Configuration of servers (HTTP,
+          Consul) and secrets (Vault, the files of Docker and Kubernetes) are layers too, with
+          <code>await loadRemoteConfig({ remote: [...] })</code>. The rest is in
+          <a href="config/index.html">Configuration</a>.
+        </p>
+        <pre><code class="language-js">// app.js
+const config = require('./config');
+// ...
+if (require.main === module) build().listen({ port: config.server.port, host: '0.0.0.0' });</code></pre>
+
         <h2 id="orm">Adding the ORM</h2>
         <p>
           Models are classes with their fields. The same models run on every backend: <code>sqlite</code>,
@@ -162,13 +216,13 @@ module.exports = { Author, Book };</code></pre>
         </p>
         <pre><code class="language-js">const xufa = require('xufa');
 const orm = require('xufa/orm');
+const config = require('./config');
 const { Author, Book } = require('./models');
 
 function build({ database } = {}) {
   const app = xufa({ logger: true });
-  const db = database || new orm.Database({ backend: 'sqlite', filename: 'app.db' });
-  // or { backend: 'postgres', url: 'postgres://user:password@localhost:5432/app' }
-  // or { backend: 'mongodb', url: 'mongodb://localhost:27017/app' }
+  // { backend: 'sqlite', filename: 'app.db' }, or in production { backend: 'postgres', url: 'postgres://...' }
+  const db = database || new orm.Database({ ...config.database });
   db.register(Author, Book);
   app.register(orm.plugin, { database: db, sync: true });
   app.register(require('./routes/books'), { prefix: '/books' });
@@ -179,14 +233,15 @@ function build({ database } = {}) {
         <p>
           <code>Model.objects</code> is a QuerySet, as in Django: refine it with <code>filter</code>,
           <code>exclude</code>, <code>orderBy</code>, <code>limit</code>..., and await it. Conditions follow relations
-          with <code>__</code>. <code>Model.jsonSchema()</code> gives the schema of the objects, for the schemas of
-          routes.
+          with <code>__</code>. <code>Model.schema()</code> gives the schema of the objects (typed, as
+          <a href="schema/index.html">@xufa/schema</a> makes them), for the schemas of routes.
         </p>
         <pre><code class="language-js">// routes/books.js
+const { s } = require('xufa/schema');
 const { Book } = require('../models');
 
 module.exports = async function books(app) {
-  const body = Book.jsonSchema({ exclude: ['id', 'createdAt'] });
+  const body = s.omit(Book.schema({ input: true }), ['id', 'createdAt']);
 
   app.get('/', async (request) =&gt; {
     const { author, minPages = 0 } = request.query;
@@ -202,7 +257,7 @@ module.exports = async function books(app) {
     return Book.objects.create(request.body);
   });
 
-  app.patch('/:id', { schema: { body: Book.jsonSchema({ exclude: ['id', 'createdAt'], partial: true }) } }, async (request) =&gt; {
+  app.patch('/:id', { schema: { body: s.partial(body) } }, async (request) =&gt; {
     const book = await Book.objects.get({ pk: request.params.id });
     Object.assign(book, request.body);
     return book.save();
@@ -214,7 +269,7 @@ module.exports = async function books(app) {
   });
 };</code></pre>
         <p>
-          These routes are what <a href="orm.html#resources"><code>orm.resource()</code></a> makes for a model, with
+          These routes are what <a href="orm/index.html#resources"><code>orm.resource()</code></a> makes for a model, with
           filters, ordering, search and pages: <code>app.register(orm.resource(Book, { filters: ['author'], related:
           ['author'] }), { prefix: '/books' })</code>. Write them by hand when they do something else.
         </p>
@@ -229,7 +284,7 @@ module.exports = async function books(app) {
 
         <h2 id="errors">Validation and errors</h2>
         <p>
-          Values are checked twice. The schema of a route (here, the one <code>Book.jsonSchema()</code> made) rejects a
+          Values are checked twice. The schema of a route (here, the one <code>Book.schema()</code> made) rejects a
           request before the handler runs, as fastify does. The fields check their values again when an object is
           saved: types, <code>maxLength</code>, <code>min</code> and <code>max</code>, <code>choices</code>,
           <code>null</code>, and your own <code>validate</code> functions, so routes without a schema are safe too.
@@ -239,7 +294,7 @@ module.exports = async function books(app) {
           <table>
             <thead><tr><th>Error</th><th>Response</th></tr></thead>
             <tbody>
-              <tr><td>The schema of the route (schiva)</td><td>400, as fastify answers it</td></tr>
+              <tr><td>The schema of the route (@xufa/schema)</td><td>400, as fastify answers it</td></tr>
               <tr><td><code>ValidationError</code> of the ORM</td><td>400, with the messages of each field in <code>errors</code></td></tr>
               <tr><td><code>NotFoundError</code> (<code>get()</code> found nothing)</td><td>404</td></tr>
             </tbody>
@@ -254,10 +309,23 @@ module.exports = async function books(app) {
   "errors": { "pages": ["Ensure this value is at least 1."] }
 }</code></pre>
         <pre><code class="language-json">{ "statusCode": 404, "code": "XUFA_ORM_ERR_NOT_FOUND", "error": "Not Found", "message": "No Book matches the query" }</code></pre>
+        <p>
+          The schemas of routes that are not of a model are written with <code>xufa/schema</code>
+          (<a href="schema/index.html"><code>@xufa/schema</code></a>): plain JSON Schemas, made by code, from which the bodies
+          of creates and updates are made too.
+        </p>
+        <pre><code class="language-js">const { s } = require('xufa/schema');
+
+const Review = s.object(
+  { stars: s.integer({ minimum: 1, maximum: 5 }), text: s.optional(s.string({ maxLength: 2000 })), bookId: s.integer() },
+  { additionalProperties: false }
+);
+app.post('/reviews', { schema: { body: Review } }, handler);
+app.patch('/reviews/:id', { schema: { body: s.partial(s.omit(Review, ['bookId'])) } }, handler);</code></pre>
 
         <h2 id="auth">Users and logins</h2>
         <p>
-          <code>xufa/auth</code> (<a href="auth.html"><code>@xufa/auth</code></a>) hashes passwords, gives JSON Web
+          <code>xufa/auth</code> (<a href="auth/index.html"><code>@xufa/auth</code></a>) hashes passwords, gives JSON Web
           Tokens and checks them. Its plugin adds the routes of logging in, refreshing and logging out, with failed
           logins locked after five tries; you give it how to find a user:
         </p>
@@ -281,7 +349,7 @@ class RefreshToken extends Model {
 db.register(Author, Book, User, RefreshToken);
 // and expire: true in the plugin of the ORM: it deletes the refresh tokens that expired (their TTL index)
 app.register(auth.plugin, {
-  keys: process.env.JWT_KEY, // 32 bytes or more
+  keys: config.auth.jwtKey, // 32 bytes or more: the schema checks it
   login: {
     findUser: (email) =&gt; User.objects.filter({ email: email.toLowerCase() }).first(),
     claims: (user) =&gt; ({ sub: String(user.id), role: user.role }),
@@ -300,7 +368,7 @@ app.delete('/:id', { config: { auth: 'admin' } }, async (request, reply) =&gt; {
 curl -X DELETE localhost:3000/books/1 -H 'authorization: Bearer eyJ...'</code></pre>
         <p>
           Codes of authenticator apps (TOTP), refresh tokens in cookies, keys per tenant and the rest are in
-          <a href="auth.html">Auth</a>.
+          <a href="auth/index.html">Auth</a>.
         </p>
 
         <h2 id="migrations">Migrations</h2>
@@ -311,10 +379,11 @@ curl -X DELETE localhost:3000/books/1 -H 'authorization: Bearer eyJ...'</code></
         </p>
         <pre><code class="language-js">// scripts/make-migrations.js
 const { Database } = require('xufa/orm');
+const config = require('../config');
 const { Author, Book } = require('../models');
 
 async function main() {
-  const db = new Database({ backend: 'postgres', url: process.env.DATABASE_URL }).register(Author, Book);
+  const db = new Database({ ...config.database }).register(Author, Book);
   await db.makeMigrations({ dir: 'migrations' }); // writes migrations/0002_auto.js, for example
 }
 
@@ -334,11 +403,12 @@ app.register(orm.plugin, { database: db, migrate: { dir: 'migrations' } });</cod
           <code>database</code> option of the model, or the <code>routes</code> given, or the default database.
         </p>
         <pre><code class="language-js">const { Databases } = require('xufa/orm');
+const config = require('./config'); // with events: { url: { type: 'url', env: 'EVENTS_URL', sensitive: true } } in its schema
 
 const dbs = new Databases(
   {
-    default: { backend: 'postgres', url: process.env.DATABASE_URL },
-    events: { backend: 'mongodb', url: process.env.EVENTS_URL },
+    default: { ...config.database },
+    events: { backend: 'mongodb', url: config.events.url },
   },
   { routes: { Event: 'events' } }
 );
@@ -364,9 +434,13 @@ const tenants = new Tenants({
   setup: (db) =&gt; db.migrate({ dir: 'migrations' }),
 });
 
-// Each request runs in its tenant: resolve() says which.
+// Each request runs in its tenant: resolve() says which, authorize() whether its user may use it.
 app.register(orm.plugin, {
-  tenants: { tenants, resolve: (request) =&gt; request.headers['x-tenant'] },
+  tenants: {
+    tenants,
+    resolve: (request) =&gt; request.headers['x-tenant'],
+    authorize: (request, id, reply) =&gt; app.auth.canUseTenant(request, id, reply),
+  },
 });
 
 // Or, outside requests:
@@ -374,6 +448,20 @@ await tenants.run('acme', () =&gt; Book.objects.count());</code></pre>
         <p>
           A request without a tenant gets a 400 (unless <code>required: false</code>), and a tenant whose
           <code>config</code> gives nothing gets a 404.
+        </p>
+        <p>
+          A tenant taken from a header is only what the client says: check that the user may use it, before its database
+          is opened. With <a href="auth/index.html#tenants">the auth plugin</a>, a user may use the tenants of its claims
+          (<code>'*'</code> is every tenant), so the login puts them in its tokens; a request of a tenant that is not the
+          user's gets a 403, and one without a user a 401. Routes can ask for more:
+        </p>
+        <pre><code class="language-js">// in the options of the auth plugin
+login: { findUser, claims: (user) =&gt; ({ sub: String(user.id), role: user.role, tenants: user.tenants }) },
+
+app.delete('/books/:id', { config: { auth: { tenant: true, roles: 'admin' } } }, handler); // an admin of this tenant
+app.get('/admin/stats', { config: { auth: { tenant: '*' } } }, handler); // a user of every tenant</code></pre>
+        <p>
+          Without <code>authorize</code>, any request may use any tenant it names, and the app warns when it starts.
         </p>
 
         <h2 id="cache">Caching objects</h2>
@@ -400,12 +488,13 @@ await User.objects.get({ email: 'ada@example.com' }); // the cache</code></pre>
 
         <h2 id="cluster">Running in a cluster</h2>
         <p>
-          <a href="cluster.html"><code>@xufa/cluster</code></a> runs an app in a process per CPU: it forks the
+          <a href="cluster/index.html"><code>@xufa/cluster</code></a> runs an app in a process per CPU: it forks the
           workers, forks again those that die, and stops them all gracefully on <code>SIGINT</code> and
           <code>SIGTERM</code>. Its bus carries messages between the processes.
         </p>
         <pre><code class="language-js">const { start, bus } = require('@xufa/cluster');
 const { Database, LocalCache } = require('xufa/orm');
+const config = require('./config'); // read in each process: the primary and every worker
 const { build } = require('./app');
 
 start({
@@ -415,15 +504,55 @@ start({
     bus.on('visits', () =&gt; visits); // a request: the result is the reply
   },
   worker: async ({ onShutdown }) =&gt; {
-    const database = new Database({ backend: 'postgres', url: process.env.DATABASE_URL, cache: new LocalCache({ bus }) });
+    const database = new Database({ ...config.database, cache: new LocalCache({ bus }) });
     const app = build({ database });
     app.addHook('onRequest', async () =&gt; bus.send('visit'));
     app.get('/visits', () =&gt; bus.request('visits'));
-    await app.listen({ port: 3000 });
+    await app.listen({ port: config.server.port, host: '0.0.0.0' });
     onShutdown(() =&gt; app.close());
   },
 });</code></pre>
-        <p>With <code>workers: 0</code> everything runs in one process, and the same bus calls work: handy in development.</p>
+        <p>
+          With <code>workers: 0</code> everything runs in one process, and the same bus calls work: handy in development.
+          A configuration with errors stops the primary before it forks a worker.
+        </p>
+
+        <h2 id="jobs">Jobs</h2>
+        <p>
+          <code>xufa/scheduler</code> (<a href="scheduler/index.html"><code>@xufa/scheduler</code></a>) runs jobs every so
+          often, on cron expressions, or once: each on a timer of its own, without overlapping runs, with timeouts and
+          retries. In a cluster, run them in the primary, not in every worker; on several machines, a lock in the
+          database makes one of them run each time, and its history catches up the times missed while it was down.
+        </p>
+        <pre><code class="language-js">const { start } = require('@xufa/cluster');
+const { Database } = require('xufa/orm');
+const { Scheduler, ormLock, ormHistory } = require('xufa/scheduler');
+const config = require('./config');
+const { Author, Book } = require('./models');
+const { purgeOldUploads, sendReport } = require('./jobs');
+
+start({
+  primary: async ({ onShutdown }) =&gt; {
+    const db = new Database({ ...config.database }).register(Author, Book);
+    const scheduler = new Scheduler({ lock: ormLock(db), history: ormHistory(db) }); // their tables: db.sync()
+    await db.connect();
+    await db.sync();
+    scheduler.add({
+      name: 'purge old uploads',
+      every: config.jobs.purgeEvery, // 10 minutes in production, an hour elsewhere
+      catchUp: true,
+      retries: 2,
+      run: ({ signal }) =&gt; purgeOldUploads({ signal }),
+    });
+    scheduler.add({ name: 'daily report', cron: '0 8 * * mon-fri', timezone: 'Europe/Madrid', timeout: '5m', run: sendReport });
+    scheduler.start();
+    onShutdown(async () =&gt; {
+      await scheduler.stop(); // the runs going on end first
+      await db.close();
+    });
+  },
+  worker: async ({ onShutdown }) =&gt; { /* the app, as above */ },
+});</code></pre>
 
         <h2 id="testing">Testing</h2>
         <p>
@@ -466,6 +595,30 @@ describe('books', () =&gt; {
           xufa's own tests run with <a href="https://www.npmjs.com/package/vyntra">vyntra</a>, but any runner with the
           API of Jest or Vitest works.
         </p>
+        <p>
+          What the app does when its database fails is tested too: <code>db.faults</code> makes operations fail, wait or
+          hang (<a href="orm/index.html#faults">Faults</a>).
+        </p>
+        <pre><code class="language-js">it('answers 503 while the database is down', async () =&gt; {
+  db.faults.down();
+  expect((await app.inject('/books')).statusCode).toBe(503);
+  db.faults.up();
+});
+
+it('retries a write that failed once', async () =&gt; {
+  const rule = db.faults.fail({ operations: 'insert', models: [Book], times: 1 });
+  await app.inject({ method: 'POST', url: '/books', payload });
+  expect(rule.hits).toBe(1);
+  expect(await Book.objects.count()).toBe(1);
+});</code></pre>
+        <p>
+          The rest fails the same way, with the rules of <a href="faults/index.html">@xufa/faults</a>: <code>cache.faults</code>
+          (the app answers without its cache), <code>client.faults</code> of the APIs it calls (failed connections,
+          <code>respond({ status: 503 })</code>, hangs ended by the timeout) and <code>bus.faults</code> of the cluster
+          (messages lost or late). <code>require('xufa/faults/register')</code> in the setup files of the runner clears
+          every fault after each test, so one that fails before its <code>up()</code> leaves none to the next;
+          <code>xufa/faults/register-strict</code> also fails a test that ends with faults still set.
+        </p>
 
         <h2 id="typescript">TypeScript</h2>
         <p>
@@ -484,6 +637,18 @@ interface Book extends Fields&lt;typeof bookFields&gt; {}
 
 const books: Book[] = await Book.query().filter({ pages__gte: 100 });
 books[0].pages; // number | null</code></pre>
+        <p>
+          The schemas of <code>xufa/schema</code> carry their types: <code>Infer&lt;typeof Review&gt;</code> is the type
+          of a review, and with its type provider the requests and replies of routes are typed by their schemas.
+        </p>
+        <pre><code class="language-ts">import { s, type Infer, type SchemaTypeProvider } from 'xufa/schema';
+
+const app = xufa().withTypeProvider&lt;SchemaTypeProvider&gt;();
+app.post('/reviews', { schema: { body: Review } }, async (request) =&gt; {
+  request.body.stars; // number
+  request.body.text; // string | undefined
+});
+type Review = Infer&lt;typeof Review&gt;;</code></pre>
       </article>
     </div>
 
@@ -491,8 +656,8 @@ books[0].pages; // number | null</code></pre>
       <div class="container">
         <span>xufa is MIT licensed. &copy; Jes&uacute;s Seijas</span>
         <span>
-          <a href="guide.html">Guide</a> &middot; <a href="http.html">HTTP</a> &middot; <a href="orm.html">ORM</a> &middot; <a href="auth.html">Auth</a> &middot;
-          <a href="sequelize.html">Sequelize</a> &middot; <a href="packages.html">Packages</a> &middot;
+          <a href="guide.html">Guide</a> &middot; <a href="playground.html">Playground</a> &middot; <a href="http/index.html">HTTP</a> &middot; <a href="orm/index.html">ORM</a> &middot; <a href="auth/index.html">Auth</a> &middot;
+          <a href="sequelize/index.html">Sequelize</a> &middot; <a href="packages.html">Packages</a> &middot;
           <a href="benchmarks.html">Benchmarks</a> &middot; <a href="https://github.com/xufajs/xufa">GitHub</a>
         </span>
       </div>

@@ -6,7 +6,7 @@
   "groups": [
     ["Using it", [["start", "Quick start"], ["right", "How it stays right"], ["options", "Options"], ["api", "API"]]],
     ["With xufa", [["orm", "With @xufa/orm"], ["cluster", "With @xufa/cluster"], ["auth", "With @xufa/auth"]]],
-    ["More", [["security", "Security"], ["limits", "What it is not"], ["typescript", "TypeScript"]]]
+    ["More", [["faults", "Faults"], ["security", "Security"], ["limits", "What it is not"], ["typescript", "TypeScript"]]]
   ]
 }-->
         <h1>@xufa/netcache</h1>
@@ -98,6 +98,16 @@ start({
           <code>new Lockout({ store: cache })</code>: failed logins are counted on every machine, so an attacker gains
           nothing by spreading attempts among them.
         </p>
+
+        <h2 id="faults">Faults (tests of resilience)</h2>
+        <p>
+          <code>cache.faults</code> (of <a href="faults.html">@xufa/faults</a>) makes <code>get</code>, <code>set</code>,
+          <code>delete</code> and <code>clear</code> fail, wait or hang (<code>read</code>, <code>write</code>; <code>keys</code>
+          by prefix or regular expression). As the store of <a href="orm.html#cache">@xufa/orm</a>, reads and writes that
+          fail are misses (the database answers, <code>onCacheError</code> is told); deletes that fail are errors.
+        </p>
+        <pre><code class="language-js">cache.faults.down(); // until cache.faults.up()
+cache.faults.fail({ operations: 'read', keys: 'session:', rate: 0.1 });</code></pre>
 
         <h2 id="security">Security</h2>
         <p>

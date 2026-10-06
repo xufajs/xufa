@@ -74,6 +74,16 @@ class Databases {
     return Promise.all([...this.databases.entries()].map(([name, database]) => fn(database, name)));
   }
 
+  // The faults of every database of these (lib/faults.js).
+  get faults() {
+    if (!this.faultsOf) {
+      const { databaseFaults, install } = require('./faults'); // eslint-disable-line global-require
+      this.faultsOf = databaseFaults();
+      for (const db of this.databases.values()) install(this.faultsOf, db.backend);
+    }
+    return this.faultsOf;
+  }
+
   async connect() {
     await this.each((database) => database.connect());
     return this;

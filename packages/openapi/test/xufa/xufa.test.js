@@ -92,6 +92,29 @@ describe('resources of @xufa/orm', () => {
     expect(Object.keys(one.delete.responses)).toEqual(['204', '404', '409']);
   });
 
+  it('null as each version says: nullable in OpenAPI 3.0, a type in 3.1 (the schemas are those of Model.schema())', async () => {
+    class Note extends Model {
+      static fields = {
+        title: fields.string(),
+        pages: fields.integer({ null: true }),
+        status: fields.string({ null: true, choices: ['draft', 'done'] }),
+      };
+    }
+    db.register(Note);
+    const bodyOf = async (version) => {
+      const { document } = await documented((app) => app.register(resource(Note), { prefix: '/notes' }), {
+        openapi: { openapi: version, info: { title: 'Notes', version: '1.0.0' } },
+      });
+      return document.paths['/notes/'].post.requestBody.content['application/json'].schema.properties;
+    };
+    const v30 = await bodyOf('3.0.3');
+    expect(v30.pages).toEqual({ type: 'integer', nullable: true });
+    expect(v30.status).toEqual({ type: 'string', enum: ['draft', 'done', null], nullable: true });
+    const v31 = await bodyOf('3.1.0');
+    expect(v31.pages).toEqual({ type: ['integer', 'null'] });
+    expect(v31.status).toEqual({ type: ['string', 'null'], enum: ['draft', 'done', null] });
+  });
+
   it('documented only: what the resource accepts and answers does not change', async () => {
     const { app } = await documented((instance) =>
       instance.register(resource(Book, { exclude: ['createdAt'] }), { prefix: '/books' })

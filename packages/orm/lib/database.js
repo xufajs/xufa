@@ -20,11 +20,13 @@ class Database {
   // `backend` is the name of a backend ('memory', 'sqlite'...), a class of backend or an instance of one. The rest of
   // the options are given to the backend.
   constructor(options = {}) {
-    const { backend = 'memory', name, cache, ...rest } = options;
+    const { backend = 'memory', name, cache, onCacheError, ...rest } = options;
     this.options = rest;
     // The name of the database (in the keys of its cache), and the cache of its models (lib/cache.js).
     this.name = name || `db${(nextName += 1)}`;
     this.cache = cache || null;
+    // What a cache that fails to read or keep is told to (a warning of the process by default): reads go to the database.
+    this.onCacheError = typeof onCacheError === 'function' ? onCacheError : null;
     if (typeof backend === 'string') {
       const factory = backends.get(backend);
       if (!factory) throw new BackendError(`Unknown backend ${backend} (${[...backends.keys()].join(', ')})`);
@@ -51,6 +53,14 @@ class Database {
       // A model can be in several databases (those of tenants); meta.db is the first.
       const existing = this.models.get(model.name);
       if (existing && existing !== model) throw new ModelError(model.name, 'another model has the same name');
+      const blobs = meta.fields.some((field) => field.type === 'blob');
+      if (this.backend.blobs) this.backend.shape(meta);
+      else if (blobs) {
+        throw new ModelError(
+          model.name,
+          `fields.blob() is of blob backends (disk, memory-blob), not of ${this.backend.name}`
+        );
+      }
       if (!meta.db) meta.db = this;
       this.models.set(model.name, model);
     });
@@ -137,6 +147,16 @@ class Database {
         .filter((model) => keys.has(model.meta.key))
         .map((model) => modelCache.clear(this, model))
     );
+  }
+
+  // The faults of this database (lib/faults.js): operations made to fail, wait or hang, for tests of resilience.
+  get faults() {
+    if (!this.faultsOf) {
+      const { databaseFaults, install } = require('./faults'); // eslint-disable-line global-require
+      this.faultsOf = databaseFaults();
+      install(this.faultsOf, this.backend);
+    }
+    return this.faultsOf;
   }
 
   async connect() {

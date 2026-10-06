@@ -1,0 +1,142 @@
+<!--{
+  "file": "config.html",
+  "name": "@xufa/config",
+  "title": "@xufa/config",
+  "description": "@xufa/config: the configuration of an app from layers (files by environment, .env, variables, overrides), with safe templates, a schema that converts and checks every key, and secrets redacted.",
+  "groups": [
+    ["Using it", [["start", "Quick start"], ["layers", "Layers"], ["dotenv", ".env files"], ["templates", "Templates"]]],
+    ["Remote", [["remote", "Remote sources"], ["watch", "Watching"]]],
+    ["Checking it", [["schema", "The schema"], ["config", "The configuration"]]]
+  ]
+}-->
+        <h1>@xufa/config</h1>
+        <p class="intro">
+          The configuration of an app, from layers: defaults, files of JSON, YAML or JS by environment, local files,
+          <code>.env</code> files, variables of the environment and overrides. Templates in its values are safe
+          expressions; a schema converts, fills in defaults and checks, every error at once; secrets are redacted when it
+          is shown; and it is frozen, with <code>get('a.b')</code> failing for keys that are not there.
+        </p>
+
+        <h2 id="start">Quick start</h2>
+        <pre><code class="language-sh">npm install @xufa/config</code></pre>
+        <pre><code class="language-js">const { loadConfig } = require('@xufa/config'); // or require('xufa/config')
+
+const config = loadConfig({
+  envPrefix: 'APP',
+  schema: {
+    server: { port: { type: 'port', default: 3000, env: 'PORT' } },
+    db: { url: { type: 'url', required: true, env: 'DATABASE_URL', sensitive: true } },
+  },
+});
+config.server.port; // 3000, or the PORT of the environment, as a number
+console.log(config); // db.url: '[redacted]'</code></pre>
+
+        <h2 id="layers">Layers</h2>
+        <p>Each layer is merged over the one before (objects key by key; arrays and other values replace):</p>
+        <ol>
+          <li><code>defaults</code>, an object of the options;</li>
+          <li><code>config/default.json</code> (or <code>.yaml</code>, <code>.yml</code>, <code>.js</code>, <code>.cjs</code>);</li>
+          <li><code>config/{env}.*</code>: the <code>env</code> option, or <code>NODE_ENV</code>, or <code>development</code>;</li>
+          <li><code>config/local.*</code>, then <code>config/local-{env}.*</code>: of the machine, kept out of git;</li>
+          <li>the <a href="#remote">remote sources</a>, in their order (with <code>loadRemoteConfig()</code>);</li>
+          <li>the variables of the schema (<code>env: 'PORT'</code>);</li>
+          <li>the variables with the prefix: with <code>envPrefix: 'APP'</code>, <code>APP__DB__POOL__MAX=20</code> sets <code>db.pool.max</code> (keys found whatever their case; without a schema, a value takes the type of the one it replaces);</li>
+          <li><code>overrides</code>, an object of the options.</li>
+        </ol>
+
+        <h2 id="dotenv">.env files</h2>
+        <p>
+          The variables are those of the process, with what <code>.env</code>, <code>.env.{env}</code>,
+          <code>.env.local</code> and <code>.env.{env}.local</code> have that they do not (the later first).
+          <code>dotenv: false</code> reads none, <code>dotenv: ['secrets.env']</code> those; <code>populate: true</code>
+          sets in <code>process.env</code> what it does not have. Values in double quotes have escapes and can be several
+          lines; <code>parseDotenv(text)</code> reads one.
+        </p>
+
+        <h2 id="templates">Templates</h2>
+        <pre><code class="language-yaml">server:
+  port: '{{ Number(env.PORT ?? 3000) }}'
+  url: 'http://{{ config.server.host }}:{{ config.server.port }}'</code></pre>
+        <p>
+          A text with <code>{{ expression }}</code> is resolved after the layers are merged, with <code>env</code> and
+          <code>config</code> (the other keys, resolved first). A text that is only a template is the value of its
+          expression; in a text with more, each is written in it. A template that is <code>undefined</code>, alone, leaves
+          its key missing (its default). The expressions are those of <a href="expression.html">@xufa/expression</a>: they
+          cannot assign nor reach the process, and a name that is not <code>env</code>, <code>config</code> nor a global
+          (a typo) is an error. Cycles are errors.
+        </p>
+
+        <h2 id="remote">Remote sources</h2>
+        <p>
+          <code>loadRemoteConfig(options)</code> takes the options of <code>loadConfig()</code> and <code>remote</code>: sources
+          read at once (it is async) and merged in their order, after the files and before the variables of the
+          environment (a variable still overrides what a server says).
+        </p>
+        <pre><code class="language-js">const { loadRemoteConfig, sources } = require('@xufa/config');
+
+const config = await loadRemoteConfig({
+  schema,
+  remote: [
+    sources.http({ url: 'https://config.internal/apps/shop.yaml' }),
+    sources.consul({ prefix: 'apps/shop' }), // apps/shop/db/host is db.host
+    sources.vault({ path: 'shop/production', at: 'credentials' }), // KV 2 of Vault
+    sources.directory({ dir: '/run/secrets', at: 'files', sensitive: true }), // Docker, Kubernetes
+  ],
+  cacheFile: '.config-cache.json',
+});</code></pre>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Source</th><th>What it reads</th></tr></thead>
+            <tbody>
+              <tr><td><code>http({ url, headers, format })</code></td><td>A document of JSON or YAML; with an ETag, one not changed is not sent again.</td></tr>
+              <tr><td><code>consul({ prefix | key })</code></td><td>The keys under a prefix as a tree, or one key as a document. <code>CONSUL_HTTP_ADDR</code>, <code>CONSUL_HTTP_TOKEN</code>.</td></tr>
+              <tr><td><code>vault({ path, mount, kv, token | roleId + secretId })</code></td><td>A secret of the KV engine (2 or 1) of Vault or OpenBao, with a token or AppRole. <code>VAULT_ADDR</code>, <code>VAULT_TOKEN</code>... Sensitive, without templates.</td></tr>
+              <tr><td><code>directory({ dir })</code></td><td>A key for each file; <code>.json</code> and <code>.yaml</code> files are their documents; hidden ones left out. Without templates.</td></tr>
+              <tr><td><code>{ name, load({ env, name, signal }) }</code></td><td>One of your own.</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <ul>
+          <li>Options of every source: <code>at</code> (the key it is put under), <code>optional</code>, <code>sensitive</code> (redacted, never cached), <code>templates: false</code> (a password with <code>{{</code> is that text), <code>timeout</code> (5 s an attempt), <code>retries</code> (2).</li>
+          <li>A source that fails takes its last tree from <code>cacheFile</code> (not sensitive ones), so the app starts while its config server is down; or is left out when optional. The rest fail together, in one <code>ConfigError</code>.</li>
+        </ul>
+
+        <h2 id="watch">Watching</h2>
+        <pre><code class="language-js">const watcher = await watchConfig(options, {
+  interval: '30s',
+  onChange: (config, previous, changed) =&gt; log.info({ changed }, 'the configuration changed'),
+  onError: (err) =&gt; log.warn(err), // the configuration there was is kept
+});
+watcher.current.flags.beta;</code></pre>
+        <p>
+          Every layer is read again every <code>interval</code>; when something changed, <code>watcher.current</code> is a new
+          (frozen) configuration and <code>onChange</code> gets it, the one before and the paths that changed. A reading that
+          fails keeps the one there was. <code>refresh()</code> reads it now; <code>stop()</code> stops it.
+        </p>
+
+        <h2 id="schema">The schema</h2>
+        <p>
+          The keys, nested as the configuration; a key whose <code>type</code> is a text is one value:
+          <code>string</code>, <code>number</code>, <code>integer</code>, <code>boolean</code> (<code>true</code>,
+          <code>yes</code>, <code>on</code>, <code>1</code>...), <code>port</code>, <code>url</code>,
+          <code>duration</code> (<code>'1h30m'</code> is milliseconds), <code>array</code> (JSON or commas, with
+          <code>items</code>), <code>object</code> (JSON) and <code>any</code>. Options: <code>default</code>,
+          <code>required</code>, <code>nullable</code>, <code>env</code>, <code>values</code>, <code>pattern</code>,
+          <code>min</code>, <code>max</code>, <code>sensitive</code>, <code>doc</code>; <code>strict: true</code> makes
+          keys out of the schema errors.
+        </p>
+        <pre><code>The configuration (production) has errors:
+  - db.url: is required (set DATABASE_URL)
+  - server.port: 70000 is not a port (0-65535)</code></pre>
+        <p>
+          Every error is in one <code>ConfigError</code>, each with its path. In TypeScript, the type of the
+          configuration follows from its schema, or is the one given (<code>loadConfig&lt;AppConfig&gt;()</code>).
+        </p>
+
+        <h2 id="config">The configuration</h2>
+        <ul>
+          <li>Frozen, deep; its keys are its own, its methods are not among them.</li>
+          <li><code>get(path)</code>: the value at <code>'a.b'</code>; a key that is not there is an error. <code>has(path)</code>.</li>
+          <li><code>redacted()</code>: a copy without the keys <code>sensitive</code> in the schema and those named as secrets (<code>password</code>, <code>secret</code>, <code>token</code>, <code>apiKey</code>...); <code>JSON.stringify</code> and <code>console.log</code> show it.</li>
+          <li><code>sources</code>: the files read, and the remote sources.</li>
+        </ul>

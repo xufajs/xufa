@@ -5,7 +5,7 @@
   "description": "@xufa/client: a client of HTTP APIs on fetch with no dependencies: base URLs, JSON, timeouts, retries with backoff, errors by status, and the cancellation and id of the request that calls.",
   "groups": [
     ["Using it", [["start", "Quick start"], ["calls", "Calls"], ["retries", "Retries"], ["requests", "In a request"], ["retry", "retry()"]]],
-    ["More", [["errors", "Errors"]]]
+    ["More", [["errors", "Errors"], ["faults", "Faults"]]]
   ]
 }-->
         <h1>@xufa/client</h1>
@@ -61,3 +61,17 @@ const created = await books.post('/books', { json: { title: 'Dune' } });</code><
           <code>RequestError</code> (<code>cause</code>), with <code>method</code> and <code>url</code>; a cancelled call throws
           the reason of its signal.
         </p>
+
+        <h2 id="faults">Faults (tests of resilience)</h2>
+        <p>
+          <code>client.faults</code> (of <a href="faults.html">@xufa/faults</a>) makes calls fail, wait, hang or get a status
+          without reaching the API; the clients of <code>extend()</code> and <code>for()</code> share them.
+        </p>
+        <pre><code class="language-js">payments.faults.fail({ operations: 'write', paths: '/charges', rate: 0.2 }); // as a refused connection
+payments.faults.respond({ status: 503, headers: { 'retry-after': '1' }, json: { error: 'busy' }, times: 2 });
+payments.faults.hang({ operations: 'read' }); // the timeout of the call ends it: a TimeoutError</code></pre>
+        <ul>
+          <li>Operations: the methods (<code>read</code>, <code>write</code>); filters <code>urls</code> and <code>paths</code>: prefixes or regular expressions.</li>
+          <li><code>fail</code> and <code>down</code> are failed connections (a <code>RequestError</code>, code <code>ECONNREFUSED</code> in its cause), retried as such; <code>respond({ status, headers, json | body })</code> answers without the call.</li>
+          <li>Each attempt goes through the faults: <code>times: 2</code> with 3 attempts fails twice, and the third reaches the API.</li>
+        </ul>

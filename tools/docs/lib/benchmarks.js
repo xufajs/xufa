@@ -168,6 +168,105 @@ function httpNotes() {
             noisy ? ` (${noisy} scenarios marked ⚠, their rounds more than 10% apart)` : ''
           }.`;
 }
+// OpenAPI routes, from bench/run.js (the scenarios openapi-*): the routes of openapi.operations of @xufa/openapi on
+// @xufa/http and on fastify, over the loopback on Linux. [scenario, title, xufa, fastify, noisy].
+// Two runs of the same scenarios: the median of their rounds together (10 for each server), as one run on a shared
+// machine varies more.
+const OPENAPI = ['openapi-linux-1', 'openapi-linux-2'];
+const OPENAPI_TITLES = {
+  'openapi-get': 'A book by id (path and query validated)',
+  'openapi-list': 'A list of 20 books',
+  'openapi-list-validated': 'A list of 20 books, its reply validated',
+  'openapi-post': 'A create (its body validated)',
+  'openapi-post-validated': 'A create, its body and its reply validated',
+  'openapi-invalid': 'An id the document refuses (400)',
+};
+function openapiResults() {
+  const reports = OPENAPI.map((report) => JSON.parse(fs.readFileSync(RESULTS + report + '.json', 'utf8')).results);
+  const median = (list) => {
+    const sorted = [...list].sort((a, b) => a - b);
+    const mid = Math.floor(sorted.length / 2);
+    return sorted.length % 2 ? sorted[mid] : (sorted[mid - 1] + sorted[mid]) / 2;
+  };
+  // The rounds of a framework in every report, its median and whether they are more than 10% apart.
+  const of = (name, framework) => {
+    const rounds = reports.flatMap((results) =>
+      results.find((item) => item.name === name).summary[framework].runs.map((run) => run.rps)
+    );
+    const rps = median(rounds);
+    return { rps, noisy: (Math.max(...rounds) - Math.min(...rounds)) / rps > 0.1 };
+  };
+  return reports[0].map(({ name }) => {
+    const ours = of(name, 'xufa');
+    const theirs = of(name, 'fastify');
+    return [name, OPENAPI_TITLES[name] || name, ours.rps, theirs.rps, ours.noisy || theirs.noisy];
+  });
+}
+
+function openapiSection() {
+  const rows = openapiResults();
+  const find = (name) => rows.find((item) => item[0] === name);
+  const x = (n) => `${n.toFixed(2)}&times;`;
+  const ratios = rows.map((item) => item[2] / item[3]);
+  const noisy = rows.filter((item) => item[4]).length;
+  // The cost of validating replies: the requests a second lost, on each framework.
+  const cost = (plain, validated, index) => 1 - find(validated)[index] / find(plain)[index];
+  // Within what the rounds vary (under 3%, or less work validated): none measurable.
+  const percent = (n) => (n < 0.03 ? 'none measurable' : `${Math.round(n * 100)}%`);
+  const costs = [
+    [
+      'A list of 20 books',
+      cost('openapi-list', 'openapi-list-validated', 2),
+      cost('openapi-list', 'openapi-list-validated', 3),
+    ],
+    ['A create', cost('openapi-post', 'openapi-post-validated', 2), cost('openapi-post', 'openapi-post-validated', 3)],
+  ];
+  return `        <h2 id="openapi">OpenAPI routes</h2>
+        <p>
+          The routes of an OpenAPI 3 document, made by <code>openapi.operations</code> of <code>@xufa/openapi</code>: the
+          same layer on <code>@xufa/http</code> and on fastify 5, the same document and handlers. Requests a second over
+          the loopback on Linux (autocannon, 100 connections, pipelining 10), more is better; each server runs in a
+          process of its own; the median of 10 rounds (two runs of 5).
+        </p>
+        <div class="pairs">
+${rows
+  .map(([, title, ours, fastify, warn]) =>
+    pair(
+      title,
+      [
+        { name: 'xufa', value: ours, kind: 'us', label: fmt(ours) },
+        { name: 'fastify', value: fastify, label: fmt(fastify) },
+      ],
+      ours / fastify,
+      warn
+    )
+  )
+  .join('\n')}
+        </div>
+        <p>
+          On <code>@xufa/http</code>, the routes of the document answer from ${x(Math.min(...ratios))} to
+          ${x(Math.max(...ratios))} the requests of the same routes on fastify${
+            noisy
+              ? ` (${noisy} of ${rows.length} marked ⚠: their rounds more than 10% apart, so read them as approximate)`
+              : ''
+          }. Validating the
+          replies against the document too (<code>validateResponses</code>) costs what the table says: each reply is
+          checked as plain data before it is serialized (the larger the reply, the more), and the validators are made on
+          the first request of each route, not before (which slows a whole process: see
+          <a href="#how">How they are measured</a>).
+        </p>
+        <div class="table-wrap">
+          <table class="numbers">
+            <thead><tr><th>Replies validated</th><th>Requests a second lost, xufa</th><th>Requests a second lost, fastify</th></tr></thead>
+            <tbody>
+${costs.map(([name, ours, theirs]) => `              <tr><td>${name}</td><td>${percent(ours)}</td><td>${percent(theirs)}</td></tr>`).join('\n')}
+            </tbody>
+          </table>
+        </div>
+${OPENAPI.map((report) => rawTable(`${report}.md`)).join('\n')}
+`;
+}
+
 // Expressions: [expression, xufa, jexl, expr-eval, filtrex, sandboxjs, new Function] (runs a second, compiled once).
 const expressions = [
   ['a + b * 2', 131.1e6, 1.04e6, 5.75e6, 18.58e6, 306.9e3, 379.19e6],
@@ -547,6 +646,7 @@ ${raw(`All numbers on Linux (bench/results/${INPROC}.md; over the loopback, ${LO
         </p>
 ${ratioTable(inprocWindows, loopbackWindows)}
 
+${openapiSection()}
 ${partsSections}        <h2 id="expressions">Expressions</h2>
         <p>
           <code>@xufa/expression</code> against the evaluators of expressions that run without access to the process

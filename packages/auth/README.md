@@ -198,6 +198,8 @@ the fields of `refreshTokenFields(fields)`. A [TTL index](../orm#ttl-indexes) on
   cookie `cookie` and the query parameter `query`, when they are given.
 - `user(claims, request)`: the user of a valid token (its claims by default; null refuses it).
 - `hook`: the hook that verifies the token of every request (`'onRequest'`), or `false`: only the routes with auth do.
+- `tenants`: `of(request)`, the tenant of a request (`request.tenant`, which the plugin of the ORM sets), and
+  `claim(user)`, the tenants a user may use (its claims `tenants` or `tenant`): see [Tenants](#tenants).
 
 Every request gets `request.user` (null without a valid token), `request.auth` (the claims) and `request.authError`.
 Routes that need a user say so with `config: { auth: true }`, a role (`'admin'`), roles (`['admin', 'staff']`: any of
@@ -225,6 +227,36 @@ the refresh token in an HttpOnly, Secure, SameSite=Strict cookie of the path of 
 
 A login answers the same `Invalid credentials` (401) for a user that does not exist and a wrong password, and verifies
 a password in both cases, so neither the answer nor its time tells which.
+
+## Tenants
+
+A user may use the tenants of its claims: `tenants` (a list) or `tenant`; `'*'` is every tenant (the admins of the
+whole service). Put them in the claims of its tokens: `claims: (user) => ({ sub: String(user.id), tenants: user.tenants })`.
+
+- `config: { auth: { tenant: true } }`: a user of the tenant of the request; 403 for the others, 401 without a user.
+- `config: { auth: { tenant: '*' } }`: a user of every tenant.
+- With `roles`, `check` or `strategy`, all of them: `{ tenant: true, roles: 'admin' }` is an admin of that tenant.
+
+The tenant of a request is `request.tenant` (set by the plugin of [@xufa/orm](../orm) from the header, the host...), or
+`tenants.of(request)` of the options (`(request) => request.params.tenant`). Rules are checked when routes are
+added: a wrong one (`tenant: 'acme'`) stops the app from starting.
+
+The tenants of the ORM run each request in the database of its tenant: check the user before it is entered, so a
+request of a tenant that is not the user's does not even open its database:
+
+```js
+app.register(auth.plugin, { keys, login });
+app.register(orm.plugin, {
+  tenants: {
+    tenants,
+    resolve: (request) => request.headers['x-tenant'],
+    authorize: (request, id, reply) => app.auth.canUseTenant(request, id, reply), // 401, 403, or the tenant
+  },
+});
+```
+
+`app.auth.canUseTenant(request, id)` throws a 401 without a user, and says whether it may use the tenant;
+`auth.tenantsOf(user)` gives the tenants of claims.
 
 ## Strategies
 

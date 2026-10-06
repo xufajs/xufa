@@ -6,9 +6,10 @@ process in development and tests. No dependencies.
 
 ```js
 const { start, bus } = require('@xufa/cluster');
+const config = require('./config'); // loadConfig() of @xufa/config: read in every process
 
 start({
-  workers: 4, // os.availableParallelism() by default; 0 runs everything in one process
+  workers: config.cluster.workers, // os.availableParallelism() when undefined; 0 runs everything in one process
   primary: async ({ bus }) => {
     const counts = new Map();
     bus.on('hit', (path) => counts.set(path, (counts.get(path) || 0) + 1));
@@ -18,7 +19,7 @@ start({
     const app = makeApp();
     app.addHook('onRequest', async (request) => bus.send('hit', request.url));
     app.get('/stats', () => bus.request('hits'));
-    await app.listen({ port: 3000 });
+    await app.listen({ port: config.server.port, host: '0.0.0.0' });
     onShutdown(() => app.close());
   },
 });
@@ -58,6 +59,25 @@ calls deliver to the handlers of that process.
 
 [@xufa/orm](../orm)'s `SharedCache({ bus })` and `LocalCache({ bus })`, and the lockout of [@xufa/auth](../auth) with
 a `SharedCache`, share their state through the bus.
+
+## Faults (tests of resilience)
+
+`bus.faults` (of [@xufa/faults](../faults)) loses, delays or holds the messages that a process sends, to see what an
+app does when its workers miss events or requests get no reply:
+
+```js
+bus.faults.drop({ events: 'cache:invalidate', rate: 0.1 }); // 1 in 10 lost
+bus.faults.delay({ operations: 'broadcast', ms: 500 });
+bus.faults.fail({ operations: 'request', events: 'lock' }); // a BusError (code XUFA_FAULT)
+bus.faults.drop({ operations: 'request' }); // no reply: the timeout of the request
+```
+
+- Operations: `send`, `sendTo`, `broadcast` (the group `events`) and `request`; the filter `events` (names or
+  regular expressions).
+- Events: `fail`, `down` and `drop` lose them; `delay` delivers them late; `hang` when released.
+- Requests: `fail` and `down` reject with a `BusError`; `drop` rejects after the timeout of the request, as a lost
+  message would; `delay` and `hang` wait before sending.
+- The faults are those of the process that sends: in tests with one process, of every message.
 
 ## License
 

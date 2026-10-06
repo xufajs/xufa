@@ -1,0 +1,1174 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>@xufa/schema: Guide · xufa</title>
+    <meta
+      name="description"
+      content="How to use @xufa/schema: the schema DSL, JSON Schema (draft-04 to 2020-12), validation modes, errors, types of your own, security and performance."
+    />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%23d9502b'/%3E%3Ctext x='16' y='22.5' font-family='monospace' font-size='18' font-weight='700' fill='white' text-anchor='middle'%3Ex%3C/text%3E%3C/svg%3E"
+    />
+    <link rel="stylesheet" href="../style.css?v=0.1.0" />
+    <script src="../main.js?v=0.1.0"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js" defer></script>
+  </head>
+  <body>
+    <header class="header">
+      <div class="header-inner">
+        <a class="logo" href="../index.html"><span class="logo-mark">x</span>xufa</a>
+        <nav class="nav">
+          <a href="../guide.html">Guide</a>
+          <a href="../playground.html">Playground</a>
+          <a href="../http/index.html">HTTP</a>
+          <a href="../orm/index.html">ORM</a>
+          <a class="hide-small" href="../auth/index.html">Auth</a>
+          <a class="hide-small" href="../sequelize/index.html">Sequelize</a>
+          <a class="hide-small" href="../packages.html" aria-current="page">Packages</a>
+          <a class="hide-small" href="../benchmarks.html">Benchmarks</a>
+          <a href="https://github.com/xufajs/xufa">GitHub</a>
+          <button class="theme-toggle" type="button" aria-label="Switch between light and dark theme">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+              <path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z" />
+            </svg>
+          </button>
+        </nav>
+      </div>
+    </header>
+
+    <div class="docs">
+      <button class="menu-toggle" type="button" aria-expanded="false">☰ Contents</button>
+      <aside class="sidebar">
+        <h4>Writing schemas</h4>
+        <ul>
+          <li><a href="#s">Writing schemas with s</a></li>
+          <li><a href="#s-schemas">The schemas of s</a></li>
+          <li><a href="#s-objects">Objects from objects</a></li>
+          <li><a href="#s-models">From models of the ORM</a></li>
+          <li><a href="#s-types">Types and typed routes</a></li>
+        </ul>
+        <h4>Guide</h4>
+        <ul>
+          <li><a href="#getting-started">Getting started</a></li>
+          <li><a href="#modes">Modes</a></li>
+          <li><a href="#compile-once">Compile once</a></li>
+          <li><a href="#standalone">Standalone code</a></li>
+          <li><a href="#choosing">DSL or JSON Schema</a></li>
+        </ul>
+        <h4>Reference</h4>
+        <ul>
+          <li><a href="#schema-dsl">Schema DSL</a></li>
+          <li><a href="#json-schema">JSON Schema</a></li>
+          <li><a href="#errors">Errors</a></li>
+          <li><a href="#typescript">TypeScript</a></li>
+          <li><a href="#infer">Schemas from samples</a></li>
+          <li><a href="#custom-types">Types of your own</a></li>
+          <li><a href="#api">API</a></li>
+        </ul>
+        <h4>More</h4>
+        <ul>
+          <li><a href="#security">Security</a></li>
+          <li><a href="#performance">Performance</a></li>
+          <li><a href="#faq">FAQ</a></li>
+        </ul>
+        <h4>Packages</h4>
+        <ul>
+          <li><a href="../websocket/index.html">@xufa/websocket</a></li>
+          <li><a href="../openapi/index.html">@xufa/openapi</a></li>
+          <li><a href="../client/index.html">@xufa/client</a></li>
+          <li><a href="index.html" aria-current="page">@xufa/schema</a></li>
+          <li><a href="../pg/index.html">@xufa/pg</a></li>
+          <li><a href="../mongo/index.html">@xufa/mongo</a></li>
+          <li><a href="../expression/index.html">@xufa/expression</a></li>
+          <li><a href="../template/index.html">@xufa/template</a></li>
+          <li><a href="../cluster/index.html">@xufa/cluster</a></li>
+          <li><a href="../scheduler/index.html">@xufa/scheduler</a></li>
+          <li><a href="../config/index.html">@xufa/config</a></li>
+          <li><a href="../discovery/index.html">@xufa/discovery</a></li>
+          <li><a href="../netcache/index.html">@xufa/netcache</a></li>
+          <li><a href="../faults/index.html">@xufa/faults</a></li>
+          <li><a href="../marshal/index.html">@xufa/marshal</a></li>
+          <li><a href="../yaml/index.html">@xufa/yaml</a></li>
+          <li><a href="../jwt/index.html">@xufa/jwt</a></li>
+          <li><a href="../logger/index.html">@xufa/logger</a></li>
+          <li><a href="../router/index.html">@xufa/router</a></li>
+          <li><a href="../serializer/index.html">@xufa/serializer</a></li>
+          <li><a href="../inject/index.html">@xufa/inject</a></li>
+          <li><a href="../boot/index.html">@xufa/boot</a></li>
+          <li><a href="../errors/index.html">@xufa/errors</a></li>
+          <li><a href="../packages.html">All the packages</a></li>
+        </ul>
+      </aside>
+
+      <article class="content">
+        <nav class="package-tabs" aria-label="@xufa/schema">
+          <a href="index.html">Overview</a>
+          <a href="guide.html" aria-current="page">Guide</a>
+          <a href="api.html">API</a>
+          <a href="playground.html">Playground</a>
+          <a href="infer.html">Schema from JSON</a>
+          <a href="ajv.html">From ajv</a>
+          <a href="benchmarks.html">Benchmarks</a>
+        </nav>
+<h1>Guide</h1>
+        <p class="intro">
+          @xufa/schema checks that JavaScript values have the shape you expect. You describe that shape with a schema,
+          written in JavaScript with its own syntax or in JSON Schema (any version from draft-04 to 2020-12). @xufa/schema
+          compiles the schema once into a function, and that function returns the list of errors of each value you
+          give it: an empty list when the value is valid.
+        </p>
+
+        <h2 id="s">Writing schemas with s</h2>
+        <p>
+          <code>s</code> writes JSON Schemas as code: what it makes is the plain JSON Schema you would write by hand, so every
+          tool reads it (the validator, the routes of <a href="../http/index.html">@xufa/http</a> and fastify,
+          <a href="../serializer/index.html">@xufa/serializer</a>, <a href="../openapi/index.html">@xufa/openapi</a>), and in TypeScript each
+          one carries the type of its values. It is the way to write schemas in xufa; the
+          <a href="#schema-dsl">builder of types</a> below is the other, for code that only validates.
+        </p>
+        <pre><code class="language-js">const { s } = require('@xufa/schema'); // or require('xufa/schema')
+
+const Book = s.object(
+  {
+    id: s.integer({ minimum: 1 }),
+    title: s.string({ minLength: 1, maxLength: 200 }),
+    pages: s.optional(s.integer({ minimum: 1 })), // not required
+    status: s.enum(['draft', 'published']),
+    tags: s.array(s.string(), { uniqueItems: true }),
+    editor: s.nullable(s.email()), // a string or null
+  },
+  { additionalProperties: false }
+);
+const NewBook = s.omit(Book, ['id']); // the body of a create
+const BookPatch = s.partial(NewBook); // the body of an update
+
+app.post('/books', { schema: { body: NewBook, response: { 201: Book } } }, handler);
+app.patch('/books/:id', { schema: { params: s.object({ id: s.integer() }), body: BookPatch } }, handler);</code></pre>
+        <p>Compiled as any JSON Schema: <code>compileJsonSchema(Book)</code>.</p>
+
+        <h3 id="s-schemas">The schemas of s</h3>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Function</th><th>Its schema</th><th>Its type</th></tr></thead>
+            <tbody>
+              <tr><td><code>string</code>, <code>number</code>, <code>integer</code>, <code>boolean</code>, <code>null</code></td><td><code>{ type }</code> and the options</td><td><code>string</code>...</td></tr>
+              <tr><td><code>dateTime</code>, <code>date</code>, <code>email</code>, <code>uuid</code>, <code>uri</code></td><td>strings of that <code>format</code></td><td><code>string</code></td></tr>
+              <tr><td><code>literal(value)</code>, <code>enum([...values])</code></td><td><code>const</code>, <code>enum</code></td><td>the values</td></tr>
+              <tr><td><code>array(items)</code>, <code>tuple([a, b])</code></td><td>arrays</td><td><code>T[]</code>, <code>[A, B]</code></td></tr>
+              <tr><td><code>object(properties)</code>, <code>record(values)</code></td><td>objects: <code>required</code> those not optional</td><td>the object, <code>Record&lt;string, T&gt;</code></td></tr>
+              <tr><td><code>union([a, b])</code>, <code>intersect([a, b])</code></td><td><code>anyOf</code>, <code>allOf</code></td><td><code>A | B</code>, <code>A &amp; B</code></td></tr>
+              <tr><td><code>optional(schema)</code></td><td>a property not required</td><td><code>T | undefined</code></td></tr>
+              <tr><td><code>nullable(schema)</code></td><td><code>type: [type, 'null']</code> (or <code>anyOf</code>)</td><td><code>T | null</code></td></tr>
+              <tr><td><code>ref(id)</code></td><td><code>{ $ref: id }</code>, a shared schema</td><td>the one given: <code>ref&lt;User&gt;('User#')</code></td></tr>
+              <tr><td><code>any()</code>, <code>unknown()</code>, <code>never()</code></td><td><code>{}</code>, <code>{}</code>, <code>{ not: {} }</code></td><td></td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p>
+          Every function takes the keywords of JSON Schema as its options (<code>minLength</code>, <code>maximum</code>,
+          <code>pattern</code>, <code>description</code>, <code>default</code>, <code>$id</code>...), in the schema as they are.
+        </p>
+
+        <h3 id="s-objects">Objects from objects</h3>
+        <ul>
+          <li><code>pick(schema, keys)</code>, <code>omit(schema, keys)</code>: some of its properties.</li>
+          <li><code>partial(schema)</code>: all of them not required (the body of a PATCH); <code>required(schema)</code>: all of them required.</li>
+          <li><code>extend(schema, properties, options)</code>: more properties (those given replace those of the same name).</li>
+        </ul>
+        <p>The schema given is not changed, and its options are kept.</p>
+
+        <h3 id="s-models">From models of the ORM</h3>
+        <pre><code class="language-js">const NewBook = s.omit(Book.schema({ input: true }), ['id']); // typed from the fields of Book</code></pre>
+        <p>
+          <code>Model.schema()</code> of <a href="../orm/index.html#schemas">@xufa/orm</a> gives the schema of the objects of a model,
+          made with these functions: fields as JSON, foreign keys by their keys, null as a type.
+        </p>
+
+        <h3 id="s-types">Types and typed routes</h3>
+        <pre><code class="language-ts">import xufa from 'xufa';
+import { s, type Infer, type SchemaTypeProvider } from 'xufa/schema';
+
+type Book = Infer&lt;typeof Book&gt;;
+// { id: number; title: string; status: 'draft' | 'published'; tags: string[]; editor: string | null; pages?: number }
+
+const app = xufa().withTypeProvider&lt;SchemaTypeProvider&gt;();
+app.post('/books', { schema: { body: NewBook } }, async (request) =&gt; {
+  request.body.title; // string
+  request.body.pages; // number | undefined
+});</code></pre>
+        <p>
+          The type provider types <code>body</code>, <code>querystring</code>, <code>params</code>, <code>headers</code>
+          and the replies of <code>response</code>, and works with fastify too.
+        </p>
+
+        <h2 id="getting-started">Getting started</h2>
+        <pre><code class="language-sh">npm install @xufa/schema</code></pre>
+        <p>
+          @xufa/schema has no dependencies and runs on Node.js 18 and later, and in browsers through any bundler. It exports
+          the same names with <code>require</code> and with <code>import</code>.
+        </p>
+
+        <div class="tabs">
+          <div class="tab-list" role="tablist">
+            <button role="tab" id="tab-gs-dsl" aria-controls="panel-gs-dsl" aria-selected="true">Schema DSL</button>
+            <button role="tab" id="tab-gs-json" aria-controls="panel-gs-json" aria-selected="false">JSON Schema</button>
+          </div>
+          <div class="tab-panel" id="panel-gs-dsl" role="tabpanel" aria-labelledby="tab-gs-dsl">
+            <pre><code class="language-js">const { ClosedSchema, String, Integer, ArrayOf } = require('@xufa/schema');
+
+const person = new ClosedSchema({
+  id: String(),
+  age: Integer({ min: 18 }),
+  tags: ArrayOf({ type: String(), isMandatory: false }),
+});
+
+// Compile once, when the program starts:
+const validatePerson = person.compile();
+
+validatePerson({ id: 'x', age: 20 }); // []
+validatePerson({ id: 1, age: 10, extra: 1 });
+// ['id must be a string', 'age must be at least 18', 'Unexpected key: extra']</code></pre>
+          </div>
+          <div class="tab-panel" id="panel-gs-json" role="tabpanel" aria-labelledby="tab-gs-json" hidden>
+            <pre><code class="language-js">import { compileJsonSchema } from '@xufa/schema';
+
+const validate = compileJsonSchema({
+  type: 'object',
+  required: ['id'],
+  properties: { id: { type: 'string', pattern: '^[A-Z]+$' } },
+});
+
+validate({ id: 'AB' }); // []
+validate({ id: 'ab' }); // ['id does not match the required pattern']</code></pre>
+          </div>
+        </div>
+
+        <h2 id="modes">Modes</h2>
+        <p>
+          <code>compile(options)</code> (on schemas and on every type) and
+          <code>compileJsonSchema(json, options)</code> return a function. The options choose what it returns:
+        </p>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr><th>Option</th><th>The function returns</th><th>Use it when</th></tr>
+            </thead>
+            <tbody>
+              <tr><td>(none)</td><td>every error message, <code>[]</code> when valid</td><td>messages are shown or logged</td></tr>
+              <tr><td><code>{ allErrors: false }</code></td><td>only the first error message, <code>[]</code> when valid</td><td>one message is enough; stops at the first failing check</td></tr>
+              <tr><td><code>{ errors: false }</code></td><td><code>true</code> or <code>false</code></td><td>only validity matters; builds no messages</td></tr>
+              <tr><td><code>{ errors: 'objects' }</code></td><td>every error as an object, <code>[]</code> when valid (with <code>allErrors: false</code>, the first)</td><td>errors are handled by code: forms, translations; see <a href="#error-objects">Error objects</a></td></tr>
+            </tbody>
+          </table>
+        </div>
+        <pre><code class="language-js">const isPerson = person.compile({ errors: false });
+
+if (!isPerson(body)) {
+  // reject the request
+}</code></pre>
+        <p>
+          Schemas and types also have <code>validate(value)</code>, which checks without compiling (10 to 25 times
+          slower), and <code>isValid(value)</code>.
+        </p>
+
+        <h2 id="compile-once">Compile once</h2>
+        <p>
+          The compiled function is a snapshot of the schema: changes made to the schema or its types afterwards (such
+          as <code>.optional()</code>, <code>.nullable()</code> or setting their fields) are not seen. Compile after
+          building the schema, and compile again if it changes.
+        </p>
+        <p>
+          Compiling takes about 0.1 ms for a schema of moderate size, so compile when the program starts (or cache the
+          function), not for every value.
+        </p>
+        <pre><code class="language-js">// Compiled once, reused for every request.
+const validateOrder = orderSchema.compile();
+
+app.post('/orders', (req, res) => {
+  const errors = validateOrder(req.body);
+  if (errors.length) return res.status(400).json({ errors });
+  // ...
+});</code></pre>
+        <div class="callout">
+          <p>
+            <code>compile()</code> creates the function with <code>new Function</code>, which does not run where code
+            generation is forbidden (for example with a strict Content Security Policy). There, generate
+            <a href="#standalone">standalone code</a> when building.
+          </p>
+        </div>
+
+        <h2 id="standalone">Standalone code</h2>
+        <p>
+          <code>standaloneCode(type, options)</code> returns the code of a validator as the source of a JavaScript
+          module, to save to a file when building and load like any other. Loading it generates no code, so it runs
+          under a strict Content Security Policy (without <code>'unsafe-eval'</code>) and in runtimes that forbid code
+          generation, and it needs nothing else: not even @xufa/schema, as the few helpers it calls are written into it.
+        </p>
+        <pre><code class="language-js">// build-validators.js, run when building
+const fs = require('fs');
+const { standaloneCode, standaloneModule, standaloneJsonSchema } = require('@xufa/schema');
+
+fs.writeFileSync('validate-person.js', standaloneCode(person)); // module.exports = the validation function
+fs.writeFileSync('validators.mjs', standaloneModule({ isPerson: person, isOrder: order }, { errors: false, format: 'esm' }));
+fs.writeFileSync('validate-address.js', standaloneJsonSchema(addressSchema, { schemas: [countrySchema] }));</code></pre>
+        <pre><code class="language-js">// In the application
+const validatePerson = require('./validate-person.js');
+import { isPerson } from './validators.mjs';</code></pre>
+        <p>
+          The options are those of <code>compile()</code> (<code>allErrors</code>, <code>errors</code>) and
+          <code>format</code>: <code>'commonjs'</code> (the default) or <code>'esm'</code>. <code>standaloneCode()</code>
+          exports one function (<code>module.exports</code>, or the default export), and
+          <code>standaloneModule()</code> one for each name. <code>standaloneJsonSchema()</code> takes the options of
+          <code>compileJsonSchema()</code> too. The functions return the same results as the ones
+          <code>compile()</code> gives: @xufa/schema checks it on every test of the JSON-Schema-Test-Suite
+          (<code>pnpm run conformance draft2020-12 --standalone</code>). <a href="#custom-types">Types of your own</a>
+          cannot be written out, as their <code>validate()</code> runs when validating, and throw.
+        </p>
+
+        <h2 id="choosing">DSL or JSON Schema</h2>
+        <p>Both compile to the same types and the same generated code, so the speed is the same.</p>
+        <ul>
+          <li>
+            Use <strong>JSON Schema</strong> when the schema is shared with other languages or tools: OpenAPI, form
+            generators, other services.
+          </li>
+          <li>
+            Use the <strong>DSL</strong> when the schema lives in your JavaScript code. It is shorter, and
+            <code>RegExp</code> patterns and <a href="#custom-types">types of your own</a> fit in directly.
+          </li>
+        </ul>
+
+        <h2 id="schema-dsl">Schema DSL</h2>
+        <p>
+          A <code>Schema</code> takes an object whose keys are the expected properties. Plain objects inside it become
+          nested schemas.
+        </p>
+        <pre><code class="language-js">const { Schema, String, Float, Enum, ArrayOf, Integer } = require('@xufa/schema');
+
+const order = new Schema(
+  {
+    id: String({ pattern: /^ORD-\d{8}$/ }),
+    status: Enum({ options: ['draft', 'placed'] }),
+    customer: { name: String({ min: 1 }), email: String({ isMandatory: false }) },
+    lines: ArrayOf({ type: { sku: String(), qty: Integer({ min: 1 }) }, min: 1 }),
+    total: Float({ min: 0 }),
+  },
+  { isOpen: false }
+);</code></pre>
+        <div class="callout">
+          <p>
+            Wherever a type is expected (<code>ArrayOf</code>, <code>AnyOf</code>, <code>Not</code>,
+            <code>additionalType</code>...), a plain object stands for <code>new Schema(object)</code>, as
+            <code>lines</code> shows above. That schema is open even inside a <code>ClosedSchema</code>; write
+            <code>new ClosedSchema({ ... })</code> to reject unknown keys there too. A value that is neither a type nor
+            an object of types throws when the type is built.
+          </p>
+        </div>
+
+        <h3 id="types">Types</h3>
+        <p>
+          Every type takes <code>isMandatory</code> (default <code>true</code>: <code>undefined</code> is an error)
+          and <code>isNullable</code> (default <code>false</code>: <code>null</code> is an error), and has
+          <code>.optional()</code>, <code>.required()</code>, <code>.nullable()</code> and <code>.notNull()</code>.
+        </p>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr><th>Type</th><th>Options</th></tr>
+            </thead>
+            <tbody>
+              <tr><td><code>String</code></td><td><code>min</code>, <code>max</code> (length), <code>pattern</code> (RegExp), <code>format</code> (a <a href="#formats">built-in format</a>), <code>allowEmpty</code>, <code>countCodePoints</code></td></tr>
+              <tr><td><code>Integer</code>, <code>Float</code></td><td><code>min</code>, <code>max</code>, <code>exclusiveMin</code>, <code>exclusiveMax</code>, <code>multipleOf</code></td></tr>
+              <tr><td><code>Boolean</code>, <code>Any</code>, <code>Never</code></td><td></td></tr>
+              <tr><td><code>Enum</code></td><td><code>options</code> (strings)</td></tr>
+              <tr><td><code>Values</code>, <code>Const(value)</code></td><td><code>values</code>: allowed values, compared deeply</td></tr>
+              <tr><td><code>ArrayOf</code></td><td><code>type</code> (one type, or an array of types for a tuple), <code>min</code>, <code>max</code>, <code>unique</code>, <code>contains</code>, <code>additionalType</code></td></tr>
+              <tr><td><code>AnyOf</code>, <code>AllOf</code>, <code>OneOf</code></td><td><code>types</code></td></tr>
+              <tr><td><code>Not</code></td><td><code>type</code></td></tr>
+              <tr><td><code>Conditional</code></td><td><code>ifType</code>, <code>thenType</code>, <code>elseType</code></td></tr>
+              <tr><td><code>When</code></td><td><code>jsonType</code> (<code>object</code>, <code>array</code>, <code>string</code>, <code>number</code>), <code>type</code>: checks only values of that JSON type</td></tr>
+              <tr><td><code>Ref</code></td><td><code>target</code>, for recursive schemas</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h3 id="schema-options">Schema options</h3>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr><th>Option</th><th>Meaning</th></tr>
+            </thead>
+            <tbody>
+              <tr><td><code>isOpen</code></td><td>default <code>true</code>; <code>false</code> rejects unknown keys. <code>ClosedSchema</code> sets it to <code>false</code>.</td></tr>
+              <tr><td><code>additionalType</code></td><td>type of the keys that are not declared</td></tr>
+              <tr><td><code>patternTypes</code></td><td><code>[{ pattern, type }]</code>: type of the keys that match a pattern</td></tr>
+              <tr><td><code>propertyNameType</code></td><td>type that every key must match</td></tr>
+              <tr><td><code>minProperties</code>, <code>maxProperties</code></td><td>number of keys</td></tr>
+              <tr><td><code>dependencies</code></td><td><code>[{ key, required: [...] }]</code> or <code>[{ key, type }]</code></td></tr>
+              <tr><td><code>isMandatory</code>, <code>isNullable</code></td><td>as for every type</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p>
+          Declared keys are read as own properties only, so <code>{}.toString</code> or a key added to
+          <code>Object.prototype</code> never counts as present.
+        </p>
+
+        <h3 id="helpers">Short helpers</h3>
+        <p>
+          <code>str</code>, <code>int</code>, <code>float</code>, <code>bool</code>, <code>arrOf</code>,
+          <code>obj</code>, <code>any</code>, <code>anyOf</code>, <code>allOf</code>, <code>oneOf</code>,
+          <code>not</code>, <code>enumt</code>, and optional versions prefixed with <code>o</code>
+          (<code>ostr</code>, <code>oint</code>...). <code>arrOf(String())</code> and
+          <code>arrOf({ sku: String() })</code> take the type of the elements; <code>arrOf({ type, min, ... })</code>
+          takes the options.
+        </p>
+
+        <h3 id="recursive">Recursive schemas</h3>
+        <p>Create the <code>Ref</code> first and point it at the schema once the schema exists:</p>
+        <pre><code class="language-js">const { Schema, Integer, ArrayOf, Ref } = require('@xufa/schema');
+
+const child = Ref();
+const node = new Schema({ value: Integer(), children: ArrayOf({ type: child, isMandatory: false }) });
+child.target = node;
+
+node.compile()({ value: 1, children: [{ value: 2, children: [{ value: 'x' }] }] });
+// ['children[0].children[0].value must be a number']</code></pre>
+
+        <h2 id="json-schema">JSON Schema</h2>
+        <p>
+          <code>fromJsonSchema(json, options)</code> converts a JSON Schema into the same types, and
+          <code>compileJsonSchema(json, options)</code> compiles it. Every validation keyword of draft-07 is
+          supported, along with <code>definitions</code> (or <code>$defs</code>) and <code>$ref</code> (JSON pointers,
+          <code>$id</code> base URIs and anchors, recursive schemas). String lengths count Unicode code points, as the
+          specification says. <code>multipleOf</code> divides in floating point, so 0.3 is not a multiple of 0.1; with
+          the option <code>multipleOfPrecision: 8</code>, a division within 1e-8 of an integer passes, as with ajv's
+          option. Drafts 04, 06, 2019-09 and 2020-12 are supported completely: see
+          <a href="#drafts">Drafts</a>.
+        </p>
+
+        <h3 id="strict">Unknown keywords</h3>
+        <p>A keyword @xufa/schema does not know throws when compiling, with the place where it was found:</p>
+        <pre><code class="language-js">compileJsonSchema({ type: 'string', maxLenght: 10 });
+// Error: Unsupported JSON Schema keyword "maxLenght" at #</code></pre>
+        <p>
+          Annotations (<code>title</code>, <code>description</code>, <code>default</code>, <code>examples</code>,
+          <code>$comment</code>, <code>readOnly</code>, <code>writeOnly</code>, <code>deprecated</code>) are accepted
+          and ignored.
+        </p>
+        <p>
+          The content keywords (<code>contentMediaType</code>, <code>contentEncoding</code>,
+          <code>contentSchema</code>) are annotations too.
+        </p>
+        <p>
+          Keywords of your own, such as the <code>x-</code> extensions of OpenAPI, can be declared as annotations with
+          the option <code>keywords</code>, and typos are still caught. <code>strict: false</code> ignores every unknown
+          keyword instead, and also the ones of other drafts and the ones a <code>type</code> excludes, as the JSON
+          Schema standard reads a schema:
+        </p>
+        <pre><code class="language-js">compileJsonSchema(schema, { keywords: ['x-internal', 'example'] });
+compileJsonSchema(schema, { strict: false }); // like ajv's strict: false</code></pre>
+
+        <h3 id="keywords">Keywords of your own</h3>
+        <p>
+          The option <code>keywords</code> also takes definitions of keywords that check values, like ajv's
+          <code>addKeyword()</code>. A definition has its <code>keyword</code>, optionally the JSON <code>type</code>
+          of the values it checks (every value by default), and one function:
+        </p>
+        <ul>
+          <li>
+            <code>validate(value, data, parentSchema)</code>: called for each value with the value of the keyword;
+            <code>true</code> when valid.
+          </li>
+          <li>
+            <code>compile(value, parentSchema)</code>: called once, when compiling; gives the function checking the
+            data, or a regular expression that the data must match.
+          </li>
+          <li>
+            <code>macro(value, parentSchema)</code>: gives a schema to check instead, so the keyword is other keywords
+            written shorter. It compiles to the same code as those keywords.
+          </li>
+        </ul>
+        <p>
+          <code>message</code> gives the text of its error after the name of the value, or a function
+          <code>(value, data) =&gt; text</code> does (<code>must pass the "&lt;keyword&gt;" keyword</code> by default).
+          Its error objects have its name as <code>keyword</code>.
+        </p>
+        <pre><code class="language-js">const even = { keyword: 'even', type: 'integer', validate: (value, data) =&gt; !value || data % 2 === 0, message: 'must be even' };
+const between = { keyword: 'between', type: 'number', macro: ([min, max]) =&gt; ({ minimum: min, maximum: max }) };
+
+const validate = compileJsonSchema(
+  { properties: { seats: { type: 'integer', even: true, between: [2, 8] } } },
+  { keywords: [even, between] }
+);
+
+validate({ seats: 3 }); // ['seats must be even']
+validate({ seats: 10 }); // ['seats must be at most 8']</code></pre>
+        <p>
+          <code>ajvKeywords()</code> gives the keywords of
+          <a href="https://github.com/ajv-validator/ajv-keywords">ajv-keywords</a>, with the same results:
+          <code>typeof</code>, <code>instanceof</code>, <code>range</code>, <code>exclusiveRange</code>,
+          <code>regexp</code>, <code>uniqueItemProperties</code>, <code>allRequired</code>, <code>anyRequired</code>,
+          <code>oneRequired</code>, <code>patternRequired</code>, <code>prohibited</code>, <code>deepProperties</code>
+          and <code>deepRequired</code>. Name the ones you use, or leave the list out for all of them:
+        </p>
+        <pre><code class="language-js">compileJsonSchema(schema, { keywords: ajvKeywords(['range', 'regexp']) });
+compileJsonSchema(schema, { keywords: ['x-internal', ...ajvKeywords()] });</code></pre>
+        <p>
+          <code>transform</code> changes the data and <code>dynamicDefaults</code> computes defaults when validating
+          (@xufa/schema only assigns fixed defaults, see <a href="#changing-the-data">useDefaults</a>), and <code>select</code>
+          needs <code>$data</code> references, so they are left out. Macros and regular expressions
+          can be written into <a href="#standalone">standalone code</a>, functions cannot: among ajv-keywords,
+          <code>range</code>, <code>exclusiveRange</code>, <code>regexp</code> (without the flags g and y),
+          <code>allRequired</code>, <code>anyRequired</code>, <code>oneRequired</code>, <code>prohibited</code> and
+          <code>deepProperties</code> can.
+        </p>
+
+        <h3 id="changing-the-data">Changing the data</h3>
+        <p>
+          @xufa/schema only checks values unless you ask for one of these options, which change the value being validated as
+          ajv's do:
+        </p>
+        <ul>
+          <li>
+            <code>useDefaults: true</code> assigns the <code>default</code> of each missing property (in
+            <code>properties</code>) and tuple element before checking it, so <code>required</code> is satisfied and
+            the default is checked too. <code>useDefaults: 'empty'</code> also replaces <code>null</code> and
+            <code>''</code>. Each validation assigns a new copy of the default.
+          </li>
+          <li>
+            <code>removeAdditional: true</code> removes the additional properties where
+            <code>additionalProperties</code> is <code>false</code>, instead of reporting them. <code>'all'</code>
+            removes every additional property of a schema with <code>properties</code> or
+            <code>additionalProperties</code>, and <code>'failing'</code> the ones that fail
+            <code>additionalProperties</code> (and where it is <code>false</code>). The keys a
+            <code>patternProperties</code> pattern matches are not additional.
+          </li>
+          <li>
+            <code>coerceTypes: true</code> converts a value that is not of the types its schema's <code>type</code> asks
+            for, trying them in order, and writes the converted value back into its object or array: numeric strings,
+            booleans and <code>null</code> to numbers (integers only when whole), numbers and booleans to strings
+            (<code>null</code> to <code>''</code>), <code>'true'</code>, <code>'false'</code>, <code>1</code>,
+            <code>0</code> and <code>null</code> to booleans, and <code>''</code>, <code>0</code> and <code>false</code>
+            to <code>null</code>. <code>coerceTypes: 'array'</code> also wraps a value into an array, and takes the
+            element of an array of one where a single value is expected. The value validated itself, in no object or
+            array, is converted for the validation only.
+          </li>
+        </ul>
+        <pre><code class="language-js">const validate = compileJsonSchema(
+  {
+    type: 'object',
+    properties: { name: { type: 'string' }, role: { type: 'string', default: 'user' } },
+    required: ['name'],
+    additionalProperties: false,
+  },
+  { useDefaults: true, removeAdditional: true }
+);
+
+const user = { name: 'Ann', password: 'secret' };
+validate(user); // []
+user; // { name: 'Ann', role: 'user' }</code></pre>
+        <p>
+          A value is converted by its schema's own <code>type</code> (or else by the first part of its
+          <code>allOf</code>, or the schema its <code>$ref</code> points to), once; ajv also converts it inside
+          <code>anyOf</code> and <code>oneOf</code> schemas, even ones that then do not apply. List the types in one
+          <code>type</code> instead: <code>type: ['number', 'boolean']</code>. ajv only takes the element of an array of
+          one for schemas with one type.
+        </p>
+        <p>
+          As in ajv, defaults inside <code>anyOf</code>, <code>oneOf</code>, <code>not</code> and <code>if</code>
+          (directly or through <code>$ref</code>) are not assigned, as those schemas may not apply: they throw, or are
+          ignored with <code>strict: false</code>. <code>required</code>, <code>minProperties</code> and
+          <code>maxProperties</code> see the additional properties before they are removed. Removing properties inside
+          <code>anyOf</code>, <code>oneOf</code>, <code>not</code> or <code>if</code> can remove them while trying a
+          schema that then does not apply, and the result depends on the order the keywords run, which is not always
+          ajv's: remove them in the schemas that always apply. An invalid value may be changed only in part, more so when
+          stopping at the first error.
+        </p>
+
+        <h3 id="discriminator">Discriminator</h3>
+        <p>
+          The <code>discriminator</code> of OpenAPI picks the <code>oneOf</code> schema that applies by the value of a
+          property, which must be required. An object is only checked against the schema its value picks, with the
+          errors of that schema, which is several times faster than trying every schema; a value that picks none gets
+          an error about the property. Other values are checked as by <code>oneOf</code>. The value of each schema
+          comes from, in this order:
+        </p>
+        <ul>
+          <li><code>mapping</code>: values to references or to schema names, as in OpenAPI.</li>
+          <li>
+            A <code>const</code> or an <code>enum</code> that the schema (or the schema it references) gives the
+            property, as ajv reads it.
+          </li>
+          <li>
+            Else the name of the schema it references: <code>Dog</code> for <code>#/components/schemas/Dog</code>,
+            OpenAPI's implicit mapping.
+          </li>
+        </ul>
+        <pre><code class="language-js">const validate = compileJsonSchema({
+  $defs: {
+    Cat: { type: 'object', properties: { lives: { type: 'integer' } }, required: ['petType', 'lives'] },
+    Dog: { type: 'object', properties: { bark: { type: 'boolean' } }, required: ['petType'] },
+  },
+  oneOf: [{ $ref: '#/$defs/Cat' }, { $ref: '#/$defs/Dog' }],
+  discriminator: { propertyName: 'petType', mapping: { cat: '#/$defs/Cat', dog: 'Dog' } },
+});
+
+validate({ petType: 'cat' }); // ['lives is mandatory']
+validate({ petType: 'cow' }); // ['petType must be one of: cat, dog']</code></pre>
+        <p>
+          With values from <code>const</code> and <code>enum</code> alone, no other schema accepts the value, so the
+          result is the one of <code>oneOf</code>. With <code>mapping</code> or names, the property picks the schema as
+          OpenAPI means it, whatever the other schemas accept. ajv only reads <code>const</code> and <code>enum</code>,
+          and rejects <code>mapping</code>.
+        </p>
+        <p>
+          A <code>oneOf</code> without <code>discriminator</code> whose schemas give one property distinct string values
+          with <code>const</code> or <code>enum</code> is checked the same way: the result is the one of
+          <code>oneOf</code>, the errors of an object whose value picks a schema are the ones of that schema, and a value
+          that picks none gets the errors of <code>oneOf</code>.
+        </p>
+
+        <h3 id="formats">Formats</h3>
+        <p>
+          <code>format</code> is an annotation by default, as the drafts allow: nothing is checked. The option
+          <code>formats</code> turns the checks on:
+        </p>
+        <pre><code class="language-js">const validate = compileJsonSchema(
+  { type: 'object', properties: { email: { type: 'string', format: 'email' }, since: { format: 'date' } } },
+  { formats: true }
+);
+
+validate({ email: 'x', since: '2026-02-30' }); // ['email must be a valid email', 'since must be a valid date']</code></pre>
+        <ul>
+          <li>
+            <code>formats: true</code> checks every built-in format: <code>date</code>, <code>time</code>,
+            <code>date-time</code>, <code>duration</code>, <code>email</code>, <code>idn-email</code>,
+            <code>hostname</code>, <code>idn-hostname</code>, <code>ipv4</code>, <code>ipv6</code>, <code>uri</code>,
+            <code>uri-reference</code>, <code>iri</code>, <code>iri-reference</code>, <code>uuid</code>,
+            <code>uri-template</code>, <code>json-pointer</code>, <code>relative-json-pointer</code> and
+            <code>regex</code>.
+          </li>
+          <li><code>formats: ['email', 'date']</code> checks only those.</li>
+          <li>
+            <code>formats: { phone: /^\+\d+$/, even: (text) =&gt; text.length % 2 === 0, email: true }</code> adds
+            formats of your own, a regular expression or a function, and <code>true</code> picks a built-in one.
+            <code>false</code> names a format that is known but not checked, such as OpenAPI's <code>int32</code>.
+          </li>
+          <li>
+            <code>formats: { ...builtInFormats(), int32: false }</code> checks every built-in format and adds your own
+            (<code>builtInFormats()</code> gives <code>{ date: true, ... }</code>).
+          </li>
+        </ul>
+        <p>
+          With the option, a format it does not name throws when compiling, as in ajv's strict mode, since it is most
+          likely a typo (<code>"emial"</code>): name it, with <code>false</code> to leave it unchecked, or use
+          <code>strict: false</code> to ignore unknown formats, as the standard reads them. Without the option, any
+          format is an annotation. A format applies to strings only. The built-in formats
+          follow their RFCs: dates and times with leap years and leap seconds (RFC 3339), email addresses with quoted
+          local parts and IP literals, and internationalized host names with punycode, IDNA2008 and the Bidi rule.
+          @xufa/schema passes every test of the optional format tests of the JSON-Schema-Test-Suite (793 of draft-07, 874 of
+          2019-09 and of 2020-12; <code>pnpm run conformance draft2020-12 --formats</code>); ajv with ajv-formats
+          passes 655 and 733.
+        </p>
+        <p>
+          <code>formatMinimum</code>, <code>formatMaximum</code>, <code>formatExclusiveMinimum</code> and
+          <code>formatExclusiveMaximum</code> limit the values of a format that can be compared (<code>date</code>,
+          <code>time</code> and <code>date-time</code>), as ajv-formats does, with the same results:
+        </p>
+        <pre><code class="language-js">const validate = compileJsonSchema(
+  { type: 'string', format: 'date', formatMinimum: '2020-01-01', formatExclusiveMaximum: '2021-01-01' },
+  { formats: true }
+);
+
+validate('2019-12-31'); // ['Value must be at least 2020-01-01']</code></pre>
+        <p>
+          Times and date-times compare by the moment they name, whatever their time zone. As in ajv the limits need
+          <code>format</code>, and are checked only when the format is. A format of your own can be compared too, given
+          as <code>{ validate, compare }</code> in <code>formats</code>, where <code>compare(a, b)</code> gives a
+          negative number, 0 or a positive number. Where ajv ignores a limit that is not a valid value of its format,
+          @xufa/schema throws.
+        </p>
+        <p>In the DSL, a <code>String</code> takes a built-in format too: <code>String({ format: 'email' })</code>.</p>
+
+        <h3 id="drafts">Drafts</h3>
+        <p>
+          The draft comes from <code>options.draft</code> (<code>'draft-04'</code>, <code>'draft-06'</code>,
+          <code>'draft-07'</code>, <code>'2019-09'</code> or <code>'2020-12'</code>), or else from the
+          <code>$schema</code> of the schema. Without either, or with another <code>$schema</code>, the schema is read
+          as draft-07. Each schema resource
+          inside it, or document it references, is read in the draft its own <code>$schema</code> names, so a 2020-12
+          schema can reference draft-07 ones. A <code>$schema</code> can also name a meta-schema given in
+          <code>options.schemas</code>: its draft applies, and the keywords of the vocabularies its
+          <code>$vocabulary</code> leaves out are ignored.
+        </p>
+        <pre><code class="language-js">const validate = compileJsonSchema({
+  $schema: 'https://json-schema.org/draft/2020-12/schema',
+  prefixItems: [{ type: 'string' }, { type: 'integer' }],
+  items: false,
+});
+
+validate(['a', 1]); // []
+validate(['a', 1, 2]); // ['Value[2] is not allowed']</code></pre>
+        <p>
+          The older drafts differ from draft-07 in a few keywords. Draft-06 has no <code>if</code>/<code>then</code>/<code>else</code>.
+          Draft-04 has no <code>const</code>, <code>contains</code> or <code>propertyNames</code> either, changes the
+          base URI with <code>id</code> instead of <code>$id</code>, and makes <code>exclusiveMinimum</code> and
+          <code>exclusiveMaximum</code> booleans that make <code>minimum</code> and <code>maximum</code> exclusive.
+        </p>
+        <p>Drafts 2019-09 and 2020-12 add, and @xufa/schema supports:</p>
+        <ul>
+          <li><code>$defs</code> and <code>$anchor</code> (and <code>$dynamicAnchor</code> as a plain anchor for <code>$ref</code>).</li>
+          <li><code>dependentRequired</code> and <code>dependentSchemas</code>, which split <code>dependencies</code> in two.</li>
+          <li><code>minContains</code> and <code>maxContains</code>.</li>
+          <li>
+            <code>prefixItems</code> (2020-12), which takes over the tuple form of <code>items</code>: in 2020-12
+            <code>items</code> is a schema for the elements after <code>prefixItems</code>, and
+            <code>additionalItems</code> is gone.
+          </li>
+          <li>Keywords next to <code>$ref</code> apply too, where draft-07 ignores them.</li>
+          <li>
+            <code>unevaluatedProperties</code> and <code>unevaluatedItems</code>: the keys or elements that no other
+            keyword of the schema evaluated, directly or through <code>allOf</code>, <code>anyOf</code>,
+            <code>oneOf</code>, <code>if</code>/<code>then</code>/<code>else</code>, <code>$ref</code> or
+            <code>dependentSchemas</code>, must satisfy them.
+          </li>
+        </ul>
+        <pre><code class="language-js">const validate = compileJsonSchema({
+  $schema: 'https://json-schema.org/draft/2020-12/schema',
+  $defs: { base: { properties: { id: { type: 'integer' } } } },
+  $ref: '#/$defs/base',
+  properties: { name: { type: 'string' } },
+  unevaluatedProperties: false,
+});
+
+validate({ id: 1, name: 'a' }); // []
+validate({ id: 1, name: 'a', extra: true }); // ['Unexpected key: extra']</code></pre>
+        <p>
+          When the keys those keywords evaluate are the same for every value, as with <code>$ref</code>,
+          <code>allOf</code> and <code>properties</code>, the check compiles to a loop over the other keys, as fast as
+          <code>additionalProperties</code>. With <code>anyOf</code>, <code>oneOf</code>, <code>if</code> or
+          <code>dependentSchemas</code> it depends on the value, and the generated code works it out first.
+        </p>
+        <h3 id="dynamic-references">Dynamic references</h3>
+        <p>
+          <code>$dynamicRef</code> (2020-12) and <code>$recursiveRef</code> (2019-09) let a schema extend another that
+          refers to itself: the reference points to the outermost schema being evaluated that has the same
+          <code>$dynamicAnchor</code> (or <code>$recursiveAnchor</code>). Here a generic tree accepts any key, and the
+          strict tree that extends it rejects unknown keys at every level:
+        </p>
+        <pre><code class="language-js">const tree = {
+  $schema: 'https://json-schema.org/draft/2020-12/schema',
+  $id: 'https://example.com/tree',
+  $dynamicAnchor: 'node',
+  type: 'object',
+  properties: { data: true, children: { type: 'array', items: { $dynamicRef: '#node' } } },
+};
+const validate = compileJsonSchema(
+  {
+    $schema: 'https://json-schema.org/draft/2020-12/schema',
+    $id: 'https://example.com/strict-tree',
+    $dynamicAnchor: 'node',
+    $ref: 'tree',
+    unevaluatedProperties: false,
+  },
+  { schemas: [tree] }
+);
+
+validate({ children: [{ daat: 1 }] }); // ['Unexpected key: children[0].daat']</code></pre>
+        <p>
+          The target of a dynamic reference depends on the schemas being evaluated, and @xufa/schema still works it out when
+          compiling: a schema reached in different ways is compiled once for each, so the generated code stays as fast
+          as for <code>$ref</code>.
+        </p>
+        <div class="callout">
+          <p>
+            <strong>Complete:</strong> @xufa/schema passes the whole JSON-Schema-Test-Suite of draft-04 (618 of 618),
+            draft-06 (841 of 841), draft-07 (929 of 929), 2019-09 (1261 of 1261) and 2020-12 (1301 of 1301).
+            <code>pnpm run conformance draft2020-12</code> shows it file by file.
+          </p>
+        </div>
+
+        <h3 id="documents">Several documents</h3>
+        <p>
+          References to other documents resolve against the documents given in <code>options.schemas</code>, as
+          <code>{ uri: schema }</code> or as an array of schemas with <code>$id</code>.
+          <code>compileJsonSchema()</code> loads nothing, and a reference that cannot be resolved throws when
+          compiling:
+        </p>
+        <pre><code class="language-js">const validateOrder = compileJsonSchema(orderSchema, {
+  schemas: { 'https://example.com/schemas/address.json': addressSchema },
+});</code></pre>
+        <p>
+          URIs can also be relative, as ajv and Fastify allow: a document with <code>"$id": "address"</code> is reached
+          by <code>"$ref": "address#"</code> from a schema without <code>$id</code> (or with a relative one).
+        </p>
+        <pre><code class="language-js">const address = { $id: 'address', type: 'object', required: ['city'], properties: { city: { type: 'string' } } };
+compileJsonSchema({ properties: { home: { $ref: 'address#' } } }, { schemas: [address] });</code></pre>
+        <p>
+          To load them instead, <code>compileJsonSchemaAsync(json, options)</code> asks
+          <code>options.loadSchema(uri)</code>, an async function you write, for each document the schema references
+          and <code>schemas</code> does not have, and for the ones those reference in turn, once each (like ajv's
+          <code>compileAsync()</code>). <code>loadJsonSchemas(json, options)</code> gives the documents it loaded, with
+          <code>options.schemas</code>, to compile later or to write <a href="#standalone">standalone code</a>:
+        </p>
+        <pre><code class="language-js">const validateOrder = await compileJsonSchemaAsync(orderSchema, {
+  loadSchema: async (uri) =&gt; (await fetch(uri)).json(),
+});</code></pre>
+        <p>
+          To validate schemas against the draft-07 meta-schema, register it in <code>schemas</code> (ajv ships a copy
+          as <code>ajv/dist/refs/json-schema-draft-07.json</code>).
+        </p>
+
+        <h2 id="errors">Errors</h2>
+        <p>Errors are plain strings that start with the path of the field, so they can be logged or returned as they are:</p>
+        <pre><code class="language-js">[
+  'customer.name is mandatory',
+  'lines[1].sku must be a string',
+  'lines[1].price must be at least 0',
+  'Unexpected key: extra',
+]</code></pre>
+        <p>
+          A value checked on its own (not inside a schema) is called <code>Value</code>:
+          <code>Integer().compile()('x')</code> returns <code>['Value must be a number']</code>. Keys are named the
+          same way whether or not the schema combines keywords (<code>allOf</code>, <code>$ref</code> with other
+          keywords, <code>unevaluatedProperties</code>...): <code>name</code>, not <code>Value.name</code>.
+        </p>
+        <p>
+          With every error (the default mode), the errors of every part of a schema are reported, including every
+          schema of an <code>allOf</code>, and each message appears once even when two parts find the same problem.
+        </p>
+
+        <h3 id="error-objects">Error objects</h3>
+        <p>
+          With <code>errors: 'objects'</code>, the compiled function returns each error as an object, for code that
+          handles them (showing them next to form fields, translating them, or <a href="ajv.html">moving from ajv</a>):
+        </p>
+        <pre><code class="language-js">order.compile({ errors: 'objects' })({ id: 1, lines: [{ price: -1 }] });
+// [
+//   { path: ['id'], pointer: '/id', keyword: 'type', params: { type: 'string' }, message: 'id must be a string' },
+//   { path: ['lines', 0, 'price'], pointer: '/lines/0/price', keyword: 'minimum', params: { limit: 0 },
+//     message: 'lines[0].price must be at least 0' },
+// ]</code></pre>
+        <ul>
+          <li>
+            <code>path</code>: the keys and indexes of the value, <code>[]</code> for the value itself;
+            <code>pointer</code> is the same path as a JSON Pointer.
+          </li>
+          <li>
+            <code>keyword</code>: the check that failed, with the name of the JSON Schema keyword: <code>type</code>,
+            <code>required</code> (missing), <code>nullable</code> (<code>null</code> not allowed),
+            <code>minimum</code>, <code>maximum</code>, <code>exclusiveMinimum</code>, <code>exclusiveMaximum</code>,
+            <code>multipleOf</code>, <code>minLength</code>, <code>maxLength</code>, <code>pattern</code>,
+            <code>format</code>, <code>enum</code>, <code>const</code>, <code>minItems</code>, <code>maxItems</code>,
+            <code>uniqueItems</code>, <code>contains</code>, <code>minContains</code>, <code>maxContains</code>,
+            <code>minProperties</code>, <code>maxProperties</code>, <code>additionalProperties</code> and
+            <code>unevaluatedProperties</code> (an unexpected key, whose path it is), <code>dependentRequired</code>
+            (at the path of the missing property), <code>not</code>, <code>oneOf</code>, <code>false</code> (a value
+            no schema allows) and <code>custom</code> (a <a href="#custom-types">type of your own</a>).
+          </li>
+          <li>
+            <code>params</code>: its details, such as <code>{ limit: 0 }</code>, <code>{ allowedValues: [...] }</code>,
+            <code>{ property: 'extra' }</code> or <code>{ format: 'email' }</code>; <code>{}</code> when there are none.
+          </li>
+          <li>
+            <code>message</code>: the same message as with the default mode. An error of <code>propertyNames</code>
+            also has <code>propertyName: true</code>.
+          </li>
+        </ul>
+        <p>
+          It works with <code>compileJsonSchema()</code> and in <a href="#standalone">standalone code</a> too;
+          <code>validate()</code> still gives messages.
+        </p>
+
+        <h2 id="typescript">TypeScript</h2>
+        <p>
+          @xufa/schema includes its type declarations. <code>Infer</code> gives the TypeScript type of the values a DSL
+          schema accepts, and a function compiled with <code>{ errors: false }</code> is a type guard:
+        </p>
+        <pre><code class="language-ts">import { Schema, String, Integer, ArrayOf, Enum, Infer } from '@xufa/schema';
+
+const person = new Schema({
+  id: String(),
+  age: Integer({ min: 18 }),
+  status: Enum({ options: ['active', 'blocked'] }),
+  tags: ArrayOf({ type: String(), isMandatory: false }),
+  address: { city: String(), zip: String({ isNullable: true }) },
+});
+
+type Person = Infer&lt;typeof person&gt;;
+// { id: string; age: number; status: 'active' | 'blocked'; address: { city: string; zip: string | null };
+//   tags?: string[] | undefined }
+
+const isPerson = person.compile({ errors: false });
+if (isPerson(body)) {
+  body.address.city; // body is a Person here
+}</code></pre>
+        <p>
+          A key whose type accepts <code>undefined</code> (<code>isMandatory: false</code>, <code>.optional()</code>)
+          is an optional property, and <code>isNullable</code> adds <code>null</code>. <code>ArrayOf</code> gives
+          arrays and tuples, <code>AnyOf</code> and <code>OneOf</code> unions, and <code>AllOf</code> intersections. A
+          recursive schema needs the type of its <code>Ref</code>: <code>const child = Ref&lt;TreeNode&gt;()</code>.
+        </p>
+        <p>
+          The values a JSON Schema accepts are <code>unknown</code> to TypeScript; give their type to get a type guard:
+          <code>compileJsonSchema&lt;User&gt;(schema, { errors: false })</code>.
+        </p>
+
+        <h2 id="infer">Schemas from samples</h2>
+        <p>
+          <code>inferJsonSchema(samples, options)</code> writes the JSON Schema of a list of sample values, and
+          <code>inferSchemaCode(samples, options)</code> the same schema in the DSL, as the source of a module. Try it
+          in the browser with <a href="infer.html">Schema from JSON</a>. The samples are merged:
+        </p>
+        <ul>
+          <li>A key is required when every object at that place has it, and optional otherwise.</li>
+          <li>
+            A value seen as <code>null</code> is nullable; integers and numbers make a number; different types make a
+            list of types (<code>AnyOf</code> in the DSL).
+          </li>
+          <li>The elements of every array at a place are merged into one schema for them.</li>
+          <li>
+            A string gets a format (<code>date-time</code>, <code>date</code>, <code>time</code>, <code>email</code>,
+            <code>uuid</code>, <code>ipv4</code>, <code>ipv6</code>, or <code>uri</code> with <code>scheme://</code>)
+            when every string there matches it.
+          </li>
+          <li>A value only ever seen as <code>null</code>, and the elements of arrays only seen empty, accept anything.</li>
+        </ul>
+        <pre><code class="language-js">const { inferJsonSchema, inferSchemaCode } = require('@xufa/schema');
+
+const samples = [
+  { id: 1, name: 'Ann', email: 'ann@example.com', address: { city: 'Madrid' } },
+  { id: 2, name: 'Bob', email: 'bob@example.com', address: null, phone: '+34 600 000 000' },
+];
+
+inferJsonSchema(samples);
+// { $schema: 'https://json-schema.org/draft/2020-12/schema', type: 'object',
+//   properties: { id: { type: 'integer' }, name: { type: 'string' }, email: { type: 'string', format: 'email' },
+//     address: { type: ['object', 'null'], properties: { city: { type: 'string' } }, required: ['city'] },
+//     phone: { type: 'string' } },
+//   required: ['id', 'name', 'email', 'address'] }
+
+console.log(inferSchemaCode(samples));
+// const { Integer, Schema, String } = require('@xufa/schema');
+//
+// const schema = new Schema({
+//   id: Integer(),
+//   name: String(),
+//   email: String({ format: 'email' }),
+//   address: new Schema({
+//     city: String(),
+//   }, { isNullable: true }),
+//   phone: String({ isMandatory: false }),
+// });</code></pre>
+        <p>
+          The options are <code>closed</code> (reject keys the samples do not have: <code>additionalProperties:
+          false</code>, <code>ClosedSchema</code>), <code>formats</code> (<code>false</code> detects none) and
+          <code>draft</code> (the <code>$schema</code> written, <code>'2020-12'</code> by default);
+          <code>inferSchemaCode()</code> also takes <code>name</code> (of the variable, <code>'schema'</code>) and
+          <code>module</code> (<code>'commonjs'</code>, <code>'esm'</code> or <code>'none'</code>). A single value goes in
+          a list: <code>inferJsonSchema([value])</code>. The schema accepts every sample and is a starting point: add
+          the limits the data needs, such as lengths, ranges, patterns and enums.
+        </p>
+
+        <h2 id="custom-types">Types of your own</h2>
+        <p>
+          Classes that extend <code>ValidateType</code> (or a built-in type) with their own <code>validate()</code> or
+          <code>isValid()</code> keep working when compiled: the generated code calls them for their part of the
+          schema. <code>validate()</code> returns <code>undefined</code> when the value is valid and an error message
+          otherwise.
+        </p>
+        <pre><code class="language-js">const { Schema, ValidateType } = require('@xufa/schema');
+
+class Even extends ValidateType {
+  validate(value, fieldName = 'Value') {
+    const presence = super.validate(value, fieldName); // isMandatory and isNullable
+    if (presence !== undefined || value === undefined || value === null) return presence;
+    return value % 2 === 0 ? undefined : `${fieldName} must be even`;
+  }
+}
+
+new Schema({ n: new Even() }).compile()({ n: 3 }); // ['n must be even']</code></pre>
+
+        <h2 id="api">API</h2>
+        <p>
+          The main functions; the <a href="api.html">API reference</a> lists every function, type, option and error
+          message.
+        </p>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr><th>Function or method</th><th>Returns</th></tr>
+            </thead>
+            <tbody>
+              <tr><td><code>new Schema(shape, options)</code>, <code>new ClosedSchema(shape, options)</code></td><td>a schema for objects</td></tr>
+              <tr><td><code>type.compile(options)</code></td><td>a validation function; see <a href="#modes">Modes</a></td></tr>
+              <tr><td><code>type.validate(value)</code></td><td>the errors, without compiling</td></tr>
+              <tr><td><code>type.isValid(value)</code></td><td><code>true</code> or <code>false</code>, without compiling</td></tr>
+              <tr><td><code>compileJsonSchema(json, options)</code></td><td>a validation function for a JSON Schema; takes the options of <code>compile</code>, and <code>schemas</code>, <code>draft</code>, <code>formats</code>, <code>strict</code>, <code>keywords</code>, <code>useDefaults</code>, <code>removeAdditional</code> and <code>coerceTypes</code></td></tr>
+              <tr><td><code>ajvKeywords(names)</code></td><td>definitions of the keywords of ajv-keywords, for the option <code>keywords</code> (see <a href="#keywords">Keywords of your own</a>)</td></tr>
+              <tr><td><code>compileJsonSchemaAsync(json, options)</code></td><td>a promise of the same, loading the documents it references with <code>options.loadSchema</code> (see <a href="#documents">Several documents</a>)</td></tr>
+              <tr><td><code>loadJsonSchemas(json, options)</code></td><td>a promise of the documents a schema references, loaded with <code>options.loadSchema</code></td></tr>
+              <tr><td><code>fromJsonSchema(json, options)</code></td><td>the @xufa/schema type of a JSON Schema</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h2 id="security">Security</h2>
+        <ul>
+          <li>
+            <strong>Schemas are code.</strong> Compiling turns a schema into JavaScript, so treat schemas like the code
+            of your program: compile schemas you wrote or trust, not schemas sent by users. A large or deeply nested
+            schema is slow to compile and to validate.
+          </li>
+          <li>
+            <strong>Regular expressions.</strong> <code>pattern</code>, <code>patternProperties</code> and
+            <code>String({ pattern })</code> run the regular expression you give them on the data. A badly written one
+            can take exponential time on some inputs
+            (<a href="https://owasp.org/www-community/attacks/Regular_expression_Denial_of_Service_-_ReDoS">ReDoS</a>).
+            Keep them simple, and limit the length of strings (<code>maxLength</code>, <code>String({ max })</code>)
+            before matching long input.
+          </li>
+          <li>
+            <strong>Every error or the first one.</strong> Collecting every error keeps checking after the first
+            failure, so an invalid value costs more. For untrusted input where one message is enough, use
+            <code>{ allErrors: false }</code> or <code>{ errors: false }</code>.
+          </li>
+          <li>
+            <strong>Large inputs.</strong> <code>uniqueItems</code>/<code>unique</code> compares items with each
+            other, so limit the size of arrays (<code>maxItems</code>, <code>ArrayOf({ max })</code>) that come from
+            outside.
+          </li>
+          <li>
+            <strong>Content Security Policy.</strong> <code>compile()</code> creates the function with
+            <code>new Function</code>, which needs <code>'unsafe-eval'</code> in the <code>script-src</code> of a
+            Content Security Policy. Where that is not allowed, generate <a href="#standalone">standalone code</a> when
+            building, which runs without it.
+          </li>
+          <li><strong>Circular data.</strong> Values that contain themselves (<code>a.self = a</code>) are not supported.</li>
+        </ul>
+        <p>
+          Report security problems privately through
+          <a href="https://github.com/xufajs/xufa/security/advisories/new">GitHub security advisories</a>,
+          not in public issues.
+        </p>
+
+        <h2 id="performance">Performance</h2>
+        <p>
+          Faster than ajv in every benchmark we run. Compared with ajv and the other validators of
+          <a href="https://github.com/ebdrup/json-schema-benchmark">json-schema-benchmark</a>, each measurement in its
+          own process. Higher is better; each library is compared in the same mode (first error or all errors). The
+          <a href="benchmarks.html">benchmarks page</a> has every library, every payload, the tests each one passes, and
+          the speed of the features (keywords of your own, defaults, coercion, formats, error objects, standalone code).
+        </p>
+        <h3 id="performance-suite">JSON-Schema-Test-Suite</h3>
+        <p>
+          Runs per second over the test groups every validator passes. For drafts 2019-09 and 2020-12 only the
+          validators that implement them run (ajv with its <code>Ajv2019</code> and <code>Ajv2020</code> classes).
+        </p>
+        <div class="table-wrap">
+          <table class="numbers">
+            <thead>
+              <tr><th></th><th>draft-07</th><th>2019-09</th><th>2020-12</th></tr>
+            </thead>
+            <tbody>
+              <tr><td>@xufa/schema, first error</td><td><strong>124k</strong></td><td><strong>22.1k</strong></td><td><strong>25.7k</strong></td></tr>
+              <tr><td>ajv, first error</td><td>60k</td><td>4k–15k ¹</td><td>5k–15k ¹</td></tr>
+              <tr><td>@exodus/schemasafe, first error</td><td>98k</td><td>14.9k</td><td>17.1k</td></tr>
+              <tr><td>@xufa/schema, all errors</td><td><strong>101k</strong></td><td><strong>17.1k</strong></td><td><strong>19.4k</strong></td></tr>
+              <tr><td>ajv, all errors</td><td>51k</td><td>3.6k–12k ¹</td><td>5k–12k ¹</td></tr>
+              <tr><td>@exodus/schemasafe, all errors</td><td>64k</td><td>6.9k</td><td>9.7k</td></tr>
+              <tr><td>@xufa/schema, true/false</td><td><strong>177k</strong></td><td><strong>30.9k</strong></td><td><strong>34.7k</strong></td></tr>
+              <tr><td>@exodus/schemasafe, true/false</td><td>147k</td><td>24.0k</td><td>27.5k</td></tr>
+              <tr><td>Tests passed: @xufa/schema / ajv / schemasafe</td><td><strong>929</strong> / 921 / 905</td><td><strong>1261</strong> / 1233 / 1228</td><td><strong>1301</strong> / 1239 / 1263</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p>
+          ¹ ajv's speed on these two suites changes from one process to the next, between the two numbers given.
+          @xufa/schema passes every test of the three suites. Of the other validators, the one that passes the most tests of
+          drafts 2019-09 and 2020-12 is json-schema-library (1260 and 1291), at about 1/400 of the speed of @xufa/schema.
+        </p>
+        <h3 id="performance-payloads">Payloads</h3>
+        <p>Validations per second (compiling: schemas per second).</p>
+        <div class="table-wrap">
+          <table class="numbers">
+            <thead>
+              <tr><th></th><th>@xufa/schema, first error</th><th>ajv, first error</th><th>@xufa/schema, all errors</th><th>ajv, all errors</th></tr>
+            </thead>
+            <tbody>
+              <tr><td>moltar strict, valid</td><td><strong>33.1M</strong></td><td>29.1M</td><td><strong>30.6M</strong></td><td>27.9M</td></tr>
+              <tr><td>moltar strict, invalid</td><td><strong>78.9M</strong></td><td>36.0M</td><td><strong>20.8M</strong></td><td>17.5M</td></tr>
+              <tr><td>Order with 20 lines, valid</td><td><strong>2.16M</strong></td><td>0.74M</td><td><strong>2.23M</strong></td><td>0.71M</td></tr>
+              <tr><td>Order with 20 lines, invalid</td><td><strong>17.1M</strong></td><td>12.2M</td><td><strong>1.86M</strong></td><td>0.44M</td></tr>
+              <tr><td>Order 2020-12 (<code>$ref</code>, <code>allOf</code>, <code>unevaluatedProperties</code>), valid</td><td><strong>2.32M</strong></td><td>0.66M</td><td><strong>2.29M</strong></td><td>0.65M</td></tr>
+              <tr><td>Order 2020-12, invalid</td><td><strong>31.7M</strong></td><td>15.0M</td><td><strong>1.53M</strong></td><td>0.38M</td></tr>
+              <tr><td>Payment 2020-12 (<code>oneOf</code> and <code>unevaluatedProperties</code>), valid</td><td><strong>15.2M</strong></td><td>8.8M</td><td><strong>15.3M</strong></td><td>8.0M</td></tr>
+              <tr><td>Payment 2020-12, invalid</td><td><strong>14.5M</strong></td><td>7.5M</td><td><strong>13.8M</strong></td><td>6.2M</td></tr>
+              <tr><td>Shapes, <code>discriminator</code> with 8 kinds, valid</td><td><strong>117M</strong></td><td>44.8M</td><td><strong>105M</strong></td><td>44.7M</td></tr>
+              <tr><td>Shapes, invalid</td><td><strong>122M</strong></td><td>37.1M</td><td><strong>44.3M</strong></td><td>19.7M</td></tr>
+              <tr><td>Compiling the order schema</td><td><strong>8.4k</strong></td><td>0.19k</td><td><strong>8.3k</strong></td><td>0.23k</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <pre><code class="language-sh">pnpm run bench         # every validator in its own process (about 15 minutes)
+pnpm run bench:quick   # every validator in one process (about a minute)
+pnpm run conformance   # tests passed by @xufa/schema and ajv, file by file, for one draft</code></pre>
+        <p>
+          The method, and the payloads measured, are described in
+          <a href="https://github.com/jesus-seijas-sp/schiva/tree/main/bench">bench/</a>. Benchmarks depend on the
+          machine: run them with nothing else busy, as a validator measured while the computer is loaded looks several
+          times slower than it is.
+        </p>
+
+        <h2 id="faq">FAQ</h2>
+        <h3 id="faq-strings">Why are errors strings by default?</h3>
+        <p>
+          Most errors end up in a log or an HTTP response. Strings with the path in front are ready for that, and
+          building them is cheap. For errors handled by code, use <code>{ errors: 'objects' }</code> (see
+          <a href="#error-objects">Error objects</a>); to know only whether a value is valid,
+          <code>{ errors: false }</code>.
+        </p>
+        <h3 id="faq-ajv">How do I move from ajv?</h3>
+        <p>
+          Your JSON Schemas stay as they are; the code around them changes a little. See
+          <a href="ajv.html">Migrating from ajv</a>.
+        </p>
+        <h3 id="faq-drafts">Which drafts does it support?</h3>
+        <p>
+          Draft-04, draft-06, draft-07, 2019-09 and 2020-12, completely: @xufa/schema passes their whole
+          JSON-Schema-Test-Suite, dynamic references and vocabularies included. See <a href="#drafts">Drafts</a>.
+        </p>
+        <h3 id="faq-openapi">Does it work with OpenAPI schemas?</h3>
+        <p>
+          Yes: <code>nullable</code> and <code>discriminator</code> are supported, and the <code>x-</code> keywords can
+          be declared with the option <code>keywords</code> (see <a href="#strict">Unknown keywords</a> and
+          <a href="#discriminator">Discriminator</a>).
+        </p>
+        <h3 id="faq-format">Does it check <code>format</code>?</h3>
+        <p>
+          When you ask it to, with the option <code>formats</code> (or <code>String({ format })</code> in the DSL): see
+          <a href="#formats">Formats</a>.
+        </p>
+        <h3 id="faq-ts">Does it include TypeScript types?</h3>
+        <p>
+          Yes, and it infers the type of the values a DSL schema accepts: see <a href="#typescript">TypeScript</a>.
+        </p>
+      </article>
+    </div>
+
+    <footer class="footer">
+      <div class="container">
+        <span>xufa is MIT licensed. &copy; Jes&uacute;s Seijas</span>
+        <span>
+          <a href="../guide.html">Guide</a> &middot; <a href="../playground.html">Playground</a> &middot; <a href="../http/index.html">HTTP</a> &middot; <a href="../orm/index.html">ORM</a> &middot; <a href="../auth/index.html">Auth</a> &middot;
+          <a href="../sequelize/index.html">Sequelize</a> &middot; <a href="../packages.html">Packages</a> &middot;
+          <a href="../benchmarks.html">Benchmarks</a> &middot; <a href="https://github.com/xufajs/xufa">GitHub</a>
+        </span>
+      </div>
+    </footer>
+  </body>
+</html>

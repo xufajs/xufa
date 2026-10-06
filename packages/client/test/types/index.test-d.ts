@@ -20,3 +20,10 @@ const err = new HTTPError<{ message: string }>();
 expectType<number>(err.status);
 expectType<{ message: string }>(err.body);
 expectType<number>(new RetryError().attempts);
+
+// Faults.
+const flaky = createClient({ baseUrl: 'https://api.example.com' });
+flaky.faults.fail({ operations: 'write', paths: [/^\/orders/], times: 2 });
+flaky.faults.respond({ status: 503, headers: { 'retry-after': '1' }, json: { error: 'busy' } });
+flaky.faults.hang({ urls: 'https://api.example.com/slow' }).release();
+expectError(flaky.faults.fail({ operations: 'connect' }));

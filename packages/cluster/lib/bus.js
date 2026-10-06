@@ -27,7 +27,81 @@ function errorOf(data) {
   return err;
 }
 
+// The faults of a bus (bus.faults), for tests of resilience: its events lost (fail, down, drop), late (delay) or held
+// until released (hang), as IPC between processes can be; its requests failed (fail, down: a BusError), without a
+// reply (drop: they time out as a request whose message was lost does), late or held. Events by name (events: names
+// or regular expressions).
+const EVENTS = ['send', 'sendTo', 'broadcast'];
+
+function busFaults(bus) {
+  const { Faults, sleep } = require('@xufa/faults'); // eslint-disable-line global-require
+  const faults = new Faults({
+    name: 'bus',
+    operations: [...EVENTS, 'request'],
+    groups: { events: EVENTS },
+    filters: { events: 'event' },
+    downMessage: 'The bus is down (a fault injected)',
+    error: (rule, context) =>
+      Object.assign(
+        new BusError(rule.message || `A fault of the bus (injected): ${context.operation} ${context.event}`),
+        {
+          code: 'XUFA_FAULT',
+        }
+      ),
+  });
+  // Messages lost: events not delivered, requests without a reply.
+  faults.drop = (options) => faults.add('drop', options);
+  for (const operation of EVENTS) {
+    const original = bus[operation].bind(bus);
+    bus[operation] = (event, ...args) => {
+      if (faults.rules.length === 0) return original(event, ...args);
+      let wait = 0;
+      const held = [];
+      for (const { rule, kind, ms } of faults.pick({ operation, event })) {
+        if (kind === 'delay') wait += ms;
+        else if (kind === 'hang') held.push(rule);
+        else return undefined; // fail, down, drop: lost
+      }
+      if (!wait && held.length === 0) return original(event, ...args);
+      (async () => {
+        if (wait) await sleep(wait);
+        for (const rule of held) await rule.held();
+        original(event, ...args);
+      })().catch((err) => process.emitWarning(err));
+      return undefined;
+    };
+  }
+  const request = bus.request.bind(bus);
+  bus.request = (event, data, options = {}) => {
+    if (faults.rules.length === 0) return request(event, data, options);
+    const timeout = options.timeout === undefined ? 30000 : options.timeout;
+    const context = { operation: 'request', event };
+    const picked = faults.pick(context);
+    return (async () => {
+      for (const { rule, kind, ms } of picked) {
+        if (kind === 'delay') await sleep(ms);
+        else if (kind === 'hang') await rule.held();
+        else if (kind === 'drop') {
+          // No reply: its timeout, as a request whose message was lost (never, without one).
+          return new Promise((resolve, reject) => {
+            if (timeout)
+              setTimeout(() => reject(new BusError(`The request ${event} had no reply in ${timeout} ms`)), timeout);
+          });
+        } else throw rule.errorFor(context);
+      }
+      return request(event, data, options);
+    })();
+  };
+  return faults;
+}
+
 class Bus {
+  // Its faults (made the first time), for tests of resilience.
+  get faults() {
+    if (!this.faultsOf) Object.defineProperty(this, 'faultsOf', { value: busFaults(this), enumerable: false });
+    return this.faultsOf;
+  }
+
   constructor() {
     this.handlers = new Map();
     this.pending = new Map();

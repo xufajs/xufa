@@ -7,7 +7,7 @@
     ["Using it", [["start", "Quick start"], ["how", "How it runs"], ["options", "Options of start"], ["context", "The context"]]],
     ["Stopping", [["shutdown", "Graceful shutdown"], ["restarts", "Workers that die"]]],
     ["The bus", [["bus", "Events and requests"], ["bus-api", "API of the bus"], ["single", "In one process"]]],
-    ["With xufa", [["shared", "Shared state"]]]
+    ["With xufa", [["shared", "Shared state"], ["faults", "Faults"]]]
   ]
 }-->
         <h1>@xufa/cluster</h1>
@@ -22,9 +22,10 @@
         <pre><code class="language-sh">npm install @xufa/cluster</code></pre>
         <pre><code class="language-js">const { start, bus } = require('@xufa/cluster');
 const xufa = require('xufa');
+const config = require('./config'); // loadConfig() of @xufa/config: read in every process
 
 start({
-  workers: 4, // os.availableParallelism() by default; 0 runs everything in one process
+  workers: config.cluster.workers, // os.availableParallelism() when undefined; 0 runs everything in one process
   primary: async ({ bus }) =&gt; {
     const counts = new Map();
     bus.on('hit', (path) =&gt; counts.set(path, (counts.get(path) || 0) + 1));
@@ -34,8 +35,22 @@ start({
     const app = xufa();
     app.addHook('onRequest', async (request) =&gt; bus.send('hit', request.url));
     app.get('/stats', () =&gt; bus.request('hits'));
-    await app.listen({ port: 3000 }); // every worker listens on the same port
+    await app.listen({ port: config.server.port, host: '0.0.0.0' }); // every worker listens on the same port
     onShutdown(() =&gt; app.close());
+  },
+});</code></pre>
+
+        <p>
+          The configuration (<a href="config.html">@xufa/config</a>) is a module that every process requires: the
+          primary and each worker read the same files and variables (the workers get those of the primary), so they agree,
+          and one with errors stops the primary before it forks a worker. Its schema can hold the cluster's own options:
+        </p>
+        <pre><code class="language-js">// config.js
+module.exports = loadConfig({
+  schema: {
+    server: { port: { type: 'port', default: 3000, env: 'PORT' } },
+    cluster: { workers: { type: 'integer', min: 0, env: 'WORKERS' } }, // WORKERS=0 in development: one process
+    database: { url: { type: 'url', env: 'DATABASE_URL', sensitive: true }, backend: { type: 'string', default: 'postgres' } },
   },
 });</code></pre>
 
@@ -80,10 +95,10 @@ start({
           and exits; those that do not exit in <code>shutdownTimeout</code> are killed; then the primary runs its own.
         </p>
         <pre><code class="language-js">worker: async ({ onShutdown }) =&gt; {
-  const db = await new Database(config).connect();
+  const db = await new Database({ ...config.database }).connect();
   onShutdown(() =&gt; db.close()); // runs second
   const app = makeApp(db);
-  await app.listen({ port: 3000 });
+  await app.listen({ port: config.server.port });
   onShutdown(() =&gt; app.close()); // runs first: no new requests, the ones in flight end
 };</code></pre>
 
@@ -140,4 +155,19 @@ bus.broadcast('config', newConfig); // to every worker</code></pre>
         <ul>
           <li><a href="orm.html">@xufa/orm</a>: <code>SharedCache({ bus })</code> keeps the cache of the models in the primary, one copy for every worker; <code>LocalCache({ bus })</code> keeps one in each worker and invalidates the others.</li>
           <li><a href="auth.html">@xufa/auth</a>: the lockout of logins can keep its counts in the primary, so every worker counts the same failures.</li>
+        </ul>
+
+        <h2 id="faults">Faults (tests of resilience)</h2>
+        <p>
+          <code>bus.faults</code> (of <a href="faults.html">@xufa/faults</a>) loses, delays or holds the messages a process
+          sends, to see what the app does when its workers miss events or requests get no reply.
+        </p>
+        <pre><code class="language-js">bus.faults.drop({ events: 'cache:invalidate', rate: 0.1 }); // 1 in 10 lost
+bus.faults.delay({ operations: 'broadcast', ms: 500 });
+bus.faults.fail({ operations: 'request', events: 'lock' }); // a BusError (code XUFA_FAULT)
+bus.faults.drop({ operations: 'request' }); // no reply: the timeout of the request</code></pre>
+        <ul>
+          <li>Operations: <code>send</code>, <code>sendTo</code>, <code>broadcast</code> (the group <code>events</code>) and <code>request</code>; the filter <code>events</code>.</li>
+          <li>Events: <code>fail</code>, <code>down</code> and <code>drop</code> lose them; <code>delay</code> delivers them late; <code>hang</code> when released.</li>
+          <li>Requests: <code>fail</code> and <code>down</code> reject with a <code>BusError</code>; <code>drop</code> rejects after the timeout; <code>delay</code> and <code>hang</code> wait before sending.</li>
         </ul>

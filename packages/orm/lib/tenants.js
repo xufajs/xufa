@@ -51,6 +51,8 @@ class Tenants {
       const options = await this.config(id);
       if (!options) throw new ModelError('Tenants', `there is no tenant ${id}`);
       const db = this.open(id, options).register(...this.models);
+      // The faults of the tenants, before it connects (so a tenant can be down).
+      if (this.faultsOf) this.installFaults(db, id);
       await db.connect();
       if (this.setup) await this.setup(db, id);
       return db;
@@ -76,6 +78,25 @@ class Tenants {
       });
     }
     return new Database({ name: `tenant:${id}`, ...options });
+  }
+
+  // The faults of the databases of every tenant (lib/faults.js): those open and those opened after; rules can name
+  // tenants ({ tenants: ['acme'] }).
+  get faults() {
+    if (!this.faultsOf) {
+      const { databaseFaults } = require('./faults'); // eslint-disable-line global-require
+      this.faultsOf = databaseFaults();
+      for (const [id, opening] of this.databases) {
+        opening.then((db) => this.installFaults(db, id)).catch(() => {});
+      }
+    }
+    return this.faultsOf;
+  }
+
+  installFaults(db, id) {
+    const databases = db instanceof Databases ? [...db.databases.values()] : [db];
+    const { install } = require('./faults'); // eslint-disable-line global-require
+    for (const one of databases) install(this.faultsOf, one.backend, id);
   }
 
   // Closes the databases of the tenants used least, beyond `max`.

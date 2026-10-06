@@ -65,6 +65,9 @@ importers:
       '@xufa/mongo':
         specifier: workspace:*
         version: link:../packages/mongo
+      '@xufa/openapi':
+        specifier: workspace:*
+        version: link:../packages/openapi
       '@xufa/orm':
         specifier: workspace:*
         version: link:../packages/orm
@@ -74,6 +77,9 @@ importers:
       '@xufa/router':
         specifier: workspace:*
         version: link:../packages/router
+      '@xufa/schema':
+        specifier: workspace:*
+        version: link:../packages/schema
       '@xufa/sequelize':
         specifier: workspace:*
         version: link:../packages/sequelize
@@ -143,9 +149,6 @@ importers:
       pino:
         specifier: ^10.1.0
         version: 10.3.1
-      schiva:
-        specifier: ^0.7.0
-        version: 0.7.0
       sequelize:
         specifier: ^6.37.8
         version: 6.37.8(pg-hstore@2.3.4)(pg@8.23.1)(sqlite3@6.0.1)
@@ -207,6 +210,10 @@ importers:
         version: 0.6.0
 
   packages/client:
+    dependencies:
+      '@xufa/faults':
+        specifier: workspace:*
+        version: link:../faults
     devDependencies:
       '@xufa/http':
         specifier: workspace:*
@@ -223,10 +230,29 @@ importers:
 
   packages/cluster:
     dependencies:
+      '@xufa/faults':
+        specifier: workspace:*
+        version: link:../faults
       '@xufa/marshal':
         specifier: workspace:*
         version: link:../marshal
     devDependencies:
+      vyntra:
+        specifier: ^0.6.0
+        version: 0.6.0
+
+  packages/config:
+    dependencies:
+      '@xufa/expression':
+        specifier: workspace:*
+        version: link:../expression
+      '@xufa/yaml':
+        specifier: workspace:*
+        version: link:../yaml
+    devDependencies:
+      tsd:
+        specifier: ^0.33.0
+        version: 0.33.0
       vyntra:
         specifier: ^0.6.0
         version: 0.6.0
@@ -252,6 +278,21 @@ importers:
         specifier: ^0.6.0
         version: 0.6.0
 
+  packages/faults:
+    devDependencies:
+      '@xufa/http':
+        specifier: workspace:*
+        version: link:../http
+      fastify:
+        specifier: ^5.12.5
+        version: 5.12.5
+      tsd:
+        specifier: ^0.33.0
+        version: 0.33.0
+      vyntra:
+        specifier: ^0.6.0
+        version: 0.6.0
+
   packages/http:
     dependencies:
       '@xufa/boot':
@@ -269,6 +310,9 @@ importers:
       '@xufa/router':
         specifier: workspace:*
         version: link:../router
+      '@xufa/schema':
+        specifier: workspace:*
+        version: link:../schema
       '@xufa/serializer':
         specifier: workspace:*
         version: link:../serializer
@@ -321,9 +365,6 @@ importers:
       rfdc:
         specifier: ^1.4.1
         version: 1.4.1
-      schiva:
-        specifier: ^0.7.0
-        version: 0.7.0
       split2:
         specifier: ^4.2.0
         version: 4.2.0
@@ -411,6 +452,9 @@ importers:
       '@xufa/discovery':
         specifier: workspace:*
         version: link:../discovery
+      '@xufa/faults':
+        specifier: workspace:*
+        version: link:../faults
       '@xufa/marshal':
         specifier: workspace:*
         version: link:../marshal
@@ -485,12 +529,18 @@ importers:
       '@xufa/expression':
         specifier: workspace:*
         version: link:../expression
+      '@xufa/faults':
+        specifier: workspace:*
+        version: link:../faults
       '@xufa/mongo':
         specifier: workspace:*
         version: link:../mongo
       '@xufa/pg':
         specifier: workspace:*
         version: link:../pg
+      '@xufa/schema':
+        specifier: workspace:*
+        version: link:../schema
     devDependencies:
       '@xufa/cluster':
         specifier: workspace:*
@@ -513,6 +563,51 @@ importers:
       rfdc:
         specifier: ^1.4.1
         version: 1.4.1
+      vyntra:
+        specifier: ^0.6.0
+        version: 0.6.0
+
+  packages/scheduler:
+    devDependencies:
+      '@xufa/http':
+        specifier: workspace:*
+        version: link:../http
+      '@xufa/orm':
+        specifier: workspace:*
+        version: link:../orm
+      fastify:
+        specifier: ^5.12.5
+        version: 5.12.5
+      tsd:
+        specifier: ^0.33.0
+        version: 0.33.0
+      vyntra:
+        specifier: ^0.6.0
+        version: 0.6.0
+
+  packages/schema:
+    devDependencies:
+      '@xufa/http':
+        specifier: workspace:*
+        version: link:../http
+      ajv:
+        specifier: ^8.20.0
+        version: 8.20.0
+      ajv-draft-04:
+        specifier: ^1.0.0
+        version: 1.0.0(ajv@8.20.0)
+      fastify:
+        specifier: ^5.12.5
+        version: 5.12.5
+      json-schema-test-suite:
+        specifier: github:json-schema-org/JSON-Schema-Test-Suite#5b0ee1613e45fcc2bddac00e07c19cd49b00d8a8
+        version: https://codeload.github.com/json-schema-org/JSON-Schema-Test-Suite/tar.gz/5b0ee1613e45fcc2bddac00e07c19cd49b00d8a8
+      tsd:
+        specifier: ^0.33.0
+        version: 0.33.0
+      typescript:
+        specifier: ~6.0.3
+        version: 6.0.3
       vyntra:
         specifier: ^0.6.0
         version: 0.6.0
@@ -587,9 +682,15 @@ importers:
       '@xufa/client':
         specifier: workspace:*
         version: link:../client
+      '@xufa/config':
+        specifier: workspace:*
+        version: link:../config
       '@xufa/expression':
         specifier: workspace:*
         version: link:../expression
+      '@xufa/faults':
+        specifier: workspace:*
+        version: link:../faults
       '@xufa/http':
         specifier: workspace:*
         version: link:../http
@@ -599,12 +700,15 @@ importers:
       '@xufa/orm':
         specifier: workspace:*
         version: link:../orm
+      '@xufa/scheduler':
+        specifier: workspace:*
+        version: link:../scheduler
+      '@xufa/schema':
+        specifier: workspace:*
+        version: link:../schema
       '@xufa/template':
         specifier: workspace:*
         version: link:../template
-      schiva:
-        specifier: '>=0.7.0'
-        version: 0.7.0
     devDependencies:
       vyntra:
         specifier: ^0.6.0
@@ -1823,6 +1927,10 @@ packages:
     resolution: {integrity: sha512-HqMnbz0tz2DaEJ3ntsqtx3ezzZyDE7G56A/pPY/NGmrPu76UzsWquOpHFRAf5beTNXoH2LU5cQePVvRli1nchA==}
     engines: {node: '>=20'}
 
+  json-schema-test-suite@https://codeload.github.com/json-schema-org/JSON-Schema-Test-Suite/tar.gz/5b0ee1613e45fcc2bddac00e07c19cd49b00d8a8:
+    resolution: {tarball: https://codeload.github.com/json-schema-org/JSON-Schema-Test-Suite/tar.gz/5b0ee1613e45fcc2bddac00e07c19cd49b00d8a8}
+    version: 0.1.0
+
   json-schema-to-ts@3.1.1:
     resolution: {integrity: sha512-+DWg8jCJG2TEnpy7kOm/7/AxaYoaRbjVB4LFZLySZlWn8exGs3A4OLJR966cVvU26N7X9TWxl+Jsw7dzAqKT6g==}
     engines: {node: '>=16'}
@@ -2533,10 +2641,6 @@ packages:
 
   safer-buffer@2.1.2:
     resolution: {integrity: sha512-YZo3K82SD7Riyi0E1EQPojLz7kpepnSQI9IyPbHHg1XXXevb5dJI7tpyN2ADxGcQbHG7vcyRHk0cbwqcQriUtg==}
-
-  schiva@0.7.0:
-    resolution: {integrity: sha512-vWajbmjSY10p4f6B1Cm0RaIXgpN8ENrP5wjFXBusUQzwHIxX3gTyLHtOYjGUD5EMa40MrWsSIlh1rY8jnjgLRA==}
-    engines: {node: '>=18'}
 
   secure-json-parse@4.1.0:
     resolution: {integrity: sha512-l4KnYfEyqYJxDwlNVyRfO2E4NTHfMKAWdUuA8J0yve2Dz/E/PdBepY03RvyJpssIpRFwJoCD55wA+mEDs6ByWA==}
@@ -4217,6 +4321,8 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
+  json-schema-test-suite@https://codeload.github.com/json-schema-org/JSON-Schema-Test-Suite/tar.gz/5b0ee1613e45fcc2bddac00e07c19cd49b00d8a8: {}
+
   json-schema-to-ts@3.1.1:
     dependencies:
       '@babel/runtime': 7.29.7
@@ -4899,8 +5005,6 @@ snapshots:
   safe-stable-stringify@2.5.0: {}
 
   safer-buffer@2.1.2: {}
-
-  schiva@0.7.0: {}
 
   secure-json-parse@4.1.0: {}
 

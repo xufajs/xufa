@@ -1,7 +1,7 @@
-// The default validator compiler, built on schiva (an optional peer dependency, loaded when a route has a schema to
-// validate). Validation functions have the interface of ajv's, which the rest of the framework and custom error
-// formatters rely on: fn(data) returns a boolean and sets fn.errors to ajv-like error objects
-// ({ instancePath, schemaPath, keyword, params, message }) when it fails.
+// The default validator compiler, built on @xufa/schema (loaded when a route has a schema to validate). Validation
+// functions have the interface of ajv's, which the rest of the framework and custom error formatters rely on:
+// fn(data) returns a boolean and sets fn.errors to ajv-like error objects ({ instancePath, schemaPath, keyword,
+// params, message }) when it fails.
 //
 // The data is changed as fastify's ajv configuration does: coerceTypes 'array', useDefaults, removeAdditional.
 
@@ -13,24 +13,15 @@ const DEFAULT_OPTIONS = Object.freeze({
   formats: true,
 });
 
-// Options of ajv that schiva has too.
+// Options of ajv that @xufa/schema has too.
 const OPTION_NAMES = ['coerceTypes', 'useDefaults', 'removeAdditional', 'allErrors', 'strict', 'formats', 'keywords'];
 
-let schiva = null;
+let validator = null;
 
-function loadSchiva() {
-  if (schiva === null) {
-    try {
-      schiva = require('schiva'); // eslint-disable-line global-require
-    } catch (err) {
-      const error = new Error(
-        'Validation schemas need the schiva package: npm install schiva (or set a validatorCompiler of your own)'
-      );
-      error.cause = err;
-      throw error;
-    }
-  }
-  return schiva;
+// Loaded when a route first has a schema to validate (apps without schemas never load it).
+function loadValidator() {
+  if (validator === null) validator = require('@xufa/schema'); // eslint-disable-line global-require
+  return validator;
 }
 
 const decodePointer = (segment) => segment.replace(/~1/g, '/').replace(/~0/g, '~');
@@ -77,7 +68,7 @@ function parentPointer(error) {
   return index === -1 ? '' : error.pointer.slice(0, index);
 }
 
-// An error of schiva as ajv reports it.
+// An error of the validator as ajv reports it.
 function toAjvError(error, rootSchema, resolveRef) {
   const { keyword, params } = error;
   const instancePath = error.pointer;
@@ -230,13 +221,13 @@ function toAjvErrors(errors, schema, resolveRef) {
 
 // Whether the value validated by a schema may be converted itself: schemas of other types than objects.
 // The keywords of OpenAPI that describe a schema without checking anything: fastify's ajv ignores unknown keywords,
-// and route schemas written for @fastify/swagger (@xufa/openapi) have them. They are declared to schiva as annotations
+// and route schemas written for @fastify/swagger (@xufa/openapi) have them. They are declared to the validator as annotations
 // (its option `keywords`), with every `x-` extension the schemas have, so other unknown keywords still throw (typos).
 const OPENAPI_ANNOTATIONS = ['style', 'explode', 'allowReserved', 'example', 'externalDocs', 'xml'];
 
-// The formats checked with formats: true: the built-in ones of schiva, and those of OpenAPI that fastify knows from
+// The formats checked with formats: true: the built-in ones of the validator, and those of OpenAPI that fastify knows from
 // ajv-formats. byte is base64 (as ajv-formats checks it); binary and password are any string; int32, int64, float
-// and double are known but not checked (schiva checks formats of strings only, where ajv-formats checks the range of
+// and double are known but not checked (the validator checks formats of strings only, where ajv-formats checks the range of
 // numbers).
 let defaultFormats = null;
 
@@ -244,7 +235,7 @@ function formatsOf(given) {
   if (given !== true) return given;
   if (defaultFormats === null) {
     defaultFormats = {
-      ...loadSchiva().builtInFormats(),
+      ...loadValidator().builtInFormats(),
       byte: /^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$/,
       binary: false,
       password: false,
@@ -291,7 +282,7 @@ class ValidatorCompiler {
     for (const name of OPTION_NAMES) if (custom[name] !== undefined) this.options[name] = custom[name];
     // ajv's strict mode for schemas: unknown keywords throw, unless it is off.
     if (custom.strictSchema === false || custom.strict === false) this.options.strict = false;
-    if (options.schivaOptions) Object.assign(this.options, options.schivaOptions);
+    if (options.validatorOptions) Object.assign(this.options, options.validatorOptions);
     this.externalSchemas = Object.values(externalSchemas || {});
     this.cache = new Map();
     this.constructorArgs = [externalSchemas, options];
@@ -320,7 +311,7 @@ class ValidatorCompiler {
     if (schema && typeof schema === 'object' && schema.$id && this.cache.has(schema.$id)) {
       return this.cache.get(schema.$id);
     }
-    const { compileJsonSchema } = loadSchiva();
+    const { compileJsonSchema } = loadValidator();
     const externals = this.externalSchemas.filter((external) => !(schema && external.$id === schema.$id));
     const resolveRef = buildResolver(schema, externals);
     const formats = formatsOf(this.options.formats);
@@ -328,7 +319,7 @@ class ValidatorCompiler {
       this.options.strict === false
         ? this.options.keywords
         : withAnnotations(this.options.keywords, [schema, ...externals]);
-    // schiva converts a value it is given only for the validation, where ajv (given the request as parent) converts
+    // The validator converts a value it is given only for the validation, where ajv (given the request as parent) converts
     // the request part itself. A schema of something else than an object (a body of "10" for a number) is checked
     // inside a holder object, so that the converted value can be given back.
     if (this.options.coerceTypes && coercesRoot(schema)) {
@@ -384,7 +375,7 @@ class ValidatorCompiler {
 function ValidatorSelector() {
   const pool = new Map();
   return function buildCompilerFromPool(externalSchemas, options = {}) {
-    const key = `${JSON.stringify(externalSchemas)}${JSON.stringify(options.customOptions)}${JSON.stringify(options.schivaOptions)}`;
+    const key = `${JSON.stringify(externalSchemas)}${JSON.stringify(options.customOptions)}${JSON.stringify(options.validatorOptions)}`;
     if (pool.has(key)) return pool.get(key);
     const compiler = new ValidatorCompiler(externalSchemas, options);
     const build = compiler.buildValidatorFunction.bind(compiler);

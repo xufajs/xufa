@@ -9,6 +9,15 @@
 // Values are copied in and out (structured clone): the objects of the ORM cannot change what is cached.
 
 class MemoryCache {
+  // Its faults (lib/faults.js): get, set, delete and clear made to fail, wait or hang, for tests of resilience.
+  get faults() {
+    if (!this.faultsOf) {
+      const { cacheFaults } = require('@xufa/faults'); // eslint-disable-line global-require
+      Object.defineProperty(this, 'faultsOf', { value: cacheFaults(this, 'cache'), enumerable: false });
+    }
+    return this.faultsOf;
+  }
+
   constructor({ max = 10000, ttl = 0 } = {}) {
     this.max = max;
     this.ttl = ttl;
@@ -80,6 +89,15 @@ const INVALIDATE = 'xufa:cache:invalidate';
 const serving = new WeakMap();
 
 class SharedCache {
+  // Its faults (lib/faults.js): get, set, delete and clear made to fail, wait or hang, for tests of resilience.
+  get faults() {
+    if (!this.faultsOf) {
+      const { cacheFaults } = require('@xufa/faults'); // eslint-disable-line global-require
+      Object.defineProperty(this, 'faultsOf', { value: cacheFaults(this, 'cache'), enumerable: false });
+    }
+    return this.faultsOf;
+  }
+
   constructor({ bus, max, ttl, name = 'default', store } = {}) {
     if (!bus) throw new TypeError('SharedCache needs the bus of @xufa/cluster');
     this.bus = bus;

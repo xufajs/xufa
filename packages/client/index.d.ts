@@ -1,4 +1,27 @@
 // @xufa/client: a client of HTTP APIs on the fetch of Node.js.
+import type { Faults, FaultOptions, FaultRule } from '@xufa/faults';
+
+export type ClientFaultOperation = 'get' | 'head' | 'options' | 'post' | 'put' | 'patch' | 'delete' | 'read' | 'write';
+
+/** The options of the faults of a client: methods, urls and paths (prefixes or regular expressions). */
+export interface ClientFaultOptions extends FaultOptions<ClientFaultOperation> {
+  urls?: string | RegExp | Array<string | RegExp>;
+  paths?: string | RegExp | Array<string | RegExp>;
+}
+
+/** The faults of a client (and of those made from it): fail is a network that refuses the call. */
+export interface ClientFaults extends Faults<ClientFaultOperation> {
+  fail(options?: ClientFaultOptions): FaultRule;
+  /** A reply of a status, without the call. */
+  respond(
+    options: ClientFaultOptions & {
+      status?: number;
+      headers?: Record<string, string>;
+      json?: unknown;
+      body?: string | Buffer;
+    }
+  ): FaultRule;
+}
 
 export interface RetryOptions {
   /** Attempts in all (3); 1 or false: none again. */
@@ -84,6 +107,8 @@ export interface FullResponse<T = any> {
 }
 
 export interface Client {
+  /** Its faults (shared with the clients made from it), for tests of resilience. */
+  readonly faults: ClientFaults;
   request<T = any>(method: string, path: string, options?: CallOptions): Promise<T>;
   get<T = any>(path: string, options?: CallOptions): Promise<T>;
   head(path: string, options?: CallOptions): Promise<undefined>;

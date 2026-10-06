@@ -4,6 +4,7 @@
 // checked when it is read (a row whose value changed is not taken). Saving or deleting an object removes it; update()
 // and delete() of QuerySets clear the model. Inside transactions the cache is not read nor filled (it would keep what
 // may be rolled back).
+const { reportCacheError } = require('./cache-errors');
 const { MemoryCache } = require('./cache');
 
 function settingsOf(model) {
@@ -50,8 +51,17 @@ function lookupOf(model, conditions) {
   return { field, value, settings };
 }
 
-// The row of a lookup in the cache, or undefined.
-async function read(db, model, { field, value }) {
+// The row of a lookup in the cache, or undefined (a cache that fails to read is a miss: the database answers).
+async function read(db, model, lookup) {
+  try {
+    return await readCached(db, model, lookup);
+  } catch (err) {
+    reportCacheError(db, err, 'get');
+    return undefined;
+  }
+}
+
+async function readCached(db, model, { field, value }) {
   if (db.backend.inTransaction || !model.meta.pk) return undefined;
   const store = storeOf(db);
   const { pk } = model.meta;
@@ -68,7 +78,16 @@ async function read(db, model, { field, value }) {
   return row;
 }
 
+// An object kept (a cache that fails to keep it is a miss the next time).
 async function write(db, model, instance, settings) {
+  try {
+    await writeCached(db, model, instance, settings);
+  } catch (err) {
+    reportCacheError(db, err, 'set');
+  }
+}
+
+async function writeCached(db, model, instance, settings) {
   if (db.backend.inTransaction || !model.meta.pk) return;
   const store = storeOf(db);
   const { pk } = model.meta;

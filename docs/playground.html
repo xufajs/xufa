@@ -1,0 +1,104 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Playground · xufa</title>
+    <meta
+      name="description"
+      content="Try xufa in your browser: schemas and their validation, safe expressions, templates, YAML, marshal and the router, each with examples to start from."
+    />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%23d9502b'/%3E%3Ctext x='16' y='22.5' font-family='monospace' font-size='18' font-weight='700' fill='white' text-anchor='middle'%3Ex%3C/text%3E%3C/svg%3E"
+    />
+    <link rel="stylesheet" href="style.css?v=0.1.0" />
+    <script src="main.js?v=0.1.0"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js" defer></script>
+    <script src="xufa.js?v=0.1.0" defer></script>
+    <script src="playground.js?v=0.1.0" defer></script>
+  </head>
+  <body>
+    <header class="header">
+      <div class="header-inner">
+        <a class="logo" href="index.html"><span class="logo-mark">x</span>xufa</a>
+        <nav class="nav">
+          <a href="guide.html">Guide</a>
+          <a href="playground.html" aria-current="page">Playground</a>
+          <a href="http/index.html">HTTP</a>
+          <a href="orm/index.html">ORM</a>
+          <a class="hide-small" href="auth/index.html">Auth</a>
+          <a class="hide-small" href="sequelize/index.html">Sequelize</a>
+          <a class="hide-small" href="packages.html">Packages</a>
+          <a class="hide-small" href="benchmarks.html">Benchmarks</a>
+          <a href="https://github.com/xufajs/xufa">GitHub</a>
+          <button class="theme-toggle" type="button" aria-label="Switch between light and dark theme">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+              <path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z" />
+            </svg>
+          </button>
+        </nav>
+      </div>
+    </header>
+
+    <main class="pg">
+<div class="pg-head">
+        <div>
+          <h1>Playground</h1>
+          <p class="pg-intro">
+            Try the packages of xufa that run in a browser: pick one, pick an example, and edit it. The result updates as
+            you type, and nothing leaves your browser.
+          </p>
+        </div>
+      </div>
+
+      <div class="pg-tools">
+        <div class="tab-list" role="tablist" id="tools" aria-label="Packages"></div>
+      </div>
+      <div class="pg-example-row">
+        <p class="pg-tool-about">
+          <a id="tool-name" href="#"></a>: <span id="tool-intro"></span>
+          <a id="tool-more" class="pg-tool-more" href="#" hidden></a>
+        </p>
+        <div class="pg-controls">
+          <label class="pg-field">
+            <span>Example</span>
+            <select id="example"></select>
+          </label>
+          <button class="button" type="button" id="reset">Reset</button>
+          <button class="button primary" type="button" id="share">Copy link</button>
+        </div>
+      </div>
+      <p class="pg-hint"><strong>Try this:</strong> <span id="hint"></span></p>
+
+      <div class="pg-grid">
+        <div id="panels-main"></div>
+        <div class="pg-side" id="panels-side">
+          <section class="pg-panel pg-output" id="output">
+            <div class="pg-panel-head">
+              <h2><span class="pg-step" id="result-step">3</span> Result</h2>
+            </div>
+            <div id="result" class="pg-result" aria-live="polite"></div>
+          </section>
+        </div>
+      </div>
+
+      <p class="pg-footer-note">
+        Each package has its page in <a href="packages.html">the packages</a>; the <a href="guide.html">guide</a> puts them
+        together in an app. What runs on a server (the HTTP layer, the ORM and its databases, the logger, JWTs) is not here:
+        it needs Node.js.
+      </p>
+    </main>
+
+    <footer class="footer">
+      <div class="container">
+        <span>xufa is MIT licensed. &copy; Jes&uacute;s Seijas</span>
+        <span>
+          <a href="guide.html">Guide</a> &middot; <a href="playground.html">Playground</a> &middot; <a href="http/index.html">HTTP</a> &middot; <a href="orm/index.html">ORM</a> &middot; <a href="auth/index.html">Auth</a> &middot;
+          <a href="sequelize/index.html">Sequelize</a> &middot; <a href="packages.html">Packages</a> &middot;
+          <a href="benchmarks.html">Benchmarks</a> &middot; <a href="https://github.com/xufajs/xufa">GitHub</a>
+        </span>
+      </div>
+    </footer>
+  </body>
+</html>

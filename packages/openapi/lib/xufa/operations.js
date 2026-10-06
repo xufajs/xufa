@@ -52,7 +52,7 @@ const kInvalidResponse = Symbol('xufa.openapi.invalidResponse');
 const kCheckedStatus = Symbol('xufa.openapi.checkedStatus');
 
 // The compiler of validators of responses: the one of the app (app.validatorCompiler, set once its routes are: the
-// ajv of fastify, schiva in @xufa/http), so responses are checked as its requests are; or, in an app without one, the
+// ajv of fastify, @xufa/schema in @xufa/http), so responses are checked as its requests are; or, in an app without one, the
 // compiler of @xufa/http with the shared schemas of the app.
 function compilerOf(app) {
   const own = app.validatorCompiler;

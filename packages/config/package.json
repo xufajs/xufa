@@ -1,0 +1,62 @@
+{
+  "name": "@xufa/config",
+  "version": "0.1.0",
+  "description": "The configuration of an app from layers (files by environment, .env, variables, HTTP, Consul, Vault, folders of secrets, overrides), with safe templates, a schema that converts and checks, and secrets redacted",
+  "main": "./index.js",
+  "types": "./index.d.ts",
+  "type": "commonjs",
+  "exports": {
+    ".": {
+      "types": "./index.d.ts",
+      "default": "./index.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "index.js",
+    "index.d.ts",
+    "lib",
+    "LICENSE"
+  ],
+  "scripts": {
+    "test": "vyntra",
+    "test:types": "tsd"
+  },
+  "keywords": [
+    "config",
+    "configuration",
+    "settings",
+    "env",
+    "dotenv",
+    "yaml",
+    "schema"
+  ],
+  "author": "Jesús Seijas <jseijas@gmail.com>",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/xufajs/xufa.git",
+    "directory": "packages/config"
+  },
+  "homepage": "https://github.com/xufajs/xufa/tree/main/packages/config#readme",
+  "bugs": {
+    "url": "https://github.com/xufajs/xufa/issues"
+  },
+  "engines": {
+    "node": ">=22"
+  },
+  "dependencies": {
+    "@xufa/expression": "workspace:*",
+    "@xufa/yaml": "workspace:*"
+  },
+  "devDependencies": {
+    "tsd": "^0.33.0",
+    "vyntra": "^0.6.0"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "tsd": {
+    "directory": "test/types"
+  }
+}

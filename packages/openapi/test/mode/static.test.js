@@ -1,5 +1,11 @@
 'use strict'
 
+// path.join, as it is: tests here replace it; put back after each (xufa: files share the modules of node).
+const realPathJoin = require('node:path').join
+afterEach(() => {
+  require('node:path').join = realPathJoin
+})
+
 const path = require('node:path')
 
 const Fastify = require('@xufa/http')

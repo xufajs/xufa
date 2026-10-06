@@ -50,6 +50,27 @@ request of @xufa/http (or fastify): `request.signal` cancels it (the API called 
 Errors: `HTTPError` (an error status: `status`, `headers`, `body` parsed), `TimeoutError`, `RequestError` (the request
 could not be made: `cause`), all with `method` and `url`; a call cancelled throws the reason of its signal.
 
+## Faults (tests of resilience)
+
+`client.faults` (of [@xufa/faults](../faults)) makes calls fail, wait, hang or get a status of your choice without
+reaching the API, to see what the app does when the API it calls is down, slow or busy. The clients made by
+`extend()` and `for()` share the faults of theirs.
+
+```js
+payments.faults.fail({ operations: 'write', paths: '/charges', rate: 0.2 }); // as a refused connection
+payments.faults.respond({ status: 503, headers: { 'retry-after': '1' }, json: { error: 'busy' }, times: 2 });
+payments.faults.delay({ ms: 2000, paths: [/^/refunds/] });
+payments.faults.hang({ operations: 'read' }); // the timeout of the call ends it: a TimeoutError
+payments.faults.down(); // until payments.faults.up()
+```
+
+- Operations: `get`, `head`, `options`, `post`, `put`, `patch`, `delete` (`read` and `write`); filters
+  `urls` (the whole URL) and `paths` (its path): prefixes or regular expressions.
+- `fail` and `down` are failed connections (a `RequestError` whose cause has the code `ECONNREFUSED`), retried as
+  such. `respond({ status, headers, json | body })` answers without the call: a 503 with `Retry-After` is retried
+  after it, a 404 is an `HTTPError`.
+- Each attempt goes through the faults: `times: 2` with 3 attempts fails twice, and the third reaches the API.
+
 ## retry()
 
 `retry(fn, { attempts, until, retryOn, delay, factor, maxDelay, jitter, wait, signal, onRetry })` calls `fn(attempt)`

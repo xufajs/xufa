@@ -1,9 +1,9 @@
-// The default compilers of xufa (lib/validator-compiler.js, on schiva, and lib/serializer-compiler.js, on
+// The default compilers of xufa (lib/validator-compiler.js, on @xufa/schema, and lib/serializer-compiler.js, on
 // @xufa/serializer): what @fastify/ajv-compiler and @fastify/fast-json-stringify-compiler declare for fastify, without
 // ajv. Written for xufa (not ported).
 import type { Options as SerializerOptions } from '@xufa/serializer';
 
-/** An error of validation, as ajv reports them (the default validator gives these objects for schiva's errors). */
+/** An error of validation, as ajv reports them (the default validator gives these objects for its errors). */
 export interface ErrorObject<K extends string = string, P = Record<string, any>> {
   keyword: K;
   instancePath: string;
@@ -18,7 +18,7 @@ export interface ErrorObject<K extends string = string, P = Record<string, any>>
 
 /**
  * The options of the default validator, given as `ajv.customOptions` (the names of ajv's options it shares with
- * schiva). Options of schiva itself go in `ajv.schivaOptions`.
+ * @xufa/schema). Options of the validator itself go in `ajv.validatorOptions`.
  */
 export interface ValidatorOptions {
   /** Converts values to the types of their schemas (fastify's default: 'array'). */
@@ -62,10 +62,10 @@ export type ValidatorCompiler = (routeDefinition: RouteDefinition) => ValidateFu
 
 export interface ValidatorBuildOptions {
   customOptions?: ValidatorOptions;
-  /** Options given to schiva as they are. */
-  schivaOptions?: Record<string, unknown>;
+  /** Options given to @xufa/schema as they are. */
+  validatorOptions?: Record<string, unknown>;
   /**
-   * Ajv's plugins have no effect in xufa, which validates with schiva: only an empty list is accepted (as fastify's
+   * Ajv's plugins have no effect in xufa, which validates with @xufa/schema: only an empty list is accepted (as fastify's
    * default). Keywords of your own go in `customOptions.keywords`, or set a validatorCompiler of your own.
    */
   plugins?: [];

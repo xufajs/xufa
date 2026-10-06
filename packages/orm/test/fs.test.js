@@ -40,9 +40,12 @@ class ReloadingFsBackend extends FsBackend {
 }
 
 defineSuite('fs', () => new Database({ backend: 'fs', dir: folder() }));
+// A file for each object: the bulk test writes 2400 files (and reads them back), which takes 2 to 4 s on Windows (NTFS
+// and the antivirus look at each new file; Linux writes them in about 0.1 s).
 defineSuite(
   'fs (files, read back)',
-  () => new Database({ backend: ReloadingFsBackend, dir: folder(), layout: 'files' })
+  () => new Database({ backend: ReloadingFsBackend, dir: folder(), layout: 'files' }),
+  { bulkTimeout: 30000 }
 );
 defineSuite('fs (read back)', () => new Database({ backend: ReloadingFsBackend, dir: folder() }));
 
@@ -73,7 +76,6 @@ async function open(options) {
 }
 
 describe('fs backend: files', () => {
-
   it('keeps the objects in files, and reads them back with their types', async () => {
     const dir = folder();
     const at = new Date('2026-01-02T03:04:05.678Z');

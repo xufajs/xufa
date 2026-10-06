@@ -168,4 +168,64 @@ describe('tenants', () => {
     await app.close();
     expect(tenants.databases.size).toBe(0);
   });
+
+  it('authorize: checked before the tenant is entered (403, or the error it throws); a warning without it', async () => {
+    const { Tag, Note } = makeModels();
+    const looked = [];
+    const tenants = new Tenants({
+      models: [Tag, Note],
+      config: (id) => {
+        looked.push(id);
+        return { backend: 'memory' };
+      },
+      setup: (db) => db.sync(),
+    });
+    const warnings = [];
+    const app = xufa({ logger: { level: 'warn', stream: { write: (line) => warnings.push(JSON.parse(line).msg) } } });
+    app.register(plugin, {
+      tenants: {
+        tenants,
+        resolve: (request) => request.headers['x-tenant'],
+        // As a check of a user would: later (after an await), and an error of its own for some.
+        authorize: async (request, id) => {
+          await new Promise((resolve) => setTimeout(resolve, 1));
+          if (request.headers['x-user'] === undefined) {
+            throw Object.assign(new Error('Who are you?'), { statusCode: 401 });
+          }
+          return request.headers['x-user'].split(',').includes(id);
+        },
+      },
+    });
+    app.post('/notes', async (request) => Note.objects.create(request.body));
+    app.get('/notes', async (request) => ({ tenant: request.tenant, notes: await Note.objects.valuesList('text', { flat: true }) }));
+    await app.ready();
+    expect(warnings).toEqual([]);
+    const as = (user, tenant) => ({ 'x-user': user, 'x-tenant': tenant });
+    await app.inject({ method: 'POST', url: '/notes', headers: as('one,two', 'one'), payload: { text: 'first' } });
+    await app.inject({ method: 'POST', url: '/notes', headers: as('two', 'two'), payload: { text: 'second' } });
+    // The queries of the handler run in the tenant entered after the check.
+    expect((await app.inject({ url: '/notes', headers: as('one', 'one') })).json()).toEqual({ tenant: 'one', notes: ['first'] });
+    expect((await app.inject({ url: '/notes', headers: as('one,two', 'two') })).json()).toEqual({ tenant: 'two', notes: ['second'] });
+    const denied = await app.inject({ url: '/notes', headers: as('one', 'three') });
+    expect([denied.statusCode, denied.json().message]).toEqual([403, 'You cannot use this tenant']);
+    const anonymous = await app.inject({ url: '/notes', headers: { 'x-tenant': 'one' } });
+    expect([anonymous.statusCode, anonymous.json().message]).toEqual([401, 'Who are you?']);
+    // A tenant refused is not even looked up.
+    expect(looked).toEqual(['one', 'two']);
+    await app.close();
+
+    const open = xufa({ logger: { level: 'warn', stream: { write: (line) => warnings.push(JSON.parse(line).msg) } } });
+    open.register(plugin, { tenants: { tenants: new Tenants({ models: [], config: () => ({ backend: 'memory' }) }), resolve: () => 'x' } });
+    await open.ready();
+    expect(warnings).toEqual([expect.stringMatching(/without tenants.authorize: any request may use any tenant/)]);
+    await open.close();
+    const fromUser = xufa({ logger: { level: 'warn', stream: { write: (line) => warnings.push(JSON.parse(line).msg) } } });
+    fromUser.register(plugin, { tenants: { tenants: new Tenants({ models: [], config: () => ({ backend: 'memory' }) }), resolve: () => 'x', authorize: false } });
+    await fromUser.ready();
+    expect(warnings).toHaveLength(1);
+    await fromUser.close();
+    const wrong = xufa();
+    wrong.register(plugin, { tenants: { tenants: new Tenants({ models: [], config: () => null }), resolve: () => 'x', authorize: 'auth' } });
+    await expect(wrong.ready()).rejects.toThrow('tenants.authorize is a function (request, id, reply), or false');
+  });
 });

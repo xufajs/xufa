@@ -55,5 +55,8 @@
   },
   "tsd": {
     "directory": "test/types"
+  },
+  "dependencies": {
+    "@xufa/faults": "workspace:*"
   }
 }

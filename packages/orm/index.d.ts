@@ -1,3 +1,5 @@
+import type { CacheFaults } from '@xufa/faults';
+import type { TSchema, TObject, TOptional, ObjectOptions } from '@xufa/schema';
 // The declarations of @xufa/orm.
 //
 // TypeScript cannot read the properties of objects from `static fields`: give them to the model with an interface of
@@ -100,10 +102,11 @@ export interface ManyToManyOptions {
   through?: ModelClass | (() => ModelClass);
 }
 
-// A field of values of type T (null when N is true).
-export declare class Field<T = unknown, N extends boolean = false> {
+// A field of values of type T (null when N is true); O: its options (what Model.schema() reads: default, computed...).
+export declare class Field<T = unknown, N extends boolean = false, O = {}> {
   private readonly __value: T;
   private readonly __null: N;
+  private readonly __options: O;
   readonly type: string;
   readonly dbType: string;
   name: string;
@@ -115,7 +118,7 @@ export declare class Field<T = unknown, N extends boolean = false> {
   jsonSchema(): Record<string, unknown>;
 }
 
-export declare class ForeignKey<M extends Model = Model, N extends boolean = false> extends Field<M, N> {
+export declare class ForeignKey<M extends Model = Model, N extends boolean = false, O = {}> extends Field<M, N, O> {
   readonly target: ModelClass<M>;
   onDelete: OnDelete;
   relatedName: string;
@@ -135,51 +138,76 @@ export declare const fields: {
   // mode (SQL databases): the keys as numbers (the default), bigints or strings, as those of bigint fields.
   id(
     options?: FieldOptions<number | string> & { mode?: 'number' | 'bigint' | 'string' }
-  ): Field<number | string | bigint>;
-  string<O extends StringOptions>(options?: O): Field<string, Nullable<O>>;
-  text<O extends StringOptions>(options?: O): Field<string, Nullable<O>>;
-  integer<O extends NumberOptions>(options?: O): Field<number, Nullable<O>>;
-  float<O extends NumberOptions>(options?: O): Field<number, Nullable<O>>;
+  ): Field<number | string | bigint, false, { primaryKey: true; auto: true }>;
+  string<O extends StringOptions>(options?: O): Field<string, Nullable<O>, O>;
+  text<O extends StringOptions>(options?: O): Field<string, Nullable<O>, O>;
+  integer<O extends NumberOptions>(options?: O): Field<number, Nullable<O>, O>;
+  float<O extends NumberOptions>(options?: O): Field<number, Nullable<O>, O>;
   // mode: 'number' (the default: numbers when they are safe integers, bigints otherwise), 'bigint' or 'string'.
   bigint<O extends FieldOptions<number | bigint> & { mode?: 'number' }>(
     options?: O
-  ): Field<number | bigint, Nullable<O>>;
-  bigint<O extends FieldOptions<bigint> & { mode: 'bigint' }>(options: O): Field<bigint, Nullable<O>>;
-  bigint<O extends FieldOptions<string> & { mode: 'string' }>(options: O): Field<string, Nullable<O>>;
-  decimal<O extends DecimalOptions>(options?: O): Field<string, Nullable<O>>;
-  date<O extends FieldOptions<string>>(options?: O): Field<string, Nullable<O>>;
-  bytes<O extends FieldOptions<Buffer>>(options?: O): Field<Buffer, Nullable<O>>;
-  boolean<O extends FieldOptions<boolean>>(options?: O): Field<boolean, Nullable<O>>;
-  datetime<O extends DateTimeOptions>(options?: O): Field<Date, Nullable<O>>;
-  json<T = unknown, O extends FieldOptions<T> = FieldOptions<T>>(options?: O): Field<T, Nullable<O>>;
+  ): Field<number | bigint, Nullable<O>, O>;
+  bigint<O extends FieldOptions<bigint> & { mode: 'bigint' }>(options: O): Field<bigint, Nullable<O>, O>;
+  bigint<O extends FieldOptions<string> & { mode: 'string' }>(options: O): Field<string, Nullable<O>, O>;
+  decimal<O extends DecimalOptions>(options?: O): Field<string, Nullable<O>, O>;
+  date<O extends FieldOptions<string>>(options?: O): Field<string, Nullable<O>, O>;
+  bytes<O extends FieldOptions<Buffer>>(options?: O): Field<Buffer, Nullable<O>, O>;
+  boolean<O extends FieldOptions<boolean>>(options?: O): Field<boolean, Nullable<O>, O>;
+  datetime<O extends DateTimeOptions>(options?: O): Field<Date, Nullable<O>, O>;
+  json<T = unknown, O extends FieldOptions<T> = FieldOptions<T>>(options?: O): Field<T, Nullable<O>, O>;
   // Maps of strings: HSTORE in PostgreSQL (the extension hstore), json text in SQLite, documents in MongoDB.
   hstore<O extends FieldOptions<Record<string, string | null>>>(
     options?: O
-  ): Field<Record<string, string | null>, Nullable<O>>;
+  ): Field<Record<string, string | null>, Nullable<O>, O>;
   // Geometries of PostGIS as GeoJSON: GEOMETRY / GEOGRAPHY columns (of a shape and SRID) in PostgreSQL.
-  geometry<O extends GeometryOptions>(options?: O): Field<GeoJsonGeometry, Nullable<O>>;
-  geography<O extends GeometryOptions>(options?: O): Field<GeoJsonGeometry, Nullable<O>>;
+  geometry<O extends GeometryOptions>(options?: O): Field<GeoJsonGeometry, Nullable<O>, O>;
+  geography<O extends GeometryOptions>(options?: O): Field<GeoJsonGeometry, Nullable<O>, O>;
   // Arrays of the values of a field: native arrays in PostgreSQL, json text in SQLite, arrays in MongoDB.
   array<T, O extends FieldOptions<Array<T | null>> = FieldOptions<Array<T | null>>>(
     base: Field<T, boolean>,
     options?: O
-  ): Field<Array<T | null>, Nullable<O>>;
+  ): Field<Array<T | null>, Nullable<O>, O>;
   // The values of a field kept encrypted (AES-256-GCM) in a TEXT column: conditions only by isnull (and exact and in
   // when deterministic), no orders nor aggregates other than Count.
   encrypted<T, O extends EncryptedOptions<T> = EncryptedOptions<T>>(
     base: Field<T, boolean>,
     options?: O
-  ): Field<T, Nullable<O>>;
-  uuid<O extends FieldOptions<string>>(options?: O): Field<string, Nullable<O>>;
+  ): Field<T, Nullable<O>, O>;
+  // A primary key of uuids is generated when it is not given.
+  uuid<O extends FieldOptions<string>>(
+    options?: O
+  ): Field<string, Nullable<O>, O extends { primaryKey: true } ? O & { auto: true } : O>;
+  // The body of an object of a blob backend (disk, memory-blob): written as a Buffer, a string, a stream, a Blob or a
+  // BlobValue; read as a BlobValue, whose body is read when asked.
+  blob<O extends FieldOptions<BlobBody>>(options?: O): Field<BlobValue | BlobBody, Nullable<O>, O & { blob: true }>;
+  // What a blob backend knows of each object, given by it: its size in bytes, etag, the time it was written, and its
+  // content type (written with the body when given).
+  blobInfo(kind: 'size', options?: { column?: string }): Field<number, true, { auto: true; readOnly: true }>;
+  blobInfo(kind: 'etag', options?: { column?: string }): Field<string, true, { auto: true; readOnly: true }>;
+  blobInfo(kind: 'updatedAt', options?: { column?: string }): Field<Date, true, { auto: true; readOnly: true }>;
+  blobInfo(kind: 'contentType', options?: { column?: string }): Field<string, true, { auto: true }>;
   foreignKey<M extends Model, O extends ForeignKeyOptions = ForeignKeyOptions>(
     to: ModelRef<M>,
     options?: O
-  ): ForeignKey<M, Nullable<O>>;
+  ): ForeignKey<M, Nullable<O>, O>;
   manyToMany<M extends Model>(to: ModelRef<M>, options?: ManyToManyOptions): ManyToManyField<M>;
+  /**
+   * The fields of a parent model with those of a child (theirs replace those of the same name; null removes one), as
+   * the ORM merges them: `static fields = fields.extend(Timestamped, { title: fields.string() })` types the child
+   * (Fields<typeof Child.fields>, Child.schema()) with the fields of its parents too.
+   */
+  extend<P, O extends Record<string, unknown>>(parent: { readonly fields?: P }, own: O): ExtendedFields<P, O>;
   Field: typeof Field;
   ForeignKey: typeof ForeignKey;
   ManyToManyField: typeof ManyToManyField;
 };
+
+// The fields of fields.extend(): those of the parent not given again, and those given (null: removed).
+export type ExtendedFields<P, O> = {
+  [K in keyof P as K extends keyof O ? never : K]: P[K];
+} & { [K in keyof O as O[K] extends null ? never : K]: O[K] } extends infer R
+  ? { [K in keyof R]: R[K] }
+  : never;
 
 type ValueOf<F> = F extends Field<infer T, infer N> ? (N extends true ? T | null : T) : never;
 
@@ -208,6 +236,56 @@ export type Fields<F> = {
     : never;
 };
 
+// The properties of Model.schema(): each field as its JSON (dates and bytes are strings, bigints numbers), not
+// required when the database or the ORM can give it (null, default, auto, computed); foreign keys by their keys
+// (`authorId`); an `id` when no field is the primary key; no many-to-many relations nor bodies of blobs.
+type JsonValueOf<T> = T extends Date ? string : T extends Buffer ? string : T extends bigint ? number : T;
+// The values of choices given as const (choices: ['draft', 'published'] as const).
+type ChoiceOf<T, O> = O extends { choices: readonly (infer C)[] } ? ([T] extends [C] ? T : C & T) : T;
+type NotRequired<O> = O extends
+  { null: true } | { default: {} | null } | { computed: {} } | { autoNow: true } | { autoNowAdd: true } | { auto: true }
+  ? true
+  : false;
+type PropertyOf<T, N, O> =
+  NotRequired<O> extends true ? TOptional<N extends true ? T | null : T> : TSchema<N extends true ? T | null : T>;
+type SchemaPropertyOf<F> =
+  F extends ForeignKey<any, infer N, infer O>
+    ? PropertyOf<number | string, N, O>
+    : F extends Field<infer T, infer N, infer O>
+      ? PropertyOf<JsonValueOf<ChoiceOf<T, O>>, N, O>
+      : never;
+type InSchema<F, I> =
+  F extends Field<any, any, infer O>
+    ? O extends { blob: true }
+      ? false
+      : I extends true
+        ? O extends { computed: {} } | { readOnly: true }
+          ? false
+          : true
+        : true
+    : false;
+type PrimaryKeyOf<F> = { [K in keyof F]: F[K] extends Field<any, any, { primaryKey: true }> ? true : false }[keyof F];
+type SimplifyProps<T> = { [K in keyof T]: Extract<T[K], TSchema> } & {};
+// An automatic id: when no field is the primary key, and the options of the model (O) do not say primaryKey: false or
+// the fields of a composite key (written as const, or satisfies ModelOptions: { primaryKey: false } alone is a boolean).
+type AutoIdOf<F, O> =
+  true extends PrimaryKeyOf<F>
+    ? {}
+    : O extends { primaryKey: false | readonly string[] }
+      ? {}
+      : { id: TOptional<number | string> };
+export type ModelSchemaProperties<F, I extends boolean = false, O = unknown> = SimplifyProps<
+  {
+    [
+      K in keyof F as InSchema<F[K], I> extends true
+        ? F[K] extends ForeignKey<any, any, any>
+          ? `${K & string}Id`
+          : K
+        : never
+    ]: SchemaPropertyOf<F[K]>;
+  } & AutoIdOf<F, O>
+>;
+
 export interface ModelClass<M extends Model = Model> {
   new (data?: Record<string, unknown>): M;
   readonly meta: Meta;
@@ -221,7 +299,7 @@ export interface ModelOptions {
   schema?: string;
   // The fields of a composite primary key (its value is the array of theirs: filter({ pk: [1, 'a'] })), or false for
   // a model without one (its objects are only inserted; querysets update and delete its rows).
-  primaryKey?: string[] | false;
+  primaryKey?: readonly string[] | false;
   ordering?: string | string[];
   /**
    * Rules of the objects, checked by validate() (save, create, bulkCreate) once their fields are valid: expressions on
@@ -279,6 +357,15 @@ export declare class Model {
     hook: (instance: M, info: { created?: boolean }) => void | Promise<void>
   ): ModelClass<M>;
   static jsonSchema(options?: { exclude?: string[]; partial?: boolean }): Record<string, unknown>;
+  /**
+   * The schema of the objects of the model as @xufa/schema makes them, typed from its fields (as JSON: dates and bytes
+   * are strings; a foreign key is its key, `authorId`). `input: true`: without what is never given (computed fields).
+   * The other options are those of s.object() (additionalProperties, $id, title...).
+   */
+  static schema<F, I extends boolean = false, O = unknown>(
+    this: { readonly fields: F; readonly options?: O },
+    options?: { input?: I } & ObjectOptions
+  ): TObject<ModelSchemaProperties<F, I, O>>;
   pk: number | string | null;
   validate(): void;
   save(options?: { fields?: string[]; validate?: boolean; db?: Database }): Promise<this>;
@@ -408,11 +495,62 @@ export interface MigrationOperation {
   [key: string]: unknown;
 }
 
+/** What the body of a blob can be written as. */
+export type BlobBody = Buffer | Uint8Array | string | NodeJS.ReadableStream | AsyncIterable<Buffer | string> | Blob;
+
+/** The body of an object of a blob backend, read when asked. */
+export declare class BlobValue {
+  readonly key: string | null;
+  readonly table: string | null;
+  readonly size: number | null;
+  readonly contentType: string | null;
+  readonly etag: string | null;
+  readonly updatedAt: Date | null;
+  stream(): Promise<NodeJS.ReadableStream>;
+  buffer(): Promise<Buffer>;
+  text(encoding?: BufferEncoding): Promise<string>;
+  json<T = unknown>(): Promise<T>;
+  /** A URL that reads it without the app (signed, where the store has them; disk: its url option). */
+  url(options?: { expiresIn?: string | number }): Promise<string>;
+  toJSON(): { size: number | null; contentType: string | null; etag: string | null };
+}
+
 export interface DatabaseOptions {
   backend?:
-    'memory' | 'fs' | 'sqlite' | 'postgres' | 'mongodb' | Backend | (new (options: Record<string, unknown>) => Backend);
-  /** fs: the folder of the files. */
+    | 'memory'
+    | 'fs'
+    | 'sqlite'
+    | 'postgres'
+    | 'mongodb'
+    | 'disk'
+    | 'memory-blob'
+    | 's3'
+    | Backend
+    | (new (options: Record<string, unknown>) => Backend);
+  /** fs: the folder of the files; disk: the folder of the objects (a folder for each model). */
   dir?: string;
+  /** disk: the URL of an object where the folder is served (BlobValue.url()). */
+  url?: (table: string, key: string) => string;
+  /** s3: the bucket of the objects (those of a model under <prefix><table>/). */
+  bucket?: string;
+  /** s3: its region (AWS_REGION, or us-east-1). */
+  region?: string;
+  /** s3: the URL of a store that is not AWS (R2, MinIO...): the bucket goes in the path. */
+  endpoint?: string;
+  /** s3: the bucket in the path on AWS too. */
+  forcePathStyle?: boolean;
+  /** s3: AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY and AWS_SESSION_TOKEN when not given. */
+  credentials?: { accessKeyId: string; secretAccessKey: string; sessionToken?: string };
+  /** s3: before the keys of every model (''). */
+  prefix?: string;
+  /** s3: the bytes of each part of the uploads of streams (8 MiB; at least 5 MiB). */
+  partSize?: number;
+  /** s3: where the objects are public (a CDN): url() gives it, not a signed URL. */
+  publicUrl?: string;
+  /** s3: sync() makes the bucket when it is not there. */
+  createBucket?: boolean;
+  /** s3: another fetch. */
+  fetch?: typeof fetch;
   /** fs: a file for each collection (the default), or a folder for each collection and a file for each object. */
   layout?: 'collection' | 'files';
   /** fs: JSON written indented. */
@@ -429,6 +567,8 @@ export interface DatabaseOptions {
   name?: string;
   /** Where the objects of models with the option `cache` are kept: a MemoryCache when not given. */
   cache?: Cache;
+  /** A cache that fails to read or keep (a miss: the database answers): told here (a warning once, else). */
+  onCacheError?: (error: unknown, info: { operation: 'get' | 'set' }) => void;
   [option: string]: unknown;
 }
 
@@ -456,6 +596,8 @@ export interface MemoryCacheOptions {
 /** In the process: an LRU of `max` keys, whose values expire after `ttl` ms. */
 export declare class MemoryCache implements Cache {
   constructor(options?: MemoryCacheOptions);
+  /** Its faults: get, set, delete and clear made to fail, wait or hang (a read that fails is a miss). */
+  readonly faults: CacheFaults;
   readonly max: number;
   readonly ttl: number;
   readonly size: number;
@@ -490,6 +632,7 @@ export interface SharedCacheOptions extends MemoryCacheOptions {
 /** In the primary of a cluster: the workers ask it, one copy shared by all. Created in every process with the bus. */
 export declare class SharedCache implements Cache {
   constructor(options: SharedCacheOptions);
+  readonly faults: CacheFaults;
   get(key: string): Promise<unknown>;
   set(key: string, value: unknown, ttl?: number): Promise<void>;
   delete(keys: string | string[]): Promise<void>;
@@ -507,8 +650,68 @@ export declare class LocalCache extends MemoryCache {
   constructor(options: LocalCacheOptions);
 }
 
+// --- Faults: operations made to fail, wait or hang, for tests of resilience.
+
+export type FaultOperation =
+  'select' | 'count' | 'aggregate' | 'insert' | 'update' | 'delete' | 'transaction' | 'connect';
+
+export interface FaultOptions {
+  /** The operations (read: select, count, aggregate; write: insert, update, delete). All but connect by default. */
+  operations?: FaultOperation | 'read' | 'write' | Array<FaultOperation | 'read' | 'write'>;
+  /** Models (classes or names). */
+  models?: ModelClass<any> | string | Array<ModelClass<any> | string>;
+  /** Tenants (of tenants.faults). */
+  tenants?: string | string[];
+  /** The chance of each match (0 to 1): faults.random() below it. */
+  rate?: number;
+  /** The first n matches are left alone. */
+  after?: number;
+  /** Removed after n hits. */
+  times?: number;
+}
+
+export interface FailOptions extends FaultOptions {
+  /** The error thrown: an error, or a function of the operation (a FaultError by default). */
+  error?: Error | ((context: { operation: FaultOperation; model: string | null; tenant: string | null }) => Error);
+  message?: string;
+}
+
+export interface FaultRule {
+  readonly kind: 'fail' | 'delay' | 'hang' | 'down';
+  /** The operations it affected. */
+  readonly hits: number;
+  readonly active: boolean;
+  remove(): this;
+  /** The operations it holds (hang) go on. */
+  release(): this;
+}
+
+export declare class Faults {
+  readonly rules: FaultRule[];
+  /** Math.random; a function of your own in tests. */
+  random: () => number;
+  fail(options?: FailOptions): FaultRule;
+  delay(options: FaultOptions & { ms: number; jitter?: number }): FaultRule;
+  hang(options?: FaultOptions): FaultRule;
+  /** Every operation (connect too) fails until up(). */
+  down(options?: FaultOptions): FaultRule;
+  up(): this;
+  clear(): this;
+}
+
+/** The error of a fault: code XUFA_ORM_ERR_FAULT, status 503. */
+export declare class FaultError extends Error {
+  readonly code: 'XUFA_ORM_ERR_FAULT';
+  readonly statusCode: 503;
+  readonly operation: FaultOperation;
+  readonly model: string | null;
+  readonly tenant: string | null;
+}
+
 export declare class Database {
   constructor(options?: DatabaseOptions);
+  /** Faults of its operations, for tests of resilience. */
+  readonly faults: Faults;
   static registerBackend(name: string, factory: () => new (options: Record<string, unknown>) => Backend): void;
   readonly backend: Backend;
   /** The name of the database (in the keys of its cache). */
@@ -542,6 +745,8 @@ export declare class Database {
 // Several databases by name, and the models routed to them: the option `database` of a model, its route, or the
 // default one. Relations across them are followed with more queries; a query cannot join them.
 export declare class Databases {
+  /** Faults of the operations of every database of these. */
+  readonly faults: Faults;
   constructor(
     config: Record<string, DatabaseOptions | Database>,
     options?: { routes?: Record<string, string>; defaultName?: string }
@@ -571,6 +776,8 @@ export type TenantConfig =
 
 // A database (or several) for each tenant, opened the first time it is used; code run in a tenant uses it.
 export interface CachedOptions<A extends unknown[]> {
+  /** A cache that fails to read or keep (the function runs): told here (a warning once, else). */
+  onCacheError?: (error: unknown, info: { operation: 'get' | 'set' }) => void;
   /** What of the arguments is the key (the arguments by default). */
   key?(...args: A): unknown;
   /** ms a result is kept (0: until evicted). */
@@ -600,6 +807,8 @@ export declare function cached<F extends (...args: any[]) => Promise<any>>(
 export declare function withSignal<R>(signal: AbortSignal, fn: () => R): R;
 
 export declare class Tenants {
+  /** Faults of the databases of every tenant (rules can name tenants). */
+  readonly faults: Faults;
   constructor(options: {
     models?: ModelClass<any>[];
     config: (tenantId: string) => TenantConfig | null | undefined | Promise<TenantConfig | null | undefined>;
@@ -684,7 +893,15 @@ export interface PluginOptions {
   // The database of the app (app.db), or tenants (a database for each).
   database?: Database;
   // Each request in its tenant (resolve gives its id); without one, 400 when required (the default), 404 when unknown.
-  tenants?: { tenants: Tenants; resolve(request: any): string | number | null | undefined; required?: boolean };
+  tenants?: {
+    tenants: Tenants;
+    resolve(request: any): string | number | null | undefined;
+    required?: boolean;
+    /** Whether the request may use the tenant, before it is entered: false is a 403, an error is sent as it is.
+     * With @xufa/auth: (request, id, reply) => app.auth.canUseTenant(request, id, reply). false: no check (a tenant
+     * taken from the user); without it, a warning says any request may use any tenant. */
+    authorize?: ((request: any, tenant: string, reply: any) => boolean | Promise<boolean>) | false;
+  };
   // The reads of a request stop when its client goes away (request.signal): those not started throw, and PostgreSQL
   // cancels the one that runs. Writes are not stopped.
   cancel?: boolean;
@@ -706,6 +923,9 @@ export interface ResourceOptions<T extends Model = Model> {
   // The documentation of its routes for @xufa/openapi (their config openapi): true by default; { tag } names their
   // tag (the name of the model by default); false leaves it out.
   openapi?: boolean | { tag?: string };
+  // Keys of bodies that are not writable (id, createdAt...) are refused instead of ignored, every key refused in one
+  // ValidationError (400 with errors by key); in an update, one with the value the object has is taken.
+  strict?: boolean;
   // The objects of a request (all by default): those out of it are not found by any route.
   queryset?(request: any): QuerySet<T>;
   // The fields answered (all of them by default), or all but `exclude`.

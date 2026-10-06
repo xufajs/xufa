@@ -96,6 +96,15 @@ class NetCache extends EventEmitter {
 
   // --- The store of a cache: get, set, delete, clear (as the caches of @xufa/orm, and the store of Lockout).
 
+  // Its faults (@xufa/faults): get, set, delete and clear made to fail, wait or hang, for tests of resilience.
+  get faults() {
+    if (!this.faultsOf) {
+      const { cacheFaults } = require('@xufa/faults'); // eslint-disable-line global-require
+      Object.defineProperty(this, 'faultsOf', { value: cacheFaults(this, 'netcache'), enumerable: false });
+    }
+    return this.faultsOf;
+  }
+
   async get(key) {
     return this.store.get(key);
   }

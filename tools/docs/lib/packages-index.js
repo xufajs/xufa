@@ -31,10 +31,16 @@ const GROUPS = [
         'A client of HTTP APIs on fetch: JSON, timeouts, retries, and the cancellation of the request that calls.',
       ],
       [
+        'schema.html',
+        '@xufa/schema',
+        'ajv, @sinclair/typebox',
+        'Schemas as code (plain JSON Schema, typed) or JSON Schema draft-04 to 2020-12, compiled into fast validators.',
+      ],
+      [
         'orm.html',
         '@xufa/orm',
         'the Django ORM',
-        'Models, querysets and migrations for PostgreSQL, MongoDB, memory and files, with tenants and caches.',
+        'Models, querysets and migrations for PostgreSQL, MongoDB, SQLite, files and stores of objects, with tenants and caches.',
       ],
       [
         'auth.html',
@@ -104,6 +110,18 @@ const GROUPS = [
         'An app in a cluster of processes, restarted when they die, stopped gracefully, with a message bus.',
       ],
       [
+        'config.html',
+        '@xufa/config',
+        'node-config, convict, dotenv, node-vault',
+        'The configuration from files by environment, .env, variables, HTTP, Consul and Vault, with safe templates, a schema and secrets redacted.',
+      ],
+      [
+        'scheduler.html',
+        '@xufa/scheduler',
+        'node-cron, agenda',
+        'Jobs on intervals, cron or once: no overlaps, timeouts, isolated failures, once among machines with a lock.',
+      ],
+      [
         'discovery.html',
         '@xufa/discovery',
         'UDP',
@@ -114,6 +132,12 @@ const GROUPS = [
         '@xufa/netcache',
         'Redis, as a cache',
         'A cache shared by the machines of a service: a copy in each, every write sent to all over sealed TCP.',
+      ],
+      [
+        'faults.html',
+        '@xufa/faults',
+        'Toxiproxy, nock',
+        'Faults made to happen by rules: the database, caches, API calls or the bus fail, wait or hang, to test resilience.',
       ],
       [
         'marshal.html',
@@ -218,4 +242,29 @@ function buildPackagesIndex(page) {
   return html;
 }
 
-module.exports = { buildPackagesIndex };
+// The table of the packages of the home page (index.html), between <!--generated: packages-table--> and
+// <!--/generated-->: the same packages as the index, by group.
+const esc = (text) => String(text).replace(/&/g, '&amp;').replace(/</g, '&lt;');
+function buildHomeTable(page) {
+  const start = '<!--generated: packages-table-->';
+  const end = '<!--/generated-->';
+  const a = page.indexOf(start);
+  const b = page.indexOf(end, a);
+  if (a < 0 || b < 0) throw new Error('index.html has no <!--generated: packages-table--> ... <!--/generated-->');
+  const rows = GROUPS.map(
+    ([title, id, items]) =>
+      `                <tr class="group"><th colspan="3"><a href="packages.html#${id}">${esc(title)}</a></th></tr>
+` +
+      items
+        .map(
+          ([href, name, replaces, text]) =>
+            `                <tr><td><a href="${href}"><code>${esc(name)}</code></a></td><td>${esc(replaces)}</td><td>${esc(text)}</td></tr>
+`
+        )
+        .join('')
+  ).join('');
+  return `${page.slice(0, a + start.length)}
+${rows}                ${page.slice(b)}`;
+}
+
+module.exports = { buildPackagesIndex, buildHomeTable, GROUPS };

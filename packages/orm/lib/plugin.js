@@ -7,9 +7,14 @@
 //
 // With `expire` (true, or { interval: '5m' }), the objects of TTL indexes that expired are deleted while the app runs.
 //
-// With `tenants` ({ tenants, resolve(request), required }), each request runs in its tenant (resolve gives its id: a
-// header, the user...): the models use the database of the tenant. Requests without a tenant are answered with 400
-// when it is required (the default), and those of a tenant that does not exist with 404.
+// With `tenants` ({ tenants, resolve(request), required, authorize }), each request runs in its tenant (resolve gives its
+// id: a header, the user...): the models use the database of the tenant. Requests without a tenant are answered with
+// 400 when it is required (the default), and those of a tenant that does not exist with 404. authorize(request, id,
+// reply) says whether the request may use the tenant, before it is entered (its database is not even looked up): false
+// is answered with 403, and an error it throws as itself (401...). With @xufa/auth:
+//   authorize: (request, id, reply) => app.auth.canUseTenant(request, id, reply)
+// Without authorize, any request may use any tenant it names: a warning says so, unless authorize is false (a tenant
+// taken from the user itself needs no check).
 const { ValidationError, UniqueError } = require('./errors');
 const { cancellation } = require('./context');
 
@@ -39,9 +44,25 @@ async function ormPlugin(app, options = {}) {
     if (close) app.addHook('onClose', () => database.close());
   }
   if (tenants) {
-    const { tenants: registry, resolve, required = true } = tenants;
+    const { tenants: registry, resolve, required = true, authorize } = tenants;
+    if (authorize !== undefined && authorize !== false && typeof authorize !== 'function') {
+      throw new TypeError('tenants.authorize is a function (request, id, reply), or false');
+    }
+    if (authorize === undefined && app.log && typeof app.log.warn === 'function') {
+      app.log.warn(
+        'The orm plugin resolves tenants without tenants.authorize: any request may use any tenant it names ' +
+          '(authorize: false when the tenant comes from the user)'
+      );
+    }
     app.decorate('tenants', registry);
     app.decorateRequest('tenant', null);
+    const enter = (request, reply, done) => {
+      // Entered now (before any await of the handler), so the handler and its queries run in the tenant.
+      registry.enter(request.tenant).then(
+        () => done(),
+        () => reply.code(404).send({ statusCode: 404, error: 'Not Found', message: `No tenant ${request.tenant}` })
+      );
+    };
     app.addHook('onRequest', (request, reply, done) => {
       const id = resolve(request);
       if (id === undefined || id === null || id === '') {
@@ -50,11 +71,25 @@ async function ormPlugin(app, options = {}) {
         return;
       }
       request.tenant = String(id);
-      // Entered now (before any await), so the handler and its queries run in the tenant.
-      registry.enter(request.tenant).then(
-        () => done(),
-        () => reply.code(404).send({ statusCode: 404, error: 'Not Found', message: `No tenant ${request.tenant}` })
-      );
+      if (!authorize) {
+        enter(request, reply, done);
+        return;
+      }
+      Promise.resolve()
+        .then(() => authorize(request, request.tenant, reply))
+        .then(
+          (allowed) => {
+            if (allowed) enter(request, reply, done);
+            else {
+              request.tenant = null;
+              reply.code(403).send({ statusCode: 403, error: 'Forbidden', message: 'You cannot use this tenant' });
+            }
+          },
+          (err) => {
+            request.tenant = null;
+            reply.send(err);
+          }
+        );
     });
     if (close) app.addHook('onClose', () => registry.close());
   }

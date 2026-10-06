@@ -5,7 +5,6 @@ The HTTP framework of [xufa](../xufa): a fast web framework for Node.js with the
 
 ```sh
 npm install @xufa/http
-npm install schiva   # only if your routes validate requests with schemas
 ```
 
 ```js
@@ -44,29 +43,29 @@ vyntra; the TypeScript declarations are fastify's, ported with their type tests.
 
 What fastify takes from other packages, xufa has in its own:
 
-| fastify uses          | xufa uses                                                                   |
-| --------------------- | --------------------------------------------------------------------------- |
-| `pino`                | [`@xufa/logger`](../logger)                                                 |
-| `find-my-way`         | [`@xufa/router`](../router)                                                 |
-| `fast-json-stringify` | [`@xufa/serializer`](../serializer)                                         |
-| `light-my-request`    | [`@xufa/inject`](../inject)                                                 |
-| `avvio`               | [`@xufa/boot`](../boot)                                                     |
-| `@fastify/error`      | [`@xufa/errors`](../errors)                                                 |
-| `fastify-plugin`      | `xufa.plugin`                                                               |
-| `ajv`                 | [`schiva`](https://www.npmjs.com/package/schiva) (optional peer dependency) |
+| fastify uses          | xufa uses                           |
+| --------------------- | ----------------------------------- |
+| `pino`                | [`@xufa/logger`](../logger)         |
+| `find-my-way`         | [`@xufa/router`](../router)         |
+| `fast-json-stringify` | [`@xufa/serializer`](../serializer) |
+| `light-my-request`    | [`@xufa/inject`](../inject)         |
+| `avvio`               | [`@xufa/boot`](../boot)             |
+| `@fastify/error`      | [`@xufa/errors`](../errors)         |
+| `fastify-plugin`      | `xufa.plugin`                       |
+| `ajv`                 | [`@xufa/schema`](../schema)         |
 
 ## What is different
 
-### Validation: schiva
+### Validation: @xufa/schema
 
-The default validator compiles schemas with schiva and reports errors as ajv does (`instancePath`, `keyword`,
+The default validator compiles schemas with [@xufa/schema](../schema) (loaded when a route first has a schema) and reports errors as ajv does (`instancePath`, `keyword`,
 `params`, `message`), so that `attachValidation`, `schemaErrorFormatter` and error handlers work unchanged. By
 default it converts types (`coerceTypes: 'array'`), applies defaults and removes additional properties, as fastify
 configures ajv.
 
-The ajv options that schiva shares are read from `ajv.customOptions`: `coerceTypes`, `useDefaults`,
-`removeAdditional`, `allErrors`, `strict` (and `strictSchema`), `formats`, `keywords`. Options of schiva itself go in
-`ajv.schivaOptions`.
+The ajv options that the validator shares are read from `ajv.customOptions`: `coerceTypes`, `useDefaults`,
+`removeAdditional`, `allErrors`, `strict` (and `strictSchema`), `formats`, `keywords`. Options of the validator itself go in
+`ajv.validatorOptions`.
 
 Not supported, because they are ajv's: ajv plugins (`ajv.plugins` only accepts `[]`), ajv-errors messages, `$async`
 schemas and the `$merge`/`$patch` keywords. A `validatorCompiler` of your own can use ajv for them.

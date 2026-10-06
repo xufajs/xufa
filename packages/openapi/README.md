@@ -37,7 +37,8 @@ In OpenAPI 3 documents (`xufa: false` leaves it out):
 
 - **Resources of @xufa/orm** are documented: `orm.resource(Book, ...)` gives each of its routes its tags, summary and
   operationId (`listBook`, `getBook`, `createBook`, `updateBook`, `partialUpdateBook`, `deleteBook`), its parameters
-  (the filters, ordering, search and page of the list), its body (the writable fields, from `Book.jsonSchema()`) and
+  (the filters, ordering, search and page of the list), its body (the writable fields, from `Book.schema()`: null is
+  `nullable: true` in OpenAPI 3.0 and a type in 3.1) and
   its responses (the object as it is answered, the page of a list, the errors). The option `openapi` of the resource
   names the tag (`{ tag: 'Library' }`) or leaves it out (`false`).
 - **Any route** can be documented by its `config.openapi`: a schema that only describes it, under its own schema

@@ -22,6 +22,10 @@ const { Q, JsonPath, jsonPath, and, or, not, F, Raw, Count, Sum, Avg, Min, Max }
 const { Backend } = require('./lib/backends/base');
 const { MemoryBackend } = require('./lib/backends/memory');
 const { FsBackend } = require('./lib/backends/fs');
+const { BlobBackend } = require('./lib/backends/blob/base');
+const { BlobValue } = require('./lib/blob');
+const { Faults } = require('@xufa/faults');
+const { FaultError } = require('./lib/faults');
 const { SqlBackend } = require('./lib/backends/sql/backend');
 const { SqlCompiler } = require('./lib/backends/sql/compiler');
 const dialects = require('./lib/backends/sql/dialects');
@@ -39,6 +43,9 @@ Database.registerBackend('fs', () => FsBackend);
 Database.registerBackend('sqlite', () => require('./lib/backends/sqlite').SqliteBackend);
 Database.registerBackend('mongodb', () => require('./lib/backends/mongo/backend').MongoBackend);
 Database.registerBackend('postgres', () => require('./lib/backends/postgres').PostgresBackend);
+Database.registerBackend('memory-blob', () => require('./lib/backends/blob/memory').MemoryBlobBackend);
+Database.registerBackend('disk', () => require('./lib/backends/blob/disk').DiskBackend);
+Database.registerBackend('s3', () => require('./lib/backends/blob/s3').S3Backend);
 
 module.exports = {
   toHstore,
@@ -77,5 +84,8 @@ module.exports = {
   generateEncryptionKey: encryption.generateEncryptionKey,
   isEncrypted: encryption.isEncrypted,
   reencrypt: encryption.reencrypt,
-  backends: { Backend, MemoryBackend, FsBackend, SqlBackend, SqlCompiler, dialects },
+  BlobValue,
+  Faults,
+  FaultError,
+  backends: { Backend, MemoryBackend, FsBackend, BlobBackend, SqlBackend, SqlCompiler, dialects },
 };

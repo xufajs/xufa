@@ -10,7 +10,9 @@ Three kinds, from the whole server to one function:
 
 Every framework and scenario runs in a process of its own, so that no measure inherits the optimizations (or the
 garbage) of another. The scenarios are in `scenarios/`: each one builds the same routes for xufa and fastify (and
-`node:http` when it can), and its response is checked before it is measured.
+`node:http` when it can), and its response is checked before it is measured. The scenarios `openapi-*` build their
+routes from an OpenAPI document with `openapi.operations` of `@xufa/openapi` (`lib/openapi-app.js`), on each framework,
+with and without `validateResponses`; their reports are `results/openapi-linux-1` and `-2`.
 
 ## HTTP: `run.js`
 

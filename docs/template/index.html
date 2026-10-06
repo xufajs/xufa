@@ -1,0 +1,414 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>@xufa/template · xufa</title>
+    <meta
+      name="description"
+      content="@xufa/template: templates of text and HTML with safe expressions, blocks, filters, partials, layouts and streaming, and reply.view for @xufa/http and fastify. No dependencies."
+    />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%23d9502b'/%3E%3Ctext x='16' y='22.5' font-family='monospace' font-size='18' font-weight='700' fill='white' text-anchor='middle'%3Ex%3C/text%3E%3C/svg%3E"
+    />
+    <link rel="stylesheet" href="../style.css?v=0.1.0" />
+    <script src="../main.js?v=0.1.0"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js" defer></script>
+  </head>
+  <body>
+    <header class="header">
+      <div class="header-inner">
+        <a class="logo" href="../index.html"><span class="logo-mark">x</span>xufa</a>
+        <nav class="nav">
+          <a href="../guide.html">Guide</a>
+          <a href="../playground.html">Playground</a>
+          <a href="../http/index.html">HTTP</a>
+          <a href="../orm/index.html">ORM</a>
+          <a class="hide-small" href="../auth/index.html">Auth</a>
+          <a class="hide-small" href="../sequelize/index.html">Sequelize</a>
+          <a class="hide-small" href="../packages.html" aria-current="page">Packages</a>
+          <a class="hide-small" href="../benchmarks.html">Benchmarks</a>
+          <a href="https://github.com/xufajs/xufa">GitHub</a>
+          <button class="theme-toggle" type="button" aria-label="Switch between light and dark theme">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+              <path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z" />
+            </svg>
+          </button>
+        </nav>
+      </div>
+    </header>
+
+    <div class="docs">
+      <button class="menu-toggle" type="button" aria-expanded="false">☰ Contents</button>
+      <aside class="sidebar">
+        <h4>Using it</h4>
+        <ul>
+          <li><a href="#start">Quick start</a></li>
+          <li><a href="#api">API</a></li>
+        </ul>
+        <h4>Templates</h4>
+        <ul>
+          <li><a href="#output">Values</a></li>
+          <li><a href="#if">if</a></li>
+          <li><a href="#each">each</a></li>
+          <li><a href="#with">with</a></li>
+          <li><a href="#partials">Partials</a></li>
+          <li><a href="#comments">Comments and white space</a></li>
+          <li><a href="#filters">Filters</a></li>
+        </ul>
+        <h4>Views of HTTP</h4>
+        <ul>
+          <li><a href="#plugin">reply.view</a></li>
+          <li><a href="#layouts">Layouts</a></li>
+          <li><a href="#streaming">Large pages</a></li>
+          <li><a href="#plugin-options">Options of the plugin</a></li>
+        </ul>
+        <h4>More</h4>
+        <ul>
+          <li><a href="#fill">Data with templates</a></li>
+          <li><a href="#escaping">Escaping</a></li>
+          <li><a href="#engine">Engines</a></li>
+          <li><a href="#errors">Errors</a></li>
+        </ul>
+        <h4>About it</h4>
+        <ul>
+          <li><a href="#performance">Performance</a></li>
+          <li><a href="#typescript">TypeScript</a></li>
+        </ul>
+        <h4>Packages</h4>
+        <ul>
+          <li><a href="../websocket/index.html">@xufa/websocket</a></li>
+          <li><a href="../openapi/index.html">@xufa/openapi</a></li>
+          <li><a href="../client/index.html">@xufa/client</a></li>
+          <li><a href="../schema/index.html">@xufa/schema</a></li>
+          <li><a href="../pg/index.html">@xufa/pg</a></li>
+          <li><a href="../mongo/index.html">@xufa/mongo</a></li>
+          <li><a href="../expression/index.html">@xufa/expression</a></li>
+          <li><a href="index.html" aria-current="page">@xufa/template</a></li>
+          <li><a href="../cluster/index.html">@xufa/cluster</a></li>
+          <li><a href="../scheduler/index.html">@xufa/scheduler</a></li>
+          <li><a href="../config/index.html">@xufa/config</a></li>
+          <li><a href="../discovery/index.html">@xufa/discovery</a></li>
+          <li><a href="../netcache/index.html">@xufa/netcache</a></li>
+          <li><a href="../faults/index.html">@xufa/faults</a></li>
+          <li><a href="../marshal/index.html">@xufa/marshal</a></li>
+          <li><a href="../yaml/index.html">@xufa/yaml</a></li>
+          <li><a href="../jwt/index.html">@xufa/jwt</a></li>
+          <li><a href="../logger/index.html">@xufa/logger</a></li>
+          <li><a href="../router/index.html">@xufa/router</a></li>
+          <li><a href="../serializer/index.html">@xufa/serializer</a></li>
+          <li><a href="../inject/index.html">@xufa/inject</a></li>
+          <li><a href="../boot/index.html">@xufa/boot</a></li>
+          <li><a href="../errors/index.html">@xufa/errors</a></li>
+          <li><a href="../packages.html">All the packages</a></li>
+        </ul>
+      </aside>
+
+      <article class="content">
+<h1>@xufa/template</h1>
+        <p class="intro">
+          Templates of text and HTML with the safe expressions of <a href="../expression/index.html">@xufa/expression</a>:
+          values escaped for HTML, blocks, filters, partials, layouts and streaming, compiled once and rendered many
+          times. With the plugin, <code>reply.view()</code> renders the views of a folder in
+          <a href="../http/index.html">@xufa/http</a> (and fastify). It renders faster than Handlebars, Mustache, Nunjucks and
+          even Eta and EJS, which run the JavaScript of their templates. No dependencies outside xufa.
+        </p>
+
+        <h2 id="start">Quick start</h2>
+        <pre><code class="language-sh">npm install @xufa/template   # or require('xufa/template')</code></pre>
+        <pre><code class="language-js">const { compile, render } = require('@xufa/template');
+
+const page = compile(`
+&lt;h1&gt;{{ title | upper }}&lt;/h1&gt;
+&lt;ul&gt;
+  {{~#each items as item~}}
+  &lt;li class="{{ loop.first ? 'first' : '' }}"&gt;{{ item.name }}: {{ item.price | number('en-US', { style: 'currency', currency: 'USD' }) }}&lt;/li&gt;
+  {{~else~}}
+  &lt;li&gt;Nothing yet&lt;/li&gt;
+  {{~/each~}}
+&lt;/ul&gt;
+{{#if user}}Hello, {{ user.name }}{{else}}&lt;a href="/login"&gt;Log in&lt;/a&gt;{{/if}}`);
+
+page({ title: 'Books', items, user });
+render('Hello {{ name }}', { name: '&lt;Ada&gt;' }); // 'Hello &amp;lt;Ada&amp;gt;'</code></pre>
+
+        <h2 id="api">API</h2>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Function</th><th>What it does</th></tr></thead>
+            <tbody>
+              <tr><td><code>compile(source, { name, escape })</code></td><td>A function of the context that gives the text. Kept by source. <code>render.stream(context)</code> gives it in chunks; with one tag alone, <code>render.value(context)</code> gives its value.</td></tr>
+              <tr><td><code>render(source, context, options)</code></td><td><code>compile(source, options)(context)</code>.</td></tr>
+              <tr><td><code>fill(value, context)</code></td><td><a href="#fill">Data with templates</a>.</td></tr>
+              <tr><td><code>new TemplateEngine(options)</code></td><td>An <a href="#engine">engine</a> of its own; the module's functions use a default one.</td></tr>
+              <tr><td><code>plugin</code></td><td>The plugin of <a href="#plugin">reply.view</a>.</td></tr>
+              <tr><td><code>SafeString</code>, <code>escapeHtml</code>, <code>FILTERS</code>, <code>TemplateError</code></td><td>HTML already safe, the escaping, the default filters, the errors.</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h2 id="output">Values</h2>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Tag</th><th>Writes</th></tr></thead>
+            <tbody>
+              <tr><td><code>{{ expression }}</code></td><td>The value, escaped for HTML.</td></tr>
+              <tr><td><code>{{{ expression }}}</code></td><td>The value as it is.</td></tr>
+              <tr><td><code>{{ value | filter(args) | other }}</code></td><td>The value through <a href="#filters">filters</a>.</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p>
+          Expressions are those of <a href="../expression/index.html">@xufa/expression</a>:
+          <code>{{ items.map(i =&gt; i.name).join(', ') }}</code>, <code>{{ `${count} items` }}</code>,
+          <code>{{ user?.name ?? 'guest' }}</code>. In templates they are lenient: a name that is not there, or a member
+          of <code>null</code>, is nothing (<code>strict: true</code> makes them errors). <code>null</code> and
+          <code>undefined</code> are written as nothing, lists and plain objects as JSON, the rest as text.
+        </p>
+
+        <h2 id="if">if</h2>
+        <pre><code class="language-html">{{#if cart.items.length &gt; 10}}
+  &lt;p&gt;Free shipping!&lt;/p&gt;
+{{else if cart.items.length &gt; 0}}
+  &lt;p&gt;{{ 10 - cart.items.length }} more for free shipping&lt;/p&gt;
+{{else}}
+  &lt;p&gt;Your cart is empty&lt;/p&gt;
+{{/if}}</code></pre>
+
+        <h2 id="each">each</h2>
+        <pre><code class="language-html">{{#each orders as order, i}}
+  &lt;tr class="{{ loop.last ? 'last' : '' }}"&gt;&lt;td&gt;{{ loop.number }}&lt;/td&gt;&lt;td&gt;{{ order.id }}&lt;/td&gt;&lt;/tr&gt;
+{{else}}
+  &lt;tr&gt;&lt;td&gt;No orders&lt;/td&gt;&lt;/tr&gt;
+{{/each}}
+
+{{#each settings as value, key}}{{ key }}={{ value }} {{/each}}</code></pre>
+        <p>
+          Lists, strings, iterables, <code>Map</code>s and plain objects (the second name is the index or the key;
+          <code>item</code> is the name when none is given). <code>loop</code> has <code>index</code>,
+          <code>number</code> (from 1), <code>first</code>, <code>last</code>, <code>length</code> and <code>key</code>.
+          <code>{{else}}</code> is rendered when there is nothing. Inside, the names around the block are still there.
+        </p>
+
+        <h2 id="with">with</h2>
+        <pre><code class="language-html">{{#with order.customer.address as address}}{{ address.street }}, {{ address.city }}{{/with}}</code></pre>
+
+        <h2 id="partials">Partials</h2>
+        <pre><code class="language-js">const engine = new TemplateEngine({ partials: { card: '&lt;div class="card"&gt;{{ name }}&lt;/div&gt;' } });
+engine.partial('row', '&lt;tr&gt;&lt;td&gt;{{ item.name }}&lt;/td&gt;&lt;/tr&gt;');
+engine.render('{{#each items as item}}{{&gt; row}}{{/each}}{{&gt; card user}}', { items, user });</code></pre>
+        <p>
+          <code>{{&gt; name}}</code> renders a partial with the context; <code>{{&gt; name value}}</code> with the
+          properties of the value over it. Partials can be recursive (trees), up to <code>maxDepth</code> (32). With the
+          plugin, partials are files of the folder: <code>{{&gt; partials/header}}</code>.
+        </p>
+
+        <h2 id="comments">Comments and white space</h2>
+        <pre><code class="language-html">{{! a comment }}
+{{!-- a comment that can hold }} --}}
+&lt;ul&gt;
+  {{~#each items as item~}}   ~ takes out the white space before and after the tag
+  &lt;li&gt;{{ item }}&lt;/li&gt;
+  {{~/each~}}
+&lt;/ul&gt;
+\{{ not a tag }}               a backslash writes {{</code></pre>
+
+        <h2 id="filters">Filters</h2>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Filter</th><th>Gives</th></tr></thead>
+            <tbody>
+              <tr><td><code>upper</code>, <code>lower</code>, <code>capitalize</code>, <code>trim</code></td><td>Text changed.</td></tr>
+              <tr><td><code>default(fallback)</code></td><td>The fallback for <code>null</code>, <code>undefined</code> and <code>''</code>.</td></tr>
+              <tr><td><code>truncate(length, end = '…')</code>, <code>replace(search, replacement)</code>, <code>slice(start, end)</code></td><td>Text (or lists, for <code>slice</code>).</td></tr>
+              <tr><td><code>join(separator)</code>, <code>length</code>, <code>first</code>, <code>last</code>, <code>reverse</code>, <code>keys</code>, <code>values</code></td><td>Of lists, strings and objects.</td></tr>
+              <tr><td><code>round(digits)</code>, <code>fixed(digits)</code></td><td>Numbers.</td></tr>
+              <tr><td><code>number(locale, options)</code>, <code>date(locale, options)</code></td><td><code>Intl.NumberFormat</code> and <code>Intl.DateTimeFormat</code>.</td></tr>
+              <tr><td><code>json(indent)</code>, <code>urlencode</code></td><td>JSON, URI components.</td></tr>
+              <tr><td><code>escape</code>, <code>safe</code></td><td>HTML escaped, or HTML as it is (a <code>SafeString</code>).</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <pre><code class="language-js">const engine = new TemplateEngine({ filters: { money: (value) =&gt; `${value.toFixed(2)} €` } });
+engine.filter('initials', (name) =&gt; name.split(' ').map((part) =&gt; part[0]).join(''));
+engine.render('{{ total | money }} by {{ user.name | initials }}', { total: 12, user: { name: 'Ada Lovelace' } });</code></pre>
+
+        <h2 id="plugin">reply.view</h2>
+        <p>
+          The plugin renders views, files of a folder, as <a href="https://github.com/fastify/point-of-view">@fastify/view</a>
+          does, on @xufa/http or fastify:
+        </p>
+        <pre><code class="language-js">const xufa = require('xufa');
+const template = require('xufa/template');
+
+const app = xufa();
+app.register(template.plugin, { root: 'views', layout: 'layout', defaultContext: { site: 'Books' } });
+app.addHook('preHandler', async (request, reply) =&gt; {
+  reply.locals = { user: request.user }; // in the context of every view of the request
+});
+app.get('/books/:id', async (request, reply) =&gt; reply.view('books/show', { book: await findBook(request.params.id) }));
+
+const html = await app.view('emails/welcome', { user }); // the text, for emails</code></pre>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Decoration</th><th>What it does</th></tr></thead>
+            <tbody>
+              <tr><td><code>reply.view(name, data, { layout, stream })</code></td><td>Renders <code>&lt;root&gt;/&lt;name&gt;.html</code> and sends it as <code>text/html</code>, unless the reply has a content type.</td></tr>
+              <tr><td><code>reply.viewAsync(...)</code>, <code>app.view(...)</code></td><td>The text.</td></tr>
+              <tr><td><code>reply.locals</code></td><td>Names for the views of the request, set in hooks.</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p>
+          The context of a view is <code>defaultContext</code>, then <code>reply.locals</code>, then the data. A name that
+          leads out of <code>root</code> (<code>..</code>, an absolute path, in views and partials) is refused, so a view
+          named by a request cannot read other files; a view that is not there, or fails, is an error (500) that names
+          its template, line and column.
+        </p>
+
+        <h2 id="layouts">Layouts</h2>
+        <pre><code class="language-html">&lt;!-- views/layout.html --&gt;
+&lt;!doctype html&gt;
+&lt;html&gt;&lt;head&gt;&lt;title&gt;{{ title ?? site }}&lt;/title&gt;&lt;/head&gt;
+&lt;body&gt;{{&gt; partials/nav}}&lt;main&gt;{{ body }}&lt;/main&gt;&lt;/body&gt;&lt;/html&gt;</code></pre>
+        <p>The view is rendered first and given to its layout as <code>body</code>. The layout of the plugin, or of a call; <code>layout: false</code> for none.</p>
+
+        <h2 id="streaming">Large pages</h2>
+        <p>
+          <code>reply.view(name, data, { stream: true })</code>, or <code>stream: true</code> for every view, sends the
+          view in chunks made as the client reads them: the first bytes go at once, and the page is never whole in
+          memory. The layout is cut where it writes <code>{{ body }}</code>: its head goes first, then the chunks of the
+          view, then its tail. A page of 200,000 rows (20 MB) sends its first byte in 2 ms instead of 265, ends in 127 ms
+          instead of 286, and takes 3 MB of memory instead of 40 (<a href="../benchmarks.html#views">Benchmarks</a>).
+        </p>
+        <pre><code class="language-js">app.get('/report', (request, reply) =&gt; reply.view('report', { rows: allRows }, { stream: true }));
+
+for (const chunk of compile(source).stream(context, { chunkSize: 16384 })) socket.write(chunk); // any template</code></pre>
+        <p>
+          The files are read and compiled before anything is sent, so a view that is not there is still a 500; an error
+          while the view renders cuts the response (its status is sent already). A layout that writes its body otherwise
+          (twice, or through a filter) is rendered whole.
+        </p>
+
+        <h2 id="plugin-options">Options of the plugin</h2>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Option</th><th>Default</th><th>What it does</th></tr></thead>
+            <tbody>
+              <tr><td><code>root</code></td><td><code>'views'</code></td><td>The folder of the views.</td></tr>
+              <tr><td><code>extension</code></td><td><code>'.html'</code></td><td>Added to names without one.</td></tr>
+              <tr><td><code>layout</code></td><td>none</td><td>The view each view is rendered in, as <code>body</code>.</td></tr>
+              <tr><td><code>defaultContext</code></td><td><code>{}</code></td><td>The context of every view.</td></tr>
+              <tr><td><code>cache</code></td><td><code>NODE_ENV === 'production'</code></td><td>Files read once; without it, every render reads them, so edits are seen at once (templates are compiled again only when they changed).</td></tr>
+              <tr><td><code>stream</code>, <code>chunkSize</code></td><td><code>false</code>, <code>65536</code></td><td>Every view sent in chunks, of that many characters.</td></tr>
+              <tr><td><code>propertyName</code></td><td><code>'view'</code></td><td>The name of the decorations.</td></tr>
+              <tr><td><code>engine</code></td><td>a new one</td><td>A <code>TemplateEngine</code> of your own; or its options (<code>filters</code>...) here.</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h2 id="fill">Data with templates</h2>
+        <pre><code class="language-js">const config = fill(
+  {
+    host: '{{ env.DB_HOST }}',
+    port: '{{ Number(env.DB_PORT ?? 5432) }}',
+    url: 'postgres://{{ env.DB_HOST }}/app',
+    replicas: '{{ (env.REPLICAS ?? "").split(",").filter(Boolean) }}',
+  },
+  { env: process.env }
+); // { host: 'db', port: 5432, url: 'postgres://db/app', replicas: ['r1', 'r2'] }</code></pre>
+        <p>
+          <code>fill(value, context)</code> fills the strings of data (configuration, messages) without escaping: a
+          string that is one <code>{{ expression }}</code> alone gives its value (a number, a list, an object), the
+          others their text; arrays and plain objects are filled item by item, and a key <code>__proto__</code> of JSON
+          stays a key.
+        </p>
+
+        <h2 id="escaping">Escaping</h2>
+        <p>
+          <code>&amp; &lt; &gt; " '</code> and the backtick are escaped, which makes values safe in the text of elements
+          and in quoted attributes; not in <code>&lt;script&gt;</code>, in <code>style</code>, nor in URLs
+          (<code>href="{{ url }}"</code> with <code>javascript:...</code>): check those values before they go there.
+          <code>escape: false</code> (an engine, or one call) writes values as they are, and a function of your own
+          escapes for other formats. <code>new SafeString(html)</code> marks text that is HTML already.
+        </p>
+
+        <h2 id="engine">Engines</h2>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Option</th><th>Default</th><th>What it does</th></tr></thead>
+            <tbody>
+              <tr><td><code>escape</code></td><td><code>true</code></td><td>HTML escaping; <code>false</code>, or a function of the text.</td></tr>
+              <tr><td><code>filters</code>, <code>partials</code></td><td><code>{}</code></td><td>Over the default filters; sources of partials by name.</td></tr>
+              <tr><td><code>globals</code>, <code>builtins</code></td><td><code>{}</code>, <code>true</code></td><td>The globals of the expressions.</td></tr>
+              <tr><td><code>strict</code></td><td><code>false</code></td><td>Names not given and members of <code>null</code> are errors.</td></tr>
+              <tr><td><code>maxDepth</code></td><td><code>32</code></td><td>Partials in partials.</td></tr>
+              <tr><td><code>cacheSize</code></td><td><code>500</code></td><td>Templates compiled kept.</td></tr>
+              <tr><td><code>inline</code></td><td><code>true</code></td><td>Templates rendered often become one function, with their paths read inline.</td></tr>
+              <tr><td><code>loadPartial(name)</code></td><td></td><td>The source of a partial that is not registered (the plugin reads them from files).</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p><code>engine.filter(name, fn)</code> and <code>engine.partial(name, source)</code> add filters and partials.</p>
+
+        <h2 id="errors">Errors</h2>
+        <p>
+          <code>TemplateError</code>, with <code>code</code> (<code>XUFA_TEMPLATE_ERR_SYNTAX</code>,
+          <code>XUFA_TEMPLATE_ERR_RUNTIME</code>, <code>XUFA_TEMPLATE_ERR_PARTIAL</code>, or
+          <code>XUFA_EXPR_ERR_FORBIDDEN</code>), the name of the template, <code>line</code> and <code>column</code>:
+        </p>
+        <pre><code class="language-text">TemplateError: {{#if}} is not closed (page.html, line 12, column 5)</code></pre>
+
+        <h2 id="performance">Performance</h2>
+        <p class="legend"><span class="us">@xufa/template</span><span>sandboxed engines</span><span class="interprets">not a sandbox (runs JavaScript)</span></p>
+        <div class="charts">
+          <div class="chart">
+            <h3>A list of 20 (each, if)</h3>
+            <p class="subtitle">Renders a second, compiled once.</p>
+            <div class="chart-row us win"><span class="name">@xufa/template</span><span class="track"><span class="fill" style="width: 100%"></span></span><span class="value">240k</span></div>
+            <div class="chart-row interprets"><span class="name">Eta</span><span class="track"><span class="fill" style="width: 47.5%"></span></span><span class="value">114k</span></div>
+            <div class="chart-row"><span class="name">Mustache</span><span class="track"><span class="fill" style="width: 30.7%"></span></span><span class="value">74k</span></div>
+            <div class="chart-row"><span class="name">Handlebars</span><span class="track"><span class="fill" style="width: 28.7%"></span></span><span class="value">69k</span></div>
+            <div class="chart-row interprets"><span class="name">EJS</span><span class="track"><span class="fill" style="width: 19.2%"></span></span><span class="value">46k</span></div>
+            <div class="chart-row"><span class="name">Nunjucks</span><span class="track"><span class="fill" style="width: 16.8%"></span></span><span class="value">40k</span></div>
+          </div>
+          <div class="chart">
+            <h3>One line</h3>
+            <p class="subtitle">Renders a second, compiled once.</p>
+            <div class="chart-row us win"><span class="name">@xufa/template</span><span class="track"><span class="fill" style="width: 100%"></span></span><span class="value">14.1M</span></div>
+            <div class="chart-row interprets"><span class="name">Eta</span><span class="track"><span class="fill" style="width: 82.4%"></span></span><span class="value">11.6M</span></div>
+            <div class="chart-row"><span class="name">Nunjucks</span><span class="track"><span class="fill" style="width: 15.3%"></span></span><span class="value">2.1M</span></div>
+            <div class="chart-row"><span class="name">Mustache</span><span class="track"><span class="fill" style="width: 11.7%"></span></span><span class="value">1.6M</span></div>
+            <div class="chart-row"><span class="name">Handlebars</span><span class="track"><span class="fill" style="width: 10%"></span></span><span class="value">1.4M</span></div>
+            <div class="chart-row interprets"><span class="name">EJS</span><span class="track"><span class="fill" style="width: 6%"></span></span><span class="value">851k</span></div>
+          </div>
+        </div>
+        <p>
+          Templates start as closures; the parts of a template rendered often become one function of JavaScript, with
+          their paths (<code>{{ user.name }}</code>) read inline from names the expression engine checked, so templates
+          rendered a few times do not pay for making it. Every case is in <a href="../benchmarks.html#templates">Benchmarks</a>.
+        </p>
+
+        <h2 id="typescript">TypeScript</h2>
+        <pre><code class="language-ts">import { compile, TemplateEngine, RenderView, ReplyView } from '@xufa/template';
+
+declare module '@xufa/http' {
+  interface XufaInstance { view: RenderView }
+  interface XufaReply { view: ReplyView&lt;XufaReply&gt;; viewAsync: RenderView; locals: Record&lt;string, unknown&gt; | null }
+}</code></pre>
+      </article>
+    </div>
+
+    <footer class="footer">
+      <div class="container">
+        <span>xufa is MIT licensed. &copy; Jes&uacute;s Seijas</span>
+        <span>
+          <a href="../guide.html">Guide</a> &middot; <a href="../playground.html">Playground</a> &middot; <a href="../http/index.html">HTTP</a> &middot; <a href="../orm/index.html">ORM</a> &middot; <a href="../auth/index.html">Auth</a> &middot;
+          <a href="../sequelize/index.html">Sequelize</a> &middot; <a href="../packages.html">Packages</a> &middot;
+          <a href="../benchmarks.html">Benchmarks</a> &middot; <a href="https://github.com/xufajs/xufa">GitHub</a>
+        </span>
+      </div>
+    </footer>
+  </body>
+</html>
