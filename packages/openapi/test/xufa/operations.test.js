@@ -343,14 +343,16 @@ describe('responses validated by the compiler of the app', () => {
       handlers: { thing: async () => current },
     });
     await fastify.ready();
-    expect(parts).toContain('response');
+    expect(parts).not.toContain('response'); // made on first use
     expect((await fastify.inject({ url: '/thing' })).statusCode).toBe(200);
+    expect(parts).toContain('response');
     current = { id: 2, at: new Date(0) };
     expect((await fastify.inject({ url: '/thing' })).statusCode).toBe(500);
     await fastify.close();
   });
 
-  it('a response schema that does not compile stops the app from starting', async () => {
+  // Made on first use (compiling before any request is served slows the whole app): its route answers 500.
+  it('a response schema that does not compile is the 500 of its route, with why', async () => {
     const broken = structuredClone(document);
     broken.paths['/thing'].get.responses['200'].content['application/json'].schema.properties.id = {
       type: 'integer',
@@ -360,9 +362,14 @@ describe('responses validated by the compiler of the app', () => {
     await app.register(openapi.operations, {
       document: broken,
       validateResponses: true,
-      handlers: { thing: async () => ({}) },
+      handlers: { thing: async () => ({ id: 1, at: new Date(0) }) },
     });
-    await expect(app.ready()).rejects.toThrow(/minimun/);
+    await app.ready();
+    for (const attempt of [1, 2]) {
+      const res = await app.inject({ url: '/thing' });
+      expect([attempt, res.statusCode, res.json().code]).toEqual([attempt, 500, 'XUFA_OPENAPI_RESPONSE_SCHEMA']);
+      expect(res.json().message).toMatch(/^The response schemas of thing do not compile: .*minimun/);
+    }
   });
 });
 

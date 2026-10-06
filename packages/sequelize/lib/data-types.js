@@ -124,7 +124,7 @@ class DataType {
     let moment = null;
     for (const name of ['moment-timezone', 'moment']) {
       try {
-        moment = require(require.resolve(name, { paths: [process.cwd()] })); // eslint-disable-line global-require, import/no-dynamic-require
+        moment = require(require.resolve(name, { paths: [process.cwd()] })); // eslint-disable-line global-require
         break;
       } catch {
         // not there

@@ -116,6 +116,26 @@ Tests of what xufa does differently are written for it, apart from the ported on
 `packages/http/test/xufa/`, `packages/serializer/test/output.test.js`, and `test/types/xufa.*` in the packages
 with declarations.
 
+### Work done at startup
+
+What a process does before it serves its first request can make every request after it slower, for as long as it
+runs. V8 shares the shapes of the objects made as `{}`: each property name added first to such an object, anywhere in
+the process, is a branch of one shared tree. When thousands of names are added before traffic (as a first compile of
+ajv does, with its meta-schema), the request path is optimized worse: on fastify, a third fewer requests per second
+on every route, and a seventh on `@xufa/http`, with or without the code that did it running again. The same work done
+after the first requests costs nothing. So, in the packages:
+
+- Lookup tables keyed by data that are built at startup and kept (registries of schemas, models, routes or keywords,
+  indexes, caches) are `Map`s or `Object.create(null)`, not `{}`. What is handed to users (rows, bodies, headers,
+  results) stays a plain object: what they expect, and it is made after traffic starts.
+- What is only needed to serve (validators of a compiler of others, caches, lookup tables) is made on first use, not
+  in `onReady` or when a plugin is registered. What checks that an app is right (the schemas of its routes, its
+  models) is still done at startup, as fastify does: it is bounded, and measured harmless.
+- A change to what runs at startup is measured under load, against the same app with that work moved after the
+  first request. A process reaches one state or the other, so compare the medians of several runs, each in a
+  process of its own. V8's profiler (`--cpu-prof`) and its trace flags put every process in the slow state: they
+  cannot show this.
+
 ## License
 
 MIT. The ported declarations and tests keep the MIT license of the projects they come from (fastify, pino,

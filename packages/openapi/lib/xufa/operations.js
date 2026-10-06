@@ -247,7 +247,6 @@ function register(app, options, document, next) {
   const routeOptions = (handler) => (typeof handler === 'function' ? { handler } : handler);
   const secured = [];
   const missingIds = [];
-  const toCompile = [];
 
   try {
     // The shared schemas, in both variants.
@@ -339,12 +338,25 @@ function register(app, options, document, next) {
         const checkResponses = own.validateResponse !== undefined ? own.validateResponse : validateResponses;
         delete own.validateResponse;
 
-        // Checks by hand (request.operation), and of every response when asked.
+        // Checks by hand (request.operation), and of every response when asked. The validators are made on first use,
+        // not when the app is ready: compiling (a first ajv compile above all) before any request has been served
+        // fills the shapes V8 gives plain objects, and the requests of the whole app are slower from then on (a
+        // third, on fastify). A schema that does not compile is the 500 of the responses of its route.
         let validators = null;
+        let compileError = null;
         const validatorsOf = () => {
-          if (validators === null)
-            validators = responseValidators(app, schema.response, method.toUpperCase(), toUrl(path));
-          return validators;
+          if (validators !== null) return validators;
+          if (compileError === null) {
+            try {
+              validators = responseValidators(app, schema.response, method.toUpperCase(), toUrl(path));
+              return validators;
+            } catch (err) {
+              compileError = new OpenapiError(`The response schemas of ${key} do not compile: ${err.message}`);
+              compileError.code = 'XUFA_OPENAPI_RESPONSE_SCHEMA';
+              compileError.statusCode = 500;
+            }
+          }
+          throw compileError;
         };
         const routeOperation = {
           id: key,
@@ -368,15 +380,27 @@ function register(app, options, document, next) {
           config: { ...config, ...(own.config || {}) },
         };
         if (checkResponses && schema.response) {
-          // Made when the app is ready (its validator compiler is set once its routes are): a schema that does not
-          // compile stops it from starting.
-          toCompile.push(validatorsOf);
+          // The validators of a status, or the error of schemas that do not compile (answered once, as a 500).
+          const validatorOf = (request, reply, done) => {
+            try {
+              return validatorFor(validatorsOf(), reply.statusCode);
+            } catch (err) {
+              request[kInvalidResponse] = true;
+              done(err);
+              return false;
+            }
+          };
           // What is sent is checked. First, before it is serialized, a copy of the payload when it is plain data (the
           // object of the handler is not touched: a compiler for requests converts and removes): valid, what is
           // written of it is valid too (the same data), and it is not checked again.
           const checkPayload = (request, reply, payload, done) => {
-            const validate = validatorFor(validatorsOf(), reply.statusCode);
-            if (validate && !request[kInvalidResponse]) {
+            if (request[kInvalidResponse]) {
+              done(null, payload);
+              return;
+            }
+            const validate = validatorOf(request, reply, done);
+            if (validate === false) return;
+            if (validate) {
               const data = plainCopy(payload);
               if (data !== NOT_PLAIN && accepts(validate(data))) request[kCheckedStatus] = reply.statusCode;
             }
@@ -392,9 +416,14 @@ function register(app, options, document, next) {
               return;
             }
             request[kCheckedStatus] = undefined;
-            const validate = validatorFor(validatorsOf(), reply.statusCode);
-            // Once: the 500 of a response out of its contract is not checked again.
-            if (!validate || request[kInvalidResponse] || typeof payload !== 'string') {
+            // Once: the 500 of a response out of its contract (or of schemas that do not compile) is not checked.
+            if (request[kInvalidResponse]) {
+              done(null, payload);
+              return;
+            }
+            const validate = validatorOf(request, reply, done);
+            if (validate === false) return;
+            if (!validate || typeof payload !== 'string') {
               done(null, payload);
               return;
             }
@@ -434,12 +463,6 @@ function register(app, options, document, next) {
   } catch (err) {
     next(err);
     return;
-  }
-
-  if (toCompile.length) {
-    app.addHook('onReady', async () => {
-      for (const compile of toCompile) compile();
-    });
   }
 
   // request.operation: the operation of the route ({ id, validateRequest(), validateResponse(payload, status) }).

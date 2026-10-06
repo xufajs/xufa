@@ -7,7 +7,7 @@ const real = require('real-sequelize');
 
 const scenarios = {
   // #13153: hasOne set() with a target that fails to save: the old one is kept?
-  async hasOneSetFailure({ Sequelize, DataTypes }, sequelize) {
+  async hasOneSetFailure({ DataTypes }, sequelize) {
     const User = sequelize.define('User', { name: DataTypes.STRING });
     const Profile = sequelize.define('Profile', { bio: { type: DataTypes.STRING, validate: { len: [3, 10] } } });
     User.hasOne(Profile);
@@ -142,7 +142,7 @@ const scenarios = {
   },
   // #17404: describeTable with a functional index.
   async describeFunctionalIndex({ DataTypes }, sequelize) {
-    const T = sequelize.define('T', { a: DataTypes.INTEGER, b: DataTypes.INTEGER });
+    sequelize.define('T', { a: DataTypes.INTEGER, b: DataTypes.INTEGER });
     await sequelize.sync({ force: true });
     await sequelize.query('CREATE INDEX t_coalesce ON "Ts" (COALESCE(a, b))');
     return sequelize
