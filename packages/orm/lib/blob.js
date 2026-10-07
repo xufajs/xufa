@@ -1,4 +1,4 @@
-// Blobs: the bodies of the objects of blob backends (disk, memory-blob; S3 and Azure later), the values of
+// Blobs: the bodies of the objects of blob backends (disk, memory-blob, s3, azure-blob), the values of
 // fields.blob().
 //
 // A blob read from a backend is a BlobValue: its body is not read until asked (buffer(), text(), json(), stream()),

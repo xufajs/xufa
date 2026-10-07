@@ -1,0 +1,242 @@
+{
+  "custom keyword (validate)": {
+    "rows": [
+      {
+        "name": "@xufa/schema (all errors)",
+        "ops": 964474494.9766301,
+        "spread": 1.1860754541134235
+      },
+      {
+        "name": "@xufa/schema (first error)",
+        "ops": 968119841.3113196,
+        "spread": 1.4704519933280114
+      },
+      {
+        "name": "ajv (all errors)",
+        "ops": 126532837.52229129,
+        "spread": 3.9226032612512145
+      },
+      {
+        "name": "ajv (first error)",
+        "ops": 127833735.79177438,
+        "spread": 0.533459355878375
+      }
+    ]
+  },
+  "ajv-keywords (range, regexp, prohibited, uniqueItemProperties)": {
+    "rows": [
+      {
+        "name": "@xufa/schema (all errors)",
+        "ops": 30452539.401309747,
+        "spread": 2.3809331878068853
+      },
+      {
+        "name": "@xufa/schema (first error)",
+        "ops": 31706915.57352767,
+        "spread": 0.3616300726348281
+      },
+      {
+        "name": "ajv (all errors)",
+        "ops": 24642843.753631428,
+        "spread": 7.522775434820464
+      },
+      {
+        "name": "ajv (first error)",
+        "ops": 24113662.561107248,
+        "spread": 3.0961267961399814
+      }
+    ]
+  },
+  "useDefaults and removeAdditional (defaults filled, 2 keys removed)": {
+    "rows": [
+      {
+        "name": "@xufa/schema (all errors)",
+        "ops": 3614983.6874331166,
+        "spread": 1.5074947645825176
+      },
+      {
+        "name": "@xufa/schema (first error)",
+        "ops": 3629287.3058002135,
+        "spread": 3.6399725933096176
+      },
+      {
+        "name": "ajv (all errors)",
+        "ops": 3256722.583252,
+        "spread": 3.7782904739912926
+      },
+      {
+        "name": "ajv (first error)",
+        "ops": 3001719.748603961,
+        "spread": 13.24073881170653
+      }
+    ]
+  },
+  "coerceTypes (query string values)": {
+    "rows": [
+      {
+        "name": "@xufa/schema (all errors)",
+        "ops": 20958288.93986973,
+        "spread": 5.963242684869023
+      },
+      {
+        "name": "@xufa/schema (first error)",
+        "ops": 19359733.332782336,
+        "spread": 3.9101796397335464
+      },
+      {
+        "name": "ajv (all errors)",
+        "ops": 13590162.614883887,
+        "spread": 5.115487960773578
+      },
+      {
+        "name": "ajv (first error)",
+        "ops": 12577750.312374623,
+        "spread": 11.891510244356326
+      }
+    ]
+  },
+  "formats with formatMinimum and formatMaximum": {
+    "rows": [
+      {
+        "name": "@xufa/schema (all errors)",
+        "ops": 1056765.3612572222,
+        "spread": 4.154115327858648
+      },
+      {
+        "name": "@xufa/schema (first error)",
+        "ops": 1095671.7441130446,
+        "spread": 2.2109218471272754
+      },
+      {
+        "name": "ajv (all errors)",
+        "ops": 916503.364398221,
+        "spread": 18.284058826855233
+      },
+      {
+        "name": "ajv (first error)",
+        "ops": 891629.8580071902,
+        "spread": 4.956474643426032
+      }
+    ]
+  },
+  "tagged oneOf without discriminator (8 kinds)": {
+    "rows": [
+      {
+        "name": "@xufa/schema (all errors)",
+        "ops": 101626054.64079984,
+        "spread": 5.52279115574086
+      },
+      {
+        "name": "@xufa/schema (first error)",
+        "ops": 110476982.6681535,
+        "spread": 4.828569831360442
+      },
+      {
+        "name": "ajv (all errors)",
+        "ops": 5695724.55476376,
+        "spread": 6.758813502523312
+      },
+      {
+        "name": "ajv (first error)",
+        "ops": 5207412.5573702,
+        "spread": 52.01996093435889
+      }
+    ]
+  },
+  "draft-04 (boolean exclusiveMaximum, id)": {
+    "rows": [
+      {
+        "name": "@xufa/schema (all errors)",
+        "ops": 164701024.45855287,
+        "spread": 4.128184193448843
+      },
+      {
+        "name": "@xufa/schema (first error)",
+        "ops": 165663574.6264261,
+        "spread": 5.35787338931519
+      },
+      {
+        "name": "ajv (all errors)",
+        "ops": 72796207.7057938,
+        "spread": 1.3510284449288787
+      },
+      {
+        "name": "ajv (first error)",
+        "ops": 77270643.25298019,
+        "spread": 8.727192900104114
+      }
+    ]
+  },
+  "error objects (order with 20 lines, invalid)": {
+    "rows": [
+      {
+        "name": "@xufa/schema (all errors)",
+        "ops": 677196.6126437415,
+        "spread": 3.6515455392511735
+      },
+      {
+        "name": "@xufa/schema (first error)",
+        "ops": 15141408.003934197,
+        "spread": 0.8694867365804926
+      },
+      {
+        "name": "ajv (all errors)",
+        "ops": 452925.00333334075,
+        "spread": 6.647116160013507
+      },
+      {
+        "name": "ajv (first error)",
+        "ops": 10928263.553869931,
+        "spread": 2.278343726034384
+      }
+    ]
+  },
+  "standalone code (order with 20 lines, valid)": {
+    "rows": [
+      {
+        "name": "@xufa/schema (all errors)",
+        "ops": 2172008.1470059454,
+        "spread": 10.97765797608909
+      },
+      {
+        "name": "@xufa/schema (first error)",
+        "ops": 2180031.3359104805,
+        "spread": 1.3649628064824622
+      },
+      {
+        "name": "ajv (all errors)",
+        "ops": 676744.4700077731,
+        "spread": 8.919377236091623
+      },
+      {
+        "name": "ajv (first error)",
+        "ops": 746152.7314690076,
+        "spread": 1.9480619986401826
+      }
+    ]
+  },
+  "unevaluatedProperties (payment 2020-12)": {
+    "rows": [
+      {
+        "name": "@xufa/schema (all errors)",
+        "ops": 12405716.98427389,
+        "spread": 8.375039645378859
+      },
+      {
+        "name": "@xufa/schema (first error)",
+        "ops": 12702698.351988351,
+        "spread": 1.2515025664034372
+      },
+      {
+        "name": "ajv (all errors)",
+        "ops": 7139066.246135932,
+        "spread": 4.091598224728531
+      },
+      {
+        "name": "ajv (first error)",
+        "ops": 7795110.524576771,
+        "spread": 4.9548953873730115
+      }
+    ]
+  }
+}

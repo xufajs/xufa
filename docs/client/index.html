@@ -6,7 +6,7 @@
     <title>@xufa/client · xufa</title>
     <meta
       name="description"
-      content="@xufa/client: a client of HTTP APIs on fetch with no dependencies: base URLs, JSON, timeouts, retries with backoff, errors by status, and the cancellation and id of the request that calls."
+      content="@xufa/client: a client of HTTP APIs over node:http (or fetch) with no dependencies: base URLs, JSON, timeouts, retries with backoff, errors by status, and the cancellation and id of the request that calls."
     />
     <link
       rel="icon"
@@ -58,6 +58,8 @@
         <h4>Packages</h4>
         <ul>
           <li><a href="../websocket/index.html">@xufa/websocket</a></li>
+          <li><a href="../admin/index.html">@xufa/admin</a></li>
+          <li><a href="../session/index.html">@xufa/session</a></li>
           <li><a href="../openapi/index.html">@xufa/openapi</a></li>
           <li><a href="index.html" aria-current="page">@xufa/client</a></li>
           <li><a href="../schema/index.html">@xufa/schema</a></li>
@@ -67,6 +69,7 @@
           <li><a href="../template/index.html">@xufa/template</a></li>
           <li><a href="../cluster/index.html">@xufa/cluster</a></li>
           <li><a href="../scheduler/index.html">@xufa/scheduler</a></li>
+          <li><a href="../queue/index.html">@xufa/queue</a></li>
           <li><a href="../config/index.html">@xufa/config</a></li>
           <li><a href="../discovery/index.html">@xufa/discovery</a></li>
           <li><a href="../netcache/index.html">@xufa/netcache</a></li>
@@ -85,9 +88,13 @@
       </aside>
 
       <article class="content">
-<h1>@xufa/client</h1>
+        <nav class="package-tabs" aria-label="@xufa/client">
+          <a href="index.html" aria-current="page">Overview</a>
+          <a href="reference.html">Reference</a>
+        </nav>
+        <h1>@xufa/client</h1>
         <p class="intro">
-          A client of HTTP APIs on the <code>fetch</code> of Node.js, with no dependencies: base URLs, query strings and
+          A client of HTTP APIs over <code>node:http</code> (or the <code>fetch</code> of Node.js), with no dependencies: base URLs, query strings and
           JSON, answers parsed, timeouts, retries with backoff, errors by status, hooks and logs. Bound to a request of
           <a href="../http/index.html">@xufa/http</a>, a call is cancelled when the client of that request goes away.
         </p>
@@ -104,9 +111,12 @@ const created = await books.post('/books', { json: { title: 'Dune' } });</code><
         <ul>
           <li><code>get</code>, <code>head</code>, <code>options</code>, <code>post</code>, <code>put</code>, <code>patch</code>, <code>delete</code>, <code>request(method, path, options)</code>: the body of the answer (JSON by its content-type, text otherwise; nothing for 204 and HEAD).</li>
           <li><code>baseUrl</code> (its path kept), <code>headers</code>, <code>query</code> (arrays repeat the key), <code>json</code> or <code>body</code>, <code>timeout</code> (30 s for each attempt).</li>
-          <li><code>responseType</code>: <code>auto</code>, <code>json</code>, <code>text</code>, <code>buffer</code>, <code>stream</code>, <code>response</code>; <code>resolveBodyOnly: false</code> gives <code>{ status, headers, body, url }</code>; <code>throwHttpErrors: false</code>.</li>
+          <li><code>responseType</code>: <code>auto</code>, <code>json</code>, <code>text</code>, <code>buffer</code>, <code>stream</code> (a web <code>ReadableStream</code>, read as it comes, decompressed), <code>response</code>; <code>resolveBodyOnly: false</code> gives <code>{ status, headers, body, url }</code>; <code>throwHttpErrors: false</code>.</li>
           <li><code>hooks</code>: <code>beforeRequest(call)</code> and <code>afterResponse(response, call)</code>. <code>extend(options)</code> makes a client with more options.</li>
           <li><code>dispatcher</code>: a dispatcher of undici for proxies; on Node.js 24, <code>NODE_USE_ENV_PROXY=1</code>.</li>
+          <li><code>transport</code>: <code>'http'</code> (the default) makes the calls over <code>node:http</code> and <code>node:https</code>, with connections kept: about 35-40% more calls a second than the same client on fetch. As fetch, it asks for compressed answers (<code>gzip, deflate, br</code>) and decompresses them, and follows redirects. Only <code>response</code> answers and a <code>dispatcher</code> go through fetch: bodies that are streams, forms (<code>FormData</code>, <code>URLSearchParams</code>), blobs and <code>ArrayBuffer</code>s are sent by it, with the type and length fetch gives them. <code>transport: 'fetch'</code> makes every call with fetch. <code>client.close()</code> closes the connections it keeps.</li>
+          <li><code>proxy</code>: a URL (<code>'http://user:password@proxy:3128'</code>, or <code>https:</code>), <code>'env'</code> (<code>HTTP_PROXY</code>, <code>HTTPS_PROXY</code>, <code>NO_PROXY</code>) or <code>false</code>; by default the proxy of the environment when <code>NODE_USE_ENV_PROXY</code> is set, as Node.js. https: servers through tunnels (<code>CONNECT</code>) kept alive and reused; http: requests sent to the proxy.</li>
+          <li><code>tls</code>: options of TLS of the connections (<code>ca</code>, <code>cert</code> and <code>key</code>, <code>rejectUnauthorized</code>). <code>proxy</code> and <code>tls</code> need the http transport: with fetch they are an error.</li>
         </ul>
 
         <h2 id="retries">Retries</h2>

@@ -63,7 +63,8 @@ In clouds, where there is no multicast: `discovery: { transport: 'unicast', seed
 
 `start()`, `stop()`; `get(key)`, `set(key, value, ttl)`, `delete(keys)`, `clear(prefix)`; `size`, `connected` (the ids
 of the peers connected), `stats` (`sent`, `applied`, `ignored`, `resent`, `resets`, `snapshots`). Events: `peer` (id,
-`'connected'` or `'disconnected'`), `change` (a write of another node applied), `reset`, `synced`, `error`.
+`'connected'` or `'disconnected'`), `change` (a write of another node applied), `reset`, `synced`, `error`. `health({ minPeers })` is a check of `xufa.health` of [@xufa/http](../http): down when
+not started, degraded when peers it knows are not connected (or fewer than `minPeers`); not critical by default.
 
 ## Security
 

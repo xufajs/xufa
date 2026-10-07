@@ -53,6 +53,7 @@
           <li><a href="#router">Router</a></li>
           <li><a href="#logger">Logger</a></li>
           <li><a href="#serializer">Serializer</a></li>
+          <li><a href="#schema">Schema validation</a></li>
           <li><a href="#jwt">JWT</a></li>
           <li><a href="#websocket">WebSocket</a></li>
           <li><a href="#expressions">Expressions</a></li>
@@ -647,7 +648,7 @@
           replies against the document too (<code>validateResponses</code>) costs what the table says: each reply is
           checked as plain data before it is serialized (the larger the reply, the more), and the validators are made on
           the first request of each route, not before (which slows a whole process: see
-          <a href="#how">How they are measured</a>).
+          <a href="benchmarks.html#how">How they are measured</a>).
         </p>
         <div class="table-wrap">
           <table class="numbers">
@@ -968,6 +969,128 @@ Server processor time per request (lower is better):
 | anyOf | 4.25M | 4.35M | 9.65M | 2.22x | 2.27x |
 | recursive $ref tree | 2.46M | 2.85M | 3.62M | 1.27x | 1.47x |</code></pre>
         </details>
+
+        <h2 id="schema">Schema validation: @xufa/schema</h2>
+        <p>
+          <a href="schema/benchmarks.html">@xufa/schema</a> compared with ajv and nine other JSON Schema validators, each
+          measured in its own process (Node.js v22.21.1, Windows_NT, 2026-10-07). Every
+          library, payload and feature is on <a href="schema/benchmarks.html">the page of its benchmarks</a>.
+        </p>
+        <div class="stats">
+          <div class="stat"><span class="value">4,950</span><span class="label">tests of the JSON-Schema-Test-Suite, draft-04 to 2020-12: all passed (ajv: 4,836)</span></div>
+          <div class="stat"><span class="value">2.0&times;</span><span class="label">ajv's speed on the draft-07 test suite, first error</span></div>
+          <div class="stat"><span class="value">2.1&times;</span><span class="label">ajv's speed on the payloads below, on average (geometric mean), first error</span></div>
+          <div class="stat"><span class="value">47&times;</span><span class="label">ajv's speed compiling a schema</span></div>
+        </div>
+        <h3 id="schema-conformance">Tests passed</h3>
+        <div class="table-wrap">
+          <table class="progress-table">
+            <thead>
+              <tr><th></th><th>draft-04</th><th>draft-06</th><th>draft-07</th><th>2019-09</th><th>2020-12</th></tr>
+            </thead>
+            <tbody>
+              <tr><td><strong>@xufa/schema</strong></td><td><div class="progress full"><div class="track"><div class="fill" style="width: 100.0%"></div></div><span class="count">618 / 618</span></div></td><td><div class="progress full"><div class="track"><div class="fill" style="width: 100.0%"></div></div><span class="count">841 / 841</span></div></td><td><div class="progress full"><div class="track"><div class="fill" style="width: 100.0%"></div></div><span class="count">929 / 929</span></div></td><td><div class="progress full"><div class="track"><div class="fill" style="width: 100.0%"></div></div><span class="count">1261 / 1261</span></div></td><td><div class="progress full"><div class="track"><div class="fill" style="width: 100.0%"></div></div><span class="count">1301 / 1301</span></div></td></tr>
+              <tr><td>ajv</td><td><div class="progress"><div class="track"><div class="fill" style="width: 98.7%"></div></div><span class="count">610 / 618</span></div></td><td><div class="progress"><div class="track"><div class="fill" style="width: 99.0%"></div></div><span class="count">833 / 841</span></div></td><td><div class="progress"><div class="track"><div class="fill" style="width: 99.1%"></div></div><span class="count">921 / 929</span></div></td><td><div class="progress"><div class="track"><div class="fill" style="width: 97.8%"></div></div><span class="count">1233 / 1261</span></div></td><td><div class="progress"><div class="track"><div class="fill" style="width: 95.2%"></div></div><span class="count">1239 / 1301</span></div></td></tr>
+              <tr><td>@exodus/schemasafe</td><td><span class="count">not run</span></td><td><span class="count">not run</span></td><td><div class="progress"><div class="track"><div class="fill" style="width: 97.4%"></div></div><span class="count">905 / 929</span></div></td><td><div class="progress"><div class="track"><div class="fill" style="width: 97.4%"></div></div><span class="count">1228 / 1261</span></div></td><td><div class="progress"><div class="track"><div class="fill" style="width: 97.1%"></div></div><span class="count">1263 / 1301</span></div></td></tr>
+              <tr><td>@cfworker/json-schema</td><td><span class="count">not run</span></td><td><span class="count">not run</span></td><td><div class="progress"><div class="track"><div class="fill" style="width: 98.9%"></div></div><span class="count">919 / 929</span></div></td><td><div class="progress"><div class="track"><div class="fill" style="width: 99.0%"></div></div><span class="count">1248 / 1261</span></div></td><td><div class="progress"><div class="track"><div class="fill" style="width: 96.0%"></div></div><span class="count">1249 / 1301</span></div></td></tr>
+              <tr><td>json-schema-library</td><td><span class="count">not run</span></td><td><span class="count">not run</span></td><td><div class="progress"><div class="track"><div class="fill" style="width: 97.6%"></div></div><span class="count">907 / 929</span></div></td><td><div class="progress"><div class="track"><div class="fill" style="width: 99.9%"></div></div><span class="count">1260 / 1261</span></div></td><td><div class="progress"><div class="track"><div class="fill" style="width: 99.2%"></div></div><span class="count">1291 / 1301</span></div></td></tr>
+              <tr><td>is-my-json-valid</td><td><span class="count">not run</span></td><td><span class="count">not run</span></td><td><div class="progress"><div class="track"><div class="fill" style="width: 86.2%"></div></div><span class="count">801 / 929</span></div></td><td><span class="count">not run</span></td><td><span class="count">not run</span></td></tr>
+              <tr><td>jsen</td><td><span class="count">not run</span></td><td><span class="count">not run</span></td><td><div class="progress"><div class="track"><div class="fill" style="width: 82.0%"></div></div><span class="count">762 / 929</span></div></td><td><span class="count">not run</span></td><td><span class="count">not run</span></td></tr>
+              <tr><td>djv</td><td><span class="count">not run</span></td><td><span class="count">not run</span></td><td><div class="progress"><div class="track"><div class="fill" style="width: 85.1%"></div></div><span class="count">791 / 929</span></div></td><td><span class="count">not run</span></td><td><span class="count">not run</span></td></tr>
+              <tr><td>jsonschema</td><td><span class="count">not run</span></td><td><span class="count">not run</span></td><td><div class="progress"><div class="track"><div class="fill" style="width: 97.4%"></div></div><span class="count">905 / 929</span></div></td><td><span class="count">not run</span></td><td><span class="count">not run</span></td></tr>
+              <tr><td>tv4</td><td><span class="count">not run</span></td><td><span class="count">not run</span></td><td><div class="progress"><div class="track"><div class="fill" style="width: 86.7%"></div></div><span class="count">805 / 929</span></div></td><td><span class="count">not run</span></td><td><span class="count">not run</span></td></tr>
+              <tr><td>z-schema</td><td><span class="count">not run</span></td><td><span class="count">not run</span></td><td><div class="progress"><div class="track"><div class="fill" style="width: 92.5%"></div></div><span class="count">859 / 929</span></div></td><td><span class="count">not run</span></td><td><span class="count">not run</span></td></tr>
+            </tbody>
+          </table>
+        </div>
+        <h3 id="schema-suite">Speed on the test suite</h3>
+        <div class="tabs segmented">
+        <div class="tab-list" role="tablist"><button role="tab" id="suite-tab-0" aria-controls="suite-panel-0" aria-selected="false">true/false</button><button role="tab" id="suite-tab-1" aria-controls="suite-panel-1" aria-selected="true">first error</button><button role="tab" id="suite-tab-2" aria-controls="suite-panel-2" aria-selected="false">all errors</button></div>
+        <div class="tab-panel" id="suite-panel-0" role="tabpanel" aria-labelledby="suite-tab-0" hidden>
+          <div class="charts">
+          <div class="chart">
+            <h3>Draft-07</h3>
+            <p class="subtitle">runs per second over 430 tests</p>
+            <div class="chart-row us win"><span class="name" title="@xufa/schema (boolean)">@xufa/schema</span><div class="track"><div class="fill" style="width: 100.0%"></div></div><span class="value">181k</span></div>
+            <div class="chart-row"><span class="name" title="@exodus/schemasafe (boolean)">@exodus/schemasafe</span><div class="track"><div class="fill" style="width: 88.9%"></div></div><span class="value">161k<small>1.1&times; slower</small></span></div>
+            <div class="chart-row"><span class="name" title="jsen">jsen</span><div class="track"><div class="fill" style="width: 24.7%"></div></div><span class="value">44.8k<small>4.0&times; slower</small></span></div>
+            <div class="chart-row"><span class="name" title="is-my-json-valid">is-my-json-valid</span><div class="track"><div class="fill" style="width: 19.8%"></div></div><span class="value">35.9k<small>5.0&times; slower</small></span></div>
+            <div class="chart-row"><span class="name" title="djv">djv</span><div class="track"><div class="fill" style="width: 3.4%"></div></div><span class="value">6.22k<small>29&times; slower</small></span></div>
+            <div class="chart-row interprets"><span class="name" title="@cfworker/json-schema">@cfworker/json-schema</span><div class="track"><div class="fill" style="width: 0.7%"></div></div><span class="value">1.28k<small>141&times; slower</small></span></div>
+            <div class="chart-row"><span class="name" title="json-schema-library">json-schema-library</span><div class="track"><div class="fill" style="width: 0.6%"></div></div><span class="value">1.04k<small>175&times; slower</small></span></div>
+            <div class="chart-row interprets"><span class="name" title="jsonschema">jsonschema</span><div class="track"><div class="fill" style="width: 0.5%"></div></div><span class="value">282<small>641&times; slower</small></span></div>
+            <div class="chart-row interprets"><span class="name" title="tv4">tv4</span><div class="track"><div class="fill" style="width: 0.5%"></div></div><span class="value">88<small>2070&times; slower</small></span></div>
+            <div class="chart-row"><span class="name" title="z-schema">z-schema</span><div class="track"><div class="fill" style="width: 0.5%"></div></div><span class="value">54<small>3354&times; slower</small></span></div>
+          </div>
+          <div class="chart">
+            <h3>Draft 2019-09</h3>
+            <p class="subtitle">runs per second over 1178 tests</p>
+            <div class="chart-row us win"><span class="name" title="@xufa/schema (boolean)">@xufa/schema</span><div class="track"><div class="fill" style="width: 100.0%"></div></div><span class="value">33.5k</span></div>
+            <div class="chart-row"><span class="name" title="@exodus/schemasafe (boolean)">@exodus/schemasafe</span><div class="track"><div class="fill" style="width: 75.4%"></div></div><span class="value">25.3k<small>1.3&times; slower</small></span></div>
+            <div class="chart-row interprets"><span class="name" title="@cfworker/json-schema">@cfworker/json-schema</span><div class="track"><div class="fill" style="width: 0.8%"></div></div><span class="value">264<small>127&times; slower</small></span></div>
+            <div class="chart-row"><span class="name" title="json-schema-library">json-schema-library</span><div class="track"><div class="fill" style="width: 0.5%"></div></div><span class="value">57<small>583&times; slower</small></span></div>
+          </div>
+          <div class="chart">
+            <h3>Draft 2020-12</h3>
+            <p class="subtitle">runs per second over 1051 tests</p>
+            <div class="chart-row us win"><span class="name" title="@xufa/schema (boolean)">@xufa/schema</span><div class="track"><div class="fill" style="width: 100.0%"></div></div><span class="value">32.7k</span></div>
+            <div class="chart-row"><span class="name" title="@exodus/schemasafe (boolean)">@exodus/schemasafe</span><div class="track"><div class="fill" style="width: 80.9%"></div></div><span class="value">26.5k<small>1.2&times; slower</small></span></div>
+            <div class="chart-row interprets"><span class="name" title="@cfworker/json-schema">@cfworker/json-schema</span><div class="track"><div class="fill" style="width: 0.9%"></div></div><span class="value">285<small>115&times; slower</small></span></div>
+            <div class="chart-row"><span class="name" title="json-schema-library">json-schema-library</span><div class="track"><div class="fill" style="width: 0.5%"></div></div><span class="value">72<small>451&times; slower</small></span></div>
+          </div>
+        </div>
+        </div>
+        <div class="tab-panel" id="suite-panel-1" role="tabpanel" aria-labelledby="suite-tab-1">
+          <div class="charts">
+          <div class="chart">
+            <h3>Draft-07</h3>
+            <p class="subtitle">runs per second over 430 tests</p>
+            <div class="chart-row us win"><span class="name" title="@xufa/schema (first error)">@xufa/schema</span><div class="track"><div class="fill" style="width: 100.0%"></div></div><span class="value">127k</span></div>
+            <div class="chart-row"><span class="name" title="@exodus/schemasafe (first error)">@exodus/schemasafe</span><div class="track"><div class="fill" style="width: 83.3%"></div></div><span class="value">106k<small>1.2&times; slower</small></span></div>
+            <div class="chart-row"><span class="name" title="ajv (first error)">ajv</span><div class="track"><div class="fill" style="width: 50.4%"></div></div><span class="value">64.2k<small>2.0&times; slower</small></span></div>
+          </div>
+          <div class="chart">
+            <h3>Draft 2019-09</h3>
+            <p class="subtitle">runs per second over 1178 tests</p>
+            <div class="chart-row us win"><span class="name" title="@xufa/schema (first error)">@xufa/schema</span><div class="track"><div class="fill" style="width: 100.0%"></div></div><span class="value">24.0k</span></div>
+            <div class="chart-row"><span class="name" title="@exodus/schemasafe (first error)">@exodus/schemasafe</span><div class="track"><div class="fill" style="width: 64.6%"></div></div><span class="value">15.5k<small>1.5&times; slower</small></span></div>
+            <div class="chart-row"><span class="name" title="ajv (first error)">ajv</span><div class="track"><div class="fill" style="width: 46.0%"></div></div><span class="value">11.0k<small>2.2&times; slower</small></span></div>
+          </div>
+          <div class="chart">
+            <h3>Draft 2020-12</h3>
+            <p class="subtitle">runs per second over 1051 tests</p>
+            <div class="chart-row us win"><span class="name" title="@xufa/schema (first error)">@xufa/schema</span><div class="track"><div class="fill" style="width: 100.0%"></div></div><span class="value">25.4k</span></div>
+            <div class="chart-row"><span class="name" title="@exodus/schemasafe (first error)">@exodus/schemasafe</span><div class="track"><div class="fill" style="width: 67.7%"></div></div><span class="value">17.2k<small>1.5&times; slower</small></span></div>
+            <div class="chart-row"><span class="name" title="ajv (first error)">ajv</span><div class="track"><div class="fill" style="width: 19.6%"></div></div><span class="value">4.98k<small>5.1&times; slower</small></span></div>
+          </div>
+        </div>
+        </div>
+        <div class="tab-panel" id="suite-panel-2" role="tabpanel" aria-labelledby="suite-tab-2" hidden>
+          <div class="charts">
+          <div class="chart">
+            <h3>Draft-07</h3>
+            <p class="subtitle">runs per second over 430 tests</p>
+            <div class="chart-row us win"><span class="name" title="@xufa/schema (all errors)">@xufa/schema</span><div class="track"><div class="fill" style="width: 100.0%"></div></div><span class="value">103k</span></div>
+            <div class="chart-row"><span class="name" title="@exodus/schemasafe (all errors)">@exodus/schemasafe</span><div class="track"><div class="fill" style="width: 67.4%"></div></div><span class="value">69.5k<small>1.5&times; slower</small></span></div>
+            <div class="chart-row"><span class="name" title="ajv (all errors)">ajv</span><div class="track"><div class="fill" style="width: 55.6%"></div></div><span class="value">57.3k<small>1.8&times; slower</small></span></div>
+          </div>
+          <div class="chart">
+            <h3>Draft 2019-09</h3>
+            <p class="subtitle">runs per second over 1178 tests</p>
+            <div class="chart-row us win"><span class="name" title="@xufa/schema (all errors)">@xufa/schema</span><div class="track"><div class="fill" style="width: 100.0%"></div></div><span class="value">18.0k</span></div>
+            <div class="chart-row"><span class="name" title="ajv (all errors)">ajv</span><div class="track"><div class="fill" style="width: 50.2%"></div></div><span class="value">9.03k<small>2.0&times; slower</small></span></div>
+            <div class="chart-row"><span class="name" title="@exodus/schemasafe (all errors)">@exodus/schemasafe</span><div class="track"><div class="fill" style="width: 40.4%"></div></div><span class="value">7.27k<small>2.5&times; slower</small></span></div>
+          </div>
+          <div class="chart">
+            <h3>Draft 2020-12</h3>
+            <p class="subtitle">runs per second over 1051 tests</p>
+            <div class="chart-row us win"><span class="name" title="@xufa/schema (all errors)">@xufa/schema</span><div class="track"><div class="fill" style="width: 100.0%"></div></div><span class="value">19.6k</span></div>
+            <div class="chart-row"><span class="name" title="@exodus/schemasafe (all errors)">@exodus/schemasafe</span><div class="track"><div class="fill" style="width: 48.0%"></div></div><span class="value">9.43k<small>2.1&times; slower</small></span></div>
+            <div class="chart-row"><span class="name" title="ajv (all errors)">ajv</span><div class="track"><div class="fill" style="width: 25.0%"></div></div><span class="value">4.90k<small>4.0&times; slower</small></span></div>
+          </div>
+        </div>
+        </div>
+      </div>
 
         <h2 id="jwt">JWT</h2>
         <p>

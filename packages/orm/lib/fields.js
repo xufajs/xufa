@@ -300,17 +300,59 @@ class DecimalField extends Field {
     return 'decimal';
   }
 
+  // The text of the value with the digits of the scale (as Django gives decimal_places, and the databases a
+  // numeric(p, s)): '3' and '3.0' are '3.00' for a scale of 2. More decimal places than the scale are kept, for
+  // checkValue() to refuse them.
   toValue(value) {
     const text = typeof value === 'number' || typeof value === 'bigint' ? String(value) : value;
     if (typeof text !== 'string' || !/^-?(\d+\.?\d*|\.\d+)(e[-+]?\d+)?$/i.test(text.trim())) {
       throw new TypeError('The value must be a decimal number.');
     }
-    return text.trim();
+    return padDecimal(text.trim(), this.scale);
+  }
+
+  // As the database gives it (SQLite: a number, or its text without the zeros at the end): with the digits of the scale.
+  fromDb(value) {
+    if (value === null || value === undefined || !Number.isInteger(this.scale)) return value;
+    if (typeof value === 'number') return value.toFixed(this.scale);
+    return padDecimal(String(value), this.scale, true);
+  }
+
+  // As Django's DecimalField: no more digits than the precision, nor decimal places than the scale.
+  checkValue(value, messages) {
+    const plain = /e/i.test(value) ? Number(value).toFixed(Number.isInteger(this.scale) ? this.scale : 20) : value;
+    const [whole, fraction = ''] = plain.replace(/^-/, '').split('.');
+    const places = fraction.length;
+    const digits = whole.replace(/^0+/, '').length + places;
+    if (Number.isInteger(this.scale) && places > this.scale) {
+      messages.push(`Ensure that there are no more than ${this.scale} decimal places.`);
+    }
+    if (Number.isInteger(this.precision) && digits > this.precision) {
+      messages.push(`Ensure that there are no more than ${this.precision} digits in total.`);
+    }
   }
 
   jsonSchema() {
     return { type: 'string', pattern: '^-?\\d*\\.?\\d+$' };
   }
+}
+
+// A decimal's text with at least `scale` digits after the point ('3' -> '3.00'); with `exact`, with exactly that many
+// (rounded half away from zero, for values of the database). Texts with exponents are written without them.
+function padDecimal(text, scale, exact = false) {
+  if (!Number.isInteger(scale)) return text;
+  let value = text;
+  if (/e/i.test(value)) value = Number(value).toFixed(scale);
+  const negative = value.startsWith('-');
+  const [whole, fraction = ''] = (negative ? value.slice(1) : value).split('.');
+  if (fraction.length <= scale) {
+    const padded = scale ? `${whole || '0'}.${fraction.padEnd(scale, '0')}` : whole || '0';
+    return negative ? `-${padded}` : padded;
+  }
+  if (!exact) return value;
+  const rounded = Math.round(Number(`${whole || '0'}.${fraction}e${scale}`));
+  const result = Number(`${rounded}e-${scale}`).toFixed(scale);
+  return negative && Number(result) !== 0 ? `-${result}` : result;
 }
 
 const DATE = /^\d{4}-\d{2}-\d{2}$/;
@@ -831,6 +873,11 @@ class BlobInfoField extends Field {
     return this.blobInfo !== 'contentType';
   }
 
+  // Set on an object when it is created (Model.save() takes them from the row the backend wrote into).
+  get givenByBackend() {
+    return true;
+  }
+
   toValue(value) {
     if (this.blobInfo === 'updatedAt') {
       const date = value instanceof Date ? value : new Date(value);
@@ -852,6 +899,73 @@ class BlobInfoField extends Field {
           ? { type: 'string', format: 'date-time' }
           : { type: 'string' };
     return this.readOnly ? { ...schema, readOnly: true } : schema;
+  }
+}
+
+// What a mail backend gives of a message it sent, as a field: 'messageId' (its Message-ID, without <>), 'accepted'
+// (the recipients the server accepted), 'rejected' ([{ address, code, response }]), 'response' (the answer of the
+// server to the message), 'sentAt' (a date) or 'raw' (the message as it was sent, MIME). Given by the backend: not
+// required, and not written.
+const MAIL_INFO = {
+  messageId: 'string',
+  accepted: 'json',
+  rejected: 'json',
+  response: 'string',
+  sentAt: 'datetime',
+  raw: 'text',
+};
+
+class MailInfoField extends Field {
+  constructor(kind, options = {}) {
+    if (!Object.hasOwn(MAIL_INFO, kind)) {
+      throw new TypeError(`fields.mailInfo(kind): kind is ${Object.keys(MAIL_INFO).join(', ')} (it is ${kind})`);
+    }
+    super({ ...options, null: true });
+    this.mailInfo = kind;
+  }
+
+  get type() {
+    return MAIL_INFO[this.mailInfo];
+  }
+
+  get auto() {
+    return true;
+  }
+
+  get readOnly() {
+    return true;
+  }
+
+  get givenByBackend() {
+    return true;
+  }
+
+  toValue(value) {
+    if (this.mailInfo === 'sentAt') {
+      const date = value instanceof Date ? value : new Date(value);
+      if (Number.isNaN(date.getTime())) throw new TypeError('The value must be a date.');
+      return date;
+    }
+    if (this.mailInfo === 'response' || this.mailInfo === 'raw' || this.mailInfo === 'messageId') return String(value);
+    return value;
+  }
+
+  jsonSchema() {
+    const schemas = {
+      messageId: { type: 'string' },
+      accepted: { type: 'array', items: { type: 'string' } },
+      rejected: {
+        type: 'array',
+        items: {
+          type: 'object',
+          properties: { address: { type: 'string' }, code: { type: 'integer' }, response: { type: 'string' } },
+        },
+      },
+      response: { type: 'string' },
+      sentAt: { type: 'string', format: 'date-time' },
+      raw: { type: 'string' },
+    };
+    return { ...schemas[this.mailInfo], readOnly: true };
   }
 }
 
@@ -878,6 +992,7 @@ const fields = {
   ManyToManyField,
   BlobField,
   BlobInfoField,
+  MailInfoField,
   id: (options) => new IdField(options),
   string: (options) => new StringField(options),
   text: (options) => new TextField(options),
@@ -900,6 +1015,7 @@ const fields = {
   manyToMany: (to, options) => new ManyToManyField(to, options),
   blob: (options) => new BlobField(options),
   blobInfo: (kind, options) => new BlobInfoField(kind, options),
+  mailInfo: (kind, options) => new MailInfoField(kind, options),
   // The fields of a parent model with those of a child (theirs replace those of the same name; null removes one): what
   // the ORM merges anyway, written so TypeScript knows it (static fields = fields.extend(Timestamped, { ... })).
   extend(parent, own = {}) {

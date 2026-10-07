@@ -1,4 +1,4 @@
-// @xufa/client: a client of HTTP APIs on the fetch of Node.js.
+/** @xufa/client: a client of HTTP APIs on the fetch of Node.js. */
 import type { Faults, FaultOptions, FaultRule } from '@xufa/faults';
 
 export type ClientFaultOperation = 'get' | 'head' | 'options' | 'post' | 'put' | 'patch' | 'delete' | 'read' | 'write';
@@ -68,7 +68,10 @@ export interface ClientOptions {
   timeout?: number;
   /** Retries: the number of attempts, false, or the options. */
   retry?: RetryOptions | number | false;
-  /** How the answer is read: auto (JSON by its type, text otherwise), json, text, buffer, stream, or the Response. */
+  /**
+   * How the answer is read: auto (JSON by its type, text otherwise), json, text, buffer, stream (a web ReadableStream,
+   * decompressed, read as it comes), or the Response of fetch.
+   */
   responseType?: 'auto' | 'json' | 'text' | 'buffer' | 'stream' | 'response';
   /** false: { status, headers, body, url } instead of the body. */
   resolveBodyOnly?: boolean;
@@ -90,6 +93,19 @@ export interface ClientOptions {
   /** A dispatcher of undici (proxies, pools): given to fetch. */
   dispatcher?: unknown;
   redirect?: 'follow' | 'error' | 'manual';
+  /**
+   * 'http' (the default): the calls over node:http and node:https, faster, compressed answers decompressed; Response
+   * answers and a dispatcher go through fetch. 'fetch': every call.
+   */
+  transport?: 'fetch' | 'http';
+  /**
+   * The proxy of the http transport: a URL (http: or https:, with user:password to log in), 'env' (HTTP_PROXY,
+   * HTTPS_PROXY, NO_PROXY), or false. By default, that of the environment when NODE_USE_ENV_PROXY is set (as Node.js).
+   * https: servers are reached through tunnels (CONNECT), kept alive.
+   */
+  proxy?: string | URL | 'env' | false;
+  /** Options of TLS of the http transport (its https: servers and proxies): ca, cert and key, rejectUnauthorized... */
+  tls?: import('node:tls').ConnectionOptions;
 }
 
 export interface CallOptions extends ClientOptions {
@@ -122,6 +138,8 @@ export interface Client {
   /** The client of a request: cancelled with it, logging with request.log, sending its id. */
   for(request: BoundRequest): Client;
   readonly defaults: ClientOptions;
+  /** Closes the connections kept by the http transport (shared with the clients made from it). */
+  close(): void;
 }
 
 export function createClient(options?: ClientOptions): Client;

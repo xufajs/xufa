@@ -40,12 +40,13 @@
     "url": "https://github.com/xufajs/xufa/issues"
   },
   "engines": {
-    "node": ">=22"
+    "node": "^22.22.3 || ^24.15.0 || >=25.7.0"
   },
   "devDependencies": {
-    "vyntra": "^0.6.0",
+    "ajv": "^8.20.0",
     "is-my-json-valid": "^2.20.6",
-    "rfdc": "^1.4.1"
+    "rfdc": "^1.4.1",
+    "vyntra": "^0.6.0"
   },
   "publishConfig": {
     "access": "public"

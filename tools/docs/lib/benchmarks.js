@@ -203,6 +203,11 @@ function openapiResults() {
   });
 }
 
+// The section of @xufa/schema (its results are in bench/results/schema, its pages written by bench/schema/report.js).
+function schemaSection() {
+  return require('../../../bench/schema/report').section(); // eslint-disable-line global-require
+}
+
 function openapiSection() {
   const rows = openapiResults();
   const find = (name) => rows.find((item) => item[0] === name);
@@ -253,7 +258,7 @@ ${rows
           replies against the document too (<code>validateResponses</code>) costs what the table says: each reply is
           checked as plain data before it is serialized (the larger the reply, the more), and the validators are made on
           the first request of each route, not before (which slows a whole process: see
-          <a href="#how">How they are measured</a>).
+          <a href="benchmarks.html#how">How they are measured</a>).
         </p>
         <div class="table-wrap">
           <table class="numbers">
@@ -312,6 +317,88 @@ const views = [
 ];
 
 // --- Sections.
+
+// The scenarios of the HTTP benchmarks: [name, what it does], from bench/scenarios.
+function scenarios() {
+  const dir = path.join(__dirname, '../../../bench/scenarios');
+  return fs
+    .readdirSync(dir)
+    .filter((file) => file.endsWith('.js') && !file.startsWith('openapi-'))
+    .map((file) => [file.slice(0, -3), require(path.join(dir, file)).description]); // eslint-disable-line global-require
+}
+
+// HTTP: @xufa/http against fastify and node:http, and the OpenAPI routes (benchmarks.html, and the page of benchmarks of
+// @xufa/http with the scenarios explained: `scenarios: true`).
+function httpSection({ scenarios: explained = false } = {}) {
+  const list = explained
+    ? `        <h3 id="scenarios">The scenarios</h3>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Scenario</th><th>What each request does</th></tr></thead>
+            <tbody>
+${scenarios()
+  .map(([name, description]) => `              <tr><td><code>${esc(name)}</code></td><td>${esc(description)}</td></tr>`)
+  .join('\n')}
+            </tbody>
+          </table>
+        </div>
+`
+    : '';
+  return `        <h2 id="http">HTTP</h2>
+        <p>
+          <code>@xufa/http</code> against fastify 5.12.5 and <code>node:http</code> (where it can answer the same), in
+          requests a second (more is better), on Linux (Ubuntu 26.04 on WSL2, on the same machine; Windows below). In the
+          process, without sockets, the numbers are the cost of the framework alone; over the loopback (autocannon, 100
+          connections, pipelining 10), the socket and Node.js's HTTP parser are part of the cost of every response.
+        </p>
+${list}        <h3>In the process: the cost of the framework</h3>
+        <div class="pairs">
+${inproc
+  .map(([name, ours, fastify, node, warn]) =>
+    pair(
+      name,
+      [
+        { name: 'xufa', value: ours, kind: 'us', label: fmt(ours) },
+        { name: 'fastify', value: fastify, label: fmt(fastify) },
+        ...(node ? [{ name: 'node:http', value: node, label: fmt(node) }] : []),
+      ],
+      ours / fastify,
+      warn
+    )
+  )
+  .join('\n')}
+        </div>
+        <h3>Over the loopback</h3>
+        <div class="pairs">
+${loopback
+  .map(([name, ours, fastify, node, warn]) =>
+    pair(
+      name,
+      [
+        { name: 'xufa', value: ours, kind: 'us', label: fmt(ours) },
+        { name: 'fastify', value: fastify, label: fmt(fastify) },
+        ...(node ? [{ name: 'node:http', value: node, label: fmt(node) }] : []),
+      ],
+      ours / fastify,
+      warn
+    )
+  )
+  .join('\n')}
+        </div>
+        <p>
+${httpNotes()}
+        </p>
+${raw(`All numbers on Linux (bench/results/${INPROC}.md; over the loopback, ${LOOPBACK}.md)`, ratioTable(inproc, loopback))}
+        <h3>On Windows</h3>
+        <p>
+          The same runs on Windows 11, on the same machine (<code>bench/results/${INPROC_WINDOWS}.md</code> and
+          <code>${LOOPBACK_WINDOWS}.md</code>). Its loopback is slower, so the socket is most of the cost of a small
+          response there, and the frameworks come closer.
+        </p>
+${ratioTable(inprocWindows, loopbackWindows)}
+
+${openapiSection()}`;
+}
 
 const twoWayTable = (head, other, list) =>
   [
@@ -500,6 +587,7 @@ ${serializer
         </p>
 ${rawTable('serializer-1.md')}
 
+${schemaSection()}
         <h2 id="jwt">JWT</h2>
         <p>
           <code>@xufa/jwt</code> against jsonwebtoken 9.0.3, in tokens signed, verified or decoded a second (more is better),
@@ -593,60 +681,7 @@ ${raw('All numbers (bench/results/postgres-7.md)', `${twoWayTable('Driver-bound 
 ${pairsOf(mongo, '@xufa/mongo', 'mongodb')}
 ${raw('All numbers (bench/results/mongo-7.md)', twoWayTable('Workload', 'mongodb', mongo))}
 
-        <h2 id="http">HTTP</h2>
-        <p>
-          <code>@xufa/http</code> against fastify 5.12.5 and <code>node:http</code> (where it can answer the same), in
-          requests a second (more is better), on Linux (Ubuntu 26.04 on WSL2, on the same machine; Windows below). In the
-          process, without sockets, the numbers are the cost of the framework alone; over the loopback (autocannon, 100
-          connections, pipelining 10), the socket and Node.js's HTTP parser are part of the cost of every response.
-        </p>
-        <h3>In the process: the cost of the framework</h3>
-        <div class="pairs">
-${inproc
-  .map(([name, ours, fastify, node, warn]) =>
-    pair(
-      name,
-      [
-        { name: 'xufa', value: ours, kind: 'us', label: fmt(ours) },
-        { name: 'fastify', value: fastify, label: fmt(fastify) },
-        ...(node ? [{ name: 'node:http', value: node, label: fmt(node) }] : []),
-      ],
-      ours / fastify,
-      warn
-    )
-  )
-  .join('\n')}
-        </div>
-        <h3>Over the loopback</h3>
-        <div class="pairs">
-${loopback
-  .map(([name, ours, fastify, node, warn]) =>
-    pair(
-      name,
-      [
-        { name: 'xufa', value: ours, kind: 'us', label: fmt(ours) },
-        { name: 'fastify', value: fastify, label: fmt(fastify) },
-        ...(node ? [{ name: 'node:http', value: node, label: fmt(node) }] : []),
-      ],
-      ours / fastify,
-      warn
-    )
-  )
-  .join('\n')}
-        </div>
-        <p>
-${httpNotes()}
-        </p>
-${raw(`All numbers on Linux (bench/results/${INPROC}.md; over the loopback, ${LOOPBACK}.md)`, ratioTable(inproc, loopback))}
-        <h3>On Windows</h3>
-        <p>
-          The same runs on Windows 11, on the same machine (<code>bench/results/${INPROC_WINDOWS}.md</code> and
-          <code>${LOOPBACK_WINDOWS}.md</code>). Its loopback is slower, so the socket is most of the cost of a small
-          response there, and the frameworks come closer.
-        </p>
-${ratioTable(inprocWindows, loopbackWindows)}
-
-${openapiSection()}
+${httpSection()}
 ${partsSections}        <h2 id="expressions">Expressions</h2>
         <p>
           <code>@xufa/expression</code> against the evaluators of expressions that run without access to the process
@@ -771,4 +806,4 @@ function buildBenchmarks(page) {
   return page.slice(0, start) + sections + page.slice(end);
 }
 
-module.exports = { buildBenchmarks };
+module.exports = { buildBenchmarks, httpSection };

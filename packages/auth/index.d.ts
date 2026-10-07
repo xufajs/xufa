@@ -1,4 +1,4 @@
-// The declarations of @xufa/auth (written for it).
+/** The declarations of @xufa/auth (written for it). */
 import { KeyObject } from 'node:crypto';
 import { XufaErrorConstructor } from '@xufa/errors';
 
@@ -251,6 +251,18 @@ export function generateRecoveryCodes(count?: number): string[];
 export function hashRecoveryCode(code: string): string;
 
 // Lockout
+
+/**
+ * A name that identifies someone (a user name, an email) as one key: Unicode NFKC and lower case ("ＡＤＭＩＮ" and
+ * "Admin" are "admin"). The lockout counts failures by it; store and find users by it too.
+ */
+export function normalizeIdentifier(value: string): string;
+
+/**
+ * The skeleton of a text (UTS #39): texts that look alike, also across scripts, have the same one ("pаypal" with a
+ * Cyrillic а is "paypal"). A key to compare, not a text to show: skeleton(normalizeIdentifier(name)), unique per user.
+ */
+export function skeleton(value: string): string;
 
 /** A store of values with a time to live in ms: a MemoryCache, SharedCache or LocalCache of @xufa/orm. */
 export interface ExpiringStore {

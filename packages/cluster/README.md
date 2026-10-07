@@ -1,8 +1,8 @@
 # @xufa/cluster
 
 Runs an app in a cluster of processes, one by CPU: the primary forks the workers, forks again those that die, and
-stops them all gracefully. A bus carries events and requests between the processes, and the same code runs in one
-process in development and tests. No dependencies.
+stops them all gracefully. A bus carries events and requests between the processes, pools share other servers
+among the workers, and the same code runs in one process in development and tests. No dependencies.
 
 ```js
 const { start, bus } = require('@xufa/cluster');
@@ -59,6 +59,52 @@ calls deliver to the handlers of that process.
 
 [@xufa/orm](../orm)'s `SharedCache({ bus })` and `LocalCache({ bus })`, and the lockout of [@xufa/auth](../auth) with
 a `SharedCache`, share their state through the bus.
+
+## Pools of nodes
+
+Work that goes to other servers taking a few tasks at once each (document converters, renderers) shares them through
+a pool: the primary keeps the nodes, their slots and a queue of tickets, and gives each free slot to the next ticket,
+whichever worker sent it. The work (the function, the request it answers) stays in the worker; only the ticket and the
+node go through the bus.
+
+```js
+const { createPool, usePool } = require('@xufa/cluster');
+
+// primary: the nodes (a list, or a Discovery of @xufa/discovery: peers, 'up', 'down')
+createPool('converters', {
+  nodes: discovery,
+  slots: (peer) => peer.meta.slots || 1, // tasks a node takes at once
+  leaseTimeout: '5m', // a lease longer is taken back: its work's signal aborted
+  autoscale: { perNode: 2, max: 64, downAfter: '10m', scale: (count) => kubernetes.scale(count) },
+});
+
+// workers (and the primary; with workers: 0, the one process)
+const converters = usePool('converters');
+const result = await converters.use((node, { signal }) => post(`${node.meta.url}/convert`, body, { signal }), {
+  retries: 2, // on other nodes
+});
+```
+
+- A free slot goes to the next ticket (higher `priority` first), on the node with most free slots (between equals,
+  the one given work longest ago). Tickets wait while there are no nodes.
+- A slot comes back when the work ends, when its worker dies, when its node goes (`XUFA_POOL_NODE_DOWN`) and when
+  its lease passes `leaseTimeout` (`XUFA_POOL_LEASE_TIMEOUT`): the last two abort the work's signal.
+- `acquire({ priority, exclude, signal })` gives a lease to `release()` by hand; `stats()` the nodes, slots, free
+  slots, leases running and tickets waiting. `waitTimeout` and `maxWaiting` reject tickets (503).
+- `autoscale` wants `ceil((waiting + running) / perNode)` nodes, between `min` and `max`: up at once (then every
+  `upEvery`), down only after the demand was lower for `downAfter`, so nodes running work are not taken away.
+- Across machines: `shared: ormSlots(db, { ttl: '30s' })` keeps the slots in a database of [@xufa/orm](../orm)
+  (any backend; table `xufa_pool_slots`), taken with an update only one machine can make, so a node never gets more
+  works than its slots among every machine; those of a machine that died come back after `ttl`. With `notify` (a
+  NetCache, a Discovery, or `{ publish, subscribe }`), a slot given back is told to the other machines, whose tickets
+  waiting are served at once instead of at their next look (`pollEvery`). And a node that
+  answers 429 (or what `busy(err)` says) is left aside for its Retry-After (or `busyFor`): `use()` runs the work
+  elsewhere without counting an attempt (`maxBusy`).
+- `pool.health({ minNodes, maxWaiting })` (or `usePool(name).health()` in a worker): a check of `xufa.health` of
+  [@xufa/http](../http): down with fewer nodes than `minNodes` (1), degraded with more tickets waiting than
+  `maxWaiting`; not critical by default.
+- With [@xufa/queue](../queue), `define(name, handler, { pool })` makes its jobs wait for a node before they are
+  claimed, and run with `job.node`.
 
 ## Faults (tests of resilience)
 

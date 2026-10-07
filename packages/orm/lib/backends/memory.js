@@ -2,7 +2,7 @@
 // with the semantics of the other backends: null is not equal, greater or less than anything (and NOT of it is true),
 // nulls sort first, unique fields are enforced, and transactions roll back.
 const { Backend } = require('./base');
-const { lastOf, likeToRegex } = require('../query');
+const { lastOf, likeToRegex, datePartOf, truncOf } = require('../query');
 const { BackendError } = require('../errors');
 
 function normalize(value) {
@@ -87,6 +87,29 @@ const ARITHMETIC = {
   '/': (a, b) => a / b,
 };
 
+// A condition on a part of a date (a number, or null for no date: it matches nothing).
+function matchesPart(actual, { lookup, value }) {
+  if (actual === null) return false;
+  switch (lookup) {
+    case 'exact':
+      return actual === value;
+    case 'gt':
+      return actual > value;
+    case 'gte':
+      return actual >= value;
+    case 'lt':
+      return actual < value;
+    case 'lte':
+      return actual <= value;
+    case 'in':
+      return value.includes(actual);
+    case 'range':
+      return actual >= value[0] && actual <= value[1];
+    default:
+      throw new BackendError(`Unknown lookup ${lookup} of a part of a date`);
+  }
+}
+
 class MemoryBackend extends Backend {
   constructor(options) {
     super(options);
@@ -159,10 +182,15 @@ class MemoryBackend extends Backend {
   evaluate(row, value) {
     if (!value || value.kind !== 'F') return value;
     let result = this.valueOf(row, value.fields);
+    // Decimals are text: their arithmetic is of numbers, and the result text again (of the scale of the field).
+    const field = lastOf(value.fields);
+    const decimal = field.dbType === 'decimal' && value.ops.length > 0;
+    if (decimal && result !== null) result = Number(result);
     for (let i = 0; i < value.ops.length && result !== null; i += 1) {
       const operand = this.evaluate(row, value.ops[i].value);
-      result = operand === null ? null : ARITHMETIC[value.ops[i].op](result, operand);
+      result = operand === null ? null : ARITHMETIC[value.ops[i].op](result, decimal ? Number(operand) : operand);
     }
+    if (decimal && result !== null) result = field.scale === undefined ? String(result) : result.toFixed(field.scale);
     return result;
   }
 
@@ -173,6 +201,7 @@ class MemoryBackend extends Backend {
     if (node.op === 'or') return node.children.some((child) => this.matches(row, child));
     if (node.op === 'not') return !this.matches(row, node.children[0]);
     if (node.op === 'exists') return this.exists(row, node);
+    if (node.part) return matchesPart(datePartOf(this.valueOf(row, node.fields), node.part), node);
     let field = lastOf(node.fields);
     let actual = this.valueOf(row, node.fields);
     const { lookup } = node;
@@ -300,16 +329,22 @@ class MemoryBackend extends Backend {
       if (query.values) {
         return rows.map((row) => {
           const result = {};
-          query.values.forEach(({ key, fields, jsonPath }) => {
-            result[key] = jsonPath
-              ? copy(this.valueAt(row, fields, jsonPath))
-              : this.given(lastOf(fields), this.valueOf(row, fields));
+          query.values.forEach((item) => {
+            result[item.key] = this.valueOfItem(row, item);
           });
           return result;
         });
       }
       return rows.map((row) => this.output(row, query.only || query.meta.fields, query.related));
     });
+  }
+
+  // A value of values(): of a field, inside a json one, or a number (Extract) or a start (Trunc) of a date.
+  valueOfItem(row, { fields, jsonPath, part, trunc }) {
+    if (jsonPath) return copy(this.valueAt(row, fields, jsonPath));
+    if (part) return datePartOf(this.valueOf(row, fields), part);
+    if (trunc) return truncOf(this.valueOf(row, fields), trunc, lastOf(fields).dbType);
+    return this.given(lastOf(fields), this.valueOf(row, fields));
   }
 
   async count(query) {
@@ -325,7 +360,9 @@ class MemoryBackend extends Backend {
       const rows = this.find({ ...query, limit: null, offset: 0, orderBy: [] });
       const groups = new Map();
       rows.forEach((row) => {
-        const values = (groupBy || []).map(({ fields }) => this.valueOf(row, fields));
+        const values = (groupBy || []).map((item) =>
+          item.part || item.trunc ? this.valueOfItem(row, item) : this.valueOf(row, item.fields)
+        );
         const key = JSON.stringify(values.map(normalize));
         if (!groups.has(key)) groups.set(key, { values, rows: [] });
         groups.get(key).rows.push(row);
@@ -333,8 +370,10 @@ class MemoryBackend extends Backend {
       if (!groupBy && groups.size === 0) groups.set('[]', { values: [], rows: [] });
       let results = [...groups.values()].map((group) => {
         const result = {};
-        (groupBy || []).forEach(({ key, fields }, i) => {
-          result[key] = fields && fields.length ? this.given(lastOf(fields), group.values[i]) : copy(group.values[i]);
+        (groupBy || []).forEach(({ key, fields, part, trunc }, i) => {
+          if (part || trunc) result[key] = copy(group.values[i]);
+          else
+            result[key] = fields && fields.length ? this.given(lastOf(fields), group.values[i]) : copy(group.values[i]);
         });
         aggregates.forEach((item) => {
           result[item.key] = this.computeAggregate(item, group.rows);

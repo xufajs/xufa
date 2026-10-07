@@ -57,12 +57,17 @@ import { loadRemoteConfig, watchConfig, sources, type RemoteSource } from '../..
       sources.http({ url: 'https://config.internal/shop.json', optional: true }),
       sources.consul({ prefix: 'apps/shop', timeout: 2000 }),
       sources.vault({ path: 'shop/production', at: 'secrets', roleId: 'r', secretId: 's' }),
+      sources.ssm({ path: '/shop/production', region: 'eu-west-1' }),
+      sources.secretsManager({ secretId: 'shop/api', at: 'api', endpoint: 'http://localhost:4566' }),
       sources.directory({ dir: '/run/secrets', sensitive: true }),
     ],
     cacheFile: '.config-cache.json',
   });
   expectType<number>(remote.server.port);
-  const own: RemoteSource = { name: 'mine', load: async ({ env, signal }) => ({ region: env.REGION, aborted: signal.aborted }) };
+  const own: RemoteSource = {
+    name: 'mine',
+    load: async ({ env, signal }) => ({ region: env.REGION, aborted: signal.aborted }),
+  };
   await loadRemoteConfig({ remote: [own] });
   expectError(sources.consul({ prefix: 'a', key: 'b' }));
   expectError(sources.http({ headers: {} }));
@@ -72,4 +77,15 @@ import { loadRemoteConfig, watchConfig, sources, type RemoteSource } from '../..
   );
   expectType<'info' | 'debug'>(watcher.current.level);
   watcher.stop();
+})();
+
+// Blocking queries: the option of watchConfig, and watch() of sources that can wait.
+(async () => {
+  const followed = await watchConfig({ remote: [sources.consul({ prefix: 'apps/shop' })] }, { blocking: false });
+  followed.stop();
+  const consul: RemoteSource = sources.consul({ key: 'apps/doc.yaml' });
+  if (consul.watch)
+    expectType<Promise<{ index: number | null }>>(
+      consul.watch({ env: {}, name: 'x', signal: new AbortController().signal, index: null })
+    );
 })();

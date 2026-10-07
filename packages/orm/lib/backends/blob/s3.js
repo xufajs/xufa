@@ -1,5 +1,5 @@
 // S3Backend ('s3'): a store of objects of the API of S3: AWS, and those that speak it (Cloudflare R2, MinIO, Backblaze
-// B2, Wasabi, DigitalOcean Spaces, Alibaba OSS...), with fetch and SigV4 signatures of its own (no SDK).
+// B2, Wasabi, DigitalOcean Spaces, Alibaba OSS...), with node:http(s) and SigV4 signatures of its own (no SDK).
 //
 //   new Database({ backend: 's3', bucket: 'uploads', region: 'eu-west-1' })   // credentials of AWS_* variables
 //   new Database({ backend: 's3', bucket: 'uploads', endpoint: 'http://localhost:9000', credentials: { ... } })
@@ -18,30 +18,15 @@
 // 7 days).
 const { Readable } = require('node:stream');
 const crypto = require('node:crypto');
-const { BlobBackend } = require('./base');
+const { BlobBackend, exists } = require('./base');
 const { sign, presign, encode, sha256, EMPTY_HASH, UNSIGNED } = require('./sigv4');
+const { httpClient } = require('./http-client');
+const { tag, tags, escapeXml } = require('./xml');
 const { BackendError } = require('../../errors');
 const { seconds } = require('../../duration');
 
 const MIB = 1024 * 1024;
 const META = 'x-amz-meta-xufa';
-
-const ENTITIES = { amp: '&', lt: '<', gt: '>', quot: '"', apos: "'" };
-const unescapeXml = (text) =>
-  text.replace(/&(#x[0-9a-f]+|#\d+|amp|lt|gt|quot|apos);/gi, (all, name) => {
-    if (name[0] === '#')
-      return String.fromCodePoint(
-        name[1] === 'x' || name[1] === 'X' ? parseInt(name.slice(2), 16) : Number(name.slice(1))
-      );
-    return ENTITIES[name.toLowerCase()];
-  });
-const tag = (xml, name) => {
-  const match = new RegExp(`<${name}>([\\s\\S]*?)</${name}>`).exec(xml);
-  return match ? unescapeXml(match[1]) : null;
-};
-const tags = (xml, name) => [...xml.matchAll(new RegExp(`<${name}>([\\s\\S]*?)</${name}>`, 'g'))].map((m) => m[1]);
-const escapeXml = (text) =>
-  text.replace(/[&<>"']/g, (c) => `&${{ '&': 'amp', '<': 'lt', '>': 'gt', '"': 'quot', "'": 'apos' }[c]};`);
 
 class S3Error extends BackendError {
   constructor(status, code, message, request) {
@@ -79,7 +64,8 @@ class S3Backend extends BlobBackend {
     }
     this.publicUrl = options.publicUrl ? String(options.publicUrl).replace(/\/$/, '') : null;
     this.createBucket = Boolean(options.createBucket);
-    this.fetch = options.fetch || globalThis.fetch;
+    // Requests over node:http(s) with connections kept (lib/backends/blob/http-client.js), or the fetch given.
+    this.fetch = options.fetch || httpClient();
   }
 
   get name() {
@@ -109,7 +95,13 @@ class S3Backend extends BlobBackend {
   }
 
   // A signed request: its response (errors thrown, but the statuses of `ok`).
-  async request(method, url, { headers = {}, body = null, payloadHash = null, ok = [] } = {}) {
+  // keep: the caller reads the body of the answer; otherwise it is let go at once, so its connection serves the next
+  // request.
+  async close() {
+    if (typeof this.fetch.close === 'function') this.fetch.close();
+  }
+
+  async request(method, url, { headers = {}, body = null, payloadHash = null, ok = [], keep = false } = {}) {
     const hash = payloadHash || (body ? sha256(body) : EMPTY_HASH);
     const signed = sign({
       method,
@@ -122,7 +114,12 @@ class S3Backend extends BlobBackend {
     const init = { method, headers: signed };
     if (body !== null) init.body = body;
     const response = await this.fetch(url, init);
-    if (response.ok || ok.includes(response.status)) return response;
+    if (response.ok || ok.includes(response.status)) {
+      if (!keep && response.body) await response.body.cancel().catch(() => {});
+      return response;
+    }
+    // A HEAD has no body to read: let go, so its connection serves the next request.
+    if (method === 'HEAD' && response.body) await response.body.cancel().catch(() => {});
     const text = method === 'HEAD' ? '' : await response.text().catch(() => '');
     throw new S3Error(response.status, tag(text, 'Code'), tag(text, 'Message'), `${method} ${url.pathname}`);
   }
@@ -144,13 +141,21 @@ class S3Backend extends BlobBackend {
     };
   }
 
-  async storePut(table, key, body, { contentType, metadata }) {
+  // create: If-None-Match: * (S3's conditional writes): S3 refuses it when the object is there (412), or while
+  // another conditional write of it goes on (409), so two creates of one key never both succeed.
+  async storePut(table, key, body, { contentType, metadata, create = false }) {
     const objectKey = this.objectKey(table, key);
     const headers = S3Backend.metaHeaders(contentType, metadata);
-    if (Buffer.isBuffer(body) && body.length <= this.partSize) {
-      await this.request('PUT', this.url(objectKey), { headers, body });
-    } else {
-      await this.upload(objectKey, Buffer.isBuffer(body) ? Readable.from([body]) : body, headers);
+    const condition = create ? { 'if-none-match': '*' } : {};
+    try {
+      if (Buffer.isBuffer(body) && body.length <= this.partSize) {
+        await this.request('PUT', this.url(objectKey), { headers: { ...headers, ...condition }, body });
+      } else {
+        await this.upload(objectKey, Buffer.isBuffer(body) ? Readable.from([body]) : body, headers, condition);
+      }
+    } catch (err) {
+      if (create && err instanceof S3Error && (err.status === 412 || err.status === 409)) throw exists(table, key);
+      throw err;
     }
     const head = await this.storeHead(table, key);
     return head.info;
@@ -179,15 +184,18 @@ class S3Backend extends BlobBackend {
   }
 
   // A stream as one PUT (when it is one part) or as a multipart upload (aborted when it fails).
-  async upload(objectKey, stream, headers) {
+  async upload(objectKey, stream, headers, condition = {}) {
     const iterator = this.parts(stream)[Symbol.asyncIterator]();
     const first = await iterator.next();
     const second = first.done ? { done: true } : await iterator.next();
     if (second.done) {
-      await this.request('PUT', this.url(objectKey), { headers, body: first.done ? Buffer.alloc(0) : first.value });
+      await this.request('PUT', this.url(objectKey), {
+        headers: { ...headers, ...condition },
+        body: first.done ? Buffer.alloc(0) : first.value,
+      });
       return;
     }
-    const created = await this.request('POST', this.url(objectKey, { uploads: '' }), { headers });
+    const created = await this.request('POST', this.url(objectKey, { uploads: '' }), { headers, keep: true });
     const uploadId = tag(await created.text(), 'UploadId');
     if (!uploadId) throw new BackendError(`S3 did not start the upload of ${objectKey}`);
     const etags = [];
@@ -204,7 +212,11 @@ class S3Backend extends BlobBackend {
       await send(second.value);
       for (let next = await iterator.next(); !next.done; next = await iterator.next()) await send(next.value);
       const xml = `<CompleteMultipartUpload>${etags.map((etag, i) => `<Part><PartNumber>${i + 1}</PartNumber><ETag>${escapeXml(etag)}</ETag></Part>`).join('')}</CompleteMultipartUpload>`;
-      const completed = await this.request('POST', this.url(objectKey, { uploadId }), { body: Buffer.from(xml) });
+      const completed = await this.request('POST', this.url(objectKey, { uploadId }), {
+        keep: true,
+        headers: condition,
+        body: Buffer.from(xml),
+      });
       // S3 can answer 200 with an error in the body.
       const text = await completed.text();
       if (/<Error>/.test(text)) throw new S3Error(200, tag(text, 'Code'), tag(text, 'Message'), `POST ${objectKey}`);
@@ -215,12 +227,12 @@ class S3Backend extends BlobBackend {
   }
 
   async storeRead(table, key) {
-    const response = await this.request('GET', this.url(this.objectKey(table, key)), { ok: [404] });
+    const response = await this.request('GET', this.url(this.objectKey(table, key)), { ok: [404], keep: true });
     if (response.status === 404) {
       await response.body?.cancel();
       return null;
     }
-    return Readable.fromWeb(response.body);
+    return response.stream || Readable.fromWeb(response.body);
   }
 
   async storeHead(table, key) {
@@ -244,7 +256,7 @@ class S3Backend extends BlobBackend {
     do {
       const query = { 'list-type': '2', prefix: `${base}${prefix}`, 'encoding-type': 'url' };
       if (token) query['continuation-token'] = token;
-      const response = await this.request('GET', this.url(null, query));
+      const response = await this.request('GET', this.url(null, query), { keep: true });
       const xml = await response.text();
       for (const item of tags(xml, 'Contents')) {
         // encoding-type=url is form encoding: a space is +, a + is %2B.

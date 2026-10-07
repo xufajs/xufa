@@ -1,9 +1,9 @@
 # @xufa/client
 
-A client of HTTP APIs on the `fetch` of Node.js, with no dependencies: base URLs, query strings and JSON, answers
-parsed, timeouts, retries with backoff that wait what `Retry-After` says, errors by status, hooks and logs. Bound to a
-request of [@xufa/http](../http), a call is cancelled when the client of that request goes away, logs with
-`request.log` and sends its id on.
+A client of HTTP APIs over `node:http` (or the `fetch` of Node.js: `transport: 'fetch'`), with no dependencies: base
+URLs, query strings and JSON, answers parsed, timeouts, retries with backoff that wait what `Retry-After` says, errors
+by status, hooks and logs. Bound to a request of [@xufa/http](../http), a call is cancelled when the client of that
+request goes away, logs with `request.log` and sends its id on.
 
 ```js
 const { createClient } = require('@xufa/client');
@@ -25,9 +25,15 @@ answer: JSON when its content-type says so, text otherwise, nothing for 204 and 
 - `baseUrl`: paths are joined to it, its path kept (`/v1` + `/books` is `/v1/books`); absolute URLs are used as they
   are.
 - `headers`, `query` (arrays repeat the key, dates are ISO, `undefined` and `null` are left out), `json` (a body with
-  `content-type: application/json`) or `body` (as `fetch` takes it).
+  `content-type: application/json`) or `body`: a text, a Buffer, a stream of Node or of the web (sent as it comes), or
+  what else `fetch` takes, with the type and length fetch gives it: `URLSearchParams`
+  (`application/x-www-form-urlencoded;charset=UTF-8`), `FormData` (`multipart/form-data`, its files streamed, its
+  length known before), `Blob` and `File` (their type and size), `ArrayBuffer`, typed arrays and `DataView`. A
+  `content-type` you give is kept. A body that is a stream is sent once: it is not retried, and a redirect that needs
+  it again (a 307 or a 308) is an error, as with fetch; forms and blobs are encoded again for each attempt.
 - `timeout`: ms for each attempt (30000).
-- `responseType`: `auto`, `json`, `text`, `buffer`, `stream` or `response` (the `Response` of fetch);
+- `responseType`: `auto`, `json`, `text`, `buffer`, `stream` (a web `ReadableStream` of the body, read as it comes and
+  decompressed; the timeout and the signal still cut it) or `response` (the `Response` of fetch);
   `resolveBodyOnly: false` gives `{ status, headers, body, url }`.
 - `throwHttpErrors: false`: error statuses are answers.
 - `retry`: `{ attempts, methods, statuses, delay, factor, maxDelay, jitter, maxRetryAfter }`, a number of attempts,
@@ -42,6 +48,28 @@ answer: JSON when its content-type says so, text otherwise, nothing for 204 and 
 - `signal`: an AbortSignal that stops the call and its retries.
 - `dispatcher`: a dispatcher of undici (proxies, pools of connections), given to fetch. On Node.js 24,
   `NODE_USE_ENV_PROXY=1` makes fetch use `HTTP_PROXY` and `HTTPS_PROXY`.
+- `transport`: `'http'` (the default) or `'fetch'`. `'http'` makes the calls over `node:http` and `node:https`, with
+  connections kept for the next ones: about 35-40% more calls a second than the same client on fetch, and more than
+  fetch alone (small JSON answers, on one machine). It does what fetch does: it asks for compressed answers
+  (`accept-encoding: gzip, deflate, br`, unless you give one) and decompresses them, and follows redirects as fetch
+  follows them (a GET after 303, credentials kept to their origin). Only these go through fetch: answers of
+  `responseType: 'response'` (a `Response` of fetch), and calls with a `dispatcher`.
+  `client.close()` closes the connections it keeps (those of the clients made from it with `extend()` and `for()`
+  too); a call after it opens new ones.
+- `proxy` (the http transport): a URL (`'http://proxy:3128'`, or `https:`; `http://user:password@proxy:3128` logs
+  in with `Proxy-Authorization`), `'env'` (`HTTP_PROXY` for http: servers, `HTTPS_PROXY` for https: ones, unless
+  `NO_PROXY` names the host: `*`, domains with their subdomains, `host:port`, addresses), or `false`. By default, the
+  proxy of the environment when `NODE_USE_ENV_PROXY` is set, as Node.js decides for its own fetch (on Node.js 22,
+  without it, fetch uses no proxy). https: servers are reached through a tunnel (`CONNECT`) with TLS to the server
+  inside it, kept alive and reused as the connections without a proxy; requests to http: servers go to the proxy
+  with the whole URL. A tunnel the proxy refuses is a `RequestError` whose `cause` has `code: 'XUFA_CLIENT_PROXY'` and
+  the status (407: a login). The proxy is asked again after each redirect (another host may have none).
+- `tls` (the http transport): options of TLS of its connections to https: servers and proxies: `ca` (a CA of your
+  own), `cert` and `key` (a certificate of the client), `rejectUnauthorized`, `servername`...
+
+A `proxy` or `tls` of your own needs the http transport: with `transport: 'fetch'` it is an error, and so is a call
+that goes through fetch (`responseType: 'response'`...), rather than a call made without them. fetch takes them in a `dispatcher` of
+undici.
 
 `client.extend(options)` makes a client with more options (as `got.extend`). `client.for(request)` binds it to a
 request of @xufa/http (or fastify): `request.signal` cancels it (the API called sees its connection closed),

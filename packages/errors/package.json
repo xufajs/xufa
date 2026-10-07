@@ -38,7 +38,7 @@
     "url": "https://github.com/xufajs/xufa/issues"
   },
   "engines": {
-    "node": ">=22"
+    "node": "^22.22.3 || ^24.15.0 || >=25.7.0"
   },
   "devDependencies": {
     "vyntra": "^0.6.0"

@@ -1,0 +1,563 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>@xufa/queue: Reference · xufa</title>
+    <meta
+      name="description"
+      content="The reference of @xufa/queue: every function, class, interface and type it declares, made from its TypeScript declarations."
+    />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%23d9502b'/%3E%3Ctext x='16' y='22.5' font-family='monospace' font-size='18' font-weight='700' fill='white' text-anchor='middle'%3Ex%3C/text%3E%3C/svg%3E"
+    />
+    <link rel="stylesheet" href="../style.css?v=0.1.0" />
+    <script src="../main.js?v=0.1.0"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js" defer></script>
+  </head>
+  <body>
+    <header class="header">
+      <div class="header-inner">
+        <a class="logo" href="../index.html"><span class="logo-mark">x</span>xufa</a>
+        <nav class="nav">
+          <a href="../guide.html">Guide</a>
+          <a href="../playground.html">Playground</a>
+          <a href="../http/index.html">HTTP</a>
+          <a href="../orm/index.html">ORM</a>
+          <a class="hide-small" href="../auth/index.html">Auth</a>
+          <a class="hide-small" href="../sequelize/index.html">Sequelize</a>
+          <a class="hide-small" href="../packages.html" aria-current="page">Packages</a>
+          <a class="hide-small" href="../benchmarks.html">Benchmarks</a>
+          <a href="https://github.com/xufajs/xufa">GitHub</a>
+          <button class="theme-toggle" type="button" aria-label="Switch between light and dark theme">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+              <path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z" />
+            </svg>
+          </button>
+        </nav>
+      </div>
+    </header>
+
+    <div class="docs">
+      <button class="menu-toggle" type="button" aria-expanded="false">☰ Contents</button>
+      <aside class="sidebar">
+        <h4>Reference</h4>
+        <ul>
+          <li><a href="#functions">Functions (2)</a></li>
+          <li><a href="#classes">Classes (5)</a></li>
+          <li><a href="#constants">Constants (1)</a></li>
+          <li><a href="#interfaces">Interfaces (16)</a></li>
+          <li><a href="#types">Types (7)</a></li>
+        </ul>
+        <h4>Packages</h4>
+        <ul>
+          <li><a href="../websocket/index.html">@xufa/websocket</a></li>
+          <li><a href="../admin/index.html">@xufa/admin</a></li>
+          <li><a href="../session/index.html">@xufa/session</a></li>
+          <li><a href="../openapi/index.html">@xufa/openapi</a></li>
+          <li><a href="../client/index.html">@xufa/client</a></li>
+          <li><a href="../schema/index.html">@xufa/schema</a></li>
+          <li><a href="../pg/index.html">@xufa/pg</a></li>
+          <li><a href="../mongo/index.html">@xufa/mongo</a></li>
+          <li><a href="../expression/index.html">@xufa/expression</a></li>
+          <li><a href="../template/index.html">@xufa/template</a></li>
+          <li><a href="../cluster/index.html">@xufa/cluster</a></li>
+          <li><a href="../scheduler/index.html">@xufa/scheduler</a></li>
+          <li><a href="index.html" aria-current="page">@xufa/queue</a></li>
+          <li><a href="../config/index.html">@xufa/config</a></li>
+          <li><a href="../discovery/index.html">@xufa/discovery</a></li>
+          <li><a href="../netcache/index.html">@xufa/netcache</a></li>
+          <li><a href="../faults/index.html">@xufa/faults</a></li>
+          <li><a href="../marshal/index.html">@xufa/marshal</a></li>
+          <li><a href="../yaml/index.html">@xufa/yaml</a></li>
+          <li><a href="../jwt/index.html">@xufa/jwt</a></li>
+          <li><a href="../logger/index.html">@xufa/logger</a></li>
+          <li><a href="../router/index.html">@xufa/router</a></li>
+          <li><a href="../serializer/index.html">@xufa/serializer</a></li>
+          <li><a href="../inject/index.html">@xufa/inject</a></li>
+          <li><a href="../boot/index.html">@xufa/boot</a></li>
+          <li><a href="../errors/index.html">@xufa/errors</a></li>
+          <li><a href="../packages.html">All the packages</a></li>
+        </ul>
+      </aside>
+
+      <article class="content">
+        <nav class="package-tabs" aria-label="@xufa/queue">
+          <a href="index.html">Overview</a>
+          <a href="reference.html" aria-current="page">Reference</a>
+        </nav>
+        <h1>Reference</h1>
+        <p class="intro">
+          Jobs in the background and pipelines of steps, kept in a database of @xufa/orm, with no dependencies. Every declaration of its TypeScript declarations
+          (<code>packages/queue/index.d.ts</code>), as they are written, with their comments: made from them each time
+          the docs are built. How to use them is in <a href="index.html">the overview</a>.
+        </p>
+
+        <h2 id="functions">Functions</h2>
+        <p class="ref-index"><a href="#ref-queuePlugin"><code>queuePlugin</code></a>, <a href="#ref-backoffDelay"><code>backoffDelay</code></a></p>
+
+        <h3 id="ref-queuePlugin"><code>queuePlugin</code></h3>
+        <pre><code class="language-ts">export declare function queuePlugin(app: any, options: QueuePluginOptions, done: (err?: Error) =&gt; void): void;</code></pre>
+        <p>The plugin of</p>
+
+        <h3 id="ref-backoffDelay"><code>backoffDelay</code></h3>
+        <pre><code class="language-ts">export declare function backoffDelay(backoff: Backoff, attempts: number): number;</code></pre>
+        <p>The delay before attempt attempts + 1.</p>
+
+        <h2 id="classes">Classes</h2>
+        <p class="ref-index"><a href="#ref-Worker"><code>Worker</code></a>, <a href="#ref-Queue"><code>Queue</code></a>, <a href="#ref-QueueError"><code>QueueError</code></a>, <a href="#ref-Pipelines"><code>Pipelines</code></a>, <a href="#ref-PipelineError"><code>PipelineError</code></a></p>
+
+        <h3 id="ref-Worker"><code>Worker</code></h3>
+        <pre><code class="language-ts">export declare class Worker { ... }</code></pre>
+        <p>A worker of a queue (queue.work()).</p>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>readonly concurrency</code></td><td><code>number</code></td><td></td></tr>
+                <tr><td><code>wake()</code></td><td><code>void</code></td><td><p>Looks for jobs now.</p></td></tr>
+                <tr><td><code>stop(options?: { timeout?: number })</code></td><td><code>Promise&lt;void&gt;</code></td><td><p>Stops, waiting for the jobs it runs (up to timeout ms).</p></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-Queue"><code>Queue</code></h3>
+        <pre><code class="language-ts">export declare class Queue extends EventEmitter { ... }</code></pre>
+        <p>Jobs in the background, kept in a database of</p>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>new (db: Database, options?: QueueOptions)</code></td><td></td><td></td></tr>
+                <tr><td><code>readonly db</code></td><td><code>Database</code></td><td></td></tr>
+                <tr><td><code>readonly Job</code></td><td><code>ModelClass&lt;<a href="#ref-Job">Job</a>&gt;</code></td><td><p>The model of the jobs.</p></td></tr>
+                <tr><td><code>keepDone</code></td><td><code>boolean</code></td><td></td></tr>
+                <tr><td><code>readonly workers</code></td><td><code><a href="#ref-Worker">Worker</a>[]</code></td><td></td></tr>
+                <tr><td><code>sync()</code></td><td><code>Promise&lt;void&gt;</code></td><td><p>Creates the table of the jobs (db.sync() makes it too).</p></td></tr>
+                <tr><td><code>define&lt;Payload = any&gt;(name: string, handler: (payload: Payload, job: Job&lt;Payload&gt;) =&gt; unknown, options?: DefineOptions)</code></td><td><code>this</code></td><td><p>A kind of job: its function (payload, job), and options.</p></td></tr>
+                <tr><td><code>enqueue&lt;Payload = unknown&gt;(name: string, payload?: Payload, options?: EnqueueOptions)</code></td><td><code>Promise&lt;<a href="#ref-Job">Job</a>&lt;Payload&gt;&gt;</code></td><td><p>Adds a job (or gives the one there with its key).</p></td></tr>
+                <tr><td><code>runDue(options?: {
+    queues?: string[] | null;
+    limit?: number;
+  })</code></td><td><code>Promise&lt;{ done: number; retrying: number; failed: number }&gt;</code></td><td><p>Runs the jobs due now, one after another (tests, scripts): counts by outcome.</p></td></tr>
+                <tr><td><code>work(options?: { queues?: string[] | null; concurrency?: number; poll?: Duration })</code></td><td><code><a href="#ref-Worker">Worker</a></code></td><td><p>Starts a worker: up to concurrency jobs at once, of some queues, looking for jobs every poll ('1s').</p></td></tr>
+                <tr><td><code>stop(options?: { timeout?: number })</code></td><td><code>Promise&lt;void&gt;</code></td><td><p>Stops the workers, waiting for their jobs (up to timeout ms).</p></td></tr>
+                <tr><td><code>retry(ids?: unknown | unknown[])</code></td><td><code>Promise&lt;number&gt;</code></td><td><p>Failed jobs pending again (all, or those of the ids given): their number.</p></td></tr>
+                <tr><td><code>recover()</code></td><td><code>Promise&lt;number&gt;</code></td><td><p>Jobs of stopped workers (past lockedUntil) pending again, or failed without attempts left: their number.</p></td></tr>
+                <tr><td><code>claim(id: unknown, timeout: number)</code></td><td><code>Promise&lt;<a href="#ref-Job">Job</a> | null&gt;</code></td><td><p>Claims a job for this process: the job, or null when another took it.</p></td></tr>
+                <tr><td><code>execute(job: Job)</code></td><td><code>Promise&lt;'done' | 'retrying' | 'failed'&gt;</code></td><td><p>Runs a job claimed.</p></td></tr>
+                <tr><td><code>readonly jobs</code></td><td><code>QuerySet&lt;<a href="#ref-Job">Job</a>&gt;</code></td><td><p>The jobs, as a queryset of their model.</p></td></tr>
+                <tr><td><code>health(options?: {
+    maxLag?: Duration;
+    maxPending?: number;
+    maxFailed?: number;
+    critical?: boolean;
+    timeout?: number | string;
+  })</code></td><td><code><a href="#ref-QueueHealthCheck">QueueHealthCheck</a></code></td><td><p>A check of xufa.health: the counts, the lag of the oldest job due and the workers; degraded past maxLag ('5m'), maxPending or maxFailed; down when the jobs cannot be read. Not critical by default.</p></td></tr>
+                <tr><td><code>counts()</code></td><td><code>Promise&lt;<a href="#ref-JobCounts">JobCounts</a>&gt;</code></td><td></td></tr>
+                <tr><td><code>on(event: 'completed', listener: (job: Job, result: unknown) =&gt; void)</code></td><td><code>this</code></td><td></td></tr>
+                <tr><td><code>on(event: 'retrying', listener: (job: Job, error: unknown, delay: number) =&gt; void)</code></td><td><code>this</code></td><td></td></tr>
+                <tr><td><code>on(event: 'failed', listener: (job: Job, error: unknown) =&gt; void)</code></td><td><code>this</code></td><td></td></tr>
+                <tr><td><code>on(event: 'error', listener: (error: unknown) =&gt; void)</code></td><td><code>this</code></td><td></td></tr>
+                <tr><td><code>on(event: string | symbol, listener: (...args: any[]) =&gt; void)</code></td><td><code>this</code></td><td></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-QueueError"><code>QueueError</code></h3>
+        <pre><code class="language-ts">export declare class QueueError extends Error { ... }</code></pre>
+        <p>An error of the queue: a wrong job or option, or a run past its timeout (timeout: true).</p>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>code</code></td><td><code>'XUFA_QUEUE_ERR'</code></td><td></td></tr>
+                <tr><td><code>timeout?</code></td><td><code>boolean</code></td><td></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-Pipelines"><code>Pipelines</code></h3>
+        <pre><code class="language-ts">export declare class Pipelines extends EventEmitter { ... }</code></pre>
+        <p>Pipelines of steps run as jobs of a queue, each run and step kept in the database.</p>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>new (queue: Queue, options?: PipelinesOptions)</code></td><td></td><td></td></tr>
+                <tr><td><code>readonly queue</code></td><td><code><a href="#ref-Queue">Queue</a></code></td><td></td></tr>
+                <tr><td><code>readonly Run</code></td><td><code>ModelClass&lt;<a href="#ref-PipelineRun">PipelineRun</a>&gt;</code></td><td></td></tr>
+                <tr><td><code>readonly Step</code></td><td><code>ModelClass&lt;<a href="#ref-PipelineStepRow">PipelineStepRow</a>&gt;</code></td><td></td></tr>
+                <tr><td><code>sync()</code></td><td><code>Promise&lt;void&gt;</code></td><td><p>Creates the tables of the runs and steps (db.sync() makes them too).</p></td></tr>
+                <tr><td><code>block(type: string, spec: BlockSpec | ((input: any, ctx: StepContext) =&gt; unknown))</code></td><td><code>this</code></td><td><p>A kind of step. Built in: 'transform' (config.map or config.value: expressions), 'wait', and 'pipeline' (runs the pipeline config.pipeline with its input, or config.input, an expression, and goes on with its result).</p></td></tr>
+                <tr><td><code>check(definition: PipelineDefinition)</code></td><td><code>string[]</code></td><td><p>Every error of a definition (an empty list when it is valid).</p></td></tr>
+                <tr><td><code>define(definition: PipelineDefinition)</code></td><td><code>this</code></td><td><p>Defines a pipeline (a PipelineError with every error when it is not valid).</p></td></tr>
+                <tr><td><code>start&lt;Result = unknown&gt;(pipeline: string | PipelineDefinition, input?: unknown, options?: { key?: string; trigger?: string })</code></td><td><code>Promise&lt;<a href="#ref-PipelineRun">PipelineRun</a>&lt;Result&gt;&gt;</code></td><td><p>Starts a run (its steps without after are queued). key: a run with it running is given instead.</p></td></tr>
+                <tr><td><code>trigger(event: string, input?: unknown, options?: { key?: string })</code></td><td><code>Promise&lt;<a href="#ref-PipelineRun">PipelineRun</a>[]&gt;</code></td><td><p>Starts a run of every pipeline with that trigger.</p></td></tr>
+                <tr><td><code>get&lt;Result = unknown&gt;(runId: unknown)</code></td><td><code>Promise&lt;{ run: <a href="#ref-PipelineRun">PipelineRun</a>&lt;Result&gt;; steps: Record&lt;string, <a href="#ref-PipelineStepRow">PipelineStepRow</a>&gt; } | null&gt;</code></td><td><p>A run with its steps by id.</p></td></tr>
+                <tr><td><code>readonly runs</code></td><td><code>QuerySet&lt;<a href="#ref-PipelineRun">PipelineRun</a>&gt;</code></td><td><p>The runs, as a queryset.</p></td></tr>
+                <tr><td><code>resume(runId: unknown, stepId: string, output?: unknown)</code></td><td><code>Promise&lt;{ run: <a href="#ref-PipelineRun">PipelineRun</a>; steps: Record&lt;string, <a href="#ref-PipelineStepRow">PipelineStepRow</a>&gt; }&gt;</code></td><td><p>Ends a paused step with its output, and moves the run on.</p></td></tr>
+                <tr><td><code>cancel(runId: unknown)</code></td><td><code>Promise&lt;boolean&gt;</code></td><td><p>Cancels a running run: false when it was not running.</p></td></tr>
+                <tr><td><code>retry(runId: unknown)</code></td><td><code>Promise&lt;boolean&gt;</code></td><td><p>A failed or cancelled run goes on from where it stopped: false when it was not.</p></td></tr>
+                <tr><td><code>recover()</code></td><td><code>Promise&lt;number&gt;</code></td><td><p>Moves on the runs whose process stopped between two steps: their number.</p></td></tr>
+                <tr><td><code>on(event: 'started' | 'completed', listener: (run: PipelineRun) =&gt; void)</code></td><td><code>this</code></td><td></td></tr>
+                <tr><td><code>on(event: 'failed', listener: (run: PipelineRun, error: unknown, step: string) =&gt; void)</code></td><td><code>this</code></td><td></td></tr>
+                <tr><td><code>on(event: 'step', listener: (run: PipelineRun, step: string, status: StepStatus) =&gt; void)</code></td><td><code>this</code></td><td></td></tr>
+                <tr><td><code>on(event: 'error', listener: (error: unknown) =&gt; void)</code></td><td><code>this</code></td><td></td></tr>
+                <tr><td><code>on(event: string | symbol, listener: (...args: any[]) =&gt; void)</code></td><td><code>this</code></td><td></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-PipelineError"><code>PipelineError</code></h3>
+        <pre><code class="language-ts">export declare class PipelineError extends Error { ... }</code></pre>
+        <p>A pipeline that is not valid (errors: every one), or a run or step that is not there.</p>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>code</code></td><td><code>'XUFA_PIPELINE_ERR'</code></td><td></td></tr>
+                <tr><td><code>errors?</code></td><td><code>string[]</code></td><td></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h2 id="constants">Constants</h2>
+        <p class="ref-index"><a href="#ref-WAIT"><code>WAIT</code></a></p>
+
+        <h3 id="ref-WAIT"><code>WAIT</code></h3>
+        <pre><code class="language-ts">export declare const WAIT: unique symbol;</code></pre>
+        <p>What a block gives (ctx.wait()) to stay paused until resume().</p>
+
+        <h2 id="interfaces">Interfaces</h2>
+        <p class="ref-index"><a href="#ref-Job"><code>Job</code></a>, <a href="#ref-JobOptions"><code>JobOptions</code></a>, <a href="#ref-JobPool"><code>JobPool</code></a>, <a href="#ref-DefineOptions"><code>DefineOptions</code></a>, <a href="#ref-QueueOptions"><code>QueueOptions</code></a>, <a href="#ref-EnqueueOptions"><code>EnqueueOptions</code></a>, <a href="#ref-QueueHealthCheck"><code>QueueHealthCheck</code></a>, <a href="#ref-QueuePluginOptions"><code>QueuePluginOptions</code></a>, <a href="#ref-StepContext"><code>StepContext</code></a>, <a href="#ref-BlockSpec"><code>BlockSpec</code></a>, <a href="#ref-PipelineStep"><code>PipelineStep</code></a>, <a href="#ref-PipelineDefinition"><code>PipelineDefinition</code></a>, <a href="#ref-PipelineRun"><code>PipelineRun</code></a>, <a href="#ref-PipelineStepRow"><code>PipelineStepRow</code></a>, <a href="#ref-PipelinesOptions"><code>PipelinesOptions</code></a>, <a href="#ref-XufaInstance"><code>XufaInstance</code></a></p>
+
+        <h3 id="ref-Job"><code>Job</code></h3>
+        <pre><code class="language-ts">export interface Job&lt;Payload = unknown&gt; extends Model { ... }</code></pre>
+        <p>A job: an object of the model of the queue (its table, xufa_jobs).</p>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>id</code></td><td><code>number</code></td><td></td></tr>
+                <tr><td><code>name</code></td><td><code>string</code></td><td></td></tr>
+                <tr><td><code>queue</code></td><td><code>string</code></td><td></td></tr>
+                <tr><td><code>payload</code></td><td><code>Payload</code></td><td></td></tr>
+                <tr><td><code>status</code></td><td><code><a href="#ref-JobStatus">JobStatus</a></code></td><td></td></tr>
+                <tr><td><code>priority</code></td><td><code>number</code></td><td><p>Higher first.</p></td></tr>
+                <tr><td><code>runAt</code></td><td><code>Date</code></td><td><p>When it runs (or runs again).</p></td></tr>
+                <tr><td><code>attempts</code></td><td><code>number</code></td><td><p>The runs started (1 in the first run).</p></td></tr>
+                <tr><td><code>maxAttempts</code></td><td><code>number</code></td><td></td></tr>
+                <tr><td><code>key</code></td><td><code>string | null</code></td><td><p>A job with the same key pending or running makes others not added.</p></td></tr>
+                <tr><td><code>lockedBy</code></td><td><code>string | null</code></td><td><p>The worker that runs it, and until when it is its own (then other workers take it back).</p></td></tr>
+                <tr><td><code>lockedUntil</code></td><td><code>Date | null</code></td><td></td></tr>
+                <tr><td><code>lastError</code></td><td><code>string | null</code></td><td><p>The error (its stack) of the last run that failed.</p></td></tr>
+                <tr><td><code>result</code></td><td><code>unknown</code></td><td><p>What the function gave (kept with keepDone).</p></td></tr>
+                <tr><td><code>createdAt</code></td><td><code>Date</code></td><td></td></tr>
+                <tr><td><code>finishedAt</code></td><td><code>Date | null</code></td><td></td></tr>
+                <tr><td><code>signal?</code></td><td><code>AbortSignal</code></td><td><p>In a run: aborted at its timeout (and when its pool takes its node back).</p></td></tr>
+                <tr><td><code>node?</code></td><td><code>any</code></td><td><p>In a run of a kind of job with a pool: the node it was given.</p></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-JobOptions"><code>JobOptions</code></h3>
+        <pre><code class="language-ts">export interface JobOptions { ... }</code></pre>
+        <p>The options of a kind of job (and the defaults of the queue).</p>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>attempts?</code></td><td><code>number</code></td><td><p>Runs before it is failed (3).</p></td></tr>
+                <tr><td><code>backoff?</code></td><td><code><a href="#ref-Backoff">Backoff</a></code></td><td><p>Exponential from 5 s, up to 1 h, with jitter, by default.</p></td></tr>
+                <tr><td><code>timeout?</code></td><td><code><a href="#ref-Duration">Duration</a></code></td><td><p>A run longer is failed, and its signal aborted ('5m').</p></td></tr>
+                <tr><td><code>queue?</code></td><td><code>string</code></td><td><p>The queue of its jobs ('default').</p></td></tr>
+                <tr><td><code>onFailure?</code></td><td><code>(job: <a href="#ref-Job">Job</a>, error: unknown, final: boolean) =&gt; unknown</code></td><td><p>Waited for when a run fails, before the job is tried again (final: false) or failed (final: true).</p></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-JobPool"><code>JobPool</code></h3>
+        <pre><code class="language-ts">export interface JobPool { ... }</code></pre>
+        <p>A pool of nodes of</p>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>acquire(options?: {
+    signal?: AbortSignal;
+  })</code></td><td><code>Promise&lt;{ node: any; signal: AbortSignal; release(failed?: boolean): void }&gt;</code></td><td></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-DefineOptions"><code>DefineOptions</code></h3>
+        <pre><code class="language-ts">export interface DefineOptions extends JobOptions { ... }</code></pre>
+        <p>The options of a kind of job.</p>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>pool?</code></td><td><code><a href="#ref-JobPool">JobPool</a></code></td><td><p>Its jobs run on a node of this pool: they wait (pending) for a free one, and run with job.node.</p></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-QueueOptions"><code>QueueOptions</code></h3>
+        <pre><code class="language-ts">export interface QueueOptions extends JobOptions { ... }</code></pre>
+        <p>The options of a queue: the defaults of its jobs, its table and model, whether done jobs are kept, a logger.</p>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>table?</code></td><td><code>string</code></td><td><p>The table of the jobs ('xufa_jobs').</p></td></tr>
+                <tr><td><code>model?</code></td><td><code>string</code></td><td><p>The name of their model ('XufaJob').</p></td></tr>
+                <tr><td><code>jobModel?</code></td><td><code>ModelClass&lt;<a href="#ref-Job">Job</a>&gt;</code></td><td><p>The model of another queue on the same database (its jobs shared).</p></td></tr>
+                <tr><td><code>keepDone?</code></td><td><code>boolean</code></td><td><p>Done jobs kept with their results (status 'done'); otherwise deleted.</p></td></tr>
+                <tr><td><code>logger?</code></td><td><code>{ error(object: unknown, message?: string): void }</code></td><td></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-EnqueueOptions"><code>EnqueueOptions</code></h3>
+        <pre><code class="language-ts">export interface EnqueueOptions { ... }</code></pre>
+        <p>How a job is enqueued.</p>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>delay?</code></td><td><code><a href="#ref-Duration">Duration</a></code></td><td><p>Runs after this (ms or '10m').</p></td></tr>
+                <tr><td><code>at?</code></td><td><code>Date | string | number</code></td><td><p>Runs at this time.</p></td></tr>
+                <tr><td><code>priority?</code></td><td><code>number</code></td><td><p>Higher first (0).</p></td></tr>
+                <tr><td><code>queue?</code></td><td><code>string</code></td><td></td></tr>
+                <tr><td><code>attempts?</code></td><td><code>number</code></td><td></td></tr>
+                <tr><td><code>key?</code></td><td><code>string</code></td><td><p>Not added when a job with this key is pending or running (that one is given).</p></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-QueueHealthCheck"><code>QueueHealthCheck</code></h3>
+        <pre><code class="language-ts">export interface QueueHealthCheck { ... }</code></pre>
+        <p>A check of xufa.health of</p>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>check()</code></td><td><code>Promise&lt; { status: 'up' | 'degraded' | 'down'; error?: string } &amp; { pending?: number; running?: number; done?: number; failed?: number; lag?: number; workers?: number; } &gt;</code></td><td></td></tr>
+                <tr><td><code>critical</code></td><td><code>boolean</code></td><td></td></tr>
+                <tr><td><code>timeout?</code></td><td><code>number | string</code></td><td></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-QueuePluginOptions"><code>QueuePluginOptions</code></h3>
+        <pre><code class="language-ts">export interface QueuePluginOptions { ... }</code></pre>
+        <p>The options of the plugin: the queue, and its workers (started when the app is ready) or none.</p>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>queue</code></td><td><code><a href="#ref-Queue">Queue</a></code></td><td></td></tr>
+                <tr><td><code>work?</code></td><td><code>boolean | { queues?: string[] | null; concurrency?: number; poll?: <a href="#ref-Duration">Duration</a> }</code></td><td></td></tr>
+                <tr><td><code>stopTimeout?</code></td><td><code>number</code></td><td></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-StepContext"><code>StepContext</code></h3>
+        <pre><code class="language-ts">export interface StepContext { ... }</code></pre>
+        <p>What the run of a block gets, besides its input.</p>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>config</code></td><td><code>Record&lt;string, any&gt;</code></td><td><p>The config of the step.</p></td></tr>
+                <tr><td><code>step</code></td><td><code>string</code></td><td><p>The id of the step.</p></td></tr>
+                <tr><td><code>run</code></td><td><code>{ id: unknown; pipeline: string; input: unknown }</code></td><td></td></tr>
+                <tr><td><code>outputs</code></td><td><code>Record&lt;string, unknown&gt;</code></td><td><p>The outputs of the steps done, by id.</p></td></tr>
+                <tr><td><code>job</code></td><td><code><a href="#ref-Job">Job</a></code></td><td></td></tr>
+                <tr><td><code>signal</code></td><td><code>AbortSignal</code></td><td><p>Aborted at the timeout of the block (and when its pool takes the node back).</p></td></tr>
+                <tr><td><code>node?</code></td><td><code>any</code></td><td><p>The node of its pool, with a pool.</p></td></tr>
+                <tr><td><code>attempt</code></td><td><code>number</code></td><td></td></tr>
+                <tr><td><code>wait(options?: { timeout?: Duration; onTimeout?: OnTimeout })</code></td><td><code>typeof <a href="#ref-WAIT">WAIT</a></code></td><td><p>Paused until resume(); timeout and onTimeout over those of the step.</p></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-BlockSpec"><code>BlockSpec</code></h3>
+        <pre><code class="language-ts">export interface BlockSpec extends DefineOptions { ... }</code></pre>
+        <p>A kind of step: run, validate(config) (an error message, or nothing), and the options of its jobs.</p>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>run(input: any, ctx: StepContext)</code></td><td><code>unknown</code></td><td></td></tr>
+                <tr><td><code>validate?(config: Record&lt;string, any&gt;)</code></td><td><code>string | undefined | void</code></td><td></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-PipelineStep"><code>PipelineStep</code></h3>
+        <pre><code class="language-ts">export interface PipelineStep { ... }</code></pre>
+        <p>A step of a pipeline.</p>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>id</code></td><td><code>string | number</code></td><td></td></tr>
+                <tr><td><code>block?</code></td><td><code>string</code></td><td><p>A block registered (or run, in code).</p></td></tr>
+                <tr><td><code>run?</code></td><td><code>(input: any, ctx: <a href="#ref-StepContext">StepContext</a>) =&gt; unknown</code></td><td></td></tr>
+                <tr><td><code>config?</code></td><td><code>Record&lt;string, any&gt;</code></td><td></td></tr>
+                <tr><td><code>after?</code></td><td><code>string | number | (string | number)[]</code></td><td><p>The steps it runs after (their outputs are its input); parent is the same with one.</p></td></tr>
+                <tr><td><code>parent?</code></td><td><code>string | number</code></td><td></td></tr>
+                <tr><td><code>when?</code></td><td><code>| string | ((input: any, scope: { input: any; outputs: Record&lt;string, unknown&gt;; run: unknown; config: unknown }) =&gt; unknown)</code></td><td><p>An expression of</p></td></tr>
+                <tr><td><code>result?</code></td><td><code>boolean</code></td><td><p>Its output is (part of) the result of the run.</p></td></tr>
+                <tr><td><code>attempts?</code></td><td><code>number</code></td><td></td></tr>
+                <tr><td><code>priority?</code></td><td><code>number</code></td><td></td></tr>
+                <tr><td><code>queue?</code></td><td><code>string</code></td><td></td></tr>
+                <tr><td><code>waitTimeout?</code></td><td><code><a href="#ref-Duration">Duration</a></code></td><td><p>How long it can be paused (a 'wait' block, or ctx.wait()); then onTimeout ('fail' by default).</p></td></tr>
+                <tr><td><code>onTimeout?</code></td><td><code><a href="#ref-OnTimeout">OnTimeout</a></code></td><td></td></tr>
+                <tr><td><code>options?</code></td><td><code><a href="#ref-DefineOptions">DefineOptions</a></code></td><td><p>The options of the jobs of a step with run.</p></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-PipelineDefinition"><code>PipelineDefinition</code></h3>
+        <pre><code class="language-ts">export interface PipelineDefinition { ... }</code></pre>
+        <p>A pipeline: data (stored, edited, shown), or code with functions.</p>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>name</code></td><td><code>string</code></td><td></td></tr>
+                <tr><td><code>trigger?</code></td><td><code>string</code></td><td><p>pipelines.trigger(event) starts it.</p></td></tr>
+                <tr><td><code>concurrency?</code></td><td><code>number</code></td><td><p>The steps of a run queued or running at once, at most (paused ones do not count).</p></td></tr>
+                <tr><td><code>description?</code></td><td><code>string</code></td><td></td></tr>
+                <tr><td><code>steps</code></td><td><code><a href="#ref-PipelineStep">PipelineStep</a>[]</code></td><td></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-PipelineRun"><code>PipelineRun</code></h3>
+        <pre><code class="language-ts">export interface PipelineRun&lt;Result = unknown&gt; extends Model { ... }</code></pre>
+        <p>A run of a pipeline: an object of its model (table xufa_pipeline_runs).</p>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>pipeline</code></td><td><code>string</code></td><td></td></tr>
+                <tr><td><code>status</code></td><td><code><a href="#ref-RunStatus">RunStatus</a></code></td><td></td></tr>
+                <tr><td><code>input</code></td><td><code>unknown</code></td><td></td></tr>
+                <tr><td><code>result</code></td><td><code>Result | null</code></td><td></td></tr>
+                <tr><td><code>error</code></td><td><code>string | null</code></td><td></td></tr>
+                <tr><td><code>definition</code></td><td><code>{ name: string; trigger?: string; steps: unknown[] }</code></td><td><p>The definition it runs (kept: changing the pipeline does not change it).</p></td></tr>
+                <tr><td><code>trigger</code></td><td><code>string | null</code></td><td></td></tr>
+                <tr><td><code>key</code></td><td><code>string | null</code></td><td></td></tr>
+                <tr><td><code>inFlight</code></td><td><code>number</code></td><td><p>Its steps queued or running (with concurrency).</p></td></tr>
+                <tr><td><code>parent</code></td><td><code>string | null</code></td><td><p>A run of a step of another run (the block 'pipeline'): that run, that step, and how deep it is (0: none).</p></td></tr>
+                <tr><td><code>parentStep</code></td><td><code>string | null</code></td><td></td></tr>
+                <tr><td><code>depth</code></td><td><code>number</code></td><td></td></tr>
+                <tr><td><code>createdAt</code></td><td><code>Date</code></td><td></td></tr>
+                <tr><td><code>finishedAt</code></td><td><code>Date | null</code></td><td></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-PipelineStepRow"><code>PipelineStepRow</code></h3>
+        <pre><code class="language-ts">export interface PipelineStepRow extends Model { ... }</code></pre>
+        <p>A step of a run (table xufa_pipeline_steps).</p>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>run</code></td><td><code>string</code></td><td></td></tr>
+                <tr><td><code>step</code></td><td><code>string</code></td><td></td></tr>
+                <tr><td><code>block</code></td><td><code>string</code></td><td></td></tr>
+                <tr><td><code>status</code></td><td><code><a href="#ref-StepStatus">StepStatus</a></code></td><td></td></tr>
+                <tr><td><code>output</code></td><td><code>unknown</code></td><td></td></tr>
+                <tr><td><code>error</code></td><td><code>string | null</code></td><td></td></tr>
+                <tr><td><code>attempts</code></td><td><code>number</code></td><td></td></tr>
+                <tr><td><code>pausedUntil</code></td><td><code>Date | null</code></td><td><p>A paused step with waitTimeout: when it stops waiting.</p></td></tr>
+                <tr><td><code>child</code></td><td><code>string | null</code></td><td><p>The run a step of the block 'pipeline' waits for.</p></td></tr>
+                <tr><td><code>startedAt</code></td><td><code>Date | null</code></td><td></td></tr>
+                <tr><td><code>finishedAt</code></td><td><code>Date | null</code></td><td></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-PipelinesOptions"><code>PipelinesOptions</code></h3>
+        <pre><code class="language-ts">export interface PipelinesOptions { ... }</code></pre>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>table?</code></td><td><code>string</code></td><td><p>The prefix of its tables ('xufa_pipeline': _runs and _steps).</p></td></tr>
+                <tr><td><code>runModel?</code></td><td><code>string</code></td><td></td></tr>
+                <tr><td><code>stepModel?</code></td><td><code>string</code></td><td></td></tr>
+                <tr><td><code>models?</code></td><td><code><a href="#ref-Pipelines">Pipelines</a></code></td><td><p>Other Pipelines on the same database: their models (runs shared).</p></td></tr>
+                <tr><td><code>maxDepth?</code></td><td><code>number</code></td><td><p>How deep pipelines started by steps (the block 'pipeline') can go (10): a cycle stops there.</p></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-XufaInstance"><code>XufaInstance</code></h3>
+        <pre><code class="language-ts">interface XufaInstance { ... }</code></pre>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>queue</code></td><td><code><a href="#ref-Queue">Queue</a></code></td><td></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h2 id="types">Types</h2>
+        <p class="ref-index"><a href="#ref-Duration"><code>Duration</code></a>, <a href="#ref-JobStatus"><code>JobStatus</code></a>, <a href="#ref-Backoff"><code>Backoff</code></a>, <a href="#ref-JobCounts"><code>JobCounts</code></a>, <a href="#ref-RunStatus"><code>RunStatus</code></a>, <a href="#ref-StepStatus"><code>StepStatus</code></a>, <a href="#ref-OnTimeout"><code>OnTimeout</code></a></p>
+
+        <h3 id="ref-Duration"><code>Duration</code></h3>
+        <pre><code class="language-ts">export type Duration = number | string;</code></pre>
+        <p>Milliseconds, or a text: '500ms', '30s', '10m', '2h', '1d', '1w', '1h30m'.</p>
+
+        <h3 id="ref-JobStatus"><code>JobStatus</code></h3>
+        <pre><code class="language-ts">export type JobStatus = 'pending' | 'running' | 'done' | 'failed';</code></pre>
+        <p>The status of a job: waiting to run (or to run again), running, done (kept with keepDone) or failed.</p>
+
+        <h3 id="ref-Backoff"><code>Backoff</code></h3>
+        <pre><code class="language-ts">export type Backoff =
+  | Duration
+  | { type?: 'exponential' | 'fixed'; delay?: Duration; max?: Duration; jitter?: boolean }
+  | ((attempts: number) =&gt; Duration);</code></pre>
+        <p>The delay before a job is tried again: ms or a text, { type, delay, max, jitter }, or a function of the attempts.</p>
+
+        <h3 id="ref-JobCounts"><code>JobCounts</code></h3>
+        <pre><code class="language-ts">export type JobCounts = Record&lt;JobStatus, number&gt;;</code></pre>
+        <p>Counts of the jobs by status.</p>
+
+        <h3 id="ref-RunStatus"><code>RunStatus</code></h3>
+        <pre><code class="language-ts">export type RunStatus = 'running' | 'done' | 'failed' | 'cancelled';</code></pre>
+        <p>The status of a run of a pipeline.</p>
+
+        <h3 id="ref-StepStatus"><code>StepStatus</code></h3>
+        <pre><code class="language-ts">export type StepStatus =
+  'waiting' | 'queued' | 'running' | 'retrying' | 'paused' | 'done' | 'skipped' | 'failed' | 'cancelled';</code></pre>
+        <p>The status of a step of a run.</p>
+
+        <h3 id="ref-OnTimeout"><code>OnTimeout</code></h3>
+        <pre><code class="language-ts">export type OnTimeout = 'fail' | 'skip' | { output: unknown };</code></pre>
+        <p>What a paused step does at its waitTimeout: its run fails, its branch is skipped, or it goes on with an output.</p>
+      </article>
+    </div>
+
+    <footer class="footer">
+      <div class="container">
+        <span>xufa is MIT licensed. &copy; Jes&uacute;s Seijas</span>
+        <span>
+          <a href="../guide.html">Guide</a> &middot; <a href="../playground.html">Playground</a> &middot; <a href="../http/index.html">HTTP</a> &middot; <a href="../orm/index.html">ORM</a> &middot; <a href="../auth/index.html">Auth</a> &middot;
+          <a href="../sequelize/index.html">Sequelize</a> &middot; <a href="../packages.html">Packages</a> &middot;
+          <a href="../benchmarks.html">Benchmarks</a> &middot; <a href="https://github.com/xufajs/xufa">GitHub</a>
+        </span>
+      </div>
+    </footer>
+  </body>
+</html>

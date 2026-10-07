@@ -19,11 +19,11 @@ const {
   standaloneCode,
   standaloneJsonSchema,
   standaloneModule,
-} = require('../src');
-const { HELPER_SOURCES } = require('../src/standalone-helpers');
-const { deepEqual } = require('../src/deep-equal');
-const { codePointLength } = require('../src/types/code-point-length');
-const { hasDuplicates } = require('../src/types/has-duplicates');
+} = require('..');
+const { HELPER_SOURCES } = require('../lib/standalone-helpers');
+const { deepEqual } = require('../lib/deep-equal');
+const { codePointLength } = require('../lib/types/code-point-length');
+const { hasDuplicates } = require('../lib/types/has-duplicates');
 
 // Loads CommonJS source in a context where code generation from strings (eval, new Function) throws. Values are
 // made in that context too, so objects compare as they do when the data and the validator share one.

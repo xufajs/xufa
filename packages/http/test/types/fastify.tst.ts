@@ -247,6 +247,8 @@ expect(xufa({
 })).type.toBeAssignableTo<XufaInstance>()
 expect(xufa({ return503OnClosing: true })).type.toBeAssignableTo<XufaInstance>()
 expect(xufa({ fastHead: false })).type.toBeAssignableTo<XufaInstance>()
+expect(xufa({ validation: { foldMessages: true } })).type.toBeAssignableTo<XufaInstance>()
+expect(xufa({ ajv: { validatorOptions: { foldMessages: true } } })).type.toBeAssignableTo<XufaInstance>()
 expect(xufa({ frameworkErrors: () => { } })).type.toBeAssignableTo<XufaInstance>()
 expect(xufa({
   rewriteUrl: function (req) {

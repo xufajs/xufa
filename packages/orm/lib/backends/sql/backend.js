@@ -27,6 +27,12 @@ class SqlBackend extends Backend {
     return this.dialect.name;
   }
 
+  // Aggregates across reverse relations, in the query (LEFT JOINs); the other backends have them from the ORM
+  // (lib/js-aggregates.js).
+  get reverseAggregates() {
+    return true;
+  }
+
   async query() {
     throw this.unsupported('query');
   }
@@ -109,6 +115,12 @@ class SqlBackend extends Backend {
     if (statements.length > 1 && !this.inTransaction) await this.transaction(insertAll);
     else await this.run(insertAll);
     return pks;
+  }
+
+  // A round trip to the database: SELECT 1.
+  async ping() {
+    await this.run(() => this.query('SELECT 1', []));
+    return true;
   }
 
   async update(query, assignments) {

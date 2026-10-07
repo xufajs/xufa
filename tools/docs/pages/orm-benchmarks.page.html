@@ -1,0 +1,43 @@
+<!--{
+  "file": "orm-benchmarks.html",
+  "name": "@xufa/orm",
+  "package": "orm.html",
+  "title": "@xufa/orm: Benchmarks",
+  "description": "@xufa/orm against Sequelize 6 on PostgreSQL and SQLite, and the same Sequelize code on @xufa/sequelize: creates, reads by key, queries, joins, bulk writes, updates and counts.",
+  "nav": "orm",
+  "packages": false,
+  "groups": [
+    ["Benchmarks", [["sequelize", "Against Sequelize"], ["method", "How they are measured"], ["run", "Run them yourself"], ["pg-benchmarks", "Its drivers"], ["benchmarks.html", "Every benchmark of xufa"]]]
+  ]
+}-->
+        <h1>Benchmarks</h1>
+        <p class="intro">
+          Operations or rows a second of @xufa/orm, of Sequelize 6 as it installs (<code>pg</code>, <code>sqlite3</code>),
+          and of the same Sequelize code on <a href="sequelize.html">@xufa/sequelize</a>, on the same models, data and
+          machine. Where the database does the work, they are about even; where the library does it, the ORM is faster.
+        </p>
+<!--generated: orm-benchmarks-->
+
+        <h2 id="method">How they are measured</h2>
+        <p>
+          Every library runs every round in a process of its own, the libraries taking turns, and the median of the rounds
+          is shown, with how many times Sequelize's it is. <strong>⚠</strong> marks a result whose rounds are more than 10%
+          apart: the machine was busy, so read it as a range. PostgreSQL runs on the same machine, with a pool of 10
+          connections for each library.
+        </p>
+
+        <h2 id="run">Run them yourself</h2>
+        <pre><code class="language-sh">node bench/orm.js                                   # PostgreSQL and SQLite, every workload
+node bench/orm.js --dialects sqlite --rounds 3      # SQLite only
+node bench/orm.js --only "findByPk (serial),count where" --url postgres://user:password@localhost:5432/bench</code></pre>
+        <p>
+          It uses the tables <code>bench_author</code> and <code>bench_book</code>, dropped before and after. The stacks
+          (<code>--orms</code>) are <code>xufa</code>, <code>sequelize</code>, <code>sequelize-xufa-pg</code> (Sequelize on
+          @xufa/pg: what the driver alone gives) and <code>xufa-sequelize</code>.
+        </p>
+
+        <h2 id="pg-benchmarks">Its drivers</h2>
+        <p>
+          The ORM reaches PostgreSQL and MongoDB with drivers of its own: <a href="benchmarks.html#pg">@xufa/pg against
+          pg</a> and <a href="benchmarks.html#mongo">@xufa/mongo against the official driver</a>.
+        </p>

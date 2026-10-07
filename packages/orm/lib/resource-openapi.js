@@ -6,8 +6,9 @@
 // or 3.1 (type: ['integer', 'null']), as the document is.
 //
 // Each action gets its tags, summary and operationId, its parameters (the id; the filters, ordering, search and page
-// of the list), its body (the writable fields, from Model.schema()) and its responses (the object as it is
-// answered, the page of a list, and the errors).
+// of the list), its body (the writable fields, from Model.schema(), and the other fields of the object marked readOnly:
+// ignored, or with strict refused unless an update gives the value the object has) and its responses (the object as it
+// is answered, its read-only fields marked too; the page of a list, and the errors).
 
 const { modelSchema } = require('./model-schema');
 
@@ -37,14 +38,15 @@ function typeOf(field) {
  */
 function resourceDocs(model, settings) {
   const { filterMap, orderings, search, pagination, pageSize, maxPageSize, lookupField, writableFields } = settings;
-  const { shown, exclude, serialize, tag = model.name } = settings;
+  const { shown, exclude, serialize, strict = false, tag = model.name, component = model.name } = settings;
   const { meta } = model;
+  const writableNames = new Set(writableFields.map((field) => field.attname));
 
-  // The object as it is answered: its fields (those of `fields`, or without `exclude`); any object with serialize.
-  let object;
-  if (serialize) object = { type: 'object', description: `A ${model.name}`, additionalProperties: true };
-  else {
-    const full = modelSchema(model, {}, { blobs: true });
+  // The fields of the object as it is answered (those of `fields`, or without `exclude`), those that are not
+  // writable marked readOnly; any object with serialize.
+  const full = modelSchema(model, {}, { blobs: true });
+  let shownProperties;
+  {
     const keep = (name) => {
       if (shown) {
         return shown.some((given) => {
@@ -57,17 +59,34 @@ function resourceDocs(model, settings) {
         return given === name || (field && field.attname === name);
       });
     };
-    const properties = Object.fromEntries(Object.entries(full.properties).filter(([name]) => keep(name)));
-    object = { type: 'object', description: `A ${model.name}`, properties };
+    shownProperties = Object.fromEntries(
+      Object.entries(full.properties)
+        .filter(([name]) => keep(name))
+        .map(([name, schema]) => [name, writableNames.has(name) ? schema : { ...schema, readOnly: true }])
+    );
   }
+  const object = serialize
+    ? { type: 'object', description: `A ${model.name}`, additionalProperties: true }
+    : { type: 'object', description: `A ${model.name}`, properties: shownProperties };
 
-  // A body: the writable fields (required ones required, for a create and a PUT).
-  const body = (partial) => {
-    const full = modelSchema(model, { input: true });
-    const names = new Set(writableFields.map((field) => field.attname));
-    const properties = Object.fromEntries(Object.entries(full.properties).filter(([name]) => names.has(name)));
+  // A body: the writable fields (required ones required, for a create and a PUT), and the other fields of the object,
+  // read-only: what the resource does with them.
+  const readOnlyNote = (update) => {
+    if (!strict) return 'Read-only: ignored in a body.';
+    return update ? 'Read-only: refused, unless it is the value the object has.' : 'Read-only: refused in a body.';
+  };
+  const body = (partial, update) => {
+    const input = modelSchema(model, { input: true });
+    const properties = {};
+    for (const [name, schema] of Object.entries(shownProperties)) {
+      if (writableNames.has(name)) properties[name] = input.properties[name] || schema;
+      else properties[name] = { ...schema, readOnly: true, description: readOnlyNote(update) };
+    }
+    for (const [name, schema] of Object.entries(input.properties)) {
+      if (writableNames.has(name) && !(name in properties)) properties[name] = schema;
+    }
     const schema = { type: 'object', properties, additionalProperties: false };
-    const required = partial ? [] : (full.required || []).filter((name) => names.has(name));
+    const required = partial ? [] : (input.required || []).filter((name) => writableNames.has(name));
     if (required.length) schema.required = required;
     return schema;
   };
@@ -78,7 +97,10 @@ function resourceDocs(model, settings) {
     required: ['id'],
   };
 
-  const list = () => {
+  // The object answered: inline, or the component of the document it is (`ref`: 'Book#', see resource.js).
+  const answered = (ref) => (ref ? { $ref: ref } : object);
+
+  const list = (ref) => {
     const properties = {};
     for (const key of filterMap.keys()) {
       const parts = key.split('__');
@@ -103,10 +125,10 @@ function resourceDocs(model, settings) {
             count: { type: 'integer' },
             limit: { type: 'integer' },
             offset: { type: 'integer' },
-            results: { type: 'array', items: object },
+            results: { type: 'array', items: answered(ref) },
           },
         }
-      : { type: 'array', items: object };
+      : { type: 'array', items: answered(ref) };
     return {
       summary: `List ${model.name} objects`,
       querystring: { type: 'object', properties },
@@ -115,22 +137,22 @@ function resourceDocs(model, settings) {
   };
 
   const actions = {
-    list,
-    get: () => ({
+    list: (partial, ref) => list(ref),
+    get: (partial, ref) => ({
       summary: `Get a ${model.name}`,
       params,
-      response: { 200: { ...object, description: `The ${model.name}` }, ...errors(404) },
+      response: { 200: { ...answered(ref), description: `The ${model.name}` }, ...errors(404) },
     }),
-    create: () => ({
+    create: (partial, ref) => ({
       summary: `Create a ${model.name}`,
-      body: body(false),
-      response: { 201: { ...object, description: `The ${model.name} created` }, ...errors(400, 409) },
+      body: body(false, false),
+      response: { 201: { ...answered(ref), description: `The ${model.name} created` }, ...errors(400, 409) },
     }),
-    update: (partial) => ({
+    update: (partial, ref) => ({
       summary: partial ? `Update some fields of a ${model.name}` : `Update a ${model.name}`,
       params,
-      body: body(partial),
-      response: { 200: { ...object, description: `The ${model.name} updated` }, ...errors(400, 404, 409) },
+      body: body(partial, true),
+      response: { 200: { ...answered(ref), description: `The ${model.name} updated` }, ...errors(400, 404, 409) },
     }),
     delete: () => ({
       summary: `Delete a ${model.name}`,
@@ -148,12 +170,15 @@ function resourceDocs(model, settings) {
     delete: `delete${model.name}`,
   };
 
-  // `partial`: the PATCH of update.
-  return (action, partial = false) => ({
+  // `partial`: the PATCH of update; `ref`: the component of the object, when the document has it.
+  const docs = (action, partial = false, ref = null) => ({
     tags: [tag],
     operationId: operationIds[partial ? 'partialUpdate' : action],
-    ...actions[action](partial),
+    ...actions[action](partial, ref),
   });
+  // The object as a component of the document (components/schemas/<name>), unless it is any object (serialize).
+  docs.component = serialize ? null : { name: component, schema: object };
+  return docs;
 }
 
 module.exports = { resourceDocs };

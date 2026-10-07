@@ -10,7 +10,7 @@ const {
   ooneOf,
   onot,
   toErrors,
-} = require('../src');
+} = require('..');
 
 // Errors of each value, after checking the interpreted type and the compiled functions agree.
 function errorsOf(json, values) {

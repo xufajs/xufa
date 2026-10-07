@@ -1,0 +1,330 @@
+{
+  "draft": "draft2020-12",
+  "mode": "isolated",
+  "totalGroups": 384,
+  "totalTests": 1301,
+  "commonGroups": 322,
+  "commonTests": 1051,
+  "commonFiles": [
+    "additionalProperties.json",
+    "allOf.json",
+    "anchor.json",
+    "anyOf.json",
+    "boolean_schema.json",
+    "const.json",
+    "contains.json",
+    "content.json",
+    "default.json",
+    "dependentRequired.json",
+    "dependentSchemas.json",
+    "enum.json",
+    "exclusiveMaximum.json",
+    "exclusiveMinimum.json",
+    "if-then-else.json",
+    "infinite-loop-detection.json",
+    "items.json",
+    "maxContains.json",
+    "maxItems.json",
+    "maxLength.json",
+    "maxProperties.json",
+    "maximum.json",
+    "minContains.json",
+    "minItems.json",
+    "minLength.json",
+    "minProperties.json",
+    "minimum.json",
+    "multipleOf.json",
+    "not.json",
+    "oneOf.json",
+    "pattern.json",
+    "patternProperties.json",
+    "prefixItems.json",
+    "properties.json",
+    "propertyNames.json",
+    "ref.json",
+    "refRemote.json",
+    "required.json",
+    "type.json",
+    "unevaluatedItems.json",
+    "unevaluatedProperties.json",
+    "uniqueItems.json"
+  ],
+  "validators": [
+    {
+      "name": "@xufa/schema (all errors)",
+      "testsOk": 1301,
+      "testsFail": 0,
+      "unsupported": 0,
+      "groupsPassed": 384,
+      "opsPerSec": 19627.16977099571,
+      "spread": 2.2315296880929107
+    },
+    {
+      "name": "@xufa/schema (first error)",
+      "testsOk": 1301,
+      "testsFail": 0,
+      "unsupported": 0,
+      "groupsPassed": 384,
+      "opsPerSec": 25449.55208788568,
+      "spread": 1.8778158312245892
+    },
+    {
+      "name": "@xufa/schema (boolean)",
+      "testsOk": 1301,
+      "testsFail": 0,
+      "unsupported": 0,
+      "groupsPassed": 384,
+      "opsPerSec": 32695.473603221097,
+      "spread": 3.5833393138764373
+    },
+    {
+      "name": "ajv (first error)",
+      "testsOk": 1239,
+      "testsFail": 62,
+      "unsupported": 20,
+      "groupsPassed": 348,
+      "opsPerSec": 4984.602727196869,
+      "spread": 18.58231892018057
+    },
+    {
+      "name": "ajv (all errors)",
+      "testsOk": 1239,
+      "testsFail": 62,
+      "unsupported": 20,
+      "groupsPassed": 348,
+      "opsPerSec": 4901.635808502901,
+      "spread": 126.97433044196137
+    },
+    {
+      "name": "@exodus/schemasafe (boolean)",
+      "testsOk": 1263,
+      "testsFail": 38,
+      "unsupported": 33,
+      "groupsPassed": 375,
+      "opsPerSec": 26458.214190747098,
+      "spread": 8.281660659054939
+    },
+    {
+      "name": "@exodus/schemasafe (first error)",
+      "testsOk": 1263,
+      "testsFail": 38,
+      "unsupported": 33,
+      "groupsPassed": 375,
+      "opsPerSec": 17234.146909925188,
+      "spread": 4.548982432803751
+    },
+    {
+      "name": "@exodus/schemasafe (all errors)",
+      "testsOk": 1259,
+      "testsFail": 42,
+      "unsupported": 37,
+      "groupsPassed": 373,
+      "opsPerSec": 9427.94720344486,
+      "spread": 2.7551446725973547
+    },
+    {
+      "name": "@cfworker/json-schema",
+      "testsOk": 1249,
+      "testsFail": 52,
+      "unsupported": 4,
+      "groupsPassed": 343,
+      "opsPerSec": 285.4011143026727,
+      "spread": 5.333105878005052
+    },
+    {
+      "name": "json-schema-library",
+      "testsOk": 1291,
+      "testsFail": 10,
+      "unsupported": 0,
+      "groupsPassed": 374,
+      "opsPerSec": 72.4215473761824,
+      "spread": 4.005561983895343
+    }
+  ],
+  "oursPerFile": {
+    "additionalProperties.json": {
+      "ok": 21,
+      "total": 21
+    },
+    "allOf.json": {
+      "ok": 30,
+      "total": 30
+    },
+    "anchor.json": {
+      "ok": 8,
+      "total": 8
+    },
+    "anyOf.json": {
+      "ok": 18,
+      "total": 18
+    },
+    "boolean_schema.json": {
+      "ok": 18,
+      "total": 18
+    },
+    "const.json": {
+      "ok": 54,
+      "total": 54
+    },
+    "contains.json": {
+      "ok": 21,
+      "total": 21
+    },
+    "content.json": {
+      "ok": 18,
+      "total": 18
+    },
+    "default.json": {
+      "ok": 7,
+      "total": 7
+    },
+    "defs.json": {
+      "ok": 2,
+      "total": 2
+    },
+    "dependentRequired.json": {
+      "ok": 20,
+      "total": 20
+    },
+    "dependentSchemas.json": {
+      "ok": 20,
+      "total": 20
+    },
+    "dynamicRef.json": {
+      "ok": 44,
+      "total": 44
+    },
+    "enum.json": {
+      "ok": 53,
+      "total": 53
+    },
+    "exclusiveMaximum.json": {
+      "ok": 4,
+      "total": 4
+    },
+    "exclusiveMinimum.json": {
+      "ok": 4,
+      "total": 4
+    },
+    "format.json": {
+      "ok": 133,
+      "total": 133
+    },
+    "if-then-else.json": {
+      "ok": 30,
+      "total": 30
+    },
+    "infinite-loop-detection.json": {
+      "ok": 2,
+      "total": 2
+    },
+    "items.json": {
+      "ok": 29,
+      "total": 29
+    },
+    "maxContains.json": {
+      "ok": 14,
+      "total": 14
+    },
+    "maxItems.json": {
+      "ok": 6,
+      "total": 6
+    },
+    "maxLength.json": {
+      "ok": 7,
+      "total": 7
+    },
+    "maxProperties.json": {
+      "ok": 10,
+      "total": 10
+    },
+    "maximum.json": {
+      "ok": 8,
+      "total": 8
+    },
+    "minContains.json": {
+      "ok": 28,
+      "total": 28
+    },
+    "minItems.json": {
+      "ok": 6,
+      "total": 6
+    },
+    "minLength.json": {
+      "ok": 7,
+      "total": 7
+    },
+    "minProperties.json": {
+      "ok": 10,
+      "total": 10
+    },
+    "minimum.json": {
+      "ok": 11,
+      "total": 11
+    },
+    "multipleOf.json": {
+      "ok": 11,
+      "total": 11
+    },
+    "not.json": {
+      "ok": 40,
+      "total": 40
+    },
+    "oneOf.json": {
+      "ok": 27,
+      "total": 27
+    },
+    "pattern.json": {
+      "ok": 12,
+      "total": 12
+    },
+    "patternProperties.json": {
+      "ok": 25,
+      "total": 25
+    },
+    "prefixItems.json": {
+      "ok": 11,
+      "total": 11
+    },
+    "properties.json": {
+      "ok": 28,
+      "total": 28
+    },
+    "propertyNames.json": {
+      "ok": 22,
+      "total": 22
+    },
+    "ref.json": {
+      "ok": 79,
+      "total": 79
+    },
+    "refRemote.json": {
+      "ok": 31,
+      "total": 31
+    },
+    "required.json": {
+      "ok": 18,
+      "total": 18
+    },
+    "type.json": {
+      "ok": 80,
+      "total": 80
+    },
+    "unevaluatedItems.json": {
+      "ok": 71,
+      "total": 71
+    },
+    "unevaluatedProperties.json": {
+      "ok": 129,
+      "total": 129
+    },
+    "uniqueItems.json": {
+      "ok": 69,
+      "total": 69
+    },
+    "vocabulary.json": {
+      "ok": 5,
+      "total": 5
+    }
+  }
+}

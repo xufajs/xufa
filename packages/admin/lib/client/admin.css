@@ -1,0 +1,442 @@
+:root {
+  color-scheme: light dark;
+  --bg: #f6f6f8;
+  --fg: #1c1c21;
+  --muted: #6c6c78;
+  --card: #ffffff;
+  --line: #e2e2e8;
+  --accent: #3b5bdb;
+  --accent-fg: #ffffff;
+  --danger: #c92a2a;
+  --hover: #f0f2fb;
+  --error-bg: #fff0f0;
+  --s-done: #2b8a3e;
+  --s-running: #1c7ed6;
+  --s-queued: #e67700;
+  --s-paused: #7048e8;
+  --s-failed: #c92a2a;
+  --s-idle: #868e96;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #141418;
+    --fg: #ececf1;
+    --muted: #9b9ba8;
+    --card: #1d1d23;
+    --line: #2d2d36;
+    --accent: #748ffc;
+    --accent-fg: #0b0b10;
+    --danger: #ff6b6b;
+    --hover: #24253a;
+    --error-bg: #3a1d1d;
+    --s-done: #51cf66;
+    --s-running: #4dabf7;
+    --s-queued: #ffa94d;
+    --s-paused: #9775fa;
+    --s-failed: #ff6b6b;
+    --s-idle: #868e96;
+  }
+}
+* {
+  box-sizing: border-box;
+}
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--fg);
+  font:
+    14px/1.5 system-ui,
+    -apple-system,
+    'Segoe UI',
+    sans-serif;
+}
+a {
+  color: var(--accent);
+  text-decoration: none;
+}
+.layout {
+  display: grid;
+  grid-template-columns: 220px 1fr;
+  min-height: 100vh;
+}
+@media (max-width: 760px) {
+  .layout {
+    grid-template-columns: 1fr;
+  }
+  nav {
+    border-right: 0;
+    border-bottom: 1px solid var(--line);
+  }
+}
+nav {
+  background: var(--card);
+  border-right: 1px solid var(--line);
+  padding: 16px 0;
+}
+nav h1 {
+  font-size: 16px;
+  margin: 0 16px 12px;
+}
+nav a {
+  display: flex;
+  justify-content: space-between;
+  padding: 6px 16px;
+  color: var(--fg);
+}
+nav a:hover,
+nav a.current {
+  background: var(--hover);
+}
+nav a.current {
+  font-weight: 600;
+  box-shadow: inset 3px 0 var(--accent);
+}
+nav .count {
+  color: var(--muted);
+  font-size: 12px;
+}
+main {
+  padding: 20px 24px 48px;
+  min-width: 0;
+}
+.head {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 14px;
+}
+.head h2 {
+  margin: 0;
+  font-size: 20px;
+}
+.tools {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  margin-bottom: 12px;
+}
+input,
+select,
+textarea {
+  font: inherit;
+  color: inherit;
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 6px 8px;
+}
+textarea {
+  width: 100%;
+  min-height: 90px;
+  font-family: ui-monospace, monospace;
+}
+button {
+  font: inherit;
+  border: 1px solid var(--line);
+  background: var(--card);
+  color: var(--fg);
+  border-radius: 6px;
+  padding: 6px 12px;
+  cursor: pointer;
+}
+button.primary {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--accent-fg);
+}
+button.danger {
+  color: var(--danger);
+  border-color: var(--danger);
+}
+button:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+.card {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  overflow: auto;
+}
+table {
+  border-collapse: collapse;
+  width: 100%;
+}
+th,
+td {
+  text-align: left;
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--line);
+  white-space: nowrap;
+  max-width: 320px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+th {
+  font-weight: 600;
+  color: var(--muted);
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  cursor: pointer;
+  user-select: none;
+}
+tbody tr {
+  cursor: pointer;
+}
+tbody tr:hover {
+  background: var(--hover);
+}
+.pages {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  justify-content: flex-end;
+  margin-top: 10px;
+  color: var(--muted);
+}
+form.edit {
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 18px;
+  max-width: 760px;
+}
+.field {
+  margin-bottom: 14px;
+}
+.field label {
+  display: block;
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+.field .note {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: normal;
+}
+.field input:not([type='checkbox']),
+.field select {
+  width: 100%;
+}
+.field .value {
+  color: var(--muted);
+}
+.field .errors,
+.all-errors {
+  color: var(--danger);
+  font-size: 13px;
+  margin-top: 4px;
+}
+.all-errors {
+  background: var(--error-bg);
+  border-radius: 6px;
+  padding: 8px 12px;
+  margin-bottom: 12px;
+}
+.actions {
+  display: flex;
+  gap: 8px;
+  justify-content: space-between;
+  margin-top: 18px;
+}
+.empty {
+  padding: 24px;
+  text-align: center;
+  color: var(--muted);
+}
+.toast {
+  position: fixed;
+  right: 16px;
+  bottom: 16px;
+  background: var(--fg);
+  color: var(--bg);
+  padding: 8px 14px;
+  border-radius: 8px;
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+.toast.on {
+  opacity: 1;
+}
+.muted {
+  color: var(--muted);
+}
+nav a.section {
+  margin-top: 12px;
+  border-top: 1px solid var(--line);
+  padding-top: 12px;
+}
+.pill {
+  display: inline-block;
+  padding: 0 8px;
+  border-radius: 999px;
+  font-size: 12px;
+  line-height: 20px;
+  color: #fff;
+  background: var(--s-idle);
+  vertical-align: middle;
+}
+.pill.s-done,
+.pill.s-up {
+  background: var(--s-done);
+}
+.pill.s-running {
+  background: var(--s-running);
+}
+.pill.s-queued,
+.pill.s-retrying,
+.pill.s-degraded {
+  background: var(--s-queued);
+}
+.pill.s-paused {
+  background: var(--s-paused);
+}
+.pill.s-failed,
+.pill.s-down {
+  background: var(--s-failed);
+}
+.card.health,
+.card.step,
+.card.io {
+  padding: 12px 16px;
+  margin-bottom: 16px;
+}
+.health-head {
+  margin-bottom: 8px;
+}
+td.detail {
+  max-width: 360px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.card.graph {
+  overflow-x: auto;
+  margin-bottom: 16px;
+}
+.card.graph svg {
+  display: block;
+}
+.graph .edge {
+  fill: none;
+  stroke: var(--muted);
+  stroke-width: 1.5;
+}
+.graph .arrow {
+  fill: var(--muted);
+}
+.graph .node {
+  cursor: pointer;
+}
+.graph .node rect {
+  fill: var(--card);
+  stroke: var(--s-idle);
+  stroke-width: 2;
+}
+.graph .node.selected rect {
+  stroke-width: 4;
+}
+.graph .node:focus {
+  outline: none;
+}
+.graph .node:focus rect {
+  stroke-dasharray: 4 2;
+}
+.graph .node text {
+  fill: var(--fg);
+  font-size: 13px;
+}
+.graph .node text.status {
+  fill: var(--muted);
+  font-size: 12px;
+}
+.graph .s-done rect {
+  stroke: var(--s-done);
+}
+.graph .s-running rect {
+  stroke: var(--s-running);
+}
+.graph .s-queued rect,
+.graph .s-retrying rect {
+  stroke: var(--s-queued);
+}
+.graph .s-paused rect {
+  stroke: var(--s-paused);
+}
+.graph .s-failed rect {
+  stroke: var(--s-failed);
+}
+.graph .s-skipped rect,
+.graph .s-cancelled rect {
+  stroke-dasharray: 5 4;
+}
+.card.step dl {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: 2px 16px;
+  margin: 0 0 8px;
+}
+.card.step dt {
+  color: var(--muted);
+}
+.card.step dd {
+  margin: 0;
+}
+.card h3 {
+  font-size: 13px;
+  margin: 12px 0 4px;
+  color: var(--muted);
+}
+.card pre {
+  margin: 0;
+  padding: 8px;
+  background: var(--bg);
+  border-radius: 6px;
+  overflow: auto;
+  max-height: 240px;
+  font-size: 12px;
+}
+form.resume textarea {
+  width: 100%;
+  min-height: 80px;
+  margin-bottom: 8px;
+}
+nav .user {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 10px 16px;
+  border-top: 1px solid var(--line);
+  margin-top: 12px;
+  color: var(--muted);
+}
+nav .user button {
+  padding: 2px 10px;
+}
+main.login {
+  display: grid;
+  place-items: center;
+  min-height: 100vh;
+  padding: 16px;
+}
+main.login form {
+  width: 100%;
+  max-width: 360px;
+  padding: 24px;
+}
+main.login h1 {
+  font-size: 20px;
+  margin: 0 0 16px;
+}
+main.login .field input {
+  width: 100%;
+}
+main.login button {
+  width: 100%;
+  margin-top: 8px;
+}

@@ -15,7 +15,7 @@ const fsp = require('node:fs/promises');
 const path = require('node:path');
 const crypto = require('node:crypto');
 const { pipeline } = require('node:stream/promises');
-const { BlobBackend } = require('./base');
+const { BlobBackend, exists } = require('./base');
 const { BackendError } = require('../../errors');
 
 const RESERVED = /^(con|prn|aux|nul|com\d|lpt\d)(\.|$)/i;
@@ -91,13 +91,18 @@ class DiskBackend extends BlobBackend {
   }
 
   // Writes a file whole: to a temporary file next to it, then renamed.
-  static async writeAtomic(file, body) {
+  // create: the file must not be there (it is linked in place, which fails when it is: no other create of it wins
+  // in between); otherwise it is renamed over the one there was.
+  static async writeAtomic(file, body, { create = false } = {}) {
     await fsp.mkdir(path.dirname(file), { recursive: true });
     const temp = `${file}.xufa-${crypto.randomBytes(6).toString('hex')}.tmp`;
     try {
       if (Buffer.isBuffer(body)) await fsp.writeFile(temp, body);
       else await pipeline(body, fs.createWriteStream(temp));
-      await fsp.rename(temp, file);
+      if (create) {
+        await fsp.link(temp, file);
+        await fsp.rm(temp, { force: true });
+      } else await fsp.rename(temp, file);
     } catch (err) {
       await fsp.rm(temp, { force: true });
       throw err;
@@ -136,9 +141,14 @@ class DiskBackend extends BlobBackend {
     }
   }
 
-  async storePut(table, key, body, { contentType, metadata }) {
+  async storePut(table, key, body, { contentType, metadata, create = false }) {
     const file = this.fileOf(table, key);
-    await DiskBackend.writeAtomic(file, body);
+    try {
+      await DiskBackend.writeAtomic(file, body, { create });
+    } catch (err) {
+      if (create && err.code === 'EEXIST') throw exists(table, key);
+      throw err;
+    }
     await this.writeMeta(table, key, contentType, metadata);
     return DiskBackend.info(await fsp.stat(file));
   }

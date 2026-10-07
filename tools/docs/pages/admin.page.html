@@ -1,0 +1,142 @@
+<!--{
+  "file": "admin.html",
+  "name": "@xufa/admin",
+  "title": "@xufa/admin",
+  "description": "@xufa/admin: the admin of the models of @xufa/orm, as Django's: lists with search, filters, order and pages, and forms from the fields with their validation, for every backend, as a plugin of @xufa/http.",
+  "groups": [
+    ["Using it", [["start", "Quick start"], ["lists", "Lists"], ["forms", "Forms"], ["runs", "Pipeline runs and health"], ["security", "Who may use it"], ["api", "Its API"]]]
+  ]
+}-->
+        <h1>@xufa/admin</h1>
+        <p class="intro">
+          The admin of the models of <a href="orm.html">@xufa/orm</a>, as Django's: a page with the list of each model
+          (search, filters, order, pages) and its forms (from its fields, with the errors of its validation), for every
+          backend of the ORM, as a plugin of <a href="http.html">@xufa/http</a>. No dependencies, and no build: the page is
+          one document with its script.
+        </p>
+
+        <h2 id="start">Quick start</h2>
+        <pre data-run><code class="language-js">const xufa = require('@xufa/http');
+const { Database, Model, fields } = require('@xufa/orm');
+const { admin } = require('@xufa/admin');
+
+class Author extends Model {
+  static fields = { name: fields.string(), country: fields.string({ null: true, choices: ['ES', 'UK', 'US'] }) };
+}
+class Book extends Model {
+  static fields = { title: fields.string(), pages: fields.integer({ null: true }), author: fields.foreignKey(() =&gt; Author) };
+  toString() {
+    return this.title; // how a book is shown (as Django's __str__)
+  }
+}
+const db = new Database({ backend: 'memory' }).register(Author, Book);
+await db.sync();
+
+const app = xufa();
+app.register(admin, {
+  prefix: '/admin',
+  models: [Book, [Author, { search: ['name'] }]],
+  authorize: (request) =&gt; true, // who may use it: required (request.user?.role === 'staff'...)
+  title: 'Bookshop',
+});
+
+const page = await app.inject('/admin/');
+console.log(page.statusCode, page.headers['content-type']); // open /admin/ in a browser</code></pre>
+        <pre data-output><code class="language-plaintext">200 text/html; charset=utf-8</code></pre>
+
+        <h2 id="lists">Lists</h2>
+        <p>
+          Each model has a list: the columns of <code>list</code> (the first six fields that are not text nor json), a
+          search in the fields of <code>search</code> (its string fields), filters by the fields of <code>filters</code>
+          (booleans, choices and foreign keys), an order by any column (a click on it), and pages of 25. The objects of
+          foreign keys are shown by their labels.
+        </p>
+        <pre><code class="language-js">app.register(admin, {
+  prefix: '/admin',
+  models: [[Book, { list: ['title', 'author', 'published'], search: ['title', 'isbn'], filters: ['published'] }], Author],
+  authorize,
+});</code></pre>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Option of a model</th><th>What it is</th></tr></thead>
+            <tbody>
+              <tr><td><code>label</code></td><td>The name shown</td></tr>
+              <tr><td><code>list</code>, <code>search</code>, <code>filters</code></td><td>Its columns, the fields its search looks in, the fields it filters by</td></tr>
+              <tr><td><code>readOnly</code></td><td>Fields shown in its forms but not changed (besides keys, automatic dates and fields given by the backend)</td></tr>
+              <tr><td><code>readOnlyModel</code></td><td>Only shown: no creates, updates nor deletes</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h2 id="forms">Forms</h2>
+        <p>
+          A form has an input for each field: text, numbers, checkboxes, dates and times, the choices of a field, a select
+          of the objects of a foreign key, JSON. The required ones are marked; keys, automatic dates and
+          <code>readOnly</code> fields are shown, not changed. Saving runs the validation of the model (its fields, its
+          rules, its unique values), and its errors are shown by field. A delete is that of the model: with
+          <a href="orm-guide.html#scopes"><code>softDelete</code></a>, the object is kept with its date.
+        </p>
+
+        <h2 id="runs">Pipeline runs and health</h2>
+        <pre><code class="language-js">app.register(xufa.health, { checks: { database: db.health(), queue: queue.health() } });
+app.register(admin, { prefix: '/admin', models: [Book], pipelines, authorize });</code></pre>
+        <ul>
+          <li><strong>Health:</strong> with <a href="http-guide.html#health">xufa.health</a> registered, the first page shows its report: the status of the app and each check with its time and its error or details (<code>health: false</code> leaves it out).</li>
+          <li><strong>Runs:</strong> with <code>pipelines</code> (a <code>Pipelines</code> of <a href="queue.html#pipelines">@xufa/queue</a>), the page lists their runs (by status and pipeline, newest first) and shows each run: the graph of its steps in columns by depth, colored by status (a skipped one dashed), with arrows; the step chosen with its block, attempts, times, the end of its wait (<code>pausedUntil</code>), its output and its error; the input and the result of the run. A run that runs is read again every 3 seconds.</li>
+          <li><strong>Pipelines in pipelines:</strong> a step of the block <code>pipeline</code> links to the run it started, and that run to the run and step that started it.</li>
+          <li><strong>Actions:</strong> <em>Retry</em> (a failed or cancelled run goes on from where it stopped), <em>Cancel</em> (a running one), and <em>Resume</em> of a paused step with its output, as JSON.</li>
+        </ul>
+
+        <h2 id="security">Who may use it</h2>
+        <p>
+          <strong>Its login page:</strong> with <code>login</code>, the admin has a page of its own to log in
+          (<code>GET login</code>, <code>POST login</code>, <code>POST logout</code>) built on
+          <a href="auth.html">@xufa/auth</a> and <a href="session.html">@xufa/session</a> (registered before the admin):
+        </p>
+        <pre><code class="language-js">app.register(sessionPlugin, { secret: process.env.SESSION_SECRET, store: ormStore(db), csrf: true });
+app.register(admin, {
+  prefix: '/admin',
+  models: [Book, Author],
+  login: {
+    findUser: (email) =&gt; User.objects.filter({ email: email.toLowerCase() }).first(),
+    allow: (user) =&gt; user.role === 'staff', // who may use the admin
+    totp: (user) =&gt; user.totpSecret, // a code of an authenticator app after the password (optional)
+    lastTotpStep: (user) =&gt; user.totpStep,
+    onTotp: (user, step) =&gt; User.objects.filter({ pk: user.pk }).update({ totpStep: step }),
+    rehash: (user, hash) =&gt; User.objects.filter({ pk: user.pk }).update({ password: hash }),
+  },
+});</code></pre>
+        <ul>
+          <li>Passwords are the hashes of <code>auth.hashPassword()</code> (<code>user.password</code>, or <code>password(user)</code>), checked in constant time; a user that is not there takes the same time, and wrong users, wrong passwords and users that <code>allow</code> refuses get the same answer.</li>
+          <li>Failures lock out: 5 by user in 15 minutes (<code>lockout</code>), 20 by address (<code>ipLockout</code>, so an office behind one address is not locked for a few typing errors); a <code>Lockout</code> of @xufa/auth with a shared store counts them for every worker. Locked attempts get 429 with <code>Retry-After</code>.</li>
+          <li>With <code>totp</code>, the page asks for the code only once the password was right; each code works once (<code>lastTotpStep</code>, <code>onTotp</code>).</li>
+          <li>The user logged in is kept in the session, whose id changes at the login; logging out ends it. Without a user, the page goes to the login page and the API answers 401. The page sends the CSRF token of the session with its writes, so sessions with <code>csrf: true</code> work.</li>
+          <li><code>authorize</code>, given too, is asked after the login, with <code>request.adminUser</code> (<code>{ id, name }</code>).</li>
+        </ul>
+        <p>
+          <strong>Or your own check:</strong> <code>authorize(request, reply)</code> is asked for every request of the
+          admin (the page and its API), and is required without <code>login</code>: <code>'development'</code> lets in every request while <code>NODE_ENV</code> is not
+          <code>production</code>. With <a href="auth.html">@xufa/auth</a>, register the admin after it and look at
+          <code>request.user</code>. Writes need the header the page sends (<code>x-xufa-admin: 1</code>): a form of
+          another site cannot send it (browsers ask the server first), so they need no CSRF token.
+        </p>
+
+        <h2 id="api">Its API</h2>
+        <p>The page uses an API of its own, under the prefix (it can be used by scripts too, with the header for writes):</p>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Route</th><th>What it does</th></tr></thead>
+            <tbody>
+              <tr><td><code>GET api/models</code></td><td>The models: their fields, lists, searches, filters and counts</td></tr>
+              <tr><td><code>GET api/:model</code></td><td>A page of objects: <code>?search=</code>, <code>?filter.&lt;field&gt;=</code>, <code>?order=-pages</code>, <code>?page=</code>, <code>?size=</code></td></tr>
+              <tr><td><code>GET api/:model/:pk</code></td><td>An object: its values, label and the labels of its foreign keys</td></tr>
+              <tr><td><code>POST api/:model</code>, <code>PATCH api/:model/:pk</code></td><td>Creates and updates (400 with <code>errors</code> by field; 409 for unique values)</td></tr>
+              <tr><td><code>DELETE api/:model/:pk</code></td><td>Deletes (409 when protected)</td></tr>
+              <tr><td><code>GET api/:model/choices</code></td><td>Keys and labels of the objects of a model (for selects of foreign keys), <code>?search=</code></td></tr>
+              <tr><td><code>GET api/_runs</code></td><td>The runs of the pipelines: <code>?status=</code>, <code>?pipeline=</code>, <code>?page=</code>; the counts by status and the names of the pipelines</td></tr>
+              <tr><td><code>GET api/_runs/:id</code></td><td>A run: its input, result, error, the graph of its definition and its steps</td></tr>
+              <tr><td><code>POST api/_runs/:id/retry</code>, <code>/cancel</code>, <code>/steps/:step/resume</code></td><td>The actions (resume takes <code>{ output }</code>); 409 when the run or step is not in a state for them</td></tr>
+              <tr><td><code>GET api/_health</code></td><td>The report of <code>xufa.health</code>, its checks run now (404 without it)</td></tr>
+            </tbody>
+          </table>
+        </div>

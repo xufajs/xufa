@@ -1,4 +1,4 @@
-const { ArrayOf, Integer, compileJsonSchema } = require('../src');
+const { ArrayOf, Integer, compileJsonSchema } = require('..');
 
 const DRAFT_2019 = 'https://json-schema.org/draft/2019-09/schema';
 const DRAFT_2020 = 'https://json-schema.org/draft/2020-12/schema';

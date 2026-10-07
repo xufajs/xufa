@@ -79,6 +79,8 @@
         <h4>Packages</h4>
         <ul>
           <li><a href="../websocket/index.html">@xufa/websocket</a></li>
+          <li><a href="../admin/index.html">@xufa/admin</a></li>
+          <li><a href="../session/index.html">@xufa/session</a></li>
           <li><a href="../openapi/index.html">@xufa/openapi</a></li>
           <li><a href="../client/index.html">@xufa/client</a></li>
           <li><a href="../schema/index.html">@xufa/schema</a></li>
@@ -88,6 +90,7 @@
           <li><a href="index.html" aria-current="page">@xufa/template</a></li>
           <li><a href="../cluster/index.html">@xufa/cluster</a></li>
           <li><a href="../scheduler/index.html">@xufa/scheduler</a></li>
+          <li><a href="../queue/index.html">@xufa/queue</a></li>
           <li><a href="../config/index.html">@xufa/config</a></li>
           <li><a href="../discovery/index.html">@xufa/discovery</a></li>
           <li><a href="../netcache/index.html">@xufa/netcache</a></li>
@@ -106,7 +109,12 @@
       </aside>
 
       <article class="content">
-<h1>@xufa/template</h1>
+        <nav class="package-tabs" aria-label="@xufa/template">
+          <a href="index.html" aria-current="page">Overview</a>
+          <a href="reference.html">Reference</a>
+          <a href="../playground.html#template">Playground</a>
+        </nav>
+        <h1>@xufa/template</h1>
         <p class="intro">
           Templates of text and HTML with the safe expressions of <a href="../expression/index.html">@xufa/expression</a>:
           values escaped for HTML, blocks, filters, partials, layouts and streaming, compiled once and rendered many
@@ -117,7 +125,13 @@
 
         <h2 id="start">Quick start</h2>
         <pre><code class="language-sh">npm install @xufa/template   # or require('xufa/template')</code></pre>
-        <pre><code class="language-js">const { compile, render } = require('@xufa/template');
+        <pre data-run="template"><code class="language-js">const { compile, render } = require('@xufa/template');
+
+const items = [
+  { name: 'Pen', price: 5 },
+  { name: 'Book', price: 12.5 },
+];
+const user = { name: 'Ada' };
 
 const page = compile(`
 &lt;h1&gt;{{ title | upper }}&lt;/h1&gt;
@@ -130,8 +144,12 @@ const page = compile(`
 &lt;/ul&gt;
 {{#if user}}Hello, {{ user.name }}{{else}}&lt;a href="/login"&gt;Log in&lt;/a&gt;{{/if}}`);
 
-page({ title: 'Books', items, user });
-render('Hello {{ name }}', { name: '&lt;Ada&gt;' }); // 'Hello &amp;lt;Ada&amp;gt;'</code></pre>
+console.log(page({ title: 'Books', items, user }));
+console.log(render('Hello {{ name }}', { name: '&lt;Ada&gt;' })); // escaped</code></pre>
+        <pre data-output><code class="language-html">&lt;h1&gt;BOOKS&lt;/h1&gt;
+&lt;ul&gt;&lt;li class="first"&gt;Pen: $5.00&lt;/li&gt;&lt;li class=""&gt;Book: $12.50&lt;/li&gt;&lt;/ul&gt;
+Hello, Ada
+Hello &amp;lt;Ada&amp;gt;</code></pre>
 
         <h2 id="api">API</h2>
         <div class="table-wrap">
@@ -391,7 +409,7 @@ for (const chunk of compile(source).stream(context, { chunkSize: 16384 })) socke
         </p>
 
         <h2 id="typescript">TypeScript</h2>
-        <pre><code class="language-ts">import { compile, TemplateEngine, RenderView, ReplyView } from '@xufa/template';
+        <pre data-run><code class="language-ts">import { compile, TemplateEngine, RenderView, ReplyView } from '@xufa/template';
 
 declare module '@xufa/http' {
   interface XufaInstance { view: RenderView }

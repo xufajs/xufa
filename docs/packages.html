@@ -51,6 +51,8 @@
           <li><a href="schema/index.html">@xufa/schema</a></li>
           <li><a href="orm/index.html">@xufa/orm</a></li>
           <li><a href="auth/index.html">@xufa/auth</a></li>
+          <li><a href="admin/index.html">@xufa/admin</a></li>
+          <li><a href="session/index.html">@xufa/session</a></li>
           <li><a href="sequelize/index.html">@xufa/sequelize</a></li>
         </ul>
         <h4>Drivers</h4>
@@ -72,6 +74,7 @@
           <li><a href="cluster/index.html">@xufa/cluster</a></li>
           <li><a href="config/index.html">@xufa/config</a></li>
           <li><a href="scheduler/index.html">@xufa/scheduler</a></li>
+          <li><a href="queue/index.html">@xufa/queue</a></li>
           <li><a href="discovery/index.html">@xufa/discovery</a></li>
           <li><a href="netcache/index.html">@xufa/netcache</a></li>
           <li><a href="faults/index.html">@xufa/faults</a></li>
@@ -129,12 +132,22 @@ npm install @xufa/pg # or only the one you need</code></pre>
           <a class="package-card" href="orm/index.html">
             <h3>@xufa/orm</h3>
             <span class="package-replaces">the Django ORM</span>
-            <p>Models, querysets and migrations for PostgreSQL, MongoDB, SQLite, files and stores of objects, with tenants and caches.</p>
+            <p>Models, querysets and migrations for PostgreSQL, MongoDB, SQLite, files, stores of objects (S3, Azure Blob) and email, with tenants and caches.</p>
           </a>
           <a class="package-card" href="auth/index.html">
             <h3>@xufa/auth</h3>
             <span class="package-replaces">jsonwebtoken, otplib</span>
             <p>Passwords, JWT, refresh tokens, TOTP and lockout, as a plugin of @xufa/http.</p>
+          </a>
+          <a class="package-card" href="admin/index.html">
+            <h3>@xufa/admin</h3>
+            <span class="package-replaces">the Django admin</span>
+            <p>The admin of the models: lists with search, filters and pages, forms with their validation, for every backend.</p>
+          </a>
+          <a class="package-card" href="session/index.html">
+            <h3>@xufa/session</h3>
+            <span class="package-replaces">@fastify/session, express-session</span>
+            <p>Sessions of browsers: signed cookies, stores in memory or in the database, flash messages and CSRF tokens.</p>
           </a>
           <a class="package-card" href="sequelize/index.html">
             <h3>@xufa/sequelize</h3>
@@ -185,7 +198,7 @@ npm install @xufa/pg # or only the one you need</code></pre>
           <a class="package-card" href="cluster/index.html">
             <h3>@xufa/cluster</h3>
             <span class="package-replaces">node:cluster</span>
-            <p>An app in a cluster of processes, restarted when they die, stopped gracefully, with a message bus.</p>
+            <p>An app in a cluster of processes, restarted when they die, stopped gracefully, with a message bus and pools of nodes.</p>
           </a>
           <a class="package-card" href="config/index.html">
             <h3>@xufa/config</h3>
@@ -196,6 +209,11 @@ npm install @xufa/pg # or only the one you need</code></pre>
             <h3>@xufa/scheduler</h3>
             <span class="package-replaces">node-cron, agenda</span>
             <p>Jobs on intervals, cron or once: no overlaps, timeouts, isolated failures, once among machines with a lock.</p>
+          </a>
+          <a class="package-card" href="queue/index.html">
+            <h3>@xufa/queue</h3>
+            <span class="package-replaces">BullMQ, Laravel queues, workflow engines</span>
+            <p>Jobs in the background kept in a database of the ORM: workers anywhere, retries, timeouts, enqueued in transactions; pipelines of steps.</p>
           </a>
           <a class="package-card" href="discovery/index.html">
             <h3>@xufa/discovery</h3>

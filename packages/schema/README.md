@@ -215,6 +215,12 @@ validate({ id: 'ab' }); // ['id does not match the required pattern']
 | `{ errors: false }`     | `true` or `false`                                                              | only validity matters; builds no messages                                            |
 | `{ errors: 'objects' }` | every error as an object, `[]` when valid (with `allErrors: false`, the first) | errors are handled by code: forms, translations; see [Error objects](#error-objects) |
 
+`foldMessages: true` (with any of them but `errors: false`) writes the parts of the messages known when compiling as
+one text in the generated code (`"customer.email is mandatory"`), instead of joining them when an error is made
+(`J("customer", "email") + " is mandatory"`). The errors are the same; they are built faster where they are about
+fields of nested objects (up to 13% more invalid values a second in our benchmarks, about the same elsewhere), and
+compiling takes about 4% longer. Use it for schemas compiled once that see much invalid input (a public API).
+
 ```js
 const isPerson = person.compile({ errors: false });
 
@@ -371,6 +377,29 @@ other drafts and the ones a `type` excludes, as the JSON Schema standard reads a
 ```js
 compileJsonSchema(schema, { keywords: ['x-internal', 'example'] });
 compileJsonSchema(schema, { strict: false }); // like ajv's strict: false
+```
+
+### $merge and $patch
+
+The keywords of ajv-merge-patch, built in: a schema made from another one and a JSON Merge Patch (RFC 7386,
+`$merge`) or a JSON Patch (RFC 6902, `$patch`), when the schema is compiled. The source is inline, or a `$ref`
+resolved as every `$ref` (a schema of `schemas`, the document, a JSON Pointer in one of them).
+
+```js
+const book = {
+  $id: 'book.json',
+  type: 'object',
+  properties: { title: { type: 'string' } },
+  additionalProperties: false,
+};
+const withIsbn = compileJsonSchema(
+  { $merge: { source: { $ref: 'book.json' }, with: { properties: { isbn: { type: 'string' } }, required: ['isbn'] } } },
+  { schemas: [book] }
+);
+const patched = compileJsonSchema(
+  { $patch: { source: { $ref: 'book.json' }, with: [{ op: 'remove', path: '/additionalProperties' }] } },
+  { schemas: [book] }
+);
 ```
 
 ### Keywords of your own

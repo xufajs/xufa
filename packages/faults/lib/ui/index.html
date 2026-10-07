@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="robots" content="noindex" />
+    <link rel="icon" href="data:," />
+    <title>Faults</title>
+    <link rel="stylesheet" href="ui.css" />
+    <script src="ui.js" defer></script>
+  </head>
+  <body data-base="{{base}}">
+    <header>
+      <h1>Faults</h1>
+      <span id="status" class="status" role="status">Connecting…</span>
+      <button id="theme" type="button" class="secondary" aria-label="Switch between light and dark">
+        Light / dark
+      </button>
+      <button id="clear-all" type="button" class="danger" hidden>Clear every fault</button>
+    </header>
+
+    <form id="token-form" class="card" hidden>
+      <h2>Token</h2>
+      <p>This app protects its faults with a token. It is kept in this tab only (sessionStorage).</p>
+      <label>Token <input id="token" type="password" autocomplete="off" required minlength="16" /></label>
+      <button type="submit">Connect</button>
+    </form>
+
+    <main id="main" hidden>
+      <section class="card">
+        <h2>New rule</h2>
+        <form id="rule-form">
+          <div class="row presets">
+            <label
+              >Preset
+              <select id="preset">
+                <option value="">—</option>
+              </select></label
+            >
+            <button id="save-preset" type="button" class="secondary">Save as preset</button>
+            <button id="delete-preset" type="button" class="secondary" hidden>Delete the preset</button>
+          </div>
+          <div class="row">
+            <label
+              >Target
+              <select id="target"></select
+            ></label>
+            <label
+              >Kind
+              <select id="kind"></select
+            ></label>
+            <label>For <input id="for" placeholder="1h" /></label>
+          </div>
+          <fieldset>
+            <legend>Operations <small>(none: the defaults of the target)</small></legend>
+            <div id="operations" class="checks"></div>
+          </fieldset>
+          <div id="filters" class="row"></div>
+          <div class="row">
+            <label>Rate <input id="rate" type="number" min="0" max="1" step="0.05" placeholder="1" /></label>
+            <label>After <input id="after" type="number" min="0" step="1" placeholder="0" /></label>
+            <label>Times <input id="times" type="number" min="1" step="1" placeholder="∞" /></label>
+          </div>
+          <div class="row" data-kinds="delay">
+            <label>ms <input id="ms" type="number" min="0" step="1" placeholder="500" /></label>
+            <label>Jitter (ms) <input id="jitter" type="number" min="0" step="1" placeholder="0" /></label>
+          </div>
+          <div class="row" data-kinds="fail down">
+            <label class="wide">Message <input id="message" placeholder="The message of the errors" /></label>
+          </div>
+          <div class="row" data-kinds="respond">
+            <label>Status <input id="status-code" type="number" min="100" max="599" placeholder="503" /></label>
+            <label class="wide"
+              >JSON body <textarea id="json" rows="2" placeholder='{ "error": "unavailable" }'></textarea>
+            </label>
+          </div>
+          <p id="form-error" class="error" role="alert" hidden></p>
+          <button type="submit">Add the rule</button>
+        </form>
+      </section>
+
+      <section id="scenarios" class="card" hidden></section>
+
+      <section id="targets"></section>
+    </main>
+  </body>
+</html>

@@ -51,6 +51,7 @@ describe('faults', () => {
     db.faults.fail({ operations: ['count'], models: ['Order'] });
     expect(await failure(Order.objects.count())).toBeInstanceOf(FaultError);
     expect((await Order.objects.all()).length).toBe(2); // select is not count
+    db.faults.clear();
   });
 
   it('after, times and rate (with a random of the test); errors of your own', async () => {
@@ -166,6 +167,7 @@ describe('faults of several databases and of tenants', () => {
     expect(await failure(tenants.run('initech', () => Order.objects.count()))).toBeInstanceOf(FaultError); // its connect
     down.remove();
     expect(await tenants.run('acme', () => Order.objects.count())).toBe(1);
+    tenants.faults.clear();
     await tenants.close();
   });
 

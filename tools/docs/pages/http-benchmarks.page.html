@@ -1,0 +1,32 @@
+<!--{
+  "file": "http-benchmarks.html",
+  "name": "@xufa/http",
+  "package": "http.html",
+  "title": "@xufa/http: Benchmarks",
+  "description": "@xufa/http against fastify and node:http: requests a second in the process and over the loopback, on Linux and Windows, and the routes of an OpenAPI document.",
+  "nav": "http",
+  "packages": false,
+  "groups": [
+    ["Benchmarks", [["http", "HTTP"], ["scenarios", "The scenarios"], ["openapi", "OpenAPI routes"], ["run", "Run them yourself"], ["benchmarks.html", "Every benchmark of xufa"]]]
+  ]
+}-->
+        <h1>Benchmarks</h1>
+        <p class="intro">
+          Requests a second of <code>@xufa/http</code>, fastify and <code>node:http</code> answering by hand, on the same
+          machine, in scenarios from a small JSON reply to a body validated and a large reply serialized. Where xufa is
+          faster, and why, is in <a href="http-fastify.html#speed">From fastify</a>.
+        </p>
+<!--generated: http-benchmarks-->
+
+        <h2 id="run">Run them yourself</h2>
+        <pre><code class="language-sh">node bench/inproc.js                                  # in the process: the cost of the framework alone
+node bench/run.js --workers 4                         # over the loopback, with autocannon
+node bench/run.js --workers 4 --scenarios hello,big-json --rounds 5 --out results/mine</code></pre>
+        <p>
+          Every framework and scenario runs in a process of its own, so that no measure inherits the optimizations (or
+          the garbage) of another, and each response is checked before it is measured. The scenarios are in
+          <code>bench/scenarios</code>, the same routes for each framework. Read the processor time per request as much as
+          the requests a second, close what else uses the machine, and prefer Linux: on Windows the loopback is slow and
+          noisy. From Windows, <code>tools/bench-linux</code> runs them in WSL. The options are in
+          <code>bench/README.md</code>; every benchmark of xufa is in <a href="benchmarks.html">Benchmarks</a>.
+        </p>

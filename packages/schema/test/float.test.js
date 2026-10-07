@@ -1,4 +1,4 @@
-const { Float, Integer, compileJsonSchema } = require('../src');
+const { Float, Integer, compileJsonSchema } = require('..');
 
 describe('Float Type', () => {
   it('Should allow undefined if not mandatory', () => {

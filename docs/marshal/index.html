@@ -60,6 +60,8 @@
         <h4>Packages</h4>
         <ul>
           <li><a href="../websocket/index.html">@xufa/websocket</a></li>
+          <li><a href="../admin/index.html">@xufa/admin</a></li>
+          <li><a href="../session/index.html">@xufa/session</a></li>
           <li><a href="../openapi/index.html">@xufa/openapi</a></li>
           <li><a href="../client/index.html">@xufa/client</a></li>
           <li><a href="../schema/index.html">@xufa/schema</a></li>
@@ -69,6 +71,7 @@
           <li><a href="../template/index.html">@xufa/template</a></li>
           <li><a href="../cluster/index.html">@xufa/cluster</a></li>
           <li><a href="../scheduler/index.html">@xufa/scheduler</a></li>
+          <li><a href="../queue/index.html">@xufa/queue</a></li>
           <li><a href="../config/index.html">@xufa/config</a></li>
           <li><a href="../discovery/index.html">@xufa/discovery</a></li>
           <li><a href="../netcache/index.html">@xufa/netcache</a></li>
@@ -87,7 +90,12 @@
       </aside>
 
       <article class="content">
-<h1>@xufa/marshal</h1>
+        <nav class="package-tabs" aria-label="@xufa/marshal">
+          <a href="index.html" aria-current="page">Overview</a>
+          <a href="reference.html">Reference</a>
+          <a href="../playground.html#marshal">Playground</a>
+        </nav>
+        <h1>@xufa/marshal</h1>
         <p class="intro">
           Values as JSON that keeps what JSON loses: the classes of your objects (through a registry), objects referenced
           twice, cycles, and <code>undefined</code>, <code>NaN</code>, <code>-0</code>, BigInt, Date, RegExp, Map, Set,
@@ -96,7 +104,7 @@
 
         <h2 id="start">Quick start</h2>
         <pre><code class="language-sh">npm install @xufa/marshal</code></pre>
-        <pre><code class="language-js">const { stringify, parse, clone, registry } = require('@xufa/marshal');
+        <pre data-run="marshal"><code class="language-js">const { stringify, parse, clone, registry } = require('@xufa/marshal');
 
 class Point {
   constructor(x, y) {
@@ -110,11 +118,17 @@ class Point {
 registry.register(Point);
 
 const shared = { n: 1 };
-const back = parse(stringify({ at: new Date(), point: new Point(3, 4), big: 10n, a: shared, b: shared }));
-back.point.norm(); // 5: a Point again
-back.a === back.b; // true: one object, as it was
+const back = parse(stringify({ at: new Date(0), point: new Point(3, 4), big: 10n, a: shared, b: shared }));
+console.log(back.point.norm()); // 5: a Point again
+console.log(back.a === back.b); // true: one object, as it was
+console.log(back.at.toISOString(), typeof back.big);
 
-clone(value); // a deep copy that keeps classes, references and cycles</code></pre>
+const copy = clone(back); // a deep copy that keeps classes, references and cycles
+console.log(copy.point instanceof Point, copy.a === copy.b);</code></pre>
+        <pre data-output><code class="language-plaintext">5
+true
+1970-01-01T00:00:00.000Z bigint
+true true</code></pre>
 
         <h2 id="classes">Classes</h2>
         <p>

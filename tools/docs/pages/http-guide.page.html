@@ -1,0 +1,903 @@
+<!--{
+  "file": "http-guide.html",
+  "name": "@xufa/http",
+  "package": "http.html",
+  "title": "@xufa/http: Guide",
+  "description": "How to build an app with @xufa/http: routes, requests and replies, validation and serialization, plugins and encapsulation, decorators, hooks, errors, bodies, logs, tests, TypeScript and running in production.",
+  "nav": "http",
+  "packages": false,
+  "groups": [
+    ["Start", [["getting-started", "Getting started"], ["layout", "The layout of an app"]]],
+    ["Routes", [["routes", "Routes"], ["request", "The request"], ["reply", "The reply"], ["async", "Returning or sending"]]],
+    ["Schemas", [["validation", "Validation"], ["s", "Schemas written with s"], ["shared-schemas", "Shared schemas"], ["serialization", "Serialization"], ["validation-errors", "When a request is not valid"]]],
+    ["Structure", [["plugins", "Plugins"], ["encapsulation", "Encapsulation"], ["decorators", "Decorators"], ["hooks", "Hooks"]]],
+    ["Errors", [["errors", "Errors"], ["error-handler", "Error handlers"], ["not-found", "Not found"], ["dev-errors", "The page of errors"]]],
+    ["Running it", [["health", "Health"], ["maintenance", "Maintenance mode"]]],
+    ["More", [["bodies", "Bodies and content types"], ["logs", "Logs"], ["testing", "Testing"], ["typescript", "TypeScript"], ["production", "In production"], ["with-xufa", "With the rest of xufa"]]]
+  ]
+}-->
+        <h1>Guide</h1>
+        <p class="intro">
+          This guide builds an app with <code>@xufa/http</code>, from the first route to running it in production. Its API
+          is <a href="https://fastify.dev">fastify</a>'s, so what you know of fastify holds; what xufa does differently is
+          marked, and gathered in <a href="http-fastify.html">From fastify</a>. Every option and method is in the
+          <a href="http-api.html">API</a>.
+        </p>
+
+        <h2 id="getting-started">Getting started</h2>
+        <pre><code class="language-sh">npm install @xufa/http</code></pre>
+        <pre><code class="language-js">// server.js
+const xufa = require('@xufa/http');
+
+const app = xufa({ logger: true });
+
+app.get('/', async () =&gt; ({ hello: 'world' }));
+
+app.listen({ port: 3000 }).catch((err) =&gt; {
+  app.log.error(err);
+  process.exit(1);
+});</code></pre>
+        <p>
+          <code>xufa(options)</code> makes an app (an instance). A route is a method, a path and a handler; an async
+          handler returns what the reply is, and an object is sent as JSON. <code>logger: true</code> logs each request
+          and its reply as JSON lines (<a href="#logs">Logs</a>).
+        </p>
+        <pre><code class="language-sh">$ node server.js
+{"level":30,"time":1759834512345,"pid":4120,"hostname":"dev","msg":"Server listening at http://127.0.0.1:3000"}
+$ curl localhost:3000
+{"hello":"world"}</code></pre>
+        <p>
+          <code>listen()</code> listens on <code>localhost</code> by default. In a container, listen on every
+          interface: <code>app.listen({ port: 3000, host: '0.0.0.0' })</code>.
+        </p>
+
+        <h2 id="layout">The layout of an app</h2>
+        <p>
+          Make the app in a function, and listen in another file: tests then make the app without listening
+          (<a href="#testing">Testing</a>), and the parts of the app are plugins (<a href="#plugins">Plugins</a>).
+        </p>
+        <pre><code class="language-js">// app.js: the app, without listening.
+const xufa = require('@xufa/http');
+
+function build(options = {}) {
+  const app = xufa(options);
+  app.register(require('./plugins/db'));
+  app.register(require('./routes/books'), { prefix: '/books' });
+  app.register(require('./routes/users'), { prefix: '/users' });
+  return app;
+}
+
+module.exports = { build };
+
+// server.js: the app, listening.
+const { build } = require('./app');
+
+const app = build({ logger: true });
+app.listen({ port: Number(process.env.PORT) || 3000, host: '0.0.0.0' });</code></pre>
+        <pre data-run><code class="language-js">// routes/books.js: a plugin with the routes of books.
+module.exports = async function books(app) {
+  app.get('/', async () =&gt; app.db.books.list());
+  app.get('/:id', async (request) =&gt; app.db.books.get(request.params.id));
+};</code></pre>
+
+        <h2 id="routes">Routes</h2>
+        <p>
+          <code>app.get</code>, <code>head</code>, <code>post</code>, <code>put</code>, <code>delete</code>,
+          <code>options</code>, <code>patch</code>, <code>trace</code> and <code>all</code> take a path, options
+          (optional) and a handler. <code>app.route()</code> takes them as one object.
+        </p>
+        <pre><code class="language-js">app.get('/books', async () =&gt; listBooks());
+app.get('/books/:id', { schema: { params: BookId } }, async (request) =&gt; getBook(request.params.id));
+
+app.route({
+  method: ['PUT', 'PATCH'],
+  url: '/books/:id',
+  schema: { params: BookId, body: BookPatch },
+  handler: async (request) =&gt; updateBook(request.params.id, request.body),
+});</code></pre>
+        <p>
+          Paths have parameters, wildcards and regular expressions, as find-my-way has them (written as they are in a
+          JavaScript string, so the <code>\d</code> of a regular expression is <code>\\d</code>):
+        </p>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Path</th><th>Matches</th><th><code>request.params</code></th></tr></thead>
+            <tbody>
+              <tr><td><code>/books/:id</code></td><td><code>/books/42</code></td><td><code>{ id: '42' }</code></td></tr>
+              <tr><td><code>/books/:id/pages/:page</code></td><td><code>/books/42/pages/7</code></td><td><code>{ id: '42', page: '7' }</code></td></tr>
+              <tr><td><code>/files/*</code></td><td><code>/files/a/b.txt</code></td><td><code>{ '*': 'a/b.txt' }</code></td></tr>
+              <tr><td><code>/books/:id(^\\d+)</code></td><td><code>/books/42</code>, not <code>/books/x</code></td><td><code>{ id: '42' }</code></td></tr>
+              <tr><td><code>/at/:hour(^\\d{2})h:minute(^\\d{2})m</code></td><td><code>/at/09h30m</code></td><td><code>{ hour: '09', minute: '30' }</code></td></tr>
+              <tr><td><code>/books/:id?</code></td><td><code>/books</code> and <code>/books/42</code></td><td><code>{}</code>, <code>{ id: '42' }</code></td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p>
+          Parameters are texts; a schema of <code>params</code> converts them (<a href="#validation">Validation</a>).
+          A <code>GET</code> route answers <code>HEAD</code> too (<code>exposeHeadRoutes</code>). Routes can also be told
+          apart by version or host (<code>constraints: { version: '2.0.0' }</code>, <code>{ host: 'api.example.com' }</code>),
+          or by a strategy of your own (<code>addConstraintStrategy</code>).
+        </p>
+        <p>The options of a route that are used most:</p>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Option</th><th>What it does</th></tr></thead>
+            <tbody>
+              <tr><td><code>schema</code></td><td><code>body</code>, <code>querystring</code>, <code>params</code>, <code>headers</code> validated; <code>response</code> by status, serialized</td></tr>
+              <tr><td><code>onRequest</code>, <code>preHandler</code>... </td><td>Hooks of this route only (<a href="#hooks">Hooks</a>)</td></tr>
+              <tr><td><code>config</code></td><td>Values of the route, read by hooks and plugins as <code>request.routeOptions.config</code> (@xufa/auth reads <code>config.auth</code>)</td></tr>
+              <tr><td><code>bodyLimit</code></td><td>The largest body, in bytes (1 MiB by default)</td></tr>
+              <tr><td><code>handlerTimeout</code></td><td>ms the handler may take: then a 503, and <code>request.signal</code> aborts</td></tr>
+              <tr><td><code>logLevel</code></td><td>The level of the logs of this route (<code>'warn'</code> to quiet a health check)</td></tr>
+              <tr><td><code>errorHandler</code></td><td>The error handler of this route</td></tr>
+              <tr><td><code>attachValidation</code></td><td>Invalid requests reach the handler, with <code>request.validationError</code></td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h2 id="request">The request</h2>
+        <pre><code class="language-js">app.post('/books/:id/reviews', async (request) =&gt; {
+  request.params; // { id: '42' }
+  request.query; // the query string, parsed when it is first read: { sort: 'date' }
+  request.body; // the body, parsed by its content type
+  request.headers; // { 'content-type': 'application/json', ... }
+  request.method; // 'POST'
+  request.url; // '/books/42/reviews?sort=date'
+  request.ip; // the address of the client (or of X-Forwarded-For with trustProxy)
+  request.hostname; // 'api.example.com'
+  request.protocol; // 'https' (with trustProxy, from X-Forwarded-Proto)
+  request.id; // the id of the request, in its logs
+  request.log; // the logger of the request
+  request.signal; // an AbortSignal, aborted when the client goes away or handlerTimeout passes
+  request.routeOptions; // { url: '/books/:id/reviews', method, config, bodyLimit, ... }
+  request.server; // the app (the instance of the plugin of the route)
+  request.raw; // Node's IncomingMessage
+});</code></pre>
+        <p>
+          <code>request.signal</code> is the way to stop work nobody waits for: give it to <code>fetch</code>, to a query
+          of the database, to <a href="client.html">@xufa/client</a> (<code>client.for(request)</code> does it for you).
+        </p>
+
+        <h2 id="reply">The reply</h2>
+<!--run-before: const fs = require('node:fs'); const xufa = require('@xufa/http'); const app = xufa(); -->
+        <pre data-run="reply"><code class="language-js">app.get('/report', async (request, reply) =&gt; {
+  reply.code(202); // the status (200 by default)
+  reply.header('cache-control', 'no-store'); // a header (headers({...}) for several)
+  reply.type('text/csv'); // the content type
+  return 'id,title\n1,Dune\n';
+});
+
+app.get('/old', async (request, reply) =&gt; reply.redirect('/new', 301));
+
+app.get('/file', async (request, reply) =&gt; {
+  reply.type('application/pdf');
+  return fs.createReadStream('report.pdf'); // a stream is piped
+});
+
+const report = await app.inject('/report');
+console.log(report.statusCode, report.headers['content-type'], report.headers['cache-control']);
+const old = await app.inject('/old');
+console.log(old.statusCode, old.headers.location);</code></pre>
+        <pre data-output><code class="language-plaintext">202 text/csv no-store
+301 /new</code></pre>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>What the handler gives</th><th>What is sent</th></tr></thead>
+            <tbody>
+              <tr><td>An object or an array</td><td>JSON (<code>application/json; charset=utf-8</code>), by the serializer of the route's response schema when it has one</td></tr>
+              <tr><td>A string</td><td>The string (<code>text/plain; charset=utf-8</code> unless a type was set)</td></tr>
+              <tr><td>A Buffer, a typed array</td><td>The bytes (<code>application/octet-stream</code>)</td></tr>
+              <tr><td>A stream (Node's or a web <code>ReadableStream</code>)</td><td>Its data, piped</td></tr>
+              <tr><td>A <code>Response</code> of fetch</td><td>Its status, headers and body</td></tr>
+              <tr><td>An Error (thrown, or returned)</td><td>The error reply (<a href="#errors">Errors</a>)</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h2 id="async">Returning or sending</h2>
+        <p>
+          An async handler returns its reply. <code>reply.send()</code> sends one too: use it in handlers that are not
+          async, or from a callback. In an async handler that calls <code>reply.send()</code>, return the reply
+          (<code>return reply.send(...)</code>) so that xufa knows it was sent.
+        </p>
+<!--run-before: const xufa = require('@xufa/http'); const app = xufa(); -->
+        <pre data-run="returning"><code class="language-js">app.get('/a', async () =&gt; ({ a: 1 })); // returned
+
+app.get('/b', (request, reply) =&gt; {
+  reply.send({ b: 1 }); // sent, by a handler that is not async
+});
+
+app.get('/c', async (request, reply) =&gt; {
+  setTimeout(() =&gt; reply.send({ c: 1 }), 10);
+  return reply; // sent later: return the reply, not undefined
+});
+
+for (const url of ['/a', '/b', '/c']) console.log(url, (await app.inject(url)).body);</code></pre>
+        <pre data-output><code class="language-plaintext">/a {"a":1}
+/b {"b":1}
+/c {"c":1}</code></pre>
+        <div class="callout">
+          <p>
+            An async handler that returns <code>undefined</code> without sending answers 200 with an empty body. Return
+            what the reply is, or the reply itself when it is sent later.
+          </p>
+        </div>
+
+        <h2 id="validation">Validation</h2>
+        <p>
+          A route's <code>schema</code> describes its request with JSON Schema: <code>body</code>,
+          <code>querystring</code>, <code>params</code> and <code>headers</code>. They are compiled by
+          <a href="schema.html">@xufa/schema</a> when the app starts, and a request that does not fit gets a 400 before
+          the handler runs.
+        </p>
+<!--run-before: const xufa = require('@xufa/http'); const app = xufa(); -->
+        <pre data-run="validation"><code class="language-js">app.post(
+  '/users',
+  {
+    schema: {
+      body: {
+        type: 'object',
+        required: ['name'],
+        properties: { name: { type: 'string', minLength: 1 }, age: { type: 'integer', default: 18 } },
+        additionalProperties: false,
+      },
+    },
+  },
+  async (request, reply) =&gt; reply.code(201).send(request.body) // the body as the handler gets it
+);
+
+for (const payload of ['{"name":"Ada","extra":1}', '{"name":""}', '{}', '{bad']) {
+  const response = await app.inject({
+    method: 'POST',
+    url: '/users',
+    headers: { 'content-type': 'application/json' },
+    payload,
+  });
+  console.log(payload, '-&gt;', response.statusCode, response.json().message ?? response.body);
+}</code></pre>
+        <pre data-output><code class="language-plaintext">{"name":"Ada","extra":1} -&gt; 201 {"name":"Ada","age":18}
+{"name":""} -&gt; 400 body/name must NOT have fewer than 1 characters
+{} -&gt; 400 body must have required property 'name'
+{bad -&gt; 400 Body is not valid JSON but content-type is set to 'application/json'</code></pre>
+        <p>
+          The handler gets <code>{ name: 'Ada', age: 18 }</code>: <code>extra</code> removed, <code>age</code> by its
+          default.
+        </p>
+        <p>
+          As fastify configures ajv, the validator converts types (<code>coerceTypes: 'array'</code>: the text
+          <code>'42'</code> of a parameter becomes <code>42</code> for an integer, a single query value becomes an array
+          for an array), applies defaults (<code>useDefaults</code>) and removes the properties a schema with
+          <code>additionalProperties: false</code> does not have (<code>removeAdditional</code>). With a schema of
+          <code>params</code> such as <code>{ id: { type: 'integer' } }</code>, <code>request.params.id</code> is a
+          number, and <code>/items/x</code> is a 400 (<code>params/id must be integer</code>).
+        </p>
+        <p>The options of the validator are those of ajv that it shares, in <code>ajv.customOptions</code>:</p>
+        <pre><code class="language-js">const app = xufa({
+  ajv: { customOptions: { coerceTypes: false, allErrors: true, formats: { slug: /^[a-z0-9-]+$/ } } },
+  validation: { foldMessages: true }, // options of @xufa/schema itself
+});</code></pre>
+
+        <h2 id="s">Schemas written with s</h2>
+        <p>
+          <a href="schema-guide.html#s">s</a> of @xufa/schema writes the same JSON Schema with less to type, and
+          derives schemas from schemas: the body of a create without the id, a patch with every property optional.
+        </p>
+<!--run-before: const xufa = require('@xufa/http'); const app = xufa(); const books = new Map();
+const createBook = async (request, reply) => { const book = { id: books.size + 1, ...request.body }; books.set(book.id, book); return reply.code(201).send(book); };
+const updateBook = async (request) => Object.assign(books.get(request.params.id), request.body); -->
+        <pre data-run="s"><code class="language-js">const { s } = require('@xufa/schema');
+
+const Book = s.object(
+  { id: s.integer(), title: s.string({ minLength: 1 }), tags: s.array(s.string()), pages: s.optional(s.integer()) },
+  { additionalProperties: false }
+);
+const NewBook = s.omit(Book, ['id']);
+const BookPatch = s.partial(NewBook);
+const BookId = s.object({ id: s.integer() });
+
+app.post('/books', { schema: { body: NewBook, response: { 201: Book } } }, createBook);
+app.patch('/books/:id', { schema: { params: BookId, body: BookPatch, response: { 200: Book } } }, updateBook);
+
+const created = await app.inject({ method: 'POST', url: '/books', payload: { title: 'Dune', tags: ['sf'] } });
+const patched = await app.inject({ method: 'PATCH', url: '/books/1', payload: { pages: 412 } });
+const refused = await app.inject({ method: 'PATCH', url: '/books/1', payload: { title: '' } });
+console.log(created.statusCode, created.body);
+console.log(patched.statusCode, patched.body);
+console.log(refused.statusCode, refused.json().message);</code></pre>
+        <pre data-output><code class="language-plaintext">201 {"id":1,"title":"Dune","tags":["sf"]}
+200 {"id":1,"title":"Dune","tags":["sf"],"pages":412}
+400 body/title must NOT have fewer than 1 characters</code></pre>
+        <p>In TypeScript, they type the request too (<a href="#typescript">TypeScript</a>).</p>
+
+        <h2 id="shared-schemas">Shared schemas</h2>
+        <p>
+          <code>app.addSchema()</code> adds a schema with an <code>$id</code> that routes refer to with
+          <code>$ref</code>. Like everything an app adds, it is seen by the plugins registered in it after.
+        </p>
+<!--run-before: const xufa = require('@xufa/http'); const app = xufa();
+const listBooks = async () => [{ id: 1, title: 'Dune', secret: 'x' }]; const getBook = async (request) => ({ id: request.params.id, title: 'Dune' }); -->
+        <pre data-run="shared-schemas"><code class="language-js">app.addSchema({
+  $id: 'Book',
+  type: 'object',
+  properties: { id: { type: 'integer' }, title: { type: 'string' } },
+});
+
+app.get('/books', { schema: { response: { 200: { type: 'array', items: { $ref: 'Book#' } } } } }, listBooks);
+app.get('/books/:id', { schema: { response: { 200: { $ref: 'Book#' } } } }, getBook);
+
+console.log((await app.inject('/books')).body); // listBooks gives a secret too: not in Book, not sent</code></pre>
+        <pre data-output><code class="language-plaintext">[{"id":1,"title":"Dune"}]</code></pre>
+
+        <h2 id="serialization">Serialization</h2>
+        <p>
+          A <code>response</code> schema, by status (<code>200</code>, <code>201</code>, <code>'2xx'</code>,
+          <code>default</code>), compiles a serializer with <a href="serializer.html">@xufa/serializer</a>: replies are
+          written faster than by <code>JSON.stringify</code>, and only with the properties of the schema. A field
+          nobody should see (a hash of a password) cannot leak through a route whose response schema does not have it.
+        </p>
+<!--run-before: const xufa = require('@xufa/http'); const { s } = require('@xufa/schema'); const app = xufa();
+const db = { users: new Map([[7, { id: 7, name: 'Ada', passwordHash: '$scrypt$...' }]]) };
+app.addHook('onRequest', async (request) => { request.user = { id: 7 }; }); -->
+        <pre data-run="serialization"><code class="language-js">app.get(
+  '/me',
+  { schema: { response: { 200: s.object({ id: s.integer(), name: s.string() }) } } },
+  async (request) =&gt; db.users.get(request.user.id) // { id, name, passwordHash }: passwordHash is not sent
+);
+
+console.log((await app.inject('/me')).body);</code></pre>
+        <pre data-output><code class="language-plaintext">{"id":7,"name":"Ada"}</code></pre>
+        <p>
+          Different from fastify: large replies (arrays, maps, recursive schemas) are written as UTF-8 bytes,
+          without making a string first: about 1.4&times; fastify on a big JSON reply. <code>onSend</code> hooks still get
+          a string.
+        </p>
+
+        <h2 id="validation-errors">When a request is not valid</h2>
+        <p>The 400 of an invalid request has its first error as message:</p>
+        <pre><code class="language-json">{"statusCode":400,"code":"XUFA_ERR_VALIDATION","error":"Bad Request","message":"body/name must NOT have fewer than 1 characters"}</code></pre>
+        <p>
+          The error has <code>validation</code> (the list of errors, as ajv makes them: <code>instancePath</code>,
+          <code>keyword</code>, <code>params</code>, <code>message</code>) and <code>validationContext</code>
+          (<code>'body'</code>, <code>'querystring'</code>...), for an error handler that answers in a format of its own:
+        </p>
+<!--run-before: const xufa = require('@xufa/http'); const app = xufa({ ajv: { customOptions: { allErrors: true } } });
+app.post('/users', { schema: { body: { type: 'object', required: ['name'], properties: { name: { type: 'string' }, age: { type: 'integer', minimum: 0 } } } } }, async (request) => request.body); -->
+        <pre data-run="validation-errors"><code class="language-js">app.setErrorHandler((error, request, reply) =&gt; {
+  if (error.validation) {
+    return reply.code(422).send({
+      errors: error.validation.map((e) =&gt; ({ field: e.instancePath.slice(1) || null, problem: e.message })),
+    });
+  }
+  return reply.send(error);
+});
+
+const response = await app.inject({ method: 'POST', url: '/users', payload: { age: -1 } });
+console.log(response.statusCode, response.body);</code></pre>
+        <pre data-output><code class="language-plaintext">422 {"errors":[{"field":null,"problem":"must have required property 'name'"},{"field":"age","problem":"must be &gt;= 0"}]}</code></pre>
+        <p>(With <code>allErrors: true</code> in <code>ajv.customOptions</code>; without it, the first error only.)</p>
+        <p>
+          <code>schemaErrorFormatter</code> changes the message only; <code>attachValidation: true</code> lets the
+          handler decide (<code>request.validationError</code>); <code>ajv: { customOptions: { allErrors: true } }</code>
+          reports every error instead of the first.
+        </p>
+
+        <h2 id="plugins">Plugins</h2>
+        <p>
+          A plugin is a function that adds to an app: routes, hooks, decorators, schemas, other plugins.
+          <code>app.register(plugin, options)</code> loads it, in order: plugins registered first are loaded first, and an
+          async plugin is waited for before the next.
+        </p>
+<!--run-before: const xufa = require('@xufa/http'); const app = xufa(); const listBooks = async ({ limit }) => ({ limit }); -->
+        <pre data-run="plugins"><code class="language-js">// A plugin: a function of (app, options).
+async function books(app, options) {
+  app.get('/', async () =&gt; listBooks({ limit: options.limit }));
+}
+
+app.register(books, { prefix: '/books', limit: 50 }); // its routes under /books
+
+await app.ready(); // every plugin loaded (listen() and inject() wait for it too)
+console.log((await app.inject('/books')).body);</code></pre>
+        <pre data-output><code class="language-plaintext">{"limit":50}</code></pre>
+        <p>
+          <code>prefix</code> is for the paths of its routes; the other options are the plugin's own. Plugins of
+          fastify's ecosystem register the same way (see <a href="http-fastify.html#ecosystem">which ones</a>).
+        </p>
+
+        <h2 id="encapsulation">Encapsulation</h2>
+        <p>
+          A plugin gets an app of its own, a child of the app it is registered in: what it adds (decorators, hooks,
+          schemas, an error handler, content type parsers) stays in it and in its children. The parent sees none of it.
+          This is how a part of an app has its own hooks (authentication for <code>/admin</code> only) without the rest
+          paying for them.
+        </p>
+<!--run-before: const xufa = require('@xufa/http'); const app = xufa();
+const requireAdmin = async (request, reply) => { if (request.headers['x-role'] !== 'admin') return reply.code(403).send({ message: 'Admins only' }); };
+const getStats = async () => ({ users: 42 }); const getPublic = async () => ({ hello: 'world' }); -->
+        <pre data-run="encapsulation"><code class="language-js">app.register(
+  async (admin) =&gt; {
+    admin.addHook('onRequest', requireAdmin); // only the routes of this plugin
+    admin.get('/stats', getStats);
+  },
+  { prefix: '/admin' }
+);
+
+app.get('/public', getPublic); // no requireAdmin here
+
+for (const url of ['/admin/stats', '/public']) {
+  const response = await app.inject(url);
+  console.log(url, response.statusCode, response.body);
+}</code></pre>
+        <pre data-output><code class="language-plaintext">/admin/stats 403 {"message":"Admins only"}
+/public 200 {"hello":"world"}</code></pre>
+        <p>
+          To add to the app that registers it (a database connection every route uses), wrap the plugin in
+          <code>xufa.plugin()</code> (fastify-plugin): it then adds to its parent.
+        </p>
+        <pre data-run><code class="language-js">const { plugin } = require('@xufa/http');
+
+module.exports = plugin(
+  async (app, options) =&gt; {
+    const db = await connect(options.url);
+    app.decorate('db', db);
+    app.addHook('onClose', () =&gt; db.close());
+  },
+  { name: 'db', xufa: '0.x' } // its name (for dependencies), and the versions of xufa it needs
+);</code></pre>
+
+        <h2 id="decorators">Decorators</h2>
+        <p>
+          <code>decorate</code> adds a property to the app, <code>decorateRequest</code> to every request and
+          <code>decorateReply</code> to every reply. Declare them once, at the start, so that every request and reply
+          has the same shape (which V8 makes fast); then set their values in hooks.
+        </p>
+<!--run-before: const xufa = require('@xufa/http'); const app = xufa();
+const userOf = async (authorization) => (authorization ? { id: authorization.split(' ')[1] } : null); -->
+        <pre data-run="decorators"><code class="language-js">app.decorate('config', { name: 'books' }); // app.config
+app.decorateRequest('user', null); // request.user, null until a hook sets it
+
+app.addHook('onRequest', async (request) =&gt; {
+  request.user = await userOf(request.headers.authorization);
+});
+
+app.get('/me', async (request) =&gt; ({ app: app.config.name, user: request.user }));
+console.log((await app.inject({ url: '/me', headers: { authorization: 'Bearer ada' } })).body);
+console.log((await app.inject('/me')).body);</code></pre>
+        <pre data-output><code class="language-plaintext">{"app":"books","user":{"id":"ada"}}
+{"app":"books","user":null}</code></pre>
+        <p>
+          A request decorator cannot be an object or an array (<code>XUFA_ERR_DEC_REFERENCE_TYPE</code>): it would be the
+          same object for every request. Use <code>null</code> and set it in a hook, or a getter
+          (<code>{ getter() {...} }</code>).
+        </p>
+
+        <h2 id="hooks">Hooks</h2>
+        <p>Hooks run at each step of a request, in this order:</p>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Hook</th><th>When</th><th>Used for</th></tr></thead>
+            <tbody>
+              <tr><td><code>onRequest</code></td><td>The request has come, its body not read</td><td>Authentication, rate limits: refusing early is cheapest</td></tr>
+              <tr><td><code>preParsing</code></td><td>Before the body is parsed</td><td>Changing the stream of the body (decompressing it)</td></tr>
+              <tr><td><code>preValidation</code></td><td>The body parsed, before validation</td><td>Changing the body before it is checked</td></tr>
+              <tr><td><code>preHandler</code></td><td>Validated, before the handler</td><td>Loading what the handler needs; permissions that need the body</td></tr>
+              <tr><td><code>preSerialization</code></td><td>The handler returned an object, before it is serialized</td><td>Wrapping replies (<code>{ data: ... }</code>)</td></tr>
+              <tr><td><code>onSend</code></td><td>Serialized, before sending</td><td>Headers, compressing, changing the bytes</td></tr>
+              <tr><td><code>onResponse</code></td><td>Sent</td><td>Metrics</td></tr>
+              <tr><td><code>onError</code></td><td>An error, before it is sent</td><td>Reporting errors (it cannot change the reply)</td></tr>
+              <tr><td><code>onTimeout</code>, <code>onRequestAbort</code></td><td>The socket timed out; the client went away</td><td>Cleaning up</td></tr>
+            </tbody>
+          </table>
+        </div>
+<!--run-before: const xufa = require('@xufa/http'); const app = xufa();
+const rateLimit = async () => {}; const loadBook = async (request) => { request.book = { title: 'Dune' }; };
+const handler = async (request) => request.book; -->
+        <pre data-run="hooks"><code class="language-js">app.addHook('onRequest', async (request, reply) =&gt; {
+  if (!request.headers.authorization) return reply.code(401).send({ message: 'Log in first' }); // stops here
+});
+
+app.addHook('onSend', async (request, reply, payload) =&gt; {
+  reply.header('x-served-by', 'books');
+  return payload; // onSend and preSerialization return the payload, changed or not
+});
+
+app.get('/slow', { onRequest: [rateLimit], preHandler: [loadBook] }, handler); // hooks of one route
+
+const refused = await app.inject('/slow');
+const served = await app.inject({ url: '/slow', headers: { authorization: 'Bearer ada' } });
+console.log(refused.statusCode, refused.body);
+console.log(served.statusCode, served.headers['x-served-by'], served.body);</code></pre>
+        <pre data-output><code class="language-plaintext">401 {"message":"Log in first"}
+200 books {"title":"Dune"}</code></pre>
+        <p>
+          Hooks are async functions, or functions with a <code>done</code> callback as their last argument (not both:
+          <code>XUFA_ERR_HOOK_INVALID_ASYNC_HANDLER</code>). A hook that sends a reply ends the request there.
+        </p>
+        <p>
+          The app has hooks of its own: <code>onRoute</code> (each route added), <code>onRegister</code> (each plugin),
+          <code>onReady</code>, <code>onListen</code>, <code>preClose</code> and <code>onClose</code>.
+        </p>
+
+        <h2 id="errors">Errors</h2>
+        <p>
+          Throw an error from a handler or a hook (or return it, or <code>reply.send(error)</code>): its
+          <code>statusCode</code> is the status of the reply, 500 without one.
+          <a href="errors.html">@xufa/errors</a> makes classes of errors with a code, a status and a message:
+        </p>
+<!--run-before: const xufa = require('@xufa/http'); const app = xufa();
+const findBook = async () => ({ title: 'Dune', deletedAt: new Date() }); -->
+        <pre data-run="errors"><code class="language-js">const createError = require('@xufa/errors');
+
+const BookGone = createError('APP_BOOK_GONE', 'Book %s is gone', 410);
+
+app.get('/books/:id', async (request) =&gt; {
+  const book = await findBook(request.params.id);
+  if (book.deletedAt) throw new BookGone(book.title);
+  return book;
+});
+
+const response = await app.inject('/books/1');
+console.log(response.statusCode, response.body);</code></pre>
+        <pre data-output><code class="language-plaintext">410 {"statusCode":410,"code":"APP_BOOK_GONE","error":"Gone","message":"Book Dune is gone"}</code></pre>
+        <div class="callout">
+          <p>
+            By default, the message of an error is sent, 500s included, as fastify does: a thrown
+            <code>new Error('connect ECONNREFUSED 10.0.0.5:5432')</code> tells the client where the database is. Set an
+            error handler that hides the messages of 500s (<a href="#error-handler">below</a>).
+          </p>
+        </div>
+
+        <h2 id="error-handler">Error handlers</h2>
+<!--run-before: const xufa = require('@xufa/http'); const app = xufa(); -->
+        <pre data-run="error-handler"><code class="language-js">app.setErrorHandler(async (error, request, reply) =&gt; {
+  const status = error.statusCode &gt;= 400 ? error.statusCode : 500;
+  if (status &gt;= 500) request.log.error(error); // logged with the request's id
+  reply.code(status);
+  return { error: status &gt;= 500 ? 'Something failed' : error.message, code: error.code };
+});
+
+app.get('/db', async () =&gt; {
+  throw new Error('connect ECONNREFUSED 10.0.0.5:5432');
+});
+app.get('/teapot', async () =&gt; {
+  throw Object.assign(new Error('No coffee here'), { statusCode: 418, code: 'APP_TEAPOT' });
+});
+
+for (const url of ['/db', '/teapot']) {
+  const response = await app.inject(url);
+  console.log(url, response.statusCode, response.body);
+}</code></pre>
+        <pre data-output><code class="language-plaintext">/db 500 {"error":"Something failed"}
+/teapot 418 {"error":"No coffee here","code":"APP_TEAPOT"}</code></pre>
+        <p>
+          An error handler is encapsulated like the rest: a plugin can have its own (its errors, and those of its
+          children). Errors it throws go to the error handler of the parent.
+        </p>
+
+        <h2 id="not-found">Not found</h2>
+<!--run-before: const xufa = require('@xufa/http'); const app = xufa(); -->
+        <pre data-run="not-found"><code class="language-js">app.setNotFoundHandler(async (request, reply) =&gt; {
+  reply.code(404);
+  return { error: `No ${request.method} ${request.url}` };
+});
+
+const response = await app.inject('/nope');
+console.log(response.statusCode, response.body);</code></pre>
+        <pre data-output><code class="language-plaintext">404 {"error":"No GET /nope"}</code></pre>
+        <p>
+          Without one, an unknown route answers
+          <code>{"message":"Route GET:/nope not found","error":"Not Found","statusCode":404}</code>. Plugins with a prefix
+          can have their own; <code>reply.callNotFound()</code> sends a request to it from a handler.
+        </p>
+
+        <h2 id="dev-errors">The page of errors in development</h2>
+        <p>
+          <code>xufa.devErrors</code> gives browsers a page when a request fails, as Laravel's Ignition and Django's debug
+          page: the error and its causes, the stack with the lines of the source around each call of the app, the request
+          (params, query, body, headers; those of credentials hidden) and the routes. A route that is not there shows the
+          list of the routes. Requests that do not ask for HTML get the JSON they get without it.
+        </p>
+<!--run-before: const xufa = require('@xufa/http'); const app = xufa(); -->
+        <pre data-run="dev-errors"><code class="language-js">app.register(xufa.devErrors); // off when NODE_ENV is production
+app.get('/books/:id', async () =&gt; {
+  throw new Error('The database is down');
+});
+
+const page = await app.inject({ url: '/books/7', headers: { accept: 'text/html' } });
+console.log(page.statusCode, page.headers['content-type']);
+const json = await app.inject('/books/7');
+console.log(json.statusCode, json.json().message);</code></pre>
+        <pre data-output><code class="language-plaintext">500 text/html; charset=utf-8
+500 The database is down</code></pre>
+        <p>
+          It is on unless <code>NODE_ENV</code> is <code>production</code> (<code>enabled: true</code> turns it on anyway:
+          never where others can reach the app, since it shows the code). <code>context</code> is the lines around each
+          call (5); <code>notFound: false</code> leaves the 404 pages to the app. It sets no handlers: the error
+          handlers of the app and of its plugins answer as they do, and for a browser what they send is replaced by the
+          page, with their status.
+        </p>
+
+        <h2 id="health">Health</h2>
+        <p>
+          <code>xufa.health</code> gives the routes load balancers, Kubernetes and people ask:
+          <code>GET /health/live</code> (the process answers), <code>GET /health/ready</code> (the app can serve: 503
+          when a critical check is down, or while it closes) and <code>GET /health</code> (every check, with its status,
+          time, error and details). A check is a function: what it gives is up (its details), <code>false</code> or a
+          text is down, what throws or goes over its <code>timeout</code> (2 s) is down, and
+          <code>{ status: 'degraded', ...details }</code> is degraded.
+        </p>
+<!--run-before: const xufa = require('@xufa/http'); const app = xufa(); -->
+        <pre data-run="health"><code class="language-js">let nodes = 3;
+app.register(xufa.health, {
+  checks: {
+    database: () =&gt; 1.2, // db.ping() of @xufa/orm: the ms of a round trip, or it throws
+    converters: () =&gt; nodes &gt; 0 || 'no converters',
+    queue: { check: () =&gt; ({ status: 'degraded', failed: 4 }), critical: false },
+  },
+  cache: 0,
+});
+
+const report = (await app.inject('/health')).json();
+console.log(report.status, report.checks.database.status, report.checks.queue.details);
+nodes = 0;
+const ready = await app.inject('/health/ready');
+console.log(ready.statusCode, ready.json(), (await app.inject('/health')).json().checks.converters.error);</code></pre>
+        <pre data-output><code class="language-plaintext">degraded up { failed: 4 }
+503 { status: 'down' } no converters</code></pre>
+        <ul>
+          <li>The status of the app: <code>down</code> when a critical check is (every check is critical but those with <code>critical: false</code>), <code>degraded</code> when another is down or one is degraded (still 200), <code>up</code> otherwise.</li>
+          <li><code>interval: '10s'</code> runs the checks in the background, as a status checker: the routes answer from the last run. Without it they run when asked, at most every <code>cache</code> (1 s).</li>
+          <li><code>onChange(status, previous, report)</code> tells when the status changes (an alert, a message to a channel); it is logged too.</li>
+          <li><code>heal: { after: '5m', run(result) }</code> in a check runs a cure when it has been down that long (restart what it checks), and again after another <code>after</code> while it stays down.</li>
+          <li>The packages of xufa give their checks, ready for <code>checks</code>: <code>db.health({ slow })</code> of <a href="orm-guide.html#maintenance">@xufa/orm</a> (critical: the latency of a ping), <code>queue.health({ maxLag, maxPending, maxFailed })</code> of <a href="queue.html#health">@xufa/queue</a>, <code>pool.health({ minNodes, maxWaiting })</code> of <a href="cluster.html#pool-api">@xufa/cluster</a> and <code>netcache.health({ minPeers })</code> of <a href="netcache.html#api">@xufa/netcache</a> (not critical: the app serves without them, degraded). Each takes <code>critical</code> and <code>timeout</code>:
+            <code>checks: { database: db.health(), queue: queue.health({ maxLag: '5m' }), converters: usePool('converters').health(), cache: netcache.health() }</code>.</li>
+          <li><code>prefix</code> (<code>'/health'</code>), <code>details: false</code> (the status only, for routes others can reach), <code>logLevel</code> of the routes (<code>'warn'</code>: probes do not fill the logs). <code>app.health.check()</code> runs them now; <code>app.health.report</code> and <code>app.health.status</code> tell the last run.</li>
+        </ul>
+
+        <h2 id="maintenance">Maintenance mode</h2>
+        <p>
+          As Laravel's <code>php artisan down</code>: while it is on, every request gets a 503 with
+          <code>Retry-After</code>, a page for browsers and JSON for the rest, but the health routes, the routes with
+          <code>config: { maintenance: false }</code> (webhooks), the addresses allowed and the browsers that opened its
+          secret path. <code>xufa down</code> turns it on and <code>xufa up</code> off (see
+          <a href="guide.html#command-line">the command line</a>).
+        </p>
+<!--run-before: const xufa = require('@xufa/http'); const app = xufa(); -->
+        <pre data-run="maintenance"><code class="language-js">let state = null; // what xufa down writes: a file, or maintenance(db) of @xufa/orm
+app.register(xufa.maintenance, { file: false, store: { get: () =&gt; state }, refresh: 0 });
+app.get('/books', async () =&gt; ['Dune']);
+
+console.log((await app.inject('/books')).statusCode);
+state = { message: 'Back at noon', retryAfter: 600, secret: 'let-me-in' };
+const down = await app.inject('/books');
+console.log(down.statusCode, down.headers['retry-after'], down.json().message);
+const cookie = (await app.inject('/let-me-in')).headers['set-cookie'].split(';')[0];
+console.log((await app.inject({ url: '/books', headers: { cookie } })).statusCode);</code></pre>
+        <pre data-output><code class="language-plaintext">200
+503 600 Back at noon
+200</code></pre>
+        <ul>
+          <li>Where it is kept: <code>file</code> (<code>.xufa/down.json</code> of the folder of the app: this machine) and <code>store</code> (one or several objects with <code>get()</code>; <code>maintenance(db)</code> of <a href="orm-guide.html#maintenance">@xufa/orm</a> keeps it in the database, for every machine). It is read at most every <code>refresh</code> (1 s); a store that fails counts as up.</li>
+          <li>The state: <code>message</code>, <code>retryAfter</code> (seconds), <code>allow</code> (addresses), <code>secret</code> (opening <code>/&lt;secret&gt;</code> gives a cookie that goes through, for 12 hours) and <code>redirect</code> (where it goes then).</li>
+          <li><code>except</code> (<code>['/health', '/health/*']</code>) and <code>render(state, request)</code> (the page). <code>app.maintenance.state()</code> reads it now.</li>
+        </ul>
+
+        <h2 id="bodies">Bodies and content types</h2>
+        <p>
+          JSON (<code>application/json</code>, and types ending in <code>+json</code>) and text
+          (<code>text/plain</code>) are parsed. Bodies with <code>__proto__</code> or <code>constructor.prototype</code>
+          are refused (<code>onProtoPoisoning</code>, <code>onConstructorPoisoning</code>), and bodies larger than
+          <code>bodyLimit</code> (1 MiB) are a 413. Other types are a 415 unless you add a parser:
+        </p>
+<!--run-before: const xufa = require('@xufa/http'); const app = xufa(); const fs = require('node:fs'); const path = require('node:path');
+const { pipeline } = require('node:stream/promises'); const dir = fs.mkdtempSync(path.join(require('node:os').tmpdir(), 'uploads-')); -->
+        <pre data-run="bodies"><code class="language-js">app.addContentTypeParser('text/csv', { parseAs: 'string' }, (request, body, done) =&gt; {
+  done(null, body.split('\n').map((line) =&gt; line.split(',')));
+});
+app.post('/import', async (request) =&gt; ({ rows: request.body.length, first: request.body[1] }));
+
+// The body as it comes, a stream: for uploads.
+app.addContentTypeParser('application/octet-stream', (request, payload, done) =&gt; done(null, payload));
+app.put('/files/:name', async (request) =&gt; {
+  await pipeline(request.body, fs.createWriteStream(path.join(dir, request.params.name)));
+  return { saved: request.params.name };
+});
+
+const csv = await app.inject({
+  method: 'POST',
+  url: '/import',
+  headers: { 'content-type': 'text/csv' },
+  payload: 'id,title\n1,Dune',
+});
+const upload = await app.inject({
+  method: 'PUT',
+  url: '/files/notes.txt',
+  headers: { 'content-type': 'application/octet-stream' },
+  payload: 'some bytes',
+});
+const xml = await app.inject({ method: 'POST', url: '/import', headers: { 'content-type': 'application/xml' }, payload: '&lt;a/&gt;' });
+console.log(csv.body);
+console.log(upload.body, fs.readFileSync(path.join(dir, 'notes.txt'), 'utf8'));
+console.log(xml.statusCode, xml.json().code);</code></pre>
+        <pre data-output><code class="language-plaintext">{"rows":2,"first":["1","Dune"]}
+{"saved":"notes.txt"} some bytes
+415 XUFA_ERR_CTP_INVALID_MEDIA_TYPE</code></pre>
+
+        <h2 id="logs">Logs</h2>
+        <p>
+          <code>logger: true</code> (or the options of a logger) makes an <a href="logger.html">@xufa/logger</a>: pino's
+          options and API, without transports. Each request has its logger, <code>request.log</code>, whose lines carry
+          the request's id.
+        </p>
+        <pre><code class="language-js">const app = xufa({
+  logger: {
+    level: process.env.LOG_LEVEL || 'info',
+    redact: ['req.headers.authorization', 'req.headers.cookie'],
+  },
+  disableRequestLogging: (request) =&gt; request.url === '/health', // no lines for health checks
+  requestIdHeader: 'x-request-id', // the id given by a proxy, when there is one
+});
+
+app.get('/books', async (request) =&gt; {
+  request.log.info({ filter: request.query }, 'listing books');
+  return listBooks(request.query);
+});</code></pre>
+        <p>
+          Lines are JSON, for the tools that collect logs; to read them in development, pipe them through
+          <code>pino-pretty</code>. A logger of your own (pino with transports) goes in <code>loggerInstance</code>.
+        </p>
+
+        <h2 id="testing">Testing</h2>
+        <p>
+          <code>app.inject()</code> sends a request to the app without a socket (<a href="inject.html">@xufa/inject</a>):
+          fast, and nothing listens. With the app made by a function (<a href="#layout">The layout of an app</a>), each
+          test has an app of its own.
+        </p>
+        <pre><code class="language-js">const { build } = require('../app');
+
+describe('books', () =&gt; {
+  let app;
+  beforeEach(() =&gt; {
+    app = build();
+  });
+  afterEach(() =&gt; app.close());
+
+  it('creates a book', async () =&gt; {
+    const response = await app.inject({ method: 'POST', url: '/books', payload: { title: 'Dune' } });
+    expect(response.statusCode).toBe(201);
+    expect(response.json()).toMatchObject({ title: 'Dune' });
+  });
+
+  it('refuses a book without a title', async () =&gt; {
+    const response = await app.inject({ method: 'POST', url: '/books', payload: {} });
+    expect(response.statusCode).toBe(400);
+  });
+});</code></pre>
+        <p>
+          <code>app.inject()</code> also chains: <code>app.inject().post('/books').headers({...}).payload({...}).end()</code>.
+          For failures of what the app depends on (a slow database, an API that answers 503), see
+          <a href="faults.html">@xufa/faults</a>.
+        </p>
+
+        <h2 id="typescript">TypeScript</h2>
+        <p>
+          The declarations are fastify's, with xufa's names: <code>XufaInstance</code>, <code>XufaRequest</code>,
+          <code>XufaReply</code>, <code>XufaPluginAsync</code>, <code>XufaPluginCallback</code>,
+          <code>XufaSchema</code>... Routes are typed by generics, or by a type provider that reads their schemas:
+        </p>
+        <!--run-before: declare function getBook(id: string, full?: boolean): Promise&lt;unknown&gt;; -->
+        <pre data-run><code class="language-ts">import xufa, { type XufaPluginAsync } from '@xufa/http';
+import { s, type SchemaTypeProvider } from '@xufa/schema';
+
+const NewBook = s.object({ title: s.string({ minLength: 1 }), pages: s.optional(s.integer()) });
+
+const books: XufaPluginAsync = async (app) =&gt; {
+  const typed = app.withTypeProvider&lt;SchemaTypeProvider&gt;();
+  typed.post('/', { schema: { body: NewBook } }, async (request) =&gt; {
+    request.body.title; // string
+    request.body.pages; // number | undefined
+    return { ok: true };
+  });
+
+  // Or by generics, without schemas:
+  app.get&lt;{ Params: { id: string }; Querystring: { full?: boolean } }&gt;('/:id', async (request) =&gt; {
+    return getBook(request.params.id, request.query.full);
+  });
+};
+
+const app = xufa();
+app.register(books, { prefix: '/books' });</code></pre>
+        <p>
+          Decorators are typed by declaring them on the interfaces of xufa:
+        </p>
+        <!--run-before: import type { Database } from '@xufa/orm'; -->
+        <pre data-run><code class="language-ts">declare module '@xufa/http' {
+  interface XufaInstance {
+    db: Database;
+  }
+  interface XufaRequest {
+    user: { id: string; role: string } | null;
+  }
+}</code></pre>
+
+        <h2 id="production">In production</h2>
+        <ul>
+          <li>
+            <strong>Listen on every interface</strong> in a container (<code>host: '0.0.0.0'</code>), on the port the
+            platform gives (<code>process.env.PORT</code>).
+          </li>
+          <li>
+            <strong>Behind a proxy</strong> (a load balancer, nginx), set <code>trustProxy</code> (<code>true</code>, the
+            number of proxies, or their addresses) so that <code>request.ip</code>, <code>hostname</code> and
+            <code>protocol</code> are the client's.
+          </li>
+          <li>
+            <strong>Close gracefully</strong>: on <code>SIGTERM</code>, <code>app.close()</code> stops accepting
+            connections, lets the requests in flight end, and runs the <code>onClose</code> hooks (where databases are
+            closed). New requests while it closes get a 503.
+          </li>
+          <li>
+            <strong>Timeouts</strong>: <code>handlerTimeout</code> (for the app or a route) answers 503 when a handler
+            takes too long and aborts <code>request.signal</code>; <code>requestTimeout</code> and
+            <code>connectionTimeout</code> protect from slow clients; <code>keepAliveTimeout</code> should be longer than
+            the idle timeout of the load balancer in front.
+          </li>
+          <li>
+            <strong>Hide the messages of 500s</strong> with an error handler (<a href="#error-handler">Error handlers</a>).
+          </li>
+          <li>
+            <strong>Use every CPU</strong> with <a href="cluster.html">@xufa/cluster</a>: a process for each one, restarted
+            when it dies.
+          </li>
+        </ul>
+        <pre><code class="language-js">const app = build({ logger: true, trustProxy: 1, handlerTimeout: 10000 });
+
+for (const signal of ['SIGINT', 'SIGTERM']) {
+  process.once(signal, async () =&gt; {
+    app.log.info({ signal }, 'closing');
+    await app.close();
+    process.exit(0);
+  });
+}
+
+await app.listen({ port: Number(process.env.PORT) || 3000, host: '0.0.0.0' });</code></pre>
+
+        <h2 id="with-xufa">With the rest of xufa</h2>
+        <p>The other packages of xufa are plugins of the app. An app with a database, users and its OpenAPI document:</p>
+        <pre><code class="language-js">const xufa = require('xufa');
+const { Database, Model, fields, plugin: orm, resource } = require('xufa/orm');
+const auth = require('xufa/auth');
+const openapi = require('xufa/openapi');
+const { loadConfig } = require('xufa/config');
+
+const config = loadConfig({ schema: require('./config-schema') });
+
+class Book extends Model {
+  static fields = { title: fields.string(), pages: fields.integer({ null: true }) };
+}
+
+const db = new Database(config.database); // { backend: 'postgres', url } or { backend: 'sqlite', filename }
+db.register(Book, User, RefreshToken);
+
+const app = xufa({ logger: config.logger });
+await app.register(openapi, { openapi: { info: { title: 'Books', version: '1.0.0' } } });
+await app.register(require('xufa/openapi/ui'), { routePrefix: '/docs' });
+app.register(orm, { database: db, migrate: { dir: 'migrations' } });
+app.register(auth.plugin, { keys: config.jwtKey, login: { findUser, claims } });
+
+// GET, POST /books, GET, PATCH, DELETE /books/:id: validated by the fields of Book, in the OpenAPI document.
+app.register(resource(Book, { auth: { create: ['editor'], update: ['editor'], delete: ['admin'] } }), {
+  prefix: '/books',
+});
+
+app.get('/me', { config: { auth: true } }, async (request) =&gt; request.user);
+
+await app.listen({ port: config.port, host: '0.0.0.0' });</code></pre>
+        <ul>
+          <li><a href="orm.html">@xufa/orm</a>: models, migrations, resources, and the database of each tenant.</li>
+          <li><a href="auth.html">@xufa/auth</a>: logging in, tokens, roles on routes.</li>
+          <li><a href="openapi.html">@xufa/openapi</a>: the document of the routes, its explorer, routes from a document.</li>
+          <li><a href="websocket.html">@xufa/websocket</a>: <code>app.get('/chat', { websocket: true }, (socket) =&gt; ...)</code>.</li>
+          <li><a href="client.html">@xufa/client</a>: calls to other APIs, cancelled with the request (<code>client.for(request)</code>).</li>
+          <li><a href="scheduler.html">@xufa/scheduler</a>: jobs every interval or by cron, as a plugin.</li>
+          <li><a href="cluster.html">@xufa/cluster</a>, <a href="config.html">@xufa/config</a>: running it.</li>
+        </ul>

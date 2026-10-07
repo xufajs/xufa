@@ -1,6 +1,6 @@
 // Lockouts and refresh tokens, with their stores of the process and of @xufa/orm.
 const { Database, Model, fields, MemoryCache } = require('@xufa/orm');
-const { Lockout, Locked, RefreshTokens, Unauthorized, modelStore, refreshTokenFields } = require('..');
+const { Lockout, Locked, RefreshTokens, Unauthorized, modelStore, refreshTokenFields, normalizeIdentifier, skeleton } = require('..');
 
 const sleep = (ms) =>
   new Promise((resolve) => {
@@ -41,6 +41,44 @@ describe('lockout', () => {
     expect(store.size).toBe(1);
     // Another Lockout on the same store (as other workers of a cluster with a SharedCache) sees it.
     expect((await new Lockout({ store }).status('ada')).locked).toBe(true);
+  });
+  it('names a person cannot tell apart are one key: full-width letters, ligatures and case (normalizeIdentifier)', async () => {
+    const lockout = new Lockout({ maxAttempts: 3, window: '1m', lockFor: '1m' });
+    await lockout.fail('admin');
+    await lockout.fail('ＡＤＭＩＮ'); // full-width
+    await lockout.fail('Admin');
+    await expect(lockout.check('admin')).rejects.toThrow(Locked);
+    expect((await lockout.status('ａｄｍｉｎ')).locked).toBe(true);
+    expect(normalizeIdentifier('ＡＤＭＩＮ')).toBe('admin');
+    expect(normalizeIdentifier('ﬁle@Example.COM')).toBe('file@example.com'); // a ligature
+    expect(normalizeIdentifier('ｊｏｈｎ①')).toBe('john1');
+    // Other scripts are other names (Cyrillic а is not Latin a).
+    expect(normalizeIdentifier('\u0430dmin')).not.toBe('admin');
+  });
+});
+
+describe('look-alike names (skeleton, UTS #39)', () => {
+  const key = (name) => skeleton(normalizeIdentifier(name));
+
+  it('names that look alike across scripts have one skeleton; names that look different do not', () => {
+    // Cyrillic letters in Latin names (а, о, р, у, с, ѕ, е).
+    expect(key('p\u0430ypal')).toBe(key('paypal'));
+    expect(key('\u0440\u0430\u0443\u0440\u0430l')).toBe(key('paypal'));
+    expect(key('g\u043e\u043egle')).toBe(key('google'));
+    expect(key('\u0455\u0441\u043e\u0440\u0435')).toBe(key('scope'));
+    // Within a script, as UTS #39 says: rn and m, and case and width by normalizeIdentifier.
+    expect(skeleton('m')).toBe(skeleton('rn'));
+    expect(key('ＰａｙＰａｌ')).toBe(key('paypal'));
+    // An accent is a difference one sees.
+    expect(key('jos\u00e9')).not.toBe(key('jose'));
+    expect(key('alice')).not.toBe(key('bob'));
+  });
+
+  it('is a key to compare: in NFD, the same for a text in NFC or NFD', () => {
+    const nfc = 'jos\u00e9';
+    expect(skeleton(nfc)).toBe(skeleton(nfc.normalize('NFD')));
+    expect(skeleton(nfc)).toBe(skeleton(nfc).normalize('NFD'));
+    expect(skeleton('')).toBe('');
   });
 });
 

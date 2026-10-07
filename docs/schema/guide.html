@@ -77,6 +77,8 @@
         <h4>Packages</h4>
         <ul>
           <li><a href="../websocket/index.html">@xufa/websocket</a></li>
+          <li><a href="../admin/index.html">@xufa/admin</a></li>
+          <li><a href="../session/index.html">@xufa/session</a></li>
           <li><a href="../openapi/index.html">@xufa/openapi</a></li>
           <li><a href="../client/index.html">@xufa/client</a></li>
           <li><a href="index.html" aria-current="page">@xufa/schema</a></li>
@@ -86,6 +88,7 @@
           <li><a href="../template/index.html">@xufa/template</a></li>
           <li><a href="../cluster/index.html">@xufa/cluster</a></li>
           <li><a href="../scheduler/index.html">@xufa/scheduler</a></li>
+          <li><a href="../queue/index.html">@xufa/queue</a></li>
           <li><a href="../config/index.html">@xufa/config</a></li>
           <li><a href="../discovery/index.html">@xufa/discovery</a></li>
           <li><a href="../netcache/index.html">@xufa/netcache</a></li>
@@ -113,7 +116,7 @@
           <a href="ajv.html">From ajv</a>
           <a href="benchmarks.html">Benchmarks</a>
         </nav>
-<h1>Guide</h1>
+        <h1>Guide</h1>
         <p class="intro">
           @xufa/schema checks that JavaScript values have the shape you expect. You describe that shape with a schema,
           written in JavaScript with its own syntax or in JSON Schema (any version from draft-04 to 2020-12). @xufa/schema
@@ -183,12 +186,13 @@ app.patch('/books/:id', { schema: { params: s.object({ id: s.integer() }), body:
         <h3 id="s-models">From models of the ORM</h3>
         <pre><code class="language-js">const NewBook = s.omit(Book.schema({ input: true }), ['id']); // typed from the fields of Book</code></pre>
         <p>
-          <code>Model.schema()</code> of <a href="../orm/index.html#schemas">@xufa/orm</a> gives the schema of the objects of a model,
+          <code>Model.schema()</code> of <a href="../orm/guide.html#schemas">@xufa/orm</a> gives the schema of the objects of a model,
           made with these functions: fields as JSON, foreign keys by their keys, null as a type.
         </p>
 
         <h3 id="s-types">Types and typed routes</h3>
-        <pre><code class="language-ts">import xufa from 'xufa';
+        <!--run-before: const Book = s.object({ id: s.integer({ minimum: 1 }), title: s.string({ minLength: 1 }), pages: s.optional(s.integer()), status: s.enum(['draft', 'published']), tags: s.array(s.string()), editor: s.nullable(s.email()) }); const NewBook = s.omit(Book, ['id']); -->
+        <pre data-run><code class="language-ts">import xufa from 'xufa';
 import { s, type Infer, type SchemaTypeProvider } from 'xufa/schema';
 
 type Book = Infer&lt;typeof Book&gt;;
@@ -217,7 +221,7 @@ app.post('/books', { schema: { body: NewBook } }, async (request) =&gt; {
             <button role="tab" id="tab-gs-json" aria-controls="panel-gs-json" aria-selected="false">JSON Schema</button>
           </div>
           <div class="tab-panel" id="panel-gs-dsl" role="tabpanel" aria-labelledby="tab-gs-dsl">
-            <pre><code class="language-js">const { ClosedSchema, String, Integer, ArrayOf } = require('@xufa/schema');
+            <pre data-run><code class="language-js">const { ClosedSchema, String, Integer, ArrayOf } = require('@xufa/schema');
 
 const person = new ClosedSchema({
   id: String(),
@@ -264,6 +268,12 @@ validate({ id: 'ab' }); // ['id does not match the required pattern']</code></pr
             </tbody>
           </table>
         </div>
+        <p>
+          <code>foldMessages: true</code> (with any of them but <code>errors: false</code>) writes the parts of the
+          messages known when compiling as one text in the generated code, instead of joining them when an error is made:
+          the same errors, built faster on fields of nested objects (up to 13% in our benchmarks), for compiling about 4%
+          slower. Use it for schemas compiled once that see much invalid input.
+        </p>
         <pre><code class="language-js">const isPerson = person.compile({ errors: false });
 
 if (!isPerson(body)) {
@@ -346,7 +356,7 @@ import { isPerson } from './validators.mjs';</code></pre>
           A <code>Schema</code> takes an object whose keys are the expected properties. Plain objects inside it become
           nested schemas.
         </p>
-        <pre><code class="language-js">const { Schema, String, Float, Enum, ArrayOf, Integer } = require('@xufa/schema');
+        <pre data-run><code class="language-js">const { Schema, String, Float, Enum, ArrayOf, Integer } = require('@xufa/schema');
 
 const order = new Schema(
   {
@@ -429,7 +439,7 @@ const order = new Schema(
 
         <h3 id="recursive">Recursive schemas</h3>
         <p>Create the <code>Ref</code> first and point it at the schema once the schema exists:</p>
-        <pre><code class="language-js">const { Schema, Integer, ArrayOf, Ref } = require('@xufa/schema');
+        <pre data-run><code class="language-js">const { Schema, Integer, ArrayOf, Ref } = require('@xufa/schema');
 
 const child = Ref();
 const node = new Schema({ value: Integer(), children: ArrayOf({ type: child, isMandatory: false }) });
@@ -825,7 +835,7 @@ compileJsonSchema({ properties: { home: { $ref: 'address#' } } }, { schemas: [ad
 
         <h2 id="errors">Errors</h2>
         <p>Errors are plain strings that start with the path of the field, so they can be logged or returned as they are:</p>
-        <pre><code class="language-js">[
+        <pre data-run><code class="language-js">[
   'customer.name is mandatory',
   'lines[1].sku must be a string',
   'lines[1].price must be at least 0',
@@ -889,7 +899,8 @@ compileJsonSchema({ properties: { home: { $ref: 'address#' } } }, { schemas: [ad
           @xufa/schema includes its type declarations. <code>Infer</code> gives the TypeScript type of the values a DSL
           schema accepts, and a function compiled with <code>{ errors: false }</code> is a type guard:
         </p>
-        <pre><code class="language-ts">import { Schema, String, Integer, ArrayOf, Enum, Infer } from '@xufa/schema';
+        <!--run-before: declare const body: unknown; -->
+        <pre data-run><code class="language-ts">import { Schema, String, Integer, ArrayOf, Enum, Infer } from '@xufa/schema';
 
 const person = new Schema({
   id: String(),
@@ -938,7 +949,7 @@ if (isPerson(body)) {
           </li>
           <li>A value only ever seen as <code>null</code>, and the elements of arrays only seen empty, accept anything.</li>
         </ul>
-        <pre><code class="language-js">const { inferJsonSchema, inferSchemaCode } = require('@xufa/schema');
+        <pre data-run><code class="language-js">const { inferJsonSchema, inferSchemaCode } = require('@xufa/schema');
 
 const samples = [
   { id: 1, name: 'Ann', email: 'ann@example.com', address: { city: 'Madrid' } },
@@ -952,18 +963,18 @@ inferJsonSchema(samples);
 //     phone: { type: 'string' } },
 //   required: ['id', 'name', 'email', 'address'] }
 
-console.log(inferSchemaCode(samples));
-// const { Integer, Schema, String } = require('@xufa/schema');
-//
-// const schema = new Schema({
-//   id: Integer(),
-//   name: String(),
-//   email: String({ format: 'email' }),
-//   address: new Schema({
-//     city: String(),
-//   }, { isNullable: true }),
-//   phone: String({ isMandatory: false }),
-// });</code></pre>
+console.log(inferSchemaCode(samples));</code></pre>
+        <pre data-output><code class="language-js">const { Integer, Schema, String } = require('@xufa/schema');
+
+const schema = new Schema({
+  id: Integer(),
+  name: String(),
+  email: String({ format: 'email' }),
+  address: new Schema({
+    city: String(),
+  }, { isNullable: true }),
+  phone: String({ isMandatory: false }),
+});</code></pre>
         <p>
           The options are <code>closed</code> (reject keys the samples do not have: <code>additionalProperties:
           false</code>, <code>ClosedSchema</code>), <code>formats</code> (<code>false</code> detects none) and
@@ -981,7 +992,7 @@ console.log(inferSchemaCode(samples));
           schema. <code>validate()</code> returns <code>undefined</code> when the value is valid and an error message
           otherwise.
         </p>
-        <pre><code class="language-js">const { Schema, ValidateType } = require('@xufa/schema');
+        <pre data-run><code class="language-js">const { Schema, ValidateType } = require('@xufa/schema');
 
 class Even extends ValidateType {
   validate(value, fieldName = 'Value') {

@@ -1,0 +1,101 @@
+<!--{
+  "file": "session.html",
+  "name": "@xufa/session",
+  "title": "@xufa/session",
+  "description": "@xufa/session: sessions of browsers for @xufa/http, with no dependencies: signed cookies, stores in memory or in a database of @xufa/orm, flash messages and CSRF tokens.",
+  "groups": [
+    ["Using it", [["start", "Quick start"], ["values", "Values"], ["login", "Logins and logouts"], ["flash", "Flash messages"], ["csrf", "CSRF"], ["stores", "Stores"], ["options", "Options"]]]
+  ]
+}-->
+        <h1>@xufa/session</h1>
+        <p class="intro">
+          Sessions of browsers for <a href="http.html">@xufa/http</a>, as those of Django and Laravel: values kept between
+          the requests of a browser by a signed cookie, in memory or in a database of <a href="orm.html">@xufa/orm</a>
+          (any backend, deleted when they expire), with flash messages and CSRF tokens. No dependencies.
+        </p>
+
+        <h2 id="start">Quick start</h2>
+        <pre data-run><code class="language-js">const xufa = require('@xufa/http');
+const { sessionPlugin } = require('@xufa/session');
+
+const app = xufa();
+app.register(sessionPlugin, { secret: 'a secret of 32 characters or more!!' }); // process.env.SESSION_SECRET
+
+app.get('/visits', async (request) =&gt; {
+  const visits = (request.session.get('visits') || 0) + 1;
+  request.session.set('visits', visits);
+  return { visits };
+});
+
+const first = await app.inject('/visits');
+const cookie = first.headers['set-cookie'].split(';')[0]; // what a browser keeps
+const second = await app.inject({ url: '/visits', headers: { cookie } });
+console.log(first.json(), second.json());</code></pre>
+        <pre data-output><code class="language-plaintext">{ visits: 1 } { visits: 2 }</code></pre>
+
+        <h2 id="values">Values</h2>
+        <p>
+          <code>request.session</code> has <code>get(key)</code>, <code>set(key, value)</code>, <code>has</code>,
+          <code>delete</code>, <code>all()</code> and <code>clear()</code>. Values are JSON. A session is saved when the
+          reply is sent, if it changed; a request that does not use it makes none (and no cookie).
+        </p>
+
+        <h2 id="login">Logins and logouts</h2>
+        <pre><code class="language-js">app.post('/login', async (request, reply) =&gt; {
+  const user = await checkPassword(request.body);
+  request.session.regenerate().set('userId', user.pk);
+  return reply.redirect('/');
+});
+app.post('/logout', async (request, reply) =&gt; {
+  request.session.destroy();
+  return reply.redirect('/');
+});</code></pre>
+        <p>
+          <code>regenerate()</code> gives the session a new id and deletes the old one: an id someone learned before the
+          login is worth nothing after it. <code>destroy()</code> ends the session and clears its cookie.
+        </p>
+
+        <h2 id="flash">Flash messages</h2>
+        <p>
+          <code>flash(key, value)</code> keeps a value for the next request only, as Rails and Laravel do: a message set
+          before a redirect, shown by the page after it. <code>flash(key)</code> reads it.
+        </p>
+        <pre><code class="language-js">request.session.flash('notice', 'Saved');   // then reply.redirect('/books')
+const notice = request.session.flash('notice'); // in the next request; gone after it</code></pre>
+
+        <h2 id="csrf">CSRF</h2>
+        <p>
+          With <code>csrf: true</code>, POST, PUT, PATCH and DELETE of a session need its token: forms send
+          <code>csrfToken()</code> back in a field <code>_csrf</code>, and scripts in the header
+          <code>x-csrf-token</code>; a 403 otherwise. Requests without a session (they act as nobody) and routes with
+          <code>config: { csrf: false }</code> (webhooks) need none.
+        </p>
+        <pre><code class="language-html">&lt;form method="post" action="/books"&gt;
+  &lt;input type="hidden" name="_csrf" value="{{ csrf }}"&gt;
+  ...
+&lt;/form&gt;</code></pre>
+
+        <h2 id="stores">Stores</h2>
+        <p>
+          <code>memoryStore()</code> (the default) keeps sessions in the process: for tests and development.
+          <code>ormStore(db)</code> keeps them as objects of a model of the ORM (table <code>xufa_sessions</code>) in any
+          backend, for every process and machine with the database; its TTL index deletes those that expired
+          (<code>db.expire()</code>, or the option <code>expire</code> of the plugin of the ORM). A store of your own has
+          <code>get(id)</code>, <code>set(id, data, expiresAt)</code> and <code>delete(id)</code>.
+        </p>
+
+        <h2 id="options">Options</h2>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Option</th><th>Default</th><th>What it is</th></tr></thead>
+            <tbody>
+              <tr><td><code>secret</code></td><td></td><td>32 characters or more; <code>[new, old]</code> to rotate them (the first signs, all are checked)</td></tr>
+              <tr><td><code>store</code></td><td><code>memoryStore()</code></td><td>Where sessions are kept</td></tr>
+              <tr><td><code>maxAge</code></td><td><code>'14d'</code></td><td>How long a session lasts</td></tr>
+              <tr><td><code>rolling</code></td><td><code>true</code></td><td>Each request makes it last <code>maxAge</code> again</td></tr>
+              <tr><td><code>csrf</code></td><td><code>false</code></td><td>Writes of a session need its token</td></tr>
+              <tr><td><code>cookieName</code></td><td><code>'sid'</code></td><td>The name of the cookie</td></tr>
+              <tr><td><code>cookie</code></td><td></td><td><code>path</code> (/), <code>domain</code>, <code>sameSite</code> (lax), <code>secure</code> (on HTTPS), <code>httpOnly</code> (true), <code>partitioned</code></td></tr>
+            </tbody>
+          </table>
+        </div>

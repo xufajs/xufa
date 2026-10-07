@@ -22,6 +22,9 @@ It prints the TODOs it leaves, where a person has to look.
 - **Subtests**: a test with subtests becomes a `describe()`. What it runs is kept in order: the statements before
   the first `await` run while the suite is collected, the ones after it in `beforeAll()` (the variables they set are
   declared before), the ones between subtests in a test `(setup)`, the ones after the last subtest in `afterAll()`.
+- **Skips**: `{ skip: true }` becomes `test.skip()`. A computed skip (`{ skip }`) is decided inside the test, as
+  `if (skip) ctx.skip(skip)`, since its value may come from code moved into `beforeAll()`; a suite or a test with a
+  `done` callback gets `.skipIf()`.
 - **Listening servers**: `server.listen(opts, (err, address) => { test(...) })` becomes a `describe('listening')`
   that listens in `beforeAll()`.
 - **Contexts**: `t` is renamed where vyntra needs it (vyntra gives the context to a first parameter named `ctx`,

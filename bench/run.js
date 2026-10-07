@@ -274,6 +274,7 @@ async function main() {
       rounds: args.rounds,
       connections: args.connections,
       pipelining: args.pipelining,
+      workers: args.workers,
     },
   };
   process.stdout.write(

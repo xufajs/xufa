@@ -79,6 +79,8 @@
         <h4>Packages</h4>
         <ul>
           <li><a href="../websocket/index.html">@xufa/websocket</a></li>
+          <li><a href="../admin/index.html">@xufa/admin</a></li>
+          <li><a href="../session/index.html">@xufa/session</a></li>
           <li><a href="../openapi/index.html">@xufa/openapi</a></li>
           <li><a href="../client/index.html">@xufa/client</a></li>
           <li><a href="index.html" aria-current="page">@xufa/schema</a></li>
@@ -88,6 +90,7 @@
           <li><a href="../template/index.html">@xufa/template</a></li>
           <li><a href="../cluster/index.html">@xufa/cluster</a></li>
           <li><a href="../scheduler/index.html">@xufa/scheduler</a></li>
+          <li><a href="../queue/index.html">@xufa/queue</a></li>
           <li><a href="../config/index.html">@xufa/config</a></li>
           <li><a href="../discovery/index.html">@xufa/discovery</a></li>
           <li><a href="../netcache/index.html">@xufa/netcache</a></li>
@@ -115,7 +118,7 @@
           <a href="ajv.html" aria-current="page">From ajv</a>
           <a href="benchmarks.html">Benchmarks</a>
         </nav>
-<h1>Migrating from ajv</h1>
+        <h1>Migrating from ajv</h1>
         <p class="intro">
           Your JSON Schemas stay as they are: @xufa/schema reads draft-04, draft-06, draft-07, 2019-09 and 2020-12, and
           passes the whole JSON-Schema-Test-Suite of each. What changes is the code around them: how you compile, what
@@ -522,7 +525,7 @@ await compileJsonSchemaAsync(orderSchema, { loadSchema }); // loads them</code><
           validation runs on @xufa/schema. Copy it into your project, replace <code>new Ajv(options)</code> with
           <code>createAjvLike(options)</code>, and move the code to @xufa/schema's own API when convenient.
         </p>
-        <pre><code class="language-js">// ajv-like.js: ajv's compile(), validate.errors and error objects, on @xufa/schema.
+        <pre data-run><code class="language-js">// ajv-like.js: ajv's compile(), validate.errors and error objects, on @xufa/schema.
 const { compileJsonSchema } = require('@xufa/schema');
 
 // Errors that ajv reports at the object, with the key in params.
@@ -609,7 +612,7 @@ console.log(compareOn(orderSchema, orderSamples));</code></pre>
         <p>
           With <a href="../http/index.html">@xufa/http</a> (the API of fastify) there is nothing to do: its default validator compiler
           is @xufa/schema, with fastify's options and errors in the shape of ajv's, shared schemas included
-          (<a href="../http/index.html#validation">Validation</a>). With fastify itself:
+          (<a href="../http/guide.html#validation">Validation</a>). With fastify itself:
         </p>
         <p>
           Fastify validates with ajv, with the options <code>coerceTypes: 'array'</code>, <code>useDefaults: true</code>,
@@ -753,7 +756,7 @@ fs.writeFileSync('validate-order.mjs', standaloneJsonSchema(orderSchema, { forma
               <tr><td>Asynchronous validation (<code>$async</code> schemas)</td><td><code>$async</code> throws (ignored with <code>strict: false</code>): validation is synchronous. Loading documents is supported, with <code>compileJsonSchemaAsync()</code>. Run asynchronous checks (a database lookup) after validating.</td></tr>
               <tr><td>JSON Type Definition (JTD, <code>ajv/dist/jtd</code>)</td><td>Not supported.</td></tr>
               <tr><td>ajv-errors (<code>errorMessage</code>), ajv-i18n</td><td>Build messages from error objects (see <a href="#custom-messages">Custom messages</a>).</td></tr>
-              <tr><td>ajv-merge-patch (<code>$merge</code>, <code>$patch</code>)</td><td>Not supported: merge the schemas in your code before compiling, or use <code>allOf</code>.</td></tr>
+              <tr><td>ajv-merge-patch (<code>$merge</code>, <code>$patch</code>)</td><td>Built in, no plugin: <code>{ $merge: { source, with } }</code> (a JSON Merge Patch) and <code>{ $patch: { source, with: [operations] } }</code> (a JSON Patch), the source inline or by a <code>$ref</code> (a schema of <code>schemas</code>, a JSON Pointer).</td></tr>
               <tr><td><code>schemaPath</code> in errors</td><td>Not given; errors have the path of the value, the keyword and its params.</td></tr>
               <tr><td>Checking schemas against the meta-schema when compiling</td><td>Keywords and types are checked, values are not; compile the meta-schema to check them (see <a href="#api">API</a>).</td></tr>
             </tbody>

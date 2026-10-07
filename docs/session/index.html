@@ -1,0 +1,198 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>@xufa/session · xufa</title>
+    <meta
+      name="description"
+      content="@xufa/session: sessions of browsers for @xufa/http, with no dependencies: signed cookies, stores in memory or in a database of @xufa/orm, flash messages and CSRF tokens."
+    />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%23d9502b'/%3E%3Ctext x='16' y='22.5' font-family='monospace' font-size='18' font-weight='700' fill='white' text-anchor='middle'%3Ex%3C/text%3E%3C/svg%3E"
+    />
+    <link rel="stylesheet" href="../style.css?v=0.1.0" />
+    <script src="../main.js?v=0.1.0"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js" defer></script>
+  </head>
+  <body>
+    <header class="header">
+      <div class="header-inner">
+        <a class="logo" href="../index.html"><span class="logo-mark">x</span>xufa</a>
+        <nav class="nav">
+          <a href="../guide.html">Guide</a>
+          <a href="../playground.html">Playground</a>
+          <a href="../http/index.html">HTTP</a>
+          <a href="../orm/index.html">ORM</a>
+          <a class="hide-small" href="../auth/index.html">Auth</a>
+          <a class="hide-small" href="../sequelize/index.html">Sequelize</a>
+          <a class="hide-small" href="../packages.html" aria-current="page">Packages</a>
+          <a class="hide-small" href="../benchmarks.html">Benchmarks</a>
+          <a href="https://github.com/xufajs/xufa">GitHub</a>
+          <button class="theme-toggle" type="button" aria-label="Switch between light and dark theme">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+              <path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z" />
+            </svg>
+          </button>
+        </nav>
+      </div>
+    </header>
+
+    <div class="docs">
+      <button class="menu-toggle" type="button" aria-expanded="false">☰ Contents</button>
+      <aside class="sidebar">
+        <h4>Using it</h4>
+        <ul>
+          <li><a href="#start">Quick start</a></li>
+          <li><a href="#values">Values</a></li>
+          <li><a href="#login">Logins and logouts</a></li>
+          <li><a href="#flash">Flash messages</a></li>
+          <li><a href="#csrf">CSRF</a></li>
+          <li><a href="#stores">Stores</a></li>
+          <li><a href="#options">Options</a></li>
+        </ul>
+        <h4>Packages</h4>
+        <ul>
+          <li><a href="../websocket/index.html">@xufa/websocket</a></li>
+          <li><a href="../admin/index.html">@xufa/admin</a></li>
+          <li><a href="index.html" aria-current="page">@xufa/session</a></li>
+          <li><a href="../openapi/index.html">@xufa/openapi</a></li>
+          <li><a href="../client/index.html">@xufa/client</a></li>
+          <li><a href="../schema/index.html">@xufa/schema</a></li>
+          <li><a href="../pg/index.html">@xufa/pg</a></li>
+          <li><a href="../mongo/index.html">@xufa/mongo</a></li>
+          <li><a href="../expression/index.html">@xufa/expression</a></li>
+          <li><a href="../template/index.html">@xufa/template</a></li>
+          <li><a href="../cluster/index.html">@xufa/cluster</a></li>
+          <li><a href="../scheduler/index.html">@xufa/scheduler</a></li>
+          <li><a href="../queue/index.html">@xufa/queue</a></li>
+          <li><a href="../config/index.html">@xufa/config</a></li>
+          <li><a href="../discovery/index.html">@xufa/discovery</a></li>
+          <li><a href="../netcache/index.html">@xufa/netcache</a></li>
+          <li><a href="../faults/index.html">@xufa/faults</a></li>
+          <li><a href="../marshal/index.html">@xufa/marshal</a></li>
+          <li><a href="../yaml/index.html">@xufa/yaml</a></li>
+          <li><a href="../jwt/index.html">@xufa/jwt</a></li>
+          <li><a href="../logger/index.html">@xufa/logger</a></li>
+          <li><a href="../router/index.html">@xufa/router</a></li>
+          <li><a href="../serializer/index.html">@xufa/serializer</a></li>
+          <li><a href="../inject/index.html">@xufa/inject</a></li>
+          <li><a href="../boot/index.html">@xufa/boot</a></li>
+          <li><a href="../errors/index.html">@xufa/errors</a></li>
+          <li><a href="../packages.html">All the packages</a></li>
+        </ul>
+      </aside>
+
+      <article class="content">
+        <nav class="package-tabs" aria-label="@xufa/session">
+          <a href="index.html" aria-current="page">Overview</a>
+          <a href="reference.html">Reference</a>
+        </nav>
+        <h1>@xufa/session</h1>
+        <p class="intro">
+          Sessions of browsers for <a href="../http/index.html">@xufa/http</a>, as those of Django and Laravel: values kept between
+          the requests of a browser by a signed cookie, in memory or in a database of <a href="../orm/index.html">@xufa/orm</a>
+          (any backend, deleted when they expire), with flash messages and CSRF tokens. No dependencies.
+        </p>
+
+        <h2 id="start">Quick start</h2>
+        <pre data-run><code class="language-js">const xufa = require('@xufa/http');
+const { sessionPlugin } = require('@xufa/session');
+
+const app = xufa();
+app.register(sessionPlugin, { secret: 'a secret of 32 characters or more!!' }); // process.env.SESSION_SECRET
+
+app.get('/visits', async (request) =&gt; {
+  const visits = (request.session.get('visits') || 0) + 1;
+  request.session.set('visits', visits);
+  return { visits };
+});
+
+const first = await app.inject('/visits');
+const cookie = first.headers['set-cookie'].split(';')[0]; // what a browser keeps
+const second = await app.inject({ url: '/visits', headers: { cookie } });
+console.log(first.json(), second.json());</code></pre>
+        <pre data-output><code class="language-plaintext">{ visits: 1 } { visits: 2 }</code></pre>
+
+        <h2 id="values">Values</h2>
+        <p>
+          <code>request.session</code> has <code>get(key)</code>, <code>set(key, value)</code>, <code>has</code>,
+          <code>delete</code>, <code>all()</code> and <code>clear()</code>. Values are JSON. A session is saved when the
+          reply is sent, if it changed; a request that does not use it makes none (and no cookie).
+        </p>
+
+        <h2 id="login">Logins and logouts</h2>
+        <pre><code class="language-js">app.post('/login', async (request, reply) =&gt; {
+  const user = await checkPassword(request.body);
+  request.session.regenerate().set('userId', user.pk);
+  return reply.redirect('/');
+});
+app.post('/logout', async (request, reply) =&gt; {
+  request.session.destroy();
+  return reply.redirect('/');
+});</code></pre>
+        <p>
+          <code>regenerate()</code> gives the session a new id and deletes the old one: an id someone learned before the
+          login is worth nothing after it. <code>destroy()</code> ends the session and clears its cookie.
+        </p>
+
+        <h2 id="flash">Flash messages</h2>
+        <p>
+          <code>flash(key, value)</code> keeps a value for the next request only, as Rails and Laravel do: a message set
+          before a redirect, shown by the page after it. <code>flash(key)</code> reads it.
+        </p>
+        <pre><code class="language-js">request.session.flash('notice', 'Saved');   // then reply.redirect('/books')
+const notice = request.session.flash('notice'); // in the next request; gone after it</code></pre>
+
+        <h2 id="csrf">CSRF</h2>
+        <p>
+          With <code>csrf: true</code>, POST, PUT, PATCH and DELETE of a session need its token: forms send
+          <code>csrfToken()</code> back in a field <code>_csrf</code>, and scripts in the header
+          <code>x-csrf-token</code>; a 403 otherwise. Requests without a session (they act as nobody) and routes with
+          <code>config: { csrf: false }</code> (webhooks) need none.
+        </p>
+        <pre><code class="language-html">&lt;form method="post" action="/books"&gt;
+  &lt;input type="hidden" name="_csrf" value="{{ csrf }}"&gt;
+  ...
+&lt;/form&gt;</code></pre>
+
+        <h2 id="stores">Stores</h2>
+        <p>
+          <code>memoryStore()</code> (the default) keeps sessions in the process: for tests and development.
+          <code>ormStore(db)</code> keeps them as objects of a model of the ORM (table <code>xufa_sessions</code>) in any
+          backend, for every process and machine with the database; its TTL index deletes those that expired
+          (<code>db.expire()</code>, or the option <code>expire</code> of the plugin of the ORM). A store of your own has
+          <code>get(id)</code>, <code>set(id, data, expiresAt)</code> and <code>delete(id)</code>.
+        </p>
+
+        <h2 id="options">Options</h2>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Option</th><th>Default</th><th>What it is</th></tr></thead>
+            <tbody>
+              <tr><td><code>secret</code></td><td></td><td>32 characters or more; <code>[new, old]</code> to rotate them (the first signs, all are checked)</td></tr>
+              <tr><td><code>store</code></td><td><code>memoryStore()</code></td><td>Where sessions are kept</td></tr>
+              <tr><td><code>maxAge</code></td><td><code>'14d'</code></td><td>How long a session lasts</td></tr>
+              <tr><td><code>rolling</code></td><td><code>true</code></td><td>Each request makes it last <code>maxAge</code> again</td></tr>
+              <tr><td><code>csrf</code></td><td><code>false</code></td><td>Writes of a session need its token</td></tr>
+              <tr><td><code>cookieName</code></td><td><code>'sid'</code></td><td>The name of the cookie</td></tr>
+              <tr><td><code>cookie</code></td><td></td><td><code>path</code> (/), <code>domain</code>, <code>sameSite</code> (lax), <code>secure</code> (on HTTPS), <code>httpOnly</code> (true), <code>partitioned</code></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </article>
+    </div>
+
+    <footer class="footer">
+      <div class="container">
+        <span>xufa is MIT licensed. &copy; Jes&uacute;s Seijas</span>
+        <span>
+          <a href="../guide.html">Guide</a> &middot; <a href="../playground.html">Playground</a> &middot; <a href="../http/index.html">HTTP</a> &middot; <a href="../orm/index.html">ORM</a> &middot; <a href="../auth/index.html">Auth</a> &middot;
+          <a href="../sequelize/index.html">Sequelize</a> &middot; <a href="../packages.html">Packages</a> &middot;
+          <a href="../benchmarks.html">Benchmarks</a> &middot; <a href="https://github.com/xufajs/xufa">GitHub</a>
+        </span>
+      </div>
+    </footer>
+  </body>
+</html>

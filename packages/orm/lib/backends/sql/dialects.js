@@ -22,6 +22,39 @@ function toNumber(value) {
 
 const { likeParts } = require('../../query');
 
+// The starts of units in SQLite: the date, and the time of datetimes (to the hour, minute or second).
+const SQLITE_TRUNCS = {
+  year: '%Y-01-01',
+  month: '%Y-%m-01',
+  day: '%Y-%m-%d',
+  hour: '%Y-%m-%d',
+  minute: '%Y-%m-%d',
+  second: '%Y-%m-%d',
+};
+const SQLITE_TIMES = { hour: 'T%H:00:00.000Z', minute: 'T%H:%M:00.000Z', second: 'T%H:%M:%S.000Z' };
+
+// The parts of dates in SQLite (strftime) and PostgreSQL (EXTRACT).
+const SQLITE_PARTS = {
+  year: '%Y',
+  month: '%m',
+  day: '%d',
+  hour: '%H',
+  minute: '%M',
+  second: '%S',
+  week: '%V',
+  iso_week_day: '%u',
+};
+const POSTGRES_PARTS = {
+  year: 'YEAR',
+  month: 'MONTH',
+  day: 'DAY',
+  hour: 'HOUR',
+  minute: 'MINUTE',
+  week: 'WEEK',
+  iso_week_day: 'ISODOW',
+  quarter: 'QUARTER',
+};
+
 // A LIKE pattern as a GLOB pattern of SQLite (whose LIKE ignores case): the characters of GLOB in the text are
 // written as sets ([*]).
 function likeToGlob(pattern) {
@@ -264,6 +297,33 @@ const sqlite = {
     hstore: 'TEXT',
     uuid: 'TEXT',
   },
+  // The parts of dates of ISO texts (strftime reads them, Z included): integers, NULL for what is not a date.
+  datePart(column, part) {
+    const take = (format) => `CAST(strftime('${format}', ${column}) AS INTEGER)`;
+    switch (part) {
+      case 'week_day':
+        return `(${take('%w')} + 1)`;
+      case 'quarter':
+        return `((${take('%m')} + 2) / 3)`;
+      default:
+        return take(SQLITE_PARTS[part]);
+    }
+  },
+  // The start of a unit of ISO texts, as ISO texts of the type: datetimes YYYY-MM-DDTHH:MM:SS.000Z, dates YYYY-MM-DD.
+  dateTrunc(column, unit, type) {
+    const time = type === 'datetime';
+    const day = time ? 'T00:00:00.000Z' : '';
+    switch (unit) {
+      case 'quarter':
+        // printf makes NULL an empty text: NULL for what is not a date.
+        return `CASE WHEN strftime('%Y', ${column}) IS NULL THEN NULL ELSE printf('%s-%02d-01${day}', strftime('%Y', ${column}), ((CAST(strftime('%m', ${column}) AS INTEGER) - 1) / 3) * 3 + 1) END`;
+      case 'week':
+        // The Monday of the week: the next Sunday (or the day itself), six days before.
+        return `strftime('%Y-%m-%d${day}', ${column}, 'weekday 0', '-6 days')`;
+      default:
+        return `strftime('${SQLITE_TRUNCS[unit]}${time && SQLITE_TIMES[unit] ? SQLITE_TIMES[unit] : day}', ${column})`;
+    }
+  },
   quoteTable: quoteSqliteTable,
   dropTable: (table, schema) => `DROP TABLE IF EXISTS ${quoteSqliteTable(table, schema)}`,
   encode(type, value) {
@@ -365,6 +425,24 @@ const postgres = {
   arrayLiteral: pgArrayLiteral,
   stringType: (maxLength) => (maxLength ? `VARCHAR(${maxLength})` : 'TEXT'),
   tableOptions: (spec) => (spec.fillfactor ? ` WITH (fillfactor = ${spec.fillfactor})` : ''),
+  // The parts of dates with EXTRACT, of datetimes in UTC: integers.
+  datePart(column, part, type) {
+    const source = type === 'datetime' ? `(${column} AT TIME ZONE 'UTC')` : column;
+    const take = (field) => `CAST(EXTRACT(${field} FROM ${source}) AS INTEGER)`;
+    switch (part) {
+      case 'week_day':
+        return `(${take('DOW')} + 1)`;
+      case 'second':
+        return `CAST(FLOOR(EXTRACT(SECOND FROM ${source})) AS INTEGER)`;
+      default:
+        return take(POSTGRES_PARTS[part]);
+    }
+  },
+  // The start of a unit with date_trunc: of datetimes in UTC (a TIMESTAMPTZ), of dates a DATE.
+  dateTrunc(column, unit, type) {
+    if (type === 'datetime') return `(date_trunc('${unit}', ${column} AT TIME ZONE 'UTC') AT TIME ZONE 'UTC')`;
+    return `CAST(date_trunc('${unit}', ${column}) AS DATE)`;
+  },
   quoteTable: quoteSchemaTable,
   dropTable: (table, schema) => `DROP TABLE IF EXISTS ${quoteSchemaTable(table, schema)} CASCADE`,
   // Dates go as they are: @xufa/pg sends them in binary (pg as text); infinite ones as 'infinity' and '-infinity'.

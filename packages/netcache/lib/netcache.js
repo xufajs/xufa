@@ -147,6 +147,28 @@ class NetCache extends EventEmitter {
     return this.store.size;
   }
 
+  // A check of xufa.health of @xufa/http: down when it is not started; degraded when peers it knows are not
+  // connected, or fewer than minPeers are; the peers, those connected, the keys and the writes not acknowledged yet.
+  // Not critical by default (a cache that misses asks the database).
+  health({ minPeers = 0, critical = false, timeout } = {}) {
+    const check = async () => {
+      if (!this.started) return { status: 'down', error: 'The netcache is not started' };
+      const connected = this.connected.length;
+      let unacknowledged = 0;
+      for (const peer of this.peers.values()) unacknowledged += peer.log ? peer.log.length : 0;
+      const details = { peers: this.peers.size, connected, keys: this.size, unacknowledged, resets: this.stats.resets };
+      const problems = [];
+      if (connected < this.peers.size) problems.push(`${this.peers.size - connected} peers not connected`);
+      if (connected < minPeers) problems.push(`${connected} peers connected (${minPeers} at least)`);
+      return {
+        status: problems.length ? 'degraded' : 'up',
+        ...(problems.length ? { error: problems.join('; ') } : {}),
+        ...details,
+      };
+    };
+    return { check, critical, ...(timeout !== undefined ? { timeout } : {}) };
+  }
+
   // The peers connected now.
   get connected() {
     return [...this.peers.values()].filter((peer) => peer.wire && peer.wire.ready).map((peer) => peer.id);

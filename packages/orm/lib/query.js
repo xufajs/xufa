@@ -404,6 +404,11 @@ function resolveWhere(model, item) {
   // The conditions of one object across the same reverse relation are of the same related object (as in Django).
   const groups = new Map();
   Object.keys(item).forEach((key) => {
+    const dated = dateCondition(model, key, item[key]);
+    if (dated) {
+      children.push(dated);
+      return;
+    }
     const reverse = findReverse(model, key);
     if (!reverse) {
       children.push(resolveLeaf(model, key, item[key]));
@@ -431,6 +436,260 @@ function resolveWhere(model, item) {
   });
   if (nodes.length === 0) return null;
   return nodes.length === 1 ? nodes[0] : { op: 'and', children: nodes };
+}
+
+// The parts of dates that conditions take, as Django's, in UTC. year and date are rewritten as ranges of the field
+// (createdAt__year: 2026, createdAt__date__gte: '2026-10-01'): the same on every backend, and indexes serve them. The
+// others are numbers taken out of the field by each backend (createdAt__month: 10, createdAt__week_day__in: [1, 7]):
+// month, day, week_day (1 Sunday to 7 Saturday), iso_week_day (1 Monday to 7 Sunday), week (of ISO), quarter; and of
+// datetimes hour, minute and second.
+const RANGE_PARTS = new Set(['year', 'date']);
+const EXTRACTED_PARTS = new Set([
+  'month',
+  'day',
+  'week_day',
+  'iso_week_day',
+  'week',
+  'quarter',
+  'hour',
+  'minute',
+  'second',
+]);
+const TIME_PARTS = new Set(['hour', 'minute', 'second']);
+const DATE_PARTS = new Set([...RANGE_PARTS, ...EXTRACTED_PARTS]);
+const DATE_LOOKUPS = new Set(['exact', 'gt', 'gte', 'lt', 'lte', 'in', 'range', 'isnull']);
+const DAY = 86400000;
+
+function dateCondition(model, key, value) {
+  const parts = key.split(SEPARATOR);
+  let lookup = 'exact';
+  if (parts.length > 2 && DATE_LOOKUPS.has(parts[parts.length - 1]) && DATE_PARTS.has(parts[parts.length - 2])) {
+    lookup = parts.pop();
+  }
+  if (parts.length < 2 || !DATE_PARTS.has(parts[parts.length - 1])) return null;
+  // A path that is of fields as it is (a field named date) is not a part of a date.
+  try {
+    const plain = resolvePath(model, key, true);
+    if (plain.rest === undefined || plain.jsonPath) return null;
+  } catch (err) {
+    if (!(err instanceof FieldError)) throw err;
+  }
+  const part = parts.pop();
+  const name = parts.join(SEPARATOR);
+  let fields;
+  try {
+    ({ fields } = resolvePath(model, name, false));
+  } catch (err) {
+    return null;
+  }
+  const field = lastOf(fields);
+  if (field.type !== 'date' && field.type !== 'datetime') {
+    throw new LookupError(`${part}${lookup === 'exact' ? '' : SEPARATOR + lookup}`, name, model.name);
+  }
+  if (lookup === 'isnull') return resolveLeaf(model, `${name}${SEPARATOR}isnull`, value);
+  if (EXTRACTED_PARTS.has(part)) return partLeaf(fields, field, part, lookup, value, key);
+  if (part === 'date' && field.type === 'date') return resolveLeaf(model, `${name}${SEPARATOR}${lookup}`, value);
+  // The interval [from, to) of a year or a day, as values of the field.
+  const interval = (given) => {
+    let start;
+    let end;
+    if (part === 'year') {
+      const year = Number(given);
+      if (!Number.isInteger(year)) throw new QueryError(`${key}: a year is an integer (it is ${given})`);
+      start = Date.UTC(year, 0, 1);
+      end = Date.UTC(year + 1, 0, 1);
+    } else {
+      const day = given instanceof Date ? given : new Date(`${String(given).slice(0, 10)}T00:00:00Z`);
+      if (Number.isNaN(day.getTime())) throw new QueryError(`${key}: not a date (${given})`);
+      start = Date.UTC(day.getUTCFullYear(), day.getUTCMonth(), day.getUTCDate());
+      end = start + DAY;
+    }
+    const as = (time) => (field.type === 'date' ? new Date(time).toISOString().slice(0, 10) : new Date(time));
+    return [as(start), as(end)];
+  };
+  const range = (from, to) => ({ [`${name}${SEPARATOR}gte`]: from, [`${name}${SEPARATOR}lt`]: to });
+  let conditions;
+  switch (lookup) {
+    case 'exact':
+      conditions = range(...interval(value));
+      break;
+    case 'gt':
+      conditions = { [`${name}${SEPARATOR}gte`]: interval(value)[1] };
+      break;
+    case 'gte':
+      conditions = { [`${name}${SEPARATOR}gte`]: interval(value)[0] };
+      break;
+    case 'lt':
+      conditions = { [`${name}${SEPARATOR}lt`]: interval(value)[0] };
+      break;
+    case 'lte':
+      conditions = { [`${name}${SEPARATOR}lt`]: interval(value)[1] };
+      break;
+    case 'range':
+      if (!Array.isArray(value) || value.length !== 2) throw new QueryError(`${key} takes [from, to]`);
+      conditions = range(interval(value[0])[0], interval(value[1])[1]);
+      break;
+    default: {
+      if (!Array.isArray(value)) throw new QueryError(`${key} takes an array`);
+      if (value.length === 0) return resolveLeaf(model, `${name}${SEPARATOR}in`, []);
+      return resolveWhere(
+        model,
+        Q.from(
+          'or',
+          value.map((item) => range(...interval(item)))
+        )
+      );
+    }
+  }
+  return resolveWhere(model, conditions);
+}
+
+// A condition on a number taken out of a date: { fields, part, lookup, value } (integers), compiled by each backend.
+function partLeaf(fields, field, part, lookup, value, key) {
+  if (TIME_PARTS.has(part) && field.type !== 'datetime') {
+    throw new LookupError(part, field.name, field.model.name);
+  }
+  const integer = (item) => {
+    const number = typeof item === 'string' && /^-?\d+$/.test(item.trim()) ? Number(item) : item;
+    if (!Number.isInteger(number)) throw new QueryError(`${key}: the ${part} is an integer (it is ${String(item)})`);
+    return number;
+  };
+  if (value instanceof F) throw new QueryError(`${key} cannot compare with an F expression`);
+  if (value === null || value === undefined) throw new QueryError(`${key} cannot compare with ${value}`);
+  if (lookup === 'in') {
+    if (!Array.isArray(value)) throw new QueryError(`${key} takes an array`);
+    return { fields, part, lookup, value: value.map(integer) };
+  }
+  if (lookup === 'range') {
+    if (!Array.isArray(value) || value.length !== 2) throw new QueryError(`${key} takes [from, to]`);
+    return { fields, part, lookup, value: value.map(integer) };
+  }
+  return { fields, part, lookup, value: integer(value) };
+}
+
+// The number of a part of a date (a Date, or a text of a date or a datetime), in UTC: what the backends without a
+// language for it (memory, files) compare, and what the others compute. null for what is not a date.
+function datePartOf(value, part) {
+  if (value === null || value === undefined) return null;
+  const date =
+    value instanceof Date
+      ? value
+      : new Date(typeof value === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(value) ? `${value}T00:00:00Z` : value);
+  const time = date.getTime();
+  if (Number.isNaN(time)) return null;
+  switch (part) {
+    case 'year':
+      return date.getUTCFullYear();
+    case 'month':
+      return date.getUTCMonth() + 1;
+    case 'day':
+      return date.getUTCDate();
+    case 'week_day':
+      return date.getUTCDay() + 1;
+    case 'iso_week_day':
+      return ((date.getUTCDay() + 6) % 7) + 1;
+    case 'quarter':
+      return Math.floor(date.getUTCMonth() / 3) + 1;
+    case 'hour':
+      return date.getUTCHours();
+    case 'minute':
+      return date.getUTCMinutes();
+    case 'second':
+      return date.getUTCSeconds();
+    case 'week': {
+      // ISO 8601: the week of the Thursday of the date's week; week 1 has the year's first Thursday.
+      const day = new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate()));
+      day.setUTCDate(day.getUTCDate() + 3 - ((day.getUTCDay() + 6) % 7));
+      const firstThursday = new Date(Date.UTC(day.getUTCFullYear(), 0, 4));
+      return 1 + Math.round(((day - firstThursday) / DAY - 3 + ((firstThursday.getUTCDay() + 6) % 7)) / 7);
+    }
+    default:
+      throw new QueryError(`Not a part of a date: ${part}`);
+  }
+}
+
+// The start of the year, quarter, month, week (Monday), day, hour, minute or second of a date, in UTC: a Date for
+// datetimes, a text YYYY-MM-DD for dates; null for what is not a date.
+function truncOf(value, unit, type) {
+  if (value === null || value === undefined) return null;
+  const date =
+    value instanceof Date
+      ? value
+      : new Date(typeof value === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(value) ? `${value}T00:00:00Z` : value);
+  if (Number.isNaN(date.getTime())) return null;
+  const y = date.getUTCFullYear();
+  const m = date.getUTCMonth();
+  const d = date.getUTCDate();
+  let time;
+  switch (unit) {
+    case 'year':
+      time = Date.UTC(y, 0, 1);
+      break;
+    case 'quarter':
+      time = Date.UTC(y, m - (m % 3), 1);
+      break;
+    case 'month':
+      time = Date.UTC(y, m, 1);
+      break;
+    case 'week':
+      time = Date.UTC(y, m, d) - ((date.getUTCDay() + 6) % 7) * DAY;
+      break;
+    case 'day':
+      time = Date.UTC(y, m, d);
+      break;
+    case 'hour':
+      time = Date.UTC(y, m, d, date.getUTCHours());
+      break;
+    case 'minute':
+      time = Date.UTC(y, m, d, date.getUTCHours(), date.getUTCMinutes());
+      break;
+    case 'second':
+      time = Date.UTC(y, m, d, date.getUTCHours(), date.getUTCMinutes(), date.getUTCSeconds());
+      break;
+    default:
+      throw new QueryError(`Not a unit of Trunc: ${unit}`);
+  }
+  return type === 'date' ? new Date(time).toISOString().slice(0, 10) : new Date(time);
+}
+
+const EXTRACTS = new Set(['year', ...EXTRACTED_PARTS]);
+const TRUNCS = new Set(['year', 'quarter', 'month', 'week', 'day', 'hour', 'minute', 'second']);
+
+// A number of a date of a field, in values() (and so in the groups of annotate()), as Django's ExtractMonth...:
+// values({ month: Extract('createdAt', 'month') }). The parts are those of the conditions, and year.
+function Extract(field, part) {
+  if (!new.target) return new Extract(field, part);
+  if (typeof field !== 'string') throw new QueryError('Extract(field, part): field is the name of a field');
+  if (!EXTRACTS.has(part))
+    throw new QueryError(`Extract(${field}, ${part}): the parts are ${[...EXTRACTS].join(', ')}`);
+  this.field = field;
+  this.part = part;
+}
+
+// The start of the year, quarter, month, week, day, hour, minute or second of a field, as Django's TruncMonth...:
+// values({ month: Trunc('createdAt', 'month') }) gives the first instant of its month (a Date; a date for dates).
+function Trunc(field, unit) {
+  if (!new.target) return new Trunc(field, unit);
+  if (typeof field !== 'string') throw new QueryError('Trunc(field, unit): field is the name of a field');
+  if (!TRUNCS.has(unit)) throw new QueryError(`Trunc(${field}, ${unit}): the units are ${[...TRUNCS].join(', ')}`);
+  this.field = field;
+  this.unit = unit;
+}
+
+// The item of values() of an Extract or a Trunc: { key, fields, part } or { key, fields, trunc }.
+function resolveDateValue(model, key, value) {
+  const { fields, jsonPath } = resolvePath(model, value.field, false);
+  const field = lastOf(fields);
+  const name =
+    value instanceof Extract ? `Extract(${value.field}, ${value.part})` : `Trunc(${value.field}, ${value.unit})`;
+  if (jsonPath || (field.type !== 'date' && field.type !== 'datetime')) {
+    throw new QueryError(`${name}: ${value.field} of ${model.name} is not a date nor a datetime`);
+  }
+  const unit = value instanceof Extract ? value.part : value.unit;
+  if (field.type === 'date' && TIME_PARTS.has(unit)) {
+    throw new QueryError(`${name}: ${value.field} of ${model.name} is a date: it has no ${unit}`);
+  }
+  return value instanceof Extract ? { key, fields, part: value.part } : { key, fields, trunc: value.unit };
 }
 
 // Whether conditions follow reverse relations.
@@ -569,6 +828,11 @@ function likeToRegex(pattern) {
 
 module.exports = {
   LOOKUPS,
+  datePartOf,
+  truncOf,
+  Extract,
+  Trunc,
+  resolveDateValue,
   expandPkOrder,
   Raw,
   likeParts,

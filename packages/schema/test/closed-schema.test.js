@@ -1,4 +1,4 @@
-const { ClosedSchema, String, Integer } = require('../src');
+const { ClosedSchema, String, Integer } = require('..');
 
 const personDefinition = {
   id: String(),

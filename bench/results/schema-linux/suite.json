@@ -1,0 +1,337 @@
+{
+  "draft": "draft7",
+  "mode": "isolated",
+  "totalGroups": 258,
+  "totalTests": 929,
+  "commonGroups": 126,
+  "commonTests": 430,
+  "commonFiles": [
+    "additionalItems.json",
+    "additionalProperties.json",
+    "allOf.json",
+    "anyOf.json",
+    "contains.json",
+    "default.json",
+    "dependencies.json",
+    "enum.json",
+    "format.json",
+    "if-then-else.json",
+    "infinite-loop-detection.json",
+    "items.json",
+    "maxItems.json",
+    "maxLength.json",
+    "maxProperties.json",
+    "maximum.json",
+    "minItems.json",
+    "minLength.json",
+    "minProperties.json",
+    "minimum.json",
+    "multipleOf.json",
+    "not.json",
+    "oneOf.json",
+    "pattern.json",
+    "patternProperties.json",
+    "properties.json",
+    "propertyNames.json",
+    "ref.json",
+    "refRemote.json",
+    "required.json",
+    "type.json"
+  ],
+  "validators": [
+    {
+      "name": "@xufa/schema (all errors)",
+      "testsOk": 929,
+      "testsFail": 0,
+      "unsupported": 0,
+      "groupsPassed": 258,
+      "opsPerSec": 96734.30331954673,
+      "spread": 4.221738071738327
+    },
+    {
+      "name": "@xufa/schema (first error)",
+      "testsOk": 929,
+      "testsFail": 0,
+      "unsupported": 0,
+      "groupsPassed": 258,
+      "opsPerSec": 112499.56845165502,
+      "spread": 7.08520143955681
+    },
+    {
+      "name": "@xufa/schema (boolean)",
+      "testsOk": 929,
+      "testsFail": 0,
+      "unsupported": 0,
+      "groupsPassed": 258,
+      "opsPerSec": 165647.89299146106,
+      "spread": 4.532234059021376
+    },
+    {
+      "name": "ajv (first error)",
+      "testsOk": 921,
+      "testsFail": 8,
+      "unsupported": 0,
+      "groupsPassed": 254,
+      "opsPerSec": 60670.34542764186,
+      "spread": 1.7526993578374725
+    },
+    {
+      "name": "ajv (all errors)",
+      "testsOk": 921,
+      "testsFail": 8,
+      "unsupported": 0,
+      "groupsPassed": 254,
+      "opsPerSec": 53385.720483121986,
+      "spread": 4.173512943900044
+    },
+    {
+      "name": "@exodus/schemasafe (boolean)",
+      "testsOk": 905,
+      "testsFail": 24,
+      "unsupported": 24,
+      "groupsPassed": 254,
+      "opsPerSec": 151224.08735085506,
+      "spread": 0.8171724328934877
+    },
+    {
+      "name": "@exodus/schemasafe (first error)",
+      "testsOk": 905,
+      "testsFail": 24,
+      "unsupported": 24,
+      "groupsPassed": 254,
+      "opsPerSec": 97459.40863424263,
+      "spread": 1.3370284044963692
+    },
+    {
+      "name": "@exodus/schemasafe (all errors)",
+      "testsOk": 905,
+      "testsFail": 24,
+      "unsupported": 24,
+      "groupsPassed": 254,
+      "opsPerSec": 64163.56323862704,
+      "spread": 1.2805265894338809
+    },
+    {
+      "name": "is-my-json-valid",
+      "testsOk": 801,
+      "testsFail": 128,
+      "unsupported": 0,
+      "groupsPassed": 172,
+      "opsPerSec": 34567.82525964276,
+      "spread": 9.608767783224033
+    },
+    {
+      "name": "djv",
+      "testsOk": 791,
+      "testsFail": 138,
+      "unsupported": 15,
+      "groupsPassed": 199,
+      "opsPerSec": 11004.280837234304,
+      "spread": 4.813807011772034
+    },
+    {
+      "name": "jsen",
+      "testsOk": 762,
+      "testsFail": 167,
+      "unsupported": 80,
+      "groupsPassed": 177,
+      "opsPerSec": 45125.39291539118,
+      "spread": 10.079466223199827
+    },
+    {
+      "name": "z-schema",
+      "testsOk": 859,
+      "testsFail": 70,
+      "unsupported": 67,
+      "groupsPassed": 236,
+      "opsPerSec": 57.25730954044859,
+      "spread": 3.196412913941631
+    },
+    {
+      "name": "@cfworker/json-schema",
+      "testsOk": 919,
+      "testsFail": 10,
+      "unsupported": 0,
+      "groupsPassed": 255,
+      "opsPerSec": 1352.692434263142,
+      "spread": 2.1303018639122357
+    },
+    {
+      "name": "json-schema-library",
+      "testsOk": 907,
+      "testsFail": 22,
+      "unsupported": 0,
+      "groupsPassed": 240,
+      "opsPerSec": 1059.9447143436303,
+      "spread": 2.238900558966588
+    },
+    {
+      "name": "jsonschema",
+      "testsOk": 905,
+      "testsFail": 24,
+      "unsupported": 0,
+      "groupsPassed": 246,
+      "opsPerSec": 329.58351092017074,
+      "spread": 2.4866130404275872
+    },
+    {
+      "name": "tv4",
+      "testsOk": 805,
+      "testsFail": 124,
+      "unsupported": 0,
+      "groupsPassed": 180,
+      "opsPerSec": 182.82203280627297,
+      "spread": 5.607486072549233
+    }
+  ],
+  "oursPerFile": {
+    "additionalItems.json": {
+      "ok": 19,
+      "total": 19
+    },
+    "additionalProperties.json": {
+      "ok": 16,
+      "total": 16
+    },
+    "allOf.json": {
+      "ok": 30,
+      "total": 30
+    },
+    "anyOf.json": {
+      "ok": 18,
+      "total": 18
+    },
+    "boolean_schema.json": {
+      "ok": 18,
+      "total": 18
+    },
+    "const.json": {
+      "ok": 54,
+      "total": 54
+    },
+    "contains.json": {
+      "ok": 21,
+      "total": 21
+    },
+    "default.json": {
+      "ok": 7,
+      "total": 7
+    },
+    "definitions.json": {
+      "ok": 2,
+      "total": 2
+    },
+    "dependencies.json": {
+      "ok": 36,
+      "total": 36
+    },
+    "enum.json": {
+      "ok": 47,
+      "total": 47
+    },
+    "exclusiveMaximum.json": {
+      "ok": 4,
+      "total": 4
+    },
+    "exclusiveMinimum.json": {
+      "ok": 4,
+      "total": 4
+    },
+    "format.json": {
+      "ok": 102,
+      "total": 102
+    },
+    "if-then-else.json": {
+      "ok": 30,
+      "total": 30
+    },
+    "infinite-loop-detection.json": {
+      "ok": 2,
+      "total": 2
+    },
+    "items.json": {
+      "ok": 28,
+      "total": 28
+    },
+    "maxItems.json": {
+      "ok": 6,
+      "total": 6
+    },
+    "maxLength.json": {
+      "ok": 7,
+      "total": 7
+    },
+    "maxProperties.json": {
+      "ok": 10,
+      "total": 10
+    },
+    "maximum.json": {
+      "ok": 8,
+      "total": 8
+    },
+    "minItems.json": {
+      "ok": 6,
+      "total": 6
+    },
+    "minLength.json": {
+      "ok": 7,
+      "total": 7
+    },
+    "minProperties.json": {
+      "ok": 10,
+      "total": 10
+    },
+    "minimum.json": {
+      "ok": 11,
+      "total": 11
+    },
+    "multipleOf.json": {
+      "ok": 11,
+      "total": 11
+    },
+    "not.json": {
+      "ok": 38,
+      "total": 38
+    },
+    "oneOf.json": {
+      "ok": 27,
+      "total": 27
+    },
+    "pattern.json": {
+      "ok": 9,
+      "total": 9
+    },
+    "patternProperties.json": {
+      "ok": 23,
+      "total": 23
+    },
+    "properties.json": {
+      "ok": 28,
+      "total": 28
+    },
+    "propertyNames.json": {
+      "ok": 22,
+      "total": 22
+    },
+    "ref.json": {
+      "ok": 78,
+      "total": 78
+    },
+    "refRemote.json": {
+      "ok": 23,
+      "total": 23
+    },
+    "required.json": {
+      "ok": 18,
+      "total": 18
+    },
+    "type.json": {
+      "ok": 80,
+      "total": 80
+    },
+    "uniqueItems.json": {
+      "ok": 69,
+      "total": 69
+    }
+  }
+}

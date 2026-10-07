@@ -1,0 +1,373 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>@xufa/sequelize: Guide · xufa</title>
+    <meta
+      name="description"
+      content="How to use @xufa/sequelize: switching from Sequelize 6, what there is, PostgreSQL types, TypeScript, Sequelize 7, the differences and a checklist to move an app."
+    />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%23d9502b'/%3E%3Ctext x='16' y='22.5' font-family='monospace' font-size='18' font-weight='700' fill='white' text-anchor='middle'%3Ex%3C/text%3E%3C/svg%3E"
+    />
+    <link rel="stylesheet" href="../style.css?v=0.1.0" />
+    <script src="../main.js?v=0.1.0"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js" defer></script>
+  </head>
+  <body>
+    <header class="header">
+      <div class="header-inner">
+        <a class="logo" href="../index.html"><span class="logo-mark">x</span>xufa</a>
+        <nav class="nav">
+          <a href="../guide.html">Guide</a>
+          <a href="../playground.html">Playground</a>
+          <a href="../http/index.html">HTTP</a>
+          <a href="../orm/index.html">ORM</a>
+          <a class="hide-small" href="../auth/index.html">Auth</a>
+          <a class="hide-small" href="index.html" aria-current="page">Sequelize</a>
+          <a class="hide-small" href="../packages.html">Packages</a>
+          <a class="hide-small" href="../benchmarks.html">Benchmarks</a>
+          <a href="https://github.com/xufajs/xufa">GitHub</a>
+          <button class="theme-toggle" type="button" aria-label="Switch between light and dark theme">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+              <path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z" />
+            </svg>
+          </button>
+        </nav>
+      </div>
+    </header>
+
+    <div class="docs">
+      <button class="menu-toggle" type="button" aria-expanded="false">☰ Contents</button>
+      <aside class="sidebar">
+        <h4>@xufa/sequelize</h4>
+        <ul>
+          <li><a href="#switching">Switching</a></li>
+          <li><a href="#speed">Speed</a></li>
+          <li><a href="#compatibility">Compatibility</a></li>
+        </ul>
+        <h4>Reference</h4>
+        <ul>
+          <li><a href="#supported">What there is</a></li>
+          <li><a href="#postgres">PostgreSQL types</a></li>
+          <li><a href="#typescript">TypeScript</a></li>
+          <li><a href="#sequelize7">From Sequelize 7</a></li>
+          <li><a href="#differences">Differences</a></li>
+          <li><a href="#checklist">Moving an app</a></li>
+        </ul>
+      </aside>
+
+      <article class="content">
+        <nav class="package-tabs" aria-label="@xufa/sequelize">
+          <a href="index.html">Overview</a>
+          <a href="guide.html" aria-current="page">Guide</a>
+          <a href="benchmarks.html">Benchmarks</a>
+        </nav>
+        <h1>Guide</h1>
+        <p class="intro">
+          <code>@xufa/sequelize</code> is the API of <a href="https://sequelize.org">Sequelize</a> 6 over xufa's
+          <a href="../orm/index.html">ORM</a>. Code written for Sequelize runs with <code>require('@xufa/sequelize')</code>
+          instead of <code>require('sequelize')</code>, faster, and with no dependencies: PostgreSQL through
+          <a href="../pg/index.html"><code>@xufa/pg</code></a>, SQLite through <code>node:sqlite</code>.
+        </p>
+
+        <h2 id="switching">Switching</h2>
+        <pre><code class="language-sh">npm install @xufa/sequelize
+npm uninstall sequelize pg pg-hstore sqlite3</code></pre>
+        <pre><code class="language-js">const { Sequelize, DataTypes, Op } = require('@xufa/sequelize'); // was: require('sequelize')
+
+const sequelize = new Sequelize('postgres://user:pass@localhost:5432/db', { logging: false });
+const Author = sequelize.define('Author', { name: { type: DataTypes.STRING, allowNull: false } });
+const Book = sequelize.define('Book', { title: DataTypes.STRING, pages: DataTypes.INTEGER });
+Book.belongsTo(Author, { as: 'author' });
+Author.hasMany(Book, { as: 'books' });
+
+await sequelize.sync();
+const ada = await Author.create({ name: 'Ada' });
+await ada.createBook({ title: 'Notes', pages: 120 });
+const books = await Book.findAll({
+  where: { pages: { [Op.gte]: 100 } },
+  include: [{ model: Author, as: 'author' }],
+  order: [['pages', 'DESC']],
+});</code></pre>
+        <p>
+          The tables it makes are those Sequelize makes (names, SQL types, enum types, constraints), so it works on the
+          databases your app already has.
+        </p>
+
+        <h2 id="speed">Speed</h2>
+        <p>
+          The same Sequelize code against Sequelize 6.37 with <code>pg</code> and <code>sqlite3</code>, on the same
+          machine and database (<a href="../benchmarks.html#orm">all numbers</a>):
+        </p>
+        <div class="charts">
+          <div class="chart">
+            <h3>PostgreSQL</h3>
+            <p class="subtitle">Operations per second, relative to Sequelize 6. More is better.</p>
+            <div class="chart-row us win"><span class="name">findByPk, 64 at once</span><span class="track"><span class="fill" style="width: 100%"></span></span><span class="value">8.0&times;</span></div>
+            <div class="chart-row us win"><span class="name">findAll with a join</span><span class="track"><span class="fill" style="width: 44%"></span></span><span class="value">3.5&times;</span></div>
+            <div class="chart-row us win"><span class="name">findAll, 10k rows</span><span class="track"><span class="fill" style="width: 35%"></span></span><span class="value">2.8&times;</span></div>
+            <div class="chart-row us win"><span class="name">create</span><span class="track"><span class="fill" style="width: 32%"></span></span><span class="value">2.5&times;</span></div>
+            <div class="chart-row"><span class="name">Sequelize 6</span><span class="track"><span class="fill" style="width: 12.5%"></span></span><span class="value">1&times;</span></div>
+          </div>
+          <div class="chart">
+            <h3>SQLite</h3>
+            <p class="subtitle">Operations per second, relative to Sequelize 6. More is better.</p>
+            <div class="chart-row us win"><span class="name">findByPk, 64 at once</span><span class="track"><span class="fill" style="width: 100%"></span></span><span class="value">18.2&times;</span></div>
+            <div class="chart-row us win"><span class="name">findByPk</span><span class="track"><span class="fill" style="width: 87%"></span></span><span class="value">15.9&times;</span></div>
+            <div class="chart-row us win"><span class="name">create</span><span class="track"><span class="fill" style="width: 59%"></span></span><span class="value">10.8&times;</span></div>
+            <div class="chart-row us win"><span class="name">findAll with a join</span><span class="track"><span class="fill" style="width: 21%"></span></span><span class="value">3.9&times;</span></div>
+            <div class="chart-row"><span class="name">Sequelize 6</span><span class="track"><span class="fill" style="width: 5.5%"></span></span><span class="value">1&times;</span></div>
+          </div>
+        </div>
+        <p>
+          What makes it faster: queries are compiled once per shape and prepared by <code>@xufa/pg</code> (with binary
+          results); rows become instances without copies; <code>belongsTo</code> includes are joins and
+          <code>hasMany</code> ones a query more, so no duplicated rows are put back together; large
+          <code>bulkCreate</code>s use COPY. Where the database does the work (updates of many rows, sorts of big
+          tables), the two are about even.
+        </p>
+
+        <h2 id="compatibility">Compatibility</h2>
+        <p>
+          Sequelize's own integration tests (its v6 branch) run against <code>@xufa/sequelize</code>, each file in a
+          process of its own. The same harness runs them against Sequelize 6.37.8 itself, on the same databases, to tell
+          the failures of the tests and of the environment from those of the package (the harness is
+          <a href="https://github.com/xufajs/xufa/tree/main/tools/sequelize-compat"><code>tools/sequelize-compat</code></a>).
+          Counted on the tests both runs ran (a test that fails in a hook leaves the rest of its file out, and what a
+          dialect says it supports decides which tests run):
+        </p>
+        <div class="table-wrap">
+          <table class="numbers">
+            <thead><tr><th>Database (tests run by both)</th><th>@xufa/sequelize</th><th>Sequelize 6.37.8</th></tr></thead>
+            <tbody>
+              <tr><td>SQLite (1,746)</td><td>1,720 passed, 21 failed</td><td>1,737 passed, 4 failed</td></tr>
+              <tr><td>PostgreSQL 18, with PostGIS, hstore and btree_gist (2,006)</td><td>1,971 passed, 35 failed</td><td>1,968 passed, 38 failed</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p>
+          What fails here and passes in Sequelize checks Sequelize's internals (the parsers of its data types, its
+          connection manager and query generator), the exact SQL text it writes, or the <a href="#differences">differences</a>
+          below, by design; 3 (SQLite) and 8 (PostgreSQL) fail on Sequelize too.
+        </p>
+
+        <h2 id="supported">What there is</h2>
+        <ul>
+          <li>
+            <strong>Sequelize</strong>: <code>new Sequelize(url, options)</code>,
+            <code>new Sequelize(database, username, password, options)</code>, <code>new Sequelize(options)</code>;
+            dialects <code>postgres</code> and <code>sqlite</code>; <code>define</code>, <code>models</code>,
+            <code>authenticate()</code>, <code>sync({ force, alter, match })</code>, <code>drop()</code>,
+            <code>close()</code>, <code>logging</code>, <code>query()</code> (replacements, binds, types, models).
+          </li>
+          <li>
+            <strong>Models</strong>: <code>Model.init</code> and <code>define</code>, table names as Sequelize makes them,
+            timestamps, <code>paranoid</code>, <code>indexes</code>, <code>unique</code>, default values, getters and
+            setters, <code>VIRTUAL</code>, scopes, hooks, optimistic locking (<code>version</code>), schemas.
+          </li>
+          <li>
+            <strong>DataTypes</strong>: <code>STRING</code>, <code>CHAR</code>, <code>TEXT</code>, <code>CITEXT</code>,
+            the integers, <code>BIGINT</code>, <code>FLOAT</code>, <code>REAL</code>, <code>DOUBLE</code>,
+            <code>DECIMAL</code>, <code>BOOLEAN</code>, <code>DATE</code>, <code>DATEONLY</code>, <code>TIME</code>,
+            <code>UUID</code>, <code>JSON</code>, <code>JSONB</code>, <code>BLOB</code>, <code>ENUM</code>,
+            <code>ARRAY</code>, <code>HSTORE</code>, <code>RANGE</code>, <code>GEOMETRY</code>, <code>GEOGRAPHY</code>,
+            <code>INET</code>, <code>CIDR</code>, <code>MACADDR</code>, <code>TSVECTOR</code>.
+          </li>
+          <li>
+            <strong>Validation</strong>: <code>allowNull</code>, the validators of validator.js that Sequelize has,
+            <code>Validator.extend()</code>, custom and model validators, <code>ValidationError</code> with its items.
+          </li>
+          <li>
+            <strong>Finding</strong>: <code>findAll</code>, <code>findOne</code>, <code>findByPk</code>,
+            <code>findAndCountAll</code>, <code>count</code>, <code>max</code>, <code>min</code>, <code>sum</code>; every
+            operator of <code>Op</code>; <code>$include.attribute$</code> keys; <code>literal()</code>, <code>fn()</code>,
+            <code>col()</code>, <code>cast()</code>, <code>where()</code> and <code>json()</code> in conditions, attributes
+            and orders; <code>group</code>, <code>limit</code>, <code>offset</code>, <code>raw</code>, <code>nest</code>,
+            <code>rejectOnEmpty</code>, <code>groupedLimit</code>.
+          </li>
+          <li>
+            <strong>Includes</strong>: <code>belongsTo</code> (joined), <code>hasMany</code>, <code>hasOne</code> and
+            <code>belongsToMany</code> (a query more each), with <code>where</code>, <code>required</code>,
+            <code>separate</code> (and a <code>limit</code> per parent, done in SQL), nesting, through models, scopes and
+            <code>{ all: true }</code>.
+          </li>
+          <li>
+            <strong>Writing</strong>: <code>build</code>, <code>save</code>, <code>create</code> and
+            <code>bulkCreate</code> (with includes, <code>ignoreDuplicates</code>, <code>updateOnDuplicate</code>),
+            <code>update</code>, <code>destroy</code>, <code>restore</code>, <code>increment</code>,
+            <code>decrement</code>, <code>reload</code>, <code>findOrCreate</code>, <code>upsert</code>.
+          </li>
+          <li>
+            <strong>Associations</strong>: <code>belongsTo</code>, <code>hasOne</code>, <code>hasMany</code>,
+            <code>belongsToMany</code>, with the keys Sequelize makes, every option, polymorphic associations by scope,
+            and the accessors (<code>getBooks</code>, <code>addBook</code>, <code>setAuthor</code>...).
+          </li>
+          <li>
+            <strong>Transactions</strong>: managed and not managed, nested as savepoints, isolation levels, row locks,
+            <code>afterCommit</code>, CLS (<code>Sequelize.useCLS()</code>), <code>searchPath</code>. Transactions not
+            managed end with <code>queryInterface.commitTransaction()</code> or <code>rollbackTransaction()</code>
+            (<code>COMMIT;</code> and <code>ROLLBACK;</code> through <code>sequelize.query</code>, logged with the id of the
+            transaction), and one whose end fails is rolled back and its connection closed.
+          </li>
+          <li>
+            <strong>Connections</strong>: <code>pool.acquire</code> (60 s, then <code>ConnectionAcquireTimeoutError</code>),
+            and <code>connectionManager</code> as Sequelize has it: the numbers of its <code>pool</code>,
+            <code>getConnection()</code> and <code>releaseConnection()</code> (a client of <code>@xufa/pg</code>),
+            <code>validate()</code>, and <code>_connect()</code>, which opens every connection.
+            <code>operatorsAliases</code>, and <code>queryGenerator.handleSequelizeMethod()</code> and
+            <code>getForeignKeysQuery()</code>.
+          </li>
+          <li>
+            <strong>QueryInterface</strong>: <code>createTable</code>, <code>describeTable</code>,
+            <code>addColumn</code>, <code>changeColumn</code>, <code>renameColumn</code>, <code>addIndex</code>,
+            <code>addConstraint</code>, <code>showIndex</code>, rows (<code>bulkInsert</code>, <code>insert</code>,
+            <code>select</code>, <code>upsert</code>, <code>increment</code>, <code>rawSelect</code>...), functions,
+            triggers, databases, enum types... (SQLite tables are made again for the changes it cannot make, as Sequelize
+            does).
+          </li>
+        </ul>
+
+        <h2 id="postgres">PostgreSQL types</h2>
+        <ul>
+          <li><code>ARRAY</code> columns are arrays of PostgreSQL, with <code>Op.contains</code>, <code>Op.contained</code> and <code>Op.overlap</code> (JSON in SQLite, where Sequelize has no arrays).</li>
+          <li><code>HSTORE</code> values are objects of strings, compared as wholes, also in arrays. The database needs the extension <code>hstore</code>.</li>
+          <li><code>GEOMETRY</code> and <code>GEOGRAPHY</code> are GeoJSON values, with their SRID as <code>crs</code>. The database needs PostGIS.</li>
+          <li><code>RANGE</code> values are their bounds (<code>[{ value, inclusive }, ...]</code>), as Sequelize gives them, also in arrays.</li>
+          <li>Infinite dates (<code>Infinity</code>, <code>-Infinity</code>) and <code>NaN</code> and infinite floats round-trip.</li>
+          <li><code>sync</code> adds the values an <code>ENUM</code> gained to its type, in their order.</li>
+          <li>xufa's own <code>fillfactor</code> works as a model option: <code>define(name, attributes, { fillfactor: 50 })</code>.</li>
+        </ul>
+
+        <h2 id="typescript">TypeScript</h2>
+        <p>
+          The declarations are Sequelize's own (6.37.8), ported with their type tests: models typed by
+          <code>InferAttributes</code> and <code>CreationOptional</code>, the accessors of associations,
+          <code>WhereOptions</code>... Left out is what the package has not: the helpers of Sequelize's own SQL writer
+          in <code>Utils</code> and the transactions of the QueryInterface (transactions are
+          <code>sequelize.transaction()</code>). They need no <code>@types/validator</code>, as Sequelize's do.
+        </p>
+        <pre data-run><code class="language-ts">import {
+  type CreationOptional,
+  DataTypes,
+  type InferAttributes,
+  type InferCreationAttributes,
+  Model,
+  Sequelize,
+} from '@xufa/sequelize';
+
+class User extends Model&lt;InferAttributes&lt;User&gt;, InferCreationAttributes&lt;User&gt;&gt; {
+  declare id: CreationOptional&lt;number&gt;;
+  declare name: string;
+}
+
+const sequelize = new Sequelize('sqlite::memory:');
+User.init(
+  { id: { type: DataTypes.INTEGER, autoIncrement: true, primaryKey: true }, name: DataTypes.STRING },
+  { sequelize }
+);
+await sequelize.sync();
+const ada = await User.create({ name: 'Ada' }); // id is optional</code></pre>
+        <p>
+          As Sequelize, the package is also an ES module with named exports:
+          <code>import { Sequelize, DataTypes, Op } from '@xufa/sequelize'</code>.
+        </p>
+
+        <h2 id="sequelize7">From Sequelize 7</h2>
+        <p>
+          The API is Sequelize 6's: code written for it runs as it is. What Sequelize 7 improves is taken where it does
+          not change what code for Sequelize 6 does:
+        </p>
+        <ul>
+          <li>
+            <code>queryInterface.changeColumns(table, { column: definition })</code>: several columns in one
+            <code>ALTER TABLE</code>, changing only what each definition gives (<code>dropDefaultValue: true</code> drops a
+            default). In PostgreSQL an <code>ENUM</code> keeps its type, which gets the values it lacks or is made again
+            when values are left out; a text column can become an enum. <code>changeColumn</code> stays as in Sequelize 6.
+          </li>
+          <li>
+            JSON paths in conditions: keys in double quotes (<code>'data."a.b"'</code>), keys named as operators
+            (<code>{ data: { in: 1 } }</code>), indexes up to 2^31 - 1 and checked casts.
+          </li>
+          <li>Attribute names with any character (<code>first-name</code>, <code>a b</code>, <code>café</code>) in conditions and orders.</li>
+          <li>
+            Attributes computed by the database: <code>DataTypes.VIRTUAL(type, (includeAs) =&gt; [literal(...), 'name'])</code>,
+            selected when it is in <code>attributes</code> (of the find or of an include), <code>includeAs</code> naming the table
+            of its model in the query.
+          </li>
+          <li>
+            Runtime attributes: with <code>enableRuntimeAttributes: true</code>, the values selected with names of their own
+            (<code>[literal('...'), 'score']</code>) are properties of the instances (<code>user.score</code>).
+          </li>
+          <li>
+            <code>build(saved.toJSON(), { isNewRecord: false })</code> keeps the timestamps; <code>toJSON()</code> keeps the
+            order of the attributes for virtual ones.
+          </li>
+          <li>BIGINT values as bigints: <code>new Sequelize(url, { bigint: 'bigint' })</code>.</li>
+          <li><code>Model.findByPks(keys)</code>: several primary keys in one query.</li>
+          <li><code>sync()</code> makes the schemas that are not there.</li>
+          <li><code>DataTypes.UUIDV7</code>: UUIDs of version 7, in the order they are made.</li>
+          <li><code>noWait</code> with <code>lock</code>: an error at once on rows locked by others (PostgreSQL).</li>
+          <li>
+            <code>onConflictUpdateWhere</code>, <code>[attribute, value]</code> pairs in <code>updateOnDuplicate</code> (in
+            includes too), and <code>upsert(values, { updateValues })</code>: counters and conditions in ON CONFLICT.
+          </li>
+          <li>Named enums of PostgreSQL: <code>DataTypes.ENUM({ values, name, schema })</code>, one type for many columns.</li>
+          <li>Indexes of foreign keys, when asked: <code>indexForeignKeys: true</code>, or <code>foreignKey: { index }</code>.</li>
+          <li>STRICT tables of SQLite: <code>{ strict: true }</code>.</li>
+          <li>Generated columns: <code>generatedAs</code> and <code>generatedColumn</code> (STORED or VIRTUAL).</li>
+          <li>Instances of classes as values (their getters).</li>
+          <li>Plain objects in <code>set</code>/<code>add</code> of associations are created; <code>createTasks(records)</code> creates several.</li>
+          <li><code>Model.update(values, { include })</code>: the rows whose includes are there.</li>
+          <li><code>showIndexes()</code>, as Sequelize 7: the name, order and collation of every field, and <code>method</code> and <code>includes</code> in PostgreSQL. <code>showIndex()</code> stays as in Sequelize 6.</li>
+        </ul>
+
+        <h2 id="differences">Differences</h2>
+        <ul>
+          <li>
+            <code>BIGINT</code> values are numbers when they are safe integers (bigints otherwise), not strings; the option
+            <code>bigint</code> of the Sequelize instance gives them as bigints (<code>'bigint'</code>) or strings
+            (<code>'string'</code>, as Sequelize 6 in PostgreSQL), <code>BIGINT</code> keys and the foreign keys to them too.
+          </li>
+          <li><code>NULL</code>s sort first in ascending order and last in descending order, in every database.</li>
+          <li>
+            <code>hasMany</code>, <code>hasOne</code> and <code>belongsToMany</code> includes are loaded with queries of their
+            own: <code>count</code> with them counts the parents (as <code>distinct: true</code> does), and literals cannot
+            name their columns.
+          </li>
+          <li>
+            A model without a primary key (<code>removeAttribute('id')</code>) has a table without one. Its saved instances
+            cannot be updated, destroyed or reloaded by themselves (Sequelize writes every row of the table then): use
+            <code>Model.update()</code> and <code>Model.destroy()</code>.
+          </li>
+          <li>Polymorphic keys are columns, not relations: conditions across them (<code>$comments.title$</code>) are not supported.</li>
+          <li>Right joins (<code>right: true</code>) are not made: <code>right</code> is ignored, as Sequelize does in dialects without them.</li>
+          <li>Geometry coordinates that are not numbers are a <code>ValidationError</code> (PostGIS would store them as 0).</li>
+          <li>Dialects: PostgreSQL and SQLite. MySQL, MariaDB, SQL Server, Oracle and Db2 are not supported.</li>
+        </ul>
+
+        <h2 id="checklist">Moving an app</h2>
+        <ol>
+          <li>Replace <code>require('sequelize')</code> (or <code>import ... from 'sequelize'</code>) with <code>@xufa/sequelize</code>.</li>
+          <li>Remove <code>pg</code>, <code>pg-hstore</code> and <code>sqlite3</code>: they are not used.</li>
+          <li>If your code reads <code>BIGINT</code> values as strings, read them as numbers (or bigints).</li>
+          <li>If it counts with <code>hasMany</code> includes and <code>distinct: false</code>, check the counts.</li>
+          <li>Run your tests. Code that reaches into Sequelize's internals (its query generator, connection manager or type parsers) needs another way.</li>
+        </ol>
+      </article>
+    </div>
+
+    <footer class="footer">
+      <div class="container">
+        <span>xufa is MIT licensed. &copy; Jes&uacute;s Seijas</span>
+        <span>
+          <a href="../guide.html">Guide</a> &middot; <a href="../playground.html">Playground</a> &middot; <a href="../http/index.html">HTTP</a> &middot; <a href="../orm/index.html">ORM</a> &middot; <a href="../auth/index.html">Auth</a> &middot;
+          <a href="index.html">Sequelize</a> &middot; <a href="../packages.html">Packages</a> &middot;
+          <a href="../benchmarks.html">Benchmarks</a> &middot; <a href="https://github.com/xufajs/xufa">GitHub</a>
+        </span>
+      </div>
+    </footer>
+  </body>
+</html>

@@ -1,7 +1,46 @@
-/*! xufa: @xufa/schema, @xufa/expression, @xufa/template, @xufa/yaml, @xufa/marshal, @xufa/router | MIT license */
+/*! xufa: @xufa/schema, @xufa/expression, @xufa/template, @xufa/yaml, @xufa/marshal, @xufa/router, @xufa/serializer | MIT license */
 // Made by tools/docs/lib/browser-bundle.js (pnpm docs): do not edit.
 (function (root) {
   'use strict';
+  // Buffer, for the modules that write bytes (the writer of @xufa/serializer): what they use of it, over Uint8Array
+  // and TextEncoder, when the browser has none. In this scope only: nothing is added to the page.
+  var Buffer = root.Buffer || (function () {
+    var encoder = new TextEncoder();
+    var decoder = new TextDecoder();
+    class BrowserBuffer extends Uint8Array {
+      static allocUnsafe(size) { return new BrowserBuffer(size); }
+      static allocUnsafeSlow(size) { return new BrowserBuffer(size); }
+      static alloc(size) { return new BrowserBuffer(size); }
+      static isBuffer(value) { return value instanceof BrowserBuffer; }
+      static byteLength(text) { return typeof text === 'string' ? encoder.encode(text).length : text.byteLength; }
+      static concat(list) {
+        var out = new BrowserBuffer(list.reduce(function (sum, part) { return sum + part.length; }, 0));
+        list.reduce(function (offset, part) { out.set(part, offset); return offset + part.length; }, 0);
+        return out;
+      }
+      static from(value) {
+        var bytes = typeof value === 'string' ? encoder.encode(value) : new Uint8Array(value);
+        var out = new BrowserBuffer(bytes.length);
+        out.set(bytes);
+        return out;
+      }
+      utf8Write(text, offset, length) {
+        return encoder.encodeInto(text, this.subarray(offset, offset + length)).written;
+      }
+      utf8Slice(start, end) {
+        return decoder.decode(this.subarray(start, end));
+      }
+      copy(target, targetStart, sourceStart, sourceEnd) {
+        var part = this.subarray(sourceStart || 0, sourceEnd === undefined ? this.length : sourceEnd);
+        target.set(part, targetStart || 0);
+        return part.length;
+      }
+      toString(encoding, start, end) {
+        return decoder.decode(this.subarray(start || 0, end === undefined ? this.length : end));
+      }
+    }
+    return BrowserBuffer;
+  })();
   var modules = {
 "@xufa/expression/index.js": function (module, exports, require) {
 // @xufa/expression: expressions of JavaScript (a safe part of it) compiled once and run many times, on data of their
@@ -4237,13 +4276,185 @@ module.exports = {"name":"@xufa/router","version":"0.1.0"};
 //   const Book = s.object({ title: s.string({ minLength: 1 }), pages: s.optional(s.integer({ minimum: 1 })) });
 //   const validate = compileJsonSchema(Book);
 //   validate({ pages: 0 }); // ['title is mandatory', 'pages must be at least 1']
-module.exports = require('./src');
+const { ClosedSchema } = require('./lib/closed-schema');
+const { compileErrors, compileFirstError, compileIsValid, compileType } = require('./lib/compile');
+const {
+  fromJsonSchema,
+  compileJsonSchema,
+  compileJsonSchemaAsync,
+  loadJsonSchemas,
+  builtInFormats,
+} = require('./lib/json-schema');
+const { Schema } = require('./lib/schema');
+const { standaloneCode, standaloneModule, standaloneJsonSchema } = require('./lib/standalone');
+const { ajvKeywords } = require('./lib/ajv-keywords');
+const { inferJsonSchema, inferSchemaCode } = require('./lib/infer');
+// The builder: JSON Schemas written as code (s.object(), s.string()...), with their types.
+const { s, isOptional, OPTIONAL } = require('./lib/builder');
+const {
+  AllOfType,
+  AllOf,
+  allOf,
+  oallOf,
+  AnyType,
+  Any,
+  any,
+  oany,
+  AnyOfType,
+  AnyOf,
+  anyOf,
+  oanyOf,
+  ArrayOfType,
+  ArrayOf,
+  arrOf,
+  oarrOf,
+  BooleanType,
+  Boolean,
+  bool,
+  obool,
+  ConditionalType,
+  Conditional,
+  EnumType,
+  Enum,
+  enumt,
+  oenumt,
+  oenum,
+  FloatType,
+  Float,
+  float,
+  ofloat,
+  num,
+  onum,
+  IntegerType,
+  Integer,
+  int,
+  oint,
+  NeverType,
+  Never,
+  never,
+  NotType,
+  Not,
+  not,
+  onot,
+  ObjType,
+  Obj,
+  obj,
+  oobj,
+  OneOfType,
+  OneOf,
+  oneOf,
+  ooneOf,
+  RefType,
+  Ref,
+  StringType,
+  String,
+  str,
+  ostr,
+  ValidateType,
+  hasErrors,
+  toErrors,
+  ValuesType,
+  Values,
+  Const,
+  WhenType,
+  When,
+  isJsonType,
+  KeywordType,
+} = require('./lib/types');
+
+module.exports = {
+  s,
+  isOptional,
+  OPTIONAL,
+  ClosedSchema,
+  compileErrors,
+  compileFirstError,
+  compileIsValid,
+  compileType,
+  fromJsonSchema,
+  compileJsonSchema,
+  compileJsonSchemaAsync,
+  loadJsonSchemas,
+  Schema,
+  AllOfType,
+  AllOf,
+  allOf,
+  oallOf,
+  AnyType,
+  Any,
+  any,
+  oany,
+  AnyOfType,
+  AnyOf,
+  anyOf,
+  oanyOf,
+  ArrayOfType,
+  ArrayOf,
+  arrOf,
+  oarrOf,
+  BooleanType,
+  Boolean,
+  bool,
+  obool,
+  ConditionalType,
+  Conditional,
+  EnumType,
+  Enum,
+  enumt,
+  oenumt,
+  oenum,
+  FloatType,
+  Float,
+  float,
+  ofloat,
+  num,
+  onum,
+  IntegerType,
+  Integer,
+  int,
+  oint,
+  NeverType,
+  Never,
+  never,
+  NotType,
+  Not,
+  not,
+  onot,
+  ObjType,
+  Obj,
+  obj,
+  oobj,
+  OneOfType,
+  OneOf,
+  oneOf,
+  ooneOf,
+  RefType,
+  Ref,
+  StringType,
+  String,
+  str,
+  ostr,
+  ValidateType,
+  hasErrors,
+  toErrors,
+  ValuesType,
+  Values,
+  Const,
+  WhenType,
+  When,
+  isJsonType,
+  standaloneCode,
+  standaloneModule,
+  standaloneJsonSchema,
+  KeywordType,
+  ajvKeywords,
+  builtInFormats,
+  inferJsonSchema,
+  inferSchemaCode,
+};
 
 },
-"@xufa/schema/package.json": function (module, exports, require) {
-module.exports = {"name":"@xufa/schema","version":"0.1.0"};
-},
-"@xufa/schema/src/ajv-keywords.js": function (module, exports, require) {
+"@xufa/schema/lib/ajv-keywords.js": function (module, exports, require) {
 // The keywords of ajv-keywords (https://github.com/ajv-validator/ajv-keywords), as definitions for the option "keywords"
 // of compileJsonSchema(): ajvKeywords() gives all of them, ajvKeywords(['range', 'typeof']) the ones named. The ones
 // that are other keywords written shorter are macros, and compile to the same code as those keywords.
@@ -4539,7 +4750,7 @@ module.exports = {
 };
 
 },
-"@xufa/schema/src/builder.js": function (module, exports, require) {
+"@xufa/schema/lib/builder.js": function (module, exports, require) {
 'use strict';
 
 // @xufa/schema: JSON Schemas written as code, with their types in TypeScript. What it makes are plain JSON Schemas
@@ -4739,7 +4950,7 @@ const isOptional = (schema) => isSchema(schema) && schema[OPTIONAL] === true;
 module.exports = { s, isOptional, OPTIONAL };
 
 },
-"@xufa/schema/src/closed-schema.js": function (module, exports, require) {
+"@xufa/schema/lib/closed-schema.js": function (module, exports, require) {
 const { Schema } = require('./schema');
 
 class ClosedSchema extends Schema {
@@ -4753,7 +4964,7 @@ module.exports = {
 };
 
 },
-"@xufa/schema/src/coerce.js": function (module, exports, require) {
+"@xufa/schema/lib/coerce.js": function (module, exports, require) {
 // The option coerceTypes: a value that is not of the JSON type its schema's "type" asks for is converted to one of those
 // types when it can be, with ajv's rules, before it is checked. The converted value replaces the original one in the
 // object or array it is in; a value that is in neither (the value validated) is converted for the validation only.
@@ -4822,6 +5033,8 @@ function coerce(value, spec) {
 
 // The conversion a type asks for: its own (coerceSpec, set when converting a schema with "type"), or the one of the
 // target of a reference, or of the first part of an allOf that has one.
+let TYPES;
+
 function coerceSpecOf(type, seen = []) {
   if (!type) {
     return undefined;
@@ -4829,8 +5042,10 @@ function coerceSpecOf(type, seen = []) {
   if (type.coerceSpec) {
     return type.coerceSpec;
   }
-  // eslint-disable-next-line global-require -- required when used: the types require this module
-  const { RefType, AllOfType } = require('./types');
+  // Required when first used (the types require this module), then kept: this runs for every key of every object.
+  // eslint-disable-next-line global-require
+  if (TYPES === undefined) TYPES = require('./types');
+  const { RefType, AllOfType } = TYPES;
   if (type.constructor === RefType && !seen.includes(type)) {
     return coerceSpecOf(type.getTarget(), [...seen, type]);
   }
@@ -4894,7 +5109,7 @@ module.exports = {
 };
 
 },
-"@xufa/schema/src/compile.js": function (module, exports, require) {
+"@xufa/schema/lib/compile.js": function (module, exports, require) {
 const { deepEqual } = require('./deep-equal');
 const { Schema } = require('./schema');
 const { ClosedSchema } = require('./closed-schema');
@@ -5095,14 +5310,63 @@ function valuePath(path) {
   return path === 'p' ? '(p === undefined ? "Value" : p)' : path;
 }
 
+// The option foldMessages: the parts of messages known when compiling written as one literal ("lines[0].sku must be
+// a string"), instead of joined when the message is made (J("lines[0]", "sku") + " must be a string"). Faster to
+// build errors, a little slower to compile: off by default.
+//
+// A simple string literal of code (no escapes, no quotes inside): its text; undefined for any other code. It reads
+// characters (this runs for every key and message when folding).
+function literalValue(code) {
+  const last = code.length - 1;
+  if (last < 1 || code.charCodeAt(0) !== 34 || code.charCodeAt(last) !== 34) {
+    return undefined;
+  }
+  const inner = code.slice(1, last);
+  return inner.indexOf('"') === -1 && inner.indexOf('\\') === -1 ? inner : undefined;
+}
+
+// Code of a message: the name (code) followed by a text; with `fold`, one literal when the name is known. The code of
+// each text is kept (the same few texts end most messages).
+const TEXT_CODES = new Map();
+function messageCode(name, suffix, fold) {
+  let text = TEXT_CODES.get(suffix);
+  if (text === undefined) {
+    text = JSON.stringify(suffix);
+    if (TEXT_CODES.size < 10000) TEXT_CODES.set(suffix, text);
+  }
+  if (fold) {
+    const known = literalValue(name);
+    if (known !== undefined) {
+      return `"${known}${text.slice(1)}`;
+    }
+  }
+  return `${name} + ${text}`;
+}
+
 // Name of a Schema in its messages, as Schema uses fieldName || 'Value'.
-function schemaName(path) {
+function schemaName(path, fold) {
+  if (fold) {
+    const known = literalValue(path);
+    if (known !== undefined) {
+      return known ? path : '"Value"';
+    }
+  }
   return path === 'undefined' ? '"Value"' : `(${path} || "Value")`;
 }
 
 // Name of a Schema key, as Schema uses fieldName ? `${fieldName}.${key}` : key. `key` is a JS expression.
-function keyPath(path, key) {
-  return path === 'undefined' ? key : `J(${path}, ${key})`;
+function keyPath(path, key, fold) {
+  if (path === 'undefined') {
+    return key;
+  }
+  if (fold) {
+    const field = literalValue(path);
+    const name = literalValue(key);
+    if (field !== undefined && name !== undefined) {
+      return field ? `"${field}.${name}"` : key;
+    }
+  }
+  return `J(${path}, ${key})`;
 }
 
 // Same text as ValuesType.validate().
@@ -5203,16 +5467,42 @@ function pushErrorObjects(out, type, value, path) {
 
 // A message for Generator.emit(): `text` gives the code of its text; `path` is the code of the path of the value it is
 // about, `keyword` the name of the check and `params` the code of an object with its details.
+// The message of every check when only checking: emit() gives the failure without reading it.
+const NO_MESSAGE = Object.freeze({ text: () => '', path: 'undefined', keyword: '', params: '{}' });
+
 function messageAt(path, text, keyword, params = '{}') {
-  return Object.assign(text, { path, keyword, params });
+  // A plain object of one shape (a function given properties would be slow to make and to read).
+  return { text, path, keyword, params };
 }
+
+// The helpers of the generated code (see Generator.source()), made once for the functions compiled in this process:
+// H and OP read own properties, J joins a field name and a key, P adds an error to the list (made with the first one),
+// and U gives the list without repeated errors (the list itself when none repeats, the usual case).
+/* eslint-disable no-new-func -- the same code as the prologue of standalone code, so both behave alike */
+const HELPER_SOURCE = (structured) => `"use strict";
+return [
+  Object.prototype.hasOwnProperty,
+  Object.prototype,
+  function J(fieldName, key) { return fieldName ? fieldName + "." + key : key; },
+  function P(out, e) { if (out === undefined) { return [e]; } out.push(e); return out; },
+  ${
+    structured
+      ? 'function U(e) { const m = e.map((x) => x.message); for (let i = 1; i < m.length; i += 1) { if (m.indexOf(m[i]) < i) { return e.filter((x, j) => m.indexOf(m[j]) === j); } } return e; }'
+      : 'function U(e) { for (let i = 1; i < e.length; i += 1) { if (e.indexOf(e[i]) < i) { return Array.from(new Set(e)); } } return e; }'
+  },
+];`;
+const HELPERS = new Function(HELPER_SOURCE(false))();
+const STRUCTURED_HELPERS = new Function(HELPER_SOURCE(true))();
+/* eslint-enable no-new-func */
 
 class Generator {
   // `structured`: errors as objects (see error-objects.js), with the paths of the values as arrays of keys and
   // indexes instead of their names.
-  constructor(mode, structured = false) {
+  // `fold`: the option foldMessages (see messageCode()).
+  constructor(mode, structured = false, fold = false) {
     this.mode = mode;
     this.structured = structured;
+    this.fold = fold;
     this.constants = [];
     this.nodes = [];
     this.functions = [];
@@ -5236,6 +5526,8 @@ class Generator {
     this.plainOneOfs = new Map();
     // Values ("scope:variable") whose `plain` flag an enclosing allOf declares (see allOf()).
     this.plainDeclared = new Set();
+    // Those of them read by the code written (an allOf declares the flag only then).
+    this.plainUsed = new Set();
     // In 'all' mode, whether the same error can be reported twice (several parts of an allOf, alternatives, or
     // patterns checking a key): the result then keeps each error once.
     this.mayRepeat = false;
@@ -5281,7 +5573,7 @@ class Generator {
     if (this.mode === 'check') {
       return this.fail;
     }
-    let text = message();
+    let text = message.text();
     let { path } = message;
     // A path known when compiling: the error object is written out, pointer included, like errorObject() builds it.
     const known = this.structured ? staticPath(path) : undefined;
@@ -5313,7 +5605,7 @@ class Generator {
   // Code of the name of the value at `path`, as messages start with it; a Schema is "Value" at the root.
   nameOf(path, isSchema) {
     if (!this.structured) {
-      return isSchema ? schemaName(path) : valuePath(path);
+      return isSchema ? schemaName(path, this.fold) : valuePath(path);
     }
     // A path known when compiling has its name written out.
     const known = staticPath(path);
@@ -5327,7 +5619,7 @@ class Generator {
   // Code of the path of the key `key` (code) of the object at `path`.
   keyOf(path, key) {
     if (!this.structured) {
-      return keyPath(path, key);
+      return keyPath(path, key, this.fold);
     }
     const known = staticPath(path);
     if (known && literalOf(key) !== undefined) {
@@ -5351,7 +5643,7 @@ class Generator {
   // Code of the path of a key checked by propertyNames, as a value: its name is "Key <name>".
   propertyNameOf(path, key) {
     if (!this.structured) {
-      return `("Key " + ${keyPath(path, key)})`;
+      return `("Key " + ${keyPath(path, key, this.fold)})`;
     }
     return path === '[]' ? `[{ key: ${key} }]` : `${path}.concat([{ key: ${key} }])`;
   }
@@ -5451,7 +5743,7 @@ class Generator {
   // Like RefType: undefined is checked here, any other value by the target.
   ref(type, v, path) {
     const onUndefined = type.isMandatory
-      ? this.emit(messageAt(path, () => `${this.nameOf(path, false)} + " is mandatory"`, 'required'))
+      ? this.emit(messageAt(path, () => messageCode(this.nameOf(path, false), ' is mandatory', this.fold), 'required'))
       : '';
     const target = type.getTarget();
     const fn = this.refFunction(target);
@@ -5500,7 +5792,9 @@ class Generator {
     if (known) {
       return checks;
     }
-    const text = (suffix, keyword) => messageAt(path, () => `${name} + ${JSON.stringify(suffix)}`, keyword);
+    // Only checking (true or false), no message is made.
+    const text = (suffix, keyword) =>
+      this.mode === 'check' ? NO_MESSAGE : messageAt(path, () => messageCode(name, suffix, this.fold), keyword);
     const onUndefined = type.isMandatory ? this.emit(text(' is mandatory', 'required')) : '';
     const onNull = type.isNullable ? '' : this.emit(text(' cannot be null', 'nullable'));
     if (!onUndefined && !onNull) {
@@ -5529,7 +5823,7 @@ class Generator {
     // A message about this value: its text is its name and `suffix`; `keyword` names the check and `params` is the code
     // of an object with its details (see messageAt()).
     const text = (suffix, keyword, params) =>
-      messageAt(path, () => `${name} + ${JSON.stringify(suffix)}`, keyword, params);
+      this.mode === 'check' ? NO_MESSAGE : messageAt(path, () => messageCode(name, suffix, this.fold), keyword, params);
     switch (type.constructor) {
       case Schema:
       case ClosedSchema:
@@ -5773,10 +6067,13 @@ class Generator {
     const plain = `${this.scope}:${v}`;
     const declares = !this.plainDeclared.has(plain);
     this.plainDeclared.add(plain);
+    if (declares) this.plainUsed.delete(plain);
     const parts = type.types.map((item) => this.generate(item, v, path, known)).join('');
     if (declares) {
       this.plainDeclared.delete(plain);
-      if (new RegExp(`\\b${v}plain\\b`).test(parts)) {
+      // Declared when a part reads it (recorded where it is written: see schema() and discriminated()).
+      if (this.plainUsed.has(plain)) {
+        this.plainUsed.delete(plain);
         code += `const ${v}plain = ${v}.__proto__ === OP;\n`;
       }
     }
@@ -5931,7 +6228,7 @@ class Generator {
       this.emit(
         messageAt(
           tagPath,
-          () => `${this.nameOf(tagPath, false)} + ${JSON.stringify(suffix)}`,
+          () => messageCode(this.nameOf(tagPath, false), suffix, this.fold),
           'discriminator',
           `{ error: "${kind}", tag: ${JSON.stringify(tag)}, tagValue: ${t} }`
         )
@@ -5945,6 +6242,7 @@ class Generator {
     const declares = !this.plainDeclared.has(plain);
     this.plainDeclared.add(plain);
     const isPlainOwn = tag in Object.prototype ? '' : `${v}plain || `;
+    if (isPlainOwn) this.plainUsed.add(plain);
     let code = declares ? `const ${v}plain = ${v}.__proto__ === OP;\n` : '';
     code += `let ${t} = ${v}[${literal}];\n`;
     code += `if (${t} !== undefined && !(${isPlainOwn}H.call(${v}, ${literal}))) { ${t} = undefined; }\n`;
@@ -6427,8 +6725,10 @@ class Generator {
   // Same order as Schema.errors(): declared keys, then extra keys, then property counts.
   schema(type, v, path, name, text, known) {
     let keysCode = '';
-    // A key read to check it gets its default as it is read; the others get it first (see defaultsCode()).
-    const defaultOf = new Map((type.defaults || []).map((entry) => [entry.key, entry]));
+    // A key read to check it gets its default as it is read; the others get it first (see defaultsCode()). Most objects
+    // have no defaults (only with the option useDefaults), and then none of this is made.
+    const hasDefaults = type.defaults !== undefined && type.defaults.length > 0;
+    const defaultOf = hasDefaults ? new Map(type.defaults.map((entry) => [entry.key, entry])) : undefined;
     type.keys.forEach((key) => {
       const x = this.name('v');
       const literal = JSON.stringify(key);
@@ -6440,7 +6740,8 @@ class Generator {
         // prototypes. The prototype is read with __proto__, as there: Object.getPrototypeOf() halves the speed.
         keysCode += `let ${x} = ${v}[${literal}];\n`;
         const isOwn = `(!${v}plain || ${literal} in OP) && !H.call(${v}, ${literal})`;
-        const entry = defaultOf.get(key);
+        this.plainUsed.add(`${this.scope}:${v}`);
+        const entry = hasDefaults ? defaultOf.get(key) : undefined;
         if (entry) {
           defaultOf.delete(key);
           const copy = `${x} = ${v}[${literal}] = ${this.copyCode(entry.value)};`;
@@ -6451,7 +6752,7 @@ class Generator {
         // With coerceTypes, the value is converted to the types of its schema and written back.
         keysCode += this.coerceCode(coerceSpecOf(type.schema[key]), x, `${v}[${literal}]`);
         keysCode += code;
-      } else if (defaultOf.has(key)) {
+      } else if (hasDefaults && defaultOf.has(key)) {
         // Not read, but its default is assigned in the order of the keys, as ajv does.
         keysCode += this.defaultsCode(v, [defaultOf.get(key)]);
         defaultOf.delete(key);
@@ -6461,7 +6762,9 @@ class Generator {
     const isDeclared = this.plainDeclared.has(`${this.scope}:${v}`);
     let rest = keysCode && !isDeclared ? `const ${v}plain = ${v}.__proto__ === OP;\n${keysCode}` : keysCode;
     // The defaults of the keys not read are assigned first, like Schema.isValid() does with all of them.
-    rest = this.defaultsCode(v, [...defaultOf.values()]) + rest;
+    if (hasDefaults) {
+      rest = this.defaultsCode(v, [...defaultOf.values()]) + rest;
+    }
     const checkExtra = !type.isOpen || type.additionalType || type.removeAdditional;
     const countKeys = type.minProperties !== undefined || type.maxProperties !== undefined;
     const { patternTypes } = type;
@@ -6574,8 +6877,10 @@ class Generator {
   }
 
   // Source of the body of a function that takes the constants (c), the nodes (n) and the helpers r and a, and returns
-  // the validation function. standalone.js writes it out with the constants as code.
-  source(type) {
+  // the validation function. standalone.js writes it out with the constants as code. With `shared`, the helpers of
+  // the prologue (H, OP, J, P, U) are not written: build() gives them as parameters, made once (V8 then has less code
+  // to parse for every schema compiled).
+  source(type, shared = false) {
     const main = this.generate(type, 'v0', this.rootPath());
     // Every error once, like toErrors(): parts of an allOf, or alternatives, can report the same one.
     const results = {
@@ -6589,6 +6894,9 @@ class Generator {
     const [declared, end] = results[this.mode];
     // The variable of the paths of error objects (see emit()).
     const start = this.structured && this.mode !== 'check' ? `${declared}let q;\n` : declared;
+    if (shared) {
+      return `"use strict";\n${this.functions.join('')}return function validate(v0) {\n${start}${main}return ${end};\n};`;
+    }
     const prologue = [
       '"use strict";',
       'const H = Object.prototype.hasOwnProperty;',
@@ -6607,10 +6915,17 @@ class Generator {
   }
 
   build(type) {
-    const source = this.source(type);
+    const source = this.source(type, true);
     const [first, push] = this.structured ? [firstErrorObject, pushErrorObjects] : [firstError, pushErrors];
+    const helpers = this.structured ? STRUCTURED_HELPERS : HELPERS;
     // eslint-disable-next-line no-new-func -- code generation is the point: only keys, texts (JSON.stringify) and finite numbers are embedded
-    return new Function('c', 'n', 'r', 'a', source)(this.constants, this.nodes, first, push);
+    return new Function('c', 'n', 'r', 'a', 'H', 'OP', 'J', 'P', 'U', source)(
+      this.constants,
+      this.nodes,
+      first,
+      push,
+      ...helpers
+    );
   }
 }
 
@@ -6636,25 +6951,30 @@ function compileErrors(type) {
 // The mode of the generated code for the options of compileType(): 'check', 'first' or 'all'.
 // The mode of the generated code for the options of compileType() ('check', 'first' or 'all'), and whether errors are
 // objects. errors: true (default) gives messages, 'objects' error objects (see error-objects.js), false true or false.
+// foldMessages: messages known when compiling written as one literal (see messageCode()).
 function modeOf(options = {}) {
-  const { allErrors = true, errors = true } = options;
+  const { allErrors = true, errors = true, foldMessages = false } = options;
+  if (foldMessages !== true && foldMessages !== false) {
+    throw new Error(`Unsupported option "foldMessages": ${JSON.stringify(foldMessages)} is not true or false`);
+  }
   if (errors !== true && errors !== false && errors !== 'objects') {
     throw new Error(`Unsupported option "errors": ${JSON.stringify(errors)} is not true, false or 'objects'`);
   }
   if (errors === false) {
-    return { mode: 'check', structured: false };
+    return { mode: 'check', structured: false, fold: false };
   }
   return {
     mode: allErrors ? 'all' : 'first',
     structured: errors === 'objects',
+    fold: foldMessages,
   };
 }
 
 // The generated code of compileType(type, options), for standalone.js: the source (see Generator.source()), with
 // the constants and the nodes it uses, and its mode.
 function generateSource(type, options = {}) {
-  const { mode, structured } = modeOf(options);
-  const generator = new Generator(mode, structured);
+  const { mode, structured, fold } = modeOf(options);
+  const generator = new Generator(mode, structured, fold);
   const source = generator.source(type);
   return {
     mode,
@@ -6665,9 +6985,9 @@ function generateSource(type, options = {}) {
 }
 
 function compileType(type, options = {}) {
-  const { mode, structured } = modeOf(options);
+  const { mode, structured, fold } = modeOf(options);
   // In 'all' mode one pass: checking validity first would walk invalid values twice.
-  const validate = new Generator(mode, structured).build(type);
+  const validate = new Generator(mode, structured, fold).build(type);
   if (mode !== 'first') {
     return validate;
   }
@@ -6687,7 +7007,7 @@ module.exports = {
 };
 
 },
-"@xufa/schema/src/deep-equal.js": function (module, exports, require) {
+"@xufa/schema/lib/deep-equal.js": function (module, exports, require) {
 function deepEqual(a, b) {
   if (a === b) return true;
   if (Number.isNaN(a) && Number.isNaN(b)) return true;
@@ -6749,7 +7069,7 @@ function deepEqual(a, b) {
 module.exports = { deepEqual };
 
 },
-"@xufa/schema/src/defaults.js": function (module, exports, require) {
+"@xufa/schema/lib/defaults.js": function (module, exports, require) {
 // The option useDefaults: values of "default" assigned to missing properties and tuple elements before they are
 // checked, as ajv does. Each validation assigns a new copy, so the data never shares objects with the schema.
 
@@ -6792,7 +7112,7 @@ module.exports = {
 };
 
 },
-"@xufa/schema/src/error-objects.js": function (module, exports, require) {
+"@xufa/schema/lib/error-objects.js": function (module, exports, require) {
 // Error objects of compile({ errors: 'objects' }). The generated code keeps the path of each value as an array of keys
 // and indexes; these functions name it as the messages do and build the objects. Standalone code writes them out by
 // their source (see standalone-helpers.js), so they call no other function.
@@ -6840,7 +7160,7 @@ module.exports = {
 };
 
 },
-"@xufa/schema/src/formats.js": function (module, exports, require) {
+"@xufa/schema/lib/formats.js": function (module, exports, require) {
 // Checks of the "format" keyword (JSON Schema) and of the `format` option of String, all of them for strings. Each
 // check is a self-contained function, or one calling others of this file by name, as standalone code writes them
 // out by their source (see standalone-helpers.js).
@@ -7442,186 +7762,7 @@ module.exports = {
 };
 
 },
-"@xufa/schema/src/index.js": function (module, exports, require) {
-const { ClosedSchema } = require('./closed-schema');
-const { compileErrors, compileFirstError, compileIsValid, compileType } = require('./compile');
-const {
-  fromJsonSchema,
-  compileJsonSchema,
-  compileJsonSchemaAsync,
-  loadJsonSchemas,
-  builtInFormats,
-} = require('./json-schema');
-const { Schema } = require('./schema');
-const { standaloneCode, standaloneModule, standaloneJsonSchema } = require('./standalone');
-const { ajvKeywords } = require('./ajv-keywords');
-const { inferJsonSchema, inferSchemaCode } = require('./infer');
-// The builder: JSON Schemas written as code (s.object(), s.string()...), with their types.
-const { s, isOptional, OPTIONAL } = require('./builder');
-const {
-  AllOfType,
-  AllOf,
-  allOf,
-  oallOf,
-  AnyType,
-  Any,
-  any,
-  oany,
-  AnyOfType,
-  AnyOf,
-  anyOf,
-  oanyOf,
-  ArrayOfType,
-  ArrayOf,
-  arrOf,
-  oarrOf,
-  BooleanType,
-  Boolean,
-  bool,
-  obool,
-  ConditionalType,
-  Conditional,
-  EnumType,
-  Enum,
-  enumt,
-  oenumt,
-  oenum,
-  FloatType,
-  Float,
-  float,
-  ofloat,
-  num,
-  onum,
-  IntegerType,
-  Integer,
-  int,
-  oint,
-  NeverType,
-  Never,
-  never,
-  NotType,
-  Not,
-  not,
-  onot,
-  ObjType,
-  Obj,
-  obj,
-  oobj,
-  OneOfType,
-  OneOf,
-  oneOf,
-  ooneOf,
-  RefType,
-  Ref,
-  StringType,
-  String,
-  str,
-  ostr,
-  ValidateType,
-  hasErrors,
-  toErrors,
-  ValuesType,
-  Values,
-  Const,
-  WhenType,
-  When,
-  isJsonType,
-  KeywordType,
-} = require('./types');
-
-module.exports = {
-  s,
-  isOptional,
-  OPTIONAL,
-  ClosedSchema,
-  compileErrors,
-  compileFirstError,
-  compileIsValid,
-  compileType,
-  fromJsonSchema,
-  compileJsonSchema,
-  compileJsonSchemaAsync,
-  loadJsonSchemas,
-  Schema,
-  AllOfType,
-  AllOf,
-  allOf,
-  oallOf,
-  AnyType,
-  Any,
-  any,
-  oany,
-  AnyOfType,
-  AnyOf,
-  anyOf,
-  oanyOf,
-  ArrayOfType,
-  ArrayOf,
-  arrOf,
-  oarrOf,
-  BooleanType,
-  Boolean,
-  bool,
-  obool,
-  ConditionalType,
-  Conditional,
-  EnumType,
-  Enum,
-  enumt,
-  oenumt,
-  oenum,
-  FloatType,
-  Float,
-  float,
-  ofloat,
-  num,
-  onum,
-  IntegerType,
-  Integer,
-  int,
-  oint,
-  NeverType,
-  Never,
-  never,
-  NotType,
-  Not,
-  not,
-  onot,
-  ObjType,
-  Obj,
-  obj,
-  oobj,
-  OneOfType,
-  OneOf,
-  oneOf,
-  ooneOf,
-  RefType,
-  Ref,
-  StringType,
-  String,
-  str,
-  ostr,
-  ValidateType,
-  hasErrors,
-  toErrors,
-  ValuesType,
-  Values,
-  Const,
-  WhenType,
-  When,
-  isJsonType,
-  standaloneCode,
-  standaloneModule,
-  standaloneJsonSchema,
-  KeywordType,
-  ajvKeywords,
-  builtInFormats,
-  inferJsonSchema,
-  inferSchemaCode,
-};
-
-},
-"@xufa/schema/src/infer.js": function (module, exports, require) {
+"@xufa/schema/lib/infer.js": function (module, exports, require) {
 // Schemas inferred from sample values: inferJsonSchema() gives a JSON Schema and inferSchemaCode() the source of the
 // same schema in the DSL. The samples are merged position by position: the types seen at each one (an integer and a
 // number give "number", null makes it nullable), the keys of objects (required when every object at that position has
@@ -7850,7 +7991,7 @@ function inferSchemaCode(samples, options = {}) {
 module.exports = { inferJsonSchema, inferSchemaCode };
 
 },
-"@xufa/schema/src/json-schema-refs.js": function (module, exports, require) {
+"@xufa/schema/lib/json-schema-refs.js": function (module, exports, require) {
 // Resolution of JSON Schema references: JSON pointers ("#/definitions/a"), "$id" base URI changes, and anchors ("#foo":
 // "$id" fragments, and from draft 2019-09 on "$anchor" and "$dynamicAnchor"), within the schema and within other
 // documents registered by URI. Nothing is loaded from the network: a reference to a document that is not registered
@@ -7884,6 +8025,21 @@ const SCHEMA_MAP_KEYWORDS = [
   'properties',
 ];
 const SCHEMA_LIST_KEYWORDS = ['allOf', 'anyOf', 'items', 'oneOf', 'prefixItems'];
+// For each keyword with schemas inside, its place in the order visit() goes through them (the keywords of one schema,
+// then those of maps of schemas, then those of lists), so a node is visited by reading its own keys once.
+const CHILD_ORDER = Object.create(null);
+SCHEMA_KEYWORDS.forEach((keyword, i) => {
+  CHILD_ORDER[keyword] = i;
+});
+SCHEMA_MAP_KEYWORDS.forEach((keyword, i) => {
+  CHILD_ORDER[keyword] = SCHEMA_KEYWORDS.length + i;
+});
+const LIST_ORDER = Object.create(null);
+SCHEMA_LIST_KEYWORDS.forEach((keyword, i) => {
+  LIST_ORDER[keyword] = SCHEMA_KEYWORDS.length + SCHEMA_MAP_KEYWORDS.length + i;
+});
+const MAP_START = SCHEMA_KEYWORDS.length;
+const LIST_START = SCHEMA_KEYWORDS.length + SCHEMA_MAP_KEYWORDS.length;
 
 // Drafts where every keyword next to "$ref" is ignored, "$id" included.
 const LEGACY_DRAFTS = ['draft-04', 'draft-06', 'draft-07'];
@@ -8124,6 +8280,12 @@ class RefIndex {
     return this.views.get(node);
   }
 
+  // Whether the vocabularies of the resource of a node leave out keywords (then viewOf() gives a copy without them).
+  ignoresKeywords(node) {
+    const dialect = this.nodeDialects.get(node);
+    return dialect !== undefined && dialect.ignored !== undefined;
+  }
+
   // The first document registered for a URI keeps it.
   addResource(uri, node) {
     if (!this.resources.has(uri)) {
@@ -8169,7 +8331,10 @@ class RefIndex {
     if (!isObject(node) || this.bases.has(node)) {
       return;
     }
-    const dialect = node === this.root ? this.rootDialect : this.dialectOf(node.$schema) || parentDialect;
+    // A node may name a dialect with "$schema" (rarely: most take the one around them).
+    let dialect = parentDialect;
+    if (node === this.root) dialect = this.rootDialect;
+    else if (node.$schema !== undefined) dialect = this.dialectOf(node.$schema) || parentDialect;
     const { draft } = dialect;
     let base = parentBase;
     // Up to draft-07 every keyword next to "$ref" is ignored, "$id" included.
@@ -8203,27 +8368,44 @@ class RefIndex {
     }
     this.bases.set(node, base);
     this.nodeDialects.set(node, this.dialects.get(base));
-    // Plain loops: every node of every schema goes through here when compiling.
-    for (let i = 0; i < SCHEMA_KEYWORDS.length; i += 1) {
-      const child = node[SCHEMA_KEYWORDS[i]];
-      if (child !== undefined) {
-        this.visit(child, base, dialect);
+    // Every node of every schema goes through here when compiling: its own keys are read once, and those with schemas
+    // inside are visited in the order of CHILD_ORDER (schemas, maps of them, lists of them).
+    const keys = Object.keys(node);
+    let children;
+    for (let i = 0; i < keys.length; i += 1) {
+      const key = keys[i];
+      const value = node[key];
+      // "items" is a schema, or a list of them (draft-07 tuples).
+      const order = Array.isArray(value) ? LIST_ORDER[key] : CHILD_ORDER[key];
+      if (order !== undefined) {
+        if (children === undefined) children = [];
+        children.push(order, key);
       }
     }
-    for (let i = 0; i < SCHEMA_MAP_KEYWORDS.length; i += 1) {
-      const map = node[SCHEMA_MAP_KEYWORDS[i]];
-      if (isObject(map)) {
-        const keys = Object.keys(map);
-        for (let j = 0; j < keys.length; j += 1) {
-          this.visit(map[keys[j]], base, dialect);
+    if (children === undefined) {
+      return;
+    }
+    if (children.length > 2) {
+      const pairs = [];
+      for (let i = 0; i < children.length; i += 2) pairs.push([children[i], children[i + 1]]);
+      pairs.sort((a, b) => a[0] - b[0]);
+      children = pairs.flat();
+    }
+    for (let i = 0; i < children.length; i += 2) {
+      const order = children[i];
+      const value = node[children[i + 1]];
+      if (order < MAP_START) {
+        this.visit(value, base, dialect);
+      } else if (order < LIST_START) {
+        if (isObject(value)) {
+          const mapKeys = Object.keys(value);
+          for (let j = 0; j < mapKeys.length; j += 1) {
+            this.visit(value[mapKeys[j]], base, dialect);
+          }
         }
-      }
-    }
-    for (let i = 0; i < SCHEMA_LIST_KEYWORDS.length; i += 1) {
-      const list = node[SCHEMA_LIST_KEYWORDS[i]];
-      if (Array.isArray(list)) {
-        for (let j = 0; j < list.length; j += 1) {
-          this.visit(list[j], base, dialect);
+      } else {
+        for (let j = 0; j < value.length; j += 1) {
+          this.visit(value[j], base, dialect);
         }
       }
     }
@@ -8276,10 +8458,11 @@ module.exports = {
 };
 
 },
-"@xufa/schema/src/json-schema.js": function (module, exports, require) {
+"@xufa/schema/lib/json-schema.js": function (module, exports, require) {
 const { Schema } = require('./schema');
 const { compileType } = require('./compile');
 const { RefIndex, isLegacy, documentsOf } = require('./json-schema-refs');
+const { mergePatch, applyPatch } = require('./merge-patch');
 const { UnevaluatedType } = require('./unevaluated');
 const { KeywordType, KEYWORD_TYPE_TESTS } = require('./types/keyword');
 const { CoerceType, COERCIBLE, coerceSpecOf } = require('./coerce');
@@ -8871,11 +9054,24 @@ function customPartOf(node, json, keyword) {
 
 // null is valid only if every constraint of the node accepts it. `seen` stops at reference cycles, which give no
 // value that accepts null.
-function acceptsNull(json, seen = new Set(), outerScope = context.scope) {
+function acceptsNull(json, seen = undefined, outerScope = context.scope) {
   if (json === true) {
     return true;
   }
   if (json === false || json === null || typeof json !== 'object') {
+    return false;
+  }
+  // The usual node: one type other than null, without "nullable" or a reference, read as it is (its vocabularies
+  // leave out no keyword). Its type does not accept null, so neither does the node.
+  if (
+    typeof json.type === 'string' &&
+    json.type !== 'null' &&
+    json.nullable !== true &&
+    json.$ref === undefined &&
+    json.$dynamicRef === undefined &&
+    json.$recursiveRef === undefined &&
+    !context.index.ignoresKeywords(json)
+  ) {
     return false;
   }
   // The node is checked in the scope of its resource, like convert() converts it, and as its vocabularies see it.
@@ -8883,7 +9079,11 @@ function acceptsNull(json, seen = new Set(), outerScope = context.scope) {
   const view = viewOf(json);
   const refKeywords = refKeywordsOf(json);
   if (refKeywords.length > 0) {
-    if (seen.has(json)) {
+    // `seen` is made when the first reference is followed.
+    if (seen === undefined) {
+      // eslint-disable-next-line no-param-reassign
+      seen = new Set();
+    } else if (seen.has(json)) {
       return false;
     }
     // `seen` holds the references being followed, so a target reached again through another path is not a cycle.
@@ -9234,6 +9434,9 @@ function convertUntyped(json, path) {
 // Adds "unevaluatedProperties" and "unevaluatedItems" to the types of the other keywords of a node, which decide
 // what they leave to check.
 function addUnevaluated(parts, json, path) {
+  if (json.unevaluatedProperties === undefined && json.unevaluatedItems === undefined) {
+    return;
+  }
   const siblings = [...parts];
   if (json.unevaluatedProperties !== undefined) {
     const type = convert(json.unevaluatedProperties, `${path}.unevaluatedProperties`);
@@ -9454,6 +9657,47 @@ convert = (json, path, isMandatory = true) => {
   }
 };
 
+// The schema of a node with $merge or $patch: its source (a schema, or a $ref resolved from the node, as every $ref)
+// with the merge patch or the JSON patch applied; made once for a node, without the $id of its source (it is another
+// schema), and indexed where the node is, so the references in it resolve as in the source.
+const merged = new WeakMap();
+function mergedNode(node, path) {
+  if (merged.has(node)) return merged.get(node);
+  const keyword = node.$merge !== undefined ? '$merge' : '$patch';
+  const spec = node[keyword];
+  if (!spec || typeof spec !== 'object' || spec.source === undefined || spec.with === undefined) {
+    throw new Error(`Unsupported JSON Schema at ${path}: ${keyword} is { source, with }`);
+  }
+  const { index } = context;
+  let source = spec.source;
+  if (source && typeof source === 'object' && typeof source.$ref === 'string') {
+    source = index.resolve(node, source.$ref);
+    if (source === undefined) {
+      throw new Error(
+        `Unsupported JSON Schema at ${path}: the source of ${keyword} (${spec.source.$ref}) is not there`
+      );
+    }
+  }
+  // A source made by $merge or $patch itself.
+  if (source && typeof source === 'object' && (source.$merge !== undefined || source.$patch !== undefined)) {
+    source = mergedNode(source, path);
+  }
+  const what = `${keyword} at ${path}`;
+  let made;
+  try {
+    made = keyword === '$merge' ? mergePatch(source, spec.with) : applyPatch(source, spec.with, what);
+  } catch (err) {
+    throw new Error(`Unsupported JSON Schema at ${path}: ${err.message}`);
+  }
+  if (made && typeof made === 'object' && !Array.isArray(made)) {
+    delete made.$id;
+    delete made.id;
+    index.visit(made, index.bases.get(node) ?? index.bases.get(index.root));
+  }
+  merged.set(node, made);
+  return made;
+}
+
 convertNode = (node, path, isMandatory) => {
   if (node === true) {
     return new AnyType({ isMandatory, isNullable: true });
@@ -9463,6 +9707,10 @@ convertNode = (node, path, isMandatory) => {
   }
   if (node === null || typeof node !== 'object' || Array.isArray(node)) {
     throw new Error(`Unsupported JSON Schema at ${path}: expected an object or a boolean`);
+  }
+  // $merge and $patch (as ajv-merge-patch): the schema they make, in their place (see merge-patch.js).
+  if (node.$merge !== undefined || node.$patch !== undefined) {
+    return convertNode(mergedNode(node, path), path, isMandatory);
   }
   // The keywords its vocabularies leave out are ignored; references resolve from the node itself.
   const json = viewOf(node);
@@ -9530,8 +9778,8 @@ convertNode = (node, path, isMandatory) => {
   }
   // A checked "format" of a schema without "type" applies to strings, like the keywords of each type (unless one of
   // them gave a string type, which has it).
-  const hasStringKeyword = Object.keys(json).some((keyword) => TYPED_KEYWORDS[keyword] === 'string');
-  if (namesToConvert.length === 0 && !hasStringKeyword && formatOf(json, path).format !== undefined) {
+  const hasStringKeyword = () => Object.keys(json).some((keyword) => TYPED_KEYWORDS[keyword] === 'string');
+  if (namesToConvert.length === 0 && !hasStringKeyword() && formatOf(json, path).format !== undefined) {
     constraints.push(
       new WhenType({
         jsonType: 'string',
@@ -9591,13 +9839,17 @@ convertNode = (node, path, isMandatory) => {
   type.isNullable = acceptsNull(node);
   // With coerceTypes, the value is converted to its types where it is read (see coerce.js). "nullable": true adds
   // null to them, as in ajv: null is kept (not converted to '' or 0), and '', 0 and false may become null.
-  const coerceTypes =
-    json.nullable === true && typeNames.length > 0 && !typeNames.includes('null') ? [...typeNames, 'null'] : typeNames;
-  const coerceTo = coerceTypes.filter(
-    (typeName) => COERCIBLE.includes(typeName) || (typeName === 'array' && context.coerceTypes === 'array')
-  );
-  if (context.coerceTypes && coerceTo.length > 0) {
-    type.coerceSpec = { types: coerceTypes, to: coerceTo, array: context.coerceTypes === 'array' };
+  if (context.coerceTypes) {
+    const coerceTypes =
+      json.nullable === true && typeNames.length > 0 && !typeNames.includes('null')
+        ? [...typeNames, 'null']
+        : typeNames;
+    const coerceTo = coerceTypes.filter(
+      (typeName) => COERCIBLE.includes(typeName) || (typeName === 'array' && context.coerceTypes === 'array')
+    );
+    if (coerceTo.length > 0) {
+      type.coerceSpec = { types: coerceTypes, to: coerceTo, array: context.coerceTypes === 'array' };
+    }
   }
   return type;
 };
@@ -9746,7 +9998,101 @@ module.exports = {
 };
 
 },
-"@xufa/schema/src/schema.js": function (module, exports, require) {
+"@xufa/schema/lib/merge-patch.js": function (module, exports, require) {
+'use strict';
+
+// The keywords $merge and $patch of ajv-merge-patch: a schema made from another one (source) and a JSON Merge Patch
+// (RFC 7386, $merge) or a JSON Patch (RFC 6902, $patch), made before the schema is compiled.
+//
+//   { $merge: { source: { $ref: 'book.json#' }, with: { required: ['isbn'] } } }
+//   { $patch: { source: { $ref: '#/definitions/book' }, with: [{ op: 'add', path: '/properties/isbn', value: { type: 'string' } }] } }
+//
+// The source is a schema, or a $ref to one, resolved from the node as every $ref (a schema of the option `schemas`,
+// the document, a JSON Pointer in one of them): see mergedNode() in json-schema.js, which applies them.
+const isPlain = (value) => value !== null && typeof value === 'object' && !Array.isArray(value);
+const clone = (value) => (value === undefined ? undefined : JSON.parse(JSON.stringify(value)));
+
+function mergePatch(target, patch) {
+  if (!isPlain(patch)) return clone(patch);
+  const out = isPlain(target) ? { ...target } : {};
+  for (const [key, value] of Object.entries(patch)) {
+    if (value === null) delete out[key];
+    else out[key] = mergePatch(out[key], value);
+  }
+  return out;
+}
+
+// The parent and the key of a JSON Pointer in a document.
+function locate(document, pointer, what) {
+  if (pointer === '') return { parent: null, key: null };
+  if (!pointer.startsWith('/')) throw new Error(`${what}: ${pointer} is not a JSON Pointer`);
+  const keys = pointer
+    .slice(1)
+    .split('/')
+    .map((key) => key.replace(/~1/g, '/').replace(/~0/g, '~'));
+  let parent = document;
+  for (const key of keys.slice(0, -1)) {
+    parent = parent === null || typeof parent !== 'object' ? undefined : parent[key];
+    if (parent === undefined) throw new Error(`${what}: no ${pointer}`);
+  }
+  return { parent, key: keys[keys.length - 1] };
+}
+
+function getAt(document, pointer, what) {
+  if (pointer === '') return document;
+  const { parent, key } = locate(document, pointer, what);
+  if (parent === null || typeof parent !== 'object' || !(key in parent)) throw new Error(`${what}: no ${pointer}`);
+  return parent[key];
+}
+
+// JSON Patch: add, remove, replace, move, copy and test, on a copy of the document.
+function applyPatch(document, operations, what) {
+  if (!Array.isArray(operations)) throw new Error(`${what}: "with" is a list of operations (JSON Patch)`);
+  let doc = clone(document);
+  const put = (pointer, value, replace) => {
+    if (pointer === '') {
+      doc = value;
+      return;
+    }
+    const { parent, key } = locate(doc, pointer, what);
+    if (Array.isArray(parent)) {
+      const index = key === '-' ? parent.length : Number(key);
+      if (!Number.isInteger(index) || index < 0 || index > parent.length) throw new Error(`${what}: no ${pointer}`);
+      if (replace) parent[index] = value;
+      else parent.splice(index, 0, value);
+    } else if (parent !== null && typeof parent === 'object') {
+      if (replace && !(key in parent)) throw new Error(`${what}: no ${pointer} to replace`);
+      parent[key] = value;
+    } else throw new Error(`${what}: no ${pointer}`);
+  };
+  const take = (pointer) => {
+    const { parent, key } = locate(doc, pointer, what);
+    const value = getAt(doc, pointer, what);
+    if (Array.isArray(parent)) parent.splice(Number(key), 1);
+    else delete parent[key];
+    return value;
+  };
+  for (const operation of operations) {
+    const { op, path, from, value } = operation || {};
+    if (typeof path !== 'string') throw new Error(`${what}: an operation without a path`);
+    if (op === 'add') put(path, clone(value), false);
+    else if (op === 'remove') take(path);
+    else if (op === 'replace') put(path, clone(value), true);
+    else if (op === 'move') put(path, take(from), false);
+    else if (op === 'copy') put(path, clone(getAt(doc, from, what)), false);
+    else if (op === 'test') {
+      if (JSON.stringify(getAt(doc, path, what)) !== JSON.stringify(value)) {
+        throw new Error(`${what}: the test of ${path} failed`);
+      }
+    } else throw new Error(`${what}: ${op} is not an operation of JSON Patch`);
+  }
+  return doc;
+}
+
+module.exports = { mergePatch, applyPatch };
+
+},
+"@xufa/schema/lib/schema.js": function (module, exports, require) {
 const { ObjType, ValidateType, toType } = require('./types');
 const { assignDefaults } = require('./defaults');
 const { readCoerced } = require('./coerce');
@@ -9799,14 +10145,21 @@ class Schema {
   }
 
   visitObjs() {
-    // Nested schemas share the options, except the ones about the keys of this object.
-    const options = {
-      ...this.options,
-      patternTypes: undefined,
-      dependencies: undefined,
-      propertyNameType: undefined,
-      defaults: undefined,
-      removeAdditional: undefined,
+    // Nested schemas share the options, except the ones about the keys of this object. Made only for a key that needs
+    // them (a plain object, from the DSL): keys of types, as JSON Schema gives, need none.
+    let options;
+    const nestedOptions = () => {
+      if (options === undefined) {
+        options = {
+          ...this.options,
+          patternTypes: undefined,
+          dependencies: undefined,
+          propertyNameType: undefined,
+          defaults: undefined,
+          removeAdditional: undefined,
+        };
+      }
+      return options;
     };
     const keys = Object.keys(this.schema);
     for (let i = 0; i < keys.length; i += 1) {
@@ -9814,12 +10167,15 @@ class Schema {
       const value = this.schema[key];
       if (!(value instanceof Schema)) {
         if (!(value instanceof ValidateType)) {
-          this.schema[key] = new Schema(value, options);
+          this.schema[key] = new Schema(value, nestedOptions());
         } else if (
           value instanceof ObjType &&
           !(value.schema instanceof ValidateType && !(value.schema instanceof Schema))
         ) {
-          this.schema[key] = new Schema(value.shape instanceof Schema ? value.shape.schema : value.shape, options);
+          this.schema[key] = new Schema(
+            value.shape instanceof Schema ? value.shape.schema : value.shape,
+            nestedOptions()
+          );
         }
       }
     }
@@ -10042,7 +10398,7 @@ module.exports = {
 };
 
 },
-"@xufa/schema/src/standalone-helpers.js": function (module, exports, require) {
+"@xufa/schema/lib/standalone-helpers.js": function (module, exports, require) {
 // Generated by scripts/generate-standalone-helpers.js (npm run build:helpers): do not edit.
 // Source of the library functions that standalone code calls, written into it (see standalone.js). They are kept as
 // text rather than read with toString(), which tools that rewrite code (coverage, minifiers) change.
@@ -10605,7 +10961,10 @@ const HELPER_SOURCES = {
       '  // A name of letter-digit-hyphen labels needs no mapping and has no right-to-left label: without "--" in the third and',
       '  // fourth positions of a label (RFC 5891), which only a punycode label ("xn--") may have and the full check reads, it',
       '  // only has to be at most 253 characters long.',
-      '  if (/^[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?(?:\\.[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?)*$/.test(value) && !/(?:^|\\.)[A-Za-z0-9-]{2}--/.test(value)) {',
+      '  if (',
+      '    /^[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?(?:\\.[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?)*$/.test(value) &&',
+      '    !/(?:^|\\.)[A-Za-z0-9-]{2}--/.test(value)',
+      '  ) {',
       '    return value.length <= 253;',
       '  }',
       '  const mapped = isIdn',
@@ -10725,7 +11084,7 @@ const HELPER_SOURCES = {
 module.exports = { HELPER_SOURCES };
 
 },
-"@xufa/schema/src/standalone.js": function (module, exports, require) {
+"@xufa/schema/lib/standalone.js": function (module, exports, require) {
 // Standalone code: compiled validators written out as JavaScript source, to save to a file when building and load like
 // any module. Loading it generates no code (no new Function), so it runs under a strict Content Security Policy and
 // where code generation is disabled, and it needs nothing else: the helpers it calls are written into it.
@@ -10909,7 +11268,7 @@ module.exports = {
 };
 
 },
-"@xufa/schema/src/types/all-of.js": function (module, exports, require) {
+"@xufa/schema/lib/types/all-of.js": function (module, exports, require) {
 const { ValidateType, toTypes } = require('./validate-type');
 
 // Value must satisfy every type; reports the errors of the first type that fails.
@@ -10976,7 +11335,7 @@ module.exports = {
 };
 
 },
-"@xufa/schema/src/types/any-of.js": function (module, exports, require) {
+"@xufa/schema/lib/types/any-of.js": function (module, exports, require) {
 const { ValidateType, toTypes } = require('./validate-type');
 
 class AnyOfType extends ValidateType {
@@ -11043,7 +11402,7 @@ module.exports = {
 };
 
 },
-"@xufa/schema/src/types/any.js": function (module, exports, require) {
+"@xufa/schema/lib/types/any.js": function (module, exports, require) {
 const { ValidateType } = require('./validate-type');
 
 class AnyType extends ValidateType {
@@ -11078,7 +11437,7 @@ module.exports = {
 };
 
 },
-"@xufa/schema/src/types/array-of.js": function (module, exports, require) {
+"@xufa/schema/lib/types/array-of.js": function (module, exports, require) {
 const { hasDuplicates } = require('./has-duplicates');
 const { assignDefaults } = require('../defaults');
 const { readCoerced } = require('../coerce');
@@ -11285,7 +11644,7 @@ module.exports = {
 };
 
 },
-"@xufa/schema/src/types/boolean.js": function (module, exports, require) {
+"@xufa/schema/lib/types/boolean.js": function (module, exports, require) {
 const { ValidateType } = require('./validate-type');
 
 class BooleanType extends ValidateType {
@@ -11331,7 +11690,7 @@ module.exports = {
 };
 
 },
-"@xufa/schema/src/types/code-point-length.js": function (module, exports, require) {
+"@xufa/schema/lib/types/code-point-length.js": function (module, exports, require) {
 // Length in Unicode code points, as JSON Schema counts it: a surrogate pair is one character. Same as [...value].length
 // without building an array.
 function codePointLength(value) {
@@ -11366,7 +11725,7 @@ module.exports = {
 };
 
 },
-"@xufa/schema/src/types/conditional.js": function (module, exports, require) {
+"@xufa/schema/lib/types/conditional.js": function (module, exports, require) {
 const { ValidateType, toType } = require('./validate-type');
 
 // When the value satisfies `ifType` it must satisfy `thenType`, otherwise `elseType`; a missing branch accepts
@@ -11418,7 +11777,7 @@ module.exports = {
 };
 
 },
-"@xufa/schema/src/types/enum.js": function (module, exports, require) {
+"@xufa/schema/lib/types/enum.js": function (module, exports, require) {
 const { StringType } = require('./string');
 
 class EnumType extends StringType {
@@ -11472,7 +11831,7 @@ module.exports = {
 };
 
 },
-"@xufa/schema/src/types/float.js": function (module, exports, require) {
+"@xufa/schema/lib/types/float.js": function (module, exports, require) {
 const { ValidateType } = require('./validate-type');
 
 class FloatType extends ValidateType {
@@ -11570,7 +11929,7 @@ module.exports = {
 };
 
 },
-"@xufa/schema/src/types/has-duplicates.js": function (module, exports, require) {
+"@xufa/schema/lib/types/has-duplicates.js": function (module, exports, require) {
 const { deepEqual } = require('../deep-equal');
 
 // An element is a duplicate when an earlier index (holes read as undefined) is deep-equal to it.
@@ -11594,7 +11953,7 @@ module.exports = {
 };
 
 },
-"@xufa/schema/src/types/index.js": function (module, exports, require) {
+"@xufa/schema/lib/types/index.js": function (module, exports, require) {
 const allOf = require('./all-of');
 const any = require('./any');
 const anyOf = require('./any-of');
@@ -11638,7 +11997,7 @@ module.exports = {
 };
 
 },
-"@xufa/schema/src/types/integer.js": function (module, exports, require) {
+"@xufa/schema/lib/types/integer.js": function (module, exports, require) {
 const { FloatType } = require('./float');
 
 class IntegerType extends FloatType {
@@ -11686,7 +12045,7 @@ module.exports = {
 };
 
 },
-"@xufa/schema/src/types/keyword.js": function (module, exports, require) {
+"@xufa/schema/lib/types/keyword.js": function (module, exports, require) {
 const { ValidateType } = require('./validate-type');
 
 // Tests of the JSON types a keyword of your own can be limited to. null never reaches them: whether a node accepts null
@@ -11752,7 +12111,7 @@ module.exports = {
 };
 
 },
-"@xufa/schema/src/types/never.js": function (module, exports, require) {
+"@xufa/schema/lib/types/never.js": function (module, exports, require) {
 const { ValidateType } = require('./validate-type');
 
 // No value is valid, like the JSON Schema false: only undefined (when not mandatory) and null (when nullable) pass.
@@ -11791,7 +12150,7 @@ module.exports = {
 };
 
 },
-"@xufa/schema/src/types/not.js": function (module, exports, require) {
+"@xufa/schema/lib/types/not.js": function (module, exports, require) {
 const { ValidateType, toType } = require('./validate-type');
 
 // Value must not satisfy `type`.
@@ -11843,7 +12202,7 @@ module.exports = {
 };
 
 },
-"@xufa/schema/src/types/obj.js": function (module, exports, require) {
+"@xufa/schema/lib/types/obj.js": function (module, exports, require) {
 const { ValidateType, toType } = require('./validate-type');
 
 class ObjType extends ValidateType {
@@ -11920,7 +12279,7 @@ module.exports = {
 };
 
 },
-"@xufa/schema/src/types/one-of.js": function (module, exports, require) {
+"@xufa/schema/lib/types/one-of.js": function (module, exports, require) {
 const { ValidateType, toTypes } = require('./validate-type');
 
 const isObject = (value) => typeof value === 'object' && value !== null && !Array.isArray(value);
@@ -12051,7 +12410,7 @@ module.exports = {
 };
 
 },
-"@xufa/schema/src/types/ref.js": function (module, exports, require) {
+"@xufa/schema/lib/types/ref.js": function (module, exports, require) {
 const { ValidateType, toType } = require('./validate-type');
 
 // Validates with the type it refers to, which is set once references are resolved; recursive schemas refer back to a
@@ -12103,7 +12462,7 @@ module.exports = {
 };
 
 },
-"@xufa/schema/src/types/string.js": function (module, exports, require) {
+"@xufa/schema/lib/types/string.js": function (module, exports, require) {
 const { hasFewerCodePoints, hasMoreCodePoints } = require('./code-point-length');
 const { ValidateType } = require('./validate-type');
 const { FORMATS, matchesFormat } = require('../formats');
@@ -12234,7 +12593,7 @@ module.exports = {
 };
 
 },
-"@xufa/schema/src/types/validate-type.js": function (module, exports, require) {
+"@xufa/schema/lib/types/validate-type.js": function (module, exports, require) {
 // A validate() result is undefined (valid), a string (one error) or a possibly empty array of errors.
 function hasErrors(result) {
   if (!Array.isArray(result)) {
@@ -12376,7 +12735,7 @@ module.exports = {
 };
 
 },
-"@xufa/schema/src/types/values.js": function (module, exports, require) {
+"@xufa/schema/lib/types/values.js": function (module, exports, require) {
 const { deepEqual } = require('../deep-equal');
 const { ValidateType } = require('./validate-type');
 
@@ -12425,7 +12784,7 @@ module.exports = {
 };
 
 },
-"@xufa/schema/src/types/when.js": function (module, exports, require) {
+"@xufa/schema/lib/types/when.js": function (module, exports, require) {
 const { ValidateType, toType } = require('./validate-type');
 
 const JSON_TYPES = ['object', 'array', 'string', 'number'];
@@ -12491,7 +12850,7 @@ module.exports = {
 };
 
 },
-"@xufa/schema/src/unevaluated.js": function (module, exports, require) {
+"@xufa/schema/lib/unevaluated.js": function (module, exports, require) {
 // "unevaluatedProperties" and "unevaluatedItems" (JSON Schema 2019-09 and 2020-12): the keys or elements of a value
 // that no other keyword of the schema evaluated must satisfy a schema. Which ones were evaluated depends on the value:
 // a keyword such as "properties" evaluates the keys it names, and an applicator ("anyOf", "oneOf", "if", "$ref",
@@ -12794,6 +13153,1877 @@ module.exports = {
   staticEvaluatedByAll,
 };
 
+},
+"@xufa/schema/package.json": function (module, exports, require) {
+module.exports = {"name":"@xufa/schema","version":"0.1.0"};
+},
+"@xufa/serializer/index.js": function (module, exports, require) {
+// @xufa/serializer: compiles a JSON schema into a function writing JSON for it, as fast-json-stringify does.
+//
+//   const serialize = build({ type: 'object', properties: { id: { type: 'integer' } } });
+//   serialize({ id: 1, secret: 'x' }); // '{"id":1}'
+//
+// Only the properties of the schema are written, each with the writer of its type. Objects and arrays are written
+// inline in the generated function; schemas reached by $ref get functions of their own (which is how recursive
+// schemas are written). The branch of anyOf, oneOf and if/then/else is chosen by predicates compiled from the schemas.
+const { RefResolver, resolveURI } = require('./lib/resolver');
+const { mergeSchemas } = require('./lib/merge');
+const { createMatcher } = require('./lib/match');
+const { createRuntime } = require('./lib/runtime');
+const { validateSchema } = require('./lib/meta');
+const writer = require('./lib/writer');
+
+const { bytesOf } = writer;
+const ROUNDING = new Set(['floor', 'ceil', 'round', 'trunc']);
+const LARGE_ARRAY_MECHANISMS = new Set(['default', 'json-stringify']);
+// How the generated code makes the JSON (see Builder#lit()); 'auto' picks by the schema.
+const OUTPUTS = new Set(['auto', 'string', 'bytes']);
+
+const OBJECT_KEYWORDS = [
+  'properties',
+  'required',
+  'additionalProperties',
+  'patternProperties',
+  'maxProperties',
+  'minProperties',
+  'dependencies',
+];
+const ARRAY_KEYWORDS = ['items', 'additionalItems', 'maxItems', 'minItems', 'uniqueItems', 'contains', 'prefixItems'];
+const STRING_KEYWORDS = ['maxLength', 'minLength', 'pattern'];
+const NUMBER_KEYWORDS = ['multipleOf', 'maximum', 'exclusiveMaximum', 'minimum', 'exclusiveMinimum'];
+
+let rootCounter = 0;
+
+// The type a schema without "type" is written as, from its keywords.
+function inferType(schema) {
+  for (const keyword of OBJECT_KEYWORDS) if (keyword in schema) return 'object';
+  for (const keyword of ARRAY_KEYWORDS) if (keyword in schema) return 'array';
+  for (const keyword of STRING_KEYWORDS) if (keyword in schema) return 'string';
+  for (const keyword of NUMBER_KEYWORDS) if (keyword in schema) return 'number';
+  return schema.type;
+}
+
+const quote = (value) => JSON.stringify(value);
+// A string literal of JavaScript code holding the given text.
+const literal = (text) => JSON.stringify(text);
+
+function parseLargeArraySize(value) {
+  if (typeof value === 'string') {
+    const parsed = Number.parseInt(value, 10);
+    if (Number.isFinite(parsed)) return parsed;
+  } else if (typeof value === 'number' && Number.isInteger(value)) {
+    return value;
+  } else if (typeof value === 'bigint') {
+    return Number(value);
+  }
+  throw new Error(`Unsupported large array size. Expected integer-like, got ${typeof value} with value ${value}`);
+}
+
+class Builder {
+  constructor(schema, options) {
+    this.options = options;
+    this.resolver = new RefResolver();
+    this.matcher = createMatcher(this.resolver, { coerceTypes: Boolean(options.ajv && options.ajv.coerceTypes) });
+    this.rootId =
+      schema && typeof schema === 'object' && typeof schema.$id === 'string' && schema.$id[0] !== '#'
+        ? schema.$id
+        : `__xufa_root_${rootCounter++}`;
+    this.uid = 0;
+    this.functions = [];
+    this.functionNames = new Map();
+    this.validators = [];
+    this.patterns = [];
+    this.mergedCache = new Map();
+    // Copies made by absolute() -> the schema they copy, so that a copy is built (and merged) as its original.
+    this.origins = new WeakMap();
+    // Schemas being written inline: met again inside themselves, they get a function.
+    this.stack = new Set();
+    this.largeArrayMechanism = options.largeArrayMechanism || 'default';
+    this.largeArraySize = options.largeArraySize === undefined ? 2e4 : parseLargeArraySize(options.largeArraySize);
+    // The output of the generated code (see lit()), and the literals it writes as bytes.
+    this.bytes = options.output === 'bytes';
+    this.literals = [];
+  }
+
+  name(prefix) {
+    const id = this.uid;
+    this.uid += 1;
+    return `${prefix}${id}`;
+  }
+
+  // The code is written for one of two outputs. 'string': the JSON is joined with + in a variable `json` (fastest for
+  // small values). 'bytes': it is written as UTF-8 to the buffer of lib/writer.js and read once at the end (fastest
+  // for large ones: no tree of strings for V8 to flatten). The helpers below write a statement for either.
+
+  // The name of the constant holding the bytes of a literal, for the 'bytes' output.
+  bytesOf(text) {
+    let index = this.literals.indexOf(text);
+    if (index === -1) {
+      index = this.literals.length;
+      this.literals.push(text);
+    }
+    return `B${index}`;
+  }
+
+  // Writes text known when compiling.
+  lit(text) {
+    if (!this.bytes) return `json += ${literal(text)};\n`;
+    if (text.length === 1 && text.charCodeAt(0) < 128) return `wc(${text.charCodeAt(0)});\n`;
+    return `wb(${this.bytesOf(text)});\n`;
+  }
+
+  // Writes one of two texts known when compiling; `whenFalse` may hold code run when the condition is false.
+  litChoice(condition, whenTrue, whenFalse, sideEffect = '') {
+    const pick = (text) => (this.bytes ? this.bytesOf(text) : literal(text));
+    const falseValue = sideEffect ? `(${sideEffect}, ${pick(whenFalse)})` : pick(whenFalse);
+    const value = `${condition} ? ${pick(whenTrue)} : ${falseValue}`;
+    return this.bytes ? `wb(${value});\n` : `json += ${value};\n`;
+  }
+
+  // Writes the JSON text an expression gives (a string, or undefined written as "undefined").
+  raw(expression) {
+    return this.bytes ? `wr('' + ${expression});\n` : `json += ${expression};\n`;
+  }
+
+  // Writes a value with a function of the generated code (for references): it returns its JSON or writes it.
+  callFunction(name, input) {
+    return this.bytes ? `${name}(${input});\n` : `json += ${name}(${input});\n`;
+  }
+
+  // How a location is named in error messages: its JSON pointer, after the id of its schema when not the root one.
+  refOf(loc) {
+    return loc.base === this.rootId ? loc.pointer : `${loc.base}${loc.pointer}`;
+  }
+
+  child(loc, key) {
+    const schema = loc.schema[key];
+    let { base } = loc;
+    if (schema && typeof schema === 'object' && typeof schema.$id === 'string' && schema.$id[0] !== '#') {
+      base = resolveURI(base, schema.$id);
+    }
+    return { schema, base, pointer: `${loc.pointer}/${key}` };
+  }
+
+  resolve(loc) {
+    let current = loc;
+    const seen = new Set();
+    while (current.schema && typeof current.schema === 'object' && current.schema.$ref !== undefined) {
+      const { $ref } = current.schema;
+      const target = this.resolver.resolve($ref, current.base);
+      if (target === null) {
+        const missing = this.resolver.missingDocument($ref, current.base);
+        if (missing !== null) {
+          throw new Error(`Cannot resolve ref "${$ref}". Schema with id "${missing}" is not found.`);
+        }
+        throw new Error(`Cannot find reference "${$ref}"`);
+      }
+      if (seen.has(target.schema)) throw new Error(`Circular reference "${$ref}"`);
+      seen.add(target.schema);
+      current = target;
+    }
+    return current;
+  }
+
+  // A copy of a schema whose references are absolute, so that it can be merged with schemas of other documents.
+  origin(schema) {
+    return this.origins.get(schema) || schema;
+  }
+
+  absolute(schema, base) {
+    if (schema === null || typeof schema !== 'object') return schema;
+    if (Array.isArray(schema)) return schema.map((item) => this.absolute(item, base));
+    let current = base;
+    if (typeof schema.$id === 'string' && schema.$id[0] !== '#') current = resolveURI(base, schema.$id);
+    const out = {};
+    for (const key of Object.keys(schema)) {
+      const value = schema[key];
+      if (key === '$ref' && typeof value === 'string') {
+        const hash = value.indexOf('#');
+        const uri = hash === -1 ? value : value.slice(0, hash);
+        out.$ref = (uri === '' ? current : resolveURI(current, uri)) + (hash === -1 ? '' : value.slice(hash));
+      } else if (key === 'enum' || key === 'const' || key === 'default' || key === 'examples') {
+        out[key] = value;
+      } else {
+        out[key] = this.absolute(value, current);
+      }
+    }
+    this.origins.set(out, this.origin(schema));
+    return out;
+  }
+
+  // The merge of schemas (resolved and made absolute), cached by the schema objects merged.
+  merge(locs) {
+    let cache = this.mergedCache;
+    for (const loc of locs) {
+      const key = loc.key || this.origin(loc.schema);
+      if (!cache.has(key)) cache.set(key, new Map());
+      cache = cache.get(key);
+    }
+    if (cache.has('merged')) return cache.get('merged');
+    const parts = locs.map((loc) => {
+      const resolved = this.resolve(loc);
+      const copy = this.absolute(resolved.schema, resolved.base);
+      if (copy && typeof copy === 'object') delete copy.$id;
+      return copy;
+    });
+    const merged = mergeSchemas(parts);
+    if (merged && typeof merged === 'object') this.origins.set(merged, merged);
+    cache.set('merged', merged);
+    return merged;
+  }
+
+  validator(loc) {
+    this.validators.push(this.matcher(loc.schema, loc.base));
+    return `v[${this.validators.length - 1}]`;
+  }
+
+  // Whether the value of a schema can be written inline: no references, combinations, objects or arrays inside.
+  isSimple(schema) {
+    if (schema === null || typeof schema !== 'object') return true;
+    if (schema.$ref || schema.allOf || schema.anyOf || schema.oneOf || schema.if) return false;
+    const type = schema.type === undefined ? inferType(schema) : schema.type;
+    const types = Array.isArray(type) ? type : [type];
+    return !types.includes('object') && !types.includes('array');
+  }
+
+  buildValue(loc, input) {
+    const { schema } = loc;
+    if (schema === undefined || typeof schema === 'boolean') return this.raw(`JSON.stringify(${input})`);
+    if (schema.$ref !== undefined) return this.buildRef(loc, input);
+    const origin = this.origin(schema);
+    if (this.stack.has(origin)) return this.callFunction(this.functionFor(loc), input);
+    this.stack.add(origin);
+    try {
+      return this.buildBody(loc, input);
+    } finally {
+      this.stack.delete(origin);
+    }
+  }
+
+  buildBody(loc, input) {
+    const { schema } = loc;
+    if (schema.allOf) return this.buildAllOf(loc, input);
+    if (schema.anyOf || schema.oneOf) return this.buildOneOf(loc, input);
+    if (schema.if !== undefined && schema.then !== undefined) return this.buildIfThenElse(loc, input);
+    const type = schema.type === undefined ? inferType(schema) : schema.type;
+    const nullable = schema.nullable === true;
+    let code = nullable ? `if (${input} === null) ${this.lit('null')}else {\n` : '';
+    if (schema.const !== undefined) code += this.buildConst(schema, type, input);
+    else if (Array.isArray(type)) code += this.buildMultiType(loc, type, input);
+    else code += this.buildSingleType(loc, type, input);
+    if (nullable) code += '}\n';
+    return code;
+  }
+
+  buildRef(loc, input) {
+    const target = this.resolve(loc);
+    if (this.isSimple(target.schema)) return this.buildValue(target, input);
+    return this.callFunction(this.functionFor(target), input);
+  }
+
+  functionFor(loc) {
+    const origin = this.origin(loc.schema);
+    const existing = this.functionNames.get(origin);
+    if (existing) return existing;
+    const name = this.name('f');
+    this.functionNames.set(origin, name);
+    const wasBuilding = this.stack.has(origin);
+    this.stack.add(origin);
+    let body;
+    try {
+      body = this.buildBody(loc, 'input');
+    } finally {
+      if (!wasBuilding) this.stack.delete(origin);
+    }
+    this.functions.push(
+      this.bytes
+        ? `// ${this.refOf(loc)}\nfunction ${name}(input) {\n${body}}\n`
+        : `// ${this.refOf(loc)}\nfunction ${name}(input) {\nlet json = '';\n${body}return json;\n}\n`
+    );
+    return name;
+  }
+
+  buildAllOf(loc, input) {
+    const { allOf, ...rest } = loc.schema;
+    const locs = [{ schema: rest, base: loc.base, pointer: loc.pointer, key: this.origin(loc.schema) }];
+    allOf.forEach((schema, i) => locs.push(this.child(this.child(loc, 'allOf'), i)));
+    const merged = this.merge(locs);
+    return this.buildValue({ schema: merged, base: loc.base, pointer: loc.pointer }, input);
+  }
+
+  buildOneOf(loc, input) {
+    const keyword = loc.schema.anyOf ? 'anyOf' : 'oneOf';
+    const { [keyword]: branches, ...rest } = loc.schema;
+    const restLoc = { schema: rest, base: loc.base, pointer: loc.pointer, key: this.origin(loc.schema) };
+    const branchesLoc = this.child(loc, keyword);
+    let code = '';
+    branches.forEach((branch, i) => {
+      const branchLoc = this.child(branchesLoc, i);
+      const check = this.validator(this.resolve(branchLoc));
+      const merged = this.merge([restLoc, branchLoc]);
+      const body = this.buildValue({ schema: merged, base: loc.base, pointer: branchLoc.pointer }, input);
+      code += `${i === 0 ? 'if' : 'else if'} (${check}(${input})) {\n${body}}\n`;
+    });
+    code += `else throw new TypeError(${literal(`The value of '${this.refOf(loc)}' does not match schema definition.`)});\n`;
+    return code;
+  }
+
+  buildIfThenElse(loc, input) {
+    const { if: ifSchema, then: thenSchema, else: elseSchema, ...rest } = loc.schema;
+    const restLoc = { schema: rest, base: loc.base, pointer: loc.pointer, key: this.origin(loc.schema) };
+    const check = this.validator(this.resolve(this.child(loc, 'if')));
+    const thenMerged = this.merge([restLoc, this.child(loc, 'then')]);
+    const thenCode = this.buildValue({ schema: thenMerged, base: loc.base, pointer: loc.pointer }, input);
+    let elseCode;
+    if (elseSchema === undefined) {
+      elseCode = this.buildValue(restLoc, input);
+    } else {
+      const elseMerged = this.merge([restLoc, this.child(loc, 'else')]);
+      elseCode = this.buildValue({ schema: elseMerged, base: loc.base, pointer: loc.pointer }, input);
+    }
+    return `if (${check}(${input})) {\n${thenCode}} else {\n${elseCode}}\n`;
+  }
+
+  buildConst(schema, type, input) {
+    const value = this.lit(JSON.stringify(schema.const));
+    if (Array.isArray(type) && type.includes('null')) return `if (${input} === null) ${this.lit('null')}else ${value}`;
+    return value;
+  }
+
+  buildMultiType(loc, types, input) {
+    // fast-json-stringify's order of the types, null first
+    const sorted = [...types].sort((type) => (type === 'null' ? -1 : 1));
+    let code = '';
+    sorted.forEach((type, i) => {
+      const keyword = i === 0 ? 'if' : 'else if';
+      const body = this.buildSingleType({ ...loc, schema: { ...loc.schema, type } }, type, input);
+      let condition;
+      switch (type) {
+        case 'null':
+          condition = `${input} === null`;
+          break;
+        case 'string':
+          condition =
+            `typeof ${input} === 'string' || ${input} === null || ${input} instanceof Date || ` +
+            `${input} instanceof RegExp || (typeof ${input} === 'object' && ` +
+            `typeof ${input}.toString === 'function' && ${input}.toString !== Object.prototype.toString)`;
+          break;
+        case 'array':
+          condition = `Array.isArray(${input})`;
+          break;
+        case 'integer':
+          condition = `Number.isInteger(${input}) || ${input} === null`;
+          break;
+        default:
+          condition = `typeof ${input} === ${quote(type)} || ${input} === null`;
+      }
+      code += `${keyword} (${condition}) {\n${body}}\n`;
+    });
+    code += `else throw new TypeError(${literal(`The value of '${this.refOf(loc)}' does not match schema definition.`)});\n`;
+    return code;
+  }
+
+  buildSingleType(loc, type, input) {
+    const { schema } = loc;
+    switch (type) {
+      case 'null':
+        return this.lit('null');
+      case 'string':
+        switch (schema.format) {
+          case 'date-time':
+            return this.raw(`asDateTime(${input})`);
+          case 'date':
+            return this.raw(`asDate(${input})`);
+          case 'time':
+            return this.raw(`asTime(${input})`);
+          case 'unsafe':
+            return this.raw(`asUnsafeString(${input})`);
+          default:
+            return this.bytes
+              ? `if (typeof ${input} === 'string') ws(${input});\nelse wr(asStringValue(${input}));\n`
+              : `json += typeof ${input} === 'string' ? asString(${input}) : asStringValue(${input});\n`;
+        }
+      case 'integer':
+        return this.bytes ? `wi(${input});\n` : `json += asInteger(${input});\n`;
+      case 'number':
+        return this.bytes ? `wn(${input});\n` : `json += asNumber(${input});\n`;
+      case 'boolean':
+        return this.litChoice(input, 'true', 'false');
+      case 'object':
+        return this.buildObject(loc, input);
+      case 'array':
+        return this.buildArray(loc, input);
+      case undefined:
+        return this.raw(`JSON.stringify(${input})`);
+      default:
+        throw new Error(`${type} unsupported`);
+    }
+  }
+
+  buildObject(loc, input) {
+    const obj = this.name('o');
+    const empty = loc.schema.nullable === true ? 'null' : '{}';
+    return (
+      `const ${obj} = ${input} && typeof ${input}.toJSON === 'function' ? ${input}.toJSON() : ${input};\n` +
+      `if (${obj} === null) ${this.lit(empty)}else {\n${this.buildInnerObject(loc, obj)}}\n`
+    );
+  }
+
+  buildInnerObject(loc, obj) {
+    const { schema } = loc;
+    const properties = schema.properties || {};
+    const required = Array.isArray(schema.required) ? schema.required : [];
+    // Required properties first, as fast-json-stringify writes them.
+    const keys = Object.keys(properties).sort((a, b) => {
+      const ra = required.includes(a);
+      const rb = required.includes(b);
+      return ra === rb ? 0 : ra ? -1 : 1;
+    });
+    let code = '';
+    for (const key of required) {
+      if (!keys.includes(key)) {
+        code += `if (${obj}[${quote(key)}] === undefined) throw new Error(${literal(`"${key}" is required!`)});\n`;
+      }
+    }
+    const hasExtra = Boolean(schema.patternProperties || schema.additionalProperties);
+    const propertiesLoc = keys.length > 0 ? this.child(loc, 'properties') : null;
+
+    // When the first property is required it is always written (or the serializer throws): the commas after it are
+    // known. Otherwise a flag tells whether something was written, and picks the whole literal written before a key:
+    // ',"key":' or '{"key":' (one string, not a comma added to the key: each concatenation costs a string).
+    const firstRequired = keys.length > 0 && required.includes(keys[0]);
+    // One property and nothing else: the object is written whole, '{"key":' + value + '}', or '{}'.
+    if (keys.length === 1 && !hasExtra && !firstRequired) {
+      const [key] = keys;
+      const propertyLoc = this.child(propertiesLoc, key);
+      const resolved = propertyLoc.schema && propertyLoc.schema.$ref ? this.resolve(propertyLoc) : propertyLoc;
+      const defaultValue = resolved.schema && typeof resolved.schema === 'object' ? resolved.schema.default : undefined;
+      const value = this.name('v');
+      const open = `{${quote(key)}:`;
+      const valueCode = this.buildValue(propertyLoc, value);
+      const single = this.bytes ? null : /^json \+= ([^\n]+);\n$/.exec(valueCode);
+      const written = single
+        ? `json += ${literal(open)} + (${single[1]}) + '}';\n`
+        : `${this.lit(open)}${valueCode}${this.lit('}')}`;
+      const missing = this.lit(defaultValue === undefined ? '{}' : `{${quote(key)}:${JSON.stringify(defaultValue)}}`);
+      return `${code}const ${value} = ${obj}[${quote(key)}];\nif (${value} !== undefined) {\n${written}}\nelse ${missing}`;
+    }
+    const flag = this.name('c');
+    if (!firstRequired) code += `let ${flag} = false;\n`;
+
+    keys.forEach((key, i) => {
+      const propertyLoc = this.child(propertiesLoc, key);
+      const resolved = propertyLoc.schema && propertyLoc.schema.$ref ? this.resolve(propertyLoc) : propertyLoc;
+      const defaultValue = resolved.schema && typeof resolved.schema === 'object' ? resolved.schema.default : undefined;
+      const value = this.name('v');
+      const keyJson = `${quote(key)}:`;
+      // The literal before the value: its key, after a comma or the brace that opens the object.
+      const before = (suffix = '') =>
+        firstRequired
+          ? this.lit((i === 0 ? '{' : ',') + keyJson + suffix)
+          : this.litChoice(flag, `,${keyJson}${suffix}`, `{${keyJson}${suffix}`, `${flag} = true`);
+      const valueCode = this.buildValue(propertyLoc, value);
+      const written = this.bytes ? before() + valueCode : appendAfter(before(), valueCode);
+      code += `const ${value} = ${obj}[${quote(key)}];\nif (${value} !== undefined) {\n${written}}\n`;
+      if (defaultValue !== undefined) {
+        code += `else {\n${before(JSON.stringify(defaultValue))}}\n`;
+      } else if (required.includes(key)) {
+        code += `else throw new Error(${literal(`"${key}" is required!`)});\n`;
+      }
+    });
+
+    if (hasExtra) {
+      const comma = firstRequired ? this.lit(',') : this.litChoice(flag, ',', '{', `${flag} = true`);
+      code += this.buildExtraProperties(loc, obj, keys, comma);
+    }
+    code += firstRequired ? this.lit('}') : this.litChoice(flag, '}', '{}');
+    return code;
+  }
+
+  buildExtraProperties(loc, obj, keys, comma) {
+    const { schema } = loc;
+    let known = 'false';
+    if (keys.length > 0 && keys.length <= 8) {
+      known = keys.map((key) => `key === ${quote(key)}`).join(' || ');
+    } else if (keys.length > 8) {
+      this.patterns.push(new Set(keys));
+      known = `p[${this.patterns.length - 1}].has(key)`;
+    }
+    // The key of a property that is not in "properties", and its colon.
+    const writeKey = this.bytes ? 'ws(key);\nwc(58);\n' : "json += asString(key) + ':';\n";
+    let code =
+      `for (const key of Object.keys(${obj})) {\nif (${known}) continue;\nconst value = ${obj}[key];\n` +
+      "if (value === undefined || typeof value === 'function' || typeof value === 'symbol') continue;\n";
+    if (schema.patternProperties) {
+      const patternsLoc = this.child(loc, 'patternProperties');
+      for (const pattern of Object.keys(schema.patternProperties)) {
+        this.patterns.push(new RegExp(pattern));
+        const regex = `p[${this.patterns.length - 1}]`;
+        code +=
+          `if (${regex}.test(key)) {\n${comma}${writeKey}` +
+          `${this.buildValue(this.child(patternsLoc, pattern), 'value')}continue;\n}\n`;
+      }
+    }
+    const additional = schema.additionalProperties;
+    if (additional === true) {
+      code += `${comma}${writeKey}${this.raw('JSON.stringify(value)')}`;
+    } else if (additional !== undefined && additional !== false) {
+      code += `${comma}${writeKey}${this.buildValue(this.child(loc, 'additionalProperties'), 'value')}`;
+    }
+    return `${code}}\n`;
+  }
+
+  buildArray(loc, input) {
+    const { schema } = loc;
+    const arr = this.name('a');
+    const length = this.name('n');
+    const empty = schema.nullable === true ? 'null' : '[]';
+    const tuple = Array.isArray(schema.prefixItems)
+      ? schema.prefixItems
+      : Array.isArray(schema.items)
+        ? schema.items
+        : null;
+    const additional = Array.isArray(schema.prefixItems) ? schema.items : schema.additionalItems;
+    const mismatch = literal(`The value of '${this.refOf(loc)}' does not match schema definition.`);
+    let code =
+      `const ${arr} = ${input};\nif (${arr} === null) ${this.lit(empty)}` +
+      `else if (!Array.isArray(${arr})) throw new TypeError(${mismatch});\nelse {\nconst ${length} = ${arr}.length;\n`;
+    let close = '}\n';
+    if (tuple && !additional) {
+      code += `if (${length} > ${tuple.length}) throw new Error(${literal(`Item at ${tuple.length} does not match schema definition.`)});\n`;
+    }
+    if (this.largeArrayMechanism === 'json-stringify') {
+      code += `if (${length} >= ${this.largeArraySize}) ${this.raw(`JSON.stringify(${arr})`)}else {\n`;
+      close += '}\n';
+    }
+    code += this.lit('[');
+    if (tuple) {
+      const tupleLoc = this.child(loc, Array.isArray(schema.prefixItems) ? 'prefixItems' : 'items');
+      const flag = this.name('c');
+      code += `let ${flag} = false;\n`;
+      tuple.forEach((item, i) => {
+        let itemLoc = this.child(tupleLoc, i);
+        if (itemLoc.schema && itemLoc.schema.$ref) itemLoc = this.resolve(itemLoc);
+        const value = this.name('v');
+        const condition = typeCondition(itemLoc.schema && itemLoc.schema.type, value);
+        code +=
+          `if (${i} < ${length}) {\nconst ${value} = ${arr}[${i}];\nif (${condition}) {\n` +
+          `if (${flag}) ${this.lit(',')}else ${flag} = true;\n${this.buildValue(itemLoc, value)}}\n` +
+          `else throw new Error(${literal(`Item at ${i} does not match schema definition.`)});\n}\n`;
+      });
+      if (additional) {
+        const index = this.name('i');
+        code +=
+          `for (let ${index} = ${tuple.length}; ${index} < ${length}; ${index} += 1) {\n` +
+          `if (${flag}) ${this.lit(',')}else ${flag} = true;\n${this.raw(`JSON.stringify(${arr}[${index}])`)}}\n`;
+      }
+    } else {
+      const itemsLoc = this.child(loc, 'items');
+      if (itemsLoc.schema === undefined) itemsLoc.schema = {};
+      const index = this.name('i');
+      const value = this.name('v');
+      code +=
+        `for (let ${index} = 0; ${index} < ${length}; ${index} += 1) {\nif (${index} !== 0) ${this.lit(',')}` +
+        `const ${value} = ${arr}[${index}];\n${this.buildValue(itemsLoc, value)}}\n`;
+    }
+    code += this.lit(']');
+    return code + close;
+  }
+
+  compile(schema) {
+    const rootLoc = { schema, base: this.rootId, pointer: '#' };
+    const body = this.buildValue(rootLoc, 'input');
+    let source =
+      "'use strict';\n" +
+      'const { asString, asStringValue, asUnsafeString, asInteger, asNumber, asDateTime, asDate, asTime } = rt;\n';
+    if (this.bytes) {
+      source +=
+        'const { begin, end, endBuffer, abort, writeBytes: wb, writeByte: wc, writeRaw: wr, writeString: ws } = w;\n' +
+        'const { writeInteger: wi, writeNumber: wn } = rt;\n' +
+        this.literals.map((text, i) => `const B${i} = lits[${i}]; // ${JSON.stringify(text)}\n`).join('') +
+        `${this.functions.join('\n')}\n` +
+        `function write(input) {\n${body}}\n` +
+        // A serialization that throws gives the buffer back as it was.
+        'function serialize(input) {\nconst start = begin();\ntry {\nwrite(input);\n} catch (error) {\n' +
+        'abort(start);\nthrow error;\n}\nreturn end(start);\n}\n' +
+        // The same JSON as UTF-8 bytes, for a response to send as they are.
+        'serialize.toBuffer = function toBuffer(input) {\nconst start = begin();\ntry {\nwrite(input);\n' +
+        '} catch (error) {\nabort(start);\nthrow error;\n}\nreturn endBuffer(start);\n};\n' +
+        'return serialize;\n';
+      return source;
+    }
+    const direct = body.match(/^json \+= (f\d+)\(input\);\n$/);
+    source += `${this.functions.join('\n')}\n`;
+    source += direct
+      ? `return ${direct[1]};\n`
+      : `return function serialize(input) {\nlet json = '';\n${body}return json;\n};\n`;
+    return source;
+  }
+}
+
+function build(schema, options = {}) {
+  if (options.rounding !== undefined && !ROUNDING.has(options.rounding)) {
+    throw new Error(`Unsupported integer rounding method ${options.rounding}`);
+  }
+  if (options.largeArrayMechanism !== undefined && !LARGE_ARRAY_MECHANISMS.has(options.largeArrayMechanism)) {
+    throw new Error(`Unsupported large array mechanism ${options.largeArrayMechanism}`);
+  }
+  if (options.output !== undefined && !OUTPUTS.has(options.output)) {
+    throw new Error(`Unsupported output ${options.output}`);
+  }
+  validateSchema(schema);
+  const compileFor = (output) => {
+    const builder = new Builder(schema, { ...options, output });
+    builder.resolver.addSchema(schema, builder.rootId);
+    if (options.schema) {
+      for (const key of Object.keys(options.schema)) {
+        const external = options.schema[key];
+        const id = typeof external.$id === 'string' && external.$id[0] !== '#' ? external.$id : key;
+        if (!builder.resolver.hasSchema(id)) {
+          validateSchema(external, key);
+          builder.resolver.addSchema(external, key);
+        }
+      }
+    }
+    return { builder, source: builder.compile(schema) };
+  };
+  // 'auto': values of a size known by the schema (no arrays, maps or recursion: no loop and no function in the code)
+  // are joined as strings; the others are written as bytes.
+  const output = options.output || 'auto';
+  let compiled = compileFor(output === 'bytes' ? 'bytes' : 'string');
+  if (output === 'auto' && (compiled.builder.functions.length > 0 || compiled.source.includes('for ('))) {
+    compiled = compileFor('bytes');
+  }
+  const { builder, source } = compiled;
+  if (options.mode === 'debug') return { code: source };
+  const literals = builder.literals.map(bytesOf);
+  // eslint-disable-next-line no-new-func
+  const factory = new Function('rt', 'v', 'p', 'w', 'lits', source);
+  return factory(createRuntime(options), builder.validators, builder.patterns, writer, literals);
+}
+
+// Two pieces of code of the 'string' output, one after the other: one statement when each is one (one + less).
+function appendAfter(first, code) {
+  const a = /^json \+= ([^\n]+);\n$/.exec(first);
+  const b = /^json \+= ([^\n]+);\n$/.exec(code);
+  if (a !== null && b !== null) return `json += (${a[1]}) + (${b[1]});\n`;
+  return first + code;
+}
+
+function typeCondition(type, value) {
+  switch (type) {
+    case 'null':
+      return `${value} === null`;
+    case 'string':
+      return (
+        `typeof ${value} === 'string' || ${value} === null || ${value} instanceof Date || ${value} instanceof RegExp || ` +
+        `(typeof ${value} === 'object' && typeof ${value}.toString === 'function' && ` +
+        `${value}.toString !== Object.prototype.toString)`
+      );
+    case 'integer':
+      return `Number.isInteger(${value})`;
+    case 'number':
+      return `Number.isFinite(${value})`;
+    case 'boolean':
+      return `typeof ${value} === 'boolean'`;
+    case 'object':
+      return `${value} && typeof ${value} === 'object' && ${value}.constructor === Object`;
+    case 'array':
+      return `Array.isArray(${value})`;
+    default:
+      if (Array.isArray(type)) return `(${type.map((t) => typeCondition(t, value)).join(' || ')})`;
+      return 'true';
+  }
+}
+
+module.exports = build;
+module.exports.build = build;
+module.exports.default = build;
+module.exports.validLargeArrayMechanisms = LARGE_ARRAY_MECHANISMS;
+
+},
+"@xufa/serializer/lib/deep-equal.js": function (module, exports, require) {
+// Structural equality of JSON values (and of Dates and RegExps).
+function deepEqual(a, b) {
+  if (a === b) return true;
+  if (a === null || b === null || typeof a !== 'object' || typeof b !== 'object') {
+    return a !== a && b !== b; // NaN
+  }
+  if (a.constructor !== b.constructor) return false;
+  if (Array.isArray(a)) {
+    if (a.length !== b.length) return false;
+    for (let i = 0; i < a.length; i += 1) if (!deepEqual(a[i], b[i])) return false;
+    return true;
+  }
+  if (a instanceof Date) return a.getTime() === b.getTime();
+  if (a instanceof RegExp) return a.source === b.source && a.flags === b.flags;
+  const keys = Object.keys(a);
+  if (keys.length !== Object.keys(b).length) return false;
+  for (const key of keys) {
+    if (!Object.prototype.hasOwnProperty.call(b, key) || !deepEqual(a[key], b[key])) return false;
+  }
+  return true;
+}
+
+module.exports = { deepEqual };
+
+},
+"@xufa/serializer/lib/match.js": function (module, exports, require) {
+// Predicates compiled from JSON schemas: whether a value matches a schema. Used to choose the branch of anyOf, oneOf
+// and if/then/else to serialize a value with. Strings also match values with a toJSON() method (Dates), as they are
+// written as strings.
+const { deepEqual } = require('./deep-equal');
+
+const FORMATS = {
+  'date-time': /^\d{4}-\d\d-\d\d[tT ]\d\d:\d\d:\d\d(?:\.\d+)?(?:[zZ]|[+-]\d\d(?::?\d\d)?)$/,
+  date: /^\d{4}-\d\d-\d\d$/,
+  time: /^\d\d:\d\d:\d\d(?:\.\d+)?(?:[zZ]|[+-]\d\d(?::?\d\d)?)?$/,
+  email: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
+  uuid: /^(?:urn:uuid:)?[0-9a-f]{8}-(?:[0-9a-f]{4}-){3}[0-9a-f]{12}$/i,
+  ipv4: /^(?:(?:25[0-5]|2[0-4]\d|1?\d?\d)\.){3}(?:25[0-5]|2[0-4]\d|1?\d?\d)$/,
+  uri: /^[a-z][a-z0-9+.-]*:[^\s]*$/i,
+};
+
+const ALWAYS = () => true;
+const NEVER = () => false;
+
+const NUMERIC = /^\s*-?\d+(\.\d+)?([eE][+-]?\d+)?\s*$/;
+const isTyped = (v, types) => types.includes(typeof v);
+
+// With coercion (ajv's coerceTypes), the values ajv would convert to the type match it too.
+function coercedTypeCheck(type) {
+  switch (type) {
+    case 'string':
+      return (v) =>
+        isTyped(v, ['string', 'number', 'boolean']) ||
+        (v !== null && typeof v === 'object' && typeof v.toJSON === 'function');
+    case 'number':
+      return (v) =>
+        (typeof v === 'number' && Number.isFinite(v)) ||
+        typeof v === 'boolean' ||
+        v === null ||
+        (typeof v === 'string' && NUMERIC.test(v));
+    case 'integer':
+      return (v) =>
+        Number.isInteger(v) ||
+        typeof v === 'boolean' ||
+        v === null ||
+        (typeof v === 'string' && NUMERIC.test(v) && Number.isInteger(Number(v)));
+    case 'boolean':
+      return (v) => typeof v === 'boolean' || v === 'true' || v === 'false' || v === 1 || v === 0 || v === null;
+    case 'null':
+      return (v) => v === null || v === '' || v === 0 || v === false;
+    default:
+      return typeCheck(type);
+  }
+}
+
+function typeCheck(type) {
+  switch (type) {
+    case 'null':
+      return (v) => v === null;
+    case 'boolean':
+      return (v) => typeof v === 'boolean';
+    case 'integer':
+      return (v) => Number.isInteger(v);
+    case 'number':
+      return (v) => typeof v === 'number' && Number.isFinite(v);
+    case 'string':
+      return (v) => typeof v === 'string' || (v !== null && typeof v === 'object' && typeof v.toJSON === 'function');
+    case 'array':
+      return (v) => Array.isArray(v);
+    case 'object':
+      return (v) => v !== null && typeof v === 'object' && !Array.isArray(v);
+    default:
+      return NEVER;
+  }
+}
+
+const length = (str) => [...str].length;
+
+// compile(schema, base) -> (value) => boolean; refs are resolved by `resolver` against the base URI.
+function createMatcher(resolver, options = {}) {
+  const cache = new Map();
+  const checkType = options.coerceTypes ? coercedTypeCheck : typeCheck;
+
+  function compile(schema, base) {
+    if (schema === true || schema === undefined) return ALWAYS;
+    if (schema === false) return NEVER;
+    if (cache.has(schema)) return cache.get(schema);
+    // Placeholder for recursive schemas, replaced below.
+    let compiled = null;
+    const lazy = (value) => compiled(value);
+    cache.set(schema, lazy);
+    const checks = [];
+    const schemaBase = resolver.baseOf(schema, base);
+
+    if (schema.$ref !== undefined) {
+      const target = resolver.resolve(schema.$ref, schemaBase);
+      if (target === null) throw new Error(`Cannot find reference "${schema.$ref}"`);
+      checks.push(compile(target.schema, target.base));
+    }
+    if (schema.type !== undefined) {
+      const types = (Array.isArray(schema.type) ? schema.type : [schema.type]).map(checkType);
+      if (schema.nullable === true) types.push(typeCheck('null'));
+      checks.push(types.length === 1 ? types[0] : (v) => types.some((check) => check(v)));
+    }
+    if (schema.const !== undefined) {
+      const expected = schema.const;
+      checks.push((v) => deepEqual(v, expected) || (schema.nullable === true && v === null));
+    }
+    if (Array.isArray(schema.enum)) {
+      const values = schema.enum;
+      checks.push((v) => values.some((e) => deepEqual(v, e)) || (schema.nullable === true && v === null));
+    }
+    addStringChecks(schema, checks);
+    addNumberChecks(schema, checks);
+    addObjectChecks(schema, checks, schemaBase);
+    addArrayChecks(schema, checks, schemaBase);
+    for (const keyword of ['allOf', 'anyOf', 'oneOf']) {
+      if (!Array.isArray(schema[keyword])) continue;
+      const subs = schema[keyword].map((sub) => compile(sub, schemaBase));
+      if (keyword === 'allOf') checks.push((v) => subs.every((check) => check(v)));
+      else if (keyword === 'anyOf') checks.push((v) => subs.some((check) => check(v)));
+      else checks.push((v) => subs.filter((check) => check(v)).length === 1);
+    }
+    if (schema.not !== undefined) {
+      const not = compile(schema.not, schemaBase);
+      checks.push((v) => !not(v));
+    }
+    if (schema.if !== undefined) {
+      const test = compile(schema.if, schemaBase);
+      const then = compile(schema.then, schemaBase);
+      const otherwise = compile(schema.else, schemaBase);
+      checks.push((v) => (test(v) ? then(v) : otherwise(v)));
+    }
+    compiled = checks.length === 0 ? ALWAYS : checks.length === 1 ? checks[0] : (v) => checks.every((c) => c(v));
+    cache.set(schema, compiled);
+    return compiled;
+  }
+
+  function addStringChecks(schema, checks) {
+    const isString = (v) => typeof v === 'string';
+    if (schema.minLength !== undefined) checks.push((v) => !isString(v) || length(v) >= schema.minLength);
+    if (schema.maxLength !== undefined) checks.push((v) => !isString(v) || length(v) <= schema.maxLength);
+    if (schema.pattern !== undefined) {
+      const regex = new RegExp(schema.pattern, 'u');
+      checks.push((v) => !isString(v) || regex.test(v));
+    }
+    if (schema.format !== undefined && FORMATS[schema.format]) {
+      const regex = FORMATS[schema.format];
+      checks.push((v) => !isString(v) || regex.test(v));
+    }
+  }
+
+  function addNumberChecks(schema, checks) {
+    const isNumber = (v) => typeof v === 'number';
+    const { minimum, maximum, exclusiveMinimum, exclusiveMaximum, multipleOf } = schema;
+    if (minimum !== undefined) checks.push((v) => !isNumber(v) || v >= minimum);
+    if (maximum !== undefined) checks.push((v) => !isNumber(v) || v <= maximum);
+    if (typeof exclusiveMinimum === 'number') checks.push((v) => !isNumber(v) || v > exclusiveMinimum);
+    if (typeof exclusiveMaximum === 'number') checks.push((v) => !isNumber(v) || v < exclusiveMaximum);
+    if (multipleOf !== undefined) {
+      checks.push((v) => !isNumber(v) || Math.abs(v / multipleOf - Math.round(v / multipleOf)) < 1e-9);
+    }
+  }
+
+  function addObjectChecks(schema, checks, base) {
+    const isObject = (v) => v !== null && typeof v === 'object' && !Array.isArray(v);
+    if (Array.isArray(schema.required) && schema.required.length > 0) {
+      const required = schema.required;
+      checks.push((v) => !isObject(v) || required.every((key) => v[key] !== undefined));
+    }
+    const properties = schema.properties ? Object.keys(schema.properties) : [];
+    const propertyChecks = properties.map((key) => [key, compile(schema.properties[key], base)]);
+    const patterns = schema.patternProperties
+      ? Object.keys(schema.patternProperties).map((p) => [
+          new RegExp(p, 'u'),
+          compile(schema.patternProperties[p], base),
+        ])
+      : [];
+    const additional = schema.additionalProperties;
+    if (propertyChecks.length > 0) {
+      checks.push((v) => {
+        if (!isObject(v)) return true;
+        for (const [key, check] of propertyChecks) if (v[key] !== undefined && !check(v[key])) return false;
+        return true;
+      });
+    }
+    if (patterns.length > 0 || (additional !== undefined && additional !== true)) {
+      const additionalCheck = compile(additional, base);
+      const known = new Set(properties);
+      checks.push((v) => {
+        if (!isObject(v)) return true;
+        for (const key of Object.keys(v)) {
+          if (v[key] === undefined) continue;
+          let matched = known.has(key);
+          for (const [regex, check] of patterns) {
+            if (regex.test(key)) {
+              matched = true;
+              if (!check(v[key])) return false;
+            }
+          }
+          if (!matched && additional !== undefined && !additionalCheck(v[key])) return false;
+        }
+        return true;
+      });
+    }
+    if (schema.minProperties !== undefined) {
+      checks.push((v) => !isObject(v) || Object.keys(v).length >= schema.minProperties);
+    }
+    if (schema.maxProperties !== undefined) {
+      checks.push((v) => !isObject(v) || Object.keys(v).length <= schema.maxProperties);
+    }
+    if (schema.dependentRequired || schema.dependencies) {
+      const deps = { ...schema.dependencies, ...schema.dependentRequired };
+      const entries = Object.keys(deps).map((key) => [key, deps[key]]);
+      const schemaDeps = entries
+        .filter(([, value]) => !Array.isArray(value))
+        .map(([key, value]) => [key, compile(value, base)]);
+      checks.push((v) => {
+        if (!isObject(v)) return true;
+        for (const [key, value] of entries) {
+          if (v[key] === undefined) continue;
+          if (Array.isArray(value) && !value.every((k) => v[k] !== undefined)) return false;
+        }
+        for (const [key, check] of schemaDeps) if (v[key] !== undefined && !check(v)) return false;
+        return true;
+      });
+    }
+  }
+
+  function addArrayChecks(schema, checks, base) {
+    const { items, prefixItems, additionalItems, minItems, maxItems, uniqueItems, contains } = schema;
+    if (minItems !== undefined) checks.push((v) => !Array.isArray(v) || v.length >= minItems);
+    if (maxItems !== undefined) checks.push((v) => !Array.isArray(v) || v.length <= maxItems);
+    const tuple = Array.isArray(prefixItems) ? prefixItems : Array.isArray(items) ? items : null;
+    if (tuple) {
+      const tupleChecks = tuple.map((s) => compile(s, base));
+      const rest = Array.isArray(prefixItems) ? items : additionalItems;
+      const restCheck = compile(rest, base);
+      checks.push((v) => {
+        if (!Array.isArray(v)) return true;
+        for (let i = 0; i < v.length; i += 1) {
+          if (i < tupleChecks.length ? !tupleChecks[i](v[i]) : !restCheck(v[i])) return false;
+        }
+        return true;
+      });
+    } else if (items !== undefined) {
+      const itemCheck = compile(items, base);
+      checks.push((v) => !Array.isArray(v) || v.every((item) => itemCheck(item)));
+    }
+    if (contains !== undefined) {
+      const containsCheck = compile(contains, base);
+      checks.push((v) => !Array.isArray(v) || v.some((item) => containsCheck(item)));
+    }
+    if (uniqueItems === true) {
+      checks.push((v) => {
+        if (!Array.isArray(v)) return true;
+        for (let i = 0; i < v.length; i += 1)
+          for (let j = i + 1; j < v.length; j += 1) if (deepEqual(v[i], v[j])) return false;
+        return true;
+      });
+    }
+  }
+
+  return compile;
+}
+
+module.exports = { createMatcher };
+
+},
+"@xufa/serializer/lib/merge.js": function (module, exports, require) {
+// Merging of JSON schemas (for allOf, and the branches of anyOf / oneOf with the keywords around them): each keyword
+// is combined by its meaning (types intersected, required united, bounds narrowed...). A keyword with values that can
+// not be combined is dropped.
+const { deepEqual } = require('./deep-equal');
+
+class MergeError extends Error {
+  constructor(keyword, values) {
+    super(`Failed to merge "${keyword}" keyword schemas.`);
+    this.keyword = keyword;
+    this.values = values;
+    this.schemas = values;
+  }
+}
+
+function intersection(arrays) {
+  let out = arrays[0];
+  for (let i = 1; i < arrays.length; i += 1) out = out.filter((value) => arrays[i].some((v) => deepEqual(v, value)));
+  return out;
+}
+
+function union(arrays) {
+  const out = [];
+  for (const array of arrays) for (const value of array) if (!out.some((v) => deepEqual(v, value))) out.push(value);
+  return out;
+}
+
+function allEqual(keyword, values, merged) {
+  for (let i = 1; i < values.length; i += 1) {
+    if (!deepEqual(values[i], values[0])) throw new MergeError(keyword, values);
+  }
+  merged[keyword] = values[0];
+}
+
+const resolvers = {
+  $id: () => {},
+  type(keyword, values, merged) {
+    const arrays = values.map((value) => (Array.isArray(value) ? value : [value]));
+    const types = intersection(arrays);
+    if (types.length === 0) throw new MergeError(keyword, arrays);
+    merged[keyword] = types.length === 1 ? types[0] : types;
+  },
+  enum(keyword, values, merged) {
+    const common = intersection(values);
+    if (common.length === 0) throw new MergeError(keyword, values);
+    merged[keyword] = common;
+  },
+  minLength: maxNumber,
+  maxLength: minNumber,
+  minimum: maxNumber,
+  maximum: minNumber,
+  exclusiveMinimum: maxNumber,
+  exclusiveMaximum: minNumber,
+  minItems: maxNumber,
+  maxItems: minNumber,
+  minProperties: maxNumber,
+  maxProperties: minNumber,
+  multipleOf(keyword, values, merged) {
+    const gcd = (a, b) => (!b ? a : gcd(b, a % b));
+    let scale = 1;
+    for (const value of values) while ((value * scale) % 1 !== 0) scale *= 10;
+    let multiple = values[0] * scale;
+    for (const value of values) multiple = (multiple * value * scale) / gcd(multiple, value * scale);
+    merged[keyword] = multiple / scale;
+  },
+  const: allEqual,
+  default: allEqual,
+  format: allEqual,
+  required(keyword, values, merged) {
+    merged[keyword] = union(values);
+  },
+  allOf(keyword, values, merged) {
+    merged[keyword] = union(values);
+  },
+  properties(keyword, values, merged, schemas, options) {
+    const found = {};
+    for (const schema of schemas) {
+      for (const name of Object.keys(schema.properties || {})) {
+        if (found[name] !== undefined) continue;
+        found[name] = [schema.properties[name]];
+        for (const other of schemas) {
+          if (other === schema) continue;
+          const propertySchema = schemaForProperty(other, name);
+          if (propertySchema !== undefined) found[name].push(propertySchema);
+        }
+      }
+    }
+    const out = {};
+    for (const name of Object.keys(found)) out[name] = mergeAll(found[name], options);
+    merged[keyword] = out;
+  },
+  patternProperties: mergeObjects,
+  definitions: mergeObjects,
+  $defs: mergeObjects,
+  dependentSchemas: mergeObjects,
+  additionalProperties: mergeSubschemas,
+  not: mergeSubschemas,
+  propertyNames: mergeSubschemas,
+  contains: mergeSubschemas,
+  items(keyword, values, merged, schemas, options) {
+    const tupleLength = Math.max(0, ...values.map((v) => (Array.isArray(v) ? v.length : 0)));
+    if (tupleLength === 0) {
+      merged[keyword] = mergeAll(values, options);
+      return;
+    }
+    const items = [];
+    for (let i = 0; i < tupleLength; i += 1) {
+      const atIndex = [];
+      for (const schema of schemas) {
+        const itemSchema = schemaForItem(schema, i);
+        if (itemSchema !== undefined) atIndex.push(itemSchema);
+      }
+      items[i] = mergeAll(atIndex, options);
+    }
+    merged[keyword] = items;
+  },
+  additionalItems(keyword, values, merged, schemas, options) {
+    if (!schemas.some((schema) => Array.isArray(schema.items))) {
+      merged[keyword] = mergeAll(values, options);
+      return;
+    }
+    const additional = [];
+    for (const schema of schemas) {
+      let value = schema.additionalItems;
+      if (value === undefined && !Array.isArray(schema.items)) value = schema.items;
+      if (value !== undefined) additional.push(value);
+    }
+    merged[keyword] = mergeAll(additional, options);
+  },
+  nullable(keyword, values, merged) {
+    merged[keyword] = values.every((value) => value !== false);
+  },
+  uniqueItems(keyword, values, merged) {
+    merged[keyword] = values.some((value) => value === true);
+  },
+  oneOf: mergeOneOf,
+  anyOf: mergeOneOf,
+  if(keyword, values, merged, schemas, options) {
+    for (const schema of schemas) {
+      if (schema.if === undefined) continue;
+      const sub = { if: schema.if, then: schema.then, else: schema.else };
+      if (merged.if === undefined) {
+        merged.if = sub.if;
+        if (sub.then !== undefined) merged.then = sub.then;
+        if (sub.else !== undefined) merged.else = sub.else;
+        continue;
+      }
+      if (merged.then !== undefined) merged.then = mergeAll([merged.then, sub], options);
+      if (merged.else !== undefined) merged.else = mergeAll([merged.else, sub], options);
+    }
+  },
+  then: () => {},
+  else: () => {},
+  dependencies: mergeDependencies,
+  dependentRequired: mergeDependencies,
+};
+
+function minNumber(keyword, values, merged) {
+  merged[keyword] = Math.min(...values);
+}
+
+function maxNumber(keyword, values, merged) {
+  merged[keyword] = Math.max(...values);
+}
+
+function mergeSubschemas(keyword, values, merged, schemas, options) {
+  merged[keyword] = mergeAll(values, options);
+}
+
+function mergeObjects(keyword, values, merged, schemas, options) {
+  const grouped = {};
+  for (const value of values) {
+    for (const name of Object.keys(value)) (grouped[name] = grouped[name] || []).push(value[name]);
+  }
+  const out = {};
+  for (const name of Object.keys(grouped)) out[name] = mergeAll(grouped[name], options);
+  merged[keyword] = out;
+}
+
+function mergeDependencies(keyword, values, merged) {
+  const out = {};
+  for (const dependencies of values) {
+    for (const name of Object.keys(dependencies)) {
+      out[name] = out[name] || [];
+      for (const dependency of dependencies[name]) if (!out[name].includes(dependency)) out[name].push(dependency);
+    }
+  }
+  merged[keyword] = out;
+}
+
+function mergeOneOf(keyword, values, merged, schemas, options) {
+  if (values.length === 1) {
+    merged[keyword] = values[0];
+    return;
+  }
+  let product = [[]];
+  for (const array of values) product = product.flatMap((combination) => array.map((item) => [...combination, item]));
+  const out = [];
+  for (const combination of product) {
+    try {
+      const schema = mergeAll(combination, options);
+      if (schema !== undefined) out.push(schema);
+    } catch (err) {
+      if (!(err instanceof MergeError)) throw err;
+    }
+  }
+  merged[keyword] = out;
+}
+
+function schemaForItem(schema, index) {
+  const { items, additionalItems } = schema;
+  if (Array.isArray(items)) return index < items.length ? items[index] : additionalItems;
+  return items !== undefined ? items : additionalItems;
+}
+
+function schemaForProperty(schema, name) {
+  if (schema.properties && schema.properties[name] !== undefined) return schema.properties[name];
+  for (const pattern of Object.keys(schema.patternProperties || {})) {
+    if (new RegExp(pattern).test(name)) return schema.patternProperties[pattern];
+  }
+  return schema.additionalProperties;
+}
+
+// Conflicting values of other keywords: equal ones are kept, different ones dropped.
+function defaultResolver(keyword, values, merged) {
+  if (values.length === 1 || values.every((value) => deepEqual(value, values[0]))) merged[keyword] = values[0];
+}
+
+function mergeAll(schemas, options = {}) {
+  if (schemas.length === 0) return {};
+  if (schemas.length === 1) return schemas[0];
+  const keywords = {};
+  let allTrue = true;
+  for (const schema of schemas) {
+    if (schema === false) return false;
+    if (schema === true) continue;
+    allTrue = false;
+    for (const keyword of Object.keys(schema)) (keywords[keyword] = keywords[keyword] || []).push(schema[keyword]);
+  }
+  if (allTrue) return true;
+  const merged = {};
+  const relevant = schemas.filter((schema) => schema !== true);
+  for (const keyword of Object.keys(keywords)) {
+    const resolver = resolvers[keyword] || defaultResolver;
+    resolver(keyword, keywords[keyword], merged, relevant, options);
+  }
+  return merged;
+}
+
+module.exports = { mergeSchemas: mergeAll, MergeError };
+
+},
+"@xufa/serializer/lib/meta.js": function (module, exports, require) {
+// Validation of schemas against the meta-schema of draft-07, reporting the first error the way ajv does
+// ("data/properties/claws/type must be equal to one of the allowed values"). Keywords are checked in the order of the
+// meta-schema, as ajv checks them.
+
+const SIMPLE_TYPES = new Set(['array', 'boolean', 'integer', 'null', 'number', 'object', 'string']);
+
+class SchemaError extends Error {}
+
+function fail(path, message) {
+  throw new SchemaError(`data${path} ${message}`);
+}
+
+const isObject = (value) => value !== null && typeof value === 'object' && !Array.isArray(value);
+const isSchema = (value) => typeof value === 'boolean' || isObject(value);
+
+function isRegex(source) {
+  try {
+    // eslint-disable-next-line no-new
+    new RegExp(source, 'u');
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+function nonNegativeInteger(value, path) {
+  if (typeof value !== 'number' || !Number.isInteger(value)) fail(path, 'must be integer');
+  if (value < 0) fail(path, 'must be >= 0');
+}
+
+function number(value, path) {
+  if (typeof value !== 'number') fail(path, 'must be number');
+}
+
+function schema(value, path) {
+  if (!isSchema(value)) fail(path, 'must be object,boolean');
+  if (typeof value === 'boolean') return;
+  const s = value;
+  if (s.$id !== undefined && typeof s.$id !== 'string') fail(`${path}/$id`, 'must be string');
+  if (s.$schema !== undefined && typeof s.$schema !== 'string') fail(`${path}/$schema`, 'must be string');
+  if (s.$ref !== undefined && typeof s.$ref !== 'string') fail(`${path}/$ref`, 'must be string');
+  if (s.$comment !== undefined && typeof s.$comment !== 'string') fail(`${path}/$comment`, 'must be string');
+  if (s.title !== undefined && typeof s.title !== 'string') fail(`${path}/title`, 'must be string');
+  if (s.description !== undefined && typeof s.description !== 'string') fail(`${path}/description`, 'must be string');
+  if (s.readOnly !== undefined && typeof s.readOnly !== 'boolean') fail(`${path}/readOnly`, 'must be boolean');
+  if (s.examples !== undefined && !Array.isArray(s.examples)) fail(`${path}/examples`, 'must be array');
+  if (s.multipleOf !== undefined) {
+    number(s.multipleOf, `${path}/multipleOf`);
+    if (s.multipleOf <= 0) fail(`${path}/multipleOf`, 'must be > 0');
+  }
+  for (const key of ['maximum', 'exclusiveMaximum', 'minimum', 'exclusiveMinimum']) {
+    // draft-04 schemas have booleans for the exclusive ones
+    if (s[key] !== undefined && typeof s[key] !== 'boolean') number(s[key], `${path}/${key}`);
+  }
+  if (s.maxLength !== undefined) nonNegativeInteger(s.maxLength, `${path}/maxLength`);
+  if (s.minLength !== undefined) nonNegativeInteger(s.minLength, `${path}/minLength`);
+  if (s.pattern !== undefined) {
+    if (typeof s.pattern !== 'string') fail(`${path}/pattern`, 'must be string');
+    if (!isRegex(s.pattern)) fail(`${path}/pattern`, 'must match format "regex"');
+  }
+  if (s.additionalItems !== undefined) schema(s.additionalItems, `${path}/additionalItems`);
+  if (s.items !== undefined) {
+    if (Array.isArray(s.items)) {
+      if (s.items.length === 0) fail(`${path}/items`, 'must NOT have fewer than 1 items');
+      s.items.forEach((item, i) => schema(item, `${path}/items/${i}`));
+    } else {
+      schema(s.items, `${path}/items`);
+    }
+  }
+  if (s.maxItems !== undefined) nonNegativeInteger(s.maxItems, `${path}/maxItems`);
+  if (s.minItems !== undefined) nonNegativeInteger(s.minItems, `${path}/minItems`);
+  if (s.uniqueItems !== undefined && typeof s.uniqueItems !== 'boolean') fail(`${path}/uniqueItems`, 'must be boolean');
+  if (s.contains !== undefined) schema(s.contains, `${path}/contains`);
+  if (s.maxProperties !== undefined) nonNegativeInteger(s.maxProperties, `${path}/maxProperties`);
+  if (s.minProperties !== undefined) nonNegativeInteger(s.minProperties, `${path}/minProperties`);
+  if (s.required !== undefined) {
+    if (!Array.isArray(s.required)) fail(`${path}/required`, 'must be array');
+    s.required.forEach((item, i) => {
+      if (typeof item !== 'string') fail(`${path}/required/${i}`, 'must be string');
+    });
+  }
+  if (s.additionalProperties !== undefined) schema(s.additionalProperties, `${path}/additionalProperties`);
+  schemaMap(s.definitions, `${path}/definitions`);
+  schemaMap(s.properties, `${path}/properties`);
+  if (s.patternProperties !== undefined) {
+    if (!isObject(s.patternProperties)) fail(`${path}/patternProperties`, 'must be object');
+    for (const key of Object.keys(s.patternProperties)) {
+      if (!isRegex(key)) fail(`${path}/patternProperties`, 'must match format "regex"');
+    }
+    schemaMap(s.patternProperties, `${path}/patternProperties`);
+  }
+  if (s.dependencies !== undefined) {
+    if (!isObject(s.dependencies)) fail(`${path}/dependencies`, 'must be object');
+    for (const key of Object.keys(s.dependencies)) {
+      const dep = s.dependencies[key];
+      if (!Array.isArray(dep)) schema(dep, `${path}/dependencies/${key}`);
+    }
+  }
+  if (s.propertyNames !== undefined) schema(s.propertyNames, `${path}/propertyNames`);
+  if (s.enum !== undefined && !Array.isArray(s.enum)) fail(`${path}/enum`, 'must be array');
+  if (s.type !== undefined) {
+    if (Array.isArray(s.type)) {
+      s.type.forEach((type, i) => {
+        if (!SIMPLE_TYPES.has(type)) fail(`${path}/type/${i}`, 'must be equal to one of the allowed values');
+      });
+    } else if (!SIMPLE_TYPES.has(s.type)) {
+      fail(`${path}/type`, 'must be equal to one of the allowed values');
+    }
+  }
+  if (s.format !== undefined && typeof s.format !== 'string') fail(`${path}/format`, 'must be string');
+  if (s.if !== undefined) schema(s.if, `${path}/if`);
+  if (s.then !== undefined) schema(s.then, `${path}/then`);
+  if (s.else !== undefined) schema(s.else, `${path}/else`);
+  for (const key of ['allOf', 'anyOf', 'oneOf']) {
+    if (s[key] === undefined) continue;
+    if (!Array.isArray(s[key])) fail(`${path}/${key}`, 'must be array');
+    if (s[key].length === 0) fail(`${path}/${key}`, 'must NOT have fewer than 1 items');
+    s[key].forEach((item, i) => schema(item, `${path}/${key}/${i}`));
+  }
+  if (s.not !== undefined) schema(s.not, `${path}/not`);
+}
+
+function schemaMap(map, path) {
+  if (map === undefined) return;
+  if (!isObject(map)) fail(path, 'must be object');
+  for (const key of Object.keys(map)) schema(map[key], `${path}/${key}`);
+}
+
+// Throws "<name> schema is invalid: data... <message>" for the first error found.
+function validateSchema(value, name) {
+  try {
+    schema(value, '');
+  } catch (err) {
+    if (!(err instanceof SchemaError)) throw err;
+    throw new Error(`${name ? `"${name}" ` : ''}schema is invalid: ${err.message}`);
+  }
+}
+
+module.exports = { validateSchema };
+
+},
+"@xufa/serializer/lib/resolver.js": function (module, exports, require) {
+// Resolution of $ref: schemas are registered by their $id (or a key), with the $id and anchors they hold inside.
+// A reference is resolved against the base URI of the schema holding it.
+
+const { deepEqual } = require('./deep-equal');
+
+const SCHEME = /^[a-z][a-z0-9+.-]*:/i;
+
+function stripHash(uri) {
+  return uri.endsWith('#') ? uri.slice(0, -1) : uri;
+}
+
+// The URI of a reference relative to a base. Plain names ('user') are kept as they are.
+function resolveURI(base, ref) {
+  if (ref === '') return base;
+  if (SCHEME.test(ref)) return stripHash(ref);
+  if (base && SCHEME.test(base)) {
+    try {
+      return stripHash(new URL(ref, base).href);
+    } catch {
+      return ref;
+    }
+  }
+  return ref;
+}
+
+function unescapePointerSegment(segment) {
+  let out = segment.replace(/~1/g, '/').replace(/~0/g, '~');
+  if (out.includes('%')) {
+    try {
+      out = decodeURIComponent(out);
+    } catch {
+      // kept as written
+    }
+  }
+  return out;
+}
+
+class RefResolver {
+  constructor() {
+    this.docs = new Map(); // URI -> schema
+    this.anchors = new Map(); // URI#name -> { schema, base }
+    this.bases = new Map(); // schema object -> base URI
+  }
+
+  hasSchema(uri) {
+    return this.docs.has(stripHash(uri));
+  }
+
+  getSchema(uri) {
+    return this.docs.get(stripHash(uri));
+  }
+
+  addSchema(schema, key) {
+    let id = key;
+    if (schema && typeof schema === 'object' && typeof schema.$id === 'string' && schema.$id[0] !== '#') {
+      id = resolveURI(key && SCHEME.test(key) ? key : '', schema.$id);
+    }
+    id = stripHash(id);
+    if (!this.docs.has(id)) this.docs.set(id, schema);
+    if (key !== undefined && stripHash(key) !== id && !this.docs.has(stripHash(key)))
+      this.docs.set(stripHash(key), schema);
+    this.walk(schema, id, true);
+    return id;
+  }
+
+  walk(schema, base, isRoot) {
+    if (schema === null || typeof schema !== 'object') return;
+    if (Array.isArray(schema)) {
+      for (const item of schema) this.walk(item, base, false);
+      return;
+    }
+    let current = base;
+    if (typeof schema.$id === 'string') {
+      if (schema.$id[0] === '#') {
+        const key = `${base}${schema.$id}`;
+        const existing = this.anchors.get(key);
+        if (existing && existing.schema !== schema && !deepEqual(existing.schema, schema)) {
+          throw new Error(`There is already another anchor "${schema.$id}" in schema "${base}".`);
+        }
+        this.anchors.set(key, { schema, base });
+      } else if (!isRoot) {
+        current = resolveURI(base, schema.$id);
+        const existing = this.docs.get(current);
+        if (existing !== undefined && existing !== schema && !deepEqual(existing, schema)) {
+          throw new Error(`There is already another schema with id "${current}".`);
+        }
+        if (existing === undefined) this.docs.set(current, schema);
+      }
+    }
+    if (typeof schema.$anchor === 'string') this.anchors.set(`${current}#${schema.$anchor}`, { schema, base: current });
+    if (!this.bases.has(schema)) this.bases.set(schema, current);
+    for (const key of Object.keys(schema)) {
+      // enum and const hold values, not schemas
+      if (key === 'enum' || key === 'const' || key === 'default' || key === 'examples') continue;
+      const value = schema[key];
+      if (value !== null && typeof value === 'object') this.walk(value, current, false);
+    }
+  }
+
+  baseOf(schema, fallback) {
+    return this.bases.get(schema) || fallback;
+  }
+
+  // The id of the document a reference points to when no such document is known, else null.
+  missingDocument(ref, base) {
+    const hash = ref.indexOf('#');
+    const uriPart = hash === -1 ? ref : ref.slice(0, hash);
+    const uri = uriPart === '' ? base : resolveURI(base, uriPart);
+    return this.docs.has(uri) ? null : uri;
+  }
+
+  // { schema, base, pointer } of a reference, or null.
+  resolve(ref, base) {
+    const hash = ref.indexOf('#');
+    const uriPart = hash === -1 ? ref : ref.slice(0, hash);
+    const fragment = hash === -1 ? '' : ref.slice(hash + 1);
+    const uri = uriPart === '' ? base : resolveURI(base, uriPart);
+    if (fragment !== '' && fragment[0] !== '/') {
+      const anchor = this.anchors.get(`${uri}#${fragment}`);
+      return anchor ? { schema: anchor.schema, base: anchor.base, pointer: `#${fragment}` } : null;
+    }
+    const doc = this.docs.get(uri);
+    if (doc === undefined) return null;
+    if (fragment === '') return { schema: doc, base: uri, pointer: '#' };
+    let schema = doc;
+    let current = uri;
+    const segments = fragment.slice(1).split('/').map(unescapePointerSegment);
+    for (const segment of segments) {
+      if (schema === null || typeof schema !== 'object' || !(segment in schema)) return null;
+      schema = schema[segment];
+      if (schema && typeof schema === 'object' && typeof schema.$id === 'string' && schema.$id[0] !== '#') {
+        current = resolveURI(current, schema.$id);
+      }
+    }
+    return { schema, base: current, pointer: `#${fragment}` };
+  }
+}
+
+module.exports = { RefResolver, resolveURI };
+
+},
+"@xufa/serializer/lib/runtime.js": function (module, exports, require) {
+// Functions the generated serializers call to write values: the same results as fast-json-stringify.
+const { writeNumberText } = require('./writer');
+
+// eslint-disable-next-line no-control-regex
+const NEEDS_ESCAPE = /[\x00-\x1f"\\\ud800-\udfff]/;
+
+// The strings are joined with +, not template literals: V8 makes fewer strings of them (measured: 2-3 ns a call).
+/* eslint-disable prefer-template */
+function asString(str) {
+  const len = str.length;
+  if (len === 0) return '""';
+  if (len < 42) {
+    // Short strings: quotes and backslashes are escaped here, anything else to escape goes to JSON.stringify.
+    let result = '';
+    let last = -1;
+    for (let i = 0; i < len; i += 1) {
+      const point = str.charCodeAt(i);
+      if (point === 34 || point === 92) {
+        if (last === -1) last = 0;
+        result += str.slice(last, i) + '\\';
+        last = i;
+      } else if (point < 32 || (point >= 0xd800 && point <= 0xdfff)) {
+        return JSON.stringify(str);
+      }
+    }
+    return last === -1 ? '"' + str + '"' : '"' + result + str.slice(last) + '"';
+  }
+  if (len < 5000 && !NEEDS_ESCAPE.test(str)) return '"' + str + '"';
+  return JSON.stringify(str);
+}
+/* eslint-enable prefer-template */
+
+// A value of a property of type string that is not a string.
+function asStringValue(value) {
+  if (typeof value === 'string') return asString(value);
+  if (value === null) return '""';
+  if (value instanceof Date) return `"${value.toISOString()}"`;
+  if (value instanceof RegExp) return asString(value.source);
+  return asString(value.toString());
+}
+
+function asUnsafeString(str) {
+  return `"${str}"`;
+}
+
+function createAsInteger(rounding) {
+  let round = Math.trunc;
+  if (rounding === 'floor') round = Math.floor;
+  else if (rounding === 'ceil') round = Math.ceil;
+  else if (rounding === 'round') round = Math.round;
+  return function asInteger(value) {
+    if (Number.isInteger(value)) return `${value}`;
+    if (typeof value === 'bigint') return value.toString();
+    const integer = round(value);
+    if (integer === Infinity || integer === -Infinity || Number.isNaN(integer)) {
+      throw new Error(`The value "${value}" cannot be converted to an integer.`);
+    }
+    return `${integer}`;
+  };
+}
+
+function asNumber(value) {
+  if (typeof value === 'number') {
+    if (Number.isFinite(value)) return `${value}`;
+    if (Number.isNaN(value)) throw new Error(`The value "${value}" cannot be converted to a number.`);
+    return 'null';
+  }
+  const num = Number(value);
+  if (Number.isNaN(num)) throw new Error(`The value "${value}" cannot be converted to a number.`);
+  if (num === Infinity || num === -Infinity) return 'null';
+  return `${num}`;
+}
+
+function asBoolean(value) {
+  return value ? 'true' : 'false';
+}
+
+function localDate(date) {
+  return new Date(date.getTime() - date.getTimezoneOffset() * 60000).toISOString();
+}
+
+function asDateTime(date) {
+  if (date === null) return '""';
+  if (date instanceof Date) return `"${date.toISOString()}"`;
+  if (typeof date === 'string') return `"${date}"`;
+  throw new Error(`The value "${date}" cannot be converted to a date-time.`);
+}
+
+function asDate(date) {
+  if (date === null) return '""';
+  if (date instanceof Date) return `"${localDate(date).slice(0, 10)}"`;
+  if (typeof date === 'string') return `"${date}"`;
+  throw new Error(`The value "${date}" cannot be converted to a date.`);
+}
+
+function asTime(date) {
+  if (date === null) return '""';
+  if (date instanceof Date) return `"${localDate(date).slice(11, 19)}"`;
+  if (typeof date === 'string') return `"${date}"`;
+  throw new Error(`The value "${date}" cannot be converted to a time.`);
+}
+
+// What JSON.stringify writes for a value, or "undefined" as fast-json-stringify does.
+function asAny(value) {
+  return `${JSON.stringify(value)}`;
+}
+
+function createRuntime(options = {}) {
+  const asInteger = createAsInteger(options.rounding);
+  return {
+    asString,
+    asStringValue,
+    asUnsafeString,
+    asInteger,
+    // The writers of numbers of the 'bytes' output: the text of asInteger and asNumber, without making it for the
+    // numbers that are written as they are.
+    writeInteger(value) {
+      writeNumberText(Number.isInteger(value) ? '' + value : asInteger(value)); // eslint-disable-line prefer-template
+    },
+    writeNumber(value) {
+      writeNumberText(typeof value === 'number' && Number.isFinite(value) ? '' + value : asNumber(value)); // eslint-disable-line prefer-template
+    },
+    asNumber,
+    asBoolean,
+    asDateTime,
+    asDate,
+    asTime,
+    asAny,
+  };
+}
+
+module.exports = { createRuntime, asString, asNumber, asBoolean, asDateTime, asDate, asTime };
+
+},
+"@xufa/serializer/lib/writer.js": function (module, exports, require) {
+// The output of the generated serializers: UTF-8 bytes written to one buffer, read back as a string at the end.
+//
+// Joining strings with + makes a tree of them that V8 copies into a flat string when the result is used (written to a
+// socket, measured): for a response of a few KB that copy costs as much as building it. Bytes in a buffer need one
+// read at the end, which is a copy at memory speed.
+//
+// The buffer is shared by every serializer. A serialization starts where the buffer is filled up to (begin()) and
+// gives that place back when it ends (end() or abort()), so that a serializer called while another one writes (by a
+// toJSON() method) writes after it and leaves it as it was.
+
+const INITIAL_SIZE = 64 * 1024;
+// A buffer grown beyond this for a large response is replaced by a small one when nothing is being written.
+const KEEP_SIZE = 1024 * 1024;
+// Strings longer than this are checked by a regular expression and encoded by Buffer#utf8Write (native code), which
+// is faster for long strings and slower for short ones than the loop of writeString.
+const LONG_STRING = 64;
+
+// eslint-disable-next-line no-control-regex
+const NEEDS_ESCAPE = /[\x00-\x1f"\\\ud800-\udfff]/;
+const HEX = '0123456789abcdef';
+
+let buf = Buffer.allocUnsafeSlow(INITIAL_SIZE);
+let pos = 0;
+
+function grow(needed) {
+  const next = Buffer.allocUnsafeSlow(Math.max(buf.length * 2, pos + needed));
+  buf.copy(next, 0, 0, pos);
+  buf = next;
+}
+
+function begin() {
+  return pos;
+}
+
+// The string written since `start`; the buffer is given back.
+function end(start) {
+  const text = buf.utf8Slice(start, pos);
+  pos = start;
+  if (start === 0 && buf.length > KEEP_SIZE) buf = Buffer.allocUnsafeSlow(INITIAL_SIZE);
+  return text;
+}
+
+// The bytes written since `start`, in a buffer of their own (the shared one is written again by the next
+// serialization, before a socket may have sent them); the buffer is given back.
+function endBuffer(start) {
+  const out = Buffer.allocUnsafe(pos - start);
+  buf.copy(out, 0, start, pos);
+  pos = start;
+  if (start === 0 && buf.length > KEEP_SIZE) buf = Buffer.allocUnsafeSlow(INITIAL_SIZE);
+  return out;
+}
+
+function abort(start) {
+  pos = start;
+}
+
+// Bytes known when the serializer was compiled (keys, punctuation), as a Uint8Array.
+function writeBytes(bytes) {
+  const n = bytes.length;
+  if (pos + n > buf.length) grow(n);
+  for (let i = 0; i < n; i += 1) buf[pos + i] = bytes[i];
+  pos += n;
+}
+
+function writeByte(byte) {
+  if (pos === buf.length) grow(1);
+  buf[pos] = byte;
+  pos += 1;
+}
+
+// Text that is JSON already (from JSON.stringify, a date formatter, a number): written as UTF-8.
+function writeRaw(text) {
+  const n = text.length;
+  if (n < LONG_STRING) {
+    if (pos + n * 3 > buf.length) grow(n * 3);
+    let p = pos;
+    for (let i = 0; i < n; i += 1) {
+      const c = text.charCodeAt(i);
+      if (c >= 128) {
+        pos += buf.utf8Write(text, pos, buf.length - pos);
+        return;
+      }
+      buf[p] = c;
+      p += 1;
+    }
+    pos = p;
+    return;
+  }
+  if (pos + n * 3 > buf.length) grow(n * 3);
+  pos += buf.utf8Write(text, pos, buf.length - pos);
+}
+
+// A number written as JSON writes it (finite ones only: the callers check).
+function writeNumberText(text) {
+  const n = text.length;
+  if (pos + n > buf.length) grow(n);
+  for (let i = 0; i < n; i += 1) buf[pos + i] = text.charCodeAt(i);
+  pos += n;
+}
+
+function writeEscapedUnit(p, c) {
+  buf[p] = 92;
+  switch (c) {
+    case 34:
+      buf[p + 1] = 34;
+      return p + 2;
+    case 92:
+      buf[p + 1] = 92;
+      return p + 2;
+    case 8:
+      buf[p + 1] = 98;
+      return p + 2;
+    case 12:
+      buf[p + 1] = 102;
+      return p + 2;
+    case 10:
+      buf[p + 1] = 110;
+      return p + 2;
+    case 13:
+      buf[p + 1] = 114;
+      return p + 2;
+    case 9:
+      buf[p + 1] = 116;
+      return p + 2;
+    default:
+      // \u00XX for the other control characters, \udXXX for lone surrogates: what JSON.stringify writes.
+      buf[p + 1] = 117;
+      buf[p + 2] = HEX.charCodeAt(c >> 12);
+      buf[p + 3] = HEX.charCodeAt((c >> 8) & 15);
+      buf[p + 4] = HEX.charCodeAt((c >> 4) & 15);
+      buf[p + 5] = HEX.charCodeAt(c & 15);
+      return p + 6;
+  }
+}
+
+// A string, quoted and escaped as JSON.stringify does it, as UTF-8.
+function writeString(text) {
+  const n = text.length;
+  if (n > LONG_STRING) {
+    writeLongString(text);
+    return;
+  }
+  // At most 6 bytes a UTF-16 unit (an escape), and the quotes.
+  if (pos + n * 6 + 2 > buf.length) grow(n * 6 + 2);
+  let p = pos;
+  buf[p] = 34;
+  p += 1;
+  for (let i = 0; i < n; i += 1) {
+    const c = text.charCodeAt(i);
+    if (c < 128) {
+      if (c >= 32 && c !== 34 && c !== 92) {
+        buf[p] = c;
+        p += 1;
+      } else {
+        p = writeEscapedUnit(p, c);
+      }
+    } else if (c < 0x800) {
+      buf[p] = 0xc0 | (c >> 6);
+      buf[p + 1] = 0x80 | (c & 63);
+      p += 2;
+    } else if (c < 0xd800 || c > 0xdfff) {
+      buf[p] = 0xe0 | (c >> 12);
+      buf[p + 1] = 0x80 | ((c >> 6) & 63);
+      buf[p + 2] = 0x80 | (c & 63);
+      p += 3;
+    } else {
+      const next = i + 1 < n ? text.charCodeAt(i + 1) : 0;
+      if (c <= 0xdbff && next >= 0xdc00 && next <= 0xdfff) {
+        // A surrogate pair: one code point of 4 bytes.
+        const point = 0x10000 + ((c - 0xd800) << 10) + (next - 0xdc00);
+        buf[p] = 0xf0 | (point >> 18);
+        buf[p + 1] = 0x80 | ((point >> 12) & 63);
+        buf[p + 2] = 0x80 | ((point >> 6) & 63);
+        buf[p + 3] = 0x80 | (point & 63);
+        p += 4;
+        i += 1;
+      } else {
+        p = writeEscapedUnit(p, c);
+      }
+    }
+  }
+  buf[p] = 34;
+  pos = p + 1;
+}
+
+function writeLongString(text) {
+  if (NEEDS_ESCAPE.test(text)) {
+    writeRaw(JSON.stringify(text));
+    return;
+  }
+  const n = text.length;
+  if (pos + n * 3 + 2 > buf.length) grow(n * 3 + 2);
+  buf[pos] = 34;
+  pos += 1;
+  pos += buf.utf8Write(text, pos, buf.length - pos);
+  buf[pos] = 34;
+  pos += 1;
+}
+
+// The bytes of a literal of the generated code.
+function bytesOf(text) {
+  return new Uint8Array(Buffer.from(text, 'utf8'));
+}
+
+module.exports = {
+  begin,
+  end,
+  endBuffer,
+  abort,
+  writeBytes,
+  writeByte,
+  writeRaw,
+  writeNumberText,
+  writeString,
+  bytesOf,
+};
+
+},
+"@xufa/serializer/package.json": function (module, exports, require) {
+module.exports = {"name":"@xufa/serializer","version":"0.1.0"};
 },
 "@xufa/template/index.js": function (module, exports, require) {
 // @xufa/template: templates of text and HTML with the expressions of @xufa/expression, compiled once and rendered
@@ -17996,7 +20226,7 @@ module.exports = {
 };
 }
   };
-  var mains = {"@xufa/schema":"@xufa/schema/index.js","@xufa/expression":"@xufa/expression/index.js","@xufa/template":"@xufa/template/index.js","@xufa/yaml":"@xufa/yaml/index.js","@xufa/marshal":"@xufa/marshal/index.js","@xufa/router":"@xufa/router/index.js"};
+  var mains = {"@xufa/schema":"@xufa/schema/index.js","@xufa/expression":"@xufa/expression/index.js","@xufa/template":"@xufa/template/index.js","@xufa/yaml":"@xufa/yaml/index.js","@xufa/marshal":"@xufa/marshal/index.js","@xufa/router":"@xufa/router/index.js","@xufa/serializer":"@xufa/serializer/index.js"};
   var cache = {};
   function resolve(from, request) {
     if (modules[request] && request.indexOf('node:') === 0) return request;
@@ -18033,5 +20263,6 @@ module.exports = {
     yaml: main('@xufa/yaml'),
     marshal: main('@xufa/marshal'),
     router: main('@xufa/router'),
+    serializer: main('@xufa/serializer'),
   };
 })(typeof globalThis !== 'undefined' ? globalThis : this);

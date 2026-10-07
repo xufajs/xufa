@@ -1,4 +1,4 @@
-// Type definitions for @xufa/netcache.
+/** Type definitions for @xufa/netcache. */
 import { EventEmitter } from 'node:events';
 import type { Discovery, DiscoveryOptions } from '@xufa/discovery';
 import type { CacheFaults } from '@xufa/faults';
@@ -76,6 +76,23 @@ export declare class NetCache extends EventEmitter<NetCacheEvents> {
   clear(prefix?: string): Promise<void>;
   /** A message to the nodes connected now ('publish' on them; not kept): how many it was sent to. */
   publish(channel: string, data: unknown): number;
+  /**
+   * A check of xufa.health of @xufa/http: down when it is not started, degraded when peers it knows are not connected
+   * (or fewer than minPeers are). Not critical by default: a cache that misses asks the database.
+   */
+  health(options?: { minPeers?: number; critical?: boolean; timeout?: number | string }): {
+    check(): Promise<{
+      status: 'up' | 'degraded' | 'down';
+      error?: string;
+      peers?: number;
+      connected?: number;
+      keys?: number;
+      unacknowledged?: number;
+      resets?: number;
+    }>;
+    critical: boolean;
+    timeout?: number | string;
+  };
 }
 
 export declare class NetCacheError extends Error {

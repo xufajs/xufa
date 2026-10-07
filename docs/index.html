@@ -121,7 +121,7 @@ const long = await Book.objects
 await Author.objects.values('name').annotate({ books: Count('books') });</code></pre>
               </div>
               <div class="tab-panel" id="panel-seq" role="tabpanel" aria-labelledby="tab-seq" hidden>
-                <pre><code class="language-js">// require('sequelize'), changed: the rest of the code as it was.
+                <pre data-run><code class="language-js">// require('sequelize'), changed: the rest of the code as it was.
 const { Sequelize, DataTypes, Op } = require('@xufa/sequelize');
 
 const sequelize = new Sequelize(process.env.DATABASE_URL);
@@ -214,7 +214,7 @@ const books = await Book.findAll({
             <table>
               <thead><tr><th>Package</th><th>Has the API of</th><th>What it is</th></tr></thead>
               <tbody>
-                <tr><td><a href="guide.html"><code>xufa</code></a></td><td></td><td>The framework: <code>@xufa/http</code>, and the rest by its paths (<code>xufa/orm</code>, <code>xufa/auth</code>, <code>xufa/schema</code>, <code>xufa/config</code>, <code>xufa/scheduler</code>, <code>xufa/client</code>, <code>xufa/openapi</code>, <code>xufa/faults</code>, <code>xufa/expression</code>, <code>xufa/template</code>)</td></tr>
+                <tr><td><a href="guide.html"><code>xufa</code></a></td><td></td><td>The framework: <code>@xufa/http</code>, and the rest by its paths (<code>xufa/orm</code>, <code>xufa/auth</code>, <code>xufa/schema</code>, <code>xufa/config</code>, <code>xufa/scheduler</code>, <code>xufa/queue</code>, <code>xufa/admin</code>, <code>xufa/session</code>, <code>xufa/client</code>, <code>xufa/openapi</code>, <code>xufa/faults</code>, <code>xufa/expression</code>, <code>xufa/template</code>)</td></tr>
                 <!--generated: packages-table-->
                 <tr class="group"><th colspan="3"><a href="packages.html#framework">The framework</a></th></tr>
                 <tr><td><a href="http/index.html"><code>@xufa/http</code></a></td><td>fastify</td><td>The HTTP framework: routes, schemas, hooks, plugins and decorators, with the API of fastify.</td></tr>
@@ -222,8 +222,10 @@ const books = await Book.findAll({
                 <tr><td><a href="openapi/index.html"><code>@xufa/openapi</code></a></td><td>@fastify/swagger, @fastify/swagger-ui</td><td>OpenAPI documents of the routes, with resources and security documented, and an explorer.</td></tr>
                 <tr><td><a href="client/index.html"><code>@xufa/client</code></a></td><td>got, axios</td><td>A client of HTTP APIs on fetch: JSON, timeouts, retries, and the cancellation of the request that calls.</td></tr>
                 <tr><td><a href="schema/index.html"><code>@xufa/schema</code></a></td><td>ajv, @sinclair/typebox</td><td>Schemas as code (plain JSON Schema, typed) or JSON Schema draft-04 to 2020-12, compiled into fast validators.</td></tr>
-                <tr><td><a href="orm/index.html"><code>@xufa/orm</code></a></td><td>the Django ORM</td><td>Models, querysets and migrations for PostgreSQL, MongoDB, SQLite, files and stores of objects, with tenants and caches.</td></tr>
+                <tr><td><a href="orm/index.html"><code>@xufa/orm</code></a></td><td>the Django ORM</td><td>Models, querysets and migrations for PostgreSQL, MongoDB, SQLite, files, stores of objects (S3, Azure Blob) and email, with tenants and caches.</td></tr>
                 <tr><td><a href="auth/index.html"><code>@xufa/auth</code></a></td><td>jsonwebtoken, otplib</td><td>Passwords, JWT, refresh tokens, TOTP and lockout, as a plugin of @xufa/http.</td></tr>
+                <tr><td><a href="admin/index.html"><code>@xufa/admin</code></a></td><td>the Django admin</td><td>The admin of the models: lists with search, filters and pages, forms with their validation, for every backend.</td></tr>
+                <tr><td><a href="session/index.html"><code>@xufa/session</code></a></td><td>@fastify/session, express-session</td><td>Sessions of browsers: signed cookies, stores in memory or in the database, flash messages and CSRF tokens.</td></tr>
                 <tr><td><a href="sequelize/index.html"><code>@xufa/sequelize</code></a></td><td>Sequelize</td><td>The API of Sequelize 6 over the xufa ORM: existing code runs as it is.</td></tr>
                 <tr class="group"><th colspan="3"><a href="packages.html#drivers">Drivers</a></th></tr>
                 <tr><td><a href="pg/index.html"><code>@xufa/pg</code></a></td><td>pg</td><td>A PostgreSQL driver: Client, Pool, transactions, TLS, COPY and LISTEN/NOTIFY.</td></tr>
@@ -234,9 +236,10 @@ const books = await Book.findAll({
                 <tr class="group"><th colspan="3"><a href="packages.html#security">Security</a></th></tr>
                 <tr><td><a href="jwt/index.html"><code>@xufa/jwt</code></a></td><td>jsonwebtoken</td><td>JSON Web Tokens with the API and the tests of jsonwebtoken, jws and jwa, with EdDSA. @xufa/auth signs with it.</td></tr>
                 <tr class="group"><th colspan="3"><a href="packages.html#running">Running</a></th></tr>
-                <tr><td><a href="cluster/index.html"><code>@xufa/cluster</code></a></td><td>node:cluster</td><td>An app in a cluster of processes, restarted when they die, stopped gracefully, with a message bus.</td></tr>
+                <tr><td><a href="cluster/index.html"><code>@xufa/cluster</code></a></td><td>node:cluster</td><td>An app in a cluster of processes, restarted when they die, stopped gracefully, with a message bus and pools of nodes.</td></tr>
                 <tr><td><a href="config/index.html"><code>@xufa/config</code></a></td><td>node-config, convict, dotenv, node-vault</td><td>The configuration from files by environment, .env, variables, HTTP, Consul and Vault, with safe templates, a schema and secrets redacted.</td></tr>
                 <tr><td><a href="scheduler/index.html"><code>@xufa/scheduler</code></a></td><td>node-cron, agenda</td><td>Jobs on intervals, cron or once: no overlaps, timeouts, isolated failures, once among machines with a lock.</td></tr>
+                <tr><td><a href="queue/index.html"><code>@xufa/queue</code></a></td><td>BullMQ, Laravel queues, workflow engines</td><td>Jobs in the background kept in a database of the ORM: workers anywhere, retries, timeouts, enqueued in transactions; pipelines of steps.</td></tr>
                 <tr><td><a href="discovery/index.html"><code>@xufa/discovery</code></a></td><td>UDP</td><td>The nodes of a service found on the network by multicast, broadcast or seeds, with their meta, sealed with a secret.</td></tr>
                 <tr><td><a href="netcache/index.html"><code>@xufa/netcache</code></a></td><td>Redis, as a cache</td><td>A cache shared by the machines of a service: a copy in each, every write sent to all over sealed TCP.</td></tr>
                 <tr><td><a href="faults/index.html"><code>@xufa/faults</code></a></td><td>Toxiproxy, nock</td><td>Faults made to happen by rules: the database, caches, API calls or the bus fail, wait or hang, to test resilience.</td></tr>

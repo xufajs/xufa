@@ -1,4 +1,4 @@
-const { AnyOf, Schema, String, Integer } = require('../src');
+const { AnyOf, Schema, String, Integer } = require('..');
 
 describe('AnyOf', () => {
   it('Should return an error if value is undefined and is mandatory', () => {

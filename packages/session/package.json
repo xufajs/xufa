@@ -1,0 +1,67 @@
+{
+  "name": "@xufa/session",
+  "version": "0.1.0",
+  "description": "Sessions of browsers for @xufa/http, with no dependencies: signed cookies, stores in memory or in a database of @xufa/orm (any backend, expired by a TTL index), flash messages and CSRF tokens",
+  "main": "./index.js",
+  "types": "./index.d.ts",
+  "type": "commonjs",
+  "exports": {
+    ".": {
+      "types": "./index.d.ts",
+      "default": "./index.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "index.js",
+    "index.d.ts",
+    "lib",
+    "LICENSE"
+  ],
+  "scripts": {
+    "test": "vyntra",
+    "test:types": "tsd"
+  },
+  "keywords": [
+    "session",
+    "cookie",
+    "csrf",
+    "flash",
+    "orm"
+  ],
+  "author": "Jesús Seijas <jseijas@gmail.com>",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/xufajs/xufa.git",
+    "directory": "packages/session"
+  },
+  "homepage": "https://github.com/xufajs/xufa/tree/main/packages/session#readme",
+  "bugs": {
+    "url": "https://github.com/xufajs/xufa/issues"
+  },
+  "engines": {
+    "node": "^22.22.3 || ^24.15.0 || >=25.7.0"
+  },
+  "devDependencies": {
+    "@xufa/http": "workspace:*",
+    "tsd": "^0.33.0",
+    "vyntra": "^0.6.0",
+    "@xufa/orm": "workspace:*"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "tsd": {
+    "directory": "test/types"
+  },
+  "dependencies": {},
+  "peerDependencies": {
+    "@xufa/orm": "workspace:*"
+  },
+  "peerDependenciesMeta": {
+    "@xufa/orm": {
+      "optional": true
+    }
+  }
+}

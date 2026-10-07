@@ -1,0 +1,549 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>@xufa/mongo: Reference · xufa</title>
+    <meta
+      name="description"
+      content="The reference of @xufa/mongo: every function, class, interface and type it declares, made from its TypeScript declarations."
+    />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%23d9502b'/%3E%3Ctext x='16' y='22.5' font-family='monospace' font-size='18' font-weight='700' fill='white' text-anchor='middle'%3Ex%3C/text%3E%3C/svg%3E"
+    />
+    <link rel="stylesheet" href="../style.css?v=0.1.0" />
+    <script src="../main.js?v=0.1.0"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js" defer></script>
+  </head>
+  <body>
+    <header class="header">
+      <div class="header-inner">
+        <a class="logo" href="../index.html"><span class="logo-mark">x</span>xufa</a>
+        <nav class="nav">
+          <a href="../guide.html">Guide</a>
+          <a href="../playground.html">Playground</a>
+          <a href="../http/index.html">HTTP</a>
+          <a href="../orm/index.html">ORM</a>
+          <a class="hide-small" href="../auth/index.html">Auth</a>
+          <a class="hide-small" href="../sequelize/index.html">Sequelize</a>
+          <a class="hide-small" href="../packages.html" aria-current="page">Packages</a>
+          <a class="hide-small" href="../benchmarks.html">Benchmarks</a>
+          <a href="https://github.com/xufajs/xufa">GitHub</a>
+          <button class="theme-toggle" type="button" aria-label="Switch between light and dark theme">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+              <path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z" />
+            </svg>
+          </button>
+        </nav>
+      </div>
+    </header>
+
+    <div class="docs">
+      <button class="menu-toggle" type="button" aria-expanded="false">☰ Contents</button>
+      <aside class="sidebar">
+        <h4>Reference</h4>
+        <ul>
+          <li><a href="#functions">Functions (3)</a></li>
+          <li><a href="#classes">Classes (16)</a></li>
+          <li><a href="#interfaces">Interfaces (11)</a></li>
+          <li><a href="#types">Types (3)</a></li>
+        </ul>
+        <h4>Packages</h4>
+        <ul>
+          <li><a href="../websocket/index.html">@xufa/websocket</a></li>
+          <li><a href="../admin/index.html">@xufa/admin</a></li>
+          <li><a href="../session/index.html">@xufa/session</a></li>
+          <li><a href="../openapi/index.html">@xufa/openapi</a></li>
+          <li><a href="../client/index.html">@xufa/client</a></li>
+          <li><a href="../schema/index.html">@xufa/schema</a></li>
+          <li><a href="../pg/index.html">@xufa/pg</a></li>
+          <li><a href="index.html" aria-current="page">@xufa/mongo</a></li>
+          <li><a href="../expression/index.html">@xufa/expression</a></li>
+          <li><a href="../template/index.html">@xufa/template</a></li>
+          <li><a href="../cluster/index.html">@xufa/cluster</a></li>
+          <li><a href="../scheduler/index.html">@xufa/scheduler</a></li>
+          <li><a href="../queue/index.html">@xufa/queue</a></li>
+          <li><a href="../config/index.html">@xufa/config</a></li>
+          <li><a href="../discovery/index.html">@xufa/discovery</a></li>
+          <li><a href="../netcache/index.html">@xufa/netcache</a></li>
+          <li><a href="../faults/index.html">@xufa/faults</a></li>
+          <li><a href="../marshal/index.html">@xufa/marshal</a></li>
+          <li><a href="../yaml/index.html">@xufa/yaml</a></li>
+          <li><a href="../jwt/index.html">@xufa/jwt</a></li>
+          <li><a href="../logger/index.html">@xufa/logger</a></li>
+          <li><a href="../router/index.html">@xufa/router</a></li>
+          <li><a href="../serializer/index.html">@xufa/serializer</a></li>
+          <li><a href="../inject/index.html">@xufa/inject</a></li>
+          <li><a href="../boot/index.html">@xufa/boot</a></li>
+          <li><a href="../errors/index.html">@xufa/errors</a></li>
+          <li><a href="../packages.html">All the packages</a></li>
+        </ul>
+      </aside>
+
+      <article class="content">
+        <nav class="package-tabs" aria-label="@xufa/mongo">
+          <a href="index.html">Overview</a>
+          <a href="reference.html" aria-current="page">Reference</a>
+        </nav>
+        <h1>Reference</h1>
+        <p class="intro">
+          A MongoDB driver (BSON, wire protocol, SCRAM, sessions and transactions) with no dependencies. Every declaration of its TypeScript declarations
+          (<code>packages/mongo/index.d.ts</code>), as they are written, with their comments: made from them each time
+          the docs are built. How to use them is in <a href="index.html">the overview</a>.
+        </p>
+
+        <h2 id="functions">Functions</h2>
+        <p class="ref-index"><a href="#ref-parseUrl"><code>parseUrl</code></a>, <a href="#ref-serialize"><code>serialize</code></a>, <a href="#ref-deserialize"><code>deserialize</code></a></p>
+
+        <h3 id="ref-parseUrl"><code>parseUrl</code></h3>
+        <pre><code class="language-ts">export declare function parseUrl(url: string): {
+  srv: boolean;
+  username?: string;
+  password?: string;
+  hosts: Array&lt;{ host: string; port: number }&gt;;
+  database?: string;
+  options: Record&lt;string, string&gt;;
+};</code></pre>
+        <p>The parts of a connection string (mongodb:// or mongodb+srv://): the hosts, the credentials, the database and the options.</p>
+
+        <h3 id="ref-serialize"><code>serialize</code></h3>
+        <pre><code class="language-ts">export declare function serialize(doc: Document, reserve?: number): Buffer;</code></pre>
+        <p>A document as BSON bytes.</p>
+
+        <h3 id="ref-deserialize"><code>deserialize</code></h3>
+        <pre><code class="language-ts">export declare function deserialize(buffer: Buffer, offset?: number): Document;</code></pre>
+        <p>The document of BSON bytes (from offset).</p>
+
+        <h2 id="classes">Classes</h2>
+        <p class="ref-index"><a href="#ref-Cursor"><code>Cursor</code></a>, <a href="#ref-Collection"><code>Collection</code></a>, <a href="#ref-Db"><code>Db</code></a>, <a href="#ref-ClientSession"><code>ClientSession</code></a>, <a href="#ref-MongoClient"><code>MongoClient</code></a>, <a href="#ref-ObjectId"><code>ObjectId</code></a>, <a href="#ref-Binary"><code>Binary</code></a>, <a href="#ref-Timestamp"><code>Timestamp</code></a>, <a href="#ref-Decimal128"><code>Decimal128</code></a>, <a href="#ref-MinKey"><code>MinKey</code></a>, <a href="#ref-MaxKey"><code>MaxKey</code></a>, <a href="#ref-Int32"><code>Int32</code></a>, <a href="#ref-Double"><code>Double</code></a>, <a href="#ref-MongoError"><code>MongoError</code></a>, <a href="#ref-MongoNetworkError"><code>MongoNetworkError</code></a>, <a href="#ref-MongoServerError"><code>MongoServerError</code></a></p>
+
+        <h3 id="ref-Cursor"><code>Cursor</code></h3>
+        <pre><code class="language-ts">export declare class Cursor&lt;T = Document&gt; implements AsyncIterable&lt;T&gt; { ... }</code></pre>
+        <p>The documents of a find() or an aggregate(), read in batches: for await (const doc of cursor), or toArray(). Batches are asked for ahead of the reading unless prefetch is false.</p>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>sort(sort: Record&lt;string, 1 | -1&gt;)</code></td><td><code>this</code></td><td></td></tr>
+                <tr><td><code>skip(count: number)</code></td><td><code>this</code></td><td></td></tr>
+                <tr><td><code>limit(count: number)</code></td><td><code>this</code></td><td></td></tr>
+                <tr><td><code>project(projection: Record&lt;string, 0 | 1 | boolean&gt;)</code></td><td><code>this</code></td><td></td></tr>
+                <tr><td><code>batchSize(size: number)</code></td><td><code>this</code></td><td></td></tr>
+                <tr><td><code>next()</code></td><td><code>Promise&lt;T | null&gt;</code></td><td></td></tr>
+                <tr><td><code>toArray()</code></td><td><code>Promise&lt;T[]&gt;</code></td><td></td></tr>
+                <tr><td><code>close()</code></td><td><code>Promise&lt;void&gt;</code></td><td></td></tr>
+                <tr><td><code>[Symbol.asyncIterator]()</code></td><td><code>AsyncIterator&lt;T&gt;</code></td><td></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-Collection"><code>Collection</code></h3>
+        <pre><code class="language-ts">export declare class Collection&lt;T extends Document = Document&gt; { ... }</code></pre>
+        <p>A collection of a database: its reads (find, findOne, aggregate, countDocuments), writes (insert, update, replace, delete) and indexes, as the official driver has them.</p>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>readonly name</code></td><td><code>string</code></td><td></td></tr>
+                <tr><td><code>readonly db</code></td><td><code><a href="#ref-Db">Db</a></code></td><td></td></tr>
+                <tr><td><code>find(filter?: Filter&lt;T&gt;, options?: FindOptions&lt;T&gt;)</code></td><td><code><a href="#ref-Cursor">Cursor</a>&lt;T&gt;</code></td><td></td></tr>
+                <tr><td><code>findOne(filter?: Filter&lt;T&gt;, options?: FindOptions&lt;T&gt;)</code></td><td><code>Promise&lt;T | null&gt;</code></td><td></td></tr>
+                <tr><td><code>aggregate&lt;R = Document&gt;(pipeline: Document[], options?: AggregateOptions)</code></td><td><code><a href="#ref-Cursor">Cursor</a>&lt;R&gt;</code></td><td></td></tr>
+                <tr><td><code>countDocuments(filter?: Filter&lt;T&gt;, options?: ReadOptions &amp; { skip?: number; limit?: number })</code></td><td><code>Promise&lt;number&gt;</code></td><td></td></tr>
+                <tr><td><code>insertOne(doc: T, options?: WriteOptions)</code></td><td><code>Promise&lt;<a href="#ref-InsertOneResult">InsertOneResult</a>&gt;</code></td><td></td></tr>
+                <tr><td><code>insertMany(docs: T[], options?: WriteOptions &amp; { ordered?: boolean })</code></td><td><code>Promise&lt;<a href="#ref-InsertManyResult">InsertManyResult</a>&gt;</code></td><td></td></tr>
+                <tr><td><code>updateOne(filter: Filter&lt;T&gt;, update: Document, options?: WriteOptions &amp; { upsert?: boolean; arrayFilters?: Document[] })</code></td><td><code>Promise&lt;<a href="#ref-UpdateResult">UpdateResult</a>&gt;</code></td><td></td></tr>
+                <tr><td><code>updateMany(filter: Filter&lt;T&gt;, update: Document, options?: WriteOptions &amp; { upsert?: boolean; arrayFilters?: Document[] })</code></td><td><code>Promise&lt;<a href="#ref-UpdateResult">UpdateResult</a>&gt;</code></td><td></td></tr>
+                <tr><td><code>replaceOne(filter: Filter&lt;T&gt;, replacement: T, options?: WriteOptions &amp; { upsert?: boolean })</code></td><td><code>Promise&lt;<a href="#ref-UpdateResult">UpdateResult</a>&gt;</code></td><td></td></tr>
+                <tr><td><code>deleteOne(filter: Filter&lt;T&gt;, options?: WriteOptions)</code></td><td><code>Promise&lt;<a href="#ref-DeleteResult">DeleteResult</a>&gt;</code></td><td></td></tr>
+                <tr><td><code>deleteMany(filter: Filter&lt;T&gt;, options?: WriteOptions)</code></td><td><code>Promise&lt;<a href="#ref-DeleteResult">DeleteResult</a>&gt;</code></td><td></td></tr>
+                <tr><td><code>createIndex(keys: Record&lt;string, 1 | -1 | string&gt;, options?: SessionOption &amp; Document)</code></td><td><code>Promise&lt;string&gt;</code></td><td></td></tr>
+                <tr><td><code>dropIndex(name: string, options?: SessionOption)</code></td><td><code>Promise&lt;void&gt;</code></td><td></td></tr>
+                <tr><td><code>indexes(options?: ReadOptions)</code></td><td><code>Promise&lt;<a href="#ref-Document">Document</a>[]&gt;</code></td><td></td></tr>
+                <tr><td><code>drop(options?: SessionOption)</code></td><td><code>Promise&lt;boolean&gt;</code></td><td></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-Db"><code>Db</code></h3>
+        <pre><code class="language-ts">export declare class Db { ... }</code></pre>
+        <p>A database of the deployment: its collections, and commands.</p>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>readonly name</code></td><td><code>string</code></td><td></td></tr>
+                <tr><td><code>readonly client</code></td><td><code><a href="#ref-MongoClient">MongoClient</a></code></td><td></td></tr>
+                <tr><td><code>collection&lt;T extends Document = Document&gt;(name: string)</code></td><td><code><a href="#ref-Collection">Collection</a>&lt;T&gt;</code></td><td></td></tr>
+                <tr><td><code>command(command: Document, options?: ReadOptions)</code></td><td><code>Promise&lt;<a href="#ref-Document">Document</a>&gt;</code></td><td></td></tr>
+                <tr><td><code>listCollections(filter?: Document, options?: { nameOnly?: boolean; readPreference?: ReadPreference })</code></td><td><code>Promise&lt;<a href="#ref-Document">Document</a>[]&gt;</code></td><td></td></tr>
+                <tr><td><code>createCollection&lt;T extends Document = Document&gt;(name: string, options?: Document)</code></td><td><code>Promise&lt;<a href="#ref-Collection">Collection</a>&lt;T&gt;&gt;</code></td><td></td></tr>
+                <tr><td><code>dropDatabase()</code></td><td><code>Promise&lt;void&gt;</code></td><td></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-ClientSession"><code>ClientSession</code></h3>
+        <pre><code class="language-ts">export declare class ClientSession { ... }</code></pre>
+        <p>A session of the client (startSession()): transactions on replica sets and sharded clusters (withTransaction() commits, or aborts when its function throws; unlike the official driver, it does not retry on transient errors).</p>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>readonly inTransaction</code></td><td><code>boolean</code></td><td></td></tr>
+                <tr><td><code>startTransaction()</code></td><td><code>void</code></td><td></td></tr>
+                <tr><td><code>commitTransaction()</code></td><td><code>Promise&lt;void&gt;</code></td><td></td></tr>
+                <tr><td><code>abortTransaction()</code></td><td><code>Promise&lt;void&gt;</code></td><td></td></tr>
+                <tr><td><code>withTransaction&lt;R&gt;(fn: (session: ClientSession) =&gt; Promise&lt;R&gt;)</code></td><td><code>Promise&lt;R&gt;</code></td><td></td></tr>
+                <tr><td><code>endSession()</code></td><td><code>Promise&lt;void&gt;</code></td><td></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-MongoClient"><code>MongoClient</code></h3>
+        <pre><code class="language-ts">export declare class MongoClient { ... }</code></pre>
+        <p>A client of a MongoDB deployment (a server, a replica set or mongos), with a pool of connections to each server: connect(), db(), startSession() and close().</p>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>new (url?: string, options?: MongoClientOptions)</code></td><td></td><td></td></tr>
+                <tr><td><code>readonly supportsTransactions</code></td><td><code>boolean</code></td><td></td></tr>
+                <tr><td><code>connect()</code></td><td><code>Promise&lt;this&gt;</code></td><td></td></tr>
+                <tr><td><code>db(name?: string)</code></td><td><code><a href="#ref-Db">Db</a></code></td><td></td></tr>
+                <tr><td><code>startSession()</code></td><td><code><a href="#ref-ClientSession">ClientSession</a></code></td><td></td></tr>
+                <tr><td><code>close()</code></td><td><code>Promise&lt;void&gt;</code></td><td></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-ObjectId"><code>ObjectId</code></h3>
+        <pre><code class="language-ts">export declare class ObjectId { ... }</code></pre>
+        <p>A BSON ObjectId: 12 bytes, as 24 hex characters (toHexString()); new ObjectId() makes a unique one.</p>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>new (value?: string | Uint8Array | ObjectId)</code></td><td></td><td></td></tr>
+                <tr><td><code>static isValid(value: unknown)</code></td><td><code>boolean</code></td><td></td></tr>
+                <tr><td><code>static generate()</code></td><td><code>Buffer</code></td><td></td></tr>
+                <tr><td><code>readonly buffer</code></td><td><code>Buffer</code></td><td></td></tr>
+                <tr><td><code>readonly id</code></td><td><code>Buffer</code></td><td></td></tr>
+                <tr><td><code>toHexString()</code></td><td><code>string</code></td><td></td></tr>
+                <tr><td><code>toString()</code></td><td><code>string</code></td><td></td></tr>
+                <tr><td><code>toJSON()</code></td><td><code>string</code></td><td></td></tr>
+                <tr><td><code>equals(other: ObjectId | string)</code></td><td><code>boolean</code></td><td></td></tr>
+                <tr><td><code>getTimestamp()</code></td><td><code>Date</code></td><td></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-Binary"><code>Binary</code></h3>
+        <pre><code class="language-ts">export declare class Binary { ... }</code></pre>
+        <p>BSON binary data, with its subtype.</p>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>new (buffer: Uint8Array, subType?: number)</code></td><td></td><td></td></tr>
+                <tr><td><code>buffer</code></td><td><code>Buffer</code></td><td></td></tr>
+                <tr><td><code>subType</code></td><td><code>number</code></td><td></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-Timestamp"><code>Timestamp</code></h3>
+        <pre><code class="language-ts">export declare class Timestamp { ... }</code></pre>
+        <p>A BSON timestamp (of the oplog): seconds and an increment.</p>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>new (low: number, high: number)</code></td><td></td><td></td></tr>
+                <tr><td><code>low</code></td><td><code>number</code></td><td></td></tr>
+                <tr><td><code>high</code></td><td><code>number</code></td><td></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-Decimal128"><code>Decimal128</code></h3>
+        <pre><code class="language-ts">export declare class Decimal128 { ... }</code></pre>
+        <p>A BSON Decimal128: a decimal of 34 digits, kept exactly (fromString(), toString()).</p>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>new (bytes: Uint8Array)</code></td><td></td><td></td></tr>
+                <tr><td><code>bytes</code></td><td><code>Buffer</code></td><td></td></tr>
+                <tr><td><code>static fromString(text: string)</code></td><td><code><a href="#ref-Decimal128">Decimal128</a></code></td><td><p>The decimal of a text ('12.50', '1E+3', 'NaN'), exactly: more than 34 digits or an exponent out of range throws.</p></td></tr>
+                <tr><td><code>static fromParts(negative: boolean, coefficient: bigint, exponent: number)</code></td><td><code><a href="#ref-Decimal128">Decimal128</a></code></td><td><p>(-1)^negative * coefficient * 10^exponent, with a coefficient of up to 34 digits.</p></td></tr>
+                <tr><td><code>toParts()</code></td><td><code>{ negative: boolean; coefficient: number | bigint; exponent: number; special: null | 'Infinity' | 'NaN' }</code></td><td><p>Its sign, coefficient (a number under 2^53, a bigint above) and exponent, or what special value it is.</p></td></tr>
+                <tr><td><code>toString()</code></td><td><code>string</code></td><td><p>The text of the standard: '12.50', '1E+3', '-0.0001'.</p></td></tr>
+                <tr><td><code>toJSON()</code></td><td><code>{ $numberDecimal: string }</code></td><td></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-MinKey"><code>MinKey</code></h3>
+        <pre><code class="language-ts">export declare class MinKey { ... }</code></pre>
+        <p>The BSON value lower than every other.</p>
+
+        <h3 id="ref-MaxKey"><code>MaxKey</code></h3>
+        <pre><code class="language-ts">export declare class MaxKey { ... }</code></pre>
+        <p>The BSON value greater than every other.</p>
+
+        <h3 id="ref-Int32"><code>Int32</code></h3>
+        <pre><code class="language-ts">export declare class Int32 { ... }</code></pre>
+        <p>A number written as a BSON 32-bit integer (numbers are written as such when they are integers that fit, as doubles otherwise).</p>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>new (value: number)</code></td><td></td><td></td></tr>
+                <tr><td><code>value</code></td><td><code>number</code></td><td></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-Double"><code>Double</code></h3>
+        <pre><code class="language-ts">export declare class Double { ... }</code></pre>
+        <p>A number written as a BSON double, even when it is an integer.</p>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>new (value: number)</code></td><td></td><td></td></tr>
+                <tr><td><code>value</code></td><td><code>number</code></td><td></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-MongoError"><code>MongoError</code></h3>
+        <pre><code class="language-ts">export declare class MongoError extends Error { ... }</code></pre>
+        <p>The class of the errors of</p>
+
+        <h3 id="ref-MongoNetworkError"><code>MongoNetworkError</code></h3>
+        <pre><code class="language-ts">export declare class MongoNetworkError extends MongoError { ... }</code></pre>
+        <p>An error of the connection to a server (it could not connect, or the connection was lost).</p>
+
+        <h3 id="ref-MongoServerError"><code>MongoServerError</code></h3>
+        <pre><code class="language-ts">export declare class MongoServerError extends MongoError { ... }</code></pre>
+        <p>An error the server answered, with its code and codeName (11000: a duplicate key).</p>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>code?</code></td><td><code>number</code></td><td></td></tr>
+                <tr><td><code>codeName?</code></td><td><code>string</code></td><td></td></tr>
+                <tr><td><code>errorLabels</code></td><td><code>string[]</code></td><td></td></tr>
+                <tr><td><code>reply</code></td><td><code><a href="#ref-Document">Document</a></code></td><td></td></tr>
+                <tr><td><code>writeErrors?</code></td><td><code><a href="#ref-Document">Document</a>[]</code></td><td></td></tr>
+                <tr><td><code>hasErrorLabel(label: string)</code></td><td><code>boolean</code></td><td></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h2 id="interfaces">Interfaces</h2>
+        <p class="ref-index"><a href="#ref-WriteConcern"><code>WriteConcern</code></a>, <a href="#ref-MongoClientOptions"><code>MongoClientOptions</code></a>, <a href="#ref-SessionOption"><code>SessionOption</code></a>, <a href="#ref-ReadOptions"><code>ReadOptions</code></a>, <a href="#ref-WriteOptions"><code>WriteOptions</code></a>, <a href="#ref-FindOptions"><code>FindOptions</code></a>, <a href="#ref-AggregateOptions"><code>AggregateOptions</code></a>, <a href="#ref-InsertOneResult"><code>InsertOneResult</code></a>, <a href="#ref-InsertManyResult"><code>InsertManyResult</code></a>, <a href="#ref-UpdateResult"><code>UpdateResult</code></a>, <a href="#ref-DeleteResult"><code>DeleteResult</code></a></p>
+
+        <h3 id="ref-WriteConcern"><code>WriteConcern</code></h3>
+        <pre><code class="language-ts">export interface WriteConcern { ... }</code></pre>
+        <p>How a write is acknowledged: by how many members (w), journaled (j), within wtimeout ms.</p>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>w?</code></td><td><code>number | 'majority'</code></td><td></td></tr>
+                <tr><td><code>j?</code></td><td><code>boolean</code></td><td></td></tr>
+                <tr><td><code>wtimeout?</code></td><td><code>number</code></td><td></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-MongoClientOptions"><code>MongoClientOptions</code></h3>
+        <pre><code class="language-ts">export interface MongoClientOptions { ... }</code></pre>
+        <p>Options of a MongoClient, over those of the URL (mongodb:// and mongodb+srv://): the pool, retries, the selection of servers, timeouts, compression, TLS and authentication (SCRAM-SHA-256 or SCRAM-SHA-1).</p>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>maxPoolSize?</code></td><td><code>number</code></td><td></td></tr>
+                <tr><td><code>readPreference?</code></td><td><code><a href="#ref-ReadPreference">ReadPreference</a></code></td><td></td></tr>
+                <tr><td><code>retryWrites?</code></td><td><code>boolean</code></td><td></td></tr>
+                <tr><td><code>retryReads?</code></td><td><code>boolean</code></td><td></td></tr>
+                <tr><td><code>replicaSet?</code></td><td><code>string</code></td><td></td></tr>
+                <tr><td><code>directConnection?</code></td><td><code>boolean</code></td><td></td></tr>
+                <tr><td><code>heartbeatFrequencyMS?</code></td><td><code>number</code></td><td></td></tr>
+                <tr><td><code>serverSelectionTimeoutMS?</code></td><td><code>number</code></td><td></td></tr>
+                <tr><td><code>localThresholdMS?</code></td><td><code>number</code></td><td></td></tr>
+                <tr><td><code>connectTimeoutMS?</code></td><td><code>number</code></td><td></td></tr>
+                <tr><td><code>compressors?</code></td><td><code>string | string[]</code></td><td><p>'zstd', 'zlib' or both ('zstd,zlib'): compression of the messages, agreed with the server.</p></td></tr>
+                <tr><td><code>zlibCompressionLevel?</code></td><td><code>number</code></td><td></td></tr>
+                <tr><td><code>tls?</code></td><td><code>boolean</code></td><td></td></tr>
+                <tr><td><code>tlsOptions?</code></td><td><code>ConnectionOptions</code></td><td></td></tr>
+                <tr><td><code>appName?</code></td><td><code>string</code></td><td></td></tr>
+                <tr><td><code>username?</code></td><td><code>string</code></td><td></td></tr>
+                <tr><td><code>password?</code></td><td><code>string</code></td><td></td></tr>
+                <tr><td><code>authSource?</code></td><td><code>string</code></td><td></td></tr>
+                <tr><td><code>authMechanism?</code></td><td><code>'SCRAM-SHA-256' | 'SCRAM-SHA-1'</code></td><td></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-SessionOption"><code>SessionOption</code></h3>
+        <pre><code class="language-ts">export interface SessionOption { ... }</code></pre>
+        <p>The session of an operation: it runs in its transaction when one is open.</p>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>session?</code></td><td><code><a href="#ref-ClientSession">ClientSession</a></code></td><td></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-ReadOptions"><code>ReadOptions</code></h3>
+        <pre><code class="language-ts">export interface ReadOptions extends SessionOption { ... }</code></pre>
+        <p>Options of reads: the session and the read preference.</p>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>readPreference?</code></td><td><code><a href="#ref-ReadPreference">ReadPreference</a></code></td><td></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-WriteOptions"><code>WriteOptions</code></h3>
+        <pre><code class="language-ts">export interface WriteOptions extends SessionOption { ... }</code></pre>
+        <p>Options of writes: the session and the write concern.</p>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>writeConcern?</code></td><td><code><a href="#ref-WriteConcern">WriteConcern</a></code></td><td></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-FindOptions"><code>FindOptions</code></h3>
+        <pre><code class="language-ts">export interface FindOptions&lt;T = Document&gt; extends ReadOptions { ... }</code></pre>
+        <p>Options of find() and findOne(): sort, skip, limit, projection, batch size, hint and collation.</p>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>sort?</code></td><td><code>Record&lt;string, 1 | -1&gt;</code></td><td></td></tr>
+                <tr><td><code>skip?</code></td><td><code>number</code></td><td></td></tr>
+                <tr><td><code>limit?</code></td><td><code>number</code></td><td></td></tr>
+                <tr><td><code>projection?</code></td><td><code>Record&lt;string, 0 | 1 | boolean&gt;</code></td><td></td></tr>
+                <tr><td><code>batchSize?</code></td><td><code>number</code></td><td></td></tr>
+                <tr><td><code>hint?</code></td><td><code>string | <a href="#ref-Document">Document</a></code></td><td></td></tr>
+                <tr><td><code>collation?</code></td><td><code><a href="#ref-Document">Document</a></code></td><td></td></tr>
+                <tr><td><code>prefetch?</code></td><td><code>boolean</code></td><td><p>false: the next batch is not asked for before the one before is read.</p></td></tr>
+                <tr><td><code>readonly __type?</code></td><td><code>T</code></td><td></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-AggregateOptions"><code>AggregateOptions</code></h3>
+        <pre><code class="language-ts">export interface AggregateOptions extends ReadOptions { ... }</code></pre>
+        <p>Options of aggregate(): the session, the read preference, and those of the command (allowDiskUse...).</p>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>batchSize?</code></td><td><code>number</code></td><td></td></tr>
+                <tr><td><code>allowDiskUse?</code></td><td><code>boolean</code></td><td></td></tr>
+                <tr><td><code>hint?</code></td><td><code>string | <a href="#ref-Document">Document</a></code></td><td></td></tr>
+                <tr><td><code>collation?</code></td><td><code><a href="#ref-Document">Document</a></code></td><td></td></tr>
+                <tr><td><code>prefetch?</code></td><td><code>boolean</code></td><td></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-InsertOneResult"><code>InsertOneResult</code></h3>
+        <pre><code class="language-ts">export interface InsertOneResult { ... }</code></pre>
+        <p>The result of insertOne(): the _id of the document inserted.</p>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>acknowledged</code></td><td><code>boolean</code></td><td></td></tr>
+                <tr><td><code>insertedId</code></td><td><code>any</code></td><td></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-InsertManyResult"><code>InsertManyResult</code></h3>
+        <pre><code class="language-ts">export interface InsertManyResult { ... }</code></pre>
+        <p>The result of insertMany(): how many documents were inserted, and their _ids by position.</p>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>acknowledged</code></td><td><code>boolean</code></td><td></td></tr>
+                <tr><td><code>insertedCount</code></td><td><code>number</code></td><td></td></tr>
+                <tr><td><code>insertedIds</code></td><td><code>any[]</code></td><td></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-UpdateResult"><code>UpdateResult</code></h3>
+        <pre><code class="language-ts">export interface UpdateResult { ... }</code></pre>
+        <p>The result of an update or a replace: the documents matched and modified, and the _id of one upserted.</p>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>acknowledged</code></td><td><code>boolean</code></td><td></td></tr>
+                <tr><td><code>matchedCount</code></td><td><code>number</code></td><td></td></tr>
+                <tr><td><code>modifiedCount</code></td><td><code>number</code></td><td></td></tr>
+                <tr><td><code>upsertedId</code></td><td><code>any</code></td><td></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-DeleteResult"><code>DeleteResult</code></h3>
+        <pre><code class="language-ts">export interface DeleteResult { ... }</code></pre>
+        <p>The result of a delete: how many documents were deleted.</p>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>acknowledged</code></td><td><code>boolean</code></td><td></td></tr>
+                <tr><td><code>deletedCount</code></td><td><code>number</code></td><td></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h2 id="types">Types</h2>
+        <p class="ref-index"><a href="#ref-Document"><code>Document</code></a>, <a href="#ref-Filter"><code>Filter</code></a>, <a href="#ref-ReadPreference"><code>ReadPreference</code></a></p>
+
+        <h3 id="ref-Document"><code>Document</code></h3>
+        <pre><code class="language-ts">export type Document = Record&lt;string, any&gt;;</code></pre>
+        <p>A document of MongoDB: an object of BSON values.</p>
+
+        <h3 id="ref-Filter"><code>Filter</code></h3>
+        <pre><code class="language-ts">export type Filter&lt;T = Document&gt; = Partial&lt;Record&lt;keyof T | string, any&gt;&gt; &amp; Document;</code></pre>
+        <p>The filter of a query: equalities by field and the operators of MongoDB ($gt, $in, $or...).</p>
+
+        <h3 id="ref-ReadPreference"><code>ReadPreference</code></h3>
+        <pre><code class="language-ts">export type ReadPreference = 'primary' | 'primaryPreferred' | 'secondary' | 'secondaryPreferred' | 'nearest';</code></pre>
+        <p>Which members of a replica set the reads go to: the primary (the default) or its secondaries.</p>
+      </article>
+    </div>
+
+    <footer class="footer">
+      <div class="container">
+        <span>xufa is MIT licensed. &copy; Jes&uacute;s Seijas</span>
+        <span>
+          <a href="../guide.html">Guide</a> &middot; <a href="../playground.html">Playground</a> &middot; <a href="../http/index.html">HTTP</a> &middot; <a href="../orm/index.html">ORM</a> &middot; <a href="../auth/index.html">Auth</a> &middot;
+          <a href="../sequelize/index.html">Sequelize</a> &middot; <a href="../packages.html">Packages</a> &middot;
+          <a href="../benchmarks.html">Benchmarks</a> &middot; <a href="https://github.com/xufajs/xufa">GitHub</a>
+        </span>
+      </div>
+    </footer>
+  </body>
+</html>

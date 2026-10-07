@@ -3,6 +3,9 @@
   "version": "0.1.0",
   "description": "A framework for Node.js in the spirit of Django: HTTP (with the API of fastify), an ORM over SQL and NoSQL databases and authentication, with no dependencies",
   "main": "./index.js",
+  "bin": {
+    "xufa": "./bin/xufa.js"
+  },
   "types": "./index.d.ts",
   "type": "commonjs",
   "exports": {
@@ -19,6 +22,14 @@
     "./auth": {
       "types": "./auth.d.ts",
       "default": "./auth.js"
+    },
+    "./admin": {
+      "types": "./admin.d.ts",
+      "default": "./admin.js"
+    },
+    "./session": {
+      "types": "./session.d.ts",
+      "default": "./session.js"
     },
     "./expression": {
       "types": "./expression.d.ts",
@@ -44,6 +55,10 @@
     "./scheduler": {
       "types": "./scheduler.d.ts",
       "default": "./scheduler.js"
+    },
+    "./queue": {
+      "types": "./queue.d.ts",
+      "default": "./queue.js"
     },
     "./config": {
       "types": "./config.d.ts",
@@ -74,6 +89,10 @@
     "orm.d.ts",
     "auth.js",
     "auth.d.ts",
+    "admin.js",
+    "admin.d.ts",
+    "session.js",
+    "session.d.ts",
     "expression.js",
     "expression.d.ts",
     "template.js",
@@ -86,6 +105,8 @@
     "client.d.ts",
     "scheduler.js",
     "scheduler.d.ts",
+    "queue.js",
+    "queue.d.ts",
     "config.js",
     "config.d.ts",
     "schema.js",
@@ -95,7 +116,9 @@
     "faults-register.js",
     "faults-register.d.ts",
     "faults-register-strict.js",
-    "faults-register-strict.d.ts"
+    "faults-register-strict.d.ts",
+    "bin",
+    "lib"
   ],
   "scripts": {
     "test": "vyntra"
@@ -121,9 +144,10 @@
     "url": "https://github.com/xufajs/xufa/issues"
   },
   "engines": {
-    "node": ">=22"
+    "node": "^22.22.3 || ^24.15.0 || >=25.7.0"
   },
   "dependencies": {
+    "@xufa/admin": "workspace:*",
     "@xufa/auth": "workspace:*",
     "@xufa/client": "workspace:*",
     "@xufa/config": "workspace:*",
@@ -132,8 +156,10 @@
     "@xufa/http": "workspace:*",
     "@xufa/openapi": "workspace:*",
     "@xufa/orm": "workspace:*",
+    "@xufa/queue": "workspace:*",
     "@xufa/scheduler": "workspace:*",
     "@xufa/schema": "workspace:*",
+    "@xufa/session": "workspace:*",
     "@xufa/template": "workspace:*"
   },
   "devDependencies": {
@@ -141,5 +167,10 @@
   },
   "publishConfig": {
     "access": "public"
+  },
+  "vyntra": {
+    "setupFiles": [
+      "@xufa/faults/register-strict"
+    ]
   }
 }

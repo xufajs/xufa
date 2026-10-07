@@ -7,6 +7,9 @@
 //
 // With `expire` (true, or { interval: '5m' }), the objects of TTL indexes that expired are deleted while the app runs.
 //
+// With `audit` ({ actor(request), context(request) }), the entries of the audit log of the changes a request makes have
+// its actor (the user: request.user.id...) and context (its ip, its id...), asked when an entry is made.
+//
 // With `tenants` ({ tenants, resolve(request), required, authorize }), each request runs in its tenant (resolve gives its
 // id: a header, the user...): the models use the database of the tenant. Requests without a tenant are answered with
 // 400 when it is required (the default), and those of a tenant that does not exist with 404. authorize(request, id,
@@ -29,6 +32,7 @@ async function ormPlugin(app, options = {}) {
     tenants,
     expire,
     cancel = false,
+    audit,
   } = options;
   if (!database && !tenants) throw new TypeError('The orm plugin needs a database (or tenants)');
   if (database) {
@@ -98,6 +102,16 @@ async function ormPlugin(app, options = {}) {
   if (cancel) {
     app.addHook('onRequest', (request, reply, done) => {
       cancellation.enterWith({ request });
+      done();
+    });
+  }
+  if (audit) {
+    if (typeof audit !== 'object' || (audit.actor && typeof audit.actor !== 'function')) {
+      throw new TypeError('audit is { actor(request), context(request) }');
+    }
+    const { enterRequest } = require('./audit'); // eslint-disable-line global-require
+    app.addHook('onRequest', (request, reply, done) => {
+      enterRequest(request, audit);
       done();
     });
   }

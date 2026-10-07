@@ -10,6 +10,7 @@
 // of a cluster in its primary). Counting is not atomic across processes: concurrent failures may count once.
 const { seconds } = require('./duration');
 const { Locked } = require('./errors');
+const { normalizeIdentifier } = require('./identifier');
 
 // A store in the process: values that expire after their ttl.
 class MemoryStore {
@@ -55,7 +56,8 @@ class Lockout {
   }
 
   keyOf(key) {
-    return `${this.prefix}${String(key).toLowerCase()}`;
+    // "ＡＤＭＩＮ" and "admin" are one key (see identifier.js): one count of failures.
+    return `${this.prefix}${normalizeIdentifier(key)}`;
   }
 
   // The state of a key: { locked, retryAfter (seconds), failures }.

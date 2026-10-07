@@ -15,13 +15,13 @@
   "files": [
     "index.js",
     "index.d.ts",
-    "src",
+    "lib",
     "LICENSE"
   ],
   "scripts": {
     "test": "vyntra",
     "test:types": "tsd && tsc -p test/types-dsl",
-    "build:helpers": "node scripts/generate-standalone-helpers.js && eslint --fix src/standalone-helpers.js"
+    "build:helpers": "node scripts/generate-standalone-helpers.js && prettier --write lib/standalone-helpers.js && eslint lib/standalone-helpers.js"
   },
   "keywords": [
     "json-schema",
@@ -54,7 +54,7 @@
     "url": "https://github.com/xufajs/xufa/issues"
   },
   "engines": {
-    "node": ">=22"
+    "node": "^22.22.3 || ^24.15.0 || >=25.7.0"
   },
   "devDependencies": {
     "@xufa/http": "workspace:*",

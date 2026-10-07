@@ -45,6 +45,13 @@ class MongoBackend extends Backend {
     return 'mongodb';
   }
 
+  // A round trip to the server: the command ping.
+  async ping() {
+    if (!this.db) await this.connect();
+    await this.db.command({ ping: 1 });
+    return true;
+  }
+
   get supportsTransactions() {
     return this.client.supportsTransactions;
   }
@@ -168,8 +175,10 @@ class MongoBackend extends Backend {
     if (docs.length === 0 && !groupBy) docs.push({ _id: null });
     return docs.map((doc) => {
       const row = {};
-      (groupBy || []).forEach(({ key, fields }, i) => {
-        row[key] = this.decode(lastOf(fields), doc._id[`g${i}`]);
+      (groupBy || []).forEach(({ key, fields, part }, i) => {
+        const value = doc._id[`g${i}`];
+        // Numbers of dates (Extract) as they are; values of fields (and starts of dates) as their field.
+        row[key] = part ? (value === undefined ? null : value) : this.decode(lastOf(fields), value);
       });
       aggregates.forEach((item, i) => {
         let value = doc[`a${i}`];

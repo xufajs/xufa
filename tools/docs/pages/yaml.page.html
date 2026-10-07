@@ -16,10 +16,25 @@
 
         <h2 id="start">Quick start</h2>
         <pre><code class="language-sh">npm install @xufa/yaml</code></pre>
-        <pre><code class="language-js">const yaml = require('@xufa/yaml');
+        <pre data-run="yaml"><code class="language-js">const yaml = require('@xufa/yaml');
 
-const doc = yaml.load(fs.readFileSync('openapi.yaml', 'utf8'));
-const text = yaml.dump(doc, { noRefs: true, lineWidth: -1 });</code></pre>
+const doc = yaml.load(`
+openapi: 3.1.0
+info: { title: Books, version: 1.0.0 }
+servers:
+  - url: https://api.example.com
+released: 2026-10-07
+`); // or yaml.load(fs.readFileSync('openapi.yaml', 'utf8'), { filename: 'openapi.yaml' })
+console.log(doc.info.title, doc.released instanceof Date);
+console.log(yaml.dump(doc, { noRefs: true, lineWidth: -1 }));</code></pre>
+        <pre data-output><code class="language-yaml">Books true
+openapi: 3.1.0
+info:
+  title: Books
+  version: 1.0.0
+servers:
+  - url: https://api.example.com
+released: 2026-10-07T00:00:00.000Z</code></pre>
 
         <h2 id="load">Loading</h2>
         <p>

@@ -133,6 +133,7 @@ const withObjects = compileJsonSchema(schema, { errors: 'objects' }); // error o
             <tbody>
               <tr><td><code>allErrors</code></td><td><code>true</code> (default), <code>false</code></td><td>every error, or only the first one: the function stops at the first failing check, faster on invalid values</td></tr>
               <tr><td><code>errors</code></td><td><code>true</code> (default), <code>'objects'</code>, <code>false</code></td><td>error messages (strings), <a href="#error-objects">error objects</a>, or <code>true</code>/<code>false</code> with no errors built at all (the fastest)</td></tr>
+              <tr><td><code>foldMessages</code></td><td><code>false</code> (default), <code>true</code></td><td>the parts of messages known when compiling written as one text in the code (<code>"customer.email is mandatory"</code>): the same errors, built faster on nested fields (up to 13%), for compiling about 4% slower. For schemas compiled once that see much invalid input.</td></tr>
             </tbody>
           </table>
         </div>

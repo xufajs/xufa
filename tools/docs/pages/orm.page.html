@@ -1,0 +1,132 @@
+<!--{
+  "file": "orm.html",
+  "name": "@xufa/orm",
+  "title": "ORM",
+  "description": "@xufa/orm: Django-like models and QuerySets on SQLite, PostgreSQL, MongoDB, memory and files, with no dependencies: the same models and queries on every backend.",
+  "nav": "orm",
+  "packages": false,
+  "groups": [
+    ["@xufa/orm", [["install", "Install"], ["first", "A first model"], ["why", "Why @xufa/orm"], ["backends", "Backends"], ["features", "What it has"]]],
+    ["The docs", [["orm-guide.html", "Guide"], ["orm-reference.html", "Reference"], ["orm-django.html", "From Django"], ["orm-benchmarks.html", "Benchmarks"]]]
+  ]
+}-->
+        <h1>ORM</h1>
+        <p class="intro">
+          <code>@xufa/orm</code> has models and QuerySets in the spirit of Django, on SQL and NoSQL databases, with no
+          dependencies: SQLite, PostgreSQL, MongoDB, memory and files. The same models and queries run on every backend,
+          and give the same results.
+        </p>
+
+        <div class="stats">
+          <div class="stat"><span class="value">5</span><span class="label">databases (SQLite, PostgreSQL, MongoDB, memory, files) and 3 stores of objects (disk, memory, S3)</span></div>
+          <div class="stat"><span class="value">2&times;&ndash;18&times;</span><span class="label">Sequelize, where the ORM does the work (building queries, making objects)</span></div>
+          <div class="stat"><span class="value">0</span><span class="label">dependencies: its own drivers of PostgreSQL and MongoDB</span></div>
+        </div>
+
+        <h2 id="install">Install</h2>
+        <pre><code class="language-sh">npm install @xufa/orm   # or: npm install xufa, and require('xufa/orm')</code></pre>
+        <p>It needs Node.js 22.22.3 or later (24.15 or later on the 24 line); SQLite is <code>node:sqlite</code>.</p>
+
+        <h2 id="first">A first model</h2>
+        <pre data-run="first"><code class="language-js">const { Database, Model, fields, Count, Sum } = require('@xufa/orm');
+
+class Author extends Model {
+  static fields = { name: fields.string({ maxLength: 100 }) };
+}
+
+class Book extends Model {
+  static fields = {
+    title: fields.string(),
+    pages: fields.integer({ min: 1 }),
+    author: fields.foreignKey(() =&gt; Author, { relatedName: 'books' }),
+  };
+}
+
+const db = new Database({ backend: 'sqlite', filename: ':memory:' }); // or postgres, mongodb, memory, fs
+db.register(Author, Book);
+await db.connect();
+await db.sync(); // creates the tables (migrations: see the Guide)
+
+const ada = await Author.objects.create({ name: 'Ada' });
+await Book.objects.bulkCreate([
+  { title: 'Notes', pages: 120, author: ada },
+  { title: 'Letters', pages: 80, author: ada },
+]);
+
+// Conditions across relations, the author loaded in the same query.
+const long = await Book.objects.filter({ pages__gte: 100, author__name: 'Ada' }).selectRelated('author');
+console.log(long.map((book) =&gt; `${book.title} by ${book.author.name}`));
+
+// Aggregates by group.
+console.log(await Author.objects.values('name').annotate({ books: Count('books'), pages: Sum('books__pages') }));
+
+// Values checked by their fields before they are written.
+try {
+  await Book.objects.create({ title: 'Empty', pages: 0, author: ada });
+} catch (err) {
+  console.log(err.code, err.errors);
+}
+await db.close();</code></pre>
+        <pre data-output><code class="language-plaintext">[ 'Notes by Ada' ]
+[ { name: 'Ada', books: 2, pages: 200 } ]
+XUFA_ORM_ERR_VALIDATION { pages: [ 'Ensure this value is at least 1.' ] }</code></pre>
+        <p>
+          The <a href="orm-guide.html">Guide</a> goes on from here: fields and relations, QuerySets, transactions,
+          migrations, several databases and tenants, caches, the audit log, and the ORM in an app.
+        </p>
+
+        <h2 id="why">Why @xufa/orm</h2>
+        <ul>
+          <li>
+            <strong>One API on every database.</strong> Models, conditions (<code>author__name__istartswith</code>),
+            aggregates, transactions and migrations are the same on SQLite, PostgreSQL and MongoDB, and give the same
+            results: the test suite runs on each backend. A model can live in MongoDB while the others are in PostgreSQL.
+          </li>
+          <li>
+            <strong>Django's design, in JavaScript.</strong> Models with fields, a manager (<code>objects</code>),
+            QuerySets that are lazy and chain, <code>Q</code> and <code>F</code>, migrations made by comparing the models
+            with the schema (<a href="orm-django.html">From Django</a>).
+          </li>
+          <li>
+            <strong>Fast.</strong> Its own drivers (<a href="pg.html">@xufa/pg</a>, <a href="mongo.html">@xufa/mongo</a>),
+            queries compiled once for each shape: from 2 to 18 times Sequelize where the library does the work
+            (<a href="orm-benchmarks.html">Benchmarks</a>).
+          </li>
+          <li>
+            <strong>What apps need, built in.</strong> Encrypted fields, TTL indexes, computed fields, tenants with a
+            database each, caches shared between processes, an audit log, stores of files (S3, disk), and resources:
+            the routes of a model in <a href="http.html">@xufa/http</a>, validated and documented in OpenAPI.
+          </li>
+        </ul>
+
+        <h2 id="backends">Backends</h2>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Backend</th><th>Database</th><th>Made with</th></tr></thead>
+            <tbody>
+              <tr><td><code>sqlite</code></td><td>SQLite</td><td><code>node:sqlite</code> (Node.js 22.5+)</td></tr>
+              <tr><td><code>postgres</code></td><td>PostgreSQL</td><td><a href="pg.html"><code>@xufa/pg</code></a></td></tr>
+              <tr><td><code>mongodb</code></td><td>MongoDB</td><td><a href="mongo.html"><code>@xufa/mongo</code></a></td></tr>
+              <tr><td><code>memory</code></td><td>In memory, for tests and prototypes</td><td>JavaScript</td></tr>
+              <tr><td><code>fs</code></td><td>Files (JSON) in a folder, watched for changes</td><td><code>node:fs</code></td></tr>
+              <tr><td><code>smtp</code>, <code>memory-mail</code></td><td>Email: messages sent (or kept in memory, for tests)</td><td><code>node:net</code>, <code>node:tls</code></td></tr>
+              <tr><td><code>s3</code>, <code>azure-blob</code>, <code>disk</code>, <code>memory-blob</code></td><td>Stores of objects (files): S3, R2, MinIO...; Azure Blob; a folder; memory</td><td><code>node:http</code> (SigV4 and Shared Key of its own), <code>node:fs</code></td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h2 id="features">What it has</h2>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Part</th><th>In the Guide</th></tr></thead>
+            <tbody>
+              <tr><td>Models: fields, options, relations (foreign keys, many-to-many), primary keys of every kind, validation rules, hooks</td><td><a href="orm-guide.html#models">Models</a>, <a href="orm-guide.html#fields">Fields</a>, <a href="orm-guide.html#relations">Relations</a></td></tr>
+              <tr><td>Arrays, hstore and geometries of PostgreSQL; encrypted, computed and TTL fields</td><td><a href="orm-guide.html#postgres-fields">Arrays, hstore, geometries</a>, <a href="orm-guide.html#encrypted">Encrypted fields</a></td></tr>
+              <tr><td>QuerySets: conditions, <code>Q</code>, <code>F</code>, aggregates, <code>selectRelated</code>, <code>prefetchRelated</code>, writing in bulk</td><td><a href="orm-guide.html#querysets">QuerySets</a>, <a href="orm-guide.html#lookups">Conditions</a>, <a href="orm-guide.html#aggregates">Aggregates</a></td></tr>
+              <tr><td>Transactions and locks; migrations made from the models</td><td><a href="orm-guide.html#transactions">Transactions</a>, <a href="orm-guide.html#migrations">Migrations</a></td></tr>
+              <tr><td>Several databases, tenants, caches, an audit log</td><td><a href="orm-guide.html#databases">Several databases</a>, <a href="orm-guide.html#tenants">Tenants</a>, <a href="orm-guide.html#cache">Caches</a>, <a href="orm-guide.html#audit">Audit log</a></td></tr>
+              <tr><td>With @xufa/http: the database of each request, resources (CRUD routes), schemas of routes from models</td><td><a href="orm-guide.html#http">With @xufa/http</a>, <a href="orm-guide.html#resources">Resources</a></td></tr>
+              <tr><td>The API of Sequelize 6, over this ORM</td><td><a href="sequelize.html">@xufa/sequelize</a></td></tr>
+            </tbody>
+          </table>
+        </div>

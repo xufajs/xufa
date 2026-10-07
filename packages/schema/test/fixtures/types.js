@@ -19,7 +19,7 @@ const {
   Values,
   ValidateType,
   When,
-} = require('../../src');
+} = require('../..');
 
 // Custom type that only overrides validate(); returns one message or an array of messages.
 class CheckType extends ValidateType {

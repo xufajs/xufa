@@ -1,0 +1,396 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>@xufa/client: Reference · xufa</title>
+    <meta
+      name="description"
+      content="The reference of @xufa/client: every function, class, interface and type it declares, made from its TypeScript declarations."
+    />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%23d9502b'/%3E%3Ctext x='16' y='22.5' font-family='monospace' font-size='18' font-weight='700' fill='white' text-anchor='middle'%3Ex%3C/text%3E%3C/svg%3E"
+    />
+    <link rel="stylesheet" href="../style.css?v=0.1.0" />
+    <script src="../main.js?v=0.1.0"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js" defer></script>
+  </head>
+  <body>
+    <header class="header">
+      <div class="header-inner">
+        <a class="logo" href="../index.html"><span class="logo-mark">x</span>xufa</a>
+        <nav class="nav">
+          <a href="../guide.html">Guide</a>
+          <a href="../playground.html">Playground</a>
+          <a href="../http/index.html">HTTP</a>
+          <a href="../orm/index.html">ORM</a>
+          <a class="hide-small" href="../auth/index.html">Auth</a>
+          <a class="hide-small" href="../sequelize/index.html">Sequelize</a>
+          <a class="hide-small" href="../packages.html" aria-current="page">Packages</a>
+          <a class="hide-small" href="../benchmarks.html">Benchmarks</a>
+          <a href="https://github.com/xufajs/xufa">GitHub</a>
+          <button class="theme-toggle" type="button" aria-label="Switch between light and dark theme">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+              <path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z" />
+            </svg>
+          </button>
+        </nav>
+      </div>
+    </header>
+
+    <div class="docs">
+      <button class="menu-toggle" type="button" aria-expanded="false">☰ Contents</button>
+      <aside class="sidebar">
+        <h4>Reference</h4>
+        <ul>
+          <li><a href="#functions">Functions (3)</a></li>
+          <li><a href="#classes">Classes (5)</a></li>
+          <li><a href="#constants">Constants (2)</a></li>
+          <li><a href="#interfaces">Interfaces (11)</a></li>
+          <li><a href="#types">Types (1)</a></li>
+        </ul>
+        <h4>Packages</h4>
+        <ul>
+          <li><a href="../websocket/index.html">@xufa/websocket</a></li>
+          <li><a href="../admin/index.html">@xufa/admin</a></li>
+          <li><a href="../session/index.html">@xufa/session</a></li>
+          <li><a href="../openapi/index.html">@xufa/openapi</a></li>
+          <li><a href="index.html" aria-current="page">@xufa/client</a></li>
+          <li><a href="../schema/index.html">@xufa/schema</a></li>
+          <li><a href="../pg/index.html">@xufa/pg</a></li>
+          <li><a href="../mongo/index.html">@xufa/mongo</a></li>
+          <li><a href="../expression/index.html">@xufa/expression</a></li>
+          <li><a href="../template/index.html">@xufa/template</a></li>
+          <li><a href="../cluster/index.html">@xufa/cluster</a></li>
+          <li><a href="../scheduler/index.html">@xufa/scheduler</a></li>
+          <li><a href="../queue/index.html">@xufa/queue</a></li>
+          <li><a href="../config/index.html">@xufa/config</a></li>
+          <li><a href="../discovery/index.html">@xufa/discovery</a></li>
+          <li><a href="../netcache/index.html">@xufa/netcache</a></li>
+          <li><a href="../faults/index.html">@xufa/faults</a></li>
+          <li><a href="../marshal/index.html">@xufa/marshal</a></li>
+          <li><a href="../yaml/index.html">@xufa/yaml</a></li>
+          <li><a href="../jwt/index.html">@xufa/jwt</a></li>
+          <li><a href="../logger/index.html">@xufa/logger</a></li>
+          <li><a href="../router/index.html">@xufa/router</a></li>
+          <li><a href="../serializer/index.html">@xufa/serializer</a></li>
+          <li><a href="../inject/index.html">@xufa/inject</a></li>
+          <li><a href="../boot/index.html">@xufa/boot</a></li>
+          <li><a href="../errors/index.html">@xufa/errors</a></li>
+          <li><a href="../packages.html">All the packages</a></li>
+        </ul>
+      </aside>
+
+      <article class="content">
+        <nav class="package-tabs" aria-label="@xufa/client">
+          <a href="index.html">Overview</a>
+          <a href="reference.html" aria-current="page">Reference</a>
+        </nav>
+        <h1>Reference</h1>
+        <p class="intro">
+          A client of HTTP APIs on the fetch of Node.js, with no dependencies: base URLs, JSON, timeouts, retries with backoff, errors by status, hooks, logs, and the cancellation of the request that calls. Every declaration of its TypeScript declarations
+          (<code>packages/client/index.d.ts</code>), as they are written, with their comments: made from them each time
+          the docs are built. How to use them is in <a href="index.html">the overview</a>.
+        </p>
+
+        <h2 id="functions">Functions</h2>
+        <p class="ref-index"><a href="#ref-createClient"><code>createClient</code></a>, <a href="#ref-retry"><code>retry</code></a>, <a href="#ref-backoff"><code>backoff</code></a></p>
+
+        <h3 id="ref-createClient"><code>createClient</code></h3>
+        <pre><code class="language-ts">export function createClient(options?: ClientOptions): Client;</code></pre>
+
+        <h3 id="ref-retry"><code>retry</code></h3>
+        <pre><code class="language-ts">export function retry&lt;T&gt;(fn: (attempt: number) =&gt; T | Promise&lt;T&gt;, options?: RetryCallOptions&lt;T&gt;): Promise&lt;T&gt;;</code></pre>
+        <p>Calls fn again until it gives a result <code>until</code> accepts (RetryError otherwise), or fails with what is not retried.</p>
+
+        <h3 id="ref-backoff"><code>backoff</code></h3>
+        <pre><code class="language-ts">export function backoff(
+  attempt: number,
+  options?: { delay?: number; factor?: number; maxDelay?: number; jitter?: boolean }
+): number;</code></pre>
+
+        <h2 id="classes">Classes</h2>
+        <p class="ref-index"><a href="#ref-ClientError"><code>ClientError</code></a>, <a href="#ref-HTTPError"><code>HTTPError</code></a>, <a href="#ref-TimeoutError"><code>TimeoutError</code></a>, <a href="#ref-RequestError"><code>RequestError</code></a>, <a href="#ref-RetryError"><code>RetryError</code></a></p>
+
+        <h3 id="ref-ClientError"><code>ClientError</code></h3>
+        <pre><code class="language-ts">export class ClientError extends Error { ... }</code></pre>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>method</code></td><td><code>string</code></td><td></td></tr>
+                <tr><td><code>url</code></td><td><code>string</code></td><td></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-HTTPError"><code>HTTPError</code></h3>
+        <pre><code class="language-ts">export class HTTPError&lt;T = any&gt; extends ClientError { ... }</code></pre>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>code</code></td><td><code>'XUFA_CLIENT_HTTP_ERROR'</code></td><td></td></tr>
+                <tr><td><code>status</code></td><td><code>number</code></td><td></td></tr>
+                <tr><td><code>statusCode</code></td><td><code>number</code></td><td></td></tr>
+                <tr><td><code>headers</code></td><td><code>Record&lt;string, string&gt;</code></td><td></td></tr>
+                <tr><td><code>body</code></td><td><code>T</code></td><td></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-TimeoutError"><code>TimeoutError</code></h3>
+        <pre><code class="language-ts">export class TimeoutError extends ClientError { ... }</code></pre>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>code</code></td><td><code>'XUFA_CLIENT_TIMEOUT'</code></td><td></td></tr>
+                <tr><td><code>timeout</code></td><td><code>number</code></td><td></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-RequestError"><code>RequestError</code></h3>
+        <pre><code class="language-ts">export class RequestError extends ClientError { ... }</code></pre>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>code</code></td><td><code>'XUFA_CLIENT_REQUEST_ERROR'</code></td><td></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-RetryError"><code>RetryError</code></h3>
+        <pre><code class="language-ts">export class RetryError&lt;T = unknown&gt; extends Error { ... }</code></pre>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>code</code></td><td><code>'XUFA_CLIENT_RETRY_EXHAUSTED'</code></td><td></td></tr>
+                <tr><td><code>attempts</code></td><td><code>number</code></td><td></td></tr>
+                <tr><td><code>result</code></td><td><code>T</code></td><td></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h2 id="constants">Constants</h2>
+        <p class="ref-index"><a href="#ref-IDEMPOTENT"><code>IDEMPOTENT</code></a>, <a href="#ref-RETRY_STATUSES"><code>RETRY_STATUSES</code></a></p>
+
+        <h3 id="ref-IDEMPOTENT"><code>IDEMPOTENT</code></h3>
+        <pre><code class="language-ts">export const IDEMPOTENT: string[];</code></pre>
+
+        <h3 id="ref-RETRY_STATUSES"><code>RETRY_STATUSES</code></h3>
+        <pre><code class="language-ts">export const RETRY_STATUSES: number[];</code></pre>
+
+        <h2 id="interfaces">Interfaces</h2>
+        <p class="ref-index"><a href="#ref-ClientFaultOptions"><code>ClientFaultOptions</code></a>, <a href="#ref-ClientFaults"><code>ClientFaults</code></a>, <a href="#ref-RetryOptions"><code>RetryOptions</code></a>, <a href="#ref-Call"><code>Call</code></a>, <a href="#ref-Logger"><code>Logger</code></a>, <a href="#ref-BoundRequest"><code>BoundRequest</code></a>, <a href="#ref-ClientOptions"><code>ClientOptions</code></a>, <a href="#ref-CallOptions"><code>CallOptions</code></a>, <a href="#ref-FullResponse"><code>FullResponse</code></a>, <a href="#ref-Client"><code>Client</code></a>, <a href="#ref-RetryCallOptions"><code>RetryCallOptions</code></a></p>
+
+        <h3 id="ref-ClientFaultOptions"><code>ClientFaultOptions</code></h3>
+        <pre><code class="language-ts">export interface ClientFaultOptions extends FaultOptions&lt;ClientFaultOperation&gt; { ... }</code></pre>
+        <p>The options of the faults of a client: methods, urls and paths (prefixes or regular expressions).</p>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>urls?</code></td><td><code>string | RegExp | Array&lt;string | RegExp&gt;</code></td><td></td></tr>
+                <tr><td><code>paths?</code></td><td><code>string | RegExp | Array&lt;string | RegExp&gt;</code></td><td></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-ClientFaults"><code>ClientFaults</code></h3>
+        <pre><code class="language-ts">export interface ClientFaults extends Faults&lt;ClientFaultOperation&gt; { ... }</code></pre>
+        <p>The faults of a client (and of those made from it): fail is a network that refuses the call.</p>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>fail(options?: ClientFaultOptions)</code></td><td><code>FaultRule</code></td><td></td></tr>
+                <tr><td><code>respond(options: ClientFaultOptions &amp; {
+      status?: number;
+      headers?: Record&lt;string, string&gt;;
+      json?: unknown;
+      body?: string | Buffer;
+    })</code></td><td><code>FaultRule</code></td><td><p>A reply of a status, without the call.</p></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-RetryOptions"><code>RetryOptions</code></h3>
+        <pre><code class="language-ts">export interface RetryOptions { ... }</code></pre>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>attempts?</code></td><td><code>number</code></td><td><p>Attempts in all (3); 1 or false: none again.</p></td></tr>
+                <tr><td><code>methods?</code></td><td><code>string[]</code></td><td><p>The methods retried (the idempotent ones: GET, HEAD, OPTIONS, PUT, DELETE, TRACE).</p></td></tr>
+                <tr><td><code>statuses?</code></td><td><code>number[]</code></td><td><p>The statuses retried (408, 413, 429, 500, 502, 503, 504, 521, 522, 524).</p></td></tr>
+                <tr><td><code>delay?</code></td><td><code>number</code></td><td><p>ms before the second attempt (100), multiplied by factor (2) each time, up to maxDelay (10000), with jitter.</p></td></tr>
+                <tr><td><code>factor?</code></td><td><code>number</code></td><td></td></tr>
+                <tr><td><code>maxDelay?</code></td><td><code>number</code></td><td></td></tr>
+                <tr><td><code>jitter?</code></td><td><code>boolean</code></td><td></td></tr>
+                <tr><td><code>maxRetryAfter?</code></td><td><code>number</code></td><td><p>The most of Retry-After waited (60000 ms).</p></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-Call"><code>Call</code></h3>
+        <pre><code class="language-ts">export interface Call { ... }</code></pre>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>method</code></td><td><code>string</code></td><td></td></tr>
+                <tr><td><code>url</code></td><td><code>string</code></td><td></td></tr>
+                <tr><td><code>headers</code></td><td><code>Record&lt;string, string&gt;</code></td><td></td></tr>
+                <tr><td><code>body</code></td><td><code>unknown</code></td><td></td></tr>
+                <tr><td><code>attempt</code></td><td><code>number</code></td><td></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-Logger"><code>Logger</code></h3>
+        <pre><code class="language-ts">export interface Logger { ... }</code></pre>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>debug(object: object, message: string)</code></td><td><code>void</code></td><td></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-BoundRequest"><code>BoundRequest</code></h3>
+        <pre><code class="language-ts">export interface BoundRequest { ... }</code></pre>
+        <p>The request of</p>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>id?</code></td><td><code>string | number</code></td><td></td></tr>
+                <tr><td><code>signal?</code></td><td><code>AbortSignal</code></td><td></td></tr>
+                <tr><td><code>log?</code></td><td><code><a href="#ref-Logger">Logger</a></code></td><td></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-ClientOptions"><code>ClientOptions</code></h3>
+        <pre><code class="language-ts">export interface ClientOptions { ... }</code></pre>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>baseUrl?</code></td><td><code>string</code></td><td><p>The URL paths are joined to (its path kept: '/v1' + '/books').</p></td></tr>
+                <tr><td><code>headers?</code></td><td><code>Record&lt;string, string | number | undefined | null&gt;</code></td><td></td></tr>
+                <tr><td><code>query?</code></td><td><code>Record&lt;string, unknown&gt; | URLSearchParams</code></td><td><p>Query string: arrays repeat the key, dates are ISO, undefined and null are left out.</p></td></tr>
+                <tr><td><code>timeout?</code></td><td><code>number</code></td><td><p>ms for each attempt (30000; 0: none).</p></td></tr>
+                <tr><td><code>retry?</code></td><td><code><a href="#ref-RetryOptions">RetryOptions</a> | number | false</code></td><td><p>Retries: the number of attempts, false, or the options.</p></td></tr>
+                <tr><td><code>responseType?</code></td><td><code>'auto' | 'json' | 'text' | 'buffer' | 'stream' | 'response'</code></td><td><p>How the answer is read: auto (JSON by its type, text otherwise), json, text, buffer, stream (a web ReadableStream, decompressed, read as it comes), or the Response of fetch.</p></td></tr>
+                <tr><td><code>resolveBodyOnly?</code></td><td><code>boolean</code></td><td><p>false: { status, headers, body, url } instead of the body.</p></td></tr>
+                <tr><td><code>throwHttpErrors?</code></td><td><code>boolean</code></td><td><p>false: error statuses are answers, not HTTPErrors.</p></td></tr>
+                <tr><td><code>requestIdHeader?</code></td><td><code>string | null</code></td><td><p>The header of the id of the request a client is bound to (x-request-id); null: not sent.</p></td></tr>
+                <tr><td><code>hooks?</code></td><td><code>{ beforeRequest?: ((call: <a href="#ref-Call">Call</a>) =&gt; void | Promise&lt;void&gt;) | Array&lt;(call: <a href="#ref-Call">Call</a>) =&gt; void | Promise&lt;void&gt;&gt;; afterResponse?: | ((response: Response, call: <a href="#ref-Call">Call</a>) =&gt; void | Promise&lt;void&gt;) | Array&lt;(response: Response, call: <a href="#ref-Call">Call</a>) =&gt; void | Promise&lt;void&gt;&gt;; }</code></td><td></td></tr>
+                <tr><td><code>log?</code></td><td><code><a href="#ref-Logger">Logger</a> | null</code></td><td><p>Where requests, answers and retries are logged (debug); the log of the bound request by default.</p></td></tr>
+                <tr><td><code>request?</code></td><td><code><a href="#ref-BoundRequest">BoundRequest</a> | null</code></td><td><p>The request it is bound to: its signal, log and id.</p></td></tr>
+                <tr><td><code>signal?</code></td><td><code>AbortSignal | null</code></td><td></td></tr>
+                <tr><td><code>dispatcher?</code></td><td><code>unknown</code></td><td><p>A dispatcher of undici (proxies, pools): given to fetch.</p></td></tr>
+                <tr><td><code>redirect?</code></td><td><code>'follow' | 'error' | 'manual'</code></td><td></td></tr>
+                <tr><td><code>transport?</code></td><td><code>'fetch' | 'http'</code></td><td><p>'http' (the default): the calls over node:http and node:https, faster, compressed answers decompressed; Response answers and a dispatcher go through fetch. 'fetch': every call.</p></td></tr>
+                <tr><td><code>proxy?</code></td><td><code>string | URL | 'env' | false</code></td><td><p>The proxy of the http transport: a URL (http: or https:, with user:password to log in), 'env' (HTTP_PROXY, HTTPS_PROXY, NO_PROXY), or false. By default, that of the environment when NODE_USE_ENV_PROXY is set (as Node.js). https: servers are reached through tunnels (CONNECT), kept alive.</p></td></tr>
+                <tr><td><code>tls?</code></td><td><code>import('node:tls').ConnectionOptions</code></td><td><p>Options of TLS of the http transport (its https: servers and proxies): ca, cert and key, rejectUnauthorized...</p></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-CallOptions"><code>CallOptions</code></h3>
+        <pre><code class="language-ts">export interface CallOptions extends ClientOptions { ... }</code></pre>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>json?</code></td><td><code>unknown</code></td><td><p>A JSON body (content-type: application/json).</p></td></tr>
+                <tr><td><code>body?</code></td><td><code>unknown</code></td><td><p>A body as fetch takes it.</p></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-FullResponse"><code>FullResponse</code></h3>
+        <pre><code class="language-ts">export interface FullResponse&lt;T = any&gt; { ... }</code></pre>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>status</code></td><td><code>number</code></td><td></td></tr>
+                <tr><td><code>headers</code></td><td><code>Record&lt;string, string&gt;</code></td><td></td></tr>
+                <tr><td><code>body</code></td><td><code>T</code></td><td></td></tr>
+                <tr><td><code>url</code></td><td><code>string</code></td><td></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-Client"><code>Client</code></h3>
+        <pre><code class="language-ts">export interface Client { ... }</code></pre>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>readonly faults</code></td><td><code><a href="#ref-ClientFaults">ClientFaults</a></code></td><td><p>Its faults (shared with the clients made from it), for tests of resilience.</p></td></tr>
+                <tr><td><code>request&lt;T = any&gt;(method: string, path: string, options?: CallOptions)</code></td><td><code>Promise&lt;T&gt;</code></td><td></td></tr>
+                <tr><td><code>get&lt;T = any&gt;(path: string, options?: CallOptions)</code></td><td><code>Promise&lt;T&gt;</code></td><td></td></tr>
+                <tr><td><code>head(path: string, options?: CallOptions)</code></td><td><code>Promise&lt;undefined&gt;</code></td><td></td></tr>
+                <tr><td><code>options&lt;T = any&gt;(path: string, options?: CallOptions)</code></td><td><code>Promise&lt;T&gt;</code></td><td></td></tr>
+                <tr><td><code>post&lt;T = any&gt;(path: string, options?: CallOptions)</code></td><td><code>Promise&lt;T&gt;</code></td><td></td></tr>
+                <tr><td><code>put&lt;T = any&gt;(path: string, options?: CallOptions)</code></td><td><code>Promise&lt;T&gt;</code></td><td></td></tr>
+                <tr><td><code>patch&lt;T = any&gt;(path: string, options?: CallOptions)</code></td><td><code>Promise&lt;T&gt;</code></td><td></td></tr>
+                <tr><td><code>delete&lt;T = any&gt;(path: string, options?: CallOptions)</code></td><td><code>Promise&lt;T&gt;</code></td><td></td></tr>
+                <tr><td><code>extend(options: ClientOptions)</code></td><td><code><a href="#ref-Client">Client</a></code></td><td><p>A client with more options (headers, retry and hooks merged).</p></td></tr>
+                <tr><td><code>for(request: BoundRequest)</code></td><td><code><a href="#ref-Client">Client</a></code></td><td><p>The client of a request: cancelled with it, logging with request.log, sending its id.</p></td></tr>
+                <tr><td><code>readonly defaults</code></td><td><code><a href="#ref-ClientOptions">ClientOptions</a></code></td><td></td></tr>
+                <tr><td><code>close()</code></td><td><code>void</code></td><td><p>Closes the connections kept by the http transport (shared with the clients made from it).</p></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-RetryCallOptions"><code>RetryCallOptions</code></h3>
+        <pre><code class="language-ts">export interface RetryCallOptions&lt;T&gt; { ... }</code></pre>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>attempts?</code></td><td><code>number</code></td><td><p>Attempts in all (3).</p></td></tr>
+                <tr><td><code>retryOn?(error: unknown, attempt: number)</code></td><td><code>boolean | Promise&lt;boolean&gt;</code></td><td><p>Whether an error is retried (all are).</p></td></tr>
+                <tr><td><code>until?(result: T, attempt: number)</code></td><td><code>boolean | Promise&lt;boolean&gt;</code></td><td><p>Whether a result is the one wanted (any is); otherwise it is tried again, and RetryError after the last.</p></td></tr>
+                <tr><td><code>delay?</code></td><td><code>number</code></td><td><p>ms before the second attempt (100), multiplied by factor (2), up to maxDelay (10000), with jitter.</p></td></tr>
+                <tr><td><code>factor?</code></td><td><code>number</code></td><td></td></tr>
+                <tr><td><code>maxDelay?</code></td><td><code>number</code></td><td></td></tr>
+                <tr><td><code>jitter?</code></td><td><code>boolean</code></td><td></td></tr>
+                <tr><td><code>wait?(attempt: number, error: unknown, result?: T)</code></td><td><code>number | Promise&lt;number&gt;</code></td><td><p>The ms to wait after an attempt, instead of the backoff.</p></td></tr>
+                <tr><td><code>signal?</code></td><td><code>AbortSignal</code></td><td></td></tr>
+                <tr><td><code>onRetry?(info: { attempt: number; error?: unknown; result?: T })</code></td><td><code>void | Promise&lt;void&gt;</code></td><td></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h2 id="types">Types</h2>
+        <p class="ref-index"><a href="#ref-ClientFaultOperation"><code>ClientFaultOperation</code></a></p>
+
+        <h3 id="ref-ClientFaultOperation"><code>ClientFaultOperation</code></h3>
+        <pre><code class="language-ts">export type ClientFaultOperation = 'get' | 'head' | 'options' | 'post' | 'put' | 'patch' | 'delete' | 'read' | 'write';</code></pre>
+      </article>
+    </div>
+
+    <footer class="footer">
+      <div class="container">
+        <span>xufa is MIT licensed. &copy; Jes&uacute;s Seijas</span>
+        <span>
+          <a href="../guide.html">Guide</a> &middot; <a href="../playground.html">Playground</a> &middot; <a href="../http/index.html">HTTP</a> &middot; <a href="../orm/index.html">ORM</a> &middot; <a href="../auth/index.html">Auth</a> &middot;
+          <a href="../sequelize/index.html">Sequelize</a> &middot; <a href="../packages.html">Packages</a> &middot;
+          <a href="../benchmarks.html">Benchmarks</a> &middot; <a href="https://github.com/xufajs/xufa">GitHub</a>
+        </span>
+      </div>
+    </footer>
+  </body>
+</html>

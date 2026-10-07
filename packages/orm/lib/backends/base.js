@@ -31,6 +31,11 @@ class Backend {
 
   async close() {}
 
+  // A round trip to the server of the backend (none here: memory, files, storage without a server to ask).
+  async ping() {
+    return true;
+  }
+
   get inTransaction() {
     return this.context.getStore() !== undefined;
   }

@@ -1,4 +1,4 @@
-// The declarations of js-yaml: @types/js-yaml 4.0.9 (MIT, DefinitelyTyped), as they are.
+/** The declarations of js-yaml: @types/js-yaml 4.0.9 (MIT, DefinitelyTyped), as they are. */
 export as namespace jsyaml;
 
 export function load(str: string, opts?: LoadOptions): unknown;

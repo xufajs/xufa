@@ -1,0 +1,462 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>@xufa/scheduler: Reference · xufa</title>
+    <meta
+      name="description"
+      content="The reference of @xufa/scheduler: every function, class, interface and type it declares, made from its TypeScript declarations."
+    />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%23d9502b'/%3E%3Ctext x='16' y='22.5' font-family='monospace' font-size='18' font-weight='700' fill='white' text-anchor='middle'%3Ex%3C/text%3E%3C/svg%3E"
+    />
+    <link rel="stylesheet" href="../style.css?v=0.1.0" />
+    <script src="../main.js?v=0.1.0"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js" defer></script>
+  </head>
+  <body>
+    <header class="header">
+      <div class="header-inner">
+        <a class="logo" href="../index.html"><span class="logo-mark">x</span>xufa</a>
+        <nav class="nav">
+          <a href="../guide.html">Guide</a>
+          <a href="../playground.html">Playground</a>
+          <a href="../http/index.html">HTTP</a>
+          <a href="../orm/index.html">ORM</a>
+          <a class="hide-small" href="../auth/index.html">Auth</a>
+          <a class="hide-small" href="../sequelize/index.html">Sequelize</a>
+          <a class="hide-small" href="../packages.html" aria-current="page">Packages</a>
+          <a class="hide-small" href="../benchmarks.html">Benchmarks</a>
+          <a href="https://github.com/xufajs/xufa">GitHub</a>
+          <button class="theme-toggle" type="button" aria-label="Switch between light and dark theme">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+              <path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z" />
+            </svg>
+          </button>
+        </nav>
+      </div>
+    </header>
+
+    <div class="docs">
+      <button class="menu-toggle" type="button" aria-expanded="false">☰ Contents</button>
+      <aside class="sidebar">
+        <h4>Reference</h4>
+        <ul>
+          <li><a href="#functions">Functions (8)</a></li>
+          <li><a href="#classes">Classes (3)</a></li>
+          <li><a href="#interfaces">Interfaces (17)</a></li>
+          <li><a href="#types">Types (2)</a></li>
+        </ul>
+        <h4>Packages</h4>
+        <ul>
+          <li><a href="../websocket/index.html">@xufa/websocket</a></li>
+          <li><a href="../admin/index.html">@xufa/admin</a></li>
+          <li><a href="../session/index.html">@xufa/session</a></li>
+          <li><a href="../openapi/index.html">@xufa/openapi</a></li>
+          <li><a href="../client/index.html">@xufa/client</a></li>
+          <li><a href="../schema/index.html">@xufa/schema</a></li>
+          <li><a href="../pg/index.html">@xufa/pg</a></li>
+          <li><a href="../mongo/index.html">@xufa/mongo</a></li>
+          <li><a href="../expression/index.html">@xufa/expression</a></li>
+          <li><a href="../template/index.html">@xufa/template</a></li>
+          <li><a href="../cluster/index.html">@xufa/cluster</a></li>
+          <li><a href="index.html" aria-current="page">@xufa/scheduler</a></li>
+          <li><a href="../queue/index.html">@xufa/queue</a></li>
+          <li><a href="../config/index.html">@xufa/config</a></li>
+          <li><a href="../discovery/index.html">@xufa/discovery</a></li>
+          <li><a href="../netcache/index.html">@xufa/netcache</a></li>
+          <li><a href="../faults/index.html">@xufa/faults</a></li>
+          <li><a href="../marshal/index.html">@xufa/marshal</a></li>
+          <li><a href="../yaml/index.html">@xufa/yaml</a></li>
+          <li><a href="../jwt/index.html">@xufa/jwt</a></li>
+          <li><a href="../logger/index.html">@xufa/logger</a></li>
+          <li><a href="../router/index.html">@xufa/router</a></li>
+          <li><a href="../serializer/index.html">@xufa/serializer</a></li>
+          <li><a href="../inject/index.html">@xufa/inject</a></li>
+          <li><a href="../boot/index.html">@xufa/boot</a></li>
+          <li><a href="../errors/index.html">@xufa/errors</a></li>
+          <li><a href="../packages.html">All the packages</a></li>
+        </ul>
+      </aside>
+
+      <article class="content">
+        <nav class="package-tabs" aria-label="@xufa/scheduler">
+          <a href="index.html">Overview</a>
+          <a href="reference.html" aria-current="page">Reference</a>
+        </nav>
+        <h1>Reference</h1>
+        <p class="intro">
+          Jobs on intervals, cron expressions or once, with no dependencies: no overlapping runs, timeouts, failures isolated per job, and each time run once among several machines with a lock in a database. Every declaration of its TypeScript declarations
+          (<code>packages/scheduler/index.d.ts</code>), as they are written, with their comments: made from them each time
+          the docs are built. How to use them is in <a href="index.html">the overview</a>.
+        </p>
+
+        <h2 id="functions">Functions</h2>
+        <p class="ref-index"><a href="#ref-createScheduler"><code>createScheduler</code></a>, <a href="#ref-schedulerPlugin"><code>schedulerPlugin</code></a>, <a href="#ref-memoryLock"><code>memoryLock</code></a>, <a href="#ref-ormLock"><code>ormLock</code></a>, <a href="#ref-memoryHistory"><code>memoryHistory</code></a>, <a href="#ref-ormHistory"><code>ormHistory</code></a>, <a href="#ref-nextRuns"><code>nextRuns</code></a>, <a href="#ref-toMs"><code>toMs</code></a></p>
+
+        <h3 id="ref-createScheduler"><code>createScheduler</code></h3>
+        <pre><code class="language-ts">export function createScheduler(options?: SchedulerOptions): Scheduler;</code></pre>
+
+        <h3 id="ref-schedulerPlugin"><code>schedulerPlugin</code></h3>
+        <pre><code class="language-ts">export function schedulerPlugin(app: any, options: SchedulerPluginOptions, done: (err?: Error) =&gt; void): void;</code></pre>
+        <p>The plugin of</p>
+
+        <h3 id="ref-memoryLock"><code>memoryLock</code></h3>
+        <pre><code class="language-ts">export function memoryLock(options?: { now?: () =&gt; number }): Lock;</code></pre>
+
+        <h3 id="ref-ormLock"><code>ormLock</code></h3>
+        <pre><code class="language-ts">export function ormLock(db: any, options?: { table?: string; model?: string }): OrmLock;</code></pre>
+
+        <h3 id="ref-memoryHistory"><code>memoryHistory</code></h3>
+        <pre><code class="language-ts">export function memoryHistory(options?: { keep?: number }): History;</code></pre>
+        <p>The last runs of each job (keep: 100) in this process.</p>
+
+        <h3 id="ref-ormHistory"><code>ormHistory</code></h3>
+        <pre><code class="language-ts">export function ormHistory(db: any, options?: { table?: string; model?: string; maxAge?: Duration | null }): OrmHistory;</code></pre>
+        <p>In a table of a database of</p>
+
+        <h3 id="ref-nextRuns"><code>nextRuns</code></h3>
+        <pre><code class="language-ts">export function nextRuns(
+  expression: string,
+  count?: number,
+  options?: { timezone?: string; from?: Date | number }
+): Date[];</code></pre>
+        <p>The next times of a cron expression.</p>
+
+        <h3 id="ref-toMs"><code>toMs</code></h3>
+        <pre><code class="language-ts">export function toMs(value: Duration, what?: string): number;</code></pre>
+
+        <h2 id="classes">Classes</h2>
+        <p class="ref-index"><a href="#ref-Scheduler"><code>Scheduler</code></a>, <a href="#ref-SchedulerError"><code>SchedulerError</code></a>, <a href="#ref-TimeoutError"><code>TimeoutError</code></a></p>
+
+        <h3 id="ref-Scheduler"><code>Scheduler</code></h3>
+        <pre><code class="language-ts">export class Scheduler extends EventEmitter&lt;SchedulerEvents&gt; { ... }</code></pre>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>new (options?: SchedulerOptions)</code></td><td></td><td></td></tr>
+                <tr><td><code>readonly started</code></td><td><code>boolean</code></td><td></td></tr>
+                <tr><td><code>add&lt;Data = unknown&gt;(job: JobSpec&lt;Data&gt;)</code></td><td><code><a href="#ref-JobInfo">JobInfo</a></code></td><td></td></tr>
+                <tr><td><code>remove(name: string)</code></td><td><code>boolean</code></td><td></td></tr>
+                <tr><td><code>has(name: string)</code></td><td><code>boolean</code></td><td></td></tr>
+                <tr><td><code>job(name: string)</code></td><td><code><a href="#ref-JobInfo">JobInfo</a> | null</code></td><td></td></tr>
+                <tr><td><code>jobs()</code></td><td><code><a href="#ref-JobInfo">JobInfo</a>[]</code></td><td></td></tr>
+                <tr><td><code>start()</code></td><td><code>this</code></td><td></td></tr>
+                <tr><td><code>stop(options?: { timeout?: Duration })</code></td><td><code>Promise&lt;void&gt;</code></td><td><p>Waits for the runs going on (up to timeout, 10 s), then aborts the signals of those left.</p></td></tr>
+                <tr><td><code>history(name: string, options?: { limit?: number })</code></td><td><code>Promise&lt;<a href="#ref-HistoryEntry">HistoryEntry</a>[]&gt;</code></td><td><p>The runs of a job in the history, the last first ([] without one).</p></td></tr>
+                <tr><td><code>runNow&lt;T = unknown&gt;(name: string)</code></td><td><code>Promise&lt;T | undefined&gt;</code></td><td><p>Runs a job now (with its lock, overlap and retries): its result, or undefined when skipped.</p></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-SchedulerError"><code>SchedulerError</code></h3>
+        <pre><code class="language-ts">export class SchedulerError extends Error { ... }</code></pre>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>code</code></td><td><code>'XUFA_SCHEDULER_ERR'</code></td><td></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-TimeoutError"><code>TimeoutError</code></h3>
+        <pre><code class="language-ts">export class TimeoutError extends Error { ... }</code></pre>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>code</code></td><td><code>'XUFA_SCHEDULER_TIMEOUT'</code></td><td></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h2 id="interfaces">Interfaces</h2>
+        <p class="ref-index"><a href="#ref-RunContext"><code>RunContext</code></a>, <a href="#ref-JobBase"><code>JobBase</code></a>, <a href="#ref-EveryJob"><code>EveryJob</code></a>, <a href="#ref-CronJob"><code>CronJob</code></a>, <a href="#ref-AtJob"><code>AtJob</code></a>, <a href="#ref-InJob"><code>InJob</code></a>, <a href="#ref-JobInfo"><code>JobInfo</code></a>, <a href="#ref-Lock"><code>Lock</code></a>, <a href="#ref-HistoryEntry"><code>HistoryEntry</code></a>, <a href="#ref-History"><code>History</code></a>, <a href="#ref-OrmHistory"><code>OrmHistory</code></a>, <a href="#ref-OrmLock"><code>OrmLock</code></a>, <a href="#ref-Clock"><code>Clock</code></a>, <a href="#ref-SchedulerLogger"><code>SchedulerLogger</code></a>, <a href="#ref-SchedulerOptions"><code>SchedulerOptions</code></a>, <a href="#ref-SchedulerEvents"><code>SchedulerEvents</code></a>, <a href="#ref-SchedulerPluginOptions"><code>SchedulerPluginOptions</code></a></p>
+
+        <h3 id="ref-RunContext"><code>RunContext</code></h3>
+        <pre><code class="language-ts">export interface RunContext&lt;Data = unknown&gt; { ... }</code></pre>
+        <p>What a run gets.</p>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>name</code></td><td><code>string</code></td><td></td></tr>
+                <tr><td><code>scheduledAt</code></td><td><code>Date</code></td><td><p>The time of this run (not when it started: a run that waited starts later).</p></td></tr>
+                <tr><td><code>attempt</code></td><td><code>number</code></td><td><p>1, then 2... when a run that failed is tried again (retries).</p></td></tr>
+                <tr><td><code>signal</code></td><td><code>AbortSignal</code></td><td><p>Aborted at its timeout (a TimeoutError), or when the scheduler stops without it ending.</p></td></tr>
+                <tr><td><code>data</code></td><td><code>Data</code></td><td></td></tr>
+                <tr><td><code>scheduler</code></td><td><code><a href="#ref-Scheduler">Scheduler</a></code></td><td></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-JobBase"><code>JobBase</code></h3>
+        <pre><code class="language-ts">interface JobBase&lt;Data = unknown&gt; { ... }</code></pre>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>name</code></td><td><code>string</code></td><td></td></tr>
+                <tr><td><code>run</code></td><td><code>(context: <a href="#ref-RunContext">RunContext</a>&lt;Data&gt;) =&gt; unknown</code></td><td></td></tr>
+                <tr><td><code>overlap?</code></td><td><code>'skip' | 'wait' | 'allow'</code></td><td><p>'skip' (the default): a time while a run goes on is left out; 'wait': run once when it ends; 'allow': at once.</p></td></tr>
+                <tr><td><code>timeout?</code></td><td><code><a href="#ref-Duration">Duration</a></code></td><td><p>Aborts the signal of a run that goes over it, and counts it as failed.</p></td></tr>
+                <tr><td><code>immediate?</code></td><td><code>boolean</code></td><td><p>Runs once when the scheduler starts too.</p></td></tr>
+                <tr><td><code>lock?</code></td><td><code>boolean</code></td><td><p>false: this job runs in every process, though the scheduler has a lock.</p></td></tr>
+                <tr><td><code>lockTtl?</code></td><td><code><a href="#ref-Duration">Duration</a></code></td><td><p>How long a claim of the lock lasts if its process dies (renewed while the run goes on). The timeout, or 10 m.</p></td></tr>
+                <tr><td><code>data?</code></td><td><code>Data</code></td><td><p>Given to each run.</p></td></tr>
+                <tr><td><code>retries?</code></td><td><code>number</code></td><td><p>How many times more a run that fails is tried (0). The attempts are one run.</p></td></tr>
+                <tr><td><code>retryDelay?</code></td><td><code><a href="#ref-Duration">Duration</a></code></td><td><p>The wait before the second attempt (1 s), multiplied by retryFactor (2) each time, up to maxRetryDelay.</p></td></tr>
+                <tr><td><code>retryFactor?</code></td><td><code>number</code></td><td></td></tr>
+                <tr><td><code>maxRetryDelay?</code></td><td><code><a href="#ref-Duration">Duration</a></code></td><td></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-EveryJob"><code>EveryJob</code></h3>
+        <pre><code class="language-ts">export interface EveryJob&lt;Data = unknown&gt; extends JobBase&lt;Data&gt; { ... }</code></pre>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>every</code></td><td><code><a href="#ref-Duration">Duration</a></code></td><td></td></tr>
+                <tr><td><code>align?</code></td><td><code>boolean</code></td><td><p>true (the default): at the multiples of the interval since 1970 (every '10m': :00, :10...); false: from the start.</p></td></tr>
+                <tr><td><code>catchUp?</code></td><td><code>boolean</code></td><td><p>When the scheduler starts, the last time missed (by the history) runs once. Needs a history; aligned only.</p></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-CronJob"><code>CronJob</code></h3>
+        <pre><code class="language-ts">export interface CronJob&lt;Data = unknown&gt; extends JobBase&lt;Data&gt; { ... }</code></pre>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>cron</code></td><td><code>string</code></td><td><p>'minute hour day month weekday', or with seconds first;</p></td></tr>
+                <tr><td><code>timezone?</code></td><td><code>string</code></td><td><p>An IANA time zone ('Europe/Madrid'): that of the scheduler, or the local one.</p></td></tr>
+                <tr><td><code>catchUp?</code></td><td><code>boolean</code></td><td><p>When the scheduler starts, the last time missed (by the history) runs once. Needs a history.</p></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-AtJob"><code>AtJob</code></h3>
+        <pre><code class="language-ts">export interface AtJob&lt;Data = unknown&gt; extends JobBase&lt;Data&gt; { ... }</code></pre>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>at</code></td><td><code>Date | string | number</code></td><td></td></tr>
+                <tr><td><code>catchUp?</code></td><td><code>never</code></td><td><p>Jobs of once do not catch up.</p></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-InJob"><code>InJob</code></h3>
+        <pre><code class="language-ts">export interface InJob&lt;Data = unknown&gt; extends JobBase&lt;Data&gt; { ... }</code></pre>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>in</code></td><td><code><a href="#ref-Duration">Duration</a></code></td><td></td></tr>
+                <tr><td><code>catchUp?</code></td><td><code>never</code></td><td><p>Jobs of once do not catch up.</p></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-JobInfo"><code>JobInfo</code></h3>
+        <pre><code class="language-ts">export interface JobInfo { ... }</code></pre>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>name</code></td><td><code>string</code></td><td></td></tr>
+                <tr><td><code>schedule</code></td><td><code>string</code></td><td><p>'every 10m', 'cron 0 8 * * 1-5 (Europe/Madrid)', 'at ...', 'in 30s'.</p></td></tr>
+                <tr><td><code>next</code></td><td><code>Date | null</code></td><td></td></tr>
+                <tr><td><code>running</code></td><td><code>boolean</code></td><td></td></tr>
+                <tr><td><code>runs</code></td><td><code>number</code></td><td></td></tr>
+                <tr><td><code>failures</code></td><td><code>number</code></td><td></td></tr>
+                <tr><td><code>skipped</code></td><td><code>number</code></td><td></td></tr>
+                <tr><td><code>retries</code></td><td><code>number</code></td><td><p>Attempts tried again.</p></td></tr>
+                <tr><td><code>lastRun</code></td><td><code>Date | null</code></td><td></td></tr>
+                <tr><td><code>lastDuration</code></td><td><code>number | null</code></td><td></td></tr>
+                <tr><td><code>lastError</code></td><td><code>unknown</code></td><td></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-Lock"><code>Lock</code></h3>
+        <pre><code class="language-ts">export interface Lock { ... }</code></pre>
+        <p>Which process runs a time of a job, among several with the same jobs.</p>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>claim(claim: { name: string; slot: number; ttl: number })</code></td><td><code>string | null | Promise&lt;string | null&gt;</code></td><td><p>A token, or null when that time was taken or a run of the job goes on elsewhere.</p></td></tr>
+                <tr><td><code>renew(claim: { name: string; token: string; ttl: number })</code></td><td><code>unknown</code></td><td></td></tr>
+                <tr><td><code>release(claim: { name: string; token: string })</code></td><td><code>unknown</code></td><td></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-HistoryEntry"><code>HistoryEntry</code></h3>
+        <pre><code class="language-ts">export interface HistoryEntry { ... }</code></pre>
+        <p>A run, in a history.</p>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>name</code></td><td><code>string</code></td><td></td></tr>
+                <tr><td><code>scheduledAt</code></td><td><code>Date</code></td><td></td></tr>
+                <tr><td><code>startedAt</code></td><td><code>Date</code></td><td></td></tr>
+                <tr><td><code>duration</code></td><td><code>number</code></td><td></td></tr>
+                <tr><td><code>status</code></td><td><code>'done' | 'failed' | 'timeout'</code></td><td></td></tr>
+                <tr><td><code>attempts</code></td><td><code>number</code></td><td></td></tr>
+                <tr><td><code>error</code></td><td><code>string | null</code></td><td><p>The message of the error of a run that failed.</p></td></tr>
+                <tr><td><code>host</code></td><td><code>string</code></td><td></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-History"><code>History</code></h3>
+        <pre><code class="language-ts">export interface History { ... }</code></pre>
+        <p>The runs of the jobs, recorded by the scheduler (and read by catchUp).</p>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>record(entry: HistoryEntry)</code></td><td><code>unknown</code></td><td></td></tr>
+                <tr><td><code>last(name: string)</code></td><td><code><a href="#ref-HistoryEntry">HistoryEntry</a> | null | Promise&lt;<a href="#ref-HistoryEntry">HistoryEntry</a> | null&gt;</code></td><td><p>The run of the latest time of a job, or null.</p></td></tr>
+                <tr><td><code>list(name: string, options?: { limit?: number })</code></td><td><code><a href="#ref-HistoryEntry">HistoryEntry</a>[] | Promise&lt;<a href="#ref-HistoryEntry">HistoryEntry</a>[]&gt;</code></td><td><p>The runs of a job, the last first (20).</p></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-OrmHistory"><code>OrmHistory</code></h3>
+        <pre><code class="language-ts">export interface OrmHistory extends History { ... }</code></pre>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>model</code></td><td><code>any</code></td><td></td></tr>
+                <tr><td><code>sync()</code></td><td><code>Promise&lt;void&gt;</code></td><td></td></tr>
+                <tr><td><code>last(name: string)</code></td><td><code>Promise&lt;<a href="#ref-HistoryEntry">HistoryEntry</a> | null&gt;</code></td><td></td></tr>
+                <tr><td><code>list(name: string, options?: { limit?: number })</code></td><td><code>Promise&lt;<a href="#ref-HistoryEntry">HistoryEntry</a>[]&gt;</code></td><td></td></tr>
+                <tr><td><code>prune(before?: Date)</code></td><td><code>Promise&lt;number&gt;</code></td><td><p>Deletes the runs older than maxAge (or than before): how many.</p></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-OrmLock"><code>OrmLock</code></h3>
+        <pre><code class="language-ts">export interface OrmLock extends Lock { ... }</code></pre>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>model</code></td><td><code>any</code></td><td><p>The model of the table of the locks, registered in the database.</p></td></tr>
+                <tr><td><code>sync()</code></td><td><code>Promise&lt;void&gt;</code></td><td><p>Creates its table (db.sync() does too).</p></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-Clock"><code>Clock</code></h3>
+        <pre><code class="language-ts">export interface Clock { ... }</code></pre>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>now()</code></td><td><code>number</code></td><td></td></tr>
+                <tr><td><code>setTimeout(fn: () =&gt; void, ms: number)</code></td><td><code>unknown</code></td><td></td></tr>
+                <tr><td><code>clearTimeout(timer: unknown)</code></td><td><code>void</code></td><td></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-SchedulerLogger"><code>SchedulerLogger</code></h3>
+        <pre><code class="language-ts">export interface SchedulerLogger { ... }</code></pre>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>debug(obj: object, msg?: string)</code></td><td><code>void</code></td><td></td></tr>
+                <tr><td><code>info(obj: object, msg?: string)</code></td><td><code>void</code></td><td></td></tr>
+                <tr><td><code>warn(obj: object, msg?: string)</code></td><td><code>void</code></td><td></td></tr>
+                <tr><td><code>error(obj: object, msg?: string)</code></td><td><code>void</code></td><td></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-SchedulerOptions"><code>SchedulerOptions</code></h3>
+        <pre><code class="language-ts">export interface SchedulerOptions { ... }</code></pre>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>logger?</code></td><td><code><a href="#ref-SchedulerLogger">SchedulerLogger</a></code></td><td></td></tr>
+                <tr><td><code>lock?</code></td><td><code><a href="#ref-Lock">Lock</a></code></td><td></td></tr>
+                <tr><td><code>history?</code></td><td><code><a href="#ref-History">History</a></code></td><td><p>Where every run is recorded (memoryHistory(), ormHistory(db)); catchUp reads it.</p></td></tr>
+                <tr><td><code>onError?</code></td><td><code>(error: unknown, job: <a href="#ref-JobInfo">JobInfo</a>) =&gt; void</code></td><td><p>Of every failure (an error it throws stops nothing).</p></td></tr>
+                <tr><td><code>timezone?</code></td><td><code>string</code></td><td><p>Of the cron jobs without one.</p></td></tr>
+                <tr><td><code>lockTtl?</code></td><td><code><a href="#ref-Duration">Duration</a></code></td><td></td></tr>
+                <tr><td><code>unref?</code></td><td><code>boolean</code></td><td><p>Timers that do not keep the process alive.</p></td></tr>
+                <tr><td><code>clock?</code></td><td><code><a href="#ref-Clock">Clock</a></code></td><td><p>For tests: a clock of your own.</p></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-SchedulerEvents"><code>SchedulerEvents</code></h3>
+        <pre><code class="language-ts">export interface SchedulerEvents { ... }</code></pre>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>run</code></td><td><code>[{ name: string; scheduledAt: Date }]</code></td><td></td></tr>
+                <tr><td><code>retry</code></td><td><code>[{ name: string; scheduledAt: Date; attempt: number; error: unknown; delay: number }]</code></td><td></td></tr>
+                <tr><td><code>done</code></td><td><code>[{ name: string; scheduledAt: Date; duration: number; attempts: number; result: unknown }]</code></td><td></td></tr>
+                <tr><td><code>failure</code></td><td><code>[{ name: string; scheduledAt: Date; duration: number; attempts: number; error: unknown }]</code></td><td></td></tr>
+                <tr><td><code>catchUp</code></td><td><code>[{ name: string; scheduledAt: Date }]</code></td><td></td></tr>
+                <tr><td><code>skip</code></td><td><code>[{ name: string; scheduledAt: Date; why: 'running' | 'locked' }]</code></td><td></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-SchedulerPluginOptions"><code>SchedulerPluginOptions</code></h3>
+        <pre><code class="language-ts">export interface SchedulerPluginOptions extends SchedulerOptions { ... }</code></pre>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>jobs?</code></td><td><code><a href="#ref-JobSpec">JobSpec</a>&lt;any&gt;[]</code></td><td></td></tr>
+                <tr><td><code>start?</code></td><td><code>boolean</code></td><td><p>false: you start it (app.scheduler.start()).</p></td></tr>
+                <tr><td><code>scheduler?</code></td><td><code><a href="#ref-Scheduler">Scheduler</a></code></td><td><p>One made before, instead of a new one.</p></td></tr>
+                <tr><td><code>stopTimeout?</code></td><td><code><a href="#ref-Duration">Duration</a></code></td><td><p>How long close() waits for the runs going on.</p></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h2 id="types">Types</h2>
+        <p class="ref-index"><a href="#ref-Duration"><code>Duration</code></a>, <a href="#ref-JobSpec"><code>JobSpec</code></a></p>
+
+        <h3 id="ref-Duration"><code>Duration</code></h3>
+        <pre><code class="language-ts">export type Duration = number | string;</code></pre>
+        <p>Milliseconds, or a text: '500ms', '30s', '10m', '2h', '1d', '1w', '1h30m'.</p>
+
+        <h3 id="ref-JobSpec"><code>JobSpec</code></h3>
+        <pre><code class="language-ts">export type JobSpec&lt;Data = unknown&gt; = EveryJob&lt;Data&gt; | CronJob&lt;Data&gt; | AtJob&lt;Data&gt; | InJob&lt;Data&gt;;</code></pre>
+      </article>
+    </div>
+
+    <footer class="footer">
+      <div class="container">
+        <span>xufa is MIT licensed. &copy; Jes&uacute;s Seijas</span>
+        <span>
+          <a href="../guide.html">Guide</a> &middot; <a href="../playground.html">Playground</a> &middot; <a href="../http/index.html">HTTP</a> &middot; <a href="../orm/index.html">ORM</a> &middot; <a href="../auth/index.html">Auth</a> &middot;
+          <a href="../sequelize/index.html">Sequelize</a> &middot; <a href="../packages.html">Packages</a> &middot;
+          <a href="../benchmarks.html">Benchmarks</a> &middot; <a href="https://github.com/xufajs/xufa">GitHub</a>
+        </span>
+      </div>
+    </footer>
+  </body>
+</html>

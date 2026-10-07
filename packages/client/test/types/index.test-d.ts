@@ -13,6 +13,12 @@ expectType<Client>(api.extend({ headers: { authorization: 'Bearer t' } }));
 expectType<Client>(api.for({ id: 'req-1', signal: new AbortController().signal }));
 expectError(createClient({ responseType: 'xml' }));
 expectError(createClient({ retry: 'yes' }));
+expectError(createClient({ transport: 'undici' }));
+createClient({ transport: 'http' }).close();
+createClient({ proxy: 'http://user:pass@proxy:3128', tls: { ca: 'PEM', rejectUnauthorized: true } });
+createClient({ proxy: 'env' });
+createClient({ proxy: false });
+expectError(createClient({ proxy: 3128 }));
 
 expectType<Promise<string>>(retry(async () => 'done', { until: (value) => value === 'done', attempts: 3 }));
 

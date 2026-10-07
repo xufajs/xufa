@@ -1,4 +1,4 @@
-const { String } = require('../src');
+const { String } = require('..');
 
 describe('String Type', () => {
   it('Should allow undefined if not mandatory', () => {

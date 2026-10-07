@@ -1,14 +1,14 @@
 /* eslint-disable no-console */
-// Writes src/standalone-helpers.js: the source of the library functions that standalone code calls, as text (see
+// Writes lib/standalone-helpers.js: the source of the library functions that standalone code calls, as text (see
 // standalone.js), with the other helpers each one calls. Run it (npm run build:helpers) after changing one of them;
 // test/standalone.test.js checks that each copy behaves as the function it copies.
 const fs = require('fs');
 const path = require('path');
-const { deepEqual } = require('../src/deep-equal');
-const { codePointLength } = require('../src/types/code-point-length');
-const { hasDuplicates } = require('../src/types/has-duplicates');
-const { FORMAT_FUNCTIONS } = require('../src/formats');
-const { errorObject, pathName } = require('../src/error-objects');
+const { deepEqual } = require('../lib/deep-equal');
+const { codePointLength } = require('../lib/types/code-point-length');
+const { hasDuplicates } = require('../lib/types/has-duplicates');
+const { FORMAT_FUNCTIONS } = require('../lib/formats');
+const { errorObject, pathName } = require('../lib/error-objects');
 
 const functions = { codePointLength, deepEqual, hasDuplicates, pathName, errorObject, ...FORMAT_FUNCTIONS };
 const names = Object.keys(functions);
@@ -35,5 +35,5 @@ names.forEach((name) => {
 });
 out += '};\n\nmodule.exports = { HELPER_SOURCES };\n';
 
-fs.writeFileSync(path.join(__dirname, '../src/standalone-helpers.js'), out);
-console.log(`Wrote src/standalone-helpers.js with ${names.length} helpers`);
+fs.writeFileSync(path.join(__dirname, '../lib/standalone-helpers.js'), out);
+console.log(`Wrote lib/standalone-helpers.js with ${names.length} helpers`);

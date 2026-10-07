@@ -1,7 +1,7 @@
 // What the ORM knows of a model, built once from its class: the fields (its own and those of its parents), the
 // primary key, the table and the options. A model is a class extending Model with `static fields` and, optionally,
 // `static options` ({ table, ordering, indexes, abstract }).
-const { IdField, ForeignKey, ManyToManyField, EncryptedField } = require('./fields');
+const { IdField, ForeignKey, ManyToManyField, EncryptedField, DateTimeField } = require('./fields');
 const { prepareComputed } = require('./computed');
 const { modelRules } = require('./rules');
 const { seconds } = require('./duration');
@@ -150,6 +150,15 @@ class Meta {
           throw new ModelError(model.name, `the field ${names[j]} is not a field`);
         } else declared.set(names[j], field);
       }
+    }
+
+    // Soft deletes (options.softDelete: true, or the name of the field): deleting an object sets the date of the field
+    // (deletedAt, added when the model has none), and the querysets leave such objects out.
+    this.softDelete = null;
+    if (options.softDelete) {
+      const name = typeof options.softDelete === 'string' ? options.softDelete : 'deletedAt';
+      if (!declared.has(name)) declared.set(name, new DateTimeField({ null: true, index: true }));
+      this.softDelete = name;
     }
 
     this.fields = [];
@@ -320,4 +329,14 @@ function tableKey(table, schema) {
   return schema ? `${schema}.${table}` : table;
 }
 
-module.exports = { CompositeKey, tableKey, Meta, STATE, State, defineState, snakeCase, lowerFirst };
+// The values a backend gives as it inserts an object (fields whose givenByBackend is true: the size of a blob, the
+// recipients a mail server accepted), taken from the row it wrote into.
+function takeGiven(meta, object, row) {
+  if (meta.givenByBackend === undefined) meta.givenByBackend = meta.fields.filter((field) => field.givenByBackend);
+  for (let i = 0; i < meta.givenByBackend.length; i += 1) {
+    const { attname } = meta.givenByBackend[i];
+    if (row[attname] !== undefined) object[attname] = row[attname];
+  }
+}
+
+module.exports = { CompositeKey, tableKey, Meta, STATE, State, defineState, snakeCase, lowerFirst, takeGiven };

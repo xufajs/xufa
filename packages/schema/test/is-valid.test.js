@@ -9,7 +9,7 @@ const {
   compileJsonSchema,
   fromJsonSchema,
   hasErrors,
-} = require('../src');
+} = require('..');
 
 const { CheckType, samples, types } = require('./fixtures/types');
 

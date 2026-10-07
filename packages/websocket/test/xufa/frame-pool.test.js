@@ -102,8 +102,11 @@ describe('frame pool', () => {
     const before = framePool.free.length;
     sender.send(crypto.randomBytes(16 * 1024), { binary: true, fin: true, mask: true });
     expect(framePool.free.length).toBe(before);
-    // One buffer of the header and the data, masked: not a slice of a larger buffer of the pool.
-    expect(written[0].buffer.byteLength).toBe(written[0].length);
+    // One buffer of the header and the data, masked, of Buffer.allocUnsafe: not one of the frame pool (memory of its
+    // own, in pages of 4 KB). Node's pool can hold it (from Node 24, Buffer.poolSize is 64 KB).
+    const frame = written[0];
+    expect(frame.length).toBe(16 * 1024 + 8);
+    expect(frame.byteOffset === 0 && frame.buffer.byteLength === Math.ceil(frame.length / 4096) * 4096).toBe(false);
   });
 
   it('take() gives a buffer of its own, of at least the size, and release() keeps a few', () => {

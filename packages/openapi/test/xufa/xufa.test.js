@@ -42,6 +42,10 @@ async function documented(register, options = OPTIONS) {
   return { app, document };
 }
 
+// A schema of a document, its $ref (to components/schemas) followed.
+const resolved = (document, schema) =>
+  schema.$ref ? document.components.schemas[schema.$ref.replace('#/components/schemas/', '')] : schema;
+
 describe('resources of @xufa/orm', () => {
   it('every action, with its parameters, body and responses', async () => {
     const { document } = await documented((app) =>
@@ -67,7 +71,9 @@ describe('resources of @xufa/orm', () => {
     expect(query.ordering.schema.enum).toEqual(['pages', '-pages']);
     const page = list.responses['200'].content['application/json'].schema;
     expect(Object.keys(page.properties)).toEqual(['count', 'limit', 'offset', 'results']);
-    expect(Object.keys(page.properties.results.items.properties)).toEqual([
+    // The object, once in components/schemas, referenced by every operation that answers it.
+    expect(page.properties.results.items.$ref).toMatch(/^#\/components\/schemas\//);
+    expect(Object.keys(resolved(document, page.properties.results.items).properties)).toEqual([
       'id',
       'title',
       'pages',
@@ -78,9 +84,17 @@ describe('resources of @xufa/orm', () => {
     const create = document.paths['/books/'].post;
     expect(create.operationId).toBe('createBook');
     const body = create.requestBody.content['application/json'].schema;
-    // The writable fields: not the id, nor createdAt (autoNowAdd); title is required, pages has a default.
-    expect(Object.keys(body.properties)).toEqual(['title', 'pages', 'authorId']);
+    // The writable fields (title is required, pages has a default), and the others of the object, read-only: the id
+    // and createdAt (autoNowAdd), ignored in a body (the resource is not strict).
+    expect(Object.keys(body.properties)).toEqual(['id', 'title', 'pages', 'authorId', 'createdAt']);
+    expect(body.properties.id).toMatchObject({ readOnly: true, description: 'Read-only: ignored in a body.' });
+    expect(body.properties.createdAt).toMatchObject({ readOnly: true });
+    expect(body.properties.title.readOnly).toBe(undefined);
     expect(body.required).toEqual(['title']);
+    expect(body.additionalProperties).toBe(false);
+    // The object answered has the same fields read-only.
+    const answered = resolved(document, create.responses['201'].content['application/json'].schema).properties;
+    expect([answered.id.readOnly, answered.createdAt.readOnly, answered.title.readOnly]).toEqual([true, true, undefined]);
     expect(Object.keys(create.responses)).toEqual(['201', '400', '409']);
 
     const one = document.paths['/books/{id}'];
@@ -90,6 +104,50 @@ describe('resources of @xufa/orm', () => {
     expect(one.patch.operationId).toBe('partialUpdateBook');
     expect(one.patch.requestBody.content['application/json'].schema.required).toBe(undefined);
     expect(Object.keys(one.delete.responses)).toEqual(['204', '404', '409']);
+  });
+
+  it('strict: read-only fields refused in a create, and in an update unless they are the value the object has', async () => {
+    const { app, document } = await documented((instance) =>
+      instance.register(resource(Book, { strict: true, readOnly: ['pages'] }), { prefix: '/strict-books' })
+    );
+    const create = document.paths['/strict-books/'].post.requestBody.content['application/json'].schema;
+    const put = document.paths['/strict-books/{id}'].put.requestBody.content['application/json'].schema;
+    const patch = document.paths['/strict-books/{id}'].patch.requestBody.content['application/json'].schema;
+    expect(create.properties.pages).toMatchObject({ readOnly: true, description: 'Read-only: refused in a body.' });
+    expect(put.properties.id.description).toBe('Read-only: refused, unless it is the value the object has.');
+    expect(patch.properties.pages.readOnly).toBe(true);
+    expect([create.required, put.required, patch.required]).toEqual([['title'], ['title'], undefined]);
+    // As documented: a GET sent back as a PUT is accepted; a new value of a read-only field is refused.
+    const made = await app.inject({ method: 'POST', url: '/strict-books/', payload: { title: 'Notes' } });
+    const book = made.json();
+    const same = await app.inject({ method: 'PUT', url: `/strict-books/${book.id}`, payload: { ...book, title: 'Notes 2' } });
+    expect(same.statusCode).toBe(200);
+    const changed = await app.inject({ method: 'PATCH', url: `/strict-books/${book.id}`, payload: { pages: 9 } });
+    expect(changed.statusCode).toBe(400);
+    expect(changed.json().message).toMatch(/pages/);
+    await app.close();
+  });
+
+  it('the object in components/schemas: named by its model with a refResolver; a name taken keeps it inline', async () => {
+    const options = {
+      ...OPTIONS,
+      // Components named by the $id of their schemas (@fastify/swagger names them def-0, def-1... by default).
+      refResolver: { buildLocalReference: (json, baseUri, fragment, i) => json.$id || `def-${i}` },
+    };
+    const { document } = await documented(async (app) => {
+      app.addSchema({ $id: 'Author', type: 'object', properties: { name: { type: 'string' } } });
+      await app.register(resource(Book), { prefix: '/books' });
+      await app.register(resource(Book, { fields: ['title'] }), { prefix: '/titles' }); // Book is taken: inline
+      await app.register(resource(Book, { fields: ['title'], openapi: { component: 'BookTitle' } }), { prefix: '/t2' });
+      await app.register(resource(Author), { prefix: '/authors' }); // another schema is Author: inline
+    }, options);
+    const schemaOf = (url) => document.paths[url].get.responses['200'].content['application/json'].schema;
+    expect(schemaOf('/books/{id}')).toEqual({ $ref: '#/components/schemas/Book' });
+    expect(Object.keys(document.components.schemas.Book.properties)).toEqual(['id', 'title', 'pages', 'authorId', 'createdAt']);
+    expect(Object.keys(schemaOf('/titles/{id}').properties)).toEqual(['title']);
+    expect(schemaOf('/t2/{id}')).toEqual({ $ref: '#/components/schemas/BookTitle' });
+    expect(schemaOf('/authors/{id}').$ref).toBe(undefined);
+    expect(Object.keys(document.components.schemas.Author.properties)).toEqual(['name']);
   });
 
   it('null as each version says: nullable in OpenAPI 3.0, a type in 3.1 (the schemas are those of Model.schema())', async () => {
@@ -138,7 +196,9 @@ describe('resources of @xufa/orm', () => {
     });
     const get = document.paths['/books/{id}'].get;
     expect(get.tags).toEqual(['Library']);
-    expect(Object.keys(get.responses['200'].content['application/json'].schema.properties)).toEqual(['title']);
+    expect(Object.keys(resolved(document, get.responses['200'].content['application/json'].schema).properties)).toEqual([
+      'title',
+    ]);
     // Not documented: listed, without anything of the resource.
     expect(document.paths['/authors/'].get.operationId).toBe(undefined);
   });

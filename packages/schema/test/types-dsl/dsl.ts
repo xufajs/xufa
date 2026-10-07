@@ -42,7 +42,7 @@ import {
   standaloneCode,
   standaloneJsonSchema,
   standaloneModule,
-} from '../../src';
+} from '../..';
 
 type Equal<A, B> = (<T>() => T extends A ? 1 : 2) extends <T>() => T extends B ? 1 : 2 ? true : false;
 function check<T extends true>(): T | undefined {

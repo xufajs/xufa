@@ -354,11 +354,11 @@ function normalizeType(type) {
 }
 
 // A UUID of version 7 (RFC 9562): the time in milliseconds, then a counter of 12 bits for the ones of the same
-// millisecond (so they keep their order), and random bits. node:crypto's when Node has it.
+// millisecond (so they keep their order), and random bits. Not node:crypto's randomUUIDv7 (Node 24): its bits after
+// the millisecond are random, so the ones of the same millisecond lose their order.
 let lastMs = -1;
 let counter = 0;
 function uuidv7() {
-  if (typeof crypto.randomUUIDv7 === 'function') return crypto.randomUUIDv7();
   const bytes = crypto.randomBytes(16);
   let ms = Date.now();
   if (ms <= lastMs) {

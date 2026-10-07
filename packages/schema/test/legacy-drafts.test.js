@@ -1,4 +1,4 @@
-const { compileJsonSchema, standaloneJsonSchema } = require('../src');
+const { compileJsonSchema, standaloneJsonSchema } = require('..');
 
 const DRAFT_04 = 'http://json-schema.org/draft-04/schema#';
 const DRAFT_06 = 'http://json-schema.org/draft-06/schema#';

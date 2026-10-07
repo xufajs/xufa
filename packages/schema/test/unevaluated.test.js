@@ -1,4 +1,4 @@
-const { compileJsonSchema, fromJsonSchema, toErrors } = require('../src');
+const { compileJsonSchema, fromJsonSchema, toErrors } = require('..');
 
 const DRAFT_2019 = 'https://json-schema.org/draft/2019-09/schema';
 const DRAFT_2020 = 'https://json-schema.org/draft/2020-12/schema';

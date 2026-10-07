@@ -38,9 +38,13 @@ In OpenAPI 3 documents (`xufa: false` leaves it out):
 - **Resources of @xufa/orm** are documented: `orm.resource(Book, ...)` gives each of its routes its tags, summary and
   operationId (`listBook`, `getBook`, `createBook`, `updateBook`, `partialUpdateBook`, `deleteBook`), its parameters
   (the filters, ordering, search and page of the list), its body (the writable fields, from `Book.schema()`: null is
-  `nullable: true` in OpenAPI 3.0 and a type in 3.1) and
-  its responses (the object as it is answered, the page of a list, the errors). The option `openapi` of the resource
-  names the tag (`{ tag: 'Library' }`) or leaves it out (`false`).
+  `nullable: true` in OpenAPI 3.0 and a type in 3.1; the other fields of the object marked `readOnly`, never
+  required, their description saying what the resource does with them: ignored, or with `strict` refused unless an
+  update gives the value the object has) and its responses (the object as it is answered, its read-only fields marked
+  too; the page of a list, the errors). The object is in `components/schemas` once, and the operations refer to it:
+  @fastify/swagger names components `def-0`, `def-1`... (their `title` is their `$id`); to name them by their `$id`
+  (`Book`), give `refResolver: { buildLocalReference: (json, baseUri, fragment, i) => json.$id || `def-${i}` }`. The option `openapi` of the resource names the tag (`{ tag: 'Library' }`) or
+  leaves it out (`false`).
 - **Any route** can be documented by its `config.openapi`: a schema that only describes it, under its own schema
   (which wins). It is never used to validate or serialize: documenting a route does not change what it accepts or
   answers. That is how the resources are documented.

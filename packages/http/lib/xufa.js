@@ -785,3 +785,6 @@ module.exports.default = xufa;
 module.exports.errorCodes = errorCodes;
 module.exports.LogController = LogController;
 module.exports.plugin = plugin;
+module.exports.devErrors = require('./dev-errors').devErrors;
+module.exports.health = require('./health').health;
+module.exports.maintenance = require('./maintenance').maintenance;

@@ -1,6 +1,6 @@
 // The playground of xufa (playground.html): packages of xufa that run in a browser (xufa.js, made by the build of the
-// docs), each with examples to start from. The result updates as you type; "Copy link" keeps the tool and what was
-// written in the address.
+// docs; xufa-http.js for the routes, loaded when its tool is opened), each with examples to start from. The result
+// updates as you type; "Copy link" keeps the tool and what was written in the address.
 (function () {
   'use strict';
 
@@ -43,6 +43,86 @@
     }
   }
 
+  // Code of the editor that may await: an async function with the names given, giving the variable `name`.
+  var AsyncFunction = Object.getPrototypeOf(async function () {}).constructor;
+  function asyncCode(text, panel, names, name) {
+    var keys = Object.keys(names);
+    var fn;
+    try {
+      fn = new AsyncFunction(keys.join(','), text + '\n;return typeof ' + name + ' === "undefined" ? undefined : ' + name + ';');
+    } catch (err) {
+      return Promise.reject(new Problem(panel, err.message));
+    }
+    return fn.apply(null, keys.map(function (key) { return names[key]; })).then(
+      function (value) {
+        if (value === undefined) throw new Problem(panel, 'Define `' + name + '`, as in the example');
+        return value;
+      },
+      function (err) {
+        throw err instanceof Problem ? err : new Problem(panel, err && err.message ? err.message : String(err));
+      }
+    );
+  }
+
+  // The console of the page, put back after a tool that shows what an app logs.
+  var CONSOLE = { log: console.log, info: console.info, warn: console.warn, error: console.error };
+  function restoreConsole() {
+    Object.keys(CONSOLE).forEach(function (key) { console[key] = CONSOLE[key]; });
+  }
+
+  // Requests, one a line: METHOD /url, and below it, indented, headers (name: value) and then a body (JSON or text).
+  function parseRequests(text) {
+    var list = [];
+    text.split('\n').forEach(function (line, i) {
+      if (!line.trim() || /^\s*(#|\/\/)/.test(line)) return;
+      var current = list[list.length - 1];
+      if (/^\s/.test(line)) {
+        if (!current) throw new Problem('requests', 'Line ' + (i + 1) + ': a header or a body before any request');
+        var header = /^\s+([A-Za-z0-9-]+):\s*(.*)$/.exec(line);
+        if (header && current.body === null) current.options.headers[header[1].toLowerCase()] = header[2];
+        else current.body = (current.body === null ? '' : current.body + '\n') + line.trim();
+        return;
+      }
+      var match = /^([A-Za-z]+)\s+(\S+)$/.exec(line.trim());
+      if (!match) throw new Problem('requests', 'Line ' + (i + 1) + ': write METHOD /url (GET /books), with headers and a body indented below it');
+      var method = match[1].toUpperCase();
+      list.push({ label: method + ' ' + match[2], body: null, options: { method: method, url: match[2], headers: {} } });
+    });
+    if (list.length === 0) throw new Problem('requests', 'Write a request: GET /');
+    list.forEach(function (request) {
+      if (request.body === null) return;
+      request.options.payload = request.body;
+      if (!request.options.headers['content-type']) {
+        var isJson = true;
+        try {
+          JSON.parse(request.body);
+        } catch (err) {
+          isJson = false;
+        }
+        request.options.headers['content-type'] = isJson ? 'application/json' : 'text/plain';
+      }
+    });
+    return list;
+  }
+
+  // A script of the docs, loaded once (the packages of a tool that is not in xufa.js).
+  var loading = {};
+  function loadScript(src) {
+    if (!loading[src]) {
+      loading[src] = new Promise(function (resolve, reject) {
+        var script = document.createElement('script');
+        script.src = src;
+        script.onload = resolve;
+        script.onerror = function () {
+          delete loading[src];
+          reject(new Error('The packages did not load (' + src + ').'));
+        };
+        document.head.appendChild(script);
+      });
+    }
+    return loading[src];
+  }
+
   function show(value) {
     if (value === undefined) return 'undefined';
     if (typeof value === 'bigint') return value + 'n';
@@ -59,6 +139,119 @@
 
   // The tools: their panels (a panel of code or data each), examples, and what they show.
   var TOOLS = [
+    {
+      id: 'http',
+      label: 'Routes',
+      page: 'http/index.html',
+      name: '@xufa/http',
+      intro:
+        'An app of @xufa/http, run in your browser: its routes, schemas, hooks and plugins, called with app.inject() (the requests of the tests, without a server). The same code runs on Node.js.',
+      needs: { global: 'xufaHttp', src: 'xufa-http.js' },
+      panels: [
+        { id: 'app', label: 'App', note: 'JavaScript: xufa and s are given; define `app`', big: true },
+        { id: 'requests', label: 'Requests', note: 'METHOD /url; indented below it, headers and a body' },
+      ],
+      examples: [
+        {
+          label: 'Routes, parameters and the query',
+          hint: 'Add a route, or a request to it: the replies update as you type.',
+          values: {
+            app: "const app = xufa();\n\napp.get('/hello/:name', async (request) => {\n  return { hello: request.params.name, lang: request.query.lang ?? 'en' };\n});\n\napp.get('/text', async (request, reply) => {\n  reply.type('text/plain').header('x-powered-by', 'xufa');\n  return 'plain text';\n});",
+            requests: 'GET /hello/ada?lang=es\nGET /hello/grace\nGET /text\nGET /nope',
+          },
+        },
+        {
+          label: 'Schemas: the body checked, the reply filtered',
+          hint: 'The secret is not in the replies: the schema of the response writes only its properties. Make pages required.',
+          values: {
+            app: "const app = xufa();\n\nconst Book = s.object({\n  id: s.integer(),\n  title: s.string({ minLength: 1 }),\n  pages: s.optional(s.integer({ minimum: 1 })),\n});\nconst NewBook = s.omit(Book, ['id']);\nconst books = [];\n\napp.post('/books', { schema: { body: NewBook, response: { 201: Book } } }, async (request, reply) => {\n  const book = { id: books.length + 1, ...request.body, secret: 'not in the reply' };\n  books.push(book);\n  reply.code(201);\n  return book;\n});\n\napp.get('/books', { schema: { response: { 200: s.array(Book) } } }, async () => books);",
+            requests: 'POST /books\n  {"title": "Dune", "pages": 412}\nPOST /books\n  {"title": ""}\nPOST /books\n  {"title": "Emma", "pages": "many"}\nGET /books',
+          },
+        },
+        {
+          label: 'Hooks, decorators and plugins',
+          hint: 'Send the token to /admin/stats (authorization: Bearer secret), or move the hook out of the plugin.',
+          values: {
+            app: "const app = xufa({ logger: true });\n\napp.decorateRequest('user', null);\napp.addHook('onRequest', async (request) => {\n  request.user = request.headers.authorization === 'Bearer secret' ? { name: 'ada' } : null;\n});\n\napp.get('/', async (request) => ({ user: request.user }));\n\n// A plugin: its hooks apply to its routes only.\napp.register(\n  async (admin) => {\n    admin.addHook('preHandler', async (request, reply) => {\n      if (!request.user) return reply.code(401).send({ error: 'Log in first' });\n    });\n    admin.get('/stats', async (request) => ({ hello: request.user.name, routes: 3 }));\n  },\n  { prefix: '/admin' }\n);",
+            requests: 'GET /\nGET /admin/stats\nGET /admin/stats\n  authorization: Bearer secret',
+          },
+        },
+        {
+          label: 'Errors and their handlers',
+          hint: 'Remove the error handler: the default one answers with statusCode, error and message.',
+          values: {
+            app: "const app = xufa();\n\napp.get('/books/:id', async (request) => {\n  const err = new Error(`No book ${request.params.id}`);\n  err.statusCode = 404;\n  throw err;\n});\napp.get('/crash', async () => {\n  throw new Error('Something broke');\n});\n\napp.setErrorHandler(async (err, request, reply) => {\n  reply.code(err.statusCode ?? 500);\n  return { error: err.message, at: request.url };\n});\napp.setNotFoundHandler(async (request, reply) => {\n  reply.code(404);\n  return { error: 'No such route', method: request.method };\n});",
+            requests: 'GET /books/7\nGET /crash\nDELETE /books',
+          },
+        },
+      ],
+      run: function (v) {
+        var x = window.xufaHttp;
+        var requests = parseRequests(v.requests);
+        var logs = [];
+        var capture = function () {
+          logs.push(Array.prototype.map.call(arguments, function (item) {
+            return typeof item === 'string' ? item : show(item);
+          }).join(' '));
+        };
+        console.log = console.info = console.warn = console.error = capture;
+        var app = null;
+        return Promise.resolve()
+          .then(function () {
+            return asyncCode(v.app, 'app', { xufa: x.http, s: x.schema.s }, 'app');
+          })
+          .then(function (made) {
+            app = made;
+            if (!app || typeof app.inject !== 'function') throw new Problem('app', '`app` is not an app: const app = xufa();');
+            return app.ready().catch(function (err) {
+              throw new Problem('app', err.message);
+            });
+          })
+          .then(function () {
+            var results = [];
+            return requests
+              .reduce(function (chain, request) {
+                return chain.then(function () {
+                  return app.inject(request.options).then(function (res) {
+                    results.push({ request: request, res: res });
+                  });
+                });
+              }, Promise.resolve())
+              .then(function () {
+                return results;
+              });
+          })
+          .then(function (results) {
+            var sections = results.map(function (result) {
+              var res = result.res;
+              var lines = [res.statusCode + ' ' + (res.statusMessage || '')];
+              Object.keys(res.headers).forEach(function (name) {
+                if (name !== 'date' && name !== 'connection') lines.push(name + ': ' + res.headers[name]);
+              });
+              var body = res.body;
+              if (/json/.test(res.headers['content-type'] || '')) {
+                try {
+                  body = JSON.stringify(JSON.parse(body), null, 2);
+                } catch (err) {
+                  body = res.body;
+                }
+              }
+              return { title: result.request.label + ' → ' + res.statusCode, pre: lines.join('\n') + (body ? '\n\n' + body : '') };
+            });
+            if (logs.length) sections.push({ title: 'Logs', pre: logs.join('\n') });
+            return {
+              ok: results.every(function (result) { return result.res.statusCode < 500; }),
+              status: results.map(function (result) { return result.res.statusCode; }).join(', '),
+              note: 'app.inject() of each request, in order, after app.ready() (the date and connection headers left out)',
+              sections: sections,
+            };
+          })
+          .finally(function () {
+            restoreConsole();
+            if (app && typeof app.close === 'function') app.close().catch(function () {});
+          });
+      },
+    },
     {
       id: 'schema',
       label: 'Schemas',
@@ -357,6 +550,58 @@
         };
       },
     },
+    {
+      id: 'serializer',
+      label: 'Serializer',
+      page: 'serializer/index.html',
+      name: '@xufa/serializer',
+      intro: 'JSON written by a function compiled from a JSON Schema, with the API of fast-json-stringify: the replies of the routes of @xufa/http.',
+      panels: [
+        { id: 'schema', label: 'Schema', note: 'JSON Schema', big: true },
+        { id: 'value', label: 'Value', note: 'JSON' },
+      ],
+      examples: [
+        {
+          label: 'Only what the schema has',
+          hint: 'The password is not in the schema: it is not written. Add it to the properties and it is.',
+          values: {
+            schema: '{\n  "type": "object",\n  "properties": {\n    "id": { "type": "integer" },\n    "name": { "type": "string" },\n    "tags": { "type": "array", "items": { "type": "string" } },\n    "createdAt": { "type": "string", "format": "date-time" }\n  }\n}',
+            value: '{\n  "id": 7,\n  "name": "Ada",\n  "password": "$scrypt$...",\n  "tags": ["admin", "author"],\n  "createdAt": "2026-10-07T12:00:00.000Z"\n}',
+          },
+        },
+        {
+          label: 'Types converted',
+          hint: 'Values are written as the type of the schema says: "42" as an integer, 1 as a boolean, null where it is allowed.',
+          values: {
+            schema: '{\n  "type": "object",\n  "properties": {\n    "count": { "type": "integer" },\n    "active": { "type": "boolean" },\n    "price": { "type": "number" },\n    "note": { "type": ["string", "null"] }\n  }\n}',
+            value: '{ "count": "42", "active": 1, "price": "9.5", "note": null }',
+          },
+        },
+      ],
+      run: function (v, x) {
+        var schema = json(v.schema, 'schema');
+        var value = json(v.value, 'value');
+        var serialize;
+        try {
+          serialize = x.serializer(schema);
+        } catch (err) {
+          throw new Problem('schema', err.message);
+        }
+        var text;
+        try {
+          text = serialize(value);
+        } catch (err) {
+          throw new Problem('value', err.message);
+        }
+        var plain = JSON.stringify(value);
+        return {
+          ok: true,
+          status: 'Written: ' + text.length + ' characters',
+          pre: text,
+          sections: [{ title: 'JSON.stringify() of the value, for comparison (' + plain.length + ' characters)', pre: plain }],
+        };
+      },
+    },
   ];
 
   var tool = TOOLS[0];
@@ -413,22 +658,52 @@
     return out;
   }
 
+  // The result of the tool for what is written (a tool may give a promise: the latest one written is shown).
+  var runs = 0;
   function render() {
+    var run = (runs += 1);
     var box = $('result');
-    box.textContent = '';
     tool.panels.forEach(function (panel) { $('panel-' + panel.id).classList.remove('pg-invalid'); });
+    if (tool.needs && !window[tool.needs.global]) {
+      box.className = 'pg-result';
+      box.textContent = 'Loading ' + tool.name + '…';
+      loadScript(tool.needs.src).then(
+        function () { if (run === runs) render(); },
+        function (err) { if (run === runs) showProblem(err); }
+      );
+      return;
+    }
     var output;
     try {
       output = tool.run(values(), window.xufa);
     } catch (err) {
-      var problem = err instanceof Problem ? err : new Problem(null, err && err.message ? err.message : String(err));
-      if (problem.panel) $('panel-' + problem.panel).classList.add('pg-invalid');
-      box.className = 'pg-result is-problem';
-      var where = tool.panels.filter(function (panel) { return panel.id === problem.panel; })[0];
-      box.appendChild(el('p', 'pg-status', where ? 'A problem in ' + where.label.toLowerCase() : 'A problem'));
-      box.appendChild(el('pre', 'pg-message', problem.message));
+      showProblem(err);
       return;
     }
+    if (output && typeof output.then === 'function') {
+      output.then(
+        function (result) { if (run === runs) showOutput(result); },
+        function (err) { if (run === runs) showProblem(err); }
+      );
+    } else {
+      showOutput(output);
+    }
+  }
+
+  function showProblem(err) {
+    var box = $('result');
+    box.textContent = '';
+    var problem = err instanceof Problem ? err : new Problem(null, err && err.message ? err.message : String(err));
+    if (problem.panel) $('panel-' + problem.panel).classList.add('pg-invalid');
+    box.className = 'pg-result is-problem';
+    var where = tool.panels.filter(function (panel) { return panel.id === problem.panel; })[0];
+    box.appendChild(el('p', 'pg-status', where ? 'A problem in ' + where.label.toLowerCase() : 'A problem'));
+    box.appendChild(el('pre', 'pg-message', problem.message));
+  }
+
+  function showOutput(output) {
+    var box = $('result');
+    box.textContent = '';
     box.className = 'pg-result ' + (output.ok ? 'is-valid' : 'is-invalid');
     box.appendChild(el('p', 'pg-status', output.status));
     if (output.list && output.list.length) {
@@ -497,6 +772,7 @@
       button.type = 'button';
       button.setAttribute('role', 'tab');
       button.dataset.tool = t.id;
+      button.id = t.id; // playground.html#<tool> is a link to it (the pages of the packages have them)
       button.addEventListener('click', function () {
         history.replaceState(null, '', location.pathname + '#' + t.id);
         pickTool(t.id);

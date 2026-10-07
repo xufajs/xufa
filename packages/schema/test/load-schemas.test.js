@@ -1,4 +1,4 @@
-const { compileJsonSchemaAsync, loadJsonSchemas, standaloneJsonSchema } = require('../src');
+const { compileJsonSchemaAsync, loadJsonSchemas, standaloneJsonSchema } = require('..');
 
 const documents = {
   'https://example.com/address.json': {

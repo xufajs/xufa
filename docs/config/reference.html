@@ -1,0 +1,423 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>@xufa/config: Reference · xufa</title>
+    <meta
+      name="description"
+      content="The reference of @xufa/config: every function, class, interface and type it declares, made from its TypeScript declarations."
+    />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%23d9502b'/%3E%3Ctext x='16' y='22.5' font-family='monospace' font-size='18' font-weight='700' fill='white' text-anchor='middle'%3Ex%3C/text%3E%3C/svg%3E"
+    />
+    <link rel="stylesheet" href="../style.css?v=0.1.0" />
+    <script src="../main.js?v=0.1.0"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js" defer></script>
+  </head>
+  <body>
+    <header class="header">
+      <div class="header-inner">
+        <a class="logo" href="../index.html"><span class="logo-mark">x</span>xufa</a>
+        <nav class="nav">
+          <a href="../guide.html">Guide</a>
+          <a href="../playground.html">Playground</a>
+          <a href="../http/index.html">HTTP</a>
+          <a href="../orm/index.html">ORM</a>
+          <a class="hide-small" href="../auth/index.html">Auth</a>
+          <a class="hide-small" href="../sequelize/index.html">Sequelize</a>
+          <a class="hide-small" href="../packages.html" aria-current="page">Packages</a>
+          <a class="hide-small" href="../benchmarks.html">Benchmarks</a>
+          <a href="https://github.com/xufajs/xufa">GitHub</a>
+          <button class="theme-toggle" type="button" aria-label="Switch between light and dark theme">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+              <path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z" />
+            </svg>
+          </button>
+        </nav>
+      </div>
+    </header>
+
+    <div class="docs">
+      <button class="menu-toggle" type="button" aria-expanded="false">☰ Contents</button>
+      <aside class="sidebar">
+        <h4>Reference</h4>
+        <ul>
+          <li><a href="#functions">Functions (4)</a></li>
+          <li><a href="#classes">Classes (1)</a></li>
+          <li><a href="#constants">Constants (1)</a></li>
+          <li><a href="#interfaces">Interfaces (11)</a></li>
+          <li><a href="#types">Types (6)</a></li>
+        </ul>
+        <h4>Packages</h4>
+        <ul>
+          <li><a href="../websocket/index.html">@xufa/websocket</a></li>
+          <li><a href="../admin/index.html">@xufa/admin</a></li>
+          <li><a href="../session/index.html">@xufa/session</a></li>
+          <li><a href="../openapi/index.html">@xufa/openapi</a></li>
+          <li><a href="../client/index.html">@xufa/client</a></li>
+          <li><a href="../schema/index.html">@xufa/schema</a></li>
+          <li><a href="../pg/index.html">@xufa/pg</a></li>
+          <li><a href="../mongo/index.html">@xufa/mongo</a></li>
+          <li><a href="../expression/index.html">@xufa/expression</a></li>
+          <li><a href="../template/index.html">@xufa/template</a></li>
+          <li><a href="../cluster/index.html">@xufa/cluster</a></li>
+          <li><a href="../scheduler/index.html">@xufa/scheduler</a></li>
+          <li><a href="../queue/index.html">@xufa/queue</a></li>
+          <li><a href="index.html" aria-current="page">@xufa/config</a></li>
+          <li><a href="../discovery/index.html">@xufa/discovery</a></li>
+          <li><a href="../netcache/index.html">@xufa/netcache</a></li>
+          <li><a href="../faults/index.html">@xufa/faults</a></li>
+          <li><a href="../marshal/index.html">@xufa/marshal</a></li>
+          <li><a href="../yaml/index.html">@xufa/yaml</a></li>
+          <li><a href="../jwt/index.html">@xufa/jwt</a></li>
+          <li><a href="../logger/index.html">@xufa/logger</a></li>
+          <li><a href="../router/index.html">@xufa/router</a></li>
+          <li><a href="../serializer/index.html">@xufa/serializer</a></li>
+          <li><a href="../inject/index.html">@xufa/inject</a></li>
+          <li><a href="../boot/index.html">@xufa/boot</a></li>
+          <li><a href="../errors/index.html">@xufa/errors</a></li>
+          <li><a href="../packages.html">All the packages</a></li>
+        </ul>
+      </aside>
+
+      <article class="content">
+        <nav class="package-tabs" aria-label="@xufa/config">
+          <a href="index.html">Overview</a>
+          <a href="reference.html" aria-current="page">Reference</a>
+        </nav>
+        <h1>Reference</h1>
+        <p class="intro">
+          The configuration of an app from layers (files by environment, .env, variables, HTTP, Consul, Vault, folders of secrets, overrides), with safe templates, a schema that converts and checks, and secrets redacted. Every declaration of its TypeScript declarations
+          (<code>packages/config/index.d.ts</code>), as they are written, with their comments: made from them each time
+          the docs are built. How to use them is in <a href="index.html">the overview</a>.
+        </p>
+
+        <h2 id="functions">Functions</h2>
+        <p class="ref-index"><a href="#ref-loadConfig"><code>loadConfig</code></a>, <a href="#ref-loadRemoteConfig"><code>loadRemoteConfig</code></a>, <a href="#ref-watchConfig"><code>watchConfig</code></a>, <a href="#ref-parseDotenv"><code>parseDotenv</code></a></p>
+
+        <h3 id="ref-loadConfig"><code>loadConfig</code></h3>
+        <pre><code class="language-ts">export function loadConfig&lt;const S extends Schema&gt;(options: LoadOptions &amp; { schema: S }): Config&lt;InferConfig&lt;S&gt;&gt;;
+
+export function loadConfig&lt;T = Record&lt;string, any&gt;&gt;(options?: LoadOptions &amp; { schema?: Schema }): Config&lt;T&gt;;</code></pre>
+        <p>The configuration of a schema, its type from it.</p>
+
+        <h3 id="ref-loadRemoteConfig"><code>loadRemoteConfig</code></h3>
+        <pre><code class="language-ts">export function loadRemoteConfig&lt;const S extends Schema&gt;(
+  options: RemoteLoadOptions &amp; { schema: S }
+): Promise&lt;Config&lt;InferConfig&lt;S&gt;&gt;&gt;;
+
+export function loadRemoteConfig&lt;T = Record&lt;string, any&gt;&gt;(
+  options?: RemoteLoadOptions &amp; { schema?: Schema }
+): Promise&lt;Config&lt;T&gt;&gt;;</code></pre>
+        <p>The configuration with remote sources (a schema: its type from it).</p>
+
+        <h3 id="ref-watchConfig"><code>watchConfig</code></h3>
+        <pre><code class="language-ts">export function watchConfig&lt;const S extends Schema&gt;(
+  options: RemoteLoadOptions &amp; { schema: S },
+  watch?: WatchOptions&lt;Config&lt;InferConfig&lt;S&gt;&gt;&gt;
+): Promise&lt;ConfigWatcher&lt;Config&lt;InferConfig&lt;S&gt;&gt;&gt;&gt;;
+
+export function watchConfig&lt;T = Record&lt;string, any&gt;&gt;(
+  options?: RemoteLoadOptions &amp; { schema?: Schema },
+  watch?: WatchOptions&lt;Config&lt;T&gt;&gt;
+): Promise&lt;ConfigWatcher&lt;Config&lt;T&gt;&gt;&gt;;</code></pre>
+        <p>The configuration, read again every interval.</p>
+
+        <h3 id="ref-parseDotenv"><code>parseDotenv</code></h3>
+        <pre><code class="language-ts">export function parseDotenv(text: string, file?: string): Record&lt;string, string&gt;;</code></pre>
+
+        <h2 id="classes">Classes</h2>
+        <p class="ref-index"><a href="#ref-ConfigError"><code>ConfigError</code></a></p>
+
+        <h3 id="ref-ConfigError"><code>ConfigError</code></h3>
+        <pre><code class="language-ts">export class ConfigError extends Error { ... }</code></pre>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>code</code></td><td><code>'XUFA_CONFIG_ERR'</code></td><td></td></tr>
+                <tr><td><code>errors</code></td><td><code>{ path: string; message: string }[]</code></td><td><p>Every error found.</p></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h2 id="constants">Constants</h2>
+        <p class="ref-index"><a href="#ref-sources"><code>sources</code></a></p>
+
+        <h3 id="ref-sources"><code>sources</code></h3>
+        <pre><code class="language-ts">export declare const sources: {
+  /** A document of JSON or YAML over HTTP (its format by format, the content type or the extension); ETag kept. */
+  http(
+    options: RemoteSourceOptions &amp; { url: string; headers?: Record&lt;string, string&gt;; format?: 'json' | 'yaml' }
+  ): RemoteSource;
+  /** The keys of Consul under a prefix as a tree, or one key as a document. CONSUL_HTTP_ADDR, CONSUL_HTTP_TOKEN. */
+  consul(
+    options: RemoteSourceOptions &amp; {
+      url?: string;
+      token?: string;
+      datacenter?: string;
+      format?: 'json' | 'yaml';
+    } &amp; ({ prefix: string; key?: never } | { key: string; prefix?: never })
+  ): RemoteSource;
+  /** A secret of the KV engine of Vault (2 or 1), with a token or AppRole. VAULT_ADDR, VAULT_TOKEN... Sensitive. */
+  vault(
+    options: RemoteSourceOptions &amp; {
+      path: string;
+      url?: string;
+      mount?: string;
+      kv?: 1 | 2;
+      token?: string;
+      roleId?: string;
+      secretId?: string;
+      namespace?: string;
+    }
+  ): RemoteSource;
+  /** The files of a folder, a key each (Docker secrets, ConfigMaps and Secrets of Kubernetes). */
+  directory(options: RemoteSourceOptions &amp; { dir: string }): RemoteSource;
+  /** The parameters of the Parameter Store of AWS under a path (/shop/production) as a tree, decrypted. Sensitive. */
+  ssm(options: RemoteSourceOptions &amp; { path: string } &amp; AwsOptions): RemoteSource;
+  /** A secret of AWS Secrets Manager: its JSON as keys, or its text under `value`. Sensitive. */
+  secretsManager(
+    options: RemoteSourceOptions &amp; { secretId: string; versionStage?: string; versionId?: string } &amp; AwsOptions
+  ): RemoteSource;
+};</code></pre>
+
+        <h2 id="interfaces">Interfaces</h2>
+        <p class="ref-index"><a href="#ref-KeySpec"><code>KeySpec</code></a>, <a href="#ref-Schema"><code>Schema</code></a>, <a href="#ref-ConfigMethods"><code>ConfigMethods</code></a>, <a href="#ref-LoadOptions"><code>LoadOptions</code></a>, <a href="#ref-RemoteSourceOptions"><code>RemoteSourceOptions</code></a>, <a href="#ref-RemoteContext"><code>RemoteContext</code></a>, <a href="#ref-RemoteSource"><code>RemoteSource</code></a>, <a href="#ref-AwsOptions"><code>AwsOptions</code></a>, <a href="#ref-RemoteLoadOptions"><code>RemoteLoadOptions</code></a>, <a href="#ref-WatchOptions"><code>WatchOptions</code></a>, <a href="#ref-ConfigWatcher"><code>ConfigWatcher</code></a></p>
+
+        <h3 id="ref-KeySpec"><code>KeySpec</code></h3>
+        <pre><code class="language-ts">export interface KeySpec { ... }</code></pre>
+        <p>A key of a schema: one value.</p>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>type</code></td><td><code><a href="#ref-ConfigType">ConfigType</a></code></td><td></td></tr>
+                <tr><td><code>default?</code></td><td><code>unknown</code></td><td></td></tr>
+                <tr><td><code>required?</code></td><td><code>boolean</code></td><td><p>Missing (no value, no default) is an error.</p></td></tr>
+                <tr><td><code>nullable?</code></td><td><code>boolean</code></td><td></td></tr>
+                <tr><td><code>env?</code></td><td><code>string</code></td><td><p>The variable of the environment that sets it.</p></td></tr>
+                <tr><td><code>values?</code></td><td><code>readonly unknown[]</code></td><td><p>The values allowed.</p></td></tr>
+                <tr><td><code>pattern?</code></td><td><code>string | RegExp</code></td><td><p>Of strings.</p></td></tr>
+                <tr><td><code>min?</code></td><td><code>number</code></td><td><p>Of numbers, or of the length of strings and arrays.</p></td></tr>
+                <tr><td><code>max?</code></td><td><code>number</code></td><td></td></tr>
+                <tr><td><code>items?</code></td><td><code><a href="#ref-ConfigType">ConfigType</a></code></td><td><p>The type of the items of an array.</p></td></tr>
+                <tr><td><code>sensitive?</code></td><td><code>boolean</code></td><td><p>Redacted when the configuration is shown.</p></td></tr>
+                <tr><td><code>doc?</code></td><td><code>string</code></td><td></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-Schema"><code>Schema</code></h3>
+        <pre><code class="language-ts">export interface Schema { ... }</code></pre>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>[key: string]</code></td><td><code><a href="#ref-KeySpec">KeySpec</a> | <a href="#ref-Schema">Schema</a></code></td><td></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-ConfigMethods"><code>ConfigMethods</code></h3>
+        <pre><code class="language-ts">export interface ConfigMethods { ... }</code></pre>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>get&lt;T = any&gt;(path: string | readonly string[])</code></td><td><code>T</code></td><td><p>The value at a path ('database.url', or ['database', 'url']): a key that is not there is an error.</p></td></tr>
+                <tr><td><code>has(path: string | readonly string[])</code></td><td><code>boolean</code></td><td></td></tr>
+                <tr><td><code>redacted()</code></td><td><code>Record&lt;string, unknown&gt;</code></td><td><p>A copy without its secrets: keys sensitive in the schema, and named as secrets (password, token, apiKey...).</p></td></tr>
+                <tr><td><code>toJSON()</code></td><td><code>Record&lt;string, unknown&gt;</code></td><td><p>The copy without secrets (JSON.stringify writes it).</p></td></tr>
+                <tr><td><code>readonly sources</code></td><td><code>readonly string[]</code></td><td><p>The files read: .env files, then those of the configuration.</p></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-LoadOptions"><code>LoadOptions</code></h3>
+        <pre><code class="language-ts">export interface LoadOptions { ... }</code></pre>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>dir?</code></td><td><code>string</code></td><td><p>The folder of the files of the configuration ('config', from cwd).</p></td></tr>
+                <tr><td><code>cwd?</code></td><td><code>string</code></td><td></td></tr>
+                <tr><td><code>env?</code></td><td><code>string</code></td><td><p>The environment: its file (config/production.json...). NODE_ENV, or 'development'.</p></td></tr>
+                <tr><td><code>environment?</code></td><td><code>Record&lt;string, string | undefined&gt;</code></td><td><p>The variables (process.env).</p></td></tr>
+                <tr><td><code>defaults?</code></td><td><code>Record&lt;string, unknown&gt;</code></td><td><p>Below the files.</p></td></tr>
+                <tr><td><code>overrides?</code></td><td><code>Record&lt;string, unknown&gt;</code></td><td><p>Over everything.</p></td></tr>
+                <tr><td><code>envPrefix?</code></td><td><code>string</code></td><td><p>Variables with it (APP__DATABASE__URL with 'APP') set keys.</p></td></tr>
+                <tr><td><code>envSeparator?</code></td><td><code>string</code></td><td><p>Between the keys of those variables ('__').</p></td></tr>
+                <tr><td><code>dotenv?</code></td><td><code>boolean | string | string[]</code></td><td><p>false: none; files of your own (they must exist); by default .env, .env.{env}, .env.local, .env.{env}.local.</p></td></tr>
+                <tr><td><code>populate?</code></td><td><code>boolean</code></td><td><p>Sets in process.env the variables of the .env files it does not have.</p></td></tr>
+                <tr><td><code>strict?</code></td><td><code>boolean</code></td><td><p>With a schema: keys that are not in it are errors.</p></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-RemoteSourceOptions"><code>RemoteSourceOptions</code></h3>
+        <pre><code class="language-ts">export interface RemoteSourceOptions { ... }</code></pre>
+        <p>Options of every remote source.</p>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>name?</code></td><td><code>string</code></td><td><p>Its name in errors, warnings, sources and cacheFile.</p></td></tr>
+                <tr><td><code>at?</code></td><td><code>string</code></td><td><p>The key it is put under ('secrets', 'a.b').</p></td></tr>
+                <tr><td><code>optional?</code></td><td><code>boolean</code></td><td><p>A failure leaves it out (a warning) instead of failing the configuration.</p></td></tr>
+                <tr><td><code>sensitive?</code></td><td><code>boolean</code></td><td><p>Its keys are redacted; never written to cacheFile.</p></td></tr>
+                <tr><td><code>templates?</code></td><td><code>boolean</code></td><td><p>false: its texts are never templates (a secret with {{ is that text).</p></td></tr>
+                <tr><td><code>timeout?</code></td><td><code>number</code></td><td><p>Ms of each attempt (5000).</p></td></tr>
+                <tr><td><code>retries?</code></td><td><code>number</code></td><td><p>Attempts after the first (2), waiting 200 ms, 400 ms...</p></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-RemoteContext"><code>RemoteContext</code></h3>
+        <pre><code class="language-ts">export interface RemoteContext { ... }</code></pre>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>env</code></td><td><code>Readonly&lt;Record&lt;string, string&gt;&gt;</code></td><td><p>The variables (with those of the .env files).</p></td></tr>
+                <tr><td><code>name</code></td><td><code>string</code></td><td><p>The environment (production...).</p></td></tr>
+                <tr><td><code>signal</code></td><td><code>AbortSignal</code></td><td><p>Aborted at its timeout.</p></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-RemoteSource"><code>RemoteSource</code></h3>
+        <pre><code class="language-ts">export interface RemoteSource extends RemoteSourceOptions { ... }</code></pre>
+        <p>A remote source: sources.http(), consul(), vault(), directory(), ssm(), secretsManager(), or one of your own.</p>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>name</code></td><td><code>string</code></td><td></td></tr>
+                <tr><td><code>load(context: RemoteContext)</code></td><td><code>Promise&lt;Record&lt;string, unknown&gt; | undefined&gt; | Record&lt;string, unknown&gt; | undefined</code></td><td></td></tr>
+                <tr><td><code>watch?(context: RemoteContext &amp; { index: number | null })</code></td><td><code>Promise&lt;{ index: number | null }&gt;</code></td><td><p>Waits for a change (Consul's blocking queries): the index of what it watches, when it changes or after a while; null when the server cannot wait (watchConfig() then reads it every interval only).</p></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-AwsOptions"><code>AwsOptions</code></h3>
+        <pre><code class="language-ts">export interface AwsOptions { ... }</code></pre>
+        <p>Where and as whom the sources of AWS call: AWS_REGION, AWS_ACCESS_KEY_ID... by default.</p>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>region?</code></td><td><code>string</code></td><td></td></tr>
+                <tr><td><code>credentials?</code></td><td><code>{ accessKeyId: string; secretAccessKey: string; sessionToken?: string }</code></td><td></td></tr>
+                <tr><td><code>endpoint?</code></td><td><code>string</code></td><td><p>Another server of the API (LocalStack, a VPC endpoint).</p></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-RemoteLoadOptions"><code>RemoteLoadOptions</code></h3>
+        <pre><code class="language-ts">export interface RemoteLoadOptions extends LoadOptions { ... }</code></pre>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>remote?</code></td><td><code><a href="#ref-RemoteSource">RemoteSource</a>[]</code></td><td><p>Read at once; merged in their order, after the files and before the variables.</p></td></tr>
+                <tr><td><code>cacheFile?</code></td><td><code>string</code></td><td><p>A file of the last trees of the sources that are not sensitive, used when they fail.</p></td></tr>
+                <tr><td><code>onSourceError?</code></td><td><code>(error: Error, source: <a href="#ref-RemoteSource">RemoteSource</a>) =&gt; void</code></td><td><p>A source that failed but was left out (optional) or taken from cacheFile (a warning by default).</p></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-WatchOptions"><code>WatchOptions</code></h3>
+        <pre><code class="language-ts">export interface WatchOptions&lt;C&gt; { ... }</code></pre>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>interval?</code></td><td><code>string | number</code></td><td><p>A duration ('30s', 60000).</p></td></tr>
+                <tr><td><code>onChange?</code></td><td><code>(config: C, previous: C, changed: string[]) =&gt; void | Promise&lt;void&gt;</code></td><td><p>A new configuration, the one before, and the paths that changed.</p></td></tr>
+                <tr><td><code>onError?</code></td><td><code>(error: Error) =&gt; void</code></td><td><p>A reading that failed (the configuration there was is kept). A warning by default.</p></td></tr>
+                <tr><td><code>blocking?</code></td><td><code>boolean</code></td><td><p>Sources that can wait for their changes (Consul) are followed, a change read at once (true by default).</p></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-ConfigWatcher"><code>ConfigWatcher</code></h3>
+        <pre><code class="language-ts">export interface ConfigWatcher&lt;C&gt; { ... }</code></pre>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>readonly current</code></td><td><code>C</code></td><td><p>The configuration now.</p></td></tr>
+                <tr><td><code>refresh()</code></td><td><code>Promise&lt;C&gt;</code></td><td><p>Reads it again now.</p></td></tr>
+                <tr><td><code>stop()</code></td><td><code>void</code></td><td></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h2 id="types">Types</h2>
+        <p class="ref-index"><a href="#ref-ConfigType"><code>ConfigType</code></a>, <a href="#ref-Scalar"><code>Scalar</code></a>, <a href="#ref-ValueOf"><code>ValueOf</code></a>, <a href="#ref-InferConfig"><code>InferConfig</code></a>, <a href="#ref-DeepReadonly"><code>DeepReadonly</code></a>, <a href="#ref-Config"><code>Config</code></a></p>
+
+        <h3 id="ref-ConfigType"><code>ConfigType</code></h3>
+        <pre><code class="language-ts">export type ConfigType =
+  'string' | 'number' | 'integer' | 'boolean' | 'port' | 'url' | 'duration' | 'array' | 'object' | 'any';</code></pre>
+
+        <h3 id="ref-Scalar"><code>Scalar</code></h3>
+        <pre><code class="language-ts">type Scalar&lt;T extends ConfigType&gt; = T extends 'string' | 'url'
+  ? string
+  : T extends 'number' | 'integer' | 'port' | 'duration'
+    ? number
+    : T extends 'boolean'
+      ? boolean
+      : T extends 'array'
+        ? unknown[]
+        : T extends 'object'
+          ? Record&lt;string, unknown&gt;
+          : unknown;</code></pre>
+
+        <h3 id="ref-ValueOf"><code>ValueOf</code></h3>
+        <pre><code class="language-ts">type ValueOf&lt;S extends KeySpec&gt; = (
+  S extends { values: readonly (infer V)[] }
+    ? V
+    : S['type'] extends 'array'
+      ? S extends { items: infer I extends ConfigType }
+        ? Scalar&lt;I&gt;[]
+        : unknown[]
+      : Scalar&lt;S['type']&gt;
+) extends infer V
+  ? | V
+    | (S extends { nullable: true } ? null : never)
+    | ('default' extends keyof S ? never : S extends { required: true } ? never : undefined)
+  : never;</code></pre>
+
+        <h3 id="ref-InferConfig"><code>InferConfig</code></h3>
+        <pre><code class="language-ts">export type InferConfig&lt;S extends Schema&gt; = {
+  [K in keyof S]: S[K] extends KeySpec ? ValueOf&lt;S[K]&gt; : S[K] extends Schema ? InferConfig&lt;S[K]&gt; : never;
+};</code></pre>
+        <p>The configuration a schema describes.</p>
+
+        <h3 id="ref-DeepReadonly"><code>DeepReadonly</code></h3>
+        <pre><code class="language-ts">type DeepReadonly&lt;T&gt; = T extends (infer I)[]
+  ? readonly DeepReadonly&lt;I&gt;[]
+  : T extends object
+    ? { readonly [K in keyof T]: DeepReadonly&lt;T[K]&gt; }
+    : T;</code></pre>
+
+        <h3 id="ref-Config"><code>Config</code></h3>
+        <pre><code class="language-ts">export type Config&lt;T&gt; = DeepReadonly&lt;T&gt; &amp; ConfigMethods;</code></pre>
+      </article>
+    </div>
+
+    <footer class="footer">
+      <div class="container">
+        <span>xufa is MIT licensed. &copy; Jes&uacute;s Seijas</span>
+        <span>
+          <a href="../guide.html">Guide</a> &middot; <a href="../playground.html">Playground</a> &middot; <a href="../http/index.html">HTTP</a> &middot; <a href="../orm/index.html">ORM</a> &middot; <a href="../auth/index.html">Auth</a> &middot;
+          <a href="../sequelize/index.html">Sequelize</a> &middot; <a href="../packages.html">Packages</a> &middot;
+          <a href="../benchmarks.html">Benchmarks</a> &middot; <a href="https://github.com/xufajs/xufa">GitHub</a>
+        </span>
+      </div>
+    </footer>
+  </body>
+</html>

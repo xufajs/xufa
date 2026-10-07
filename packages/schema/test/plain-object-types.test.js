@@ -16,7 +16,7 @@ const {
   oarrOf,
   obj,
   oobj,
-} = require('../src');
+} = require('..');
 
 // A plain object where a type is expected stands for new Schema(object), as it does for a key of a Schema.
 describe('Plain objects as types', () => {

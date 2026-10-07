@@ -6,7 +6,8 @@
 // `dir`: the folder of the database. `layout`: 'collection' (a file for each collection: <dir>/<table>.json, the
 // default) or 'files' (a folder for each collection, a file for each object: <dir>/<table>/<key>.json, which writes
 // only the objects that changed). Files are written whole to a temporary file and renamed, so a file is never left
-// half written. Values JSON has not (dates, bytes, bigints, infinite numbers) are kept with their type, and the values of
+// half written; in the layout files, a batch of many objects of a table is written with a journal instead (all or
+// nothing, in half the time on Windows: written again from the journal when the folder is opened). Values JSON has not (dates, bytes, bigints, infinite numbers) are kept with their type, and the values of
 // encrypted fields encrypted.
 //
 // One process writes a folder: a lock file (<dir>/.xufa.lock) refuses another process while it is alive
@@ -115,6 +116,48 @@ async function writeFile(file, text) {
       });
     }
   }
+}
+
+// In the layout files: the changes of a table from which a batch is written with a journal (see writeFolder), and
+// the journal, in the folder of the table (a dot file: not an object, and not seen by the watcher).
+const BULK = 16;
+const JOURNAL = '.xufa-pending.json';
+
+// The files of a batch written synchronously on Linux, where a small file takes about 9 µs that way and 90 µs through
+// the thread pool (on Windows the thread pool is faster). By chunks, the event loop let go between them, so a large
+// batch does not stop the requests for long (256 files: about 2 ms).
+const SYNC_BATCHES = process.platform === 'linux';
+const CHUNK = 256;
+async function writeBatchSync(folder, writes, removes) {
+  const tasks = [
+    ...writes.map(
+      ([file, text]) =>
+        () =>
+          fs.writeFileSync(path.join(folder, file), text)
+    ),
+    ...removes.map((file) => () => fs.rmSync(path.join(folder, file), { force: true })),
+  ];
+  for (let i = 0; i < tasks.length; i += 1) {
+    if (i > 0 && i % CHUNK === 0) {
+      await new Promise((resolve) => {
+        setImmediate(resolve);
+      });
+    }
+    tasks[i]();
+  }
+}
+
+// A batch of a table cut short (the process ended while it was written): its files written again from its journal,
+// and the journal removed. A journal is written whole (temporary file and rename): it is there complete, or not at all.
+function replayJournal(folder) {
+  const file = path.join(folder, JOURNAL);
+  const text = readText(file);
+  if (text === null) return false;
+  const { write = [], remove = [] } = JSON.parse(text);
+  for (const [name, content] of write) fs.writeFileSync(path.join(folder, name), content);
+  for (const name of remove) fs.rmSync(path.join(folder, name), { force: true });
+  fs.unlinkSync(file);
+  return true;
 }
 
 // The text of a file (null: there is none).
@@ -242,7 +285,9 @@ class FsBackend extends MemoryBackend {
         return;
       }
       const name = tableOf(entry.name, entry.isDirectory());
-      if (name !== null) this.readTable(name);
+      if (name === null) return;
+      if (this.layout === 'files' && entry.isDirectory()) replayJournal(path.join(this.dir, entry.name));
+      this.readTable(name);
     });
   }
 
@@ -336,6 +381,10 @@ class FsBackend extends MemoryBackend {
 
   // The folder watched: the changes are gathered for a moment, then read.
   watch() {
+    if (process.platform === 'linux') {
+      this.watchFolders();
+      return;
+    }
     try {
       this.watcher = fs.watch(this.dir, { recursive: true }, (event, name) => this.seen(name));
     } catch (err) {
@@ -343,6 +392,45 @@ class FsBackend extends MemoryBackend {
     }
     this.watcher.on('error', (err) => this.failed(err));
     this.watcher.unref();
+  }
+
+  // On Linux, Node watches a folder with recursive: true by watching each of its files, and a file replaced by a
+  // rename (as this backend writes them) is not seen again. The folder is watched by itself instead, and in the layout
+  // files the folder of each table too (those made later as they appear).
+  watchFolders() {
+    const watchers = new Map();
+    const add = (sub) => {
+      if (watchers.has(sub)) return;
+      const folder = sub ? path.join(this.dir, sub) : this.dir;
+      let watcher;
+      try {
+        watcher = fs.watch(folder, (event, name) => {
+          if (!name) return;
+          if (!sub && this.layout === 'files' && isFolder(path.join(this.dir, name))) add(String(name));
+          this.seen(sub ? `${sub}/${name}` : name);
+        });
+      } catch (err) {
+        if (sub) return; // a folder gone already
+        throw new BackendError(`The fs backend cannot watch ${this.dir}: ${err.message}`);
+      }
+      watcher.on('error', (err) => {
+        // The folder of a table removed (drop): it is not watched any more.
+        watchers.delete(sub);
+        if (!sub) this.failed(err);
+      });
+      watcher.unref();
+      watchers.set(sub, watcher);
+    };
+    add('');
+    if (this.layout === 'files') {
+      for (const entry of fs.readdirSync(this.dir, { withFileTypes: true })) if (entry.isDirectory()) add(entry.name);
+    }
+    this.watcher = {
+      close: () => {
+        for (const watcher of watchers.values()) watcher.close();
+        watchers.clear();
+      },
+    };
   }
 
   seen(name) {
@@ -577,7 +665,8 @@ class FsBackend extends MemoryBackend {
     const before = this.written.get(key) || { rows: new Map(), sequence: null };
     const now = new Map();
     const conflicts = [];
-    const tasks = [];
+    const writes = []; // [file, text]
+    const removes = [];
     const outside = (file, text) => this.watcher && readText(path.join(folder, file)) !== text;
     for (const [rowKey, row] of table.rows) {
       const { id, json, text } = this.serialized(rowKey, row);
@@ -588,15 +677,50 @@ class FsBackend extends MemoryBackend {
       }
       const file = old ? old.file : rowFileName(JSON.parse(id));
       if (outside(file, old ? old.text : null)) conflicts.push(id);
-      tasks.push(() => writeFile(path.join(folder, file), text));
+      writes.push([file, text]);
       now.set(id, { file, text, json });
     }
     for (const [id, old] of before.rows) {
       if (now.has(id)) continue;
       if (outside(old.file, old.text)) conflicts.push(id);
-      tasks.push(() => fsp.rm(path.join(folder, old.file), { force: true }));
+      removes.push(old.file);
     }
-    await inParallel(tasks, 32);
+    const remove = (file) => () => fsp.rm(path.join(folder, file), { force: true });
+    if (!this.watcher && writes.length + removes.length >= BULK) {
+      // Many files at once: the batch in a journal first (one file, written whole), then each file written in place,
+      // without a temporary file and a rename for each (half the time on Windows). A batch cut short is written again
+      // from the journal when the folder is opened (replayJournal), so it is all or nothing. Not when watching: the
+      // watcher would read files half written.
+      const journal = path.join(folder, JOURNAL);
+      await writeFile(journal, JSON.stringify({ write: writes, remove: removes }));
+      if (SYNC_BATCHES) await writeBatchSync(folder, writes, removes);
+      else {
+        await inParallel(
+          [
+            ...writes.map(
+              ([file, text]) =>
+                () =>
+                  fsp.writeFile(path.join(folder, file), text)
+            ),
+            ...removes.map(remove),
+          ],
+          32
+        );
+      }
+      await fsp.unlink(journal);
+    } else {
+      await inParallel(
+        [
+          ...writes.map(
+            ([file, text]) =>
+              () =>
+                writeFile(path.join(folder, file), text)
+          ),
+          ...removes.map(remove),
+        ],
+        32
+      );
+    }
     if (before.sequence !== table.sequence) {
       await writeFile(path.join(folder, '_table.json'), JSON.stringify({ sequence: table.sequence }));
     }
@@ -673,6 +797,14 @@ function tableOf(name, folder) {
     return decodeURIComponent(folder ? name : name.slice(0, -5));
   } catch {
     return null;
+  }
+}
+
+function isFolder(file) {
+  try {
+    return fs.statSync(file).isDirectory();
+  } catch (err) {
+    return false;
   }
 }
 

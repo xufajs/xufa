@@ -1,0 +1,278 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>@xufa/boot: Reference · xufa</title>
+    <meta
+      name="description"
+      content="The reference of @xufa/boot: every function, class, interface and type it declares, made from its TypeScript declarations."
+    />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%23d9502b'/%3E%3Ctext x='16' y='22.5' font-family='monospace' font-size='18' font-weight='700' fill='white' text-anchor='middle'%3Ex%3C/text%3E%3C/svg%3E"
+    />
+    <link rel="stylesheet" href="../style.css?v=0.1.0" />
+    <script src="../main.js?v=0.1.0"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js" defer></script>
+  </head>
+  <body>
+    <header class="header">
+      <div class="header-inner">
+        <a class="logo" href="../index.html"><span class="logo-mark">x</span>xufa</a>
+        <nav class="nav">
+          <a href="../guide.html">Guide</a>
+          <a href="../playground.html">Playground</a>
+          <a href="../http/index.html">HTTP</a>
+          <a href="../orm/index.html">ORM</a>
+          <a class="hide-small" href="../auth/index.html">Auth</a>
+          <a class="hide-small" href="../sequelize/index.html">Sequelize</a>
+          <a class="hide-small" href="../packages.html" aria-current="page">Packages</a>
+          <a class="hide-small" href="../benchmarks.html">Benchmarks</a>
+          <a href="https://github.com/xufajs/xufa">GitHub</a>
+          <button class="theme-toggle" type="button" aria-label="Switch between light and dark theme">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+              <path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z" />
+            </svg>
+          </button>
+        </nav>
+      </div>
+    </header>
+
+    <div class="docs">
+      <button class="menu-toggle" type="button" aria-expanded="false">☰ Contents</button>
+      <aside class="sidebar">
+        <h4>Reference</h4>
+        <ul>
+          <li><a href="#functions">Functions (1)</a></li>
+          <li><a href="#constants">Constants (4)</a></li>
+          <li><a href="#interfaces">Interfaces (9)</a></li>
+          <li><a href="#types">Types (2)</a></li>
+        </ul>
+        <h4>Packages</h4>
+        <ul>
+          <li><a href="../websocket/index.html">@xufa/websocket</a></li>
+          <li><a href="../admin/index.html">@xufa/admin</a></li>
+          <li><a href="../session/index.html">@xufa/session</a></li>
+          <li><a href="../openapi/index.html">@xufa/openapi</a></li>
+          <li><a href="../client/index.html">@xufa/client</a></li>
+          <li><a href="../schema/index.html">@xufa/schema</a></li>
+          <li><a href="../pg/index.html">@xufa/pg</a></li>
+          <li><a href="../mongo/index.html">@xufa/mongo</a></li>
+          <li><a href="../expression/index.html">@xufa/expression</a></li>
+          <li><a href="../template/index.html">@xufa/template</a></li>
+          <li><a href="../cluster/index.html">@xufa/cluster</a></li>
+          <li><a href="../scheduler/index.html">@xufa/scheduler</a></li>
+          <li><a href="../queue/index.html">@xufa/queue</a></li>
+          <li><a href="../config/index.html">@xufa/config</a></li>
+          <li><a href="../discovery/index.html">@xufa/discovery</a></li>
+          <li><a href="../netcache/index.html">@xufa/netcache</a></li>
+          <li><a href="../faults/index.html">@xufa/faults</a></li>
+          <li><a href="../marshal/index.html">@xufa/marshal</a></li>
+          <li><a href="../yaml/index.html">@xufa/yaml</a></li>
+          <li><a href="../jwt/index.html">@xufa/jwt</a></li>
+          <li><a href="../logger/index.html">@xufa/logger</a></li>
+          <li><a href="../router/index.html">@xufa/router</a></li>
+          <li><a href="../serializer/index.html">@xufa/serializer</a></li>
+          <li><a href="../inject/index.html">@xufa/inject</a></li>
+          <li><a href="index.html" aria-current="page">@xufa/boot</a></li>
+          <li><a href="../errors/index.html">@xufa/errors</a></li>
+          <li><a href="../packages.html">All the packages</a></li>
+        </ul>
+      </aside>
+
+      <article class="content">
+        <nav class="package-tabs" aria-label="@xufa/boot">
+          <a href="index.html">Overview</a>
+          <a href="reference.html" aria-current="page">Reference</a>
+        </nav>
+        <h1>Reference</h1>
+        <p class="intro">
+          Asynchronous loading of plugins in order, with encapsulation, after/ready/close hooks and timeouts, with the API of avvio. Every declaration of its TypeScript declarations
+          (<code>packages/boot/index.d.ts</code>), as they are written, with their comments: made from them each time
+          the docs are built. How to use them is in <a href="index.html">the overview</a>.
+        </p>
+
+        <h2 id="functions">Functions</h2>
+        <p class="ref-index"><a href="#ref-boot"><code>boot</code></a></p>
+
+        <h3 id="ref-boot"><code>boot</code></h3>
+        <pre><code class="language-ts">declare function boot(done?: Function): boot.Boot&lt;null&gt;;
+
+declare function boot&lt;I&gt;(instance: I, options?: boot.Options, done?: Function): boot.Boot&lt;I&gt;;</code></pre>
+
+        <h2 id="constants">Constants</h2>
+        <p class="ref-index"><a href="#ref-Boot"><code>Boot</code></a>, <a href="#ref-errors"><code>errors</code></a>, <a href="#ref-kBoot"><code>kBoot</code></a>, <a href="#ref-kPluginMeta"><code>kPluginMeta</code></a></p>
+
+        <h3 id="ref-Boot"><code>Boot</code></h3>
+        <pre><code class="language-ts">const Boot: typeof boot;</code></pre>
+        <p>The function itself, by name.</p>
+
+        <h3 id="ref-errors"><code>errors</code></h3>
+        <pre><code class="language-ts">const errors: {
+    BOOT_ERR_EXPOSE_ALREADY_DEFINED: XufaErrorConstructor&lt;{ code: 'BOOT_ERR_EXPOSE_ALREADY_DEFINED' }&gt;;
+    BOOT_ERR_ATTRIBUTE_ALREADY_DEFINED: XufaErrorConstructor&lt;{ code: 'BOOT_ERR_ATTRIBUTE_ALREADY_DEFINED' }&gt;;
+    BOOT_ERR_CALLBACK_NOT_FN: XufaErrorConstructor&lt;{ code: 'BOOT_ERR_CALLBACK_NOT_FN' }&gt;;
+    BOOT_ERR_PLUGIN_NOT_VALID: XufaErrorConstructor&lt;{ code: 'BOOT_ERR_PLUGIN_NOT_VALID' }&gt;;
+    BOOT_ERR_ROOT_PLG_BOOTED: XufaErrorConstructor&lt;{ code: 'BOOT_ERR_ROOT_PLG_BOOTED' }&gt;;
+    BOOT_ERR_PARENT_PLG_LOADED: XufaErrorConstructor&lt;{ code: 'BOOT_ERR_PARENT_PLG_LOADED' }&gt;;
+    BOOT_ERR_READY_TIMEOUT: XufaErrorConstructor&lt;{ code: 'BOOT_ERR_READY_TIMEOUT' }&gt;;
+    BOOT_ERR_PLUGIN_EXEC_TIMEOUT: XufaErrorConstructor&lt;{ code: 'BOOT_ERR_PLUGIN_EXEC_TIMEOUT' }&gt;;
+  };</code></pre>
+        <p>The errors of loading plugins.</p>
+
+        <h3 id="ref-kBoot"><code>kBoot</code></h3>
+        <pre><code class="language-ts">const kBoot: unique symbol;</code></pre>
+        <p>The key of the instance of Boot on the object it was given.</p>
+
+        <h3 id="ref-kPluginMeta"><code>kPluginMeta</code></h3>
+        <pre><code class="language-ts">const kPluginMeta: unique symbol;</code></pre>
+        <p>The key of the metadata of a plugin (its name, dependencies...).</p>
+
+        <h2 id="interfaces">Interfaces</h2>
+        <p class="ref-index"><a href="#ref-Options"><code>Options</code></a>, <a href="#ref-Plugin"><code>Plugin</code></a>, <a href="#ref-Server"><code>Server</code></a>, <a href="#ref-Boot"><code>Boot</code></a>, <a href="#ref-After"><code>After</code></a>, <a href="#ref-Use"><code>Use</code></a>, <a href="#ref-Ready"><code>Ready</code></a>, <a href="#ref-Close"><code>Close</code></a>, <a href="#ref-OnClose"><code>OnClose</code></a></p>
+
+        <h3 id="ref-Options"><code>Options</code></h3>
+        <pre><code class="language-ts">interface Options { ... }</code></pre>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>expose?</code></td><td><code>{ use?: string; after?: string; ready?: string; close?: string; onClose?: string; }</code></td><td></td></tr>
+                <tr><td><code>autostart?</code></td><td><code>boolean</code></td><td></td></tr>
+                <tr><td><code>timeout?</code></td><td><code>number</code></td><td></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-Plugin"><code>Plugin</code></h3>
+        <pre><code class="language-ts">interface Plugin&lt;O, I&gt; { ... }</code></pre>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>(server: context&lt;I&gt;, options: O, done: (err?: Error) =&gt; void)</code></td><td><code>unknown</code></td><td></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-Server"><code>Server</code></h3>
+        <pre><code class="language-ts">interface Server&lt;I&gt; { ... }</code></pre>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>use</code></td><td><code><a href="#ref-Use">Use</a>&lt;I&gt;</code></td><td></td></tr>
+                <tr><td><code>after</code></td><td><code><a href="#ref-After">After</a>&lt;I&gt;</code></td><td></td></tr>
+                <tr><td><code>ready</code></td><td><code><a href="#ref-Ready">Ready</a>&lt;I&gt;</code></td><td></td></tr>
+                <tr><td><code>close</code></td><td><code><a href="#ref-Close">Close</a>&lt;I&gt;</code></td><td></td></tr>
+                <tr><td><code>onClose</code></td><td><code><a href="#ref-OnClose">OnClose</a>&lt;I&gt;</code></td><td></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-Boot"><code>Boot</code></h3>
+        <pre><code class="language-ts">interface Boot&lt;I&gt; extends EventEmitter, Server&lt;I&gt; { ... }</code></pre>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>on(event: 'start', listener: () =&gt; void)</code></td><td><code>this</code></td><td></td></tr>
+                <tr><td><code>on(event: 'preReady', listener: () =&gt; void)</code></td><td><code>this</code></td><td></td></tr>
+                <tr><td><code>on(event: 'close', listener: () =&gt; void)</code></td><td><code>this</code></td><td></td></tr>
+                <tr><td><code>start()</code></td><td><code>this</code></td><td></td></tr>
+                <tr><td><code>toJSON()</code></td><td><code>Object</code></td><td></td></tr>
+                <tr><td><code>prettyPrint()</code></td><td><code>string</code></td><td></td></tr>
+                <tr><td><code>override</code></td><td><code>(server: <a href="#ref-context">context</a>&lt;I&gt;, fn: <a href="#ref-Plugin">Plugin</a>&lt;any, I&gt;, options: any) =&gt; <a href="#ref-context">context</a>&lt;I&gt;</code></td><td></td></tr>
+                <tr><td><code>started</code></td><td><code>boolean</code></td><td></td></tr>
+                <tr><td><code>booted</code></td><td><code>boolean</code></td><td></td></tr>
+                <tr><td><code>[Symbol.asyncDispose]()</code></td><td><code>Promise&lt;void&gt;</code></td><td><p>Alias for {@linkcode Boot.close}</p></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-After"><code>After</code></h3>
+        <pre><code class="language-ts">interface After&lt;I, C = context&lt;I&gt;&gt; { ... }</code></pre>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>(fn: (err: Error) =&gt; void)</code></td><td><code>C</code></td><td></td></tr>
+                <tr><td><code>(fn: (err: Error, done: Function) =&gt; void)</code></td><td><code>C</code></td><td></td></tr>
+                <tr><td><code>(fn: (err: Error, context: C, done: Function) =&gt; void)</code></td><td><code>C</code></td><td></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-Use"><code>Use</code></h3>
+        <pre><code class="language-ts">interface Use&lt;I, C = context&lt;I&gt;&gt; { ... }</code></pre>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>(fn: boot.Plugin&lt;O, I&gt;, options?: O | ((server: C) =&gt; O))</code></td><td><code>C</code></td><td></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-Ready"><code>Ready</code></h3>
+        <pre><code class="language-ts">interface Ready&lt;I, C = context&lt;I&gt;&gt; { ... }</code></pre>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>()</code></td><td><code>Promise&lt;C&gt;</code></td><td></td></tr>
+                <tr><td><code>(callback: (err?: Error) =&gt; void)</code></td><td><code>void</code></td><td></td></tr>
+                <tr><td><code>(callback: (err: Error, done: Function) =&gt; void)</code></td><td><code>void</code></td><td></td></tr>
+                <tr><td><code>(callback: (err: Error, context: C, done: Function) =&gt; void)</code></td><td><code>void</code></td><td></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-Close"><code>Close</code></h3>
+        <pre><code class="language-ts">interface Close&lt;I, C = context&lt;I&gt;&gt; { ... }</code></pre>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>(fn: (err: Error) =&gt; void)</code></td><td><code>void</code></td><td></td></tr>
+                <tr><td><code>(fn: (err: Error, done: Function) =&gt; void)</code></td><td><code>void</code></td><td></td></tr>
+                <tr><td><code>(fn: (err: Error, context: C, done: Function) =&gt; void)</code></td><td><code>void</code></td><td></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-OnClose"><code>OnClose</code></h3>
+        <pre><code class="language-ts">interface OnClose&lt;I, C = context&lt;I&gt;&gt; { ... }</code></pre>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>(fn: (context: C, done: Function) =&gt; void)</code></td><td><code>C</code></td><td></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h2 id="types">Types</h2>
+        <p class="ref-index"><a href="#ref-context"><code>context</code></a>, <a href="#ref-mixedInstance"><code>mixedInstance</code></a></p>
+
+        <h3 id="ref-context"><code>context</code></h3>
+        <pre><code class="language-ts">type context&lt;I&gt; = I extends null ? Boot&lt;I&gt; : mixedInstance&lt;I&gt;;</code></pre>
+
+        <h3 id="ref-mixedInstance"><code>mixedInstance</code></h3>
+        <pre><code class="language-ts">type mixedInstance&lt;I&gt; = I &amp; Server&lt;I&gt;;</code></pre>
+      </article>
+    </div>
+
+    <footer class="footer">
+      <div class="container">
+        <span>xufa is MIT licensed. &copy; Jes&uacute;s Seijas</span>
+        <span>
+          <a href="../guide.html">Guide</a> &middot; <a href="../playground.html">Playground</a> &middot; <a href="../http/index.html">HTTP</a> &middot; <a href="../orm/index.html">ORM</a> &middot; <a href="../auth/index.html">Auth</a> &middot;
+          <a href="../sequelize/index.html">Sequelize</a> &middot; <a href="../packages.html">Packages</a> &middot;
+          <a href="../benchmarks.html">Benchmarks</a> &middot; <a href="https://github.com/xufajs/xufa">GitHub</a>
+        </span>
+      </div>
+    </footer>
+  </body>
+</html>

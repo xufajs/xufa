@@ -1,4 +1,4 @@
-const { AllOf, Integer, Float, Schema } = require('../src');
+const { AllOf, Integer, Float, Schema } = require('..');
 
 describe('AllOf', () => {
   it('Should return an error if value is undefined and is mandatory', () => {

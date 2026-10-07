@@ -59,6 +59,8 @@
         <h4>Packages</h4>
         <ul>
           <li><a href="../websocket/index.html">@xufa/websocket</a></li>
+          <li><a href="../admin/index.html">@xufa/admin</a></li>
+          <li><a href="../session/index.html">@xufa/session</a></li>
           <li><a href="../openapi/index.html">@xufa/openapi</a></li>
           <li><a href="../client/index.html">@xufa/client</a></li>
           <li><a href="../schema/index.html">@xufa/schema</a></li>
@@ -68,6 +70,7 @@
           <li><a href="../template/index.html">@xufa/template</a></li>
           <li><a href="../cluster/index.html">@xufa/cluster</a></li>
           <li><a href="index.html" aria-current="page">@xufa/scheduler</a></li>
+          <li><a href="../queue/index.html">@xufa/queue</a></li>
           <li><a href="../config/index.html">@xufa/config</a></li>
           <li><a href="../discovery/index.html">@xufa/discovery</a></li>
           <li><a href="../netcache/index.html">@xufa/netcache</a></li>
@@ -86,7 +89,11 @@
       </aside>
 
       <article class="content">
-<h1>@xufa/scheduler</h1>
+        <nav class="package-tabs" aria-label="@xufa/scheduler">
+          <a href="index.html" aria-current="page">Overview</a>
+          <a href="reference.html">Reference</a>
+        </nav>
+        <h1>@xufa/scheduler</h1>
         <p class="intro">
           Jobs that run every so often, on cron expressions, or once, with no dependencies. Each job has a timer of its
           own, so a slow job delays no other one and a failure stops none; a run does not overlap the one before it; a

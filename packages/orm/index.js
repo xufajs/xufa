@@ -13,12 +13,29 @@
 //   const authors = await Author.objects.filter({ name__istartswith: 'a' }).orderBy('name');
 const fields = require('./lib/fields');
 const errors = require('./lib/errors');
-const { Model } = require('./lib/model');
+const { Model, modelOptions } = require('./lib/model');
+const { AuditEntry, auditResource } = require('./lib/audit');
 const { QuerySet } = require('./lib/queryset');
 const { Database } = require('./lib/database');
 const { Databases } = require('./lib/databases');
 const { Tenants } = require('./lib/tenants');
-const { Q, JsonPath, jsonPath, and, or, not, F, Raw, Count, Sum, Avg, Min, Max } = require('./lib/query');
+const {
+  Q,
+  JsonPath,
+  jsonPath,
+  and,
+  or,
+  not,
+  F,
+  Raw,
+  Count,
+  Sum,
+  Avg,
+  Min,
+  Max,
+  Extract,
+  Trunc,
+} = require('./lib/query');
 const { Backend } = require('./lib/backends/base');
 const { MemoryBackend } = require('./lib/backends/memory');
 const { FsBackend } = require('./lib/backends/fs');
@@ -46,8 +63,20 @@ Database.registerBackend('postgres', () => require('./lib/backends/postgres').Po
 Database.registerBackend('memory-blob', () => require('./lib/backends/blob/memory').MemoryBlobBackend);
 Database.registerBackend('disk', () => require('./lib/backends/blob/disk').DiskBackend);
 Database.registerBackend('s3', () => require('./lib/backends/blob/s3').S3Backend);
+Database.registerBackend('azure-blob', () => require('./lib/backends/blob/azure').AzureBackend);
+Database.registerBackend('smtp', () => require('./lib/backends/mail/smtp').SmtpBackend);
+Database.registerBackend('memory-mail', () => require('./lib/backends/mail/memory').MemoryMailBackend);
+
+const { factory, sequence, Factory } = require('./lib/factory');
+const { maintenance } = require('./lib/maintenance');
+const { CombinedQuerySet } = require('./lib/combine');
 
 module.exports = {
+  maintenance,
+  CombinedQuerySet,
+  factory,
+  sequence,
+  Factory,
   toHstore,
   parseHstore,
   Database,
@@ -56,6 +85,9 @@ module.exports = {
   withSignal,
   cached,
   Model,
+  modelOptions,
+  AuditEntry,
+  auditResource,
   QuerySet,
   fields,
   Q,
@@ -66,6 +98,8 @@ module.exports = {
   not,
   F,
   Raw,
+  Extract,
+  Trunc,
   Count,
   Sum,
   Avg,

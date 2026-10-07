@@ -69,18 +69,22 @@ const config = await loadRemoteConfig({
     sources.consul({ prefix: 'apps/shop' }), // apps/shop/db/host is db.host
     sources.vault({ path: 'shop/production', at: 'credentials' }), // KV 2 of Vault, under credentials
     sources.directory({ dir: '/run/secrets', at: 'files', sensitive: true }), // Docker, Kubernetes
+    sources.ssm({ path: '/shop/production' }), // Parameter Store of AWS: /shop/production/db/url is db.url
+    sources.secretsManager({ secretId: 'shop/api', at: 'api' }), // AWS Secrets Manager
   ],
   cacheFile: '.config-cache.json',
 });
 ```
 
-| Source                                                              | What it reads                                                                                                                                                                                                                                         |
-| ------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `http({ url, headers, format })`                                    | A document of JSON or YAML (by `format`, its content type or its extension). With an ETag, one that has not changed is not sent again.                                                                                                                |
-| `consul({ prefix \| key, url, token, datacenter })`                 | The keys under a prefix as a tree (texts; JSON objects and arrays as values), or one key as a document. `CONSUL_HTTP_ADDR` and `CONSUL_HTTP_TOKEN` by default.                                                                                        |
-| `vault({ path, mount, kv, token \| roleId + secretId, namespace })` | A secret of the KV engine (`kv: 2`, or 1) of Vault or OpenBao, with a token or AppRole (logged in again when the token is refused). `VAULT_ADDR`, `VAULT_TOKEN`, `VAULT_ROLE_ID`, `VAULT_SECRET_ID`, `VAULT_NAMESPACE`. Sensitive, without templates. |
-| `directory({ dir })`                                                | A key for each file (its text without the last newline); `.json`, `.yaml` and `.yml` files are their documents. Hidden ones (the `..data` of Kubernetes) are left out. Without templates.                                                             |
-| `{ name, load({ env, name, signal }) }`                             | One of your own: the tree it gives.                                                                                                                                                                                                                   |
+| Source                                                                                 | What it reads                                                                                                                                                                                                                                         |
+| -------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `http({ url, headers, format })`                                                       | A document of JSON or YAML (by `format`, its content type or its extension). With an ETag, one that has not changed is not sent again.                                                                                                                |
+| `consul({ prefix \| key, url, token, datacenter })`                                    | The keys under a prefix as a tree (texts; JSON objects and arrays as values), or one key as a document. `CONSUL_HTTP_ADDR` and `CONSUL_HTTP_TOKEN` by default.                                                                                        |
+| `vault({ path, mount, kv, token \| roleId + secretId, namespace })`                    | A secret of the KV engine (`kv: 2`, or 1) of Vault or OpenBao, with a token or AppRole (logged in again when the token is refused). `VAULT_ADDR`, `VAULT_TOKEN`, `VAULT_ROLE_ID`, `VAULT_SECRET_ID`, `VAULT_NAMESPACE`. Sensitive, without templates. |
+| `directory({ dir })`                                                                   | A key for each file (its text without the last newline); `.json`, `.yaml` and `.yml` files are their documents. Hidden ones (the `..data` of Kubernetes) are left out. Without templates.                                                             |
+| `ssm({ path, region, credentials, endpoint })`                                         | The parameters of the Parameter Store of AWS Systems Manager under a path, as a tree, every page, SecureStrings decrypted. Sensitive, without templates.                                                                                              |
+| `secretsManager({ secretId, versionStage, versionId, region, credentials, endpoint })` | A secret of AWS Secrets Manager: its JSON as keys, or its text under `value`. Sensitive, without templates.                                                                                                                                           |
+| `{ name, load({ env, name, signal }) }`                                                | One of your own: the tree it gives.                                                                                                                                                                                                                   |
 
 Options of every source: `at` (the key it is put under), `optional` (a failure leaves it out, with a warning),
 `sensitive` (its keys redacted, and never written to the cache), `templates: false` (its texts are never templates: a
@@ -91,6 +95,15 @@ A source that fails, after its retries, takes the tree it gave last from `cacheF
 sources that are not sensitive), so an app starts while its config server is down; or it is left out when optional
 (both with `onSourceError(err, source)`, or a warning). The rest fail together: one `ConfigError` with every source
 that failed. `config.sources` lists the names of the sources read.
+
+The sources of AWS sign their calls (Signature Version 4, no SDK) with `credentials` or `AWS_ACCESS_KEY_ID`,
+`AWS_SECRET_ACCESS_KEY` and `AWS_SESSION_TOKEN`, in `region` or `AWS_REGION` (`AWS_DEFAULT_REGION`); `endpoint` is another
+server of the API (LocalStack, a VPC endpoint). The credentials of instance roles (IMDS, ECS) are not read: give them
+with `credentials`.
+
+The sources of Consul and Vault are tested against real servers too (Consul 2.0.4 and Vault 2.1.1 in dev mode: KV 1
+and 2, AppRole, tokens refused, watching), in `test/remote-servers.test.js`, which runs when `XUFA_CONSUL_URL`,
+`XUFA_VAULT_URL` and `XUFA_VAULT_TOKEN` are set.
 
 ### Watching
 
@@ -107,6 +120,11 @@ watcher.current.flags.beta;
 configuration (they are frozen), and `onChange` gets it, the one before and the paths that changed. A reading that
 fails (a source down without a cache, a value the schema refuses) keeps the one there was. `refresh()` reads it now,
 and `stop()` stops it. Read `watcher.current` where the value is used, not once at the start.
+
+The keys of Consul are followed with blocking queries: a request that Consul answers when they change, so a change is
+read at once, not at the next interval (`blocking: false` leaves only the interval). Its connection does not keep the
+process alive, a failure is told to `onError` and tried again (1 s, then twice as long, 30 s at most), and `stop()`
+ends it. The other sources are read every `interval`.
 
 ## Templates
 

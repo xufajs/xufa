@@ -93,6 +93,8 @@
         <h4>Packages</h4>
         <ul>
           <li><a href="../websocket/index.html">@xufa/websocket</a></li>
+          <li><a href="../admin/index.html">@xufa/admin</a></li>
+          <li><a href="../session/index.html">@xufa/session</a></li>
           <li><a href="../openapi/index.html">@xufa/openapi</a></li>
           <li><a href="../client/index.html">@xufa/client</a></li>
           <li><a href="index.html" aria-current="page">@xufa/schema</a></li>
@@ -102,6 +104,7 @@
           <li><a href="../template/index.html">@xufa/template</a></li>
           <li><a href="../cluster/index.html">@xufa/cluster</a></li>
           <li><a href="../scheduler/index.html">@xufa/scheduler</a></li>
+          <li><a href="../queue/index.html">@xufa/queue</a></li>
           <li><a href="../config/index.html">@xufa/config</a></li>
           <li><a href="../discovery/index.html">@xufa/discovery</a></li>
           <li><a href="../netcache/index.html">@xufa/netcache</a></li>
@@ -129,7 +132,7 @@
           <a href="ajv.html">From ajv</a>
           <a href="benchmarks.html">Benchmarks</a>
         </nav>
-<h1>API reference</h1>
+        <h1>API reference</h1>
         <p class="intro">
           Every export of @xufa/schema, with its options. The <a href="guide.html">guide</a> explains how to use them together;
           this page is the list to come back to. Everything is exported from <code>@xufa/schema</code>, with
@@ -248,6 +251,7 @@ const withObjects = compileJsonSchema(schema, { errors: 'objects' }); // error o
             <tbody>
               <tr><td><code>allErrors</code></td><td><code>true</code> (default), <code>false</code></td><td>every error, or only the first one: the function stops at the first failing check, faster on invalid values</td></tr>
               <tr><td><code>errors</code></td><td><code>true</code> (default), <code>'objects'</code>, <code>false</code></td><td>error messages (strings), <a href="#error-objects">error objects</a>, or <code>true</code>/<code>false</code> with no errors built at all (the fastest)</td></tr>
+              <tr><td><code>foldMessages</code></td><td><code>false</code> (default), <code>true</code></td><td>the parts of messages known when compiling written as one text in the code (<code>"customer.email is mandatory"</code>): the same errors, built faster on nested fields (up to 13%), for compiling about 4% slower. For schemas compiled once that see much invalid input.</td></tr>
             </tbody>
           </table>
         </div>

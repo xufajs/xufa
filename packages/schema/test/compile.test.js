@@ -14,7 +14,7 @@ const {
   compileType,
   fromJsonSchema,
   toErrors,
-} = require('../src');
+} = require('..');
 const { CheckType, samples, types } = require('./fixtures/types');
 
 // Results of the compiled function and of the interpreted type for every sample, to compare with toEqual.

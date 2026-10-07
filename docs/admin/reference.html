@@ -1,0 +1,257 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>@xufa/admin: Reference · xufa</title>
+    <meta
+      name="description"
+      content="The reference of @xufa/admin: every function, class, interface and type it declares, made from its TypeScript declarations."
+    />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%23d9502b'/%3E%3Ctext x='16' y='22.5' font-family='monospace' font-size='18' font-weight='700' fill='white' text-anchor='middle'%3Ex%3C/text%3E%3C/svg%3E"
+    />
+    <link rel="stylesheet" href="../style.css?v=0.1.0" />
+    <script src="../main.js?v=0.1.0"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js" defer></script>
+  </head>
+  <body>
+    <header class="header">
+      <div class="header-inner">
+        <a class="logo" href="../index.html"><span class="logo-mark">x</span>xufa</a>
+        <nav class="nav">
+          <a href="../guide.html">Guide</a>
+          <a href="../playground.html">Playground</a>
+          <a href="../http/index.html">HTTP</a>
+          <a href="../orm/index.html">ORM</a>
+          <a class="hide-small" href="../auth/index.html">Auth</a>
+          <a class="hide-small" href="../sequelize/index.html">Sequelize</a>
+          <a class="hide-small" href="../packages.html" aria-current="page">Packages</a>
+          <a class="hide-small" href="../benchmarks.html">Benchmarks</a>
+          <a href="https://github.com/xufajs/xufa">GitHub</a>
+          <button class="theme-toggle" type="button" aria-label="Switch between light and dark theme">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+              <path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z" />
+            </svg>
+          </button>
+        </nav>
+      </div>
+    </header>
+
+    <div class="docs">
+      <button class="menu-toggle" type="button" aria-expanded="false">☰ Contents</button>
+      <aside class="sidebar">
+        <h4>Reference</h4>
+        <ul>
+          <li><a href="#functions">Functions (3)</a></li>
+          <li><a href="#classes">Classes (1)</a></li>
+          <li><a href="#interfaces">Interfaces (5)</a></li>
+          <li><a href="#types">Types (2)</a></li>
+        </ul>
+        <h4>Packages</h4>
+        <ul>
+          <li><a href="../websocket/index.html">@xufa/websocket</a></li>
+          <li><a href="index.html" aria-current="page">@xufa/admin</a></li>
+          <li><a href="../session/index.html">@xufa/session</a></li>
+          <li><a href="../openapi/index.html">@xufa/openapi</a></li>
+          <li><a href="../client/index.html">@xufa/client</a></li>
+          <li><a href="../schema/index.html">@xufa/schema</a></li>
+          <li><a href="../pg/index.html">@xufa/pg</a></li>
+          <li><a href="../mongo/index.html">@xufa/mongo</a></li>
+          <li><a href="../expression/index.html">@xufa/expression</a></li>
+          <li><a href="../template/index.html">@xufa/template</a></li>
+          <li><a href="../cluster/index.html">@xufa/cluster</a></li>
+          <li><a href="../scheduler/index.html">@xufa/scheduler</a></li>
+          <li><a href="../queue/index.html">@xufa/queue</a></li>
+          <li><a href="../config/index.html">@xufa/config</a></li>
+          <li><a href="../discovery/index.html">@xufa/discovery</a></li>
+          <li><a href="../netcache/index.html">@xufa/netcache</a></li>
+          <li><a href="../faults/index.html">@xufa/faults</a></li>
+          <li><a href="../marshal/index.html">@xufa/marshal</a></li>
+          <li><a href="../yaml/index.html">@xufa/yaml</a></li>
+          <li><a href="../jwt/index.html">@xufa/jwt</a></li>
+          <li><a href="../logger/index.html">@xufa/logger</a></li>
+          <li><a href="../router/index.html">@xufa/router</a></li>
+          <li><a href="../serializer/index.html">@xufa/serializer</a></li>
+          <li><a href="../inject/index.html">@xufa/inject</a></li>
+          <li><a href="../boot/index.html">@xufa/boot</a></li>
+          <li><a href="../errors/index.html">@xufa/errors</a></li>
+          <li><a href="../packages.html">All the packages</a></li>
+        </ul>
+      </aside>
+
+      <article class="content">
+        <nav class="package-tabs" aria-label="@xufa/admin">
+          <a href="index.html">Overview</a>
+          <a href="reference.html" aria-current="page">Reference</a>
+        </nav>
+        <h1>Reference</h1>
+        <p class="intro">
+          The admin of the models of @xufa/orm, as Django's, with no dependencies: lists with search, filters, order and pages, forms from the fields with their validation, for any backend, as a plugin of @xufa/http. Every declaration of its TypeScript declarations
+          (<code>packages/admin/index.d.ts</code>), as they are written, with their comments: made from them each time
+          the docs are built. How to use them is in <a href="index.html">the overview</a>.
+        </p>
+
+        <h2 id="functions">Functions</h2>
+        <p class="ref-index"><a href="#ref-admin"><code>admin</code></a>, <a href="#ref-describeModel"><code>describeModel</code></a>, <a href="#ref-labelOf"><code>labelOf</code></a></p>
+
+        <h3 id="ref-admin"><code>admin</code></h3>
+        <pre><code class="language-ts">export declare function admin(app: any, options: AdminOptions): Promise&lt;void&gt;;</code></pre>
+        <p>The admin of models, as Django's: a page with the list of each model (search, filters, order, pages) and its forms (from its fields, with the errors of its validation), over an API of its own. A plugin of</p>
+
+        <h3 id="ref-describeModel"><code>describeModel</code></h3>
+        <pre><code class="language-ts">export declare function describeModel(model: ModelClass&lt;any&gt;, options?: AdminModelOptions): AdminModel;</code></pre>
+        <p>What the admin knows of a model, with its options.</p>
+
+        <h3 id="ref-labelOf"><code>labelOf</code></h3>
+        <pre><code class="language-ts">export declare function labelOf(model: ModelClass&lt;any&gt;, object: unknown): string;</code></pre>
+        <p>The label of an object: its toString() (as Django's __str__), or its first string field.</p>
+
+        <h2 id="classes">Classes</h2>
+        <p class="ref-index"><a href="#ref-AdminError"><code>AdminError</code></a></p>
+
+        <h3 id="ref-AdminError"><code>AdminError</code></h3>
+        <pre><code class="language-ts">export declare class AdminError extends Error { ... }</code></pre>
+        <p>An error of the admin: wrong options, or a request it refuses.</p>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>statusCode</code></td><td><code>number</code></td><td></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h2 id="interfaces">Interfaces</h2>
+        <p class="ref-index"><a href="#ref-AdminModelOptions"><code>AdminModelOptions</code></a>, <a href="#ref-AdminBaseOptions"><code>AdminBaseOptions</code></a>, <a href="#ref-AdminField"><code>AdminField</code></a>, <a href="#ref-AdminModel"><code>AdminModel</code></a>, <a href="#ref-AdminLogin"><code>AdminLogin</code></a></p>
+
+        <h3 id="ref-AdminModelOptions"><code>AdminModelOptions</code></h3>
+        <pre><code class="language-ts">export interface AdminModelOptions { ... }</code></pre>
+        <p>The options of a model in the admin: its list, what it searches and filters by, its fields only read.</p>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>label?</code></td><td><code>string</code></td><td><p>The name shown (the name of the model).</p></td></tr>
+                <tr><td><code>list?</code></td><td><code>string[]</code></td><td><p>The columns of its list (the first six fields that are not text nor json).</p></td></tr>
+                <tr><td><code>search?</code></td><td><code>string[]</code></td><td><p>The fields its search looks in (its string fields).</p></td></tr>
+                <tr><td><code>filters?</code></td><td><code>string[]</code></td><td><p>The fields it filters by (booleans, choices and foreign keys).</p></td></tr>
+                <tr><td><code>readOnly?</code></td><td><code>string[]</code></td><td><p>Fields shown but not changed in its forms (besides keys, automatic dates and given fields).</p></td></tr>
+                <tr><td><code>ordering?</code></td><td><code>string[]</code></td><td><p>Its default order (that of the model).</p></td></tr>
+                <tr><td><code>readOnlyModel?</code></td><td><code>boolean</code></td><td><p>Only read: no creates, updates nor deletes.</p></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-AdminBaseOptions"><code>AdminBaseOptions</code></h3>
+        <pre><code class="language-ts">export interface AdminBaseOptions { ... }</code></pre>
+        <p>The options of the admin besides who may use it: its models, its title, its pipelines.</p>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>models</code></td><td><code>Array&lt;ModelClass&lt;any&gt; | [ModelClass&lt;any&gt;, <a href="#ref-AdminModelOptions">AdminModelOptions</a>]&gt;</code></td><td><p>The models, or [model, options] pairs.</p></td></tr>
+                <tr><td><code>modelOptions?</code></td><td><code>Record&lt;string, <a href="#ref-AdminModelOptions">AdminModelOptions</a>&gt;</code></td><td><p>Options of the models by name (for those given alone).</p></td></tr>
+                <tr><td><code>title?</code></td><td><code>string</code></td><td><p>The title of the page ('Admin').</p></td></tr>
+                <tr><td><code>pageSize?</code></td><td><code>number</code></td><td><p>Objects in a page of a list (25).</p></td></tr>
+                <tr><td><code>pipelines?</code></td><td><code>{ get(runId: unknown): Promise&lt;unknown&gt;; retry(runId: unknown): Promise&lt;boolean&gt;; cancel(runId: unknown): Promise&lt;boolean&gt;; resume(runId: unknown, stepId: string, output?: unknown): Promise&lt;unknown&gt;; }</code></td><td><p>The runs of these pipelines of</p></td></tr>
+                <tr><td><code>health?</code></td><td><code>boolean</code></td><td><p>The report of xufa.health of the app on the first page (true: when the app has it).</p></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-AdminField"><code>AdminField</code></h3>
+        <pre><code class="language-ts">export interface AdminField { ... }</code></pre>
+        <p>What the admin knows of a field.</p>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>name</code></td><td><code>string</code></td><td></td></tr>
+                <tr><td><code>attname</code></td><td><code>string</code></td><td></td></tr>
+                <tr><td><code>type</code></td><td><code>string</code></td><td></td></tr>
+                <tr><td><code>input</code></td><td><code>'text' | 'textarea' | 'number' | 'decimal' | 'checkbox' | 'date' | 'datetime' | 'json' | 'select' | 'choices'</code></td><td></td></tr>
+                <tr><td><code>required</code></td><td><code>boolean</code></td><td></td></tr>
+                <tr><td><code>null</code></td><td><code>boolean</code></td><td></td></tr>
+                <tr><td><code>readOnly</code></td><td><code>boolean</code></td><td></td></tr>
+                <tr><td><code>primaryKey</code></td><td><code>boolean</code></td><td></td></tr>
+                <tr><td><code>choices</code></td><td><code>unknown[] | null</code></td><td></td></tr>
+                <tr><td><code>maxLength</code></td><td><code>number | null</code></td><td></td></tr>
+                <tr><td><code>scale</code></td><td><code>number | null</code></td><td></td></tr>
+                <tr><td><code>target</code></td><td><code>string | null</code></td><td></td></tr>
+                <tr><td><code>default</code></td><td><code>unknown</code></td><td></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-AdminModel"><code>AdminModel</code></h3>
+        <pre><code class="language-ts">export interface AdminModel { ... }</code></pre>
+        <p>What the admin knows of a model.</p>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>name</code></td><td><code>string</code></td><td></td></tr>
+                <tr><td><code>label</code></td><td><code>string</code></td><td></td></tr>
+                <tr><td><code>pk</code></td><td><code>string | null</code></td><td></td></tr>
+                <tr><td><code>fields</code></td><td><code><a href="#ref-AdminField">AdminField</a>[]</code></td><td></td></tr>
+                <tr><td><code>list</code></td><td><code>string[]</code></td><td></td></tr>
+                <tr><td><code>search</code></td><td><code>string[]</code></td><td></td></tr>
+                <tr><td><code>filters</code></td><td><code>string[]</code></td><td></td></tr>
+                <tr><td><code>ordering</code></td><td><code>string[]</code></td><td></td></tr>
+                <tr><td><code>softDelete</code></td><td><code>string | null</code></td><td></td></tr>
+                <tr><td><code>readOnlyModel</code></td><td><code>boolean</code></td><td></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-AdminLogin"><code>AdminLogin</code></h3>
+        <pre><code class="language-ts">export interface AdminLogin&lt;User = any&gt; { ... }</code></pre>
+        <p>The login of the admin: the options of the login of</p>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>findUser(username: string, request: any)</code></td><td><code>User | null | undefined | Promise&lt;User | null | undefined&gt;</code></td><td><p>The user of a username (an email...), or null.</p></td></tr>
+                <tr><td><code>password?</code></td><td><code>(user: User) =&gt; string | null | undefined</code></td><td><p>Its hash of</p></td></tr>
+                <tr><td><code>allow?</code></td><td><code>(user: User) =&gt; boolean | Promise&lt;boolean&gt;</code></td><td><p>Who may use the admin (everyone found). Others get the answer of a wrong password.</p></td></tr>
+                <tr><td><code>name?</code></td><td><code>(user: User, username: string) =&gt; string | Promise&lt;string&gt;</code></td><td><p>The name shown in the page (the username).</p></td></tr>
+                <tr><td><code>totp?</code></td><td><code>(user: User) =&gt; string | null | undefined | Promise&lt;string | null | undefined&gt;</code></td><td><p>The secret of the authenticator app of the user: its code is asked for after the password.</p></td></tr>
+                <tr><td><code>lastTotpStep?</code></td><td><code>(user: User) =&gt; number | null | undefined | Promise&lt;number | null | undefined&gt;</code></td><td></td></tr>
+                <tr><td><code>onTotp?</code></td><td><code>(user: User, step: number) =&gt; unknown</code></td><td></td></tr>
+                <tr><td><code>rehash?</code></td><td><code>(user: User, hash: string) =&gt; unknown</code></td><td><p>A new hash of the password (made with passwordOptions) when the one kept was made with others.</p></td></tr>
+                <tr><td><code>lockout?</code></td><td><code>false | { maxAttempts?: number; window?: number | string; lockFor?: number | string; store?: unknown } | object</code></td><td><p>Failures by user: 5 in 15 minutes lock it for 15 (false: none; or a Lockout of</p></td></tr>
+                <tr><td><code>ipLockout?</code></td><td><code>false | { maxAttempts?: number; window?: number | string; lockFor?: number | string; store?: unknown } | object</code></td><td><p>Failures by address: 20 in 15 minutes.</p></td></tr>
+                <tr><td><code>passwordOptions?</code></td><td><code>{ ln?: number; r?: number; p?: number }</code></td><td></td></tr>
+                <tr><td><code>totpOptions?</code></td><td><code>{ window?: number; digits?: number; period?: number; algorithm?: string }</code></td><td></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h2 id="types">Types</h2>
+        <p class="ref-index"><a href="#ref-AdminAuthorize"><code>AdminAuthorize</code></a>, <a href="#ref-AdminOptions"><code>AdminOptions</code></a></p>
+
+        <h3 id="ref-AdminAuthorize"><code>AdminAuthorize</code></h3>
+        <pre><code class="language-ts">export type AdminAuthorize = ((request: any, reply: any) =&gt; boolean | Promise&lt;boolean&gt;) | 'development';</code></pre>
+        <p>Who may use it: a function of the request (a promise too), or 'development': every request while NODE_ENV is not production.</p>
+
+        <h3 id="ref-AdminOptions"><code>AdminOptions</code></h3>
+        <pre><code class="language-ts">export type AdminOptions = AdminBaseOptions &amp;
+  ({ authorize: AdminAuthorize; login?: AdminLogin } | { login: AdminLogin; authorize?: AdminAuthorize });</code></pre>
+        <p>The options of the admin: authorize, or login (its own login page, GET login, POST login, POST logout, with</p>
+      </article>
+    </div>
+
+    <footer class="footer">
+      <div class="container">
+        <span>xufa is MIT licensed. &copy; Jes&uacute;s Seijas</span>
+        <span>
+          <a href="../guide.html">Guide</a> &middot; <a href="../playground.html">Playground</a> &middot; <a href="../http/index.html">HTTP</a> &middot; <a href="../orm/index.html">ORM</a> &middot; <a href="../auth/index.html">Auth</a> &middot;
+          <a href="../sequelize/index.html">Sequelize</a> &middot; <a href="../packages.html">Packages</a> &middot;
+          <a href="../benchmarks.html">Benchmarks</a> &middot; <a href="https://github.com/xufajs/xufa">GitHub</a>
+        </span>
+      </div>
+    </footer>
+  </body>
+</html>

@@ -3,7 +3,8 @@
 // - A pair card (div.pair) takes `win`, `lose` or `even` from its badge (how many times ours is the other's).
 // - In a chart (div.chart), each row of ours (chart-row us) takes it from its bar against the best of the other rows
 //   (their widths are their values). data-better="lower" for times and sizes; data-compare="previous" compares a row
-//   with the one before it only (two ways of ours, as whole and streamed pages).
+//   with the one before it only (two ways of ours, as whole and streamed pages); data-compare="compilers" leaves out the
+//   rows that interpret (chart-row interprets), for charts of compiling, where they have nothing to compile.
 const AHEAD = 1.05;
 const OUTCOMES = /\s+(?:win|lose|even)(?=["\s]|$)/g;
 
@@ -48,8 +49,11 @@ function markChart(chart) {
   const open = /^<div class="chart"([^>]*)>/.exec(chart);
   const lower = /data-better="lower"/.test(open[1]);
   const previous = /data-compare="previous"/.test(open[1]);
+  const compilers = /data-compare="compilers"/.test(open[1]);
   const rows = [...chart.matchAll(ROW)].map((match) => ({ text: match[0], kind: match[1].replace(OUTCOMES, '') }));
-  const others = rows.filter((row) => !isOurs(row.kind)).map((row) => widthOf(row.text));
+  const others = rows
+    .filter((row) => !isOurs(row.kind) && !(compilers && /(^|\s)interprets(\s|$)/.test(row.kind)))
+    .map((row) => widthOf(row.text));
   let index = 0;
   return chart.replace(ROW, (text, kind) => {
     const i = index;

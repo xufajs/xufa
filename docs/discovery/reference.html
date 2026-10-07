@@ -1,0 +1,244 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>@xufa/discovery: Reference · xufa</title>
+    <meta
+      name="description"
+      content="The reference of @xufa/discovery: every function, class, interface and type it declares, made from its TypeScript declarations."
+    />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%23d9502b'/%3E%3Ctext x='16' y='22.5' font-family='monospace' font-size='18' font-weight='700' fill='white' text-anchor='middle'%3Ex%3C/text%3E%3C/svg%3E"
+    />
+    <link rel="stylesheet" href="../style.css?v=0.1.0" />
+    <script src="../main.js?v=0.1.0"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js" defer></script>
+  </head>
+  <body>
+    <header class="header">
+      <div class="header-inner">
+        <a class="logo" href="../index.html"><span class="logo-mark">x</span>xufa</a>
+        <nav class="nav">
+          <a href="../guide.html">Guide</a>
+          <a href="../playground.html">Playground</a>
+          <a href="../http/index.html">HTTP</a>
+          <a href="../orm/index.html">ORM</a>
+          <a class="hide-small" href="../auth/index.html">Auth</a>
+          <a class="hide-small" href="../sequelize/index.html">Sequelize</a>
+          <a class="hide-small" href="../packages.html" aria-current="page">Packages</a>
+          <a class="hide-small" href="../benchmarks.html">Benchmarks</a>
+          <a href="https://github.com/xufajs/xufa">GitHub</a>
+          <button class="theme-toggle" type="button" aria-label="Switch between light and dark theme">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+              <path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z" />
+            </svg>
+          </button>
+        </nav>
+      </div>
+    </header>
+
+    <div class="docs">
+      <button class="menu-toggle" type="button" aria-expanded="false">☰ Contents</button>
+      <aside class="sidebar">
+        <h4>Reference</h4>
+        <ul>
+          <li><a href="#functions">Functions (1)</a></li>
+          <li><a href="#classes">Classes (2)</a></li>
+          <li><a href="#constants">Constants (1)</a></li>
+          <li><a href="#interfaces">Interfaces (4)</a></li>
+          <li><a href="#types">Types (2)</a></li>
+        </ul>
+        <h4>Packages</h4>
+        <ul>
+          <li><a href="../websocket/index.html">@xufa/websocket</a></li>
+          <li><a href="../admin/index.html">@xufa/admin</a></li>
+          <li><a href="../session/index.html">@xufa/session</a></li>
+          <li><a href="../openapi/index.html">@xufa/openapi</a></li>
+          <li><a href="../client/index.html">@xufa/client</a></li>
+          <li><a href="../schema/index.html">@xufa/schema</a></li>
+          <li><a href="../pg/index.html">@xufa/pg</a></li>
+          <li><a href="../mongo/index.html">@xufa/mongo</a></li>
+          <li><a href="../expression/index.html">@xufa/expression</a></li>
+          <li><a href="../template/index.html">@xufa/template</a></li>
+          <li><a href="../cluster/index.html">@xufa/cluster</a></li>
+          <li><a href="../scheduler/index.html">@xufa/scheduler</a></li>
+          <li><a href="../queue/index.html">@xufa/queue</a></li>
+          <li><a href="../config/index.html">@xufa/config</a></li>
+          <li><a href="index.html" aria-current="page">@xufa/discovery</a></li>
+          <li><a href="../netcache/index.html">@xufa/netcache</a></li>
+          <li><a href="../faults/index.html">@xufa/faults</a></li>
+          <li><a href="../marshal/index.html">@xufa/marshal</a></li>
+          <li><a href="../yaml/index.html">@xufa/yaml</a></li>
+          <li><a href="../jwt/index.html">@xufa/jwt</a></li>
+          <li><a href="../logger/index.html">@xufa/logger</a></li>
+          <li><a href="../router/index.html">@xufa/router</a></li>
+          <li><a href="../serializer/index.html">@xufa/serializer</a></li>
+          <li><a href="../inject/index.html">@xufa/inject</a></li>
+          <li><a href="../boot/index.html">@xufa/boot</a></li>
+          <li><a href="../errors/index.html">@xufa/errors</a></li>
+          <li><a href="../packages.html">All the packages</a></li>
+        </ul>
+      </aside>
+
+      <article class="content">
+        <nav class="package-tabs" aria-label="@xufa/discovery">
+          <a href="index.html">Overview</a>
+          <a href="reference.html" aria-current="page">Reference</a>
+        </nav>
+        <h1>Reference</h1>
+        <p class="intro">
+          The nodes of a service found on the network by UDP (multicast, broadcast or seeds), sealed with a secret, with no dependencies. Every declaration of its TypeScript declarations
+          (<code>packages/discovery/index.d.ts</code>), as they are written, with their comments: made from them each time
+          the docs are built. How to use them is in <a href="index.html">the overview</a>.
+        </p>
+
+        <h2 id="functions">Functions</h2>
+        <p class="ref-index"><a href="#ref-createDiscovery"><code>createDiscovery</code></a></p>
+
+        <h3 id="ref-createDiscovery"><code>createDiscovery</code></h3>
+        <pre><code class="language-ts">export declare function createDiscovery&lt;M extends Meta = Meta&gt;(options?: DiscoveryOptions): Discovery&lt;M&gt;;</code></pre>
+
+        <h2 id="classes">Classes</h2>
+        <p class="ref-index"><a href="#ref-Discovery"><code>Discovery</code></a>, <a href="#ref-DiscoveryError"><code>DiscoveryError</code></a></p>
+
+        <h3 id="ref-Discovery"><code>Discovery</code></h3>
+        <pre><code class="language-ts">export declare class Discovery&lt;M extends Meta = Meta&gt; extends EventEmitter&lt;DiscoveryEvents&lt;M&gt;&gt; { ... }</code></pre>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>new (options?: DiscoveryOptions)</code></td><td></td><td></td></tr>
+                <tr><td><code>readonly id</code></td><td><code>string</code></td><td></td></tr>
+                <tr><td><code>readonly service</code></td><td><code>string</code></td><td></td></tr>
+                <tr><td><code>readonly started</code></td><td><code>boolean</code></td><td></td></tr>
+                <tr><td><code>readonly meta</code></td><td><code>M</code></td><td></td></tr>
+                <tr><td><code>readonly stats</code></td><td><code><a href="#ref-DiscoveryStats">DiscoveryStats</a></code></td><td></td></tr>
+                <tr><td><code>readonly peers</code></td><td><code><a href="#ref-Peer">Peer</a>&lt;M&gt;[]</code></td><td><p>The peers now (copies).</p></td></tr>
+                <tr><td><code>readonly port</code></td><td><code>number</code></td><td><p>The port bound (the one given, or the one the system chose for 0).</p></td></tr>
+                <tr><td><code>get(id: string)</code></td><td><code><a href="#ref-Peer">Peer</a>&lt;M&gt; | undefined</code></td><td></td></tr>
+                <tr><td><code>start()</code></td><td><code>Promise&lt;this&gt;</code></td><td></td></tr>
+                <tr><td><code>stop()</code></td><td><code>Promise&lt;void&gt;</code></td><td><p>Says goodbye to the others, and closes the socket.</p></td></tr>
+                <tr><td><code>setMeta(meta: M)</code></td><td><code>void</code></td><td></td></tr>
+                <tr><td><code>send(event: string, data?: unknown, options?: { to?: string })</code></td><td><code>Promise&lt;void&gt;</code></td><td><p>A message to every peer, or to one: datagrams can be lost.</p></td></tr>
+                <tr><td><code>waitFor(predicate: (peers: Peer&lt;M&gt;[]) =&gt; boolean, options?: { timeout?: number })</code></td><td><code>Promise&lt;<a href="#ref-Peer">Peer</a>&lt;M&gt;[]&gt;</code></td><td><p>The peers once the predicate holds; rejects after <code>timeout</code> ms (10000).</p></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-DiscoveryError"><code>DiscoveryError</code></h3>
+        <pre><code class="language-ts">export declare class DiscoveryError extends Error { ... }</code></pre>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>code</code></td><td><code>| 'XUFA_DISCOVERY_ERR_OPTIONS' | 'XUFA_DISCOVERY_ERR_SIZE' | 'XUFA_DISCOVERY_ERR_STOPPED' | 'XUFA_DISCOVERY_ERR_PEER' | 'XUFA_DISCOVERY_ERR_TIMEOUT'</code></td><td></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h2 id="constants">Constants</h2>
+        <p class="ref-index"><a href="#ref-MAX_PACKET"><code>MAX_PACKET</code></a></p>
+
+        <h3 id="ref-MAX_PACKET"><code>MAX_PACKET</code></h3>
+        <pre><code class="language-ts">export declare const MAX_PACKET: number;</code></pre>
+        <p>The largest packet sent (1400 bytes: one Ethernet frame).</p>
+
+        <h2 id="interfaces">Interfaces</h2>
+        <p class="ref-index"><a href="#ref-DiscoveryOptions"><code>DiscoveryOptions</code></a>, <a href="#ref-Peer"><code>Peer</code></a>, <a href="#ref-DiscoveryStats"><code>DiscoveryStats</code></a>, <a href="#ref-DiscoveryEvents"><code>DiscoveryEvents</code></a></p>
+
+        <h3 id="ref-DiscoveryOptions"><code>DiscoveryOptions</code></h3>
+        <pre><code class="language-ts">export interface DiscoveryOptions { ... }</code></pre>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>service?</code></td><td><code>string</code></td><td><p>The name of the service: nodes of other services are not peers. 'xufa' by default.</p></td></tr>
+                <tr><td><code>transport?</code></td><td><code><a href="#ref-Transport">Transport</a></code></td><td><p>'multicast' (default), 'broadcast' or 'unicast' (seeds).</p></td></tr>
+                <tr><td><code>port?</code></td><td><code>number</code></td><td><p>The UDP port: shared by the nodes of a machine for multicast and broadcast. 29050 by default; 0 for any.</p></td></tr>
+                <tr><td><code>address?</code></td><td><code>string</code></td><td><p>The address to bind ('0.0.0.0').</p></td></tr>
+                <tr><td><code>group?</code></td><td><code>string</code></td><td><p>The multicast group ('239.255.29.5').</p></td></tr>
+                <tr><td><code>interface?</code></td><td><code>string</code></td><td><p>The interface multicast is sent on (its IPv4 address); the default one when not given.</p></td></tr>
+                <tr><td><code>ttl?</code></td><td><code>number</code></td><td><p>Hops multicast goes through (1: the local network; 0: this machine).</p></td></tr>
+                <tr><td><code>broadcastAddress?</code></td><td><code>string</code></td><td><p>The broadcast address ('255.255.255.255').</p></td></tr>
+                <tr><td><code>seeds?</code></td><td><code>Array&lt;string | [string, number]&gt;</code></td><td><p>Addresses ('host:port' or [host, port]) the node announces itself to, besides the group or broadcast.</p></td></tr>
+                <tr><td><code>interval?</code></td><td><code>number</code></td><td><p>Milliseconds between announcements (1000).</p></td></tr>
+                <tr><td><code>timeout?</code></td><td><code>number</code></td><td><p>Milliseconds a peer is kept without being heard (3 intervals and a half by default).</p></td></tr>
+                <tr><td><code>secret?</code></td><td><code>string | Buffer</code></td><td><p>16 bytes or more: packets are sealed (AES-256-GCM), and only the nodes that know it are peers.</p></td></tr>
+                <tr><td><code>maxSkew?</code></td><td><code>number</code></td><td><p>With a secret, packets older (or newer) than this many milliseconds are refused (30000).</p></td></tr>
+                <tr><td><code>meta?</code></td><td><code><a href="#ref-Meta">Meta</a></code></td><td><p>What this node tells the others: its URL, its role... (JSON, in one packet of 1400 bytes).</p></td></tr>
+                <tr><td><code>id?</code></td><td><code>string</code></td><td><p>The id of this node (a random UUID by default).</p></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-Peer"><code>Peer</code></h3>
+        <pre><code class="language-ts">export interface Peer&lt;M extends Meta = Meta&gt; { ... }</code></pre>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>id</code></td><td><code>string</code></td><td></td></tr>
+                <tr><td><code>service</code></td><td><code>string</code></td><td></td></tr>
+                <tr><td><code>address</code></td><td><code>string</code></td><td></td></tr>
+                <tr><td><code>port</code></td><td><code>number</code></td><td></td></tr>
+                <tr><td><code>meta</code></td><td><code>M</code></td><td></td></tr>
+                <tr><td><code>since</code></td><td><code>number</code></td><td><p>When it was first heard (ms since the epoch).</p></td></tr>
+                <tr><td><code>lastSeen</code></td><td><code>number</code></td><td><p>When it was last heard.</p></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-DiscoveryStats"><code>DiscoveryStats</code></h3>
+        <pre><code class="language-ts">export interface DiscoveryStats { ... }</code></pre>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>sent</code></td><td><code>number</code></td><td></td></tr>
+                <tr><td><code>received</code></td><td><code>number</code></td><td></td></tr>
+                <tr><td><code>dropped</code></td><td><code>number</code></td><td></td></tr>
+                <tr><td><code>sendErrors</code></td><td><code>number</code></td><td></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-DiscoveryEvents"><code>DiscoveryEvents</code></h3>
+        <pre><code class="language-ts">export interface DiscoveryEvents&lt;M extends Meta = Meta&gt; { ... }</code></pre>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>up</code></td><td><code>[peer: <a href="#ref-Peer">Peer</a>&lt;M&gt;]</code></td><td></td></tr>
+                <tr><td><code>down</code></td><td><code>[peer: <a href="#ref-Peer">Peer</a>&lt;M&gt;, reason: 'bye' | 'timeout']</code></td><td></td></tr>
+                <tr><td><code>update</code></td><td><code>[peer: <a href="#ref-Peer">Peer</a>&lt;M&gt;, previous: M]</code></td><td></td></tr>
+                <tr><td><code>message</code></td><td><code>[event: string, data: unknown, peer: <a href="#ref-Peer">Peer</a>&lt;M&gt;]</code></td><td></td></tr>
+                <tr><td><code>error</code></td><td><code>[error: Error]</code></td><td></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h2 id="types">Types</h2>
+        <p class="ref-index"><a href="#ref-Transport"><code>Transport</code></a>, <a href="#ref-Meta"><code>Meta</code></a></p>
+
+        <h3 id="ref-Transport"><code>Transport</code></h3>
+        <pre><code class="language-ts">export type Transport = 'multicast' | 'broadcast' | 'unicast';</code></pre>
+
+        <h3 id="ref-Meta"><code>Meta</code></h3>
+        <pre><code class="language-ts">export type Meta = Record&lt;string, unknown&gt;;</code></pre>
+      </article>
+    </div>
+
+    <footer class="footer">
+      <div class="container">
+        <span>xufa is MIT licensed. &copy; Jes&uacute;s Seijas</span>
+        <span>
+          <a href="../guide.html">Guide</a> &middot; <a href="../playground.html">Playground</a> &middot; <a href="../http/index.html">HTTP</a> &middot; <a href="../orm/index.html">ORM</a> &middot; <a href="../auth/index.html">Auth</a> &middot;
+          <a href="../sequelize/index.html">Sequelize</a> &middot; <a href="../packages.html">Packages</a> &middot;
+          <a href="../benchmarks.html">Benchmarks</a> &middot; <a href="https://github.com/xufajs/xufa">GitHub</a>
+        </span>
+      </div>
+    </footer>
+  </body>
+</html>

@@ -47,7 +47,7 @@ describe.skipIf(!available)('mongodb', () => {
       await Item.objects.delete();
       const item = await Item.objects.create({ name: 'x', price: '1E+3' });
       expect((await collection().findOne({ name: 'x' })).price.constructor.name).toBe('Decimal128');
-      expect((await Item.objects.get({ pk: item.pk })).price).toBe('1000');
+      expect((await Item.objects.get({ pk: item.pk })).price).toBe('1000.00'); // with the places of its scale, as every backend gives it
       await Item.objects.create({ name: 'y', price: '0.05' });
       expect((await Item.objects.get({ name: 'y' })).price).toBe('0.05');
     });

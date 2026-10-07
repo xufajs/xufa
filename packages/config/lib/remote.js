@@ -10,6 +10,7 @@
 //       sources.consul({ prefix: 'apps/shop' }),
 //       sources.vault({ path: 'shop/production', at: 'secrets' }),
 //       sources.directory({ dir: '/run/secrets', at: 'secrets' }),
+//       sources.ssm({ path: '/shop/production' }),                 // AWS: Parameter Store, Secrets Manager (lib/aws.js)
 //     ],
 //     cacheFile: '.config-cache.json',
 //   });
@@ -29,6 +30,7 @@ const path = require('node:path');
 const { ConfigError } = require('./errors');
 const { readLocal, complete, merge } = require('./load');
 const { coerce, isPlain } = require('./schema');
+const { call } = require('./aws');
 
 const DEFAULTS = { timeout: 5000, retries: 2 };
 
@@ -113,6 +115,37 @@ function consul(options) {
   return {
     name: rest.name || `consul ${prefix || key}`,
     ...rest,
+    // A blocking query: it answers when the keys change (or after `wait`), with their index (X-Consul-Index), or null
+    // when the server gives none (watchConfig() then does not follow it). Its socket does not keep the process alive.
+    watch({ env, signal, index = null, wait = '5m' }) {
+      const base = String(url || env.CONSUL_HTTP_ADDR || 'http://127.0.0.1:8500').replace(/\/$/, '');
+      const headers = {};
+      const secret = token || env.CONSUL_HTTP_TOKEN;
+      if (secret) headers['x-consul-token'] = secret;
+      const at = String(prefix || key).replace(/^\/+|\/+$/g, '');
+      const params = [];
+      if (!key) params.push('recurse=true');
+      if (index) params.push(`index=${index}`, `wait=${wait}`);
+      if (datacenter) params.push(`dc=${encodeURIComponent(datacenter)}`);
+      const target = `${base}/v1/kv/${at.split('/').map(encodeURIComponent).join('/')}${key ? '' : '/'}`;
+      const what = this.name;
+      return new Promise((resolve, reject) => {
+        const address = new URL(`${target}?${params.join('&')}`);
+        const client = address.protocol === 'https:' ? require('node:https') : require('node:http'); // eslint-disable-line global-require
+        const req = client.get(address, { headers, signal }, (res) => {
+          res.resume();
+          res.on('end', () => {
+            const header = res.headers['x-consul-index'];
+            if (header === undefined) resolve({ index: null });
+            else if (res.statusCode >= 400 && res.statusCode !== 404) {
+              reject(new Error(`${what}: ${res.statusCode} when waiting for changes`));
+            } else resolve({ index: Number(header) });
+          });
+        });
+        req.on('socket', (socket) => socket.unref());
+        req.on('error', (err) => reject(new Error(`${what}: ${err.message}`)));
+      });
+    },
     async load({ env, signal }) {
       const base = String(url || env.CONSUL_HTTP_ADDR || 'http://127.0.0.1:8500').replace(/\/$/, '');
       const headers = {};
@@ -222,7 +255,89 @@ function directory(options) {
   };
 }
 
-const sources = { http, consul, vault, directory };
+// The parameters of the Parameter Store of AWS Systems Manager under a path, as a tree (/shop/production/db/url is
+// db.url under the path /shop/production), SecureStrings decrypted. Sensitive, without templates.
+function ssm(options) {
+  const { path: at, ...rest } = options || {};
+  if (!at || !String(at).startsWith('/')) throw new TypeError('sources.ssm(): path is required (as /shop/production)');
+  const prefix = String(at).replace(/\/+$/, '');
+  return {
+    name: rest.name || `ssm ${prefix}`,
+    sensitive: true,
+    templates: false,
+    ...rest,
+    async load({ env, signal }) {
+      const tree = {};
+      let token;
+      do {
+        const page = await call({
+          options: rest,
+          env,
+          signal,
+          service: 'ssm',
+          host: 'ssm',
+          target: 'AmazonSSM.GetParametersByPath',
+          payload: {
+            Path: prefix || '/',
+            Recursive: true,
+            WithDecryption: true,
+            ...(token ? { NextToken: token } : {}),
+          },
+          what: this.name,
+        });
+        for (const parameter of page.Parameters || []) {
+          const keys = parameter.Name.slice(prefix.length).split('/').filter(Boolean);
+          if (keys.length === 0) continue;
+          let node = tree;
+          for (const part of keys.slice(0, -1)) {
+            if (!isPlain(node[part])) node[part] = {};
+            node = node[part];
+          }
+          node[keys[keys.length - 1]] = valueOfText(parameter.Value);
+        }
+        token = page.NextToken;
+      } while (token);
+      return tree;
+    },
+  };
+}
+
+// A secret of AWS Secrets Manager: its JSON (the keys and values of a secret made in the console), or its text under
+// `value`. A version by its stage (AWSCURRENT) or id. Sensitive, without templates.
+function secretsManager(options) {
+  const { secretId, versionStage, versionId, ...rest } = options || {};
+  if (!secretId) throw new TypeError('sources.secretsManager(): secretId is required (its name or ARN)');
+  return {
+    name: rest.name || `secretsmanager ${secretId}`,
+    sensitive: true,
+    templates: false,
+    ...rest,
+    async load({ env, signal }) {
+      const secret = await call({
+        options: rest,
+        env,
+        signal,
+        service: 'secretsmanager',
+        host: 'secretsmanager',
+        target: 'secretsmanager.GetSecretValue',
+        payload: {
+          SecretId: secretId,
+          ...(versionStage ? { VersionStage: versionStage } : {}),
+          ...(versionId ? { VersionId: versionId } : {}),
+        },
+        what: this.name,
+      });
+      const text =
+        secret.SecretString !== undefined
+          ? secret.SecretString
+          : Buffer.from(secret.SecretBinary || '', 'base64').toString('utf8');
+      const value = valueOfText(text);
+      return isPlain(value) ? value : { value };
+    },
+  };
+}
+
+const sources = { http, consul, vault, directory, ssm, secretsManager };
 
 // One source: its attempts (each with its timeout), then what it gave, or its error.
 async function readSource(source, context) {
@@ -346,7 +461,7 @@ function changedPaths(before, after, prefix = [], out = []) {
   return out;
 }
 
-async function watchConfig(options = {}, { interval = '30s', onChange, onError } = {}) {
+async function watchConfig(options = {}, { interval = '30s', onChange, onError, blocking = true } = {}) {
   const every = coerce(interval, 'duration');
   if (every.error || every.value <= 0) throw new TypeError(`watchConfig(): interval is a duration ('30s', 60000)`);
   let current = await loadRemoteConfig(options);
@@ -381,6 +496,36 @@ async function watchConfig(options = {}, { interval = '30s', onChange, onError }
     timer.unref();
   };
   schedule();
+  // Sources that can wait for their changes (Consul's blocking queries) are followed: a change is read at once, not
+  // at the next interval. A failure is told and tried again later (1 s, then twice as long, 30 s at most).
+  const controller = new AbortController();
+  const { env } = readLocal(options);
+  const pause = (ms) =>
+    new Promise((resolve) => {
+      setTimeout(resolve, ms).unref();
+    });
+  async function follow(source) {
+    let index = null;
+    let failures = 0;
+    while (!stopped) {
+      try {
+        const answer = await source.watch({ env, signal: controller.signal, index });
+        if (answer.index === null) return; // a server that does not wait: the interval reads it
+        if (index !== null && answer.index !== index) await refresh();
+        // An index that goes back (the server started again) starts again.
+        index = answer.index > 0 && (index === null || answer.index >= index) ? answer.index : null;
+        failures = 0;
+      } catch (err) {
+        if (stopped) return;
+        failures += 1;
+        report(err);
+        await pause(Math.min(30000, 1000 * 2 ** (failures - 1)));
+      }
+    }
+  }
+  if (blocking) {
+    for (const source of options.remote || []) if (typeof source.watch === 'function') follow(source);
+  }
   return {
     get current() {
       return current;
@@ -389,6 +534,7 @@ async function watchConfig(options = {}, { interval = '30s', onChange, onError }
     stop() {
       stopped = true;
       clearTimeout(timer);
+      controller.abort();
     },
   };
 }

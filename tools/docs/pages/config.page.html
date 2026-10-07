@@ -19,8 +19,10 @@
 
         <h2 id="start">Quick start</h2>
         <pre><code class="language-sh">npm install @xufa/config</code></pre>
-        <pre><code class="language-js">const { loadConfig } = require('@xufa/config'); // or require('xufa/config')
+<!--run-before: process.env.PORT = '8080'; process.env.DATABASE_URL = 'postgres://app:secret@db/app'; -->
+        <pre data-run="config"><code class="language-js">const { loadConfig } = require('@xufa/config'); // or require('xufa/config')
 
+// With PORT=8080 and DATABASE_URL=postgres://app:secret@db/app in the environment:
 const config = loadConfig({
   envPrefix: 'APP',
   schema: {
@@ -28,8 +30,19 @@ const config = loadConfig({
     db: { url: { type: 'url', required: true, env: 'DATABASE_URL', sensitive: true } },
   },
 });
-config.server.port; // 3000, or the PORT of the environment, as a number
-console.log(config); // db.url: '[redacted]'</code></pre>
+console.log(config.server.port, typeof config.server.port); // the PORT of the environment, as a number
+console.log(config.redacted()); // what is safe to log
+
+// Without DATABASE_URL:
+try {
+  loadConfig({ schema: { db: { url: { type: 'url', required: true, env: 'DATABASE_URL' } } }, environment: {} });
+} catch (err) {
+  console.log(err.message);
+}</code></pre>
+        <pre data-output><code class="language-plaintext">8080 number
+{ server: { port: 8080 }, db: { url: '[redacted]' } }
+The configuration (development) has errors:
+  - db.url: is required (set DATABASE_URL)</code></pre>
 
         <h2 id="layers">Layers</h2>
         <p>Each layer is merged over the one before (objects key by key; arrays and other values replace):</p>
@@ -80,6 +93,8 @@ const config = await loadRemoteConfig({
     sources.http({ url: 'https://config.internal/apps/shop.yaml' }),
     sources.consul({ prefix: 'apps/shop' }), // apps/shop/db/host is db.host
     sources.vault({ path: 'shop/production', at: 'credentials' }), // KV 2 of Vault
+    sources.ssm({ path: '/shop/production' }), // Parameter Store of AWS
+    sources.secretsManager({ secretId: 'shop/api', at: 'api' }), // AWS Secrets Manager
     sources.directory({ dir: '/run/secrets', at: 'files', sensitive: true }), // Docker, Kubernetes
   ],
   cacheFile: '.config-cache.json',
@@ -91,6 +106,8 @@ const config = await loadRemoteConfig({
               <tr><td><code>http({ url, headers, format })</code></td><td>A document of JSON or YAML; with an ETag, one not changed is not sent again.</td></tr>
               <tr><td><code>consul({ prefix | key })</code></td><td>The keys under a prefix as a tree, or one key as a document. <code>CONSUL_HTTP_ADDR</code>, <code>CONSUL_HTTP_TOKEN</code>.</td></tr>
               <tr><td><code>vault({ path, mount, kv, token | roleId + secretId })</code></td><td>A secret of the KV engine (2 or 1) of Vault or OpenBao, with a token or AppRole. <code>VAULT_ADDR</code>, <code>VAULT_TOKEN</code>... Sensitive, without templates.</td></tr>
+              <tr><td><code>ssm({ path, region, credentials, endpoint })</code></td><td>The parameters of the Parameter Store of AWS under a path, as a tree, SecureStrings decrypted. <code>AWS_REGION</code>, <code>AWS_ACCESS_KEY_ID</code>, <code>AWS_SECRET_ACCESS_KEY</code>, <code>AWS_SESSION_TOKEN</code>; calls signed with Signature Version 4, without an SDK. Sensitive, without templates.</td></tr>
+              <tr><td><code>secretsManager({ secretId, versionStage, region, credentials, endpoint })</code></td><td>A secret of AWS Secrets Manager: its JSON as keys, or its text under <code>value</code>. Sensitive, without templates.</td></tr>
               <tr><td><code>directory({ dir })</code></td><td>A key for each file; <code>.json</code> and <code>.yaml</code> files are their documents; hidden ones left out. Without templates.</td></tr>
               <tr><td><code>{ name, load({ env, name, signal }) }</code></td><td>One of your own.</td></tr>
             </tbody>
@@ -112,6 +129,11 @@ watcher.current.flags.beta;</code></pre>
           Every layer is read again every <code>interval</code>; when something changed, <code>watcher.current</code> is a new
           (frozen) configuration and <code>onChange</code> gets it, the one before and the paths that changed. A reading that
           fails keeps the one there was. <code>refresh()</code> reads it now; <code>stop()</code> stops it.
+        </p>
+        <p>
+          The keys of Consul are followed with blocking queries, which Consul answers when they change: a change is read at
+          once, not at the next interval (<code>blocking: false</code> leaves only the interval). Their connection does not
+          keep the process alive, and a failure is tried again (1 s, then twice as long, 30 s at most).
         </p>
 
         <h2 id="schema">The schema</h2>

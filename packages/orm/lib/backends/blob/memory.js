@@ -1,7 +1,7 @@
 // MemoryBlobBackend ('memory-blob'): a store of objects in memory, for tests and prototypes of the models of blob
 // backends (lib/backends/blob/base.js). Its containers are made when an object is written to them.
 const crypto = require('node:crypto');
-const { BlobBackend } = require('./base');
+const { BlobBackend, exists } = require('./base');
 const { bufferOf } = require('../../blob');
 
 class MemoryBlobBackend extends BlobBackend {
@@ -27,8 +27,9 @@ class MemoryBlobBackend extends BlobBackend {
     return { size: object.body.length, etag: object.etag, updatedAt: new Date(object.updatedAt.getTime()) };
   }
 
-  async storePut(table, key, body, { contentType, metadata }) {
+  async storePut(table, key, body, { contentType, metadata, create = false }) {
     const buffer = Buffer.from(await bufferOf(body));
+    if (create && this.container(table).has(key)) throw exists(table, key);
     const object = {
       body: buffer,
       etag: crypto.createHash('md5').update(buffer).digest('hex'),

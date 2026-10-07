@@ -1,0 +1,418 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>@xufa/queue · xufa</title>
+    <meta
+      name="description"
+      content="@xufa/queue: jobs in the background kept in a database of @xufa/orm (any backend), with no dependencies: workers on any machine, retries with backoff, timeouts, priorities, delays, unique keys, jobs enqueued in transactions, and pipelines of steps kept in the database."
+    />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%23d9502b'/%3E%3Ctext x='16' y='22.5' font-family='monospace' font-size='18' font-weight='700' fill='white' text-anchor='middle'%3Ex%3C/text%3E%3C/svg%3E"
+    />
+    <link rel="stylesheet" href="../style.css?v=0.1.0" />
+    <script src="../main.js?v=0.1.0"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js" defer></script>
+  </head>
+  <body>
+    <header class="header">
+      <div class="header-inner">
+        <a class="logo" href="../index.html"><span class="logo-mark">x</span>xufa</a>
+        <nav class="nav">
+          <a href="../guide.html">Guide</a>
+          <a href="../playground.html">Playground</a>
+          <a href="../http/index.html">HTTP</a>
+          <a href="../orm/index.html">ORM</a>
+          <a class="hide-small" href="../auth/index.html">Auth</a>
+          <a class="hide-small" href="../sequelize/index.html">Sequelize</a>
+          <a class="hide-small" href="../packages.html" aria-current="page">Packages</a>
+          <a class="hide-small" href="../benchmarks.html">Benchmarks</a>
+          <a href="https://github.com/xufajs/xufa">GitHub</a>
+          <button class="theme-toggle" type="button" aria-label="Switch between light and dark theme">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+              <path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z" />
+            </svg>
+          </button>
+        </nav>
+      </div>
+    </header>
+
+    <div class="docs">
+      <button class="menu-toggle" type="button" aria-expanded="false">☰ Contents</button>
+      <aside class="sidebar">
+        <h4>Using it</h4>
+        <ul>
+          <li><a href="#start">Quick start</a></li>
+          <li><a href="#jobs">Jobs</a></li>
+          <li><a href="#enqueue">Enqueueing</a></li>
+          <li><a href="#failures">Failures and retries</a></li>
+        </ul>
+        <h4>Running</h4>
+        <ul>
+          <li><a href="#workers">Workers</a></li>
+          <li><a href="#pools">Pools of nodes</a></li>
+          <li><a href="#transactions">In transactions</a></li>
+          <li><a href="#plugin">The plugin</a></li>
+          <li><a href="#health">Health</a></li>
+          <li><a href="#tests">In tests</a></li>
+        </ul>
+        <h4>Pipelines</h4>
+        <ul>
+          <li><a href="#pipelines">Pipelines</a></li>
+          <li><a href="#pipeline-steps">Steps</a></li>
+          <li><a href="#pipeline-blocks">Blocks</a></li>
+          <li><a href="#pipeline-runs">Runs</a></li>
+        </ul>
+        <h4>Packages</h4>
+        <ul>
+          <li><a href="../websocket/index.html">@xufa/websocket</a></li>
+          <li><a href="../admin/index.html">@xufa/admin</a></li>
+          <li><a href="../session/index.html">@xufa/session</a></li>
+          <li><a href="../openapi/index.html">@xufa/openapi</a></li>
+          <li><a href="../client/index.html">@xufa/client</a></li>
+          <li><a href="../schema/index.html">@xufa/schema</a></li>
+          <li><a href="../pg/index.html">@xufa/pg</a></li>
+          <li><a href="../mongo/index.html">@xufa/mongo</a></li>
+          <li><a href="../expression/index.html">@xufa/expression</a></li>
+          <li><a href="../template/index.html">@xufa/template</a></li>
+          <li><a href="../cluster/index.html">@xufa/cluster</a></li>
+          <li><a href="../scheduler/index.html">@xufa/scheduler</a></li>
+          <li><a href="index.html" aria-current="page">@xufa/queue</a></li>
+          <li><a href="../config/index.html">@xufa/config</a></li>
+          <li><a href="../discovery/index.html">@xufa/discovery</a></li>
+          <li><a href="../netcache/index.html">@xufa/netcache</a></li>
+          <li><a href="../faults/index.html">@xufa/faults</a></li>
+          <li><a href="../marshal/index.html">@xufa/marshal</a></li>
+          <li><a href="../yaml/index.html">@xufa/yaml</a></li>
+          <li><a href="../jwt/index.html">@xufa/jwt</a></li>
+          <li><a href="../logger/index.html">@xufa/logger</a></li>
+          <li><a href="../router/index.html">@xufa/router</a></li>
+          <li><a href="../serializer/index.html">@xufa/serializer</a></li>
+          <li><a href="../inject/index.html">@xufa/inject</a></li>
+          <li><a href="../boot/index.html">@xufa/boot</a></li>
+          <li><a href="../errors/index.html">@xufa/errors</a></li>
+          <li><a href="../packages.html">All the packages</a></li>
+        </ul>
+      </aside>
+
+      <article class="content">
+        <nav class="package-tabs" aria-label="@xufa/queue">
+          <a href="index.html" aria-current="page">Overview</a>
+          <a href="reference.html">Reference</a>
+        </nav>
+        <h1>@xufa/queue</h1>
+        <p class="intro">
+          Jobs in the background, kept in a database of <a href="../orm/index.html">@xufa/orm</a> (SQLite, PostgreSQL, MongoDB,
+          files or memory): the queues of Laravel and Rails' Active Job, with no dependencies and no Redis. Workers run on
+          any process or machine that has the database, each job once; jobs that fail are tried again with backoff; and a
+          job enqueued in a transaction is there only when the transaction commits. Pipelines run graphs of steps as
+          its jobs, each run and step kept in the database.
+        </p>
+
+        <h2 id="start">Quick start</h2>
+        <pre data-run><code class="language-js">const { Database } = require('@xufa/orm');
+const { Queue } = require('@xufa/queue');
+
+const db = new Database({ backend: 'memory' }); // or postgres, sqlite, mongodb...
+const queue = new Queue(db); // its model (table xufa_jobs) is registered in db
+await db.sync();
+
+queue.define('welcome', async ({ name }) =&gt; {
+  console.log(`Welcome, ${name}!`);
+});
+await queue.enqueue('welcome', { name: 'Ada' });
+await queue.enqueue('welcome', { name: 'Grace' }, { delay: '1h' });
+console.log(await queue.counts());
+
+console.log(await queue.runDue()); // without workers: the jobs due now</code></pre>
+        <pre data-output><code class="language-plaintext">{ pending: 2, running: 0, done: 0, failed: 0 }
+Welcome, Ada!
+{ done: 1, retrying: 0, failed: 0 }</code></pre>
+        <p>In an app, workers run the jobs as they come: <code>queue.work({ concurrency: 4 })</code>.</p>
+
+        <h2 id="jobs">Jobs</h2>
+        <p>
+          <code>define(name, handler, options)</code> names a kind of job: its function gets the payload and the job
+          (an object of the model: <code>attempts</code>, <code>signal</code>, <code>runAt</code>...).
+        </p>
+        <pre><code class="language-js">queue.define('invoice', async ({ orderId }, job) =&gt; {
+  const order = await Order.objects.get({ pk: orderId });
+  await renderInvoice(order, { signal: job.signal }); // aborted at the timeout
+  return { pages: 2 }; // kept as its result with keepDone: true
+}, { attempts: 5, backoff: { delay: '10s', max: '1h' }, timeout: '1m', queue: 'billing' });</code></pre>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Option</th><th>Default</th><th>What it is</th></tr></thead>
+            <tbody>
+              <tr><td><code>attempts</code></td><td>3</td><td>Runs before the job is failed</td></tr>
+              <tr><td><code>backoff</code></td><td>5 s to 1 h</td><td>The delay before a job is tried again: exponential (<code>{ delay, max }</code>, doubling, with jitter), <code>{ type: 'fixed', delay }</code>, ms, or a function of the attempts</td></tr>
+              <tr><td><code>timeout</code></td><td><code>'5m'</code></td><td>A run longer is failed, and its <code>signal</code> aborted</td></tr>
+              <tr><td><code>queue</code></td><td><code>'default'</code></td><td>The queue of its jobs (workers can take some queues only)</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p>
+          <code>new Queue(db, options)</code> takes the same options as defaults of its jobs, and <code>table</code>
+          (<code>xufa_jobs</code>), <code>model</code>, <code>keepDone</code> (done jobs kept with their results; deleted
+          otherwise) and <code>logger</code>.
+        </p>
+
+        <h2 id="enqueue">Enqueueing</h2>
+        <pre><code class="language-js">await queue.enqueue('invoice', { orderId: 7 });
+await queue.enqueue('report', { month: 10 }, { delay: '10m' });          // or at: new Date(...)
+await queue.enqueue('alert', { id: 1 }, { priority: 10, queue: 'urgent' }); // higher first
+await queue.enqueue('sync', { userId: 3 }, { key: 'sync:3' });           // not twice while one is pending or running</code></pre>
+        <p>
+          <code>enqueue</code> gives the job (with <code>key</code>, the one there when there is one). The payload is JSON.
+        </p>
+
+        <h2 id="failures">Failures and retries</h2>
+        <p>
+          A job that throws (or goes over its timeout) is tried again after its backoff, up to its attempts; then it is
+          kept as <code>failed</code>, with the stack of its error in <code>lastError</code>. <code>queue.retry()</code>
+          takes the failed jobs back (all, or those of the ids given).
+        </p>
+        <pre><code class="language-js">queue.on('failed', (job, err) =&gt; log.error({ err, job: job.pk }, 'job failed'));
+const failed = await queue.jobs.filter({ status: 'failed', name: 'invoice' }); // a queryset of the jobs
+await queue.retry(failed.map((job) =&gt; job.pk));</code></pre>
+        <p>The queue emits <code>completed</code> (job, result), <code>retrying</code> (job, error, delay) and <code>failed</code> (job, error). The option <code>onFailure(job, err, final)</code> of <code>define</code> is waited for when a run fails, before the job is tried again or failed.</p>
+
+        <h2 id="workers">Workers</h2>
+        <p>
+          <code>queue.work({ concurrency, queues, poll })</code> starts a worker in the process: it runs up to
+          <code>concurrency</code> jobs at once (1), of some queues (all), looking for jobs every <code>poll</code> (1 s)
+          and at once when its process enqueues one. Workers claim each job with an update only one of them can make (a
+          pending job to running), so every worker of every machine with the database can run them, and each job runs
+          once. A job whose worker died while it ran (past <code>lockedUntil</code>: its timeout and 30 s) is taken back
+          by the others, or failed when it has no attempts left. <code>queue.stop()</code> stops the workers, waiting for
+          the jobs they run.
+        </p>
+
+        <h2 id="pools">Pools of nodes</h2>
+        <p>
+          A kind of job whose work goes to other servers that take a few tasks at once (document converters) can run on
+          a <a href="../cluster/index.html#pool">pool of nodes</a> of @xufa/cluster: its jobs wait for a free node before they are
+          claimed, so they stay pending while they wait (other machines can take them), their timeout counts their run
+          only, and they run with <code>job.node</code>. The pool hands the nodes out among every worker of the process's
+          cluster, in order.
+        </p>
+        <pre data-run><code class="language-js">const { Database } = require('@xufa/orm');
+const { Queue } = require('@xufa/queue');
+const { createPool } = require('@xufa/cluster');
+
+const db = new Database({ backend: 'memory' });
+const queue = new Queue(db);
+await db.sync();
+
+const converters = createPool('converters', { nodes: [{ id: 'converter-1', url: 'http://10.0.0.7:8080' }], leaseTimeout: '5m' });
+queue.define(
+  'convert',
+  async ({ file }, job) =&gt; {
+    // fetch(`${job.node.url}/convert`, { method: 'POST', body: file, signal: job.signal })
+    console.log(`${file} on ${job.node.id}`);
+  },
+  { pool: converters, attempts: 3 }
+);
+await queue.enqueue('convert', { file: 'a.docx' });
+await queue.enqueue('convert', { file: 'b.docx' });
+console.log(await queue.runDue());
+converters.close();</code></pre>
+        <pre data-output><code class="language-plaintext">a.docx on converter-1
+b.docx on converter-1
+{ done: 2, retrying: 0, failed: 0 }</code></pre>
+        <p>
+          A job waiting for a node takes a place of the worker's <code>concurrency</code>: give such jobs their own
+          <code>queue</code> and worker when other jobs must not wait behind them. When the pool takes the node back (its
+          <code>leaseTimeout</code>, the node gone), <code>job.signal</code> is aborted and the run fails, to be tried again
+          after its backoff; a node that answers busy (429) is left aside for a while. In a worker of a cluster,
+          <code>pool: usePool('converters')</code> uses the pool of the primary, and with <a href="../cluster/index.html#pool-machines">shared
+          slots</a> the pools of several machines share the nodes.
+        </p>
+
+        <h2 id="transactions">In transactions</h2>
+        <p>
+          The jobs are objects of the database, so a job enqueued in a transaction is written with the rest: when the
+          transaction fails, there is no job; when it commits, the job sees the data it was enqueued for. A message
+          sent after the commit, or lost before, does not happen (the pattern of the outbox).
+        </p>
+        <pre><code class="language-js">await db.transaction(async () =&gt; {
+  const order = await Order.objects.create({ total });
+  await queue.enqueue('invoice', { orderId: order.pk });
+});</code></pre>
+
+        <h2 id="plugin">The plugin</h2>
+        <pre><code class="language-js">const { queuePlugin } = require('@xufa/queue');
+
+app.register(queuePlugin, { queue, work: { concurrency: 4 } }); // leave out work in processes that only enqueue
+app.post('/signup', async (request, reply) =&gt; {
+  await app.queue.enqueue('welcome', { email: request.body.email });
+  return reply.code(202).send();
+});</code></pre>
+        <p>
+          The workers start when the app is ready, and stop when it closes. With
+          <a href="../scheduler/index.html">@xufa/scheduler</a> jobs can be enqueued by time, and with the
+          <a href="../orm/guide.html#mail">mail backends</a> of the ORM a message can be sent in the background:
+          <code>queue.define('mail', (message) =&gt; Email.objects.create(message))</code>.
+        </p>
+
+        <h2 id="health">Health</h2>
+        <p>
+          <code>queue.health()</code> is a check of <a href="../http/guide.html#health">xufa.health</a>: the counts of the
+          jobs, the <code>lag</code> (how long the oldest job due has waited: workers that do not keep up, or none at all)
+          and the <code>workers</code> of the process. It is degraded when the lag is more than <code>maxLag</code>
+          (<code>'5m'</code>), or the jobs pending or failed more than <code>maxPending</code> or <code>maxFailed</code>,
+          and down when the jobs cannot be read. Not critical by default (<code>critical: true</code> makes it so).
+        </p>
+        <pre><code class="language-js">app.register(xufa.health, {
+  checks: { database: db.health(), queue: queue.health({ maxLag: '2m', maxFailed: 100 }) },
+});
+// GET /health: { status: 'up', checks: { queue: { status: 'up', details: { pending, running, failed, lag, workers } } } }</code></pre>
+
+        <h2 id="tests">In tests</h2>
+        <p>
+          <code>queue.runDue()</code> runs the jobs due now one after another, without workers, and gives counts by
+          outcome; <code>queue.counts()</code> and <code>queue.jobs</code> tell what is there. With the memory backend,
+          a test needs no database server.
+        </p>
+
+        <h2 id="pipelines">Pipelines</h2>
+        <p>
+          A pipeline is a graph of steps run as jobs of the queue, and every run keeps, in the database, the status,
+          output, error and attempts of each of its steps. It is data, so it can be stored, edited by users and shown:
+          each step runs a <em>block</em> (a kind of work your code registers) with its config, after other steps (fan
+          out and join), when a condition holds, and the outputs of some steps make the result of the run.
+        </p>
+        <pre data-run><code class="language-js">const { Database } = require('@xufa/orm');
+const { Queue, Pipelines } = require('@xufa/queue');
+
+const db = new Database({ backend: 'memory' });
+const queue = new Queue(db);
+const pipelines = new Pipelines(queue); // its models (xufa_pipeline_runs, _steps) registered in db
+await db.sync();
+
+pipelines.block('measure', (doc) =&gt; ({ words: doc.words, links: doc.links.length }));
+pipelines.block('score', (input, { config }) =&gt; Math.round(input.links * config.weight * 100) / 100);
+
+pipelines.define({
+  name: 'ingest',
+  trigger: 'document.uploaded',
+  steps: [
+    { id: 'measure', block: 'measure' },
+    { id: 'links', block: 'score', after: 'measure', config: { weight: 0.5 } },
+    { id: 'detail', block: 'score', after: 'measure', config: { weight: 2 }, when: 'input.words &gt;= 1024' },
+    {
+      id: 'report',
+      block: 'transform',
+      after: ['links', 'detail'],
+      config: { map: { links: 'input.links', detail: 'input.detail ?? "skipped"', user: 'run.input.user' } },
+    },
+  ],
+});
+
+const [run] = await pipelines.trigger('document.uploaded', { user: 'ada', words: 800, links: [1, 2, 3] });
+await queue.runDue(); // workers in an app: queue.work()
+
+const { run: done, steps } = await pipelines.get(run.pk);
+console.log(done.status, done.result);
+console.log(Object.fromEntries(Object.entries(steps).map(([id, step]) =&gt; [id, step.status])));</code></pre>
+        <pre data-output><code class="language-plaintext">done { links: 1.5, detail: 'skipped', user: 'ada' }
+{ measure: 'done', links: 'done', detail: 'skipped', report: 'done' }</code></pre>
+        <p>
+          The document had under 1024 words, so <code>detail</code> was skipped and the join (<code>report</code>) got
+          the outputs of the steps done: <code>{ links: 1.5 }</code>. <code>run.input</code> is the input of the run, in
+          every step.
+        </p>
+
+        <h2 id="pipeline-steps">Steps</h2>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Key</th><th>What it does</th></tr></thead>
+            <tbody>
+              <tr><td><code>id</code></td><td>Its name in the run (a string or a number).</td></tr>
+              <tr><td><code>block</code></td><td>The block it runs (or <code>run</code>, a function, in code).</td></tr>
+              <tr><td><code>config</code></td><td>An object the block reads (<code>ctx.config</code>), checked by the block's <code>validate</code>.</td></tr>
+              <tr><td><code>after</code></td><td>The steps it runs after: one (<code>parent</code> too) or a list. Its input is the run's input (none), the output of the step (one), or the outputs by step (a join).</td></tr>
+              <tr><td><code>when</code></td><td>An expression of <a href="../expression/index.html">@xufa/expression</a> over <code>input</code>, <code>outputs</code>, <code>run</code> and <code>config</code> (or a function, in code). False: the step is skipped; a step after only skipped steps is skipped too, and a join runs with the steps done.</td></tr>
+              <tr><td><code>result</code></td><td>Its output is part of the result of the run (merged when objects). Without any, the result is the output of the last step (the outputs by step when several end the run).</td></tr>
+              <tr><td><code>attempts</code>, <code>priority</code>, <code>queue</code></td><td>Of its job.</td></tr>
+              <tr><td><code>waitTimeout</code>, <code>onTimeout</code></td><td>How long it can be paused (<code>'24h'</code>), and then: <code>'fail'</code> (its run fails: the default), <code>'skip'</code> (its branch is skipped) or <code>{ output }</code> (it goes on with that output: an approval by default).</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p>
+          <code>pipelines.check(definition)</code> gives every error of a definition (blocks that are not there, steps
+          after steps that are not there, cycles, conditions that do not parse, ids twice, configs a block refuses), and
+          <code>define()</code> throws a <code>PipelineError</code> with all of them (<code>err.errors</code>). A run keeps
+          the definition it started with: changing a pipeline does not change the runs on their way.
+        </p>
+
+        <h2 id="pipeline-blocks">Blocks</h2>
+        <pre><code class="language-js">pipelines.block('extract', {
+  // Its jobs' options: attempts, backoff, timeout, queue, and a pool of nodes of @xufa/cluster.
+  pool: usePool('converters'),
+  timeout: '2m',
+  attempts: 3,
+  validate: (config) =&gt; (typeof config.format === 'string' ? undefined : 'config.format is the format to convert to'),
+  run: async (doc, { config, node, signal, outputs, run, step, attempt }) =&gt; convert(node.url, config.format, doc, { signal }),
+});</code></pre>
+        <p>
+          <code>run(input, ctx)</code> gives the step's output (kept as JSON). <code>ctx</code> has its
+          <code>config</code>, the <code>outputs</code> of the steps done, the <code>run</code> (<code>id</code>,
+          <code>pipeline</code>, <code>input</code>), the <code>job</code>, its <code>signal</code> (aborted at the
+          timeout), the <code>node</code> of its pool and its <code>attempt</code>. Two blocks are built in:
+        </p>
+        <ul>
+          <li><code>transform</code>: the values of expressions, <code>config.map</code> (<code>{ key: expression }</code>, an object) or <code>config.value</code> (one value).</li>
+          <li><code>wait</code>: the step is <code>paused</code> until <code>pipelines.resume(runId, stepId, output)</code>: an approval, the callback of another system. Any block can give <code>ctx.wait()</code> to do the same after starting something, and <code>ctx.wait({ timeout, onTimeout })</code> with a time limit of its own. The end of the wait is a job of the queue (its time in <code>pausedUntil</code> of the step): it holds when processes restart, and does nothing when the step was resumed.</li>
+          <li><code>pipeline</code>: the step runs another pipeline, <code>config.pipeline</code>, with its input (or <code>config.input</code>, an expression over <code>input</code>, <code>outputs</code>, <code>run</code> and <code>config</code>), and waits for it as a paused step: the result of that run is its output. A child run that fails, or is cancelled, fails the step and its run (the error says which run); the step's <code>waitTimeout</code> holds, and cancels the child when it ends the wait; cancelling a run cancels its children. A child run knows its <code>parent</code>, <code>parentStep</code> and <code>depth</code>, and the step its <code>child</code>; pipelines that start pipelines go <code>maxDepth</code> deep at most (10, an option of <code>Pipelines</code>), so a cycle stops.</li>
+        </ul>
+        <pre><code class="language-js">pipelines.define({
+  name: 'publish',
+  steps: [
+    { id: 'document', block: 'fetch' },
+    // Another pipeline for the text, waited for (an hour at most), with an input of its own.
+    { id: 'translated', block: 'pipeline', after: 'document', config: { pipeline: 'translate', input: '{ text: input.text, to: "es" }' }, waitTimeout: '1h' },
+    { id: 'site', block: 'upload', after: 'translated' },
+  ],
+});</code></pre>
+        <p>Code can define steps with functions instead of blocks (the run keeps the rest as data):</p>
+        <pre><code class="language-js">pipelines.define({
+  name: 'welcome',
+  steps: [
+    { id: 'user', run: ({ userId }) =&gt; User.objects.get({ pk: userId }).then((user) =&gt; user.toJSON()) },
+    { id: 'mail', after: 'user', when: (user) =&gt; user.newsletter, run: (user) =&gt; Email.objects.create(welcomeOf(user)) },
+  ],
+});</code></pre>
+
+        <h2 id="pipeline-runs">Runs</h2>
+        <ul>
+          <li><code>start(name, input, { key })</code> starts a run (a running run with the same <code>key</code> is given instead); <code>trigger(event, input)</code> starts one of every pipeline with that <code>trigger</code>.</li>
+          <li><code>get(runId)</code> gives the run and its steps by id; <code>pipelines.runs</code> is the queryset of the runs (<code>pipelines.runs.filter({ status: 'failed' })</code>).</li>
+          <li>A run is <code>running</code>, <code>done</code>, <code>failed</code> or <code>cancelled</code>; a step <code>waiting</code>, <code>queued</code>, <code>running</code>, <code>retrying</code>, <code>paused</code>, <code>done</code>, <code>skipped</code>, <code>failed</code> or <code>cancelled</code>.</li>
+          <li><code>concurrency: n</code> in a pipeline: at most <code>n</code> steps of each run queued or running at once, among every worker (a counter of the run, <code>inFlight</code>, taken and given back with updates only one process can make); paused steps do not count. Other runs have their own.</li>
+          <li>A step that fails is tried again after its backoff, up to its attempts; then the step and its run are <code>failed</code>, with the error. <code>retry(runId)</code> makes it go on from the steps that failed (those done are not run again); <code>cancel(runId)</code> stops it.</li>
+          <li>Events: <code>started</code>, <code>step</code> (run, step, status), <code>completed</code> and <code>failed</code> (run, error, step).</li>
+        </ul>
+        <p>
+          The steps of a run go to every worker of every machine with the database. Every change of a step or a run is
+          an update made from the status it expects, so two branches that end at once do not overwrite each other, and a
+          step whose job runs twice (taken back after its worker died) runs once. A process that stops between a step
+          and the next leaves its run to the jobs taken back, or to <code>pipelines.recover()</code>.
+        </p>
+      </article>
+    </div>
+
+    <footer class="footer">
+      <div class="container">
+        <span>xufa is MIT licensed. &copy; Jes&uacute;s Seijas</span>
+        <span>
+          <a href="../guide.html">Guide</a> &middot; <a href="../playground.html">Playground</a> &middot; <a href="../http/index.html">HTTP</a> &middot; <a href="../orm/index.html">ORM</a> &middot; <a href="../auth/index.html">Auth</a> &middot;
+          <a href="../sequelize/index.html">Sequelize</a> &middot; <a href="../packages.html">Packages</a> &middot;
+          <a href="../benchmarks.html">Benchmarks</a> &middot; <a href="https://github.com/xufajs/xufa">GitHub</a>
+        </span>
+      </div>
+    </footer>
+  </body>
+</html>

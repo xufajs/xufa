@@ -102,7 +102,72 @@ class MongoCompiler {
     return this.leaf(node);
   }
 
-  leaf({ fields, lookup, value, path: jsonPath }) {
+  // The date of a field as an expression: datetimes are Dates, dates texts YYYY-MM-DD (null when they are not).
+  dateOf(fields) {
+    const source = `$${path(fields)}`;
+    if (lastOf(fields).dbType === 'datetime') return source;
+    return { $dateFromString: { dateString: source, format: '%Y-%m-%d', onError: null, onNull: null } };
+  }
+
+  // A number of a date (Extract, and the conditions on parts of dates), in UTC.
+  partOf(fields, part) {
+    const date = this.dateOf(fields);
+    return {
+      year: { $year: date },
+      month: { $month: date },
+      day: { $dayOfMonth: date },
+      week_day: { $dayOfWeek: date },
+      iso_week_day: { $isoDayOfWeek: date },
+      week: { $isoWeek: date },
+      quarter: { $ceil: { $divide: [{ $month: date }, 3] } },
+      hour: { $hour: date },
+      minute: { $minute: date },
+      second: { $second: date },
+    }[part];
+  }
+
+  // The start of a unit of a date (Trunc), in UTC: a Date, or a text YYYY-MM-DD for dates ($dateTrunc: MongoDB 5.0).
+  truncOf(fields, unit) {
+    const start = { $dateTrunc: { date: this.dateOf(fields), unit, startOfWeek: 'monday' } };
+    if (lastOf(fields).dbType === 'datetime') return start;
+    return { $dateToString: { date: start, format: '%Y-%m-%d', onNull: null } };
+  }
+
+  // The expression of a value of values(): its path, or a number or a start of a date of it.
+  valueOf({ fields, jsonPath, part, trunc }) {
+    if (part) return this.partOf(fields, part);
+    if (trunc) return this.truncOf(fields, trunc);
+    return `$${path(fields)}${jsonPath ? `.${jsonPath.join('.')}` : ''}`;
+  }
+
+  // A condition on a part of a date: an expression of the value of the field (none for what is not a date).
+  partLeaf({ fields, part, lookup, value }) {
+    const field = lastOf(fields);
+    const source = `$${path(fields)}`;
+    const date = this.dateOf(fields);
+    const take = this.partOf(fields, part);
+    // Only dates (a missing value or one that is not a date compares as null, which is below every number).
+    const isDate = field.dbType === 'datetime' ? { $eq: [{ $type: source }, 'date'] } : { $ne: [date, null] };
+    let compare;
+    switch (lookup) {
+      case 'in':
+        compare = { $in: ['$$part', value] };
+        break;
+      case 'range':
+        compare = { $and: [{ $gte: ['$$part', value[0]] }, { $lte: ['$$part', value[1]] }] };
+        break;
+      default:
+        compare = { [COMPARISONS[lookup] || '$eq']: ['$$part', value] };
+    }
+    return {
+      $expr: {
+        $cond: [isDate, { $let: { vars: { part: take }, in: compare } }, false],
+      },
+    };
+  }
+
+  leaf({ fields, lookup, value, path: jsonPath, part }) {
+    if (part) return this.partLeaf({ fields, part, lookup, value });
     // A value inside json values is compared as it is.
     const field = jsonPath ? JSON_VALUE : lastOf(fields);
     // MongoDB reads dots as steps of a path and $ as operators: keys with them cannot be reached by a path.
@@ -218,15 +283,15 @@ class MongoCompiler {
     const pipeline = this.match(query);
     if (query.values) {
       const project = { _id: 0 };
-      query.values.forEach(({ fields, jsonPath }, i) => {
-        project[`v${i}`] = `$${path(fields)}${jsonPath ? `.${jsonPath.join('.')}` : ''}`;
+      query.values.forEach((item, i) => {
+        project[`v${i}`] = this.valueOf(item);
       });
       pipeline.push({ $project: project });
       const toRow = (doc) => {
         const row = {};
-        query.values.forEach(({ key, fields, jsonPath }, i) => {
+        query.values.forEach(({ key, fields, jsonPath, part }, i) => {
           const value = doc[`v${i}`];
-          row[key] = jsonPath ? (value === undefined ? null : value) : decode(lastOf(fields), value);
+          row[key] = jsonPath || part ? (value === undefined ? null : value) : decode(lastOf(fields), value);
         });
         return row;
       };
@@ -276,9 +341,9 @@ class MongoCompiler {
     const group = { _id: null };
     if (groupBy && groupBy.length) {
       group._id = {};
-      groupBy.forEach(({ fields }, i) => {
+      groupBy.forEach((item, i) => {
         // Missing fields are grouped with nulls.
-        group._id[`g${i}`] = { $ifNull: [`$${path(fields)}`, null] };
+        group._id[`g${i}`] = { $ifNull: [this.valueOf(item), null] };
       });
     }
     aggregates.forEach((item, i) => {

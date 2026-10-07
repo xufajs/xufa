@@ -16,17 +16,50 @@
 //   POST   /_faults/:target/up               no more down
 //   DELETE /_faults/:target                  the rules of the target removed
 //   DELETE /_faults                          every rule of every target removed
+//   GET    /_faults/scenarios                the scenarios defined (option scenarios) and those run
+//   POST   /_faults/scenarios/:name          a scenario defined started
+//   POST   /_faults/scenarios                a scenario of the body ({ name, steps, duration }) started
+//   DELETE /_faults/scenarios/:id            a scenario stopped (its rules removed)
+//   GET    /_faults/ui                       a page that does all of this (ui: false leaves it out)
 //
 // The options of a rule are those of the faults (operations, rate, after, times, ms, jitter, message, the filters of
 // the target, and those of respond), with `for`: how long it stays (a duration: 30000, '30s', '10m'), never more than
 // maxDuration. Filters are names, lists of them, or { regex: '...' }; functions (match, error) cannot be sent.
 const crypto = require('node:crypto');
+const { Scenario } = require('./scenario');
+const fs = require('node:fs');
+const nodePath = require('node:path');
 
 const KINDS = ['fail', 'delay', 'hang', 'down', 'respond', 'drop'];
 const COMMON = ['operations', 'rate', 'after', 'times', 'ms', 'jitter', 'message', 'for'];
 const RESPOND = ['status', 'headers', 'json', 'body'];
 const UNITS = { ms: 1, s: 1000, m: 60000, h: 3600000 };
 const ERROR = Symbol('faults plugin error');
+
+// The files of the page (lib/ui), read once. They hold no data: they are served without the protection of the routes,
+// and the page asks the routes (with the token it is given, or the cookies of the browser).
+let uiFiles = null;
+function uiFile(name) {
+  if (!uiFiles) {
+    const dir = nodePath.join(__dirname, 'ui');
+    uiFiles = {
+      html: fs.readFileSync(nodePath.join(dir, 'index.html'), 'utf8'),
+      js: fs.readFileSync(nodePath.join(dir, 'ui.js'), 'utf8'),
+      css: fs.readFileSync(nodePath.join(dir, 'ui.css'), 'utf8'),
+    };
+  }
+  return uiFiles[name];
+}
+const ENTITIES = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' };
+const escapeAttribute = (text) => String(text).replace(/[&<>"']/g, (c) => ENTITIES[c]);
+const UI_HEADERS = {
+  'content-security-policy':
+    "default-src 'none'; script-src 'self'; style-src 'self'; connect-src 'self'; img-src 'self' data:; " +
+    "base-uri 'none'; form-action 'none'; frame-ancestors 'none'",
+  'x-content-type-options': 'nosniff',
+  'referrer-policy': 'no-referrer',
+  'cache-control': 'no-store',
+};
 
 function durationOf(value, what) {
   if (typeof value === 'number' && Number.isFinite(value) && value > 0) return value;
@@ -88,7 +121,9 @@ async function faultsPlugin(app, options = {}) {
     authorize,
     auth,
     path = '/_faults',
+    ui = true,
     maxDuration = '1h',
+    scenarios = {},
     enabled = process.env.NODE_ENV !== 'production',
     allowProduction = false,
   } = options;
@@ -108,7 +143,11 @@ async function faultsPlugin(app, options = {}) {
     throw new TypeError('authorize of the faults plugin is a function of the request');
   }
   const longest = durationOf(maxDuration, 'maxDuration');
-  for (const [name, target] of Object.entries(targets)) faultsOf(target, name);
+  for (const [name, target] of Object.entries(targets)) {
+    if (name === 'scenarios' || name === 'ui')
+      throw new TypeError(`A target cannot be named ${name} (a route of its own)`);
+    faultsOf(target, name);
+  }
 
   // Rules by id (those made here, and those found when listing), and their timers.
   let next = 1;
@@ -155,6 +194,7 @@ async function faultsPlugin(app, options = {}) {
       hits: rule.hits,
       active: rule.active,
       expiresAt: entry.expiresAt,
+      scenario: ruleScenarios.get(rule),
     };
   };
   const rulesOf = (name) => {
@@ -181,7 +221,67 @@ async function faultsPlugin(app, options = {}) {
     return out;
   }
 
+  const base = path.replace(/\/$/, '');
+  // Scenarios: those defined (checked now), and those run (the last 20 kept, for their status).
+  let nextScenario = 1;
+  const runs = new Map(); // id -> Scenario
+  const ruleScenarios = new WeakMap(); // rule -> id of its scenario
+  function scenarioOf(spec, name) {
+    if (!spec || typeof spec !== 'object' || !Array.isArray(spec.steps)) {
+      throw fail(400, `The scenario ${name} is { steps: [{ at, target, kind, options, for }], duration }`);
+    }
+    const steps = spec.steps.map((step, index) => {
+      if (!step || typeof step !== 'object') throw fail(400, `Step ${index + 1} of the scenario ${name} is an object`);
+      if (typeof step.target !== 'string' || !Object.hasOwn(targets, step.target)) {
+        throw fail(
+          400,
+          `Step ${index + 1} of the scenario ${name}: no target ${step.target} (${Object.keys(targets).join(', ')})`
+        );
+      }
+      return { ...step, options: optionsOf(faultsOf(targets[step.target], step.target), step.kind, step.options) };
+    });
+    let made;
+    try {
+      made = new Scenario({ name, steps, duration: spec.duration, targets });
+    } catch (err) {
+      throw fail(400, err.message);
+    }
+    if (made.duration > longest) {
+      throw fail(400, `The scenario ${name} lasts ${made.duration} ms, more than maxDuration (${longest} ms)`);
+    }
+    return made;
+  }
+  const defined = new Map();
+  for (const [name, spec] of Object.entries(scenarios)) {
+    try {
+      scenarioOf(spec, name);
+    } catch (err) {
+      throw new TypeError(err.message);
+    }
+    defined.set(name, spec);
+  }
+  function startScenario(made, request) {
+    const id = `s${nextScenario}`;
+    nextScenario += 1;
+    made.onEvent = (event) => {
+      if (event.type === 'step') ruleScenarios.set(made.steps[event.step - 1].rule, id);
+      const level = event.type === 'error' ? 'error' : 'warn';
+      app.log[level]({ scenario: made.name, id, ...event }, `fault scenario: ${event.type}`);
+    };
+    runs.set(id, made);
+    for (const old of [...runs.keys()]) {
+      if (runs.size <= 20) break;
+      if (runs.get(old).state !== 'running') runs.delete(old);
+    }
+    made.start();
+    request.log.warn({ scenario: made.name, id }, 'fault scenario started');
+    return { id, ...made.status() };
+  }
+
+  const uiUrls = new Set(ui ? [`${base}/ui`, `${base}/ui.js`, `${base}/ui.css`] : []);
+
   app.addHook('onRequest', async (request, reply) => {
+    if (uiUrls.has(request.routeOptions.url)) return undefined;
     let allowed = true;
     if (token !== undefined) allowed = tokenMatches(request, token);
     if (allowed && authorize !== undefined) allowed = Boolean(await authorize(request));
@@ -195,12 +295,13 @@ async function faultsPlugin(app, options = {}) {
 
   app.setErrorHandler((err, request, reply) => {
     const status = err[ERROR] || (err instanceof TypeError ? 400 : err.statusCode || 500);
-    const error = { 400: 'Bad Request', 404: 'Not Found' }[status] || 'Internal Server Error';
+    const error = { 400: 'Bad Request', 404: 'Not Found', 409: 'Conflict' }[status] || 'Internal Server Error';
     reply.code(status).send({ statusCode: status, error, message: err.message });
   });
 
   app.addHook('onClose', async () => {
     // What was turned on here does not stay after the app.
+    for (const made of runs.values()) made.stop();
     for (const [id, entry] of [...byId]) {
       if (entry.expiresAt !== null) entry.rule.remove();
       forget(id);
@@ -209,7 +310,18 @@ async function faultsPlugin(app, options = {}) {
 
   const config = auth === undefined ? {} : { auth };
   const route = { schema: { hide: true }, config };
-  const base = path.replace(/\/$/, '');
+
+  if (ui) {
+    const page = { schema: { hide: true } };
+    const send = (reply, type, body) => reply.headers(UI_HEADERS).type(type).send(body);
+    app.get(`${base}/ui`, page, async (request, reply) =>
+      send(reply, 'text/html; charset=utf-8', uiFile('html').replace('{{base}}', escapeAttribute(base)))
+    );
+    app.get(`${base}/ui.js`, page, async (request, reply) =>
+      send(reply, 'text/javascript; charset=utf-8', uiFile('js'))
+    );
+    app.get(`${base}/ui.css`, page, async (request, reply) => send(reply, 'text/css; charset=utf-8', uiFile('css')));
+  }
 
   app.get(`${base}`, route, async () => {
     const out = {};
@@ -281,6 +393,48 @@ async function faultsPlugin(app, options = {}) {
   app.delete(`${base}/:target`, route, async (request, reply) => {
     targetOf(request.params.target).clear();
     request.log.warn({ target: request.params.target }, 'faults cleared');
+    reply.code(204).send();
+  });
+
+  app.get(`${base}/scenarios`, route, async () => ({
+    defined: Object.fromEntries(
+      [...defined].map(([name, spec]) => {
+        const made = scenarioOf(spec, name);
+        return [
+          name,
+          {
+            duration: made.duration,
+            steps: made.status().steps.map(({ at, for: lasts, target, kind }) => ({ at, for: lasts, target, kind })),
+          },
+        ];
+      })
+    ),
+    runs: [...runs].map(([id, made]) => ({ id, ...made.status() })),
+  }));
+
+  app.post(`${base}/scenarios/:name`, route, async (request, reply) => {
+    const { name } = request.params;
+    if (!defined.has(name))
+      throw fail(404, `No scenario ${name} (${[...defined.keys()].join(', ') || 'none defined'})`);
+    if ([...runs.values()].some((made) => made.name === name && made.state === 'running')) {
+      throw fail(409, `The scenario ${name} is running`);
+    }
+    reply.code(201);
+    return startScenario(scenarioOf(defined.get(name), name), request);
+  });
+
+  app.post(`${base}/scenarios`, route, async (request, reply) => {
+    const body = request.body || {};
+    const name = typeof body.name === 'string' && body.name ? body.name : 'scenario';
+    reply.code(201);
+    return startScenario(scenarioOf(body, name), request);
+  });
+
+  app.delete(`${base}/scenarios/:id`, route, async (request, reply) => {
+    const made = runs.get(request.params.id);
+    if (!made) throw fail(404, `No scenario ${request.params.id}`);
+    made.stop();
+    request.log.warn({ scenario: made.name, id: request.params.id }, 'fault scenario stopped');
     reply.code(204).send();
   });
 

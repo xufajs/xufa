@@ -123,6 +123,8 @@ function fakeS3({ accessKeyId = 'AKIDTEST', secretAccessKey = 'secret/key', regi
           const numbers = [...body.toString().matchAll(/<PartNumber>(\d+)<\/PartNumber>/g)].map((m) => Number(m[1]));
           const parts = numbers.map((n) => upload.parts.get(n));
           if (parts.some((part) => !part)) return fail(res, 400, 'InvalidPart');
+          // A conditional write (If-None-Match: *): refused when the object is there.
+          if (req.headers['if-none-match'] === '*' && objects.has(key)) return fail(res, 412, 'PreconditionFailed');
           const whole = Buffer.concat(parts.map((part) => part.body));
           objects.set(key, { body: whole, contentType: upload.contentType, meta: upload.meta, etag: `${crypto.createHash('md5').update(whole).digest('hex')}-${parts.length}`, updatedAt: new Date() });
           uploads.delete(q.get('uploadId'));
@@ -139,6 +141,7 @@ function fakeS3({ accessKeyId = 'AKIDTEST', secretAccessKey = 'secret/key', regi
           objects.set(key, { ...original, body: original.body, contentType: replace ? req.headers['content-type'] : original.contentType, meta: replace ? metaOf(req) : original.meta, updatedAt: new Date() });
           return res.end(xml('<CopyObjectResult/>'));
         }
+        if (req.headers['if-none-match'] === '*' && objects.has(key)) return fail(res, 412, 'PreconditionFailed');
         const etag = crypto.createHash('md5').update(body).digest('hex');
         objects.set(key, { body, contentType: req.headers['content-type'], meta: metaOf(req), etag, updatedAt: new Date() });
         res.writeHead(200, { etag: `"${etag}"` });

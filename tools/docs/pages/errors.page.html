@@ -18,7 +18,7 @@
 
         <h2 id="start">Quick start</h2>
         <pre><code class="language-sh">npm install @xufa/errors</code></pre>
-        <pre><code class="language-js">const createError = require('@xufa/errors');
+        <pre data-run><code class="language-js">const createError = require('@xufa/errors');
 
 const NotFound = createError('APP_NOT_FOUND', 'User %s not found', 404);
 
@@ -92,7 +92,7 @@ err.toString(); // 'XufaError [APP_INVALID]: Invalid body: "..."'</code></pre>
         </ul>
 
         <h2 id="typescript">TypeScript</h2>
-        <pre><code class="language-ts">import createError, { XufaError, XufaErrorConstructor } from '@xufa/errors';
+        <pre data-run><code class="language-ts">import createError, { XufaError, XufaErrorConstructor } from '@xufa/errors';
 
 const NotFound: XufaErrorConstructor&lt;{ code: 'APP_NOT_FOUND'; statusCode: 404 }, [string]&gt; =
   createError('APP_NOT_FOUND', 'User %s not found', 404);</code></pre>

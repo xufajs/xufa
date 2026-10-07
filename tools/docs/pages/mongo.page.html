@@ -278,7 +278,8 @@ new ObjectId('66f1c0ffee00000000000000').equals(id);</code></pre>
         </ul>
 
         <h2 id="typescript">TypeScript</h2>
-        <pre><code class="language-ts">import { MongoClient, Collection } from '@xufa/mongo';
+        <!--run-before: declare const client: import('@xufa/mongo').MongoClient; -->
+        <pre data-run><code class="language-ts">import { MongoClient, Collection } from '@xufa/mongo';
 
 interface User { _id?: unknown; name: string; born: Date }
 const users: Collection&lt;User&gt; = client.db().collection&lt;User&gt;('users');

@@ -1,7 +1,9 @@
 // SqliteBackend: SQLite with node:sqlite, built into Node.js (22.5 and later). Options: `filename` (':memory:' by
 // default) and the options of DatabaseSync. Foreign keys are enforced. In a database of a file, each transaction has a
-// connection of its own: the queries made outside it do not wait for it (they read what is committed, and writes that
-// meet its locks fail at once, as SQLITE_BUSY). In memory, transactions hold the only connection.
+// connection of its own: the queries made outside it do not wait for it (they read what is committed). A write outside
+// transactions that meets the locks of a transaction of this process waits for it to end and is made then; one that
+// meets those of another process, or one made in a transaction, fails at once (SQLITE_BUSY). In memory, transactions
+// hold the only connection.
 const { SqlBackend } = require('./sql/backend');
 const { sqlite } = require('./sql/dialects');
 const { BackendError } = require('../errors');
@@ -50,6 +52,9 @@ const MODES = new Set(['DEFERRED', 'IMMEDIATE', 'EXCLUSIVE']);
 // The statements that change rows (a retry after an error reading their results would change them again).
 const WRITES = /^\s*(INSERT|UPDATE|DELETE|REPLACE)\b/i;
 
+// SQLITE_BUSY: a lock of another connection.
+const isBusy = (err) => Boolean(err) && err.errcode === 5;
+
 // The bigints of a row as numbers when they are safe integers.
 function safeNumbers(row) {
   const keys = Object.keys(row);
@@ -68,19 +73,47 @@ class SqliteBackend extends SqlBackend {
     const { filename = ':memory:' } = options;
     this.separate = filename !== ':memory:' && filename !== '' && !String(filename).startsWith('file::memory:');
     this.migrating = false;
-    // The connections of the transactions running (closed with the database).
+    // The connections of the transactions running (closed with the database), and the promises of their ends.
     this.open = new Set();
+    this.ending = new Set();
+    this.turn = Promise.resolve();
   }
 
+  // Each call is one statement: one that met a lock wrote nothing, so it is made again once the transactions of this
+  // process that hold it end.
   async run(fn) {
-    if (this.separate && !this.migrating) return fn();
-    return super.run(fn);
+    if (!this.separate || this.migrating) return super.run(fn);
+    if (this.context.getStore()) return fn();
+    for (;;) {
+      try {
+        return await fn();
+      } catch (err) {
+        if (!isBusy(err) || this.ending.size === 0) throw err;
+        await Promise.allSettled([...this.ending]);
+      }
+    }
   }
 
   async transaction(fn, transactionOptions = {}) {
     if (!this.separate || this.migrating || this.context.getStore()) return super.transaction(fn, transactionOptions);
     const given = transactionOptions.mode;
     const mode = MODES.has(String(given).toUpperCase()) ? ` ${String(given).toUpperCase()}` : '';
+    // One at a time in this process (SQLite has one writer): a transaction waits for those before it, instead of
+    // failing at once on their locks.
+    const before = this.turn;
+    let done;
+    this.turn = new Promise((resolve) => {
+      done = resolve;
+    });
+    await before;
+    try {
+      return await this.transactionTurn(fn, mode);
+    } finally {
+      done();
+    }
+  }
+
+  async transactionTurn(fn, mode) {
     const { filename, ...options } = this.options;
     const Database = loadSqlite();
     const connection = new Database(filename, { ...options, timeout: 0 });
@@ -88,6 +121,11 @@ class SqliteBackend extends SqlBackend {
     registerFunctions(connection);
     this.open.add(connection);
     const store = { depth: 0, connection, statements: new Map() };
+    let ended;
+    const ending = new Promise((resolve) => {
+      ended = resolve;
+    });
+    this.ending.add(ending);
     try {
       return await this.context.run(store, async () => {
         connection.exec(`BEGIN${mode}`);
@@ -103,6 +141,8 @@ class SqliteBackend extends SqlBackend {
       });
     } finally {
       if (this.open.delete(connection)) connection.close();
+      this.ending.delete(ending);
+      ended();
     }
   }
 

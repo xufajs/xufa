@@ -1,0 +1,407 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>@xufa/faults: Reference · xufa</title>
+    <meta
+      name="description"
+      content="The reference of @xufa/faults: every function, class, interface and type it declares, made from its TypeScript declarations."
+    />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%23d9502b'/%3E%3Ctext x='16' y='22.5' font-family='monospace' font-size='18' font-weight='700' fill='white' text-anchor='middle'%3Ex%3C/text%3E%3C/svg%3E"
+    />
+    <link rel="stylesheet" href="../style.css?v=0.1.0" />
+    <script src="../main.js?v=0.1.0"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js" defer></script>
+  </head>
+  <body>
+    <header class="header">
+      <div class="header-inner">
+        <a class="logo" href="../index.html"><span class="logo-mark">x</span>xufa</a>
+        <nav class="nav">
+          <a href="../guide.html">Guide</a>
+          <a href="../playground.html">Playground</a>
+          <a href="../http/index.html">HTTP</a>
+          <a href="../orm/index.html">ORM</a>
+          <a class="hide-small" href="../auth/index.html">Auth</a>
+          <a class="hide-small" href="../sequelize/index.html">Sequelize</a>
+          <a class="hide-small" href="../packages.html" aria-current="page">Packages</a>
+          <a class="hide-small" href="../benchmarks.html">Benchmarks</a>
+          <a href="https://github.com/xufajs/xufa">GitHub</a>
+          <button class="theme-toggle" type="button" aria-label="Switch between light and dark theme">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+              <path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z" />
+            </svg>
+          </button>
+        </nav>
+      </div>
+    </header>
+
+    <div class="docs">
+      <button class="menu-toggle" type="button" aria-expanded="false">☰ Contents</button>
+      <aside class="sidebar">
+        <h4>Reference</h4>
+        <ul>
+          <li><a href="#functions">Functions (8)</a></li>
+          <li><a href="#classes">Classes (3)</a></li>
+          <li><a href="#constants">Constants (1)</a></li>
+          <li><a href="#interfaces">Interfaces (11)</a></li>
+          <li><a href="#types">Types (4)</a></li>
+        </ul>
+        <h4>Packages</h4>
+        <ul>
+          <li><a href="../websocket/index.html">@xufa/websocket</a></li>
+          <li><a href="../admin/index.html">@xufa/admin</a></li>
+          <li><a href="../session/index.html">@xufa/session</a></li>
+          <li><a href="../openapi/index.html">@xufa/openapi</a></li>
+          <li><a href="../client/index.html">@xufa/client</a></li>
+          <li><a href="../schema/index.html">@xufa/schema</a></li>
+          <li><a href="../pg/index.html">@xufa/pg</a></li>
+          <li><a href="../mongo/index.html">@xufa/mongo</a></li>
+          <li><a href="../expression/index.html">@xufa/expression</a></li>
+          <li><a href="../template/index.html">@xufa/template</a></li>
+          <li><a href="../cluster/index.html">@xufa/cluster</a></li>
+          <li><a href="../scheduler/index.html">@xufa/scheduler</a></li>
+          <li><a href="../queue/index.html">@xufa/queue</a></li>
+          <li><a href="../config/index.html">@xufa/config</a></li>
+          <li><a href="../discovery/index.html">@xufa/discovery</a></li>
+          <li><a href="../netcache/index.html">@xufa/netcache</a></li>
+          <li><a href="index.html" aria-current="page">@xufa/faults</a></li>
+          <li><a href="../marshal/index.html">@xufa/marshal</a></li>
+          <li><a href="../yaml/index.html">@xufa/yaml</a></li>
+          <li><a href="../jwt/index.html">@xufa/jwt</a></li>
+          <li><a href="../logger/index.html">@xufa/logger</a></li>
+          <li><a href="../router/index.html">@xufa/router</a></li>
+          <li><a href="../serializer/index.html">@xufa/serializer</a></li>
+          <li><a href="../inject/index.html">@xufa/inject</a></li>
+          <li><a href="../boot/index.html">@xufa/boot</a></li>
+          <li><a href="../errors/index.html">@xufa/errors</a></li>
+          <li><a href="../packages.html">All the packages</a></li>
+        </ul>
+      </aside>
+
+      <article class="content">
+        <nav class="package-tabs" aria-label="@xufa/faults">
+          <a href="index.html">Overview</a>
+          <a href="reference.html" aria-current="page">Reference</a>
+        </nav>
+        <h1>Reference</h1>
+        <p class="intro">
+          Faults made to happen (fail, delay, hang, down), to test what an app does when what it uses fails: the rules of the faults of the ORM, the HTTP client, the caches and the bus of xufa. No dependencies. Every declaration of its TypeScript declarations
+          (<code>packages/faults/index.d.ts</code>), as they are written, with their comments: made from them each time
+          the docs are built. How to use them is in <a href="index.html">the overview</a>.
+        </p>
+
+        <h2 id="functions">Functions</h2>
+        <p class="ref-index"><a href="#ref-scenario"><code>scenario</code></a>, <a href="#ref-isFault"><code>isFault</code></a>, <a href="#ref-sleep"><code>sleep</code></a>, <a href="#ref-wrap"><code>wrap</code></a>, <a href="#ref-cacheFaults"><code>cacheFaults</code></a>, <a href="#ref-activeFaults"><code>activeFaults</code></a>, <a href="#ref-clearFaults"><code>clearFaults</code></a>, <a href="#ref-useFaults"><code>useFaults</code></a></p>
+
+        <h3 id="ref-scenario"><code>scenario</code></h3>
+        <pre><code class="language-ts">export function scenario(options: ScenarioOptions): Scenario;</code></pre>
+
+        <h3 id="ref-isFault"><code>isFault</code></h3>
+        <pre><code class="language-ts">export function isFault(value: unknown): boolean;</code></pre>
+
+        <h3 id="ref-sleep"><code>sleep</code></h3>
+        <pre><code class="language-ts">export function sleep(ms: number, signal?: AbortSignal): Promise&lt;void&gt;;</code></pre>
+
+        <h3 id="ref-wrap"><code>wrap</code></h3>
+        <pre><code class="language-ts">export function wrap&lt;O extends object, Operation extends string&gt;(
+  faults: Faults&lt;Operation&gt;,
+  target: O,
+  methods: readonly string[],
+  contextOf: (method: string, args: unknown[]) =&gt; FaultContext
+): Faults&lt;Operation&gt;;</code></pre>
+        <p>Wraps methods of an object: each call goes through the faults.</p>
+
+        <h3 id="ref-cacheFaults"><code>cacheFaults</code></h3>
+        <pre><code class="language-ts">export function cacheFaults(cache: object, name?: string): CacheFaults;</code></pre>
+
+        <h3 id="ref-activeFaults"><code>activeFaults</code></h3>
+        <pre><code class="language-ts">export function activeFaults(): Faults[];</code></pre>
+        <p>The faults that have rules now (of the database, its caches, the clients, the bus...).</p>
+
+        <h3 id="ref-clearFaults"><code>clearFaults</code></h3>
+        <pre><code class="language-ts">export function clearFaults(): number;</code></pre>
+        <p>Removes every rule of every faults, and lets go what they hold; gives the number of rules removed.</p>
+
+        <h3 id="ref-useFaults"><code>useFaults</code></h3>
+        <pre><code class="language-ts">export function useFaults(hooks?: TestHooks, options?: UseFaultsOptions): void;
+
+export function useFaults(options: UseFaultsOptions): void;</code></pre>
+        <p>clearFaults() after each test: the afterEach of the runner (a global), or of the hooks given (node:test).</p>
+
+        <h2 id="classes">Classes</h2>
+        <p class="ref-index"><a href="#ref-Faults"><code>Faults</code></a>, <a href="#ref-Scenario"><code>Scenario</code></a>, <a href="#ref-FaultError"><code>FaultError</code></a></p>
+
+        <h3 id="ref-Faults"><code>Faults</code></h3>
+        <pre><code class="language-ts">export declare class Faults&lt;Operation extends string = string&gt; { ... }</code></pre>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>new (config?: FaultsConfig&lt;Operation&gt;)</code></td><td></td><td></td></tr>
+                <tr><td><code>readonly name</code></td><td><code>string</code></td><td><p>Its name in messages ('faults' when not given).</p></td></tr>
+                <tr><td><code>readonly rules</code></td><td><code><a href="#ref-FaultRule">FaultRule</a>[]</code></td><td></td></tr>
+                <tr><td><code>random</code></td><td><code>() =&gt; number</code></td><td><p>Math.random; a function of your own in tests.</p></td></tr>
+                <tr><td><code>fail(options?: FaultOptions&lt;Operation&gt;)</code></td><td><code><a href="#ref-FaultRule">FaultRule</a></code></td><td></td></tr>
+                <tr><td><code>delay(options: FaultOptions&lt;Operation&gt; &amp; { ms: number; jitter?: number })</code></td><td><code><a href="#ref-FaultRule">FaultRule</a></code></td><td></td></tr>
+                <tr><td><code>hang(options?: FaultOptions&lt;Operation&gt;)</code></td><td><code><a href="#ref-FaultRule">FaultRule</a></code></td><td></td></tr>
+                <tr><td><code>down(options?: FaultOptions&lt;Operation&gt;)</code></td><td><code><a href="#ref-FaultRule">FaultRule</a></code></td><td><p>Every operation fails, until up().</p></td></tr>
+                <tr><td><code>up()</code></td><td><code>this</code></td><td></td></tr>
+                <tr><td><code>clear()</code></td><td><code>this</code></td><td></td></tr>
+                <tr><td><code>add(kind: string, options?: FaultOptions&lt;Operation&gt;, extra?: { replace?: (context: FaultContext) =&gt; unknown })</code></td><td><code><a href="#ref-FaultRule">FaultRule</a></code></td><td><p>A rule of a kind of its own: replace(context) is what the operation gives instead.</p></td></tr>
+                <tr><td><code>pick(context: FaultContext)</code></td><td><code>Array&lt;{ rule: <a href="#ref-FaultRule">FaultRule</a>; kind: string; ms: number }&gt;</code></td><td><p>The rules that act on an operation, at once (their hits counted).</p></td></tr>
+                <tr><td><code>apply&lt;T&gt;(context: FaultContext, run: () =&gt; T | Promise&lt;T&gt;)</code></td><td><code>Promise&lt;T&gt;</code></td><td><p>An operation through the faults.</p></td></tr>
+                <tr><td><code>check(kind: string, options?: FaultOptions&lt;Operation&gt;)</code></td><td><code>this</code></td><td><p>Throws what a rule of these options would throw, without making it.</p></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-Scenario"><code>Scenario</code></h3>
+        <pre><code class="language-ts">export declare class Scenario { ... }</code></pre>
+        <p>Rules that come and go on a timeline (steps checked when it is made).</p>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>new (options: ScenarioOptions)</code></td><td></td><td></td></tr>
+                <tr><td><code>readonly name</code></td><td><code>string</code></td><td></td></tr>
+                <tr><td><code>readonly duration</code></td><td><code>number</code></td><td></td></tr>
+                <tr><td><code>readonly state</code></td><td><code><a href="#ref-ScenarioStatus">ScenarioStatus</a>['state']</code></td><td></td></tr>
+                <tr><td><code>start()</code></td><td><code>this</code></td><td></td></tr>
+                <tr><td><code>run()</code></td><td><code>Promise&lt;this&gt;</code></td><td><p>Starts it (when it has not started) and waits for its end.</p></td></tr>
+                <tr><td><code>stop()</code></td><td><code>this</code></td><td><p>Stops it: its rules removed, the steps not made skipped.</p></td></tr>
+                <tr><td><code>status()</code></td><td><code><a href="#ref-ScenarioStatus">ScenarioStatus</a></code></td><td></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-FaultError"><code>FaultError</code></h3>
+        <pre><code class="language-ts">export declare class FaultError extends Error { ... }</code></pre>
+        <p>The error of a fault injected; instanceof is true of every one (its code ends in FAULT).</p>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>new (message: string, context?: Partial&lt;FaultContext&gt;)</code></td><td></td><td></td></tr>
+                <tr><td><code>readonly code</code></td><td><code>string</code></td><td></td></tr>
+                <tr><td><code>readonly statusCode</code></td><td><code>number</code></td><td></td></tr>
+                <tr><td><code>readonly operation</code></td><td><code>string | undefined</code></td><td></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h2 id="constants">Constants</h2>
+        <p class="ref-index"><a href="#ref-plugin"><code>plugin</code></a></p>
+
+        <h3 id="ref-plugin"><code>plugin</code></h3>
+        <pre><code class="language-ts">export declare const plugin: (app: any, options: FaultsPluginOptions) =&gt; Promise&lt;void&gt;;</code></pre>
+        <p>The plugin of</p>
+
+        <h2 id="interfaces">Interfaces</h2>
+        <p class="ref-index"><a href="#ref-FaultContext"><code>FaultContext</code></a>, <a href="#ref-FaultOptions"><code>FaultOptions</code></a>, <a href="#ref-FaultRule"><code>FaultRule</code></a>, <a href="#ref-FaultsConfig"><code>FaultsConfig</code></a>, <a href="#ref-ScenarioStep"><code>ScenarioStep</code></a>, <a href="#ref-ScenarioEvent"><code>ScenarioEvent</code></a>, <a href="#ref-ScenarioOptions"><code>ScenarioOptions</code></a>, <a href="#ref-ScenarioStatus"><code>ScenarioStatus</code></a>, <a href="#ref-UseFaultsOptions"><code>UseFaultsOptions</code></a>, <a href="#ref-TestHooks"><code>TestHooks</code></a>, <a href="#ref-FaultsPluginOptions"><code>FaultsPluginOptions</code></a></p>
+
+        <h3 id="ref-FaultContext"><code>FaultContext</code></h3>
+        <pre><code class="language-ts">export interface FaultContext { ... }</code></pre>
+        <p>What an operation is: its name, and the fields its filters read.</p>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>operation</code></td><td><code>string</code></td><td></td></tr>
+                <tr><td><code>signal?</code></td><td><code>AbortSignal</code></td><td><p>Waits (delay, hang) end when it is aborted.</p></td></tr>
+                <tr><td><code>[field: string]</code></td><td><code>unknown</code></td><td></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-FaultOptions"><code>FaultOptions</code></h3>
+        <pre><code class="language-ts">export interface FaultOptions&lt;Operation extends string = string&gt; { ... }</code></pre>
+        <p>The options of a rule.</p>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>operations?</code></td><td><code>Operation | Operation[]</code></td><td><p>Operations (names or groups); the defaults of the faults when not given.</p></td></tr>
+                <tr><td><code>rate?</code></td><td><code>number</code></td><td><p>The chance of each match, 0 to 1 (faults.random() below it).</p></td></tr>
+                <tr><td><code>after?</code></td><td><code>number</code></td><td><p>The first n matches are left alone.</p></td></tr>
+                <tr><td><code>times?</code></td><td><code>number</code></td><td><p>Removed after n hits.</p></td></tr>
+                <tr><td><code>match?</code></td><td><code>(context: <a href="#ref-FaultContext">FaultContext</a>) =&gt; boolean</code></td><td><p>A check of the context of the operation, besides the filters.</p></td></tr>
+                <tr><td><code>error?</code></td><td><code>Error | ((context: <a href="#ref-FaultContext">FaultContext</a>) =&gt; Error)</code></td><td><p>The error of a fail: an error, or a function of the context.</p></td></tr>
+                <tr><td><code>message?</code></td><td><code>string</code></td><td></td></tr>
+                <tr><td><code>[filter: string]</code></td><td><code>unknown</code></td><td><p>Filters of the faults (models, tenants, keys, paths, events...): names, prefixes or regular expressions.</p></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-FaultRule"><code>FaultRule</code></h3>
+        <pre><code class="language-ts">export interface FaultRule { ... }</code></pre>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>readonly kind</code></td><td><code>string</code></td><td></td></tr>
+                <tr><td><code>readonly hits</code></td><td><code>number</code></td><td><p>The operations it acted on.</p></td></tr>
+                <tr><td><code>readonly active</code></td><td><code>boolean</code></td><td></td></tr>
+                <tr><td><code>remove()</code></td><td><code>this</code></td><td></td></tr>
+                <tr><td><code>release()</code></td><td><code>this</code></td><td><p>What it holds (hang) goes on.</p></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-FaultsConfig"><code>FaultsConfig</code></h3>
+        <pre><code class="language-ts">export interface FaultsConfig&lt;Operation extends string = string&gt; { ... }</code></pre>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>name?</code></td><td><code>string</code></td><td><p>Its name in messages ('cache', 'database'...).</p></td></tr>
+                <tr><td><code>operations?</code></td><td><code>readonly Operation[]</code></td><td></td></tr>
+                <tr><td><code>groups?</code></td><td><code>Record&lt;string, readonly Operation[]&gt;</code></td><td></td></tr>
+                <tr><td><code>defaults?</code></td><td><code>readonly Operation[]</code></td><td></td></tr>
+                <tr><td><code>filters?</code></td><td><code>Record&lt;string, string | { field: string; prefixes?: boolean }&gt;</code></td><td><p>Options of rules to fields of the context: 'model', or { field: 'path', prefixes: true }.</p></td></tr>
+                <tr><td><code>error?</code></td><td><code>(rule: <a href="#ref-FaultRule">FaultRule</a>, context: <a href="#ref-FaultContext">FaultContext</a>) =&gt; Error</code></td><td></td></tr>
+                <tr><td><code>downMessage?</code></td><td><code>string</code></td><td></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-ScenarioStep"><code>ScenarioStep</code></h3>
+        <pre><code class="language-ts">export interface ScenarioStep { ... }</code></pre>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>at?</code></td><td><code><a href="#ref-Duration">Duration</a></code></td><td><p>When it starts, from the start of the scenario (0).</p></td></tr>
+                <tr><td><code>target</code></td><td><code><a href="#ref-ScenarioTarget">ScenarioTarget</a> | string</code></td><td><p>Faults (or what has them), or the name of one of <code>targets</code>.</p></td></tr>
+                <tr><td><code>kind</code></td><td><code>'fail' | 'delay' | 'hang' | 'down' | 'respond' | 'drop'</code></td><td></td></tr>
+                <tr><td><code>options?</code></td><td><code><a href="#ref-FaultOptions">FaultOptions</a> &amp; Record&lt;string, unknown&gt;</code></td><td></td></tr>
+                <tr><td><code>for?</code></td><td><code><a href="#ref-Duration">Duration</a></code></td><td><p>How long its rule stays; until the end of the scenario without it.</p></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-ScenarioEvent"><code>ScenarioEvent</code></h3>
+        <pre><code class="language-ts">export interface ScenarioEvent { ... }</code></pre>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>type</code></td><td><code>'start' | 'step' | 'end' | 'error' | 'done' | 'stopped'</code></td><td></td></tr>
+                <tr><td><code>at</code></td><td><code>number</code></td><td><p>Milliseconds from the start.</p></td></tr>
+                <tr><td><code>step?</code></td><td><code>number</code></td><td></td></tr>
+                <tr><td><code>target?</code></td><td><code>string</code></td><td></td></tr>
+                <tr><td><code>kind?</code></td><td><code>string</code></td><td></td></tr>
+                <tr><td><code>message?</code></td><td><code>string</code></td><td></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-ScenarioOptions"><code>ScenarioOptions</code></h3>
+        <pre><code class="language-ts">export interface ScenarioOptions { ... }</code></pre>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>name?</code></td><td><code>string</code></td><td></td></tr>
+                <tr><td><code>steps</code></td><td><code><a href="#ref-ScenarioStep">ScenarioStep</a>[]</code></td><td></td></tr>
+                <tr><td><code>duration?</code></td><td><code><a href="#ref-Duration">Duration</a></code></td><td><p>How long it lasts: until its last step ends when not given.</p></td></tr>
+                <tr><td><code>targets?</code></td><td><code>Record&lt;string, <a href="#ref-ScenarioTarget">ScenarioTarget</a>&gt;</code></td><td></td></tr>
+                <tr><td><code>onEvent?</code></td><td><code>(event: <a href="#ref-ScenarioEvent">ScenarioEvent</a>, <a href="#ref-scenario">scenario</a>: <a href="#ref-Scenario">Scenario</a>) =&gt; void</code></td><td></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-ScenarioStatus"><code>ScenarioStatus</code></h3>
+        <pre><code class="language-ts">export interface ScenarioStatus { ... }</code></pre>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>name</code></td><td><code>string</code></td><td></td></tr>
+                <tr><td><code>state</code></td><td><code>'ready' | 'running' | 'done' | 'stopped'</code></td><td></td></tr>
+                <tr><td><code>duration</code></td><td><code>number</code></td><td></td></tr>
+                <tr><td><code>elapsed</code></td><td><code>number</code></td><td></td></tr>
+                <tr><td><code>startedAt</code></td><td><code>string | null</code></td><td></td></tr>
+                <tr><td><code>steps</code></td><td><code>Array&lt;{ at: number; for: number | null; target: string; kind: string; state: 'waiting' | 'active' | 'done' | 'skipped' | 'failed'; hits: number; }&gt;</code></td><td></td></tr>
+                <tr><td><code>events</code></td><td><code><a href="#ref-ScenarioEvent">ScenarioEvent</a>[]</code></td><td></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-UseFaultsOptions"><code>UseFaultsOptions</code></h3>
+        <pre><code class="language-ts">export interface UseFaultsOptions { ... }</code></pre>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>strict?</code></td><td><code>boolean</code></td><td><p>A test that ends with faults still set fails (they are cleared all the same).</p></td></tr>
+                <tr><td><code>hooks?</code></td><td><code><a href="#ref-TestHooks">TestHooks</a></code></td><td><p>The hooks of the runner (require('node:test')); the globals by default.</p></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-TestHooks"><code>TestHooks</code></h3>
+        <pre><code class="language-ts">export interface TestHooks { ... }</code></pre>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>afterEach(fn: () =&gt; void)</code></td><td><code>unknown</code></td><td></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-FaultsPluginOptions"><code>FaultsPluginOptions</code></h3>
+        <pre><code class="language-ts">export interface FaultsPluginOptions { ... }</code></pre>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>targets</code></td><td><code>Record&lt;string, <a href="#ref-Faults">Faults</a>&lt;any&gt; | { readonly faults: <a href="#ref-Faults">Faults</a>&lt;any&gt; }&gt;</code></td><td><p>The faults the routes act on, by name: faults, or what has them (db, db.cache, a client, the bus...).</p></td></tr>
+                <tr><td><code>token?</code></td><td><code>string</code></td><td><p>Authorization: Bearer &lt;token&gt; (or x-faults-token); 16 characters or more.</p></td></tr>
+                <tr><td><code>authorize?</code></td><td><code>(request: any) =&gt; boolean | Promise&lt;boolean&gt;</code></td><td><p>A check of your own of each request (true: allowed).</p></td></tr>
+                <tr><td><code>auth?</code></td><td><code>unknown</code></td><td><p>A rule of</p></td></tr>
+                <tr><td><code>path?</code></td><td><code>string</code></td><td><p>Where the routes are ('/_faults').</p></td></tr>
+                <tr><td><code>ui?</code></td><td><code>boolean</code></td><td><p>The page of the faults at &lt;path&gt;/ui (true); its files have no data, and it asks the protected routes.</p></td></tr>
+                <tr><td><code>maxDuration?</code></td><td><code>number | string</code></td><td><p>The longest a rule stays: a duration (30000, '10m', '1h'). '1h'.</p></td></tr>
+                <tr><td><code>enabled?</code></td><td><code>boolean</code></td><td><p>Off in production by default (NODE_ENV).</p></td></tr>
+                <tr><td><code>allowProduction?</code></td><td><code>boolean</code></td><td><p>Needed, with enabled: true, in production.</p></td></tr>
+                <tr><td><code>scenarios?</code></td><td><code>Record&lt;string, { steps: Array&lt;<a href="#ref-ScenarioStep">ScenarioStep</a> &amp; { target: string }&gt;; duration?: <a href="#ref-Duration">Duration</a> }&gt;</code></td><td><p>Scenarios started by name (POST &lt;path&gt;/scenarios/:name): their steps name targets. Checked when registered.</p></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h2 id="types">Types</h2>
+        <p class="ref-index"><a href="#ref-Duration"><code>Duration</code></a>, <a href="#ref-ScenarioTarget"><code>ScenarioTarget</code></a>, <a href="#ref-CacheOperation"><code>CacheOperation</code></a>, <a href="#ref-CacheFaults"><code>CacheFaults</code></a></p>
+
+        <h3 id="ref-Duration"><code>Duration</code></h3>
+        <pre><code class="language-ts">export type Duration = number | string;</code></pre>
+        <p>A duration: milliseconds, or text as '500ms', '30s', '2m', '1h'.</p>
+
+        <h3 id="ref-ScenarioTarget"><code>ScenarioTarget</code></h3>
+        <pre><code class="language-ts">export type ScenarioTarget = Faults&lt;any&gt; | { readonly faults: Faults&lt;any&gt; };</code></pre>
+
+        <h3 id="ref-CacheOperation"><code>CacheOperation</code></h3>
+        <pre><code class="language-ts">export type CacheOperation = 'get' | 'set' | 'delete' | 'clear' | 'read' | 'write';</code></pre>
+
+        <h3 id="ref-CacheFaults"><code>CacheFaults</code></h3>
+        <pre><code class="language-ts">export type CacheFaults = Faults&lt;CacheOperation&gt;;</code></pre>
+        <p>The faults of a cache: get, set, delete, clear (read, write); keys by prefix or regular expression.</p>
+      </article>
+    </div>
+
+    <footer class="footer">
+      <div class="container">
+        <span>xufa is MIT licensed. &copy; Jes&uacute;s Seijas</span>
+        <span>
+          <a href="../guide.html">Guide</a> &middot; <a href="../playground.html">Playground</a> &middot; <a href="../http/index.html">HTTP</a> &middot; <a href="../orm/index.html">ORM</a> &middot; <a href="../auth/index.html">Auth</a> &middot;
+          <a href="../sequelize/index.html">Sequelize</a> &middot; <a href="../packages.html">Packages</a> &middot;
+          <a href="../benchmarks.html">Benchmarks</a> &middot; <a href="https://github.com/xufajs/xufa">GitHub</a>
+        </span>
+      </div>
+    </footer>
+  </body>
+</html>

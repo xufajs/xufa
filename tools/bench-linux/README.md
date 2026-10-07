@@ -23,3 +23,16 @@ for the first run. Nothing is installed outside the home of that Linux: removing
 it.
 
 The machine is shared with Windows: close what uses it while the benchmark runs, and read the ⚠ of the reports.
+
+## Tests
+
+```sh
+pnpm test:linux              # the tests of every package, in Linux
+pnpm test:linux orm faults   # of those
+```
+
+The same copy (`~/xufa`, files deleted on Windows deleted there too), then the tests of each package with Node.js for
+Linux (`test.sh`): a line for each package and its failed tests, and a failure when one failed. What Linux does
+differently shows there (watching folders, file systems, sockets). The services of the tests on Windows (PostgreSQL,
+MongoDB) are not reachable from WSL, so their tests are skipped, as when they are not running; the tests in a browser
+are skipped too.

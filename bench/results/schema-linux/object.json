@@ -1,0 +1,810 @@
+{
+  "moltar strict · valid": {
+    "skipped": [
+      "djv: wrong result (false)"
+    ],
+    "rows": [
+      {
+        "name": "@xufa/schema (all errors)",
+        "ops": 29585291.87058111,
+        "spread": 0.9714703369707101
+      },
+      {
+        "name": "@xufa/schema (first error)",
+        "ops": 30765282.879846066,
+        "spread": 1.1231234462038717
+      },
+      {
+        "name": "@xufa/schema (boolean)",
+        "ops": 37032725.33172674,
+        "spread": 0.9079657630174798
+      },
+      {
+        "name": "ajv (first error)",
+        "ops": 28326477.86622225,
+        "spread": 2.991760859845479
+      },
+      {
+        "name": "ajv (all errors)",
+        "ops": 27802198.89379186,
+        "spread": 2.685461074214668
+      },
+      {
+        "name": "@exodus/schemasafe (boolean)",
+        "ops": 10230334.826919323,
+        "spread": 0.40638453265061086
+      },
+      {
+        "name": "@exodus/schemasafe (first error)",
+        "ops": 10000482.635342726,
+        "spread": 2.2659293937031357
+      },
+      {
+        "name": "@exodus/schemasafe (all errors)",
+        "ops": 6464319.486101448,
+        "spread": 1.8221035482418402
+      },
+      {
+        "name": "is-my-json-valid",
+        "ops": 21913559.65713561,
+        "spread": 2.2820937870738547
+      },
+      {
+        "name": "jsen",
+        "ops": 6434295.735714832,
+        "spread": 2.2714088367630296
+      },
+      {
+        "name": "z-schema",
+        "ops": 5671.675960138059,
+        "spread": 3.893635265649432
+      },
+      {
+        "name": "@cfworker/json-schema",
+        "ops": 217955.27458457477,
+        "spread": 5.60553916235007
+      },
+      {
+        "name": "json-schema-library",
+        "ops": 243243.32991154914,
+        "spread": 4.735892249554794
+      },
+      {
+        "name": "jsonschema",
+        "ops": 29771.66649577286,
+        "spread": 0.6716763265054274
+      },
+      {
+        "name": "tv4",
+        "ops": 330273.5833696106,
+        "spread": 4.913871262729321
+      }
+    ]
+  },
+  "moltar strict · invalid": {
+    "skipped": [],
+    "rows": [
+      {
+        "name": "@xufa/schema (all errors)",
+        "ops": 20087763.45150789,
+        "spread": 2.9401328635278268
+      },
+      {
+        "name": "@xufa/schema (first error)",
+        "ops": 76302023.67318787,
+        "spread": 1.1592286863327994
+      },
+      {
+        "name": "@xufa/schema (boolean)",
+        "ops": 110718371.87834397,
+        "spread": 0.747984064166301
+      },
+      {
+        "name": "ajv (first error)",
+        "ops": 33802946.46246435,
+        "spread": 5.059238813419619
+      },
+      {
+        "name": "ajv (all errors)",
+        "ops": 16473684.343154468,
+        "spread": 1.935664507803241
+      },
+      {
+        "name": "@exodus/schemasafe (boolean)",
+        "ops": 15230358.032436779,
+        "spread": 2.478170188104614
+      },
+      {
+        "name": "@exodus/schemasafe (first error)",
+        "ops": 12640961.428684933,
+        "spread": 12.891130087644822
+      },
+      {
+        "name": "@exodus/schemasafe (all errors)",
+        "ops": 4761759.609944938,
+        "spread": 3.1373407536332443
+      },
+      {
+        "name": "is-my-json-valid",
+        "ops": 15002267.971372537,
+        "spread": 3.135265980236641
+      },
+      {
+        "name": "djv",
+        "ops": 184005.7737649776,
+        "spread": 1.7225460805302324
+      },
+      {
+        "name": "jsen",
+        "ops": 7602744.07264694,
+        "spread": 1.0734862609114568
+      },
+      {
+        "name": "z-schema",
+        "ops": 5457.475007276691,
+        "spread": 2.831299623506443
+      },
+      {
+        "name": "@cfworker/json-schema",
+        "ops": 190284.65339884753,
+        "spread": 2.09233178646811
+      },
+      {
+        "name": "json-schema-library",
+        "ops": 135989.978082602,
+        "spread": 8.6864605701365
+      },
+      {
+        "name": "jsonschema",
+        "ops": 29565.17511387249,
+        "spread": 2.1117422325882638
+      },
+      {
+        "name": "tv4",
+        "ops": 37723.688497783536,
+        "spread": 1.5102155113153732
+      }
+    ]
+  },
+  "order (20 lines) · valid": {
+    "skipped": [
+      "djv: wrong result (false)"
+    ],
+    "rows": [
+      {
+        "name": "@xufa/schema (all errors)",
+        "ops": 2133706.337285863,
+        "spread": 2.129303077293398
+      },
+      {
+        "name": "@xufa/schema (first error)",
+        "ops": 2175980.929702819,
+        "spread": 2.379488005622486
+      },
+      {
+        "name": "@xufa/schema (boolean)",
+        "ops": 2404790.055110811,
+        "spread": 0.9274519762188749
+      },
+      {
+        "name": "ajv (first error)",
+        "ops": 737553.2143444412,
+        "spread": 1.8451253186674665
+      },
+      {
+        "name": "ajv (all errors)",
+        "ops": 696697.3367867065,
+        "spread": 2.102152145648372
+      },
+      {
+        "name": "@exodus/schemasafe (boolean)",
+        "ops": 527136.882055507,
+        "spread": 2.0452034573359303
+      },
+      {
+        "name": "@exodus/schemasafe (first error)",
+        "ops": 528178.8161285307,
+        "spread": 1.9822168436946093
+      },
+      {
+        "name": "@exodus/schemasafe (all errors)",
+        "ops": 343882.17177975393,
+        "spread": 0.22716732457324101
+      },
+      {
+        "name": "is-my-json-valid",
+        "ops": 1599439.7752913134,
+        "spread": 0.1552775388335898
+      },
+      {
+        "name": "jsen",
+        "ops": 161512.09798613744,
+        "spread": 7.526501696600069
+      },
+      {
+        "name": "z-schema",
+        "ops": 2075.942224451862,
+        "spread": 4.58796092922845
+      },
+      {
+        "name": "@cfworker/json-schema",
+        "ops": 9375.535207843597,
+        "spread": 3.144289628501745
+      },
+      {
+        "name": "json-schema-library",
+        "ops": 14211.156155758856,
+        "spread": 1.8432511927920265
+      },
+      {
+        "name": "jsonschema",
+        "ops": 3415.7687148850073,
+        "spread": 3.2812065574328413
+      },
+      {
+        "name": "tv4",
+        "ops": 2803.4883269343954,
+        "spread": 1.9438802694456756
+      }
+    ]
+  },
+  "order (20 lines) · invalid": {
+    "skipped": [],
+    "rows": [
+      {
+        "name": "@xufa/schema (all errors)",
+        "ops": 1833584.5575506715,
+        "spread": 1.1702182815766127
+      },
+      {
+        "name": "@xufa/schema (first error)",
+        "ops": 16008800.053567877,
+        "spread": 1.1160847158985905
+      },
+      {
+        "name": "@xufa/schema (boolean)",
+        "ops": 16401917.102040553,
+        "spread": 2.312601925026269
+      },
+      {
+        "name": "ajv (first error)",
+        "ops": 11576764.838449096,
+        "spread": 3.5617561741951236
+      },
+      {
+        "name": "ajv (all errors)",
+        "ops": 449790.6281386106,
+        "spread": 1.7410669442312436
+      },
+      {
+        "name": "@exodus/schemasafe (boolean)",
+        "ops": 7944666.963888852,
+        "spread": 0.7378824705786274
+      },
+      {
+        "name": "@exodus/schemasafe (first error)",
+        "ops": 7845731.556112556,
+        "spread": 3.9957840775345215
+      },
+      {
+        "name": "@exodus/schemasafe (all errors)",
+        "ops": 312871.3936035749,
+        "spread": 2.473967109299019
+      },
+      {
+        "name": "is-my-json-valid",
+        "ops": 1474663.126856827,
+        "spread": 2.549964221230262
+      },
+      {
+        "name": "djv",
+        "ops": 210242.28934194622,
+        "spread": 2.0931443123678166
+      },
+      {
+        "name": "jsen",
+        "ops": 4833459.15483933,
+        "spread": 3.806097785379175
+      },
+      {
+        "name": "z-schema",
+        "ops": 1959.869586357898,
+        "spread": 2.6433039441920068
+      },
+      {
+        "name": "@cfworker/json-schema",
+        "ops": 9082.334476081838,
+        "spread": 4.632456549007024
+      },
+      {
+        "name": "json-schema-library",
+        "ops": 13258.340665629134,
+        "spread": 4.994490321415316
+      },
+      {
+        "name": "jsonschema",
+        "ops": 3373.567565989398,
+        "spread": 3.3132549599798056
+      },
+      {
+        "name": "tv4",
+        "ops": 35227.11889517467,
+        "spread": 4.367339979353618
+      }
+    ]
+  },
+  "order 2020-12, unevaluatedProperties (20 lines) · valid": {
+    "skipped": [],
+    "rows": [
+      {
+        "name": "@xufa/schema (all errors)",
+        "ops": 2192103.0582513493,
+        "spread": 1.4205392593224635
+      },
+      {
+        "name": "@xufa/schema (first error)",
+        "ops": 2173653.811553297,
+        "spread": 3.4934808673019
+      },
+      {
+        "name": "@xufa/schema (boolean)",
+        "ops": 2332091.17532569,
+        "spread": 3.291116038054071
+      },
+      {
+        "name": "ajv (first error)",
+        "ops": 647254.9109637248,
+        "spread": 2.824423095734404
+      },
+      {
+        "name": "ajv (all errors)",
+        "ops": 622999.7821046164,
+        "spread": 2.7823703533998083
+      },
+      {
+        "name": "@exodus/schemasafe (boolean)",
+        "ops": 561692.8818375476,
+        "spread": 2.9658862316297454
+      },
+      {
+        "name": "@exodus/schemasafe (first error)",
+        "ops": 541529.6921896399,
+        "spread": 1.8388765838576904
+      },
+      {
+        "name": "@exodus/schemasafe (all errors)",
+        "ops": 307667.5957655754,
+        "spread": 1.8271137513394944
+      },
+      {
+        "name": "@cfworker/json-schema",
+        "ops": 8661.895549169674,
+        "spread": 5.039167102464693
+      },
+      {
+        "name": "json-schema-library",
+        "ops": 742.5710241452736,
+        "spread": 4.045931952883039
+      }
+    ]
+  },
+  "order 2020-12, unevaluatedProperties (20 lines) · invalid": {
+    "skipped": [],
+    "rows": [
+      {
+        "name": "@xufa/schema (all errors)",
+        "ops": 1491450.153515329,
+        "spread": 3.966572515034694
+      },
+      {
+        "name": "@xufa/schema (first error)",
+        "ops": 30906111.733018078,
+        "spread": 5.341385109067711
+      },
+      {
+        "name": "@xufa/schema (boolean)",
+        "ops": 36366899.826531045,
+        "spread": 3.4552255288203626
+      },
+      {
+        "name": "ajv (first error)",
+        "ops": 14319346.896515086,
+        "spread": 2.081546932260997
+      },
+      {
+        "name": "ajv (all errors)",
+        "ops": 386734.37777577766,
+        "spread": 2.640866086173062
+      },
+      {
+        "name": "@exodus/schemasafe (boolean)",
+        "ops": 11993766.58010857,
+        "spread": 2.6154287803406904
+      },
+      {
+        "name": "@exodus/schemasafe (first error)",
+        "ops": 11165200.454906905,
+        "spread": 2.441794752090563
+      },
+      {
+        "name": "@exodus/schemasafe (all errors)",
+        "ops": 274270.26332062355,
+        "spread": 1.4301109462496293
+      },
+      {
+        "name": "@cfworker/json-schema",
+        "ops": 8533.203421773702,
+        "spread": 2.6485421596690597
+      },
+      {
+        "name": "json-schema-library",
+        "ops": 481.8109595428306,
+        "spread": 3.0754224342103504
+      }
+    ]
+  },
+  "payment 2020-12, oneOf + unevaluatedProperties · valid": {
+    "skipped": [],
+    "rows": [
+      {
+        "name": "@xufa/schema (all errors)",
+        "ops": 13222996.201992871,
+        "spread": 2.712063481713057
+      },
+      {
+        "name": "@xufa/schema (first error)",
+        "ops": 13156681.961000754,
+        "spread": 0.6424203039132008
+      },
+      {
+        "name": "@xufa/schema (boolean)",
+        "ops": 13895264.170328645,
+        "spread": 0.9713502111487545
+      },
+      {
+        "name": "ajv (first error)",
+        "ops": 8120255.159762282,
+        "spread": 2.5114944769616554
+      },
+      {
+        "name": "ajv (all errors)",
+        "ops": 7302305.883642059,
+        "spread": 6.172413100910907
+      },
+      {
+        "name": "@exodus/schemasafe (boolean)",
+        "ops": 6702436.457435805,
+        "spread": 0.587563774305545
+      },
+      {
+        "name": "@exodus/schemasafe (first error)",
+        "ops": 6482417.343252962,
+        "spread": 1.0970864577962867
+      },
+      {
+        "name": "@exodus/schemasafe (all errors)",
+        "ops": 3892418.7912237714,
+        "spread": 1.6704765825468202
+      },
+      {
+        "name": "@cfworker/json-schema",
+        "ops": 113360.07793395109,
+        "spread": 1.1577296819822165
+      },
+      {
+        "name": "json-schema-library",
+        "ops": 143468.96367710683,
+        "spread": 2.869092408858547
+      }
+    ]
+  },
+  "payment 2020-12, oneOf + unevaluatedProperties · invalid": {
+    "skipped": [],
+    "rows": [
+      {
+        "name": "@xufa/schema (all errors)",
+        "ops": 12289748.646306468,
+        "spread": 0.4878359787037796
+      },
+      {
+        "name": "@xufa/schema (first error)",
+        "ops": 12589853.588334015,
+        "spread": 1.3623951612424714
+      },
+      {
+        "name": "@xufa/schema (boolean)",
+        "ops": 13610199.976035709,
+        "spread": 3.8701797930323494
+      },
+      {
+        "name": "ajv (first error)",
+        "ops": 6984306.411373701,
+        "spread": 5.479085129076234
+      },
+      {
+        "name": "ajv (all errors)",
+        "ops": 5879154.473189614,
+        "spread": 7.886119616922034
+      },
+      {
+        "name": "@exodus/schemasafe (boolean)",
+        "ops": 5786013.93426247,
+        "spread": 3.93706715376191
+      },
+      {
+        "name": "@exodus/schemasafe (first error)",
+        "ops": 4716267.754048214,
+        "spread": 3.8620305581176915
+      },
+      {
+        "name": "@exodus/schemasafe (all errors)",
+        "ops": 2838518.7549434127,
+        "spread": 5.482838369952465
+      },
+      {
+        "name": "@cfworker/json-schema",
+        "ops": 101519.98084599488,
+        "spread": 0.7223833440398104
+      },
+      {
+        "name": "json-schema-library",
+        "ops": 9525.050771542197,
+        "spread": 1.2071134540296309
+      }
+    ]
+  },
+  "shapes, discriminator (8 kinds) · valid": {
+    "skipped": [],
+    "rows": [
+      {
+        "name": "@xufa/schema (all errors)",
+        "ops": 101741560.79169138,
+        "spread": 2.160951846095964
+      },
+      {
+        "name": "@xufa/schema (first error)",
+        "ops": 114190694.32027166,
+        "spread": 0.8808778314555095
+      },
+      {
+        "name": "@xufa/schema (boolean)",
+        "ops": 119341113.25807934,
+        "spread": 3.4919279407501738
+      },
+      {
+        "name": "ajv (first error)",
+        "ops": 42951776.33363636,
+        "spread": 1.8038866569698995
+      },
+      {
+        "name": "ajv (all errors)",
+        "ops": 43905710.721567936,
+        "spread": 2.9292076317312756
+      },
+      {
+        "name": "@exodus/schemasafe (boolean)",
+        "ops": 34110033.60794352,
+        "spread": 1.8612969361067866
+      },
+      {
+        "name": "@exodus/schemasafe (first error)",
+        "ops": 32909179.865564957,
+        "spread": 8.249222738998924
+      },
+      {
+        "name": "@exodus/schemasafe (all errors)",
+        "ops": 19839830.277093116,
+        "spread": 0.8408751619793716
+      },
+      {
+        "name": "is-my-json-valid",
+        "ops": 82489197.3342043,
+        "spread": 3.956917694849084
+      },
+      {
+        "name": "djv",
+        "ops": 173924.01493029337,
+        "spread": 5.881363744530372
+      },
+      {
+        "name": "jsen",
+        "ops": 1701733.8007949472,
+        "spread": 2.377338129816606
+      },
+      {
+        "name": "z-schema",
+        "ops": 1633.9476270769903,
+        "spread": 2.649555848744634
+      },
+      {
+        "name": "@cfworker/json-schema",
+        "ops": 38257.071708053896,
+        "spread": 1.8161851694093956
+      },
+      {
+        "name": "json-schema-library",
+        "ops": 40346.49722193283,
+        "spread": 2.139553834711147
+      },
+      {
+        "name": "jsonschema",
+        "ops": 8228.477832975941,
+        "spread": 2.2120586613756568
+      },
+      {
+        "name": "tv4",
+        "ops": 6514.188998163591,
+        "spread": 4.513238959902572
+      }
+    ]
+  },
+  "shapes, discriminator (8 kinds) · invalid": {
+    "skipped": [],
+    "rows": [
+      {
+        "name": "@xufa/schema (all errors)",
+        "ops": 44993259.28986258,
+        "spread": 3.8330660268107897
+      },
+      {
+        "name": "@xufa/schema (first error)",
+        "ops": 129083190.1413267,
+        "spread": 2.0802023278199746
+      },
+      {
+        "name": "@xufa/schema (boolean)",
+        "ops": 171086568.09219494,
+        "spread": 3.7574923935229094
+      },
+      {
+        "name": "ajv (first error)",
+        "ops": 36785667.80600949,
+        "spread": 1.8361099386946678
+      },
+      {
+        "name": "ajv (all errors)",
+        "ops": 20957789.161012497,
+        "spread": 1.4276337018330147
+      },
+      {
+        "name": "@exodus/schemasafe (boolean)",
+        "ops": 48100790.91461295,
+        "spread": 1.240156420800412
+      },
+      {
+        "name": "@exodus/schemasafe (first error)",
+        "ops": 35838672.60724989,
+        "spread": 1.8504328560987966
+      },
+      {
+        "name": "@exodus/schemasafe (all errors)",
+        "ops": 15387366.720455067,
+        "spread": 1.8772309598637449
+      },
+      {
+        "name": "is-my-json-valid",
+        "ops": 38768525.01256384,
+        "spread": 2.0972253343340914
+      },
+      {
+        "name": "djv",
+        "ops": 240559.00835251922,
+        "spread": 7.175294041843576
+      },
+      {
+        "name": "jsen",
+        "ops": 1855076.5384590388,
+        "spread": 0.807380982687571
+      },
+      {
+        "name": "z-schema",
+        "ops": 1808.8305270502162,
+        "spread": 2.5242639157386635
+      },
+      {
+        "name": "@cfworker/json-schema",
+        "ops": 43541.32584397558,
+        "spread": 2.8722692872606697
+      },
+      {
+        "name": "json-schema-library",
+        "ops": 30073.012234883394,
+        "spread": 3.235254925471314
+      },
+      {
+        "name": "jsonschema",
+        "ops": 8578.916105423668,
+        "spread": 1.145362246923748
+      },
+      {
+        "name": "tv4",
+        "ops": 5421.835792916614,
+        "spread": 1.9855717004462872
+      }
+    ]
+  },
+  "compile order schema": {
+    "rows": [
+      {
+        "name": "@xufa/schema (all errors)",
+        "ops": 9961.967205204746,
+        "spread": 1.0884820012121958
+      },
+      {
+        "name": "@xufa/schema (first error)",
+        "ops": 10174.356268476093,
+        "spread": 2.334138563346173
+      },
+      {
+        "name": "@xufa/schema (boolean)",
+        "ops": 13313.971602205123,
+        "spread": 1.9686476525852339
+      },
+      {
+        "name": "ajv (first error)",
+        "ops": 209.79291278644803,
+        "spread": 1.5735941505117004
+      },
+      {
+        "name": "ajv (all errors)",
+        "ops": 254.94464136040003,
+        "spread": 2.3331997334192476
+      },
+      {
+        "name": "@exodus/schemasafe (boolean)",
+        "ops": 1154.7768913308244,
+        "spread": 0.6934871152075364
+      },
+      {
+        "name": "@exodus/schemasafe (first error)",
+        "ops": 934.0769974194052,
+        "spread": 4.702238730839575
+      },
+      {
+        "name": "@exodus/schemasafe (all errors)",
+        "ops": 767.4914317801408,
+        "spread": 3.7974633080338576
+      },
+      {
+        "name": "is-my-json-valid",
+        "ops": 4056.484355469394,
+        "spread": 1.5765268948074693
+      },
+      {
+        "name": "djv",
+        "ops": 4170.741614217382,
+        "spread": 0.9985340948130801
+      },
+      {
+        "name": "jsen",
+        "ops": 6254.872281764651,
+        "spread": 2.096062266609485
+      },
+      {
+        "name": "z-schema",
+        "ops": 1426.3013932981546,
+        "spread": 3.155259315133029
+      },
+      {
+        "name": "@cfworker/json-schema",
+        "ops": 42937.95927318004,
+        "spread": 1.3508867160594282
+      },
+      {
+        "name": "json-schema-library",
+        "ops": 9358.689853018685,
+        "spread": 2.8499565741492034
+      },
+      {
+        "name": "jsonschema",
+        "ops": 119749.23880896448,
+        "spread": 1.2333254898974453
+      },
+      {
+        "name": "tv4",
+        "ops": 115904.96960258098,
+        "spread": 1.4395606884793968
+      }
+    ]
+  }
+}

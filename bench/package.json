@@ -1,12 +1,25 @@
 {
   "name": "xufa-bench",
   "private": true,
-  "description": "Benchmarks of xufa against fastify and node:http",
+  "description": "Benchmarks of xufa: HTTP against fastify and node:http, its packages against the libraries they replace, and @xufa/schema against ajv and other JSON Schema validators",
   "scripts": {
     "start": "node run.js",
-    "quick": "node run.js --duration 3 --warmup 1 --rounds 1"
+    "quick": "node run.js --duration 3 --warmup 1 --rounds 1",
+    "schema": "node --no-deprecation schema/isolated.js",
+    "schema:suite": "node --no-deprecation schema/isolated.js suite",
+    "schema:object": "node --no-deprecation schema/isolated.js object",
+    "schema:features": "node --no-deprecation schema/features.js",
+    "schema:quick": "node --no-deprecation schema/suite-bench.js && node --no-deprecation schema/object-bench.js",
+    "schema:conformance": "node --no-deprecation schema/conformance.js",
+    "schema:legacy": "node --no-deprecation schema/legacy.js",
+    "schema:all": "node --no-deprecation schema/isolated.js && node --no-deprecation schema/features.js && node --no-deprecation schema/legacy.js && node schema/machine.js",
+    "schema:compile": "node --no-deprecation schema/compile.js",
+    "schema:validate": "node --no-deprecation schema/validate.js"
   },
   "devDependencies": {
+    "@aws-sdk/client-s3": "^3.1147.0",
+    "@cfworker/json-schema": "^4.1.1",
+    "@exodus/schemasafe": "^1.3.0",
     "@nyariv/sandboxjs": "^0.9.7",
     "@xufa/expression": "workspace:*",
     "@xufa/http": "workspace:*",
@@ -23,8 +36,13 @@
     "@xufa/serializer": "workspace:*",
     "@xufa/template": "workspace:*",
     "@xufa/websocket": "workspace:*",
+    "ajv": "^8.20.0",
+    "ajv-draft-04": "^1.0.0",
+    "ajv-formats": "^3.0.1",
+    "ajv-keywords": "^5.1.0",
     "autocannon": "^8.0.0",
     "bufferutil": "^4.1.0",
+    "djv": "^2.1.4",
     "ejs": "^7.0.1",
     "eta": "^4.6.0",
     "expr-eval": "^2.0.2",
@@ -33,7 +51,12 @@
     "filtrex": "^3.1.0",
     "find-my-way": "^9.9.0",
     "handlebars": "^4.7.9",
+    "is-my-json-valid": "^2.20.6",
     "jexl": "^2.3.0",
+    "jsen": "^0.6.6",
+    "json-schema-library": "^11.6.2",
+    "json-schema-test-suite": "github:json-schema-org/JSON-Schema-Test-Suite#5b0ee1613e45fcc2bddac00e07c19cd49b00d8a8",
+    "jsonschema": "^1.5.0",
     "jsonwebtoken": "^9.0.3",
     "mongodb": "^7.7.0",
     "mustache": "^4.2.0",
@@ -44,7 +67,10 @@
     "pino": "^10.1.0",
     "sequelize": "^6.37.8",
     "sqlite3": "^6.0.1",
+    "tinybench": "^6.2.0",
+    "tv4": "^1.3.0",
     "utf-8-validate": "^6.0.6",
-    "ws": "^8.22.0"
+    "ws": "^8.22.0",
+    "z-schema": "^12.4.6"
   }
 }

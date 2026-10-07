@@ -3,8 +3,8 @@
 //
 // - docs/schema.js: @xufa/schema, as the global `xufaSchema` (its playground and "Schema from JSON");
 // - docs/xufa.js: the packages that run in a browser, as the global `xufa` ({ schema, expression,
-//   template, yaml, marshal, router }), for the playground of the docs. (The serializer writes with Buffer, which
-//   browsers do not have.)
+//   template, yaml, marshal, router, serializer }), for the playground of the docs. (The serializer writes bytes with
+//   Buffer, which browsers do not have: the bundle has a small one of its own, over Uint8Array.)
 //
 // The modules are CommonJS: each one is wrapped in a function and required on first use; `@xufa/<name>` is the main
 // module of that package. The few modules of Node.js they require are small stand-ins (SHIMS): what they use of them
@@ -83,11 +83,12 @@ function modulesOf(name, modules) {
   return `${prefix}/${pkg.main.replace(/^\.\//, '')}`;
 }
 
-function bundle(names, exportsCode, header) {
+// shims: modules of Node.js of this bundle ({ id: source }, over SHIMS); prelude: code before the modules, in their scope.
+function bundle(names, exportsCode, header, { shims = {}, prelude = '' } = {}) {
   const modules = {};
   const mains = {};
   for (const name of names) mains[`@xufa/${name}`] = modulesOf(name, modules);
-  for (const [id, source] of Object.entries(SHIMS)) modules[id] = source;
+  for (const [id, source] of Object.entries({ ...SHIMS, ...shims })) modules[id] = source;
   const body = Object.keys(modules)
     .sort()
     .map((id) => `${JSON.stringify(id)}: function (module, exports, require) {\n${modules[id]}\n}`)
@@ -96,7 +97,46 @@ function bundle(names, exportsCode, header) {
 // Made by tools/docs/lib/browser-bundle.js (pnpm docs): do not edit.
 (function (root) {
   'use strict';
-  var modules = {
+  // Buffer, for the modules that write bytes (the writer of @xufa/serializer): what they use of it, over Uint8Array
+  // and TextEncoder, when the browser has none. In this scope only: nothing is added to the page.
+  var Buffer = root.Buffer || (function () {
+    var encoder = new TextEncoder();
+    var decoder = new TextDecoder();
+    class BrowserBuffer extends Uint8Array {
+      static allocUnsafe(size) { return new BrowserBuffer(size); }
+      static allocUnsafeSlow(size) { return new BrowserBuffer(size); }
+      static alloc(size) { return new BrowserBuffer(size); }
+      static isBuffer(value) { return value instanceof BrowserBuffer; }
+      static byteLength(text) { return typeof text === 'string' ? encoder.encode(text).length : text.byteLength; }
+      static concat(list) {
+        var out = new BrowserBuffer(list.reduce(function (sum, part) { return sum + part.length; }, 0));
+        list.reduce(function (offset, part) { out.set(part, offset); return offset + part.length; }, 0);
+        return out;
+      }
+      static from(value) {
+        var bytes = typeof value === 'string' ? encoder.encode(value) : new Uint8Array(value);
+        var out = new BrowserBuffer(bytes.length);
+        out.set(bytes);
+        return out;
+      }
+      utf8Write(text, offset, length) {
+        return encoder.encodeInto(text, this.subarray(offset, offset + length)).written;
+      }
+      utf8Slice(start, end) {
+        return decoder.decode(this.subarray(start, end));
+      }
+      copy(target, targetStart, sourceStart, sourceEnd) {
+        var part = this.subarray(sourceStart || 0, sourceEnd === undefined ? this.length : sourceEnd);
+        target.set(part, targetStart || 0);
+        return part.length;
+      }
+      toString(encoding, start, end) {
+        return decoder.decode(this.subarray(start || 0, end === undefined ? this.length : end));
+      }
+    }
+    return BrowserBuffer;
+  })();
+${prelude}  var modules = {
 ${body}
   };
   var mains = ${JSON.stringify(mains)};
@@ -145,7 +185,7 @@ function schemaBundle() {
 }
 
 // The packages of the playground, by the name it uses for each.
-const PLAYGROUND = ['schema', 'expression', 'template', 'yaml', 'marshal', 'router'];
+const PLAYGROUND = ['schema', 'expression', 'template', 'yaml', 'marshal', 'router', 'serializer'];
 
 function xufaBundle() {
   const exportsCode = `  root.xufa = {\n${PLAYGROUND.map((name) => `    ${name}: main('@xufa/${name}'),`).join('\n')}\n  };`;
@@ -156,4 +196,96 @@ function xufaBundle() {
   );
 }
 
-module.exports = { schemaBundle, xufaBundle, PLAYGROUND };
+// The packages of @xufa/http, for the HTTP tool of the playground (docs/xufa-http.js, loaded when it is opened), as
+// the global `xufaHttp` (@xufa/http, with schema). The modules of Node.js it uses are stand-ins (lib/browser/): events,
+// streams, the request and response of @xufa/inject, and no server (app.inject() calls the routes without one).
+const HTTP_PACKAGES = ['http', 'boot', 'errors', 'inject', 'logger', 'router', 'schema', 'serializer'];
+const BROWSER = path.join(__dirname, 'browser');
+const browserModule = (name) => fs.readFileSync(path.join(BROWSER, `${name}.js`), 'utf8').replace(/\r\n/g, '\n');
+
+const HTTP_SHIMS = {
+  'node:events': browserModule('events'),
+  'node:stream': browserModule('stream'),
+  'node:http': browserModule('http'),
+  'node:https': "module.exports = require('node:http');",
+  'node:util': browserModule('util'),
+  'node:async_hooks': browserModule('async_hooks'),
+  'node:diagnostics_channel': "module.exports = require('node:async_hooks');",
+  'node:os':
+    "module.exports = { EOL: '\\n', hostname: function () { return 'localhost'; }, networkInterfaces: function () { return {}; }, platform: function () { return 'browser'; } };",
+  'node:crypto': `
+var refuse = function () { throw new Error('node:crypto is not in the browser'); };
+module.exports = {
+  randomUUID: function () { return root.crypto.randomUUID(); },
+  randomBytes: function (size) { return Buffer.from(root.crypto.getRandomValues(new Uint8Array(size))); },
+  createHash: refuse, createHmac: refuse, timingSafeEqual: refuse,
+};`,
+};
+// The logger writes its lines to the descriptors 1 and 2: the console here.
+HTTP_SHIMS['node:fs'] = `
+var refuse = function () { throw new Error('node:fs is not in the browser'); };
+function write(fd, data) {
+  var text = typeof data === 'string' ? data : Buffer.from(data).toString();
+  (fd === 2 ? console.error : console.log)(text.replace(/\\n$/, ''));
+  return typeof data === 'string' ? Buffer.byteLength(data) : data.length;
+}
+module.exports = new Proxy({
+  writeSync: write,
+  write: function (fd, data, callback) { var written = write(fd, data); if (typeof callback === 'function') queueMicrotask(function () { callback(null, written); }); },
+  fsyncSync: function () {},
+}, { get: function (target, key) { return key in target ? target[key] : key === '__esModule' ? false : refuse; } });`;
+for (const name of ['node:dns', 'node:net', 'node:tls', 'node:http2', 'node:zlib', 'node:string_decoder']) {
+  HTTP_SHIMS[name] = `
+var refuse = function () { throw new Error('${name} is not in the browser'); };
+module.exports = new Proxy({}, { get: function (target, key) { return key === '__esModule' ? false : refuse; } });`;
+}
+
+// process, setImmediate and timers that can be unref()'d, in the scope of the modules (a browser has none of them).
+const HTTP_PRELUDE = `  var process = root.process || {
+    nextTick: function (fn) {
+      var args = Array.prototype.slice.call(arguments, 1);
+      queueMicrotask(function () { fn.apply(null, args); });
+    },
+    env: {}, argv: [], platform: 'browser', pid: 1, version: '', versions: {},
+    hrtime: Object.assign(function (previous) {
+      var now = performance.now();
+      var time = [Math.floor(now / 1000), Math.round((now % 1000) * 1e6)];
+      return previous ? [time[0] - previous[0], time[1] - previous[1]] : time;
+    }, { bigint: function () { return BigInt(Math.round(performance.now() * 1e6)); } }),
+    emitWarning: function (warning) { console.warn(String(warning && warning.message || warning)); },
+    on: function () { return process; }, once: function () { return process; },
+    off: function () { return process; }, removeListener: function () { return process; },
+    emit: function () { return false; }, listenerCount: function () { return 0; },
+    cwd: function () { return '/'; },
+    uptime: function () { return performance.now() / 1000; },
+    memoryUsage: function () { return { rss: 0, heapTotal: 0, heapUsed: 0, external: 0, arrayBuffers: 0 }; },
+    stdout: { write: function (text) { console.log(String(text).replace(/\\n$/, '')); return true; } },
+    stderr: { write: function (text) { console.error(String(text).replace(/\\n$/, '')); return true; } },
+  };
+  function timer(id) {
+    return { id: id, unref: function () { return this; }, ref: function () { return this; },
+      hasRef: function () { return true; }, refresh: function () { return this; },
+      [Symbol.toPrimitive]: function () { return id; } };
+  }
+  function clear(id) { return id && typeof id === 'object' ? id.id : id; }
+  var setTimeout = function () { return timer(root.setTimeout.apply(root, arguments)); };
+  var clearTimeout = function (id) { root.clearTimeout(clear(id)); };
+  var setInterval = function () { return timer(root.setInterval.apply(root, arguments)); };
+  var clearInterval = function (id) { root.clearInterval(clear(id)); };
+  var setImmediate = function (fn) {
+    var args = Array.prototype.slice.call(arguments, 1);
+    return setTimeout(function () { fn.apply(null, args); }, 0);
+  };
+  var clearImmediate = clearTimeout;
+`;
+
+function httpBundle() {
+  return bundle(
+    HTTP_PACKAGES,
+    "  root.xufaHttp = { http: main('@xufa/http'), schema: main('@xufa/schema') };",
+    `/*! xufa: @xufa/http ${versionOf('http')} in the browser | MIT license */`,
+    { shims: HTTP_SHIMS, prelude: HTTP_PRELUDE }
+  );
+}
+
+module.exports = { schemaBundle, xufaBundle, httpBundle, PLAYGROUND };

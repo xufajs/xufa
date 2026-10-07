@@ -122,6 +122,82 @@ declare namespace xufa {
   /** Wraps a plugin so that it is not encapsulated, with its metadata (what fastify-plugin does for fastify). */
   export const plugin: typeof pluginFunction;
   export type PluginMetadata = pluginFunction.PluginMetadata;
+  /**
+   * The page of the errors for development: browsers get the error, its stack with the source and the request (off
+   * when NODE_ENV is production, unless enabled; notFound: false leaves the 404 to the app).
+   */
+  export const devErrors: XufaPluginCallback<{ enabled?: boolean; context?: number; notFound?: boolean }>;
+  /** The result of a check of health. */
+  export interface HealthResult {
+    status: 'up' | 'degraded' | 'down';
+    error?: string;
+    details?: unknown;
+    duration: number;
+    since: string;
+    critical: boolean;
+  }
+  /** What GET /health gives (and app.health.check()). */
+  export interface HealthReport {
+    status: 'up' | 'degraded' | 'down';
+    closing?: boolean;
+    checks: Record<string, HealthResult>;
+    uptime: number;
+    checkedAt: string | null;
+  }
+  /**
+   * A check: a function (it gives nothing, true or details: up; false or a text: down; throws: down; or
+   * { status: 'degraded', ...details }), or { check, critical (true), timeout, heal: { after, run } }.
+   */
+  export type HealthCheck =
+    | (() => unknown)
+    | {
+        check: () => unknown;
+        critical?: boolean;
+        timeout?: number | string;
+        heal?: { after: number | string; run: (result: HealthResult) => unknown };
+      };
+  /**
+   * The routes of the health of the app: GET /health/live, /health/ready (503 when a critical check is down, or the
+   * app closes) and /health (the report). app.health: check(), report, status.
+   */
+  export const health: XufaPluginCallback<{
+    prefix?: string;
+    checks?: Record<string, HealthCheck>;
+    timeout?: number | string;
+    cache?: number | string;
+    interval?: number | string;
+    details?: boolean;
+    logLevel?: string;
+    onChange?: (
+      status: HealthReport['status'],
+      previous: HealthReport['status'] | null,
+      report: HealthReport
+    ) => unknown;
+  }>;
+  /** The state of the maintenance mode (what xufa down writes). */
+  export interface MaintenanceState {
+    message?: string;
+    retryAfter?: number;
+    secret?: string;
+    allow?: string[];
+    redirect?: string;
+    since?: string;
+  }
+  /** Where the maintenance mode is kept: a file, maintenance(db) of @xufa/orm, or yours. */
+  export interface MaintenanceStore {
+    get(): MaintenanceState | null | Promise<MaintenanceState | null>;
+  }
+  /**
+   * The maintenance mode: while xufa down has it on, requests get a 503 (the health routes, routes with
+   * config.maintenance: false, the addresses allowed and the secret path go through). app.maintenance.state().
+   */
+  export const maintenance: XufaPluginCallback<{
+    file?: string | false;
+    store?: MaintenanceStore | MaintenanceStore[];
+    refresh?: number;
+    except?: string[];
+    render?: (state: MaintenanceState, request: XufaRequest) => string;
+  }>;
   export { LogControllerClass as LogController };
 
   export type XufaHttp2SecureOptions<
@@ -241,6 +317,11 @@ declare namespace xufa {
      */
     fastHead?: boolean;
     ajv?: Parameters<BuildCompilerFromPool>[1];
+    /**
+     * Options of @xufa/schema for the validators of the routes (the same as ajv.validatorOptions), as
+     * { foldMessages: true }.
+     */
+    validation?: Record<string, unknown>;
     frameworkErrors?: <
       RequestGeneric extends RequestGenericInterface = RequestGenericInterface,
       TypeProvider extends XufaTypeProvider = XufaTypeProviderDefault,

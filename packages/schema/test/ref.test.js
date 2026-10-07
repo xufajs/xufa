@@ -1,4 +1,4 @@
-const { Integer, Ref, compileJsonSchema, fromJsonSchema, toErrors } = require('../src');
+const { Integer, Ref, compileJsonSchema, fromJsonSchema, toErrors } = require('..');
 
 // Errors of the interpreted type, of the compiled function and of the first-error function, for each value.
 function results(json, values) {

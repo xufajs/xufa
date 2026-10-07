@@ -63,6 +63,7 @@
           <li><a href="#cache">Caching objects</a></li>
           <li><a href="#cluster">Running in a cluster</a></li>
           <li><a href="#jobs">Jobs</a></li>
+          <li><a href="#command-line">The command line</a></li>
           <li><a href="#testing">Testing</a></li>
           <li><a href="#typescript">TypeScript</a></li>
           <li><a href="http/index.html">HTTP reference</a></li>
@@ -79,7 +80,7 @@
         </p>
 
         <h2 id="getting-started">Getting started</h2>
-        <p>xufa needs Node.js 22 or later, and nothing else.</p>
+        <p>xufa needs Node.js 22.22.3 or later (24.15 or later on the 24 line), and nothing else.</p>
         <pre><code class="language-sh">npm install xufa</code></pre>
         <p>
           <code>xufa</code> gives the HTTP framework (<a href="http/index.html"><code>@xufa/http</code></a>) and, as
@@ -121,7 +122,7 @@ if (require.main === module) build().listen({ port: 3000 });</code></pre>
           Plugins written for fastify (with <code>fastify-plugin</code>) load as they are. For your own, use
           <code>xufa.plugin()</code>, which is fastify-plugin:
         </p>
-        <pre><code class="language-js">const { plugin } = require('xufa');
+        <pre data-run><code class="language-js">const { plugin } = require('xufa');
 
 module.exports = plugin(
   async (app, options) =&gt; {
@@ -187,7 +188,7 @@ if (require.main === module) build().listen({ port: config.server.port, host: '0
           Models are classes with their fields. The same models run on every backend: <code>sqlite</code>,
           <code>postgres</code>, <code>mongodb</code>, and <code>memory</code> for tests.
         </p>
-        <pre><code class="language-js">// models.js
+        <pre data-run><code class="language-js">// models.js
 const { Model, fields } = require('xufa/orm');
 
 class Author extends Model {
@@ -269,7 +270,7 @@ module.exports = async function books(app) {
   });
 };</code></pre>
         <p>
-          These routes are what <a href="orm/index.html#resources"><code>orm.resource()</code></a> makes for a model, with
+          These routes are what <a href="orm/guide.html#resources"><code>orm.resource()</code></a> makes for a model, with
           filters, ordering, search and pages: <code>app.register(orm.resource(Book, { filters: ['author'], related:
           ['author'] }), { prefix: '/books' })</code>. Write them by hand when they do something else.
         </p>
@@ -451,7 +452,7 @@ await tenants.run('acme', () =&gt; Book.objects.count());</code></pre>
         </p>
         <p>
           A tenant taken from a header is only what the client says: check that the user may use it, before its database
-          is opened. With <a href="auth/index.html#tenants">the auth plugin</a>, a user may use the tenants of its claims
+          is opened. With <a href="auth/guide.html#tenants">the auth plugin</a>, a user may use the tenants of its claims
           (<code>'*'</code> is every tenant), so the login puts them in its tokens; a request of a tenant that is not the
           user's gets a 403, and one without a user a 401. Routes can ask for more:
         </p>
@@ -554,6 +555,46 @@ start({
   worker: async ({ onShutdown }) =&gt; { /* the app, as above */ },
 });</code></pre>
 
+        <h2 id="command-line">The command line</h2>
+        <p>
+          <code>xufa</code> is also a command, as Rails' <code>rails</code>, Laravel's <code>artisan</code> and Django's
+          <code>manage.py</code>: it makes an app with the layout every app of xufa shares, writes models and routes,
+          makes and applies migrations, and opens a REPL with the models.
+        </p>
+        <pre><code class="language-sh">npx xufa new shop                     # app.js, server.js, models/, routes/, jobs/, migrations/, test/
+cd shop &amp;&amp; npm install
+npx xufa generate model Author name:string email:email:unique
+npx xufa generate resource Book title:string pages:integer:null author:references
+npx xufa migrate                      # the migrations the generators made
+npm run dev                           # http://127.0.0.1:3000/books, restarted on changes</code></pre>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Command</th><th>What it does</th></tr></thead>
+            <tbody>
+              <tr><td><code>xufa new &lt;folder&gt;</code></td><td>A new app: <code>app.js</code> (<code>build()</code>, <code>database()</code>, <code>jobs()</code>), <code>server.js</code>, a model in each file of <code>models/</code>, a plugin in each file of <code>routes/</code> at the path of its name, jobs of the queue in <code>jobs/</code>, a test</td></tr>
+              <tr><td><code>xufa generate model &lt;Name&gt; field:type...</code></td><td>A model (<code>models/&lt;name&gt;.js</code>) and its migration. Types: string, text, integer, bigint, float, decimal, boolean, date, datetime, json, uuid, email, references; modifiers <code>:null</code>, <code>:unique</code>, <code>:index</code>; <code>createdAt</code> and <code>updatedAt</code> unless <code>--no-timestamps</code></td></tr>
+              <tr><td><code>xufa generate resource &lt;Name&gt; ...</code></td><td>The model, and its routes: <code>routes/&lt;names&gt;.js</code> with <code>orm.resource()</code> (list with filters, search, ordering and pages; get, create, update, delete)</td></tr>
+              <tr><td><code>xufa makemigrations</code>, <code>migrate</code>, <code>showmigrations</code></td><td>The migrations of the models, as Django's</td></tr>
+              <tr><td><code>xufa routes</code></td><td>The routes of the app</td></tr>
+              <tr><td><code>xufa seed [name...]</code></td><td>Runs the seeds of <code>seeds/</code> (functions of the database and its models, each in a transaction): data for development, made with <a href="orm/guide.html#factories">factories</a></td></tr>
+              <tr><td><code>xufa shell</code></td><td>A REPL with <code>app</code>, <code>db</code>, <code>queue</code> and the models (<code>await Book.objects.count()</code>)</td></tr>
+              <tr><td><code>xufa dev</code></td><td>The server, restarted when a file changes (<code>node --watch</code>)</td></tr>
+              <tr><td><code>xufa work</code></td><td>Workers of the queue (<code>--concurrency 4 --queues mail,reports</code>)</td></tr>
+              <tr><td><code>xufa down</code></td><td>The <a href="http/guide.html#maintenance">maintenance mode</a> on: a 503 for every request but <code>/health</code> (<code>--message</code>, <code>--retry 60</code>, <code>--allow ip,ip</code>, <code>--secret [path]</code>: a path that lets a browser through). This machine (<code>.xufa/down.json</code>), or every one with <code>--everywhere</code> (in the database)</td></tr>
+              <tr><td><code>xufa up</code></td><td>The maintenance mode off (<code>--everywhere</code>: in the database too)</td></tr>
+              <tr><td><code>xufa health</code></td><td>The checks of <a href="http/guide.html#health">GET /health</a>, run once: their status, time and errors (exit code 1 when the app is down)</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p>
+          The database is <code>DATABASE_URL</code> (<code>sqlite:data/app.db</code> by default;
+          <code>postgres://...</code>, <code>mongodb://...</code>, <code>memory:</code>): <code>Database.fromUrl()</code>
+          of the ORM. The app shows errors to browsers with <code>xufa.devErrors</code> unless <code>NODE_ENV</code> is
+          <code>production</code>, its jobs run in <a href="queue/index.html">@xufa/queue</a>, and it has the routes of its
+          health (its database and its queue) and the maintenance mode. For test data,
+          <a href="orm/guide.html#factories">factories</a>.
+        </p>
+
         <h2 id="testing">Testing</h2>
         <p>
           <code>app.inject()</code> sends fake requests without a socket. With the <code>memory</code> backend, or SQLite in
@@ -597,7 +638,7 @@ describe('books', () =&gt; {
         </p>
         <p>
           What the app does when its database fails is tested too: <code>db.faults</code> makes operations fail, wait or
-          hang (<a href="orm/index.html#faults">Faults</a>).
+          hang (<a href="orm/guide.html#faults">Faults</a>).
         </p>
         <pre><code class="language-js">it('answers 503 while the database is down', async () =&gt; {
   db.faults.down();
@@ -626,7 +667,7 @@ it('retries a write that failed once', async () =&gt; {
           <code>XufaRequest</code>, <code>XufaReply</code>, the type providers. The ORM types models from their fields:
           give the model an interface of the same name, and use <code>Model.query()</code> for typed QuerySets.
         </p>
-        <pre><code class="language-ts">import xufa, { type XufaInstance } from 'xufa';
+        <pre data-run><code class="language-ts">import xufa, { type XufaInstance } from 'xufa';
 import { Model, fields, type Fields } from 'xufa/orm';
 
 const bookFields = { title: fields.string(), pages: fields.integer({ null: true }) };
@@ -641,7 +682,8 @@ books[0].pages; // number | null</code></pre>
           The schemas of <code>xufa/schema</code> carry their types: <code>Infer&lt;typeof Review&gt;</code> is the type
           of a review, and with its type provider the requests and replies of routes are typed by their schemas.
         </p>
-        <pre><code class="language-ts">import { s, type Infer, type SchemaTypeProvider } from 'xufa/schema';
+        <!--run-before: import xufa from 'xufa'; const Review = s.object({ stars: s.integer({ minimum: 1, maximum: 5 }), text: s.optional(s.string({ maxLength: 2000 })), bookId: s.integer() }); -->
+        <pre data-run><code class="language-ts">import { s, type Infer, type SchemaTypeProvider } from 'xufa/schema';
 
 const app = xufa().withTypeProvider&lt;SchemaTypeProvider&gt;();
 app.post('/reviews', { schema: { body: Review } }, async (request) =&gt; {

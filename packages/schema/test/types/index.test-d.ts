@@ -1,7 +1,7 @@
 import { expectType, expectError, expectAssignable } from 'tsd';
 import xufa from '@xufa/http';
 import fastify from 'fastify';
-import { s, Infer, TSchema, TObject, SchemaTypeProvider } from '../..';
+import { s, Infer, TSchema, TObject, SchemaTypeProvider, compileJsonSchema, ErrorsFunction } from '../..';
 
 // Scalars, formats, literals and enums.
 expectType<string>({} as Infer<ReturnType<typeof s.string>>);
@@ -108,3 +108,7 @@ const typed = new Schema({ a: StringType(), b: Integer({ isMandatory: false }) }
 expectType<{ a: string; b?: number }>({} as InferAny<typeof typed>);
 const plain = { a: StringType() };
 expectType<{ a: string }>({} as InferAny<typeof plain>);
+
+// foldMessages: a compile option.
+expectType<ErrorsFunction>(compileJsonSchema({ type: 'string' }, { foldMessages: true }));
+expectError(compileJsonSchema({ type: 'string' }, { foldMessages: 'yes' }));

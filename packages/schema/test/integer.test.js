@@ -1,4 +1,4 @@
-const { Integer } = require('../src');
+const { Integer } = require('..');
 
 describe('Integer Type', () => {
   it('Should allow undefined if not mandatory', () => {

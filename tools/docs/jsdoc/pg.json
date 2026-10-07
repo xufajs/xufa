@@ -1,0 +1,20 @@
+{
+  "ClientConfig": "The options of a connection (or a connection string, postgres://user:password@host:port/database?sslmode=...): the server or servers, the credentials and TLS, timeouts, and how values are read.",
+  "PoolConfig": "The options of a pool: those of each connection, and max (connections, 10), idleTimeoutMillis and acquireTimeoutMillis.",
+  "FieldDef": "A column of a result: its name, the table and column it comes from, and its type.",
+  "QueryResult": "The result of a query: its rows (objects by column, or arrays with rowMode: 'array'), the command, the number of rows and the columns.",
+  "QueryConfig": "A query with its options: the text, its values ($1, $2...), arrays as rows, prepared or not, a signal or a timeout to cancel it, and a name for tracing.",
+  "Notification": "A notification of LISTEN/NOTIFY: its channel and payload, and the process that sent it.",
+  "CopyData": "The data of a COPY ... FROM STDIN: text or bytes in the format of the COPY, at once or in chunks.",
+  "Queryable": "What clients, pool clients and pools share: query(), and the COPY methods.",
+  "Client": "One connection to PostgreSQL, as pg's Client: connect(), query() (prepared statements, binary values), COPY, LISTEN/NOTIFY and end().",
+  "PoolClient": "A connection taken from a pool with connect(): release() gives it back.",
+  "Pool": "A pool of connections, as pg's Pool: query() takes one for each query; connect() takes one for several (a transaction).",
+  "PgError": "The class of the errors of @xufa/pg.",
+  "ConnectionError": "An error of the connection: it could not connect or log in, or it was lost.",
+  "DatabaseError": "An error the server answered, with its fields: code (the SQLSTATE: 23505 for a unique violation), detail, constraint, table, column...",
+  "escapeLiteral": "A string as a literal of SQL ('it''s'; E'...' with backslashes), as pg writes it.",
+  "parseConfig": "The options of a connection string (or of options with one), as the client reads them.",
+  "types": "How values are read and written: the parser of a type (by oid) and the text of a parameter.",
+  "copy": "COPY of rows: copyRows() loads rows (binary when it can), with the helpers it uses."
+}

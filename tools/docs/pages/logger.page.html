@@ -19,7 +19,7 @@
 
         <h2 id="start">Quick start</h2>
         <pre><code class="language-sh">npm install @xufa/logger</code></pre>
-        <pre><code class="language-js">const logger = require('@xufa/logger')({ level: 'debug', redact: ['req.headers.authorization'] });
+        <pre data-run><code class="language-js">const logger = require('@xufa/logger')({ level: 'debug', redact: ['req.headers.authorization'] });
 
 logger.info('hello %s', 'world');
 logger.child({ requestId: 'r1' }).warn({ user: 7 }, 'slow request');
@@ -151,7 +151,7 @@ pino({ redact: { paths: ['token'], remove: true } }); // the key is not written 
 });</code></pre>
 
         <h2 id="destination">Destinations</h2>
-        <pre><code class="language-js">const pino = require('@xufa/logger');
+        <pre data-run><code class="language-js">const pino = require('@xufa/logger');
 
 const logger = pino(pino.destination({ dest: './app.log', sync: false, minLength: 4096, mkdir: true }));
 process.on('SIGHUP', () =&gt; logger[pino.symbols.streamSym].reopen()); // log rotation
@@ -191,7 +191,7 @@ process.on('exit', () =&gt; logger.flush());</code></pre>
 
         <h2 id="typescript">TypeScript</h2>
         <p>pino's declarations, without transports and with <code>Destination</code>:</p>
-        <pre><code class="language-ts">import pino, { Logger, LoggerOptions } from '@xufa/logger';
+        <pre data-run><code class="language-ts">import pino, { Logger, LoggerOptions } from '@xufa/logger';
 
 const options: LoggerOptions = { level: 'info', redact: ['password'] };
 const logger: Logger = pino(options);</code></pre>

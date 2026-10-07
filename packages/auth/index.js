@@ -13,6 +13,8 @@ const { KeySet } = require('./lib/keys');
 const { signJwt, signJwtAsync, verifyJwt, verifyJwtAsync, decodeJwt } = require('./lib/jwt-keyset');
 const totp = require('./lib/totp');
 const { Lockout, MemoryStore } = require('./lib/lockout');
+const { normalizeIdentifier } = require('./lib/identifier');
+const { skeleton } = require('./lib/confusables');
 const { RefreshTokens, MemoryTokenStore, modelStore, refreshTokenFields } = require('./lib/refresh');
 const { parseCookies, serializeCookie } = require('./lib/cookies');
 const { KeyVault, MemoryKeyStore, vaultModelStore, vaultFields, VaultError } = require('./lib/vault');
@@ -31,6 +33,8 @@ const errors = require('./lib/errors');
 
 module.exports = {
   plugin: authPlugin,
+  normalizeIdentifier,
+  skeleton,
   rolesOf,
   tenantsOf,
   ALL_TENANTS,

@@ -7,9 +7,9 @@ const {
   fromJsonSchema,
   standaloneJsonSchema,
   toErrors,
-} = require('../src');
-const { FORMATS, FORMAT_FUNCTIONS, matchesFormat } = require('../src/formats');
-const { HELPER_SOURCES } = require('../src/standalone-helpers');
+} = require('..');
+const { FORMATS, FORMAT_FUNCTIONS, matchesFormat } = require('../lib/formats');
+const { HELPER_SOURCES } = require('../lib/standalone-helpers');
 
 // Every compiled mode and the uncompiled type give the same verdict and messages.
 function check(schema, value, options) {

@@ -1,0 +1,242 @@
+{
+  "custom keyword (validate)": {
+    "rows": [
+      {
+        "name": "@xufa/schema (all errors)",
+        "ops": 823700311.4047127,
+        "spread": 3.494479476523306
+      },
+      {
+        "name": "@xufa/schema (first error)",
+        "ops": 851345636.9716195,
+        "spread": 24.885426178369986
+      },
+      {
+        "name": "ajv (all errors)",
+        "ops": 110483736.25993009,
+        "spread": 2.6507724268415394
+      },
+      {
+        "name": "ajv (first error)",
+        "ops": 108972866.26227541,
+        "spread": 3.269049217261142
+      }
+    ]
+  },
+  "ajv-keywords (range, regexp, prohibited, uniqueItemProperties)": {
+    "rows": [
+      {
+        "name": "@xufa/schema (all errors)",
+        "ops": 26008276.904790793,
+        "spread": 3.810116080756495
+      },
+      {
+        "name": "@xufa/schema (first error)",
+        "ops": 27140376.354041204,
+        "spread": 0.3771178210813485
+      },
+      {
+        "name": "ajv (all errors)",
+        "ops": 21589332.94979878,
+        "spread": 1.8424217417404445
+      },
+      {
+        "name": "ajv (first error)",
+        "ops": 21833852.43724838,
+        "spread": 1.7555528885620486
+      }
+    ]
+  },
+  "useDefaults and removeAdditional (defaults filled, 2 keys removed)": {
+    "rows": [
+      {
+        "name": "@xufa/schema (all errors)",
+        "ops": 2538021.8057439234,
+        "spread": 6.426466947974796
+      },
+      {
+        "name": "@xufa/schema (first error)",
+        "ops": 2606910.8279395965,
+        "spread": 7.354006732490781
+      },
+      {
+        "name": "ajv (all errors)",
+        "ops": 2530549.097000734,
+        "spread": 1.170259463277011
+      },
+      {
+        "name": "ajv (first error)",
+        "ops": 2448805.8386317864,
+        "spread": 8.60489902792512
+      }
+    ]
+  },
+  "coerceTypes (query string values)": {
+    "rows": [
+      {
+        "name": "@xufa/schema (all errors)",
+        "ops": 17756009.07427847,
+        "spread": 10.705329043023319
+      },
+      {
+        "name": "@xufa/schema (first error)",
+        "ops": 17363127.20013705,
+        "spread": 4.821808974963756
+      },
+      {
+        "name": "ajv (all errors)",
+        "ops": 11319271.44123017,
+        "spread": 1.6955307641804362
+      },
+      {
+        "name": "ajv (first error)",
+        "ops": 11654169.237634651,
+        "spread": 1.8965748009342656
+      }
+    ]
+  },
+  "formats with formatMinimum and formatMaximum": {
+    "rows": [
+      {
+        "name": "@xufa/schema (all errors)",
+        "ops": 840647.0119849611,
+        "spread": 4.350796058716068
+      },
+      {
+        "name": "@xufa/schema (first error)",
+        "ops": 859842.4352644968,
+        "spread": 0.03770382523225929
+      },
+      {
+        "name": "ajv (all errors)",
+        "ops": 736305.3793438862,
+        "spread": 2.3834947714687273
+      },
+      {
+        "name": "ajv (first error)",
+        "ops": 735605.0442116382,
+        "spread": 1.4825137878868322
+      }
+    ]
+  },
+  "tagged oneOf without discriminator (8 kinds)": {
+    "rows": [
+      {
+        "name": "@xufa/schema (all errors)",
+        "ops": 105459015.97128409,
+        "spread": 4.82719929158058
+      },
+      {
+        "name": "@xufa/schema (first error)",
+        "ops": 116353477.95984307,
+        "spread": 1.7453588525439014
+      },
+      {
+        "name": "ajv (all errors)",
+        "ops": 5963693.701055647,
+        "spread": 35.81417507600436
+      },
+      {
+        "name": "ajv (first error)",
+        "ops": 5667548,
+        "spread": 3.9772241282251066
+      }
+    ]
+  },
+  "draft-04 (boolean exclusiveMaximum, id)": {
+    "rows": [
+      {
+        "name": "@xufa/schema (all errors)",
+        "ops": 179418474.78062016,
+        "spread": 3.3065251980352244
+      },
+      {
+        "name": "@xufa/schema (first error)",
+        "ops": 181337459.1849048,
+        "spread": 1.3610473277907735
+      },
+      {
+        "name": "ajv (all errors)",
+        "ops": 82856418.01311877,
+        "spread": 2.3184479704276497
+      },
+      {
+        "name": "ajv (first error)",
+        "ops": 82404395.38705833,
+        "spread": 1.7222701503356224
+      }
+    ]
+  },
+  "error objects (order with 20 lines, invalid)": {
+    "rows": [
+      {
+        "name": "@xufa/schema (all errors)",
+        "ops": 674629.73014354,
+        "spread": 0.9513862756002295
+      },
+      {
+        "name": "@xufa/schema (first error)",
+        "ops": 16194886.00042265,
+        "spread": 1.4852988268970682
+      },
+      {
+        "name": "ajv (all errors)",
+        "ops": 392995.68560984166,
+        "spread": 3.983205745156255
+      },
+      {
+        "name": "ajv (first error)",
+        "ops": 11561253.00171771,
+        "spread": 5.656962629773117
+      }
+    ]
+  },
+  "standalone code (order with 20 lines, valid)": {
+    "rows": [
+      {
+        "name": "@xufa/schema (all errors)",
+        "ops": 2149791.689303719,
+        "spread": 1.3759974234662564
+      },
+      {
+        "name": "@xufa/schema (first error)",
+        "ops": 2171005.9567093416,
+        "spread": 5.813898566177878
+      },
+      {
+        "name": "ajv (all errors)",
+        "ops": 663253.6381145433,
+        "spread": 13.245811154830106
+      },
+      {
+        "name": "ajv (first error)",
+        "ops": 710852.4313084284,
+        "spread": 5.06108655452761
+      }
+    ]
+  },
+  "unevaluatedProperties (payment 2020-12)": {
+    "rows": [
+      {
+        "name": "@xufa/schema (all errors)",
+        "ops": 13944383.95540829,
+        "spread": 5.46827232405415
+      },
+      {
+        "name": "@xufa/schema (first error)",
+        "ops": 14250095.411740001,
+        "spread": 1.6435752693027463
+      },
+      {
+        "name": "ajv (all errors)",
+        "ops": 7782357.975251348,
+        "spread": 2.1455973244903266
+      },
+      {
+        "name": "ajv (first error)",
+        "ops": 8713211.84099653,
+        "spread": 1.5120960290667524
+      }
+    ]
+  }
+}

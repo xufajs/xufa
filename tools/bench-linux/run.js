@@ -69,9 +69,14 @@ function main() {
   }
 }
 
-try {
-  main();
-} catch (err) {
-  console.error(`bench-linux: ${err.message}`);
-  process.exitCode = 1;
+if (require.main === module) {
+  try {
+    main();
+  } catch (err) {
+    console.error(`bench-linux: ${err.message}`);
+    process.exitCode = 1;
+  }
 }
+
+// For test.js: the same copy of the repository, to run the tests there.
+module.exports = { ROOT, linuxPath, quote, wsl };

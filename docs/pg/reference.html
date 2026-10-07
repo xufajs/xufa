@@ -1,0 +1,422 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>@xufa/pg: Reference · xufa</title>
+    <meta
+      name="description"
+      content="The reference of @xufa/pg: every function, class, interface and type it declares, made from its TypeScript declarations."
+    />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%23d9502b'/%3E%3Ctext x='16' y='22.5' font-family='monospace' font-size='18' font-weight='700' fill='white' text-anchor='middle'%3Ex%3C/text%3E%3C/svg%3E"
+    />
+    <link rel="stylesheet" href="../style.css?v=0.1.0" />
+    <script src="../main.js?v=0.1.0"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js" defer></script>
+  </head>
+  <body>
+    <header class="header">
+      <div class="header-inner">
+        <a class="logo" href="../index.html"><span class="logo-mark">x</span>xufa</a>
+        <nav class="nav">
+          <a href="../guide.html">Guide</a>
+          <a href="../playground.html">Playground</a>
+          <a href="../http/index.html">HTTP</a>
+          <a href="../orm/index.html">ORM</a>
+          <a class="hide-small" href="../auth/index.html">Auth</a>
+          <a class="hide-small" href="../sequelize/index.html">Sequelize</a>
+          <a class="hide-small" href="../packages.html" aria-current="page">Packages</a>
+          <a class="hide-small" href="../benchmarks.html">Benchmarks</a>
+          <a href="https://github.com/xufajs/xufa">GitHub</a>
+          <button class="theme-toggle" type="button" aria-label="Switch between light and dark theme">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+              <path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z" />
+            </svg>
+          </button>
+        </nav>
+      </div>
+    </header>
+
+    <div class="docs">
+      <button class="menu-toggle" type="button" aria-expanded="false">☰ Contents</button>
+      <aside class="sidebar">
+        <h4>Reference</h4>
+        <ul>
+          <li><a href="#functions">Functions (3)</a></li>
+          <li><a href="#classes">Classes (6)</a></li>
+          <li><a href="#constants">Constants (2)</a></li>
+          <li><a href="#interfaces">Interfaces (8)</a></li>
+          <li><a href="#types">Types (1)</a></li>
+        </ul>
+        <h4>Packages</h4>
+        <ul>
+          <li><a href="../websocket/index.html">@xufa/websocket</a></li>
+          <li><a href="../admin/index.html">@xufa/admin</a></li>
+          <li><a href="../session/index.html">@xufa/session</a></li>
+          <li><a href="../openapi/index.html">@xufa/openapi</a></li>
+          <li><a href="../client/index.html">@xufa/client</a></li>
+          <li><a href="../schema/index.html">@xufa/schema</a></li>
+          <li><a href="index.html" aria-current="page">@xufa/pg</a></li>
+          <li><a href="../mongo/index.html">@xufa/mongo</a></li>
+          <li><a href="../expression/index.html">@xufa/expression</a></li>
+          <li><a href="../template/index.html">@xufa/template</a></li>
+          <li><a href="../cluster/index.html">@xufa/cluster</a></li>
+          <li><a href="../scheduler/index.html">@xufa/scheduler</a></li>
+          <li><a href="../queue/index.html">@xufa/queue</a></li>
+          <li><a href="../config/index.html">@xufa/config</a></li>
+          <li><a href="../discovery/index.html">@xufa/discovery</a></li>
+          <li><a href="../netcache/index.html">@xufa/netcache</a></li>
+          <li><a href="../faults/index.html">@xufa/faults</a></li>
+          <li><a href="../marshal/index.html">@xufa/marshal</a></li>
+          <li><a href="../yaml/index.html">@xufa/yaml</a></li>
+          <li><a href="../jwt/index.html">@xufa/jwt</a></li>
+          <li><a href="../logger/index.html">@xufa/logger</a></li>
+          <li><a href="../router/index.html">@xufa/router</a></li>
+          <li><a href="../serializer/index.html">@xufa/serializer</a></li>
+          <li><a href="../inject/index.html">@xufa/inject</a></li>
+          <li><a href="../boot/index.html">@xufa/boot</a></li>
+          <li><a href="../errors/index.html">@xufa/errors</a></li>
+          <li><a href="../packages.html">All the packages</a></li>
+        </ul>
+      </aside>
+
+      <article class="content">
+        <nav class="package-tabs" aria-label="@xufa/pg">
+          <a href="index.html">Overview</a>
+          <a href="reference.html" aria-current="page">Reference</a>
+        </nav>
+        <h1>Reference</h1>
+        <p class="intro">
+          A PostgreSQL driver with the API of pg: pipelined, with prepared statements, and no dependencies. Every declaration of its TypeScript declarations
+          (<code>packages/pg/index.d.ts</code>), as they are written, with their comments: made from them each time
+          the docs are built. How to use them is in <a href="index.html">the overview</a>.
+        </p>
+
+        <h2 id="functions">Functions</h2>
+        <p class="ref-index"><a href="#ref-escapeIdentifier"><code>escapeIdentifier</code></a>, <a href="#ref-escapeLiteral"><code>escapeLiteral</code></a>, <a href="#ref-parseConfig"><code>parseConfig</code></a></p>
+
+        <h3 id="ref-escapeIdentifier"><code>escapeIdentifier</code></h3>
+        <pre><code class="language-ts">export declare function escapeIdentifier(value: string): string;</code></pre>
+        <p>"identifier" and 'literal' (E'...' with backslashes), as pg writes them; a null character is refused.</p>
+
+        <h3 id="ref-escapeLiteral"><code>escapeLiteral</code></h3>
+        <pre><code class="language-ts">export declare function escapeLiteral(value: string): string;</code></pre>
+        <p>A string as a literal of SQL ('it''s'; E'...' with backslashes), as pg writes it.</p>
+
+        <h3 id="ref-parseConfig"><code>parseConfig</code></h3>
+        <pre><code class="language-ts">export declare function parseConfig(config?: string | ClientConfig): ClientConfig;</code></pre>
+        <p>The options of a connection string (or of options with one), as the client reads them.</p>
+
+        <h2 id="classes">Classes</h2>
+        <p class="ref-index"><a href="#ref-Client"><code>Client</code></a>, <a href="#ref-PoolClient"><code>PoolClient</code></a>, <a href="#ref-Pool"><code>Pool</code></a>, <a href="#ref-PgError"><code>PgError</code></a>, <a href="#ref-ConnectionError"><code>ConnectionError</code></a>, <a href="#ref-DatabaseError"><code>DatabaseError</code></a></p>
+
+        <h3 id="ref-Client"><code>Client</code></h3>
+        <pre><code class="language-ts">export declare class Client extends EventEmitter implements Queryable { ... }</code></pre>
+        <p>One connection to PostgreSQL, as pg's Client: connect(), query() (prepared statements, binary values), COPY, LISTEN/NOTIFY and end().</p>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>new (config?: string | ClientConfig)</code></td><td></td><td></td></tr>
+                <tr><td><code>readonly processID</code></td><td><code>number | null</code></td><td></td></tr>
+                <tr><td><code>connect()</code></td><td><code>Promise&lt;this&gt;</code></td><td></td></tr>
+                <tr><td><code>end()</code></td><td><code>Promise&lt;void&gt;</code></td><td><p>Ends the connection after the queries already sent (new ones are refused).</p></td></tr>
+                <tr><td><code>[Symbol.asyncDispose]()</code></td><td><code>Promise&lt;void&gt;</code></td><td></td></tr>
+                <tr><td><code>escapeIdentifier(value: string)</code></td><td><code>string</code></td><td></td></tr>
+                <tr><td><code>escapeLiteral(value: string)</code></td><td><code>string</code></td><td></td></tr>
+                <tr><td><code>forgetStatements()</code></td><td><code>void</code></td><td><p>After changes of the schema: the statements prepared are prepared again.</p></td></tr>
+                <tr><td><code>query&lt;R = any&gt;(text: string, values?: unknown[])</code></td><td><code>Promise&lt;<a href="#ref-QueryResult">QueryResult</a>&lt;R&gt;&gt;</code></td><td></td></tr>
+                <tr><td><code>query(config: QueryConfig &amp; { describe: true })</code></td><td><code>Promise&lt;<a href="#ref-DescribeResult">DescribeResult</a>&gt;</code></td><td></td></tr>
+                <tr><td><code>query&lt;R = any&gt;(config: QueryConfig)</code></td><td><code>Promise&lt;<a href="#ref-QueryResult">QueryResult</a>&lt;R&gt;&gt;</code></td><td></td></tr>
+                <tr><td><code>copyFrom(text: string, data: CopyData)</code></td><td><code>Promise&lt;<a href="#ref-QueryResult">QueryResult</a>&lt;never&gt;&gt;</code></td><td></td></tr>
+                <tr><td><code>copyTo(text: string)</code></td><td><code>AsyncIterable&lt;Buffer&gt;</code></td><td></td></tr>
+                <tr><td><code>copyRows(table: string | string[], columns: string[], rows: Iterable&lt;unknown[] | Record&lt;string, unknown&gt;&gt;)</code></td><td><code>Promise&lt;number&gt;</code></td><td></td></tr>
+                <tr><td><code>on(event: 'notification', listener: (message: Notification) =&gt; void)</code></td><td><code>this</code></td><td></td></tr>
+                <tr><td><code>on(event: 'notice', listener: (notice: DatabaseError) =&gt; void)</code></td><td><code>this</code></td><td></td></tr>
+                <tr><td><code>on(event: 'error', listener: (err: Error) =&gt; void)</code></td><td><code>this</code></td><td></td></tr>
+                <tr><td><code>on(event: 'end', listener: () =&gt; void)</code></td><td><code>this</code></td><td></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-PoolClient"><code>PoolClient</code></h3>
+        <pre><code class="language-ts">export declare class PoolClient extends EventEmitter implements Queryable { ... }</code></pre>
+        <p>A connection taken from a pool with connect(): release() gives it back.</p>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>readonly processID</code></td><td><code>number | null</code></td><td></td></tr>
+                <tr><td><code>escapeIdentifier(value: string)</code></td><td><code>string</code></td><td></td></tr>
+                <tr><td><code>escapeLiteral(value: string)</code></td><td><code>string</code></td><td></td></tr>
+                <tr><td><code>query&lt;R = any&gt;(text: string, values?: unknown[])</code></td><td><code>Promise&lt;<a href="#ref-QueryResult">QueryResult</a>&lt;R&gt;&gt;</code></td><td></td></tr>
+                <tr><td><code>query(config: QueryConfig &amp; { describe: true })</code></td><td><code>Promise&lt;<a href="#ref-DescribeResult">DescribeResult</a>&gt;</code></td><td></td></tr>
+                <tr><td><code>query&lt;R = any&gt;(config: QueryConfig)</code></td><td><code>Promise&lt;<a href="#ref-QueryResult">QueryResult</a>&lt;R&gt;&gt;</code></td><td></td></tr>
+                <tr><td><code>copyFrom(text: string, data: CopyData)</code></td><td><code>Promise&lt;<a href="#ref-QueryResult">QueryResult</a>&lt;never&gt;&gt;</code></td><td></td></tr>
+                <tr><td><code>copyTo(text: string)</code></td><td><code>AsyncIterable&lt;Buffer&gt;</code></td><td></td></tr>
+                <tr><td><code>copyRows(table: string | string[], columns: string[], rows: Iterable&lt;unknown[] | Record&lt;string, unknown&gt;&gt;)</code></td><td><code>Promise&lt;number&gt;</code></td><td></td></tr>
+                <tr><td><code>release(err?: Error | boolean)</code></td><td><code>void</code></td><td><p>Gives the connection back to the pool; with an error (or true), it is closed instead.</p></td></tr>
+                <tr><td><code>[Symbol.dispose]()</code></td><td><code>void</code></td><td><p>using client = await pool.connect(): released at the end of the block.</p></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-Pool"><code>Pool</code></h3>
+        <pre><code class="language-ts">export declare class Pool extends EventEmitter implements Queryable { ... }</code></pre>
+        <p>A pool of connections, as pg's Pool: query() takes one for each query; connect() takes one for several (a transaction).</p>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>new (config?: string | PoolConfig)</code></td><td></td><td></td></tr>
+                <tr><td><code>readonly totalCount</code></td><td><code>number</code></td><td></td></tr>
+                <tr><td><code>readonly idleCount</code></td><td><code>number</code></td><td></td></tr>
+                <tr><td><code>readonly waitingCount</code></td><td><code>number</code></td><td></td></tr>
+                <tr><td><code>forgetStatements()</code></td><td><code>void</code></td><td><p>After changes of the schema: the statements every connection prepared are prepared again.</p></td></tr>
+                <tr><td><code>query&lt;R = any&gt;(text: string, values?: unknown[])</code></td><td><code>Promise&lt;<a href="#ref-QueryResult">QueryResult</a>&lt;R&gt;&gt;</code></td><td></td></tr>
+                <tr><td><code>query(config: QueryConfig &amp; { describe: true })</code></td><td><code>Promise&lt;<a href="#ref-DescribeResult">DescribeResult</a>&gt;</code></td><td></td></tr>
+                <tr><td><code>query&lt;R = any&gt;(config: QueryConfig)</code></td><td><code>Promise&lt;<a href="#ref-QueryResult">QueryResult</a>&lt;R&gt;&gt;</code></td><td></td></tr>
+                <tr><td><code>connect()</code></td><td><code>Promise&lt;<a href="#ref-PoolClient">PoolClient</a>&gt;</code></td><td></td></tr>
+                <tr><td><code>copyFrom(text: string, data: CopyData)</code></td><td><code>Promise&lt;<a href="#ref-QueryResult">QueryResult</a>&lt;never&gt;&gt;</code></td><td></td></tr>
+                <tr><td><code>copyTo(text: string)</code></td><td><code>AsyncIterable&lt;Buffer&gt;</code></td><td></td></tr>
+                <tr><td><code>copyRows(table: string | string[], columns: string[], rows: Iterable&lt;unknown[] | Record&lt;string, unknown&gt;&gt;)</code></td><td><code>Promise&lt;number&gt;</code></td><td></td></tr>
+                <tr><td><code>openConnection(options: ClientConfig)</code></td><td><code>Promise&lt;unknown&gt;</code></td><td><p>Opens the connections of the pool (replaceable, to open them in another way).</p></td></tr>
+                <tr><td><code>end()</code></td><td><code>Promise&lt;void&gt;</code></td><td><p>Ends the pool after the queries sent and once the clients given by connect() are released.</p></td></tr>
+                <tr><td><code>[Symbol.asyncDispose]()</code></td><td><code>Promise&lt;void&gt;</code></td><td></td></tr>
+                <tr><td><code>on(event: 'error', listener: (err: Error, client: unknown) =&gt; void)</code></td><td><code>this</code></td><td></td></tr>
+                <tr><td><code>on(event: 'connect' | 'notice', listener: (value: unknown) =&gt; void)</code></td><td><code>this</code></td><td></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-PgError"><code>PgError</code></h3>
+        <pre><code class="language-ts">export declare class PgError extends Error { ... }</code></pre>
+        <p>The class of the errors of</p>
+
+        <h3 id="ref-ConnectionError"><code>ConnectionError</code></h3>
+        <pre><code class="language-ts">export declare class ConnectionError extends PgError { ... }</code></pre>
+        <p>An error of the connection: it could not connect or log in, or it was lost.</p>
+
+        <h3 id="ref-DatabaseError"><code>DatabaseError</code></h3>
+        <pre><code class="language-ts">export declare class DatabaseError extends PgError { ... }</code></pre>
+        <p>An error the server answered, with its fields: code (the SQLSTATE: 23505 for a unique violation), detail, constraint, table, column...</p>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>severity?</code></td><td><code>string</code></td><td></td></tr>
+                <tr><td><code>code?</code></td><td><code>string</code></td><td></td></tr>
+                <tr><td><code>detail?</code></td><td><code>string</code></td><td></td></tr>
+                <tr><td><code>hint?</code></td><td><code>string</code></td><td></td></tr>
+                <tr><td><code>position?</code></td><td><code>string</code></td><td></td></tr>
+                <tr><td><code>internalPosition?</code></td><td><code>string</code></td><td></td></tr>
+                <tr><td><code>internalQuery?</code></td><td><code>string</code></td><td></td></tr>
+                <tr><td><code>where?</code></td><td><code>string</code></td><td></td></tr>
+                <tr><td><code>schema?</code></td><td><code>string</code></td><td></td></tr>
+                <tr><td><code>table?</code></td><td><code>string</code></td><td></td></tr>
+                <tr><td><code>column?</code></td><td><code>string</code></td><td></td></tr>
+                <tr><td><code>dataType?</code></td><td><code>string</code></td><td></td></tr>
+                <tr><td><code>constraint?</code></td><td><code>string</code></td><td></td></tr>
+                <tr><td><code>file?</code></td><td><code>string</code></td><td></td></tr>
+                <tr><td><code>line?</code></td><td><code>string</code></td><td></td></tr>
+                <tr><td><code>routine?</code></td><td><code>string</code></td><td></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h2 id="constants">Constants</h2>
+        <p class="ref-index"><a href="#ref-types"><code>types</code></a>, <a href="#ref-copy"><code>copy</code></a></p>
+
+        <h3 id="ref-types"><code>types</code></h3>
+        <pre><code class="language-ts">export declare const types: {
+  parserOf(
+    oid: number,
+    custom?: Map&lt;number, (value: string) =&gt; unknown&gt;
+  ): (buffer: Buffer, start: number, end: number) =&gt; unknown;
+  paramToText(value: unknown): string | Buffer | null;
+};</code></pre>
+        <p>How values are read and written: the parser of a type (by oid) and the text of a parameter.</p>
+
+        <h3 id="ref-copy"><code>copy</code></h3>
+        <pre><code class="language-ts">export declare const copy: {
+  copyRows(
+    connection: unknown,
+    table: string | string[],
+    columns: string[],
+    rows: Iterable&lt;unknown[] | Record&lt;string, unknown&gt;&gt;
+  ): Promise&lt;number&gt;;
+  quoteIdentifier(name: string): string;
+  textValue(value: unknown): string;
+};</code></pre>
+        <p>COPY of rows: copyRows() loads rows (binary when it can), with the helpers it uses.</p>
+
+        <h2 id="interfaces">Interfaces</h2>
+        <p class="ref-index"><a href="#ref-ClientConfig"><code>ClientConfig</code></a>, <a href="#ref-PoolConfig"><code>PoolConfig</code></a>, <a href="#ref-FieldDef"><code>FieldDef</code></a>, <a href="#ref-QueryResult"><code>QueryResult</code></a>, <a href="#ref-QueryConfig"><code>QueryConfig</code></a>, <a href="#ref-DescribeResult"><code>DescribeResult</code></a>, <a href="#ref-Notification"><code>Notification</code></a>, <a href="#ref-Queryable"><code>Queryable</code></a></p>
+
+        <h3 id="ref-ClientConfig"><code>ClientConfig</code></h3>
+        <pre><code class="language-ts">export interface ClientConfig { ... }</code></pre>
+        <p>The options of a connection (or a connection string, postgres://user:password@host:port/database?sslmode=...): the server or servers, the credentials and TLS, timeouts, and how values are read.</p>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>connectionString?</code></td><td><code>string</code></td><td></td></tr>
+                <tr><td><code>host?</code></td><td><code>string | string[]</code></td><td><p>A host, or the directory of a unix socket (/var/run/postgresql); several hosts ('a,b' or an array) are tried in order (libpq's failover), with a port for each or one for all.</p></td></tr>
+                <tr><td><code>port?</code></td><td><code>number | string | number[]</code></td><td></td></tr>
+                <tr><td><code>target_session_attrs?</code></td><td><code>'any' | 'read-write' | 'read-only' | 'primary' | 'standby' | 'prefer-standby'</code></td><td><p>The kind of server to connect to among the hosts.</p></td></tr>
+                <tr><td><code>load_balance_hosts?</code></td><td><code>'disable' | 'random'</code></td><td><p>random: the hosts in a random order (to spread connections).</p></td></tr>
+                <tr><td><code>require_auth?</code></td><td><code>string</code></td><td><p>The authentication methods the server may ask for (libpq's: 'scram-sha-256', '!password,!md5', 'none'...).</p></td></tr>
+                <tr><td><code>channel_binding?</code></td><td><code>'disable' | 'prefer' | 'require'</code></td><td><p>SCRAM bound to the TLS channel (SCRAM-SHA-256-PLUS): prefer (the default), require or disable.</p></td></tr>
+                <tr><td><code>oauthBearerToken?</code></td><td><code>string | (() =&gt; string | Promise&lt;string&gt;)</code></td><td><p>An OAuth token for OAUTHBEARER (PostgreSQL 18), or a function that gives it.</p></td></tr>
+                <tr><td><code>user?</code></td><td><code>string | (() =&gt; string | Promise&lt;string&gt;)</code></td><td><p>The user and the password, or functions that give them (asked for every connection: tokens of AWS RDS IAM...).</p></td></tr>
+                <tr><td><code>password?</code></td><td><code>string | (() =&gt; string | Promise&lt;string&gt;)</code></td><td></td></tr>
+                <tr><td><code>database?</code></td><td><code>string</code></td><td></td></tr>
+                <tr><td><code>ssl?</code></td><td><code>boolean | ConnectionOptions</code></td><td></td></tr>
+                <tr><td><code>application_name?</code></td><td><code>string</code></td><td></td></tr>
+                <tr><td><code>options?</code></td><td><code>string</code></td><td></td></tr>
+                <tr><td><code>connectionTimeoutMillis?</code></td><td><code>number</code></td><td><p>Milliseconds to connect and log in (30000; 0: no limit). connectTimeoutMillis is the old name.</p></td></tr>
+                <tr><td><code>connectTimeoutMillis?</code></td><td><code>number</code></td><td></td></tr>
+                <tr><td><code>statement_timeout?</code></td><td><code>number</code></td><td><p>Settings of the session, in milliseconds.</p></td></tr>
+                <tr><td><code>lock_timeout?</code></td><td><code>number</code></td><td></td></tr>
+                <tr><td><code>idle_in_transaction_session_timeout?</code></td><td><code>number</code></td><td></td></tr>
+                <tr><td><code>types?</code></td><td><code>Map&lt;number, (value: string) =&gt; unknown&gt; | Record&lt;number, (value: string) =&gt; unknown&gt;</code></td><td><p>Parsers by type oid, of the text of the values (those types are read as text).</p></td></tr>
+                <tr><td><code>prepare?</code></td><td><code>boolean</code></td><td><p>false: statements are not prepared.</p></td></tr>
+                <tr><td><code>binary?</code></td><td><code>boolean</code></td><td><p>false: only the text format (no binary parameters and results).</p></td></tr>
+                <tr><td><code>query_timeout?</code></td><td><code>number</code></td><td><p>Milliseconds after which queries are cancelled.</p></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-PoolConfig"><code>PoolConfig</code></h3>
+        <pre><code class="language-ts">export interface PoolConfig extends ClientConfig { ... }</code></pre>
+        <p>The options of a pool: those of each connection, and max (connections, 10), idleTimeoutMillis and acquireTimeoutMillis.</p>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>max?</code></td><td><code>number</code></td><td></td></tr>
+                <tr><td><code>idleTimeoutMillis?</code></td><td><code>number</code></td><td></td></tr>
+                <tr><td><code>acquireTimeoutMillis?</code></td><td><code>number</code></td><td><p>How long a query or connect() waits for a connection, free or being opened (0: no limit); past it, an error of code ACQUIRE_TIMEOUT.</p></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-FieldDef"><code>FieldDef</code></h3>
+        <pre><code class="language-ts">export interface FieldDef { ... }</code></pre>
+        <p>A column of a result: its name, the table and column it comes from, and its type.</p>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>name</code></td><td><code>string</code></td><td></td></tr>
+                <tr><td><code>tableID</code></td><td><code>number</code></td><td></td></tr>
+                <tr><td><code>columnID</code></td><td><code>number</code></td><td></td></tr>
+                <tr><td><code>dataTypeID</code></td><td><code>number</code></td><td></td></tr>
+                <tr><td><code>dataTypeSize</code></td><td><code>number</code></td><td></td></tr>
+                <tr><td><code>dataTypeModifier</code></td><td><code>number</code></td><td></td></tr>
+                <tr><td><code>format</code></td><td><code>'text' | 'binary'</code></td><td></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-QueryResult"><code>QueryResult</code></h3>
+        <pre><code class="language-ts">export interface QueryResult&lt;R = any&gt; { ... }</code></pre>
+        <p>The result of a query: its rows (objects by column, or arrays with rowMode: 'array'), the command, the number of rows and the columns.</p>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>command</code></td><td><code>string</code></td><td></td></tr>
+                <tr><td><code>rowCount</code></td><td><code>number | null</code></td><td></td></tr>
+                <tr><td><code>rows</code></td><td><code>R[]</code></td><td></td></tr>
+                <tr><td><code>fields</code></td><td><code><a href="#ref-FieldDef">FieldDef</a>[]</code></td><td></td></tr>
+                <tr><td><code>rowAsArray</code></td><td><code>boolean</code></td><td></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-QueryConfig"><code>QueryConfig</code></h3>
+        <pre><code class="language-ts">export interface QueryConfig&lt;V extends unknown[] = unknown[]&gt; { ... }</code></pre>
+        <p>A query with its options: the text, its values ($1, $2...), arrays as rows, prepared or not, a signal or a timeout to cancel it, and a name for tracing.</p>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>text</code></td><td><code>string</code></td><td></td></tr>
+                <tr><td><code>values?</code></td><td><code>V</code></td><td></td></tr>
+                <tr><td><code>rowMode?</code></td><td><code>'array'</code></td><td></td></tr>
+                <tr><td><code>prepare?</code></td><td><code>boolean</code></td><td></td></tr>
+                <tr><td><code>signal?</code></td><td><code>AbortSignal</code></td><td><p>Cancels the query (it rejects with an AbortError, and the server stops it).</p></td></tr>
+                <tr><td><code>timeout?</code></td><td><code>number</code></td><td><p>Milliseconds after which the query is cancelled (it rejects with the code QUERY_TIMEOUT).</p></td></tr>
+                <tr><td><code>name?</code></td><td><code>string</code></td><td><p>A name for tracing (pg:query).</p></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-DescribeResult"><code>DescribeResult</code></h3>
+        <pre><code class="language-ts">export interface DescribeResult { ... }</code></pre>
+        <p>query({ text, describe: true }): the types (oids) of the parameters and the columns, without running the text.</p>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>params</code></td><td><code>number[]</code></td><td></td></tr>
+                <tr><td><code>fields</code></td><td><code><a href="#ref-FieldDef">FieldDef</a>[]</code></td><td></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-Notification"><code>Notification</code></h3>
+        <pre><code class="language-ts">export interface Notification { ... }</code></pre>
+        <p>A notification of LISTEN/NOTIFY: its channel and payload, and the process that sent it.</p>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>processId</code></td><td><code>number</code></td><td></td></tr>
+                <tr><td><code>channel</code></td><td><code>string</code></td><td></td></tr>
+                <tr><td><code>payload</code></td><td><code>string</code></td><td></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-Queryable"><code>Queryable</code></h3>
+        <pre><code class="language-ts">interface Queryable { ... }</code></pre>
+        <p>What clients, pool clients and pools share: query(), and the COPY methods.</p>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>query&lt;R = any&gt;(text: string, values?: unknown[])</code></td><td><code>Promise&lt;<a href="#ref-QueryResult">QueryResult</a>&lt;R&gt;&gt;</code></td><td></td></tr>
+                <tr><td><code>query(config: QueryConfig &amp; { describe: true })</code></td><td><code>Promise&lt;<a href="#ref-DescribeResult">DescribeResult</a>&gt;</code></td><td></td></tr>
+                <tr><td><code>query&lt;R = any&gt;(config: QueryConfig)</code></td><td><code>Promise&lt;<a href="#ref-QueryResult">QueryResult</a>&lt;R&gt;&gt;</code></td><td></td></tr>
+                <tr><td><code>copyFrom(text: string, data: CopyData)</code></td><td><code>Promise&lt;<a href="#ref-QueryResult">QueryResult</a>&lt;never&gt;&gt;</code></td><td><p>COPY ... FROM STDIN with data in the format of the COPY.</p></td></tr>
+                <tr><td><code>copyTo(text: string)</code></td><td><code>AsyncIterable&lt;Buffer&gt;</code></td><td><p>COPY ... TO STDOUT: the chunks of data.</p></td></tr>
+                <tr><td><code>copyRows(table: string | string[], columns: string[], rows: Iterable&lt;unknown[] | Record&lt;string, unknown&gt;&gt;)</code></td><td><code>Promise&lt;number&gt;</code></td><td><p>Loads rows (arrays, or objects by column) into a table with COPY (binary when it can): the number of rows.</p></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h2 id="types">Types</h2>
+        <p class="ref-index"><a href="#ref-CopyData"><code>CopyData</code></a></p>
+
+        <h3 id="ref-CopyData"><code>CopyData</code></h3>
+        <pre><code class="language-ts">export type CopyData = string | Buffer | Iterable&lt;string | Buffer&gt; | AsyncIterable&lt;string | Buffer&gt;;</code></pre>
+        <p>The data of a COPY ... FROM STDIN: text or bytes in the format of the COPY, at once or in chunks.</p>
+      </article>
+    </div>
+
+    <footer class="footer">
+      <div class="container">
+        <span>xufa is MIT licensed. &copy; Jes&uacute;s Seijas</span>
+        <span>
+          <a href="../guide.html">Guide</a> &middot; <a href="../playground.html">Playground</a> &middot; <a href="../http/index.html">HTTP</a> &middot; <a href="../orm/index.html">ORM</a> &middot; <a href="../auth/index.html">Auth</a> &middot;
+          <a href="../sequelize/index.html">Sequelize</a> &middot; <a href="../packages.html">Packages</a> &middot;
+          <a href="../benchmarks.html">Benchmarks</a> &middot; <a href="https://github.com/xufajs/xufa">GitHub</a>
+        </span>
+      </div>
+    </footer>
+  </body>
+</html>

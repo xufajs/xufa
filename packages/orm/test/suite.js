@@ -2,7 +2,8 @@
 // of a backend calls defineSuite with a function that makes a Database of it.
 const { Model, fields, Q, or, not, F, Raw, Count, Sum, Avg, Min, Max, ValidationError, NotFoundError } = require('..');
 const { MultipleObjectsError, ProtectedError, QueryError, FieldError, LookupError, UniqueError } = require('..');
-const { setEncryptionKeys, generateEncryptionKey, reencrypt, jsonPath } = require('..');
+const { setEncryptionKeys, generateEncryptionKey, reencrypt, jsonPath, maintenance, QuerySet, CombinedQuerySet } = require('..');
+const { Extract, Trunc } = require('..');
 
 function defineModels() {
   class Publisher extends Model {
@@ -1069,17 +1070,13 @@ function defineSuite(name, makeDatabase, options = {}) {
         });
       });
 
-      it('aggregates across reverse relations (SQL databases)', async () => {
+      it('aggregates across reverse relations (in SQL; computed by the ORM in the other backends)', async () => {
         const { Author, Publisher } = models;
         await seed();
         const counted = Author.objects
           .values('name')
           .annotate({ books: Count('books'), pages: Sum('books__pages') })
           .orderBy('name');
-        if (!db.backend.dialect) {
-          await expect(counted).rejects.toThrow('reverse relations');
-          return;
-        }
         expect(await counted).toEqual([
           { name: 'Ada', books: 2, pages: 420 },
           { name: 'Alan', books: 1, pages: null },
@@ -1094,6 +1091,37 @@ function defineSuite(name, makeDatabase, options = {}) {
           .values('name')
           .annotate({ books: Count('books') });
         expect(zoe).toEqual([{ name: 'Zoe', books: 0 }]);
+        expect(await Author.objects.aggregate({ books: Count('books'), longest: Max('books__pages') })).toEqual({
+          books: 4,
+          longest: 300,
+        });
+      });
+
+      it('annotate() of objects: each with its aggregates, ordered and sliced by them', async () => {
+        const { Author } = models;
+        await seed();
+        await Author.objects.create({ name: 'Zoe' });
+        const authors = await Author.objects
+          .annotate({ numBooks: Count('books'), pages: Sum('books__pages') })
+          .orderBy('name');
+        expect(authors.every((author) => author instanceof Author)).toBe(true);
+        expect(authors.map((author) => [author.name, author.numBooks, author.pages])).toEqual([
+          ['Ada', 2, 420],
+          ['Alan', 1, null],
+          ['Grace', 1, 250],
+          ['Zoe', 0, null],
+        ]);
+        const top = await Author.objects
+          .annotate({ numBooks: Count('books') })
+          .orderBy('-numBooks', 'name')
+          .limit(2);
+        expect(top.map((author) => [author.name, author.numBooks])).toEqual([
+          ['Ada', 2],
+          ['Alan', 1],
+        ]);
+        const filtered = await Author.objects.filter({ name__startswith: 'G' }).annotate({ numBooks: Count('books') });
+        expect(filtered.map((author) => [author.name, author.numBooks])).toEqual([['Grace', 1]]);
+        await expect(Author.objects.annotate({ books: Count('books') })).rejects.toThrow('conflicts with a field');
       });
 
       it('groups with values and annotate', async () => {
@@ -1883,7 +1911,9 @@ function defineSuite(name, makeDatabase, options = {}) {
       await Secret.objects.delete();
     });
 
-    const storedOf = async (id) => (name === 'memory' ? null : Stored.objects.get({ pk: id }));
+    // The memory backend keeps the values as they are (not encrypted): by the backend, not the name of the suite.
+    const plainMemory = () => db.backend.name === 'memory';
+    const storedOf = async (id) => (plainMemory() ? null : Stored.objects.get({ pk: id }));
 
     it('keeps the values encrypted, and gives them back', async () => {
       const born = new Date('1815-12-10T08:00:00.000Z');
@@ -1944,7 +1974,7 @@ function defineSuite(name, makeDatabase, options = {}) {
     });
 
     it('refuses values that were changed or moved to another column', async () => {
-      if (name === 'memory') return;
+      if (plainMemory()) return;
       const ada = await Secret.objects.create({ name: 'Ada', ssn: '123-45-6789', notes: 'x' });
       const stored = await storedOf(ada.pk);
       // The text of the ssn in the column of the email: bound to its column, it is refused there.
@@ -1960,13 +1990,13 @@ function defineSuite(name, makeDatabase, options = {}) {
 
     it('rotates keys, and encrypts the values written before', async () => {
       const ada = await Secret.objects.create({ name: 'Ada', ssn: '123-45-6789', email: 'ada@example.com' });
-      if (name !== 'memory') {
+      if (!plainMemory()) {
         await Stored.objects.filter({ pk: ada.pk }).update({ notes: 'written before the field was encrypted' });
       }
       // A new key encrypts; the old one still decrypts.
       setEncryptionKeys({ current: 'k2', keys: { k2: KEY2, k1: KEY1 } });
       expect((await Secret.objects.get({ pk: ada.pk })).ssn).toBe('123-45-6789');
-      if (name !== 'memory') {
+      if (!plainMemory()) {
         // Deterministic values of the old key are not found by the new one until they are written again.
         expect(await Secret.objects.filter({ email: 'ada@example.com' }).count()).toBe(0);
         expect((await Secret.objects.get({ pk: ada.pk })).notes).toBe('written before the field was encrypted');
@@ -1983,12 +2013,219 @@ function defineSuite(name, makeDatabase, options = {}) {
       const found = await Secret.objects.get({ pk: ada.pk });
       expect([found.ssn, found.notes]).toEqual([
         '123-45-6789',
-        name === 'memory' ? null : 'written before the field was encrypted',
+        plainMemory() ? null : 'written before the field was encrypted',
       ]);
-      if (name !== 'memory') {
+      if (!plainMemory()) {
         setEncryptionKeys({ keys: { k1: KEY1 } });
         await expect(Secret.objects.get({ pk: ada.pk })).rejects.toThrow('not in the keyring');
       }
+    });
+  });
+
+  describe(`${name} backend: decimals with their scale`, () => {
+    let ddb;
+    let Price;
+
+    beforeAll(async () => {
+      Price = class extends Model {
+        static options = { table: 'scaled_price' };
+
+        static fields = { amount: fields.decimal({ precision: 6, scale: 2 }) };
+      };
+      Object.defineProperty(Price, 'name', { value: 'ScaledPrice' });
+      ddb = makeDatabase();
+      ddb.register(Price);
+      await ddb.connect();
+      await ddb.drop();
+      await ddb.sync();
+    });
+
+    afterAll(async () => {
+      if (ddb) {
+        await ddb.drop();
+        await ddb.close();
+      }
+    });
+
+    it("are given with the places of their scale, written and read, as Django's", async () => {
+      const objects = Price.objects.using(ddb);
+      const price = await objects.create({ amount: '3' });
+      expect(price.amount).toBe('3.00');
+      expect((await objects.get({ pk: price.pk })).amount).toBe('3.00');
+      await objects.filter({ pk: price.pk }).update({ amount: '2.5' });
+      expect((await objects.get({ pk: price.pk })).amount).toBe('2.50');
+      expect((await objects.get({ pk: price.pk })).amount).toBe(
+        (await objects.valuesList('amount', { flat: true }))[0]
+      );
+      await expect(objects.create({ amount: '1.005' })).rejects.toMatchObject({
+        errors: { amount: ['Ensure that there are no more than 2 decimal places.'] },
+      });
+      await expect(objects.create({ amount: '12345.6' })).rejects.toMatchObject({
+        errors: { amount: ['Ensure that there are no more than 6 digits in total.'] },
+      });
+    });
+  });
+
+  describe(`${name} backend: soft deletes and scopes`, () => {
+    let sdb;
+    let Post;
+    let Comment;
+
+    beforeAll(async () => {
+      Post = class extends Model {
+        static options = { table: 'soft_post', softDelete: true, ordering: ['title'] };
+
+        static fields = { title: fields.string(), status: fields.string({ default: 'draft' }), views: fields.integer({ default: 0 }) };
+
+        static scopes = {
+          published: (qs) => qs.filter({ status: 'published' }),
+          popular: (qs, min = 10) => qs.filter({ views__gte: min }),
+        };
+      };
+      Object.defineProperty(Post, 'name', { value: 'SoftPost' });
+      Comment = class extends Model {
+        static options = { table: 'soft_comment', softDelete: 'removedAt' };
+
+        static fields = { text: fields.string(), post: fields.foreignKey(() => Post, { onDelete: 'cascade' }) };
+      };
+      Object.defineProperty(Comment, 'name', { value: 'SoftComment' });
+      sdb = makeDatabase();
+      sdb.register(Post, Comment);
+      await sdb.connect();
+      await sdb.drop();
+      await sdb.sync();
+    });
+
+    afterAll(async () => {
+      if (sdb) {
+        await sdb.drop();
+        await sdb.close();
+      }
+    });
+
+    it('scopes: methods of the querysets of the model, chained with the rest', async () => {
+      const objects = Post.objects.using(sdb);
+      await objects.bulkCreate([
+        { title: 'a', status: 'published', views: 50 },
+        { title: 'b', status: 'published', views: 5 },
+        { title: 'c', views: 100 },
+      ]);
+      expect(await objects.published().valuesList('title', { flat: true })).toEqual(['a', 'b']);
+      expect(await objects.published().popular().valuesList('title', { flat: true })).toEqual(['a']);
+      expect(await objects.popular(60).count()).toBe(1);
+      expect(await objects.filter({ title__in: ['a', 'c'] }).published().count()).toBe(1);
+      await objects.all().forceDelete();
+    });
+
+    it('soft deletes: delete() sets the date, querysets leave them out; withDeleted, onlyDeleted, restore, forceDelete', async () => {
+      const objects = Post.objects.using(sdb);
+      const [a, b] = await objects.bulkCreate([{ title: 'a' }, { title: 'b' }, { title: 'c' }]);
+      expect(Post.meta.field('deletedAt').type).toBe('datetime');
+      await a.delete();
+      expect(a.isDeleted).toBe(true);
+      expect(a.pk).not.toBe(null);
+      expect(await objects.valuesList('title', { flat: true })).toEqual(['b', 'c']);
+      expect(await objects.count()).toBe(2);
+      await expect(objects.get({ pk: a.pk })).rejects.toThrow(/matches the query/);
+      expect(await objects.withDeleted().count()).toBe(3);
+      expect(await objects.onlyDeleted().valuesList('title', { flat: true })).toEqual(['a']);
+      expect(await objects.filter({ title: 'c' }).delete()).toBe(1);
+      expect(await objects.onlyDeleted().count()).toBe(2);
+      expect(await objects.filter({ title: 'c' }).restore()).toBe(1);
+      await a.restore();
+      expect(a.isDeleted).toBe(false);
+      expect(await objects.count()).toBe(3);
+      await b.forceDelete();
+      expect(await objects.withDeleted().count()).toBe(2);
+      await objects.all().delete();
+      expect(await objects.count()).toBe(0);
+      expect(await objects.withDeleted().forceDelete()).toBe(2);
+      expect(await objects.withDeleted().count()).toBe(0);
+    });
+
+    it('a delete for good takes the related objects deleted softly too (cascade), and the field can be named', async () => {
+      const posts = Post.objects.using(sdb);
+      const comments = Comment.objects.using(sdb);
+      const post = await posts.create({ title: 'p' });
+      const [kept, removed] = await comments.bulkCreate([{ text: 'kept', postId: post.pk }, { text: 'removed', postId: post.pk }]);
+      await removed.delete();
+      expect(removed.removedAt).toBeInstanceOf(Date);
+      expect(await comments.count()).toBe(1);
+      // A soft delete of the post leaves its comments as they are.
+      await post.delete();
+      expect(await comments.filter({ pk: kept.pk }).count()).toBe(1);
+      await posts.withDeleted().filter({ pk: post.pk }).forceDelete();
+      expect(await comments.withDeleted().count()).toBe(0);
+      await expect(Comment.objects.using(sdb).all().restore()).resolves.toBe(0);
+    });
+  });
+
+  describe(`${name} backend: parts of dates, defer() and inBulk()`, () => {
+    let edb;
+    let Event;
+
+    beforeAll(async () => {
+      Event = class extends Model {
+        static options = { table: 'dated_event' };
+
+        static fields = {
+          title: fields.string(),
+          at: fields.datetime(),
+          day: fields.date({ null: true }),
+          date: fields.string({ null: true }),
+          code: fields.string({ unique: true, null: true }),
+        };
+      };
+      Object.defineProperty(Event, 'name', { value: 'DatedEvent' });
+      edb = makeDatabase();
+      edb.register(Event);
+      await edb.connect();
+      await edb.drop();
+      await edb.sync();
+      await Event.objects.using(edb).bulkCreate([
+        { title: 'a', at: new Date('2025-12-31T23:59:59Z'), day: '2025-12-31', code: 'A' },
+        { title: 'b', at: new Date('2026-01-01T00:00:00Z'), day: '2026-01-01', date: 'x', code: 'B' },
+        { title: 'c', at: new Date('2026-10-07T12:00:00Z'), day: '2026-10-07' },
+      ]);
+    });
+
+    afterAll(async () => {
+      if (edb) {
+        await edb.drop();
+        await edb.close();
+      }
+    });
+
+    const titles = async (conditions) =>
+      (await Event.objects.using(edb).filter(conditions).orderBy('title').valuesList('title', { flat: true })).join('');
+
+    it('__year and __date, with comparisons, in and range (as ranges of the field, in UTC)', async () => {
+      expect(await titles({ at__year: 2026 })).toBe('bc');
+      expect(await titles({ at__year__gt: 2025 })).toBe('bc');
+      expect(await titles({ at__year__lte: 2025 })).toBe('a');
+      expect(await titles({ at__year__in: [2025, 2027] })).toBe('a');
+      expect(await titles({ at__date: '2026-10-07' })).toBe('c');
+      expect(await titles({ at__date: new Date('2026-01-01T15:00:00Z') })).toBe('b');
+      expect(await titles({ at__date__lt: '2026-01-01' })).toBe('a');
+      expect(await titles({ at__date__range: ['2026-01-01', '2026-10-07'] })).toBe('bc');
+      expect(await titles({ day__year: 2026 })).toBe('bc');
+      expect(await titles({ day__date__gte: '2026-01-01' })).toBe('bc');
+      // A field named date is a field.
+      expect(await titles({ date: 'x' })).toBe('b');
+      expect(() => Event.objects.filter({ title__year: 2026 })).toThrow(/Unsupported lookup "year"/);
+    });
+
+    it('defer() leaves fields unread; inBulk() gives a Map by key or unique field', async () => {
+      const objects = Event.objects.using(edb);
+      const [first] = await objects.orderBy('title').defer('title', 'day').limit(1);
+      expect([first.title, first.day, first.code]).toEqual([undefined, undefined, 'A']);
+      const byCode = await objects.inBulk(['A', 'B', 'Z'], { field: 'code' });
+      expect([...byCode.keys()].sort()).toEqual(['A', 'B']);
+      expect(byCode.get('B').title).toBe('b');
+      const all = await objects.inBulk();
+      expect(all.size).toBe(3);
+      expect(all.get(first.pk).code).toBe('A');
+      await expect(objects.inBulk(['a'], { field: 'title' })).rejects.toThrow(/not the key nor a unique field/);
     });
   });
 
@@ -2179,6 +2416,256 @@ function defineSuite(name, makeDatabase, options = {}) {
       expect(schema.properties.total.readOnly).toBe(true);
       expect(schema.properties.label.readOnly).toBe(true);
       expect(schema.required).toEqual(['product', 'price', 'quantity']);
+    });
+  });
+
+  describe(`${name} backend: ping() and the store of the maintenance mode`, () => {
+    let mdb;
+
+    afterAll(async () => {
+      if (mdb) {
+        await mdb.drop();
+        await mdb.close();
+      }
+    });
+
+    it('ping() gives the milliseconds of a round trip; the store keeps the state of the maintenance mode', async () => {
+      mdb = makeDatabase();
+      const store = maintenance(mdb, { table: 'xufa_test_maintenance' });
+      await mdb.connect();
+      await mdb.drop();
+      await mdb.sync();
+      const took = await mdb.ping();
+      expect(typeof took).toBe('number');
+      expect(took).toBeGreaterThanOrEqual(0);
+      // health(): a check of xufa.health, critical; degraded when slower than slow; down when ping throws.
+      const health = mdb.health();
+      expect(health.critical).toBe(true);
+      expect(await health.check()).toMatchObject({ status: 'up', latency: expect.any(Number) });
+      expect((await mdb.health({ slow: -1 }).check()).status).toBe('degraded');
+      expect(mdb.health({ critical: false, timeout: '1s' })).toMatchObject({ critical: false, timeout: '1s' });
+      const { ping } = mdb.backend;
+      mdb.backend.ping = async () => {
+        throw new Error('the database is gone');
+      };
+      await expect(health.check()).rejects.toThrow('the database is gone');
+      mdb.backend.ping = ping;
+      expect(() => mdb.health({ slow: 'soon' })).toThrow(/not a duration/);
+      expect(await store.get()).toBe(null);
+      const state = await store.set({ message: 'Back soon', retryAfter: 60 });
+      expect(state).toMatchObject({ message: 'Back soon', retryAfter: 60, since: expect.any(String) });
+      expect(await store.get()).toEqual(state);
+      // Set again: one row, the new state.
+      await store.set({ message: 'Later' });
+      expect((await store.get()).message).toBe('Later');
+      expect(await store.model.objects.using(mdb).count()).toBe(1);
+      // Another app on the same database has its own.
+      expect(await maintenance(mdb, { key: 'admin', model: 'XufaMaintenance' }).get()).toBe(null);
+      expect(await store.clear()).toBe(true);
+      expect(await store.clear()).toBe(false);
+      expect(await store.get()).toBe(null);
+    });
+  });
+
+  describe(`${name} backend: parts of dates, distinct() and union()`, () => {
+    let pdb;
+    let Event;
+    let Book;
+
+    beforeAll(async () => {
+      Event = class extends Model {
+        static options = { table: 'parted_event' };
+
+        static fields = { title: fields.string(), at: fields.datetime({ null: true }), day: fields.date({ null: true }) };
+      };
+      Object.defineProperty(Event, 'name', { value: 'PartedEvent' });
+      Book = class extends Model {
+        static options = { table: 'unioned_book', ordering: ['title'] };
+
+        static fields = {
+          title: fields.string(),
+          genre: fields.string({ null: true }),
+          pages: fields.integer(),
+          year: fields.integer(),
+        };
+      };
+      Object.defineProperty(Book, 'name', { value: 'UnionedBook' });
+      pdb = makeDatabase();
+      pdb.register(Event, Book);
+      await pdb.connect();
+      await pdb.drop();
+      await pdb.sync();
+      await Event.objects.using(pdb).bulkCreate([
+        // A Wednesday of ISO week 1 of 2026; a Thursday; a Sunday; a Sunday of ISO week 53 of 2020; no date.
+        { title: 'a', at: new Date('2025-12-31T23:59:59Z'), day: '2025-12-31' },
+        { title: 'b', at: new Date('2026-01-01T00:00:30Z'), day: '2026-01-01' },
+        { title: 'c', at: new Date('2026-10-04T12:00:45Z'), day: '2026-10-04' },
+        { title: 'd', at: new Date('2021-01-03T08:30:00Z'), day: '2021-01-03' },
+        { title: 'e', at: null, day: null },
+      ]);
+      await Book.objects.using(pdb).bulkCreate([
+        { title: 'A', genre: 'sf', pages: 300, year: 2001 },
+        { title: 'B', genre: 'sf', pages: 500, year: 2003 },
+        { title: 'C', genre: 'crime', pages: 200, year: 2001 },
+        { title: 'D', genre: null, pages: 900, year: 2003 },
+        { title: 'E', genre: 'crime', pages: 250, year: 2005 },
+      ]);
+    });
+
+    afterAll(async () => {
+      if (pdb) {
+        await pdb.drop();
+        await pdb.close();
+      }
+    });
+
+    const titles = async (qs) => (await qs.orderBy('title').valuesList('title', { flat: true }).using(pdb)).join('');
+
+    it('month, day, week_day, iso_week_day, week, quarter, hour, minute and second, in UTC', async () => {
+      const E = Event.objects;
+      expect(await titles(E.filter({ at__month: 1 }))).toBe('bd');
+      expect(await titles(E.filter({ at__month__in: [10, 12] }))).toBe('ac');
+      expect(await titles(E.filter({ at__day: 31 }))).toBe('a');
+      expect(await titles(E.filter({ at__week_day: 1 }))).toBe('cd');
+      expect(await titles(E.filter({ at__iso_week_day__gte: 6 }))).toBe('cd');
+      expect(await titles(E.filter({ at__week: 53 }))).toBe('d');
+      expect(await titles(E.filter({ at__week: 1 }))).toBe('ab');
+      expect(await titles(E.filter({ at__quarter: 4 }))).toBe('ac');
+      expect(await titles(E.filter({ at__hour__lt: 12 }))).toBe('bd');
+      expect(await titles(E.filter({ at__minute: 59 }))).toBe('a');
+      expect(await titles(E.filter({ at__second__range: [30, 59] }))).toBe('abc');
+      // Of dates too, and with the other conditions.
+      expect(await titles(E.filter({ day__month: 12 }))).toBe('a');
+      expect(await titles(E.filter({ day__week_day: 5, at__year: 2026 }))).toBe('b');
+      expect(await titles(E.filter({ day__quarter__lte: 1 }).exclude({ day__day: 3 }))).toBe('b');
+      expect(await titles(E.exclude({ at__month: 1 }))).toBe('ace');
+      expect(await titles(E.filter(or({ at__month: 10 }, { at__hour: 8 })))).toBe('cd');
+      expect(await E.filter({ at__month: '12' }).using(pdb).count()).toBe(1);
+      // Times are of datetimes; the values are integers.
+      expect(() => E.filter({ day__hour: 1 })).toThrow(LookupError);
+      expect(() => E.filter({ at__month: 'May' })).toThrow(QueryError);
+      expect(() => E.filter({ title__month: 1 })).toThrow(LookupError);
+    });
+
+    it('Extract and Trunc in values() and the groups of annotate(): reports by year, month, week...', async () => {
+      const E = Event.objects.using(pdb);
+      expect(await E.values({ year: Extract('at', 'year') }).annotate({ n: Count() }).orderBy('year')).toEqual([
+        { year: null, n: 1 },
+        { year: 2021, n: 1 },
+        { year: 2025, n: 1 },
+        { year: 2026, n: 2 },
+      ]);
+      const months = await E.filter({ at__year: 2026 })
+        .values({ month: Trunc('at', 'month') })
+        .annotate({ n: Count() })
+        .orderBy('-month');
+      expect(months.map((row) => [row.month instanceof Date, row.month.toISOString(), row.n])).toEqual([
+        [true, '2026-10-01T00:00:00.000Z', 1],
+        [true, '2026-01-01T00:00:00.000Z', 1],
+      ]);
+      // Of dates: texts of dates. The week starts on Monday (2026-10-04 is a Sunday).
+      expect(await E.filter({ title: 'c' }).values({ w: Trunc('day', 'week'), q: Trunc('day', 'quarter'), y: Trunc('day', 'year') })).toEqual([
+        { w: '2026-09-28', q: '2026-10-01', y: '2026-01-01' },
+      ]);
+      const [a] = await E.filter({ title: 'a' }).values({ h: Trunc('at', 'hour'), s: Trunc('at', 'second') });
+      expect([a.h.toISOString(), a.s.toISOString()]).toEqual(['2025-12-31T23:00:00.000Z', '2025-12-31T23:59:59.000Z']);
+      // Plain values and lists, with the fields; nothing for no date.
+      expect(await E.orderBy('title').valuesList('title', { wd: Extract('at', 'week_day'), h: Extract('at', 'hour') })).toEqual([
+        ['a', 4, 23],
+        ['b', 5, 0],
+        ['c', 1, 12],
+        ['d', 1, 8],
+        ['e', null, null],
+      ]);
+      expect(await E.valuesList({ m: Extract('day', 'month') }, { flat: true }).distinct().orderBy('m')).toEqual([null, 1, 10, 12]);
+      expect(() => E.values({ h: Trunc('day', 'hour') }).toQuery()).toThrow(QueryError);
+      expect(() => E.values({ m: Extract('title', 'month') }).toQuery()).toThrow(QueryError);
+      expect(() => Extract('at', 'decade')).toThrow(QueryError);
+      expect(new Trunc('at', 'week')).toBeInstanceOf(Trunc);
+    });
+
+    it('distinct(): the rows of values once, ordered and sliced; with names, the first object of each group', async () => {
+      const B = Book.objects;
+      expect(await B.values('genre').distinct().orderBy('genre').using(pdb)).toEqual([
+        { genre: null },
+        { genre: 'crime' },
+        { genre: 'sf' },
+      ]);
+      expect(await B.valuesList('genre', 'year').distinct().orderBy('year', 'genre').using(pdb)).toEqual([
+        ['crime', 2001],
+        ['sf', 2001],
+        [null, 2003],
+        ['sf', 2003],
+        ['crime', 2005],
+      ]);
+      const years = B.valuesList('year', { flat: true }).distinct();
+      expect(await years.using(pdb).count()).toBe(3);
+      expect(await years.orderBy('-year').limit(2).using(pdb)).toEqual([2005, 2003]);
+      // Objects are distinct already.
+      expect((await B.distinct().using(pdb)).length).toBe(5);
+      // The longest book of each genre.
+      expect((await B.orderBy('genre', '-pages').distinct('genre').using(pdb)).map((book) => book.title)).toEqual([
+        'D',
+        'E',
+        'B',
+      ]);
+    });
+
+    it('union(): one query of one model, or queries merged; each once, or all', async () => {
+      const B = Book.objects.using(pdb);
+      const one = B.filter({ pages__gt: 400 }).union(B.filter({ year: 2001 }));
+      expect(one).toBeInstanceOf(QuerySet);
+      expect((await one.orderBy('title')).map((book) => book.title)).toEqual(['A', 'B', 'C', 'D']);
+      expect(await one.filter({ genre: 'sf' }).count()).toBe(2);
+      expect(await B.filter({ year: 2001 }).union(B.all()).count()).toBe(5);
+      const sliced = B.orderBy('-pages').limit(2).union(B.orderBy('pages').limit(2));
+      expect(sliced).toBeInstanceOf(CombinedQuerySet);
+      expect((await sliced.orderBy('title')).map((book) => book.title)).toEqual(['B', 'C', 'D', 'E']);
+      expect(await sliced.count()).toBe(4);
+      expect((await sliced.orderBy('-title').first()).title).toBe('E');
+      expect((await sliced.orderBy('title').slice(1, 3)).map((book) => book.title)).toEqual(['C', 'D']);
+      const all = B.filter({ genre: 'sf' }).union(B.filter({ year: 2003 }), { all: true });
+      expect((await all.orderBy('-pages', 'title')).map((book) => book.title)).toEqual(['D', 'B', 'B', 'A']);
+      expect(await all.count()).toBe(4);
+      expect(await all.exists()).toBe(true);
+      expect(await B.filter({ pages: 1 }).union(B.filter({ pages: 2 }), { all: true }).exists()).toBe(false);
+      // Values: each row once.
+      const genres = B.values('genre').filter({ year: 2001 }).union(B.values('genre').filter({ year: 2005 }));
+      expect(await genres.orderBy('genre')).toEqual([{ genre: 'crime' }, { genre: 'sf' }]);
+      const lists = B.valuesList('year', { flat: true }).limit(1).union(B.valuesList('year', { flat: true }).orderBy('-year').limit(1));
+      expect(await lists.orderBy('year')).toEqual([2001, 2005]);
+      expect(() => B.union('nope')).toThrow(QueryError);
+    });
+
+    it('intersection() and difference(): one query of objects, or the rows compared (values by their values)', async () => {
+      const B = Book.objects.using(pdb);
+      const ids = async (qs) => (await qs.orderBy('title')).map((book) => book.title);
+      const both = B.filter({ year: 2001 }).intersection(B.filter({ genre: 'sf' }));
+      expect(both).toBeInstanceOf(QuerySet);
+      expect(await ids(both)).toEqual(['A']);
+      // A row whose condition is unknown (genre null) is not in the other query: the difference keeps it.
+      const rest = B.filter({ year__lte: 2003 }).difference(B.filter({ genre: 'sf' }));
+      expect(rest).toBeInstanceOf(QuerySet);
+      expect(await ids(rest)).toEqual(['C', 'D']);
+      expect(await rest.filter({ pages__gt: 500 }).count()).toBe(1);
+      expect(await ids(B.all().difference(B.filter({ genre: 'sf' }), B.filter({ year: 2005 })))).toEqual(['C', 'D']);
+      expect(await ids(B.all().intersection(B.filter({ year: 2005 })))).toEqual(['E']);
+      expect(await B.filter({ year: 2001 }).difference(B.all()).count()).toBe(0);
+      // Slices: the rows of each, compared.
+      const top = B.orderBy('-pages').limit(3);
+      const kept = top.intersection(B.filter({ year: 2003 }));
+      expect(kept).toBeInstanceOf(CombinedQuerySet);
+      expect(await ids(kept)).toEqual(['B', 'D']);
+      expect(await ids(top.difference(B.filter({ genre: 'sf' })))).toEqual(['D']);
+      expect(await top.difference(B.all()).exists()).toBe(false);
+      // Values are compared by their values: crime is in the genres of 2005, so it is not in the difference.
+      const of2001 = B.values('genre').filter({ year: 2001 });
+      const of2005 = B.values('genre').filter({ year: 2005 });
+      expect(await of2001.intersection(of2005)).toEqual([{ genre: 'crime' }]);
+      expect(await of2001.difference(of2005)).toEqual([{ genre: 'sf' }]);
+      // Combined with each other.
+      expect(await ids(B.filter({ genre: 'sf' }).union(B.filter({ year: 2005 })).difference(B.filter({ pages__gt: 400 })))).toEqual(['A', 'E']);
+      expect(() => B.intersection()).toThrow(QueryError);
     });
   });
 }

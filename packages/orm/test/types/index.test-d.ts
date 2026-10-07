@@ -1,10 +1,19 @@
 import { expectType, expectError, expectAssignable, expectNotAssignable } from 'tsd';
 import {
   Database,
+  maintenance,
+  MaintenanceState,
+  Extract,
+  Trunc,
   Databases,
   Tenants,
   Model,
+  modelOptions,
+  AuditEntry,
+  AuditChange,
   fields,
+  factory,
+  sequence,
   Field,
   Fields,
   QuerySet,
@@ -452,3 +461,116 @@ class Ordered extends Model {
 }
 const orderedSchema = Ordered.schema({ input: true });
 expectType<{ at: string; id?: number | string }>({} as Infer<typeof orderedSchema>);
+// modelOptions(): the values kept without as const, the names checked.
+class KeptPair extends Model {
+  static options = modelOptions({ primaryKey: ['a', 'b'] });
+  static fields = { a: fields.integer(), b: fields.integer() };
+}
+const keptPairSchema = KeptPair.schema();
+expectType<{ a: number; b: number }>({} as Infer<typeof keptPairSchema>);
+class KeptKeyless extends Model {
+  static options = modelOptions({ primaryKey: false, table: 'log_lines', ordering: ['-line'] });
+  static fields = { line: fields.string() };
+}
+const keptKeylessSchema = KeptKeyless.schema();
+expectType<{ line: string }>({} as Infer<typeof keptKeylessSchema>);
+class KeptOrdered extends Model {
+  static options = modelOptions({ ordering: '-at', cache: { ttl: 1000 } });
+  static fields = { at: fields.datetime() };
+}
+const keptOrderedSchema = KeptOrdered.schema({ input: true });
+expectType<{ at: string; id?: number | string }>({} as Infer<typeof keptOrderedSchema>);
+expectError(modelOptions({ primarykey: false }));
+expectError(modelOptions({ table: 'books', ordring: ['title'] }));
+expectError(modelOptions({ primaryKey: 'id' }));
+expectError(modelOptions({ cache: { ttl: '1s' } }));
+// Every option, the lists too (rules, indexes).
+class KeptAll extends Model {
+  static options = modelOptions({
+    table: 'events',
+    schema: 'audit',
+    ordering: ['-at'],
+    rules: ['at != null', { rule: 'at != null', message: 'needs a date', field: 'at' }],
+    indexes: [['at'], { fields: ['at'], expireAfter: '30d' }],
+    abstract: false,
+    strict: true,
+    cache: true,
+    database: 'logs',
+  });
+  static fields = { at: fields.datetime() };
+}
+expectAssignable<ModelOptions>(KeptAll.options);
+// The audit log.
+const audited = new Database({ backend: 'memory', audit: { redact: ['password'], retain: '365d', exclude: ['Session'] } });
+expectType<number | null>(new Database({ backend: 'memory', audit: true }).audit!.retain);
+if (audited.audit) {
+  const log = audited.audit;
+  expectType<Promise<number>>(log.with({ actor: 'u1', requestId: 'r1' }, async () => 1));
+  expectType<Promise<void>>(log.log('export', { rows: 3 }));
+  const entries = await log.entries({ model: 'Book', action: 'update', since: new Date() });
+  expectType<AuditEntry[]>(entries);
+  expectType<AuditChange[] | null>(entries[0].changes);
+  expectType<string | null>(entries[0].actor);
+}
+expectError(new Database({ audit: { retain: true } }));
+expectError(fields.string({ audit: 'hide' }));
+expectAssignable<ModelOptions>({ audit: false });
+
+// The audit log over HTTP: auth is required.
+import { auditResource } from '../..';
+expectType<(app: any) => Promise<void>>(auditResource({ auth: 'admin' }));
+expectType<(app: any) => Promise<void>>(auditResource({ auth: false, pageSize: 20 }));
+expectError(auditResource({}));
+
+// Factories, soft deletes, defer and inBulk.
+{
+  class Pet extends Model {
+    static fields = { name: fields.string(), color: fields.string() };
+  }
+  const Pets = factory(Pet, { name: (n: number) => `Pet ${n}`, color: sequence(['red', 'green']) }, { states: { red: { color: 'red' } } });
+  expectType<Promise<Pet>>(Pets.state('red').create());
+  expectType<Promise<Pet[]>>(Pets.createMany(2));
+  expectType<Promise<Pet>>(Pets.make());
+  expectType<Promise<number>>(Pet.query().withDeleted().restore());
+  expectType<Promise<number>>(new Pet().forceDelete());
+  expectType<boolean>(new Pet().isDeleted);
+  expectType<Promise<Map<unknown, Pet>>>(Pet.query().defer('color').inBulk([1]));
+}
+
+// ping() and the store of the maintenance mode.
+{
+  const db = new Database({ backend: 'memory' });
+  expectType<Promise<number>>(db.ping());
+  const store = maintenance(db, { key: 'app' });
+  expectType<Promise<MaintenanceState | null>>(store.get());
+  store.set({ message: 'soon', retryAfter: 60, allow: ['10.0.0.1'] });
+}
+
+// distinct(), union() and the parts of dates.
+{
+  class Post extends Model {}
+  const genres = Post.objects.values<{ genre: string }>('genre').distinct();
+  expectType<QuerySet<{ genre: string }>>(genres);
+  Post.objects.orderBy('author', '-at').distinct('author');
+  const both = Post.objects.filter({ at__month: 12, at__week_day__in: [1, 7] }).union(Post.objects.filter({ pk: 1 }), { all: true });
+  both.orderBy('-at').slice(0, 10).then((posts) => posts.length);
+  Post.objects.filter({ at__year: 2026 }).intersection(Post.objects.filter({ pk: 1 })).difference(Post.objects.filter({ pk: 2 }));
+}
+
+// Extract and Trunc in values() and the groups of annotate().
+{
+  class Sale extends Model {}
+  const monthly = Sale.objects
+    .values<{ month: number; n: number }>({ month: Extract('createdAt', 'month') })
+    .annotate({ n: Count() });
+  Sale.objects.values('region', { week: Trunc('createdAt', 'week') });
+  Sale.objects.valuesList({ y: new Extract('createdAt', 'year') }, { flat: true });
+  expectError(Extract('createdAt', 'decade'));
+  expectError(Trunc('createdAt', 'week_day'));
+  void monthly;
+}
+
+{
+  const db = new Database({ backend: 'memory' });
+  db.health({ slow: 100 }).check().then((result) => expectType<number | undefined>(result.latency));
+}

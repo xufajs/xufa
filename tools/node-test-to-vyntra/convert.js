@@ -577,6 +577,7 @@ function convert(src, file = '') {
     let name = kind.kind === 'suite' || (info && info.subtests) ? 'describe' : kind.name;
     let modifier = kind.modifier ? `.${kind.modifier}` : '';
     let timeout = '';
+    let skipExpr = null;
     if (options) {
       for (const prop of options.properties) {
         if (prop.type !== 'Property') continue;
@@ -585,7 +586,21 @@ function convert(src, file = '') {
         const truthyLiteral = value.type === 'Literal' && value.value;
         if (key === 'skip') {
           if (truthyLiteral) modifier = '.skip';
-          else if (!(value.type === 'Literal')) modifier = `.skipIf(${text(value)})`;
+          else if (value.type !== 'Literal') {
+            // node:test reads a computed skip when the test is registered, which may be after awaits of the parent
+            // (hoisted into beforeAll here): decided inside the test, when those have run. A done test has no context.
+            if (
+              scope.test &&
+              kind.kind !== 'suite' &&
+              info &&
+              !info.subtests &&
+              !info.done &&
+              fn &&
+              fn.body.type === 'BlockStatement'
+            ) {
+              skipExpr = text(value);
+            } else modifier = `.skipIf(${text(value)})`;
+          }
         } else if (key === 'only' && truthyLiteral) modifier = '.only';
         else if (key === 'todo' && truthyLiteral) modifier = '.todo';
         else if (key === 'timeout') timeout = text(value);
@@ -600,7 +615,7 @@ function convert(src, file = '') {
     if (name === 'describe') {
       body = describeFunction(fn, info);
     } else {
-      rewriteParams(fn, info);
+      rewriteParams(fn, info, skipExpr);
       body = text(fn);
     }
     const parts = [text(args[0]), body];
@@ -609,7 +624,7 @@ function convert(src, file = '') {
   };
 
   // A test function without its context parameter; `ctx` when the context is still used for something else.
-  const rewriteParams = (fn, info) => {
+  const rewriteParams = (fn, info, skipExpr = null) => {
     if (!info) return;
     const bodyText = editor.text(fn.body.start, fn.body.end);
     const refs = info.ctx ? references(bodyText, info.ctx) : [];
@@ -628,7 +643,7 @@ function convert(src, file = '') {
         editor.replace(fn.body.start, fn.body.end, replaced + bodyText.slice(pos));
       }
       if (bare.length < refs.length) todos.push('context used along with done');
-    } else if (refs.length) {
+    } else if (refs.length || skipExpr) {
       params.push('ctx');
       if (info.ctx !== 'ctx') {
         let renamed = '';
@@ -649,6 +664,15 @@ function convert(src, file = '') {
         fn.body.start,
         fn.body.end,
         `${current.slice(0, -1)}\n  // The assertions of resolved promises run before the test ends.\n  await new Promise((resolve) => setImmediate(resolve))\n}`
+      );
+    }
+    if (skipExpr) {
+      const current = editor.text(fn.body.start, fn.body.end);
+      editor.replace(
+        fn.body.start,
+        fn.body.end,
+        `{
+  if (${skipExpr}) ctx.skip(${skipExpr})${current.slice(1)}`
       );
     }
     const head =

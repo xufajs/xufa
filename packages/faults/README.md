@@ -58,10 +58,58 @@ useFaults(); // afterEach of the runner (a global); useFaults(require('node:test
   cleared all the same, so the next test is not the one that fails for it. `useFaults({ strict: true })`,
   `useFaults(require('node:test'), { strict: true })`, or `require('@xufa/faults/register-strict')` in the setup files. A
   test that clears its faults in an `afterEach` of its own is fine: those run before the one of the setup files.
+  xufa's own suites that use faults (faults, orm, client, cluster, netcache, xufa) run strict: with vyntra,
+  `"vyntra": { "setupFiles": ["@xufa/faults/register-strict"] }` in package.json.
 - `clearFaults()` gives the number of rules it removed; `activeFaults()` the faults that have rules now.
 - They reach every copy of this package in the process (the registry is global), so the faults of every part of xufa
   are cleared, whichever one they came from.
 - A faults whose rules are gone (removed, of their `times`, `up()`, `clear()`) is not kept in the registry.
+
+## Scenarios
+
+A scenario makes faults come and go on a timeline, as an outage does: the database gets slow, then the cache goes
+down, then the payment provider answers 503 now and then. For game days in staging, and for tests of what an app does
+through all of it.
+
+```js
+const { scenario } = require('@xufa/faults'); // or require('xufa/faults')
+
+const brownout = scenario({
+  name: 'payments brownout',
+  steps: [
+    { at: 0, target: db, kind: 'delay', options: { operations: 'read', ms: 300 }, for: '2m' },
+    { at: '30s', target: payments, kind: 'respond', options: { status: 503, rate: 0.2 }, for: '1m' },
+    { at: '1m', target: db.cache, kind: 'down', for: '30s' },
+  ],
+  onEvent: (event) => logger.warn(event, 'fault scenario'),
+});
+await brownout.run(); // or brownout.start() ... brownout.stop()
+```
+
+- A step makes its rule `at` its time from the start (`0`, `5000`, `'30s'`, `'2m'`) and removes it after `for`;
+  without `for`, it stays until the end. `target` is faults or what has them (`db`, `db.cache`, a client, the bus),
+  or the name of one of `targets`.
+- The scenario ends at `duration`, or when its last step ends. Its end, and `stop()`, remove every rule it made and let
+  go what they hold; the steps not made yet are skipped.
+- Steps are checked when the scenario is made (targets, kinds, operations, rates, durations), so a mistake fails at
+  once, not in the middle of a game day.
+- `status()` gives its state (`running`, `done`, `stopped`), the time gone, each step (`waiting`, `active`, `done`,
+  `skipped`) with its hits, and the events (`start`, `step`, `end`, `error`, `done`, `stopped`), which `onEvent`
+  is told of as they happen.
+
+To run one every week, give it to [@xufa/scheduler](../scheduler) (stopped when the run is aborted):
+
+```js
+scheduler.add({
+  name: 'game day',
+  cron: '0 15 * * thu',
+  run: ({ signal }) => {
+    const run = scenario({ name: 'game day', steps });
+    signal.addEventListener('abort', () => run.stop());
+    return run.run();
+  },
+});
+```
 
 ## Over HTTP (staging)
 
@@ -91,6 +139,11 @@ curl -X POST localhost:3000/_faults/payments/respond -H "authorization: Bearer $
 | `POST /_faults/:target/up`                | No more `down`                                                   |
 | `DELETE /_faults/:target`                 | The rules of the target removed                                  |
 | `DELETE /_faults`                         | Every rule of every target removed                               |
+| `GET /_faults/scenarios`                  | The scenarios defined, and those run (with their status)         |
+| `POST /_faults/scenarios/:name`           | A scenario defined, started: 201 (409 while it runs)             |
+| `POST /_faults/scenarios`                 | A scenario of the body (`{ name, steps, duration }`), started    |
+| `DELETE /_faults/scenarios/:id`           | A scenario stopped: its rules removed                            |
+| `GET /_faults/ui`                         | A page that does all of this                                     |
 
 - The body of a rule has its options as JSON: `operations`, `rate`, `after`, `times`, `ms`, `jitter`,
   `message`, the filters of the target (names, lists of them, or `{ "regex": "^user:" }`) and those of `respond`.
@@ -103,6 +156,22 @@ curl -X POST localhost:3000/_faults/payments/respond -H "authorization: Bearer $
 - Off in production (`NODE_ENV`): it registers nothing. `enabled: true` there needs `allowProduction: true` too.
 - Every change is logged (`fault injected`, `fault removed`, `fault expired`...) at warn, and the routes are left out of
   OpenAPI documents. `path` moves them (`/_faults`).
+- **Scenarios** over HTTP: `scenarios` defines them by name (`{ 'cache outage': { steps: [{ at: 0, target: 'cache',
+kind: 'down', for: '5m' }] } }`: steps name targets), checked when the plugin is registered. They, and those of a
+  body, never last more than `maxDuration`; the rules they make are listed with their `scenario`, and the app stops
+  them when it closes.
+- **The page** (`/_faults/ui`; `ui: false` leaves it out): the targets and their rules, refreshed every 2 seconds
+  (hits, whether a hang holds, the time left), a form for new rules (operations and filters of the target, the fields
+  of each kind), and buttons to remove, release, bring up and clear. Its files have no data, so they are served without
+  the protection; what it shows and changes goes through the protected routes. With `token`, it asks for the token and
+  keeps it in the tab (sessionStorage); with `authorize` or `auth`, the cookies of the browser go with its requests.
+  Presets keep the form as it is, by name ("payments 20% 503s"), and a button switches between light and dark: both
+  kept in the browser (localStorage). It is served with a strict Content-Security-Policy (no inline scripts, no frames)
+  and sets every value as text. Scenarios are started and stopped with their steps shown as they go, and one can be
+  written there, as JSON (`{ name, steps, duration }`, an example given with the first target): the server checks it
+  (its message shown) and starts it; the text is kept in the browser.
+  `test/ui.browser.test.js` drives it in Chrome or Edge as installed (with playwright-core; skipped without one): the
+  form, rules refused by the server, the buttons, scenarios, and no error of a script or of the policy.
 
 ## Errors
 

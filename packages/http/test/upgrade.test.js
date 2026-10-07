@@ -12,7 +12,8 @@ beforeAll(async () => {
 localAddresses = await dns.lookup('localhost', { all: true });
 skip = localAddresses.length === 1 && 'requires both IPv4 and IPv6';
 })
-test.skipIf(skip)('upgrade IPv4 and IPv6', async () => {
+test('upgrade IPv4 and IPv6', async (ctx) => {
+  if (skip) ctx.skip(skip)
     expect.assertions(2)
 
     const fastify = Fastify()

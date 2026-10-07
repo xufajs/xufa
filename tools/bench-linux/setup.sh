@@ -15,9 +15,14 @@ if [ ! -x "$NODE_DIR/bin/node" ]; then
 fi
 export PATH="$NODE_DIR/bin:$PATH"
 
-# The working tree as it is (changes not committed too), without node_modules nor the history.
+# The working tree as it is (changes not committed too), without node_modules nor the history; files deleted in it
+# are deleted in the copy too (rsync --delete), so tests and files removed do not stay.
 mkdir -p "$COPY"
-tar -C "$REPO" --exclude=node_modules --exclude=.git --exclude='*.cpuprofile' -cf - . | tar -C "$COPY" -xf -
+if command -v rsync >/dev/null; then
+  rsync -a --delete --exclude=node_modules --exclude=.git --exclude='*.cpuprofile' --exclude=.bench-linux-lock "$REPO/" "$COPY/"
+else
+  tar -C "$REPO" --exclude=node_modules --exclude=.git --exclude='*.cpuprofile' -cf - . | tar -C "$COPY" -xf -
+fi
 
 cd "$COPY"
 LOCK_HASH=$(sha256sum pnpm-lock.yaml | cut -d' ' -f1)

@@ -50,6 +50,7 @@ describe('caches that fail', () => {
       for (const user of users) expect((await User.objects.get({ pk: user.pk })).name).toBe(user.name);
     }
     expect(rule.hits).toBeGreaterThan(0);
+    cache.faults.clear();
   });
 
   it('cached querysets and cached() functions: the query runs (or the function) when the cache fails to read', async () => {
@@ -68,6 +69,8 @@ describe('caches that fail', () => {
     store.faults.fail({ operations: 'read' });
     expect(await double(2)).toBe(4);
     expect([runs, fnErrors]).toEqual([2, ['get']]);
+    cache.faults.clear();
+    store.faults.clear();
   });
 
   it('a delete that fails is an error: save() of an object kept says so', async () => {
@@ -79,6 +82,7 @@ describe('caches that fail', () => {
     const err = await ada.save().catch((e) => e);
     expect(err).toBeInstanceOf(FaultError);
     expect(err.message).toMatch(/A fault of the cache \(injected\): delete of /);
+    cache.faults.clear();
   });
 
   it('without onCacheError: a warning, once for a database', async () => {
@@ -101,6 +105,7 @@ describe('caches that fail', () => {
       expect(warnings).toEqual(['A cache failed to get; the database answers (The cache is down (a fault injected))']);
     } finally {
       process.off('warning', listener);
+      cache.faults.up();
     }
   });
 

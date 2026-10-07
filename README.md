@@ -49,8 +49,10 @@ with no dependencies outside xufa, and every library fastify depends on is repla
 | [`@xufa/openapi`](packages/openapi)     | `@fastify/swagger`, `@fastify/swagger-ui` | OpenAPI documents of the routes, and an explorer                                       |
 | [`@xufa/client`](packages/client)       | `got`, `axios`                            | A client of HTTP APIs on fetch                                                         |
 | [`@xufa/schema`](packages/schema)       | `ajv`, `@sinclair/typebox`                | Schemas as code or JSON Schema, compiled into fast validators                          |
-| [`@xufa/orm`](packages/orm)             | the Django ORM                            | ORM for SQL and NoSQL databases, files and stores of objects                           |
+| [`@xufa/orm`](packages/orm)             | the Django ORM                            | ORM for SQL and NoSQL databases, files, stores of objects and email                    |
 | [`@xufa/auth`](packages/auth)           | `otplib`                                  | Passwords, JWTs, TOTP, refresh tokens, as a plugin                                     |
+| [`@xufa/admin`](packages/admin)         | the Django admin                          | The admin of the models: lists, search, filters, forms with their validation           |
+| [`@xufa/session`](packages/session)     | `@fastify/session`                        | Sessions of browsers: signed cookies, flash messages, CSRF                             |
 | [`@xufa/sequelize`](packages/sequelize) | `sequelize`                               | The API of Sequelize 6 over `@xufa/orm`                                                |
 
 ### Drivers
@@ -77,9 +79,10 @@ with no dependencies outside xufa, and every library fastify depends on is repla
 
 | Package                                 | Replaces                | What it is                                                            |
 | --------------------------------------- | ----------------------- | --------------------------------------------------------------------- |
-| [`@xufa/cluster`](packages/cluster)     | `node:cluster`          | Apps in clusters of processes, with a message bus                     |
+| [`@xufa/cluster`](packages/cluster)     | `node:cluster`          | Apps in clusters of processes, a message bus, pools of nodes          |
 | [`@xufa/config`](packages/config)       | `node-config`, `dotenv` | Configuration by environment, Consul and Vault, with a schema         |
 | [`@xufa/scheduler`](packages/scheduler) | `node-cron`             | Jobs on intervals, cron or once                                       |
+| [`@xufa/queue`](packages/queue)         | BullMQ, Laravel queues  | Jobs in the background and pipelines of steps, kept in the database   |
 | [`@xufa/discovery`](packages/discovery) |                         | The nodes of a service found on the network (UDP)                     |
 | [`@xufa/netcache`](packages/netcache)   | Redis, as a cache       | A cache shared by the machines of a service                           |
 | [`@xufa/faults`](packages/faults)       | Toxiproxy, `nock`       | Faults by rules for tests of resilience: database, caches, calls, bus |
@@ -129,7 +132,8 @@ pnpm lint
 pnpm bench         # HTTP benchmark of xufa, fastify and node:http (see bench/README.md)
 ```
 
-Node.js 22 or later.
+Node.js 22.22.3 or later (24.15 or later on the 24 line, 25.7 on the 25 line): the releases that fix a race of the
+keep-alive connections of `node:http` (nodejs/node#60001).
 
 The tests of the databases run against local servers, and are skipped when they cannot connect:
 
@@ -152,6 +156,9 @@ The tests of fastify and of the libraries it uses are ported, not rewritten:
 
 The integration tests of Sequelize 6 run as they are: [`tools/sequelize-compat`](tools/sequelize-compat) runs them
 against `@xufa/sequelize`, and against Sequelize itself to compare (see its README).
+
+The main plugins of fastify (21: cors, helmet, rate-limit, cookie, session, jwt, multipart, static, compress...) run
+on `@xufa/http` as their READMEs show them, in [`tools/fastify-plugins`](tools/fastify-plugins).
 
 Tests of what xufa does differently are written for it, apart from the ported ones (which a new port overwrites):
 `packages/http/test/xufa/`, `packages/serializer/test/output.test.js`, and `test/types/xufa.*` in the packages

@@ -4,9 +4,10 @@
 //
 //   const books = await Book.objects.filter({ author__name: 'Ada', pages__gte: 100 }).orderBy('-pages').limit(10);
 const { ForeignKey } = require('./fields');
-const { STATE } = require('./meta');
+const { STATE, takeGiven } = require('./meta');
 const { currentSignal } = require('./context');
 const { cachedQuery } = require('./query-cache');
+const { aggregateAcross, isReverse } = require('./js-aggregates');
 const {
   Q,
   F,
@@ -23,11 +24,15 @@ const {
   SEPARATOR,
   collectJoins,
   eachExists,
+  Extract,
+  Trunc,
+  resolveDateValue,
 } = require('./query');
 const modelCache = require('./model-cache');
 const { NotFoundError, MultipleObjectsError, QueryError, ProtectedError, ValidationError } = require('./errors');
 const { uniqueErrorOf } = require('./errors');
 const { affects } = require('./computed');
+const { combine: combineQueries, isOptions, optionsOf } = require('./combine');
 
 const MAX_GET_RESULTS = 21;
 
@@ -50,6 +55,10 @@ const INITIAL = {
   defaults: null,
   signal: null,
   cached: null,
+  // Objects deleted softly: left out ('without'), with the others ('with'), or alone ('only').
+  deleted: 'without',
+  // Rows of values() with the same values given once.
+  distinct: false,
 };
 
 class QuerySet {
@@ -60,7 +69,27 @@ class QuerySet {
   }
 
   clone(changes) {
-    return new QuerySet(this.model, { ...this.state, ...changes });
+    return new (querySetClass(this.model) || QuerySet)(this.model, { ...this.state, ...changes });
+  }
+
+  // Soft deletes: the objects deleted too, or those alone.
+  withDeleted() {
+    requireSoft(this.model, 'withDeleted()');
+    return this.clone({ deleted: 'with' });
+  }
+
+  onlyDeleted() {
+    requireSoft(this.model, 'onlyDeleted()');
+    return this.clone({ deleted: 'only' });
+  }
+
+  // The condition of the soft deletes, with the conditions of the query.
+  whereOf() {
+    const { model, state } = this;
+    const soft = model.meta.softDelete;
+    if (!soft || state.deleted === 'with') return state.where;
+    const condition = resolveWhere(model, { [`${soft}__isnull`]: state.deleted === 'without' });
+    return combine('and', state.where, condition);
   }
 
   get db() {
@@ -138,9 +167,51 @@ class QuerySet {
     return qs;
   }
 
+  // Without names, the rows of values() and valuesList() with the same values once (as SQL's DISTINCT): on every
+  // backend, ordered by their values. Objects are distinct already (conditions on reverse relations are EXISTS, not
+  // joins). With names, the first object (in the order of the query) of each group of their values, as DISTINCT ON
+  // of PostgreSQL: limitPer(names, 1), on every backend.
+  distinct(...names) {
+    if (names.length) return this.limitPer(names, 1);
+    return this.clone({ distinct: true });
+  }
+
+  // The objects (or values) of this query and of others, each once (as Django's union(); { all: true } keeps them as
+  // many times as they come): one query when they are of one model without slices, the conditions ORed (a QuerySet);
+  // otherwise each runs and they are merged (a union that orders, slices, counts and is awaited).
+  union(...others) {
+    return combineQueries('union', [this, ...others.filter((item) => !isOptions(item))], optionsOf(others));
+  }
+
+  // The objects (or values) of this query that are in every other one (as Django's intersection(): INTERSECT), and
+  // those that are in none of them (difference(): EXCEPT), each once. Objects of one model without slices are one
+  // query, the conditions ANDed, or those of the others excluded (a QuerySet); otherwise each runs and their rows are
+  // compared (values by their values).
+  intersection(...others) {
+    return combineQueries('intersection', [this, ...others]);
+  }
+
+  difference(...others) {
+    return combineQueries('difference', [this, ...others]);
+  }
+
   // Loads only some fields of the objects (and the primary key).
   only(...names) {
     return this.clone({ only: names });
+  }
+
+  // The objects without the fields named (they are not read), as Django's defer().
+  defer(...names) {
+    const { meta } = this.model;
+    const deferred = new Set(
+      names.map((name) => {
+        const field = meta.field(name);
+        if (!field) throw new QueryError(`defer(): ${this.model.name} has no field ${name}`);
+        return field;
+      })
+    );
+    const current = this.state.only ? this.state.only.map((name) => meta.field(name)) : meta.fields;
+    return this.clone({ only: current.filter((field) => !deferred.has(field)).map((field) => field.name) });
   }
 
   // Gives plain objects with the fields named (every field when there is none), which can follow relations:
@@ -151,7 +222,14 @@ class QuerySet {
 
   // Gives arrays of the values of the fields named, or the values themselves with { flat: true } and one field.
   valuesList(...args) {
-    const options = args.length && typeof args[args.length - 1] === 'object' ? args.pop() : {};
+    // The options ({ flat }) come last; an object of other keys is of values ({ month: Extract(...) }).
+    const last = args[args.length - 1];
+    const isOptions =
+      last &&
+      typeof last === 'object' &&
+      Object.keys(last).length > 0 &&
+      Object.keys(last).every((key) => key === 'flat');
+    const options = isOptions ? args.pop() : {};
     if (options.flat && args.length !== 1) throw new QueryError('valuesList with flat takes one field');
     return this.clone({ values: args, list: true, flat: Boolean(options.flat) });
   }
@@ -210,7 +288,7 @@ class QuerySet {
     const query = {
       model,
       meta,
-      where: state.where,
+      where: this.whereOf(),
       orderBy: [],
       limit: state.limit,
       offset: state.offset,
@@ -242,7 +320,11 @@ class QuerySet {
       // Names, or { key: Raw(sql) } for values of fragments of SQL.
       query.values = names.flatMap((name) => {
         if (name && typeof name === 'object') {
-          return Object.entries(name).map(([key, raw]) => ({ key, raw: raw.sql, params: raw.params }));
+          return Object.entries(name).map(([key, item]) =>
+            item instanceof Extract || item instanceof Trunc
+              ? resolveDateValue(model, key, item)
+              : { key, raw: item.sql, params: item.params }
+          );
         }
         const { fields, jsonPath } = resolvePath(model, name, false);
         return jsonPath ? { key: name, fields, jsonPath } : { key: name, fields };
@@ -332,7 +414,11 @@ class QuerySet {
   async fetchFresh() {
     const { state } = this;
     let result;
-    if (state.annotations) result = this.shapeValues(await this.fetchGroups());
+    if (state.distinct && state.values && !state.annotations) {
+      // Rows with the same values once: groups of them, with no aggregates.
+      result = this.shapeValues(await this.clone({ annotations: {}, distinct: false }).fetchGroups());
+    } else if (state.annotations && !state.values) result = await this.fetchAnnotated();
+    else if (state.annotations) result = this.shapeValues(await this.fetchGroups());
     else {
       const { backend } = this;
       if (state.per && !backend.limitPer) result = await this.fetchPer();
@@ -371,9 +457,73 @@ class QuerySet {
   shapeValues(rows) {
     const { state } = this;
     if (!state.list) return rows;
-    const keys = state.values.length ? state.values : this.model.meta.fields.map((field) => field.attname);
+    // Names, and the keys of { key: Raw | Extract | Trunc }.
+    const keys = state.values.length
+      ? state.values.flatMap((name) => (name && typeof name === 'object' ? Object.keys(name) : [name]))
+      : this.model.meta.fields.map((field) => field.attname);
     if (state.flat) return rows.map((row) => row[keys[0]]);
     return rows.map((row) => keys.map((key) => row[key]));
+  }
+
+  // annotate() without values(), as Django's: the objects, each with its aggregates (Author.objects.annotate({
+  // numBooks: Count('books') }) gives authors with numBooks). Two queries, on every backend: the objects, then their
+  // aggregates grouped by key; or, when the order is of an annotation, the groups first (their order and slice), then
+  // their objects.
+  async fetchAnnotated() {
+    const { model, state } = this;
+    const { meta } = model;
+    for (const key of Object.keys(state.annotations)) {
+      if (meta.field(key) || meta.fields.some((field) => field.attname === key) || meta.reverseRelation(key)) {
+        throw new QueryError(`The annotation ${key} conflicts with a field of ${model.name}`);
+      }
+    }
+    if (state.related.length) {
+      throw new QueryError('annotate() of objects cannot be used with selectRelated(): prefetchRelated() loads them');
+    }
+    const keys = meta.pkFields.map((field) => field.attname);
+    const keyOf = (row) => JSON.stringify(keys.map((name) => row[name]));
+    const annotationKeys = Object.keys(state.annotations);
+    const orderBy = state.orderBy || meta.options.ordering || [];
+    const byAnnotation = orderBy.some((name) => state.annotations[name.replace(/^-/, '')] !== undefined);
+    const assign = (objects, groups) => {
+      const values = new Map(groups.map((group) => [keyOf(group), group]));
+      for (const object of objects) {
+        const group = values.get(keyOf(object));
+        for (const key of annotationKeys) {
+          // Not in the groups: none of its related rows matched (a count of 0; a sum of nothing is null).
+          const value = group ? group[key] : state.annotations[key].fn === 'count' ? 0 : null;
+          Object.defineProperty(object, key, { value, enumerable: true, writable: true, configurable: true });
+        }
+      }
+      return objects;
+    };
+    const keysIn = (rows) =>
+      keys.length === 1
+        ? { pk__in: rows.map((row) => row[keys[0]]) }
+        : { pk__in: rows.map((row) => keys.map((k) => row[k])) };
+    if (!byAnnotation) {
+      const objects = await this.clone({ annotations: null }).fetch();
+      if (objects.length === 0) return objects;
+      const groups = await this.clone({ values: keys, orderBy: [], limit: null, offset: 0, prefetch: [] })
+        .filter(keysIn(objects))
+        .fetchGroups();
+      return assign(objects, groups);
+    }
+    // Ordered by an annotation: the groups, with the fields the order names, decide the order and the slice.
+    const ordered = orderBy
+      .map((name) => name.replace(/^-/, ''))
+      .filter((name) => state.annotations[name] === undefined);
+    const groups = await this.clone({
+      values: [...new Set([...keys, ...ordered])],
+      orderBy,
+      prefetch: [],
+    }).fetchGroups();
+    if (groups.length === 0) return [];
+    const objects = await this.clone({ annotations: null, orderBy: [], limit: null, offset: 0 })
+      .filter(keysIn(groups))
+      .fetch();
+    const byKey = new Map(objects.map((object) => [keyOf(object), object]));
+    return assign(groups.map((group) => byKey.get(keyOf(group))).filter(Boolean), groups);
   }
 
   async fetchGroups() {
@@ -391,6 +541,9 @@ class QuerySet {
       if (!keys.has(key)) throw new QueryError(`Groups can only be ordered by their values and annotations (${key})`);
       return { key, desc };
     });
+    if (!this.backend.reverseAggregates && aggregates.some(isReverse)) {
+      return aggregateAcross(this.backend, query, aggregates, query.values, this.state.db);
+    }
     return this.backend.aggregate(query, aggregates, query.values);
   }
 
@@ -400,6 +553,7 @@ class QuerySet {
     const { state } = this;
     return (
       state.where === null &&
+      (!this.model.meta.softDelete || state.deleted === 'with') &&
       state.limit === null &&
       !state.offset &&
       !state.only &&
@@ -453,17 +607,36 @@ class QuerySet {
 
   async count() {
     if (this.cache) return this.cache.length;
-    if (this.state.per) return (await this.fetch()).length;
+    if (this.state.per || (this.state.distinct && this.state.values)) return (await this.fetch()).length;
     this.readSignal();
     if (this.state.cached) return cachedQuery(this, 'count', () => this.backend.count(this.toQuery()));
     return this.backend.count(this.toQuery());
+  }
+
+  // The objects of these keys (or values of a unique field), as a Map by key, as Django's in_bulk(): every object
+  // without keys.
+  async inBulk(keys, { field = 'pk' } = {}) {
+    const { meta } = this.model;
+    const by = field === 'pk' ? meta.pk : meta.field(field);
+    if (!by || (field !== 'pk' && !by.unique && !by.primaryKey)) {
+      throw new QueryError(`inBulk(): ${field} is not the key nor a unique field of ${this.model.name}`);
+    }
+    const objects = keys === undefined ? await this.fetch() : await this.filter({ [`${field}__in`]: keys }).fetch();
+    return new Map(objects.map((object) => [object[by.attname], object]));
   }
 
   async exists() {
     if (this.cache) return this.cache.length > 0;
     if (this.state.per) return (await this.fetch()).length > 0;
     const key = (this.model.meta.pkFields[0] || this.model.meta.fields[0]).attname;
-    const items = await this.clone({ values: [key], list: true, flat: true, limit: 1, orderBy: [] }).fetch();
+    const items = await this.clone({
+      values: [key],
+      list: true,
+      flat: true,
+      limit: 1,
+      orderBy: [],
+      distinct: false,
+    }).fetch();
     return items.length > 0;
   }
 
@@ -473,7 +646,10 @@ class QuerySet {
     this.readSignal();
     const query = { ...this.toQuery(), orderBy: [] };
     const items = Object.keys(aggregates).map((key) => ({ key, ...resolveAggregate(this.model, aggregates[key]) }));
-    const compute = async () => (await this.backend.aggregate(query, items, null))[0];
+    const compute = async () =>
+      (!this.backend.reverseAggregates && items.some(isReverse)
+        ? await aggregateAcross(this.backend, query, items, null, this.state.db)
+        : await this.backend.aggregate(query, items, null))[0];
     if (this.state.cached) return cachedQuery(this, 'aggregate', compute, { extra: items });
     return compute();
   }
@@ -546,6 +722,7 @@ class QuerySet {
       // A composite key is given, not made by the database.
       const { pk } = model.meta;
       if (pk && !pk.composite && (pks[i] !== null || !conflict)) instance[pk.attname] = pks[i];
+      takeGiven(model.meta, instance, rows[i]);
       instance[STATE].adding = false;
       instance[STATE].db = this.state.db || null;
     });
@@ -596,7 +773,7 @@ class QuerySet {
     // Stored computed fields read a field updated: the objects are found first (the update can change what the
     // conditions select), updated, and their computed fields set again.
     requireKey(model, 'update() of fields read by stored computed fields');
-    return this.db.transaction(async () => {
+    const run = async () => {
       const keys = await this.keys();
       const count = await this.backend
         .update(this.toQuery(), assignments)
@@ -604,7 +781,10 @@ class QuerySet {
       await recomputeKeys(this, keys, computed);
       await modelCache.clear(this.db, model);
       return count;
-    });
+    };
+    // With an audit log, the update and the computing again are one entry for each object.
+    const audit = this.db ? this.db.audit : null;
+    return this.db.transaction(() => (audit ? audit.group(run) : run()));
   }
 
   // Computes the stored computed fields of the objects of the query again and saves those that changed (after adding
@@ -634,7 +814,23 @@ class QuerySet {
   // number of objects of this model deleted.
   async delete() {
     this.checkWritable('delete');
+    const soft = this.model.meta.softDelete;
+    // Soft deletes: the objects get the date (those deleted already keep theirs).
+    if (soft) return this.filter({ [`${soft}__isnull`]: true }).update({ [soft]: new Date() });
     return this.db.transaction(() => collectAndDelete(this, new Map()));
+  }
+
+  // Deletes for good, also when the model has soft deletes (the objects deleted softly too, with withDeleted()).
+  async forceDelete() {
+    this.checkWritable('forceDelete');
+    return this.db.transaction(() => collectAndDelete(this, new Map()));
+  }
+
+  // Takes back the objects deleted softly that the query matches (of onlyDeleted(), or withDeleted()).
+  async restore() {
+    requireSoft(this.model, 'restore()');
+    const query = this.state.deleted === 'without' ? this.clone({ deleted: 'only' }) : this;
+    return query.update({ [this.model.meta.softDelete]: null });
   }
 
   checkWritable(operation) {
@@ -642,6 +838,45 @@ class QuerySet {
       throw new QueryError(`${operation}() cannot be used on a query with limit or offset`);
     }
   }
+}
+
+function requireSoft(model, what) {
+  if (!model.meta.softDelete) throw new QueryError(`${what}: ${model.name} has no soft deletes (options.softDelete)`);
+}
+
+// Scopes (static scopes = { published: (qs) => qs.filter(...), by: (qs, name) => ... }): methods of the querysets of a
+// model (Book.objects.published().by('Ada')), with those of its parents. The class of its querysets, made once; null
+// for models without scopes.
+const QUERYSET_CLASSES = new WeakMap();
+function querySetClass(model) {
+  if (QUERYSET_CLASSES.has(model)) return QUERYSET_CLASSES.get(model);
+  const scopes = {};
+  const chain = [];
+  for (let current = model; current && current !== Function.prototype; current = Object.getPrototypeOf(current)) {
+    chain.unshift(current);
+  }
+  for (const current of chain) {
+    if (Object.hasOwn(current, 'scopes') && current.scopes) Object.assign(scopes, current.scopes);
+  }
+  let made = null;
+  if (Object.keys(scopes).length) {
+    made = class extends QuerySet {};
+    for (const [name, scope] of Object.entries(scopes)) {
+      if (typeof scope !== 'function') throw new QueryError(`The scope ${name} of ${model.name} is not a function`);
+      if (name in QuerySet.prototype) {
+        throw new QueryError(`The scope ${name} of ${model.name} has the name of a method of querysets`);
+      }
+      made.prototype[name] = function scoped(...args) {
+        const result = scope.call(model, this, ...args);
+        if (!(result instanceof QuerySet)) {
+          throw new QueryError(`The scope ${name} of ${model.name} gave no queryset (it gives qs.filter(...)...)`);
+        }
+        return result;
+      };
+    }
+  }
+  QUERYSET_CLASSES.set(model, made);
+  return made;
 }
 
 const RECOMPUTE_BATCH = 500;
@@ -838,6 +1073,12 @@ function equalities(model, conditions) {
   return data;
 }
 
+// Every object of a model in a database, those deleted softly too (they are rows a delete takes with it).
+function allObjects(model, db) {
+  const objects = model.objects.using(db);
+  return model.meta.softDelete ? objects.withDeleted() : objects;
+}
+
 async function collectAndDelete(qs, seen) {
   const { model } = qs;
   const { meta } = model;
@@ -852,7 +1093,7 @@ async function collectAndDelete(qs, seen) {
     for (let i = 0; i < reverse.length; i += 1) {
       const field = reverse[i];
       const values = await qs.valuesList(field.targetField.attname, { flat: true }).orderBy();
-      const related = field.model.objects.using(qs.state.db).filter({ [`${field.attname}__in`]: values });
+      const related = allObjects(field.model, qs.state.db).filter({ [`${field.attname}__in`]: values });
       if (field.onDelete === 'protect') {
         if (await related.exists()) throw new ProtectedError(model.name, `${field.model.name}.${field.name}`);
       } else if (field.onDelete === 'setNull') await related.update({ [field.name]: null });
@@ -868,13 +1109,13 @@ async function collectAndDelete(qs, seen) {
   pks.forEach((pk) => done.add(pk));
   for (let i = 0; i < reverse.length; i += 1) {
     const field = reverse[i];
-    const related = field.model.objects.using(qs.state.db).filter({ [`${field.attname}__in`]: pks });
+    const related = allObjects(field.model, qs.state.db).filter({ [`${field.attname}__in`]: pks });
     if (field.onDelete === 'protect') {
       if (await related.exists()) throw new ProtectedError(model.name, `${field.model.name}.${field.name}`);
     } else if (field.onDelete === 'setNull') await related.update({ [field.name]: null });
     else await collectAndDelete(related, seen);
   }
-  const count = await qs.backend.delete(model.objects.using(qs.state.db).filter({ pk__in: pks }).orderBy().toQuery());
+  const count = await qs.backend.delete(allObjects(model, qs.state.db).filter({ pk__in: pks }).orderBy().toQuery());
   await modelCache.clear(qs.db, model);
   return count;
 }
@@ -922,4 +1163,4 @@ async function prefetch(model, instances, names, db) {
   }
 }
 
-module.exports = { QuerySet, RelatedSet, pathKey, lastOf };
+module.exports = { QuerySet, RelatedSet, pathKey, lastOf, querySetClass };

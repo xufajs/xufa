@@ -165,6 +165,17 @@ They are kept in a store with `get`, `set(key, value, ttl)` and `delete`: one of
 @xufa/orm given as `store` (`SharedCache` keeps them in the primary of a cluster, so every worker counts the same
 failures). Counting is not atomic across processes: failures at the same time in two workers may count once.
 
+Keys are counted by `normalizeIdentifier(key)`: Unicode NFKC and lower case, so names a person cannot tell apart are
+one key (`'ＡＤＭＩＮ'`, full-width, and `'Admin'` are `'admin'`; a ligature `'ﬁ'` is `'fi'`) and have one count of
+failures. Store and find users by it too, so a name and its look-alike are one account. Letters of other scripts that
+look the same (Cyrillic `а`) are other letters and are not changed.
+
+`skeleton(value)` covers those: the skeleton of Unicode's security mechanisms (UTS #39, its `confusables.txt`), the
+same for texts that look alike across scripts (`"pаypal"` with a Cyrillic `а`, and `"paypal"`; `"rn"` and `"m"`). Keep
+`skeleton(normalizeIdentifier(name))` with each user, unique, and refuse a new name whose skeleton is taken: no one can
+sign up as a look-alike of another. It is a key to compare, not a text to show. The data (6,712 characters, 60 KB) is
+read the first time it is used; `scripts/generate-confusables.js` writes it again from a new `confusables.txt`.
+
 ## Refresh tokens
 
 ```js

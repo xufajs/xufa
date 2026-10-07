@@ -23,7 +23,8 @@ describe('client.faults', () => {
     calls = 0;
   });
 
-  const client = (options = {}) => createClient({ baseUrl: base, retry: { attempts: 3, delay: 1, jitter: 0 }, ...options });
+  const client = (options = {}) =>
+    createClient({ baseUrl: base, retry: { attempts: 3, delay: 1, jitter: 0 }, ...options });
 
   it('fail: as a network that refuses the call (a RequestError), retried as one', async () => {
     const api = client();
@@ -35,6 +36,7 @@ describe('client.faults', () => {
     expect(err).toBeInstanceOf(RequestError);
     expect(err.cause.cause.code).toBe('ECONNREFUSED');
     expect(calls).toBe(1); // no call reached the server
+    api.faults.clear();
   });
 
   it('respond: a status without the call (a 503 with Retry-After is retried after it)', async () => {
@@ -46,6 +48,7 @@ describe('client.faults', () => {
     expect([err instanceof HTTPError, err.status, err.body]).toEqual([true, 404, { error: 'not here' }]);
     expect(await api.get('/other')).toEqual({ path: '/other' });
     expect(() => api.faults.respond({ status: 99 })).toThrow(/from 200 to 599/);
+    api.faults.clear();
   });
 
   it('delay, and hang (the timeout of the client ends it: a TimeoutError)', async () => {
@@ -61,6 +64,7 @@ describe('client.faults', () => {
     expect(calls).toBe(1);
     // A write is not a read: not held.
     expect(await api.post('/write', { json: {} })).toEqual({ path: '/write' });
+    api.faults.clear();
   });
 
   it('by method and path; down and up; shared with extend() and for()', async () => {

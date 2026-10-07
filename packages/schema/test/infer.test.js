@@ -1,4 +1,4 @@
-const validator = require('../src');
+const validator = require('..');
 
 const { inferJsonSchema, inferSchemaCode, compileJsonSchema } = validator;
 

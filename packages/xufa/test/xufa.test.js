@@ -1,5 +1,4 @@
 // The package xufa gives the framework of @xufa/http, in CommonJS and as an ES module.
-require('xufa/faults/register'); // every fault cleared after each test (xufa/faults below)
 const xufa = require('xufa');
 const http = require('@xufa/http');
 
@@ -75,6 +74,24 @@ describe('xufa/scheduler', () => {
   });
 });
 
+describe('xufa/admin', () => {
+  it('is @xufa/admin', () => {
+    expect(require('xufa/admin')).toBe(require('@xufa/admin'));
+  });
+});
+
+describe('xufa/session', () => {
+  it('is @xufa/session', () => {
+    expect(require('xufa/session')).toBe(require('@xufa/session'));
+  });
+});
+
+describe('xufa/queue', () => {
+  it('is @xufa/queue', () => {
+    expect(require('xufa/queue')).toBe(require('@xufa/queue'));
+  });
+});
+
 describe('xufa/faults', () => {
   it('is @xufa/faults; clearFaults() clears those of the ORM, its caches and the clients', async () => {
     expect(require('xufa/faults')).toBe(require('@xufa/faults'));
@@ -92,18 +109,10 @@ describe('xufa/faults', () => {
     expect([db.faults.rules, cache.faults.rules, client.faults.rules]).toEqual([[], [], []]);
   });
 
-  // xufa/faults/register (required at the top of this file, as a setup file would): cleared after each test.
-  it('a test that leaves a fault...', () => {
-    const { Database } = require('xufa/orm');
-    new Database({ backend: 'memory' }).faults.down();
-    expect(require('xufa/faults').activeFaults()).toHaveLength(1);
-  });
-
-  it('...leaves none to the next one', () => {
-    expect(require('xufa/faults').activeFaults()).toEqual([]);
-  });
-
-  it('xufa/faults/register-strict is there (a test that leaves faults fails)', () => {
+  // This package's tests run with xufa/faults/register-strict (package.json, "vyntra"): a test that ended with faults
+  // set would fail, so every test here clears its own.
+  it('xufa/faults/register and register-strict are there', () => {
+    expect(require.resolve('xufa/faults/register')).toBe(require.resolve('../faults-register.js'));
     expect(require.resolve('xufa/faults/register-strict')).toBe(require.resolve('../faults-register-strict.js'));
   });
 });

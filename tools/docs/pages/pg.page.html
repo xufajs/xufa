@@ -289,7 +289,7 @@ await client.query('LISTEN orders');
           the client and the result or the error), and <code>pg:pool:release</code> and <code>pg:pool:remove</code>.
           Nothing is made when no one subscribes.
         </p>
-        <pre><code class="language-js">const dc = require('node:diagnostics_channel');
+        <pre data-run><code class="language-js">const dc = require('node:diagnostics_channel');
 dc.tracingChannel('pg:query').subscribe({
   start: (ctx) =&gt; (ctx.started = performance.now()),
   asyncEnd: (ctx) =&gt; metrics.observe(ctx.query.text, performance.now() - ctx.started),
@@ -346,7 +346,7 @@ dc.tracingChannel('pg:query').subscribe({
 
         <h2 id="typescript">TypeScript</h2>
         <p>Declarations are in the package: <code>Client</code>, <code>Pool</code>, <code>PoolClient</code>, <code>QueryResult&lt;R&gt;</code>, <code>QueryConfig</code>, <code>DatabaseError</code>...</p>
-        <pre><code class="language-ts">import { Pool, QueryResult } from '@xufa/pg';
+        <pre data-run><code class="language-ts">import { Pool, QueryResult } from '@xufa/pg';
 
 interface User { id: number; name: string }
 const pool = new Pool({ connectionString: process.env.DATABASE_URL });

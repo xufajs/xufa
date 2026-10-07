@@ -3,7 +3,7 @@
 // and s.partial(), and used by routes of @xufa/http to validate bodies and write replies.
 const xufa = require('@xufa/http');
 const { s } = require('@xufa/schema');
-const { Database, Model, fields } = require('..');
+const { Database, Model, fields, modelOptions } = require('..');
 
 function makeModels() {
   class Writer extends Model {
@@ -97,6 +97,38 @@ describe('Model.schema()', () => {
       required: ['a', 'b'],
     });
     expect(Object.keys(Child.schema().properties)).toEqual(['id', 'at', 'name']);
+  });
+
+  it('modelOptions(): the options as they are (for TypeScript, which keeps their values)', () => {
+    const options = { primaryKey: ['a', 'b'], table: 'pairs' };
+    expect(modelOptions(options)).toBe(options);
+    class Pair extends Model {
+      static options = modelOptions({ primaryKey: ['a', 'b'], table: 'pairs' });
+      static fields = { a: fields.integer(), b: fields.integer() };
+    }
+    new Database({ backend: 'memory' }).register(Pair);
+    expect([Pair.meta.table, Object.keys(Pair.schema().properties)]).toEqual(['pairs', ['a', 'b']]);
+    for (const wrong of [null, 'pairs', ['a']]) {
+      expect(() => modelOptions(wrong)).toThrow('The options of a model are an object');
+    }
+    // In JavaScript too, a name that is no option is refused (with the option of the same letters, when there is one).
+    expect(() => modelOptions({ primarykey: false })).toThrow(
+      'An option a model does not have: primarykey (did you mean primaryKey?) (it has table, schema, primaryKey,'
+    );
+    expect(() => modelOptions({ table: 'books', ordring: ['title'], verbose: true })).toThrow(
+      'Options a model does not have: ordring, verbose ('
+    );
+    const every = { table: 't', schema: 's', primaryKey: false, ordering: [], rules: [], indexes: [], abstract: false };
+    const more = { fillfactor: 90, strict: true, cache: true, database: 'main', audit: false };
+    expect(modelOptions({ ...every, ...more })).toEqual({ ...every, ...more });
+  });
+
+  it('modelOptions() knows the options of ModelOptions in index.d.ts, no more and no fewer', () => {
+    const { MODEL_OPTIONS } = require('../lib/model'); // eslint-disable-line global-require
+    const declarations = require('node:fs').readFileSync(require.resolve('../index.d.ts'), 'utf8'); // eslint-disable-line global-require
+    const block = /export interface ModelOptions \{([\s\S]*?)\n\}/.exec(declarations)[1];
+    const declared = [...block.matchAll(/^ {2}(\w+)\?:/gm)].map((match) => match[1]);
+    expect([...MODEL_OPTIONS].sort()).toEqual(declared.sort());
   });
 
   it('models of their own primary key, and blobs (no body in JSON)', () => {

@@ -71,7 +71,77 @@ export declare class Faults<Operation extends string = string> {
   pick(context: FaultContext): Array<{ rule: FaultRule; kind: string; ms: number }>;
   /** An operation through the faults. */
   apply<T>(context: FaultContext, run: () => T | Promise<T>): Promise<T>;
+  /** Throws what a rule of these options would throw, without making it. */
+  check(kind: string, options?: FaultOptions<Operation>): this;
 }
+
+/** A duration: milliseconds, or text as '500ms', '30s', '2m', '1h'. */
+export type Duration = number | string;
+
+export type ScenarioTarget = Faults<any> | { readonly faults: Faults<any> };
+
+export interface ScenarioStep {
+  /** When it starts, from the start of the scenario (0). */
+  at?: Duration;
+  /** Faults (or what has them), or the name of one of `targets`. */
+  target: ScenarioTarget | string;
+  kind: 'fail' | 'delay' | 'hang' | 'down' | 'respond' | 'drop';
+  options?: FaultOptions & Record<string, unknown>;
+  /** How long its rule stays; until the end of the scenario without it. */
+  for?: Duration;
+}
+
+export interface ScenarioEvent {
+  type: 'start' | 'step' | 'end' | 'error' | 'done' | 'stopped';
+  /** Milliseconds from the start. */
+  at: number;
+  step?: number;
+  target?: string;
+  kind?: string;
+  message?: string;
+}
+
+export interface ScenarioOptions {
+  name?: string;
+  steps: ScenarioStep[];
+  /** How long it lasts: until its last step ends when not given. */
+  duration?: Duration;
+  targets?: Record<string, ScenarioTarget>;
+  onEvent?: (event: ScenarioEvent, scenario: Scenario) => void;
+}
+
+export interface ScenarioStatus {
+  name: string;
+  state: 'ready' | 'running' | 'done' | 'stopped';
+  duration: number;
+  elapsed: number;
+  startedAt: string | null;
+  steps: Array<{
+    at: number;
+    for: number | null;
+    target: string;
+    kind: string;
+    state: 'waiting' | 'active' | 'done' | 'skipped' | 'failed';
+    hits: number;
+  }>;
+  events: ScenarioEvent[];
+}
+
+/** Rules that come and go on a timeline (steps checked when it is made). */
+export declare class Scenario {
+  constructor(options: ScenarioOptions);
+  readonly name: string;
+  readonly duration: number;
+  readonly state: ScenarioStatus['state'];
+  start(): this;
+  /** Starts it (when it has not started) and waits for its end. */
+  run(): Promise<this>;
+  /** Stops it: its rules removed, the steps not made skipped. */
+  stop(): this;
+  status(): ScenarioStatus;
+}
+
+export function scenario(options: ScenarioOptions): Scenario;
 
 /** The error of a fault injected; instanceof is true of every one (its code ends in FAULT). */
 export declare class FaultError extends Error {
@@ -124,12 +194,16 @@ export interface FaultsPluginOptions {
   auth?: unknown;
   /** Where the routes are ('/_faults'). */
   path?: string;
+  /** The page of the faults at <path>/ui (true); its files have no data, and it asks the protected routes. */
+  ui?: boolean;
   /** The longest a rule stays: a duration (30000, '10m', '1h'). '1h'. */
   maxDuration?: number | string;
   /** Off in production by default (NODE_ENV). */
   enabled?: boolean;
   /** Needed, with enabled: true, in production. */
   allowProduction?: boolean;
+  /** Scenarios started by name (POST <path>/scenarios/:name): their steps name targets. Checked when registered. */
+  scenarios?: Record<string, { steps: Array<ScenarioStep & { target: string }>; duration?: Duration }>;
 }
 
 /** The plugin of @xufa/http (and fastify) that turns faults on and off over HTTP, for staging. */

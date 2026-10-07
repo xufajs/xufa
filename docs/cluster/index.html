@@ -6,7 +6,7 @@
     <title>@xufa/cluster · xufa</title>
     <meta
       name="description"
-      content="@xufa/cluster: an app in a cluster of processes, workers forked again when they die, graceful shutdown, and a bus of events and requests between the processes. No dependencies."
+      content="@xufa/cluster: an app in a cluster of processes, workers forked again when they die, graceful shutdown, a bus of events and requests between the processes, and pools of nodes whose slots the primary gives to the workers. No dependencies."
     />
     <link
       rel="icon"
@@ -60,6 +60,16 @@
           <li><a href="#bus-api">API of the bus</a></li>
           <li><a href="#single">In one process</a></li>
         </ul>
+        <h4>Pools of nodes</h4>
+        <ul>
+          <li><a href="#pool">Pools</a></li>
+          <li><a href="#pool-nodes">Nodes and slots</a></li>
+          <li><a href="#pool-use">Using a node</a></li>
+          <li><a href="#pool-leases">Slots that come back</a></li>
+          <li><a href="#pool-autoscale">Autoscaling</a></li>
+          <li><a href="#pool-machines">Across machines</a></li>
+          <li><a href="#pool-api">Options and errors</a></li>
+        </ul>
         <h4>With xufa</h4>
         <ul>
           <li><a href="#shared">Shared state</a></li>
@@ -68,6 +78,8 @@
         <h4>Packages</h4>
         <ul>
           <li><a href="../websocket/index.html">@xufa/websocket</a></li>
+          <li><a href="../admin/index.html">@xufa/admin</a></li>
+          <li><a href="../session/index.html">@xufa/session</a></li>
           <li><a href="../openapi/index.html">@xufa/openapi</a></li>
           <li><a href="../client/index.html">@xufa/client</a></li>
           <li><a href="../schema/index.html">@xufa/schema</a></li>
@@ -77,6 +89,7 @@
           <li><a href="../template/index.html">@xufa/template</a></li>
           <li><a href="index.html" aria-current="page">@xufa/cluster</a></li>
           <li><a href="../scheduler/index.html">@xufa/scheduler</a></li>
+          <li><a href="../queue/index.html">@xufa/queue</a></li>
           <li><a href="../config/index.html">@xufa/config</a></li>
           <li><a href="../discovery/index.html">@xufa/discovery</a></li>
           <li><a href="../netcache/index.html">@xufa/netcache</a></li>
@@ -95,12 +108,17 @@
       </aside>
 
       <article class="content">
-<h1>@xufa/cluster</h1>
+        <nav class="package-tabs" aria-label="@xufa/cluster">
+          <a href="index.html" aria-current="page">Overview</a>
+          <a href="reference.html">Reference</a>
+        </nav>
+        <h1>@xufa/cluster</h1>
         <p class="intro">
           Runs an app in a cluster of processes, one by CPU, so it uses every core: the primary forks the workers, forks
           again those that die, and stops them all gracefully. A bus carries events and requests between the processes,
           so a worker can ask the primary for what only it keeps (counters, caches, locks), and the same code runs in
-          one process in development and tests. No dependencies.
+          one process in development and tests. Pools of nodes share other servers (models, renderers, anything that
+          takes a few tasks at once) among the workers: the primary hands out their slots in order. No dependencies.
         </p>
 
         <h2 id="start">Quick start</h2>
@@ -233,6 +251,198 @@ bus.broadcast('config', newConfig); // to every worker</code></pre>
           With <code>workers: 0</code>, or without <code>start()</code> (tests), the same calls deliver the messages to
           the handlers of the same process: <code>request()</code> gives the reply of the local handler,
           <code>broadcast()</code> runs the local handlers. Code written for a cluster runs as it is.
+        </p>
+
+        <h2 id="pool">Pools</h2>
+        <p>
+          Some work goes to other servers that take only a few tasks at once each: document converters, renderers, a
+          service with a few licenses. When every worker sends to them on its own, some nodes get too many tasks and others none. A pool
+          puts the nodes in the primary: it keeps their slots (the tasks each node takes at once) and a queue of tickets,
+          and gives each free slot to the next ticket, whichever worker sent it. The work itself (the function, the request
+          it answers, its promise) stays in the worker that waits; only the ticket and the node go through the bus.
+        </p>
+        <pre data-run><code class="language-js">const { createPool } = require('@xufa/cluster');
+
+// In the primary (here, the only process): the nodes, one task at once each.
+const pool = createPool('converters', {
+  nodes: [{ id: 'a', url: 'http://10.0.0.1:8080' }, { id: 'b', url: 'http://10.0.0.2:8080' }],
+});
+const sleep = (wait) =&gt; new Promise((resolve) =&gt; setTimeout(resolve, wait));
+
+// In any process: the work runs when a node is free, and gives it back when it ends.
+const results = await Promise.all(
+  [1, 2, 3].map((n) =&gt;
+    pool.use(async (node, { signal }) =&gt; {
+      await sleep(10 * n); // as fetch(`${node.url}/convert`, { signal })
+      return `task ${n} on ${node.id}`;
+    })
+  )
+);
+console.log(results);
+console.log(pool.stats());
+pool.close();</code></pre>
+        <pre data-output><code class="language-plaintext">[ 'task 1 on a', 'task 2 on b', 'task 3 on a' ]
+{
+  name: 'converters',
+  nodes: 2,
+  slots: 2,
+  free: 2,
+  running: 0,
+  waiting: 0,
+  byNode: [
+    { id: 'a', slots: 1, running: 0, failures: 0 },
+    { id: 'b', slots: 1, running: 0, failures: 0 }
+  ]
+}</code></pre>
+        <p>In a cluster, the primary makes the pool and the workers use it by its name:</p>
+        <pre><code class="language-js">const { start, createPool, usePool } = require('@xufa/cluster');
+const { Discovery } = require('@xufa/discovery');
+
+start({
+  primary: async () =&gt; {
+    const discovery = new Discovery({ service: 'converters' }); // the converters say they are there
+    await discovery.start();
+    createPool('converters', { nodes: discovery, slots: (peer) =&gt; peer.meta.slots || 1, leaseTimeout: '5m' });
+  },
+  worker: async () =&gt; {
+    const converters = usePool('converters');
+    const app = makeApp();
+    app.post('/convert', (request) =&gt;
+      converters.use((node, { signal }) =&gt; client.post(`${node.meta.url}/convert`, request.body, { signal }), { retries: 2 })
+    );
+    await app.listen({ port: 3000 });
+  },
+});</code></pre>
+
+        <h2 id="pool-nodes">Nodes and slots</h2>
+        <p>
+          <code>nodes</code> is a list (ids, or objects with an <code>id</code>, given to the work as they are) or a
+          source of peers: an object with <code>peers</code> and the events <code>up</code> and <code>down</code>, as a
+          <code>Discovery</code> of <a href="../discovery/index.html">@xufa/discovery</a>. <code>pool.add(node)</code> and
+          <code>pool.remove(id)</code> change them by hand. <code>slots</code> is how many tasks a node takes at once (1),
+          or a function of the node (<code>peer.meta.slots</code>). A free slot goes to the next ticket, higher
+          <code>priority</code> first: on the node with most free slots, and between equals on the one given work
+          longest ago, so the work spreads. Tickets wait while there are no nodes (the nodes can start at zero, see
+          autoscaling).
+        </p>
+
+        <h2 id="pool-use">Using a node</h2>
+        <ul>
+          <li><code>pool.use(fn, options)</code> runs <code>fn(node, { signal, attempt })</code> on a free node and gives the slot back when it ends, whether it gave a result or failed. With <code>retries</code>, a failure tries again on another node while there are others (<code>avoidFailed</code>), for the errors <code>retryOn(err, attempt)</code> says (all).</li>
+          <li><code>pool.acquire(options)</code> waits for a node and gives its lease: <code>lease.node</code>, <code>lease.signal</code>, and <code>lease.release(failed)</code>, which you call when done.</li>
+          <li>Both take <code>priority</code> (higher first) and <code>signal</code> (to stop waiting: the ticket leaves the queue). <code>pool.stats()</code> gives the nodes, slots, free slots, leases running and tickets waiting, by node too.</li>
+          <li><code>createPool(name, options)</code> in the primary gives the pool (with <code>use</code> and <code>acquire</code> for the primary itself); <code>usePool(name)</code> in any process gives its client. With <code>workers: 0</code> both are in the one process.</li>
+        </ul>
+
+        <h2 id="pool-leases">Slots that come back</h2>
+        <p>A slot comes back to the pool when:</p>
+        <ul>
+          <li>the work ends (<code>use</code>), or its lease is released (<code>acquire</code>);</li>
+          <li>its worker dies: its leases end and its tickets leave the queue;</li>
+          <li>its node goes (<code>down</code>, <code>remove</code>): the lease is taken back, the signal of the work aborted (<code>XUFA_POOL_NODE_DOWN</code>), and <code>use</code> tries again on another node when it has retries;</li>
+          <li>the lease passes <code>leaseTimeout</code>: taken back the same way (<code>XUFA_POOL_LEASE_TIMEOUT</code>), so a work that hangs does not keep the node forever.</li>
+        </ul>
+
+        <h2 id="pool-autoscale">Autoscaling</h2>
+        <p>
+          The pool emits <code>demand</code> with its stats when they change, and <code>autoscale</code> scales the nodes
+          by it: the nodes wanted are the tickets waiting <em>plus the leases running</em>, divided by
+          <code>perNode</code>, between <code>min</code> and <code>max</code>. Up at once (then not more often than
+          <code>upEvery</code>), down only when the demand was lower for <code>downAfter</code>, to the most it wanted in
+          that time: nodes running work are not taken away because the queue is empty.
+        </p>
+        <pre><code class="language-js">createPool('converters', {
+  nodes: discovery,
+  autoscale: {
+    perNode: 2, // tasks a node takes
+    min: 0,
+    max: 64,
+    upEvery: '10s',
+    downAfter: '10m',
+    scale: (count) =&gt; kubernetes.scaleDeployment('converters', count), // yours
+  },
+});</code></pre>
+
+        <h2 id="pool-machines">Across machines</h2>
+        <p>
+          The primary of each machine keeps its own pool, so with several machines of the app two of them could send
+          work to the same node at once. Two things prevent it, and they go well together:
+        </p>
+        <ul>
+          <li>
+            <strong>Shared slots</strong> (<code>shared: ormSlots(db)</code>): the slots of the nodes are rows of a
+            database of <a href="../orm/index.html">@xufa/orm</a> (any backend, the one the app has). A pool gives a slot only
+            when it takes its row, with an update only one machine can make, so a node never gets more works at once
+            than its slots among every machine. A machine renews the slots it holds (every <code>ttl / 3</code>); those
+            of a machine that died are free again when their <code>ttl</code> passes. When every free slot is taken by
+            others, the tickets wait and the pool looks again every <code>pollEvery</code>, or at once when another
+            machine says it gave a slot back (<code>notify</code>).
+          </li>
+          <li>
+            <strong>Busy answers</strong>: a node that answers 429 (an error with <code>statusCode</code> or
+            <code>status</code> 429, as those of <a href="../client/index.html">@xufa/client</a>, or what
+            <code>busy(err)</code> says) is left aside for its <code>Retry-After</code> (or <code>busyFor</code>), and
+            <code>use()</code> runs the work on another node, or on the same one when it is free again, without
+            counting an attempt (up to <code>maxBusy</code>, 20). The pool emits <code>busy</code>. Nodes that refuse
+            what they cannot take protect themselves from any client, of xufa or not.
+          </li>
+        </ul>
+        <pre><code class="language-js">const { createPool, ormSlots } = require('@xufa/cluster');
+
+// In the primary of every machine: the same database, the same nodes.
+const db = new Database({ backend: 'postgres', url: process.env.DATABASE_URL });
+createPool('converters', {
+  nodes: discovery,
+  slots: (peer) =&gt; peer.meta.slots || 1,
+  shared: ormSlots(db, { ttl: '30s' }), // its model (table xufa_pool_slots) is registered in db: db.sync() makes it
+  notify: netcache, // a slot given back is told to the other machines: their tickets waiting are served at once
+  pollEvery: '2s', // what notify misses: datagrams lost, the slots of machines that died
+});
+
+// A node that refuses: the work goes elsewhere.
+app.post('/infer', async (request, reply) =&gt; {
+  if (running &gt;= capacity) return reply.code(429).header('retry-after', '1').send();
+  // ...
+});</code></pre>
+        <p>
+          <code>notify</code> is a NetCache of <a href="../netcache/index.html">@xufa/netcache</a> (its <code>publish</code>, over
+          TCP to the machines connected), a Discovery of <a href="../discovery/index.html">@xufa/discovery</a> (datagrams, which
+          can be lost) or an object with <code>publish(data)</code> and <code>subscribe(handler)</code>. The slots that
+          come back without a message (those of a machine that died) are still found every <code>pollEvery</code>.
+          <code>pool.health({ minNodes, maxWaiting })</code> (of the pool, or of <code>usePool()</code> in a worker) is a
+          check of <a href="../http/guide.html#health">xufa.health</a>: down with fewer nodes than <code>minNodes</code> (1),
+          degraded with more tickets waiting than <code>maxWaiting</code>, with the nodes, slots and works; not critical
+          by default. <code>store.held(pool)</code> gives the slots held now by node. With <a href="../queue/index.html#pools">@xufa/queue</a>,
+          a job whose node answers busy fails that run (tried again after its backoff) and the node is left aside.
+        </p>
+
+        <h2 id="pool-api">Options and errors</h2>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Option</th><th>Default</th><th>What it does</th></tr></thead>
+            <tbody>
+              <tr><td><code>nodes</code></td><td></td><td>A list, or a source of peers (<code>peers</code>, <code>up</code>, <code>down</code>).</td></tr>
+              <tr><td><code>slots</code></td><td><code>1</code></td><td>Tasks a node takes at once, or <code>(node) =&gt; number</code>.</td></tr>
+              <tr><td><code>leaseTimeout</code></td><td>none</td><td>A lease longer is taken back (<code>'5m'</code>).</td></tr>
+              <tr><td><code>waitTimeout</code></td><td>none</td><td>A ticket that waits longer is rejected.</td></tr>
+              <tr><td><code>maxWaiting</code></td><td>none</td><td>Tickets waiting at most; more are rejected at once.</td></tr>
+              <tr><td><code>autoscale</code></td><td></td><td><code>{ scale, perNode, min, max, upEvery, downAfter, initial }</code>.</td></tr>
+              <tr><td><code>shared</code></td><td></td><td>A store of slots shared by the machines: <code>ormSlots(db, { ttl })</code>.</td></tr>
+              <tr><td><code>notify</code></td><td></td><td>Tells the other machines when a slot comes back: a NetCache, a Discovery, or <code>{ publish, subscribe }</code>.</td></tr>
+              <tr><td><code>pollEvery</code></td><td><code>'500ms'</code></td><td>How often to look again when other machines hold every free slot.</td></tr>
+              <tr><td><code>busyFor</code></td><td><code>'1s'</code></td><td>How long a node that answered busy is left aside, when it does not say.</td></tr>
+              <tr><td><code>busy</code></td><td>429</td><td><code>(err) =&gt; boolean</code>: which errors are busy answers (also an option of <code>usePool</code>).</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p>
+          Errors are <code>PoolError</code>s with a <code>code</code> and a <code>statusCode</code>:
+          <code>XUFA_POOL_FULL</code> and <code>XUFA_POOL_WAIT_TIMEOUT</code> (503), <code>XUFA_POOL_LEASE_TIMEOUT</code>
+          (504), <code>XUFA_POOL_NODE_DOWN</code> (502), <code>XUFA_POOL_BUSY</code> (429, a busy answer of your own),
+          <code>XUFA_POOL_CLOSED</code>, and
+          <code>XUFA_POOL_UNKNOWN</code> when no process made the pool. The pool also emits <code>up</code>,
+          <code>down</code>, <code>revoke</code>, <code>busy</code> and <code>scale</code>. With <a href="../queue/index.html#pools">@xufa/queue</a>,
+          jobs of a kind wait for a node of a pool before they are claimed.
         </p>
 
         <h2 id="shared">Shared state</h2>

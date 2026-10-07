@@ -10,9 +10,9 @@ const {
   ValidateType,
   compileJsonSchema,
   standaloneCode,
-} = require('../src');
-const { errorObject, pathName } = require('../src/error-objects');
-const { HELPER_SOURCES } = require('../src/standalone-helpers');
+} = require('..');
+const { errorObject, pathName } = require('../lib/error-objects');
+const { HELPER_SOURCES } = require('../lib/standalone-helpers');
 
 const order = new ClosedSchema({
   id: StringType({ pattern: /^O-/ }),

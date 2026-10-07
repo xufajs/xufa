@@ -1,0 +1,954 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>@xufa/auth: Reference · xufa</title>
+    <meta
+      name="description"
+      content="The reference of @xufa/auth: every function, class, interface and type it declares, made from its TypeScript declarations."
+    />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%23d9502b'/%3E%3Ctext x='16' y='22.5' font-family='monospace' font-size='18' font-weight='700' fill='white' text-anchor='middle'%3Ex%3C/text%3E%3C/svg%3E"
+    />
+    <link rel="stylesheet" href="../style.css?v=0.1.0" />
+    <script src="../main.js?v=0.1.0"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js" defer></script>
+  </head>
+  <body>
+    <header class="header">
+      <div class="header-inner">
+        <a class="logo" href="../index.html"><span class="logo-mark">x</span>xufa</a>
+        <nav class="nav">
+          <a href="../guide.html">Guide</a>
+          <a href="../playground.html">Playground</a>
+          <a href="../http/index.html">HTTP</a>
+          <a href="../orm/index.html">ORM</a>
+          <a class="hide-small" href="index.html" aria-current="page">Auth</a>
+          <a class="hide-small" href="../sequelize/index.html">Sequelize</a>
+          <a class="hide-small" href="../packages.html">Packages</a>
+          <a class="hide-small" href="../benchmarks.html">Benchmarks</a>
+          <a href="https://github.com/xufajs/xufa">GitHub</a>
+          <button class="theme-toggle" type="button" aria-label="Switch between light and dark theme">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+              <path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z" />
+            </svg>
+          </button>
+        </nav>
+      </div>
+    </header>
+
+    <div class="docs">
+      <button class="menu-toggle" type="button" aria-expanded="false">☰ Contents</button>
+      <aside class="sidebar">
+        <h4>Reference</h4>
+        <ul>
+          <li><a href="#functions">Functions (37)</a></li>
+          <li><a href="#classes">Classes (8)</a></li>
+          <li><a href="#constants">Constants (7)</a></li>
+          <li><a href="#interfaces">Interfaces (31)</a></li>
+          <li><a href="#types">Types (11)</a></li>
+        </ul>
+      </aside>
+
+      <article class="content">
+        <nav class="package-tabs" aria-label="@xufa/auth">
+          <a href="index.html">Overview</a>
+          <a href="guide.html">Guide</a>
+          <a href="reference.html" aria-current="page">Reference</a>
+        </nav>
+        <h1>Reference</h1>
+        <p class="intro">
+          Authentication with no dependencies: scrypt passwords, JSON Web Tokens with rotating keys, TOTP, login lockout, rotating refresh tokens, API keys, HTTP Basic, Passport strategies and a plugin for @xufa/http. Every declaration of its TypeScript declarations
+          (<code>packages/auth/index.d.ts</code>), as they are written, with their comments: made from them each time
+          the docs are built. How to use them is in <a href="index.html">the overview</a>.
+        </p>
+
+        <h2 id="functions">Functions</h2>
+        <p class="ref-index"><a href="#ref-hashPassword"><code>hashPassword</code></a>, <a href="#ref-verifyPassword"><code>verifyPassword</code></a>, <a href="#ref-needsRehash"><code>needsRehash</code></a>, <a href="#ref-vaultModelStore"><code>vaultModelStore</code></a>, <a href="#ref-vaultFields"><code>vaultFields</code></a>, <a href="#ref-signJwt"><code>signJwt</code></a>, <a href="#ref-verifyJwt"><code>verifyJwt</code></a>, <a href="#ref-signJwtAsync"><code>signJwtAsync</code></a>, <a href="#ref-verifyJwtAsync"><code>verifyJwtAsync</code></a>, <a href="#ref-decodeJwt"><code>decodeJwt</code></a>, <a href="#ref-base32Encode"><code>base32Encode</code></a>, <a href="#ref-base32Decode"><code>base32Decode</code></a>, <a href="#ref-generateSecret"><code>generateSecret</code></a>, <a href="#ref-hotp"><code>hotp</code></a>, <a href="#ref-totp"><code>totp</code></a>, <a href="#ref-verifyTotp"><code>verifyTotp</code></a>, <a href="#ref-totpUri"><code>totpUri</code></a>, <a href="#ref-generateRecoveryCodes"><code>generateRecoveryCodes</code></a>, <a href="#ref-hashRecoveryCode"><code>hashRecoveryCode</code></a>, <a href="#ref-normalizeIdentifier"><code>normalizeIdentifier</code></a>, <a href="#ref-skeleton"><code>skeleton</code></a>, <a href="#ref-modelStore"><code>modelStore</code></a>, <a href="#ref-refreshTokenFields"><code>refreshTokenFields</code></a>, <a href="#ref-parseCookies"><code>parseCookies</code></a>, <a href="#ref-serializeCookie"><code>serializeCookie</code></a>, <a href="#ref-tenantsOf"><code>tenantsOf</code></a>, <a href="#ref-rolesOf"><code>rolesOf</code></a>, <a href="#ref-apiKey"><code>apiKey</code></a>, <a href="#ref-generateApiKey"><code>generateApiKey</code></a>, <a href="#ref-hashApiKey"><code>hashApiKey</code></a>, <a href="#ref-parseApiKey"><code>parseApiKey</code></a>, <a href="#ref-verifyApiKey"><code>verifyApiKey</code></a>, <a href="#ref-apiKeyFields"><code>apiKeyFields</code></a>, <a href="#ref-basic"><code>basic</code></a>, <a href="#ref-passport"><code>passport</code></a>, <a href="#ref-oauthState"><code>oauthState</code></a>, <a href="#ref-plugin"><code>plugin</code></a></p>
+
+        <h3 id="ref-hashPassword"><code>hashPassword</code></h3>
+        <pre><code class="language-ts">export function hashPassword(password: string, options?: PasswordOptions): Promise&lt;string&gt;;</code></pre>
+        <p>The hash of a password as a PHC string: <code>$scrypt$ln=17,r=8,p=1$&lt;salt&gt;$&lt;hash&gt;</code>.</p>
+
+        <h3 id="ref-verifyPassword"><code>verifyPassword</code></h3>
+        <pre><code class="language-ts">export function verifyPassword(password: string, hash: string | null | undefined): Promise&lt;boolean&gt;;</code></pre>
+        <p>Whether a password is the one of a hash (false for what is no hash of scrypt).</p>
+
+        <h3 id="ref-needsRehash"><code>needsRehash</code></h3>
+        <pre><code class="language-ts">export function needsRehash(hash: string, options?: PasswordOptions): boolean;</code></pre>
+        <p>Whether a hash was made with other parameters than these: it should be made again.</p>
+
+        <h3 id="ref-vaultModelStore"><code>vaultModelStore</code></h3>
+        <pre><code class="language-ts">export function vaultModelStore(Model: any): VaultStore;</code></pre>
+        <p>A store on a model of</p>
+
+        <h3 id="ref-vaultFields"><code>vaultFields</code></h3>
+        <pre><code class="language-ts">export function vaultFields(fields: any): Record&lt;string, unknown&gt;;</code></pre>
+        <p>The fields of a model of the keys of the tenants, made with the fields of</p>
+
+        <h3 id="ref-signJwt"><code>signJwt</code></h3>
+        <pre><code class="language-ts">export function signJwt(payload: Record&lt;string, unknown&gt;, keys: Keys, options?: SignOptions): string;</code></pre>
+
+        <h3 id="ref-verifyJwt"><code>verifyJwt</code></h3>
+        <pre><code class="language-ts">export function verifyJwt&lt;T extends Claims = Claims&gt;(token: string, keys: Keys, options?: VerifyOptions): T;</code></pre>
+        <p>The claims of a token, or a TokenError (401) whose reason says why not.</p>
+
+        <h3 id="ref-signJwtAsync"><code>signJwtAsync</code></h3>
+        <pre><code class="language-ts">export function signJwtAsync(payload: Record&lt;string, unknown&gt;, keys: Keys, options?: SignOptions): Promise&lt;string&gt;;</code></pre>
+        <p>signJwt() as a Promise: RSA keys sign in libuv's thread pool, so the event loop does not wait (about 0.5 ms).</p>
+
+        <h3 id="ref-verifyJwtAsync"><code>verifyJwtAsync</code></h3>
+        <pre><code class="language-ts">export function verifyJwtAsync&lt;T extends Claims = Claims&gt;(
+  token: string,
+  keys: Keys,
+  options?: VerifyOptions
+): Promise&lt;T&gt;;</code></pre>
+        <p>verifyJwt() as a Promise (done on the event loop: 20 to 90 µs); it rejects with the same TokenError.</p>
+
+        <h3 id="ref-decodeJwt"><code>decodeJwt</code></h3>
+        <pre><code class="language-ts">export function decodeJwt(
+  token: string
+): { header: Record&lt;string, unknown&gt;; payload: Claims; signature: string } | null;</code></pre>
+        <p>The parts of a token, without verifying it (null when it is no JWT).</p>
+
+        <h3 id="ref-base32Encode"><code>base32Encode</code></h3>
+        <pre><code class="language-ts">export function base32Encode(bytes: Buffer | Uint8Array): string;</code></pre>
+
+        <h3 id="ref-base32Decode"><code>base32Decode</code></h3>
+        <pre><code class="language-ts">export function base32Decode(text: string): Buffer;</code></pre>
+
+        <h3 id="ref-generateSecret"><code>generateSecret</code></h3>
+        <pre><code class="language-ts">export function generateSecret(bytes?: number): string;</code></pre>
+        <p>A random secret in base32 (20 bytes by default).</p>
+
+        <h3 id="ref-hotp"><code>hotp</code></h3>
+        <pre><code class="language-ts">export function hotp(secret: string | Buffer, counter: number | bigint, options?: TotpOptions): string;</code></pre>
+
+        <h3 id="ref-totp"><code>totp</code></h3>
+        <pre><code class="language-ts">export function totp(secret: string | Buffer, options?: TotpOptions &amp; { time?: number }): string;</code></pre>
+
+        <h3 id="ref-verifyTotp"><code>verifyTotp</code></h3>
+        <pre><code class="language-ts">export function verifyTotp(
+  code: string | number,
+  secret: string | Buffer,
+  options?: TotpOptions &amp; { window?: number; after?: number | null; time?: number }
+): number | null;</code></pre>
+        <p>The time step of a code that is valid now (or null): keep it and give it as <code>after</code> next time, so each code is used once.</p>
+
+        <h3 id="ref-totpUri"><code>totpUri</code></h3>
+        <pre><code class="language-ts">export function totpUri(options: TotpOptions &amp; { secret: string; label: string; issuer?: string }): string;</code></pre>
+        <p>The otpauth:// URI of a secret, for the QR code of authenticator apps.</p>
+
+        <h3 id="ref-generateRecoveryCodes"><code>generateRecoveryCodes</code></h3>
+        <pre><code class="language-ts">export function generateRecoveryCodes(count?: number): string[];</code></pre>
+
+        <h3 id="ref-hashRecoveryCode"><code>hashRecoveryCode</code></h3>
+        <pre><code class="language-ts">export function hashRecoveryCode(code: string): string;</code></pre>
+
+        <h3 id="ref-normalizeIdentifier"><code>normalizeIdentifier</code></h3>
+        <pre><code class="language-ts">export function normalizeIdentifier(value: string): string;</code></pre>
+        <p>A name that identifies someone (a user name, an email) as one key: Unicode NFKC and lower case ("ＡＤＭＩＮ" and "Admin" are "admin"). The lockout counts failures by it; store and find users by it too.</p>
+
+        <h3 id="ref-skeleton"><code>skeleton</code></h3>
+        <pre><code class="language-ts">export function skeleton(value: string): string;</code></pre>
+        <p>The skeleton of a text (UTS #39): texts that look alike, also across scripts, have the same one ("pаypal" with a Cyrillic а is "paypal"). A key to compare, not a text to show: skeleton(normalizeIdentifier(name)), unique per user.</p>
+
+        <h3 id="ref-modelStore"><code>modelStore</code></h3>
+        <pre><code class="language-ts">export function modelStore(Model: any): TokenStore;</code></pre>
+        <p>A store on a model of</p>
+
+        <h3 id="ref-refreshTokenFields"><code>refreshTokenFields</code></h3>
+        <pre><code class="language-ts">export function refreshTokenFields&lt;F extends Record&lt;string, (...args: any[]) =&gt; any&gt;&gt;(fields: F): Record&lt;string, any&gt;;</code></pre>
+        <p>The fields of a model of refresh tokens, made with the <code>fields</code> of</p>
+
+        <h3 id="ref-parseCookies"><code>parseCookies</code></h3>
+        <pre><code class="language-ts">export function parseCookies(header: string | undefined): Record&lt;string, string&gt;;</code></pre>
+
+        <h3 id="ref-serializeCookie"><code>serializeCookie</code></h3>
+        <pre><code class="language-ts">export function serializeCookie(name: string, value: string, options?: CookieOptions): string;</code></pre>
+
+        <h3 id="ref-tenantsOf"><code>tenantsOf</code></h3>
+        <pre><code class="language-ts">export function tenantsOf(user: any): string[];</code></pre>
+        <p>The tenants of a user: user.tenants (a list) or user.tenant, as texts.</p>
+
+        <h3 id="ref-rolesOf"><code>rolesOf</code></h3>
+        <pre><code class="language-ts">export function rolesOf(user: any): string[];</code></pre>
+        <p>The roles of a user: user.roles (a list) or user.role.</p>
+
+        <h3 id="ref-apiKey"><code>apiKey</code></h3>
+        <pre><code class="language-ts">export function apiKey&lt;User = any, R extends ApiKeyRecord = ApiKeyRecord&gt;(
+  options: ApiKeyOptions&lt;User, R&gt;
+): Strategy&lt;User&gt;;</code></pre>
+        <p>The strategy of API keys ('&lt;id&gt;.&lt;secret&gt;' of generateApiKey). request.auth is { apiKey: id }.</p>
+
+        <h3 id="ref-generateApiKey"><code>generateApiKey</code></h3>
+        <pre><code class="language-ts">export function generateApiKey(options?: { prefix?: string }): { key: string; id: string; hash: string };</code></pre>
+        <p>A new API key: give <code>key</code> to its owner once; keep <code>id</code> and <code>hash</code> (the key cannot be made from them).</p>
+
+        <h3 id="ref-hashApiKey"><code>hashApiKey</code></h3>
+        <pre><code class="language-ts">export function hashApiKey(secret: string): string;</code></pre>
+
+        <h3 id="ref-parseApiKey"><code>parseApiKey</code></h3>
+        <pre><code class="language-ts">export function parseApiKey(key: string): { id: string; secret: string } | null;</code></pre>
+
+        <h3 id="ref-verifyApiKey"><code>verifyApiKey</code></h3>
+        <pre><code class="language-ts">export function verifyApiKey(secret: string, hash: string): boolean;</code></pre>
+        <p>Whether a secret is the one of a hash, in constant time.</p>
+
+        <h3 id="ref-apiKeyFields"><code>apiKeyFields</code></h3>
+        <pre><code class="language-ts">export function apiKeyFields(
+  fields: any
+): Record&lt;'id' | 'hash' | 'subject' | 'name' | 'scopes' | 'createdAt' | 'expiresAt' | 'revokedAt', any&gt;;</code></pre>
+        <p>The fields of a model of API keys, made with the fields of</p>
+
+        <h3 id="ref-basic"><code>basic</code></h3>
+        <pre><code class="language-ts">export function basic&lt;User = any&gt;(options: BasicOptions&lt;User&gt;): Strategy&lt;User&gt;;</code></pre>
+        <p>The strategy of HTTP Basic, against the scrypt hashes of the users. request.auth is { username }.</p>
+
+        <h3 id="ref-passport"><code>passport</code></h3>
+        <pre><code class="language-ts">export function passport&lt;User = any&gt;(
+  strategy: PassportStrategy,
+  options?: {
+    name?: string;
+    options?: Record&lt;string, unknown&gt;;
+    /** Its security scheme of OpenAPI (guessed from the strategy: OAuth 2.0, bearer, API keys, Basic), or false. */
+    openapi?: Record&lt;string, unknown&gt; | false;
+  }
+): PassportAdapter&lt;User&gt;;</code></pre>
+        <p>A strategy of Passport for the plugin (in <code>strategies</code>) or for routes of login (login()).</p>
+
+        <h3 id="ref-oauthState"><code>oauthState</code></h3>
+        <pre><code class="language-ts">export function oauthState(options: OAuthStateOptions): OAuthStateStore;</code></pre>
+        <p>The state of OAuth 2.0 logins in a sealed cookie (the store option of passport-oauth2 strategies), with PKCE.</p>
+
+        <h3 id="ref-plugin"><code>plugin</code></h3>
+        <pre><code class="language-ts">export function plugin(app: any, options: PluginOptions): Promise&lt;void&gt;;</code></pre>
+        <p>The plugin for</p>
+
+        <h2 id="classes">Classes</h2>
+        <p class="ref-index"><a href="#ref-KeySet"><code>KeySet</code></a>, <a href="#ref-KeyVault"><code>KeyVault</code></a>, <a href="#ref-MemoryKeyStore"><code>MemoryKeyStore</code></a>, <a href="#ref-VaultError"><code>VaultError</code></a>, <a href="#ref-MemoryStore"><code>MemoryStore</code></a>, <a href="#ref-Lockout"><code>Lockout</code></a>, <a href="#ref-MemoryTokenStore"><code>MemoryTokenStore</code></a>, <a href="#ref-RefreshTokens"><code>RefreshTokens</code></a></p>
+
+        <h3 id="ref-KeySet"><code>KeySet</code></h3>
+        <pre><code class="language-ts">export class KeySet { ... }</code></pre>
+        <p>The keys of JWTs: one signs, all verify (by kid), so keys can be rotated.</p>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>new (options: KeyEntry | KeySetOptions)</code></td><td></td><td></td></tr>
+                <tr><td><code>current</code></td><td><code>string</code></td><td></td></tr>
+                <tr><td><code>readonly signing</code></td><td><code><a href="#ref-Key">Key</a></code></td><td></td></tr>
+                <tr><td><code>readonly algorithms</code></td><td><code><a href="#ref-Algorithm">Algorithm</a>[]</code></td><td></td></tr>
+                <tr><td><code>get(id: string)</code></td><td><code><a href="#ref-Key">Key</a> | undefined</code></td><td></td></tr>
+                <tr><td><code>toJWKS()</code></td><td><code>{ keys: Array&lt;Record&lt;string, unknown&gt; &amp; { kid: string; alg: <a href="#ref-Algorithm">Algorithm</a>; use: 'sig' }&gt; }</code></td><td><p>The public keys as a JWKS (secrets are left out).</p></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-KeyVault"><code>KeyVault</code></h3>
+        <pre><code class="language-ts">export class KeyVault { ... }</code></pre>
+        <p>The keys of the JWTs of each tenant, encrypted in a store, rotated without failures.</p>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>new (options: KeyVaultOptions)</code></td><td></td><td></td></tr>
+                <tr><td><code>keys(tenant: string)</code></td><td><code>Promise&lt;<a href="#ref-KeySet">KeySet</a>&gt;</code></td><td><p>The KeySet of a tenant (kept ttl in memory).</p></td></tr>
+                <tr><td><code>jwks(tenant: string)</code></td><td><code>Promise&lt;ReturnType&lt;<a href="#ref-KeySet">KeySet</a>['toJWKS']&gt;&gt;</code></td><td><p>The public keys of a tenant as a JWKS.</p></td></tr>
+                <tr><td><code>create(tenant: string, options?: { algorithm?: Algorithm })</code></td><td><code>Promise&lt;<a href="#ref-KeySet">KeySet</a>&gt;</code></td><td><p>The first key of a tenant.</p></td></tr>
+                <tr><td><code>rotate(tenant: string, options?: { algorithm?: Algorithm; immediate?: boolean })</code></td><td><code>Promise&lt;<a href="#ref-KeySet">KeySet</a>&gt;</code></td><td><p>A new key: it verifies at once and signs after ttl (immediate: at once).</p></td></tr>
+                <tr><td><code>revoke(tenant: string, keyId: string)</code></td><td><code>Promise&lt;void&gt;</code></td><td><p>Removes a key at once (not the one that signs).</p></td></tr>
+                <tr><td><code>remove(tenant: string)</code></td><td><code>Promise&lt;void&gt;</code></td><td><p>Removes every key of a tenant.</p></td></tr>
+                <tr><td><code>invalidate(tenant?: string)</code></td><td><code>void</code></td><td><p>Forgets the KeySet of a tenant (or of every tenant) in this process.</p></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-MemoryKeyStore"><code>MemoryKeyStore</code></h3>
+        <pre><code class="language-ts">export class MemoryKeyStore implements VaultStore { ... }</code></pre>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>get(tenant: string)</code></td><td><code>Promise&lt;<a href="#ref-VaultRecord">VaultRecord</a> | null&gt;</code></td><td></td></tr>
+                <tr><td><code>put(tenant: string, record: VaultRecord, version: number | null)</code></td><td><code>Promise&lt;boolean&gt;</code></td><td></td></tr>
+                <tr><td><code>delete(tenant: string)</code></td><td><code>Promise&lt;void&gt;</code></td><td></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-VaultError"><code>VaultError</code></h3>
+        <pre><code class="language-ts">export class VaultError extends Error { ... }</code></pre>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>code</code></td><td><code>| 'XUFA_AUTH_VAULT_SECRET' | 'XUFA_AUTH_VAULT_ALGORITHM' | 'XUFA_AUTH_VAULT_OPTIONS' | 'XUFA_AUTH_VAULT_NO_KEYS' | 'XUFA_AUTH_VAULT_EXISTS' | 'XUFA_AUTH_VAULT_CURRENT' | 'XUFA_AUTH_VAULT_CONFLICT' | 'XUFA_AUTH_VAULT_TENANT'</code></td><td></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-MemoryStore"><code>MemoryStore</code></h3>
+        <pre><code class="language-ts">export class MemoryStore implements ExpiringStore { ... }</code></pre>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>get(key: string)</code></td><td><code>Promise&lt;any&gt;</code></td><td></td></tr>
+                <tr><td><code>set(key: string, value: any, ttl?: number)</code></td><td><code>Promise&lt;void&gt;</code></td><td></td></tr>
+                <tr><td><code>delete(key: string)</code></td><td><code>Promise&lt;void&gt;</code></td><td></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-Lockout"><code>Lockout</code></h3>
+        <pre><code class="language-ts">export class Lockout { ... }</code></pre>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>new (options?: LockoutOptions)</code></td><td></td><td></td></tr>
+                <tr><td><code>status(key: string)</code></td><td><code>Promise&lt;<a href="#ref-LockoutStatus">LockoutStatus</a>&gt;</code></td><td></td></tr>
+                <tr><td><code>check(key: string)</code></td><td><code>Promise&lt;<a href="#ref-LockoutStatus">LockoutStatus</a>&gt;</code></td><td><p>Throws Locked (429, retryAfter) while the key is locked.</p></td></tr>
+                <tr><td><code>fail(key: string)</code></td><td><code>Promise&lt;<a href="#ref-LockoutStatus">LockoutStatus</a>&gt;</code></td><td></td></tr>
+                <tr><td><code>succeed(key: string)</code></td><td><code>Promise&lt;void&gt;</code></td><td></td></tr>
+                <tr><td><code>reset(key: string)</code></td><td><code>Promise&lt;void&gt;</code></td><td></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-MemoryTokenStore"><code>MemoryTokenStore</code></h3>
+        <pre><code class="language-ts">export class MemoryTokenStore implements TokenStore { ... }</code></pre>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>get(id: string)</code></td><td><code>Promise&lt;<a href="#ref-RefreshTokenRecord">RefreshTokenRecord</a> | null&gt;</code></td><td></td></tr>
+                <tr><td><code>create(record: RefreshTokenRecord)</code></td><td><code>Promise&lt;void&gt;</code></td><td></td></tr>
+                <tr><td><code>spend(id: string, time: number)</code></td><td><code>Promise&lt;boolean&gt;</code></td><td></td></tr>
+                <tr><td><code>updateMany(where: { family?: string; subject?: string }, changes: Partial&lt;RefreshTokenRecord&gt;)</code></td><td><code>Promise&lt;void&gt;</code></td><td></td></tr>
+                <tr><td><code>deleteExpired(before: number)</code></td><td><code>Promise&lt;void&gt;</code></td><td></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-RefreshTokens"><code>RefreshTokens</code></h3>
+        <pre><code class="language-ts">export class RefreshTokens&lt;Data = any&gt; { ... }</code></pre>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>new (options?: RefreshTokensOptions)</code></td><td></td><td></td></tr>
+                <tr><td><code>store</code></td><td><code><a href="#ref-TokenStore">TokenStore</a></code></td><td></td></tr>
+                <tr><td><code>ttl</code></td><td><code>number</code></td><td><p>ms</p></td></tr>
+                <tr><td><code>issue(subject: string | number, data?: Data, options?: { family?: string })</code></td><td><code>Promise&lt;<a href="#ref-IssuedToken">IssuedToken</a>&lt;Data&gt;&gt;</code></td><td></td></tr>
+                <tr><td><code>verify(token: string, options?: { spend?: boolean })</code></td><td><code>Promise&lt;<a href="#ref-RefreshTokenRecord">RefreshTokenRecord</a>&lt;Data&gt;&gt;</code></td><td><p>The record of a usable token, or an Unauthorized (401) with its reason.</p></td></tr>
+                <tr><td><code>rotate(token: string, options?: { data?: Data })</code></td><td><code>Promise&lt;<a href="#ref-IssuedToken">IssuedToken</a>&lt;Data&gt;&gt;</code></td><td><p>A new token of the family for a token, which is spent.</p></td></tr>
+                <tr><td><code>revoke(token: string)</code></td><td><code>Promise&lt;boolean&gt;</code></td><td><p>Revokes the family of a token: whether it was one.</p></td></tr>
+                <tr><td><code>revokeSubject(subject: string | number)</code></td><td><code>Promise&lt;void&gt;</code></td><td></td></tr>
+                <tr><td><code>prune()</code></td><td><code>Promise&lt;void&gt;</code></td><td></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h2 id="constants">Constants</h2>
+        <p class="ref-index"><a href="#ref-PASSWORD_DEFAULTS"><code>PASSWORD_DEFAULTS</code></a>, <a href="#ref-TokenError"><code>TokenError</code></a>, <a href="#ref-Unauthorized"><code>Unauthorized</code></a>, <a href="#ref-TotpRequired"><code>TotpRequired</code></a>, <a href="#ref-Forbidden"><code>Forbidden</code></a>, <a href="#ref-Locked"><code>Locked</code></a>, <a href="#ref-ALL_TENANTS"><code>ALL_TENANTS</code></a></p>
+
+        <h3 id="ref-PASSWORD_DEFAULTS"><code>PASSWORD_DEFAULTS</code></h3>
+        <pre><code class="language-ts">export const PASSWORD_DEFAULTS: Required&lt;PasswordOptions&gt;;</code></pre>
+
+        <h3 id="ref-TokenError"><code>TokenError</code></h3>
+        <pre><code class="language-ts">export const TokenError: XufaErrorConstructor&lt;
+  { code: 'XUFA_AUTH_INVALID_TOKEN'; statusCode: 401; reason?: string },
+  [string]
+&gt;;</code></pre>
+        <p>Why a token was refused: 'malformed', 'algorithm', 'signature', 'expired', 'notBefore', 'issuer'...</p>
+
+        <h3 id="ref-Unauthorized"><code>Unauthorized</code></h3>
+        <pre><code class="language-ts">export const Unauthorized: XufaErrorConstructor&lt;
+  { code: 'XUFA_AUTH_UNAUTHORIZED'; statusCode: 401; reason?: string },
+  [string]
+&gt;;</code></pre>
+        <p>reason: why a refresh token was refused ('malformed', 'unknown', 'revoked', 'expired', 'reused').</p>
+
+        <h3 id="ref-TotpRequired"><code>TotpRequired</code></h3>
+        <pre><code class="language-ts">export const TotpRequired: XufaErrorConstructor&lt;{ code: 'XUFA_AUTH_TOTP_REQUIRED'; statusCode: 401 }, [string]&gt;;</code></pre>
+
+        <h3 id="ref-Forbidden"><code>Forbidden</code></h3>
+        <pre><code class="language-ts">export const Forbidden: XufaErrorConstructor&lt;{ code: 'XUFA_AUTH_FORBIDDEN'; statusCode: 403 }, [string]&gt;;</code></pre>
+
+        <h3 id="ref-Locked"><code>Locked</code></h3>
+        <pre><code class="language-ts">export const Locked: XufaErrorConstructor&lt;{ code: 'XUFA_AUTH_LOCKED'; statusCode: 429; retryAfter?: number }, [string]&gt;;</code></pre>
+        <p>retryAfter: seconds until the key is unlocked.</p>
+
+        <h3 id="ref-ALL_TENANTS"><code>ALL_TENANTS</code></h3>
+        <pre><code class="language-ts">export const ALL_TENANTS: '*';</code></pre>
+        <p>Every tenant, in the tenants of a user ('*').</p>
+
+        <h2 id="interfaces">Interfaces</h2>
+        <p class="ref-index"><a href="#ref-PasswordOptions"><code>PasswordOptions</code></a>, <a href="#ref-KeySetOptions"><code>KeySetOptions</code></a>, <a href="#ref-Key"><code>Key</code></a>, <a href="#ref-VaultRecord"><code>VaultRecord</code></a>, <a href="#ref-VaultStore"><code>VaultStore</code></a>, <a href="#ref-KeyVaultOptions"><code>KeyVaultOptions</code></a>, <a href="#ref-Claims"><code>Claims</code></a>, <a href="#ref-SignOptions"><code>SignOptions</code></a>, <a href="#ref-VerifyOptions"><code>VerifyOptions</code></a>, <a href="#ref-TotpOptions"><code>TotpOptions</code></a>, <a href="#ref-ExpiringStore"><code>ExpiringStore</code></a>, <a href="#ref-LockoutOptions"><code>LockoutOptions</code></a>, <a href="#ref-LockoutStatus"><code>LockoutStatus</code></a>, <a href="#ref-RefreshTokenRecord"><code>RefreshTokenRecord</code></a>, <a href="#ref-TokenStore"><code>TokenStore</code></a>, <a href="#ref-RefreshTokensOptions"><code>RefreshTokensOptions</code></a>, <a href="#ref-IssuedToken"><code>IssuedToken</code></a>, <a href="#ref-CookieOptions"><code>CookieOptions</code></a>, <a href="#ref-Strategy"><code>Strategy</code></a>, <a href="#ref-ApiKeyRecord"><code>ApiKeyRecord</code></a>, <a href="#ref-ApiKeyOptions"><code>ApiKeyOptions</code></a>, <a href="#ref-BasicOptions"><code>BasicOptions</code></a>, <a href="#ref-PassportStrategy"><code>PassportStrategy</code></a>, <a href="#ref-PassportFailure"><code>PassportFailure</code></a>, <a href="#ref-PassportLoginOptions"><code>PassportLoginOptions</code></a>, <a href="#ref-PassportAdapter"><code>PassportAdapter</code></a>, <a href="#ref-OAuthStateOptions"><code>OAuthStateOptions</code></a>, <a href="#ref-OAuthStateStore"><code>OAuthStateStore</code></a>, <a href="#ref-LoginOptions"><code>LoginOptions</code></a>, <a href="#ref-PluginOptions"><code>PluginOptions</code></a>, <a href="#ref-AuthApi"><code>AuthApi</code></a></p>
+
+        <h3 id="ref-PasswordOptions"><code>PasswordOptions</code></h3>
+        <pre><code class="language-ts">export interface PasswordOptions { ... }</code></pre>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>ln?</code></td><td><code>number</code></td><td><p>log2 of the cost N of scrypt (17: N = 131072, 128 MiB).</p></td></tr>
+                <tr><td><code>r?</code></td><td><code>number</code></td><td><p>The block size (8).</p></td></tr>
+                <tr><td><code>p?</code></td><td><code>number</code></td><td><p>The parallelization (1).</p></td></tr>
+                <tr><td><code>saltLength?</code></td><td><code>number</code></td><td><p>Bytes of salt (16).</p></td></tr>
+                <tr><td><code>keyLength?</code></td><td><code>number</code></td><td><p>Bytes of hash (32).</p></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-KeySetOptions"><code>KeySetOptions</code></h3>
+        <pre><code class="language-ts">export interface KeySetOptions { ... }</code></pre>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>current?</code></td><td><code>string</code></td><td><p>The id of the key that signs (the first one by default).</p></td></tr>
+                <tr><td><code>keys</code></td><td><code>Record&lt;string, <a href="#ref-KeyEntry">KeyEntry</a>&gt;</code></td><td><p>The keys by their ids (the kid of the tokens).</p></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-Key"><code>Key</code></h3>
+        <pre><code class="language-ts">export interface Key { ... }</code></pre>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>id</code></td><td><code>string</code></td><td></td></tr>
+                <tr><td><code>algorithm</code></td><td><code><a href="#ref-Algorithm">Algorithm</a></code></td><td></td></tr>
+                <tr><td><code>secret?</code></td><td><code>Buffer</code></td><td></td></tr>
+                <tr><td><code>privateKey?</code></td><td><code>KeyObject | null</code></td><td></td></tr>
+                <tr><td><code>publicKey?</code></td><td><code>KeyObject</code></td><td></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-VaultRecord"><code>VaultRecord</code></h3>
+        <pre><code class="language-ts">export interface VaultRecord { ... }</code></pre>
+        <p>What a KeyVault keeps of a tenant: its keys (private keys encrypted), and the version of the record.</p>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>version</code></td><td><code>number</code></td><td></td></tr>
+                <tr><td><code>keys</code></td><td><code>Array&lt;{ id: string; algorithm: <a href="#ref-Algorithm">Algorithm</a>; createdAt: number; activeAt: number; retiredAt: number | null; secret?: string; privateKey?: string; publicKey?: string; }&gt;</code></td><td></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-VaultStore"><code>VaultStore</code></h3>
+        <pre><code class="language-ts">export interface VaultStore { ... }</code></pre>
+        <p>Where a KeyVault keeps the records: put() writes only when the record has that version (null: when none).</p>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>get(tenant: string)</code></td><td><code>Promise&lt;<a href="#ref-VaultRecord">VaultRecord</a> | null&gt;</code></td><td></td></tr>
+                <tr><td><code>put(tenant: string, record: VaultRecord, version: number | null)</code></td><td><code>Promise&lt;boolean&gt;</code></td><td></td></tr>
+                <tr><td><code>delete(tenant: string)</code></td><td><code>Promise&lt;void&gt;</code></td><td></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-KeyVaultOptions"><code>KeyVaultOptions</code></h3>
+        <pre><code class="language-ts">export interface KeyVaultOptions { ... }</code></pre>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>secret</code></td><td><code>string | Buffer</code></td><td><p>32 bytes or more: the private keys of the store are encrypted with keys derived from it.</p></td></tr>
+                <tr><td><code>store?</code></td><td><code><a href="#ref-VaultStore">VaultStore</a></code></td><td><p>A MemoryKeyStore by default; vaultModelStore(Model) for</p></td></tr>
+                <tr><td><code>algorithm?</code></td><td><code><a href="#ref-Algorithm">Algorithm</a></code></td><td><p>Of the keys made ('ES256').</p></td></tr>
+                <tr><td><code>ttl?</code></td><td><code>number | string</code></td><td><p>How long a KeySet is kept in memory, and how long a new key waits to sign ('5m').</p></td></tr>
+                <tr><td><code>keep?</code></td><td><code>number | string</code></td><td><p>How long a key verifies after it stops signing ('1d').</p></td></tr>
+                <tr><td><code>rotateAfter?</code></td><td><code>number | string</code></td><td><p>Keys older are rotated when their tenant is used (none).</p></td></tr>
+                <tr><td><code>max?</code></td><td><code>number</code></td><td><p>Tenants kept in memory (1000).</p></td></tr>
+                <tr><td><code>autoCreate?</code></td><td><code>boolean</code></td><td><p>keys() of a tenant without keys makes them (false).</p></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-Claims"><code>Claims</code></h3>
+        <pre><code class="language-ts">export interface Claims { ... }</code></pre>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>iss?</code></td><td><code>string</code></td><td></td></tr>
+                <tr><td><code>sub?</code></td><td><code>string</code></td><td></td></tr>
+                <tr><td><code>aud?</code></td><td><code>string | string[]</code></td><td></td></tr>
+                <tr><td><code>exp?</code></td><td><code>number</code></td><td></td></tr>
+                <tr><td><code>nbf?</code></td><td><code>number</code></td><td></td></tr>
+                <tr><td><code>iat?</code></td><td><code>number</code></td><td></td></tr>
+                <tr><td><code>jti?</code></td><td><code>string</code></td><td></td></tr>
+                <tr><td><code>[claim: string]</code></td><td><code>unknown</code></td><td></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-SignOptions"><code>SignOptions</code></h3>
+        <pre><code class="language-ts">export interface SignOptions { ... }</code></pre>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>expiresIn?</code></td><td><code><a href="#ref-Duration">Duration</a></code></td><td></td></tr>
+                <tr><td><code>notBefore?</code></td><td><code><a href="#ref-Duration">Duration</a></code></td><td></td></tr>
+                <tr><td><code>issuer?</code></td><td><code>string</code></td><td></td></tr>
+                <tr><td><code>audience?</code></td><td><code>string | string[]</code></td><td></td></tr>
+                <tr><td><code>subject?</code></td><td><code>string | number</code></td><td></td></tr>
+                <tr><td><code>jwtId?</code></td><td><code>string | true</code></td><td><p>The jti: a value, or true for a random UUID.</p></td></tr>
+                <tr><td><code>header?</code></td><td><code>Record&lt;string, unknown&gt;</code></td><td><p>More fields of the header (alg, typ and kid are set).</p></td></tr>
+                <tr><td><code>timestamp?</code></td><td><code>boolean</code></td><td><p>false: no iat.</p></td></tr>
+                <tr><td><code>now?</code></td><td><code>number</code></td><td><p>The time of the token, in seconds since the epoch (now by default).</p></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-VerifyOptions"><code>VerifyOptions</code></h3>
+        <pre><code class="language-ts">export interface VerifyOptions { ... }</code></pre>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>algorithms?</code></td><td><code><a href="#ref-Algorithm">Algorithm</a>[]</code></td><td><p>The algorithms taken (all those of the keys by default).</p></td></tr>
+                <tr><td><code>issuer?</code></td><td><code>string | RegExp | Array&lt;string | RegExp&gt;</code></td><td></td></tr>
+                <tr><td><code>audience?</code></td><td><code>string | RegExp | Array&lt;string | RegExp&gt;</code></td><td></td></tr>
+                <tr><td><code>subject?</code></td><td><code>string</code></td><td></td></tr>
+                <tr><td><code>maxAge?</code></td><td><code><a href="#ref-Duration">Duration</a></code></td><td><p>The oldest iat taken.</p></td></tr>
+                <tr><td><code>clockTolerance?</code></td><td><code><a href="#ref-Duration">Duration</a></code></td><td><p>Leeway of exp, nbf and maxAge.</p></td></tr>
+                <tr><td><code>now?</code></td><td><code>number</code></td><td><p>The time, in seconds since the epoch (now by default).</p></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-TotpOptions"><code>TotpOptions</code></h3>
+        <pre><code class="language-ts">export interface TotpOptions { ... }</code></pre>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>digits?</code></td><td><code>number</code></td><td><p>6 to 10 (6).</p></td></tr>
+                <tr><td><code>period?</code></td><td><code>number</code></td><td><p>Seconds of each code (30).</p></td></tr>
+                <tr><td><code>algorithm?</code></td><td><code><a href="#ref-TotpAlgorithm">TotpAlgorithm</a></code></td><td></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-ExpiringStore"><code>ExpiringStore</code></h3>
+        <pre><code class="language-ts">export interface ExpiringStore { ... }</code></pre>
+        <p>A store of values with a time to live in ms: a MemoryCache, SharedCache or LocalCache of</p>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>get(key: string)</code></td><td><code>Promise&lt;any&gt;</code></td><td></td></tr>
+                <tr><td><code>set(key: string, value: any, ttl?: number)</code></td><td><code>Promise&lt;void&gt;</code></td><td></td></tr>
+                <tr><td><code>delete(key: string)</code></td><td><code>Promise&lt;void&gt;</code></td><td></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-LockoutOptions"><code>LockoutOptions</code></h3>
+        <pre><code class="language-ts">export interface LockoutOptions { ... }</code></pre>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>store?</code></td><td><code><a href="#ref-ExpiringStore">ExpiringStore</a></code></td><td></td></tr>
+                <tr><td><code>maxAttempts?</code></td><td><code>number</code></td><td><p>Failures within the window that lock (5).</p></td></tr>
+                <tr><td><code>window?</code></td><td><code><a href="#ref-Duration">Duration</a></code></td><td><p>'15m'</p></td></tr>
+                <tr><td><code>lockFor?</code></td><td><code><a href="#ref-Duration">Duration</a></code></td><td><p>'15m'</p></td></tr>
+                <tr><td><code>prefix?</code></td><td><code>string</code></td><td></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-LockoutStatus"><code>LockoutStatus</code></h3>
+        <pre><code class="language-ts">export interface LockoutStatus { ... }</code></pre>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>locked</code></td><td><code>boolean</code></td><td></td></tr>
+                <tr><td><code>retryAfter</code></td><td><code>number</code></td><td><p>Seconds until it is unlocked.</p></td></tr>
+                <tr><td><code>failures</code></td><td><code>number</code></td><td></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-RefreshTokenRecord"><code>RefreshTokenRecord</code></h3>
+        <pre><code class="language-ts">export interface RefreshTokenRecord&lt;Data = any&gt; { ... }</code></pre>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>id</code></td><td><code>string</code></td><td></td></tr>
+                <tr><td><code>family</code></td><td><code>string</code></td><td></td></tr>
+                <tr><td><code>subject</code></td><td><code>string</code></td><td></td></tr>
+                <tr><td><code>data</code></td><td><code>Data</code></td><td></td></tr>
+                <tr><td><code>hash</code></td><td><code>string</code></td><td></td></tr>
+                <tr><td><code>createdAt</code></td><td><code>number</code></td><td></td></tr>
+                <tr><td><code>expiresAt</code></td><td><code>number</code></td><td></td></tr>
+                <tr><td><code>usedAt</code></td><td><code>number | null</code></td><td></td></tr>
+                <tr><td><code>revokedAt</code></td><td><code>number | null</code></td><td></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-TokenStore"><code>TokenStore</code></h3>
+        <pre><code class="language-ts">export interface TokenStore { ... }</code></pre>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>get(id: string)</code></td><td><code>Promise&lt;<a href="#ref-RefreshTokenRecord">RefreshTokenRecord</a> | null&gt;</code></td><td></td></tr>
+                <tr><td><code>create(record: RefreshTokenRecord)</code></td><td><code>Promise&lt;void&gt;</code></td><td></td></tr>
+                <tr><td><code>spend(id: string, time: number)</code></td><td><code>Promise&lt;boolean&gt;</code></td><td><p>Marks a token used when it was not: whether it was.</p></td></tr>
+                <tr><td><code>updateMany(where: { family?: string; subject?: string }, changes: Partial&lt;RefreshTokenRecord&gt;)</code></td><td><code>Promise&lt;void&gt;</code></td><td></td></tr>
+                <tr><td><code>deleteExpired(before: number)</code></td><td><code>Promise&lt;void&gt;</code></td><td></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-RefreshTokensOptions"><code>RefreshTokensOptions</code></h3>
+        <pre><code class="language-ts">export interface RefreshTokensOptions { ... }</code></pre>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>store?</code></td><td><code><a href="#ref-TokenStore">TokenStore</a></code></td><td></td></tr>
+                <tr><td><code>ttl?</code></td><td><code><a href="#ref-Duration">Duration</a></code></td><td><p>How long a token lives ('30d').</p></td></tr>
+                <tr><td><code>reuseInterval?</code></td><td><code><a href="#ref-Duration">Duration</a></code></td><td><p>For how long a spent token may be used again without revoking its family (0).</p></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-IssuedToken"><code>IssuedToken</code></h3>
+        <pre><code class="language-ts">export interface IssuedToken&lt;Data = any&gt; { ... }</code></pre>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>token</code></td><td><code>string</code></td><td></td></tr>
+                <tr><td><code>record</code></td><td><code><a href="#ref-RefreshTokenRecord">RefreshTokenRecord</a>&lt;Data&gt;</code></td><td></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-CookieOptions"><code>CookieOptions</code></h3>
+        <pre><code class="language-ts">export interface CookieOptions { ... }</code></pre>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>path?</code></td><td><code>string</code></td><td></td></tr>
+                <tr><td><code>domain?</code></td><td><code>string</code></td><td></td></tr>
+                <tr><td><code>maxAge?</code></td><td><code>number</code></td><td><p>Seconds (0 deletes it).</p></td></tr>
+                <tr><td><code>httpOnly?</code></td><td><code>boolean</code></td><td></td></tr>
+                <tr><td><code>secure?</code></td><td><code>boolean</code></td><td></td></tr>
+                <tr><td><code>sameSite?</code></td><td><code>'Strict' | 'Lax' | 'None' | false</code></td><td></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-Strategy"><code>Strategy</code></h3>
+        <pre><code class="language-ts">export interface Strategy&lt;User = any&gt; { ... }</code></pre>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>readonly name</code></td><td><code>string</code></td><td></td></tr>
+                <tr><td><code>readonly challenge?</code></td><td><code>string</code></td><td><p>The WWW-Authenticate challenge of a 401 when there were no credentials.</p></td></tr>
+                <tr><td><code>readonly openapi?</code></td><td><code>Record&lt;string, unknown&gt;</code></td><td><p>Its security scheme of OpenAPI (for</p></td></tr>
+                <tr><td><code>authenticate(request: any, reply: any)</code></td><td><code>Promise&lt;<a href="#ref-StrategyResult">StrategyResult</a>&lt;User&gt;&gt;</code></td><td></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-ApiKeyRecord"><code>ApiKeyRecord</code></h3>
+        <pre><code class="language-ts">export interface ApiKeyRecord { ... }</code></pre>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>hash</code></td><td><code>string</code></td><td><p>The hash of the secret of the key (hashApiKey).</p></td></tr>
+                <tr><td><code>expiresAt?</code></td><td><code>Date | number | string | null</code></td><td></td></tr>
+                <tr><td><code>revokedAt?</code></td><td><code>Date | number | string | null</code></td><td></td></tr>
+                <tr><td><code>[field: string]</code></td><td><code>any</code></td><td></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-ApiKeyOptions"><code>ApiKeyOptions</code></h3>
+        <pre><code class="language-ts">export interface ApiKeyOptions&lt;User = any, R extends ApiKeyRecord = ApiKeyRecord&gt; { ... }</code></pre>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>openapi?</code></td><td><code>Record&lt;string, unknown&gt;</code></td><td><p>Its security scheme of OpenAPI (from where the key is read by default).</p></td></tr>
+                <tr><td><code>name?</code></td><td><code>string</code></td><td><p>'apiKey'</p></td></tr>
+                <tr><td><code>header?</code></td><td><code>string | null</code></td><td><p>The header of the key ('x-api-key'; null: none).</p></td></tr>
+                <tr><td><code>scheme?</code></td><td><code>string | null</code></td><td><p>The scheme of the key in the Authorization header ('ApiKey': Authorization: ApiKey &lt;key&gt;).</p></td></tr>
+                <tr><td><code>query?</code></td><td><code>string | null</code></td><td><p>A query parameter of the key (none by default: URLs end in logs).</p></td></tr>
+                <tr><td><code>find(id: string, request: any)</code></td><td><code>R | null | undefined | Promise&lt;R | null | undefined&gt;</code></td><td><p>The record of the id of a key, or null.</p></td></tr>
+                <tr><td><code>user?(record: R, request: any)</code></td><td><code>User | null | undefined | Promise&lt;User | null | undefined&gt;</code></td><td><p>The user of a record (record.user, or the record).</p></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-BasicOptions"><code>BasicOptions</code></h3>
+        <pre><code class="language-ts">export interface BasicOptions&lt;User = any&gt; { ... }</code></pre>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>openapi?</code></td><td><code>Record&lt;string, unknown&gt;</code></td><td><p>Its security scheme of OpenAPI ({ type: 'http', scheme: 'basic' }).</p></td></tr>
+                <tr><td><code>name?</code></td><td><code>string</code></td><td><p>'basic'</p></td></tr>
+                <tr><td><code>realm?</code></td><td><code>string</code></td><td><p>'api'</p></td></tr>
+                <tr><td><code>findUser(username: string, request: any)</code></td><td><code>User | null | undefined | Promise&lt;User | null | undefined&gt;</code></td><td></td></tr>
+                <tr><td><code>password?(user: User)</code></td><td><code>string | null | undefined</code></td><td><p>The hash of the password of a user (user.password).</p></td></tr>
+                <tr><td><code>passwordOptions?</code></td><td><code><a href="#ref-PasswordOptions">PasswordOptions</a></code></td><td></td></tr>
+                <tr><td><code>lockout?</code></td><td><code><a href="#ref-Lockout">Lockout</a> | <a href="#ref-LockoutOptions">LockoutOptions</a> | false</code></td><td><p>A Lockout, its options, or false (no lockout).</p></td></tr>
+                <tr><td><code>cache?</code></td><td><code><a href="#ref-Duration">Duration</a></code></td><td><p>How long a checked password is remembered, so requests do not pay scrypt each time ('5m'; 0: never).</p></td></tr>
+                <tr><td><code>maxCached?</code></td><td><code>number</code></td><td><p>Passwords remembered at most (10000).</p></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-PassportStrategy"><code>PassportStrategy</code></h3>
+        <pre><code class="language-ts">export interface PassportStrategy { ... }</code></pre>
+        <p>A strategy of Passport: an object with authenticate(req, options), and its name.</p>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>name?</code></td><td><code>string</code></td><td></td></tr>
+                <tr><td><code>authenticate(this: any, req: any, options?: any)</code></td><td><code>any</code></td><td></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-PassportFailure"><code>PassportFailure</code></h3>
+        <pre><code class="language-ts">export interface PassportFailure { ... }</code></pre>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>challenge?</code></td><td><code>string</code></td><td></td></tr>
+                <tr><td><code>message?</code></td><td><code>string</code></td><td></td></tr>
+                <tr><td><code>status?</code></td><td><code>number</code></td><td></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-PassportLoginOptions"><code>PassportLoginOptions</code></h3>
+        <pre><code class="language-ts">export interface PassportLoginOptions&lt;User = any&gt; { ... }</code></pre>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>onLogin?(user: User, info: unknown, request: any, reply: any)</code></td><td><code>unknown</code></td><td><p>The answer of a login (the tokens of the plugin by default, of claims).</p></td></tr>
+                <tr><td><code>onFailure?(failure: PassportFailure, request: any, reply: any)</code></td><td><code>unknown</code></td><td><p>The answer of a failure (401, or the status the strategy gives, by default).</p></td></tr>
+                <tr><td><code>claims?(user: User, request: any)</code></td><td><code><a href="#ref-Claims">Claims</a> | Promise&lt;<a href="#ref-Claims">Claims</a>&gt;</code></td><td><p>The claims of the tokens of a user ({ sub: String(user.id) }).</p></td></tr>
+                <tr><td><code>[option: string]</code></td><td><code>unknown</code></td><td><p>Options of the authenticate() of the strategy (scope...).</p></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-PassportAdapter"><code>PassportAdapter</code></h3>
+        <pre><code class="language-ts">export interface PassportAdapter&lt;User = any&gt; extends Strategy&lt;User&gt; { ... }</code></pre>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>readonly strategy</code></td><td><code><a href="#ref-PassportStrategy">PassportStrategy</a></code></td><td></td></tr>
+                <tr><td><code>login(options?: PassportLoginOptions&lt;User&gt;)</code></td><td><code>(request: any, reply: any) =&gt; Promise&lt;unknown&gt;</code></td><td><p>The handler of a route of login: redirects (OAuth), failures, and the user given to onLogin.</p></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-OAuthStateOptions"><code>OAuthStateOptions</code></h3>
+        <pre><code class="language-ts">export interface OAuthStateOptions { ... }</code></pre>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>secret</code></td><td><code>string</code></td><td><p>The key of the cookies (16 characters or more).</p></td></tr>
+                <tr><td><code>name?</code></td><td><code>string</code></td><td><p>'xufa_oauth_state'</p></td></tr>
+                <tr><td><code>maxAge?</code></td><td><code>number</code></td><td><p>Seconds (600).</p></td></tr>
+                <tr><td><code>path?</code></td><td><code>string</code></td><td></td></tr>
+                <tr><td><code>secure?</code></td><td><code>boolean</code></td><td></td></tr>
+                <tr><td><code>sameSite?</code></td><td><code>'Lax' | 'Strict' | 'None'</code></td><td></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-OAuthStateStore"><code>OAuthStateStore</code></h3>
+        <pre><code class="language-ts">export interface OAuthStateStore { ... }</code></pre>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>store(req: any, verifier: string | undefined, state: unknown, meta: unknown, callback: (err: Error | null, handle?: string) =&gt; void)</code></td><td><code>void</code></td><td></td></tr>
+                <tr><td><code>verify(req: any, providedState: string, meta: unknown, callback: (err: Error | null, ok?: string | boolean, state?: unknown) =&gt; void)</code></td><td><code>void</code></td><td></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-LoginOptions"><code>LoginOptions</code></h3>
+        <pre><code class="language-ts">export interface LoginOptions&lt;User = any&gt; { ... }</code></pre>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>findUser(username: string, request: any)</code></td><td><code>User | null | undefined | Promise&lt;User | null | undefined&gt;</code></td><td><p>The user of a username (an email...), or null.</p></td></tr>
+                <tr><td><code>password?(user: User)</code></td><td><code>string | null | undefined</code></td><td><p>The hash of the password of a user (user.password).</p></td></tr>
+                <tr><td><code>totp?(user: User)</code></td><td><code>string | null | undefined | Promise&lt;string | null | undefined&gt;</code></td><td><p>The secret of TOTP of a user, when they have one (then a code is needed).</p></td></tr>
+                <tr><td><code>lastTotpStep?(user: User)</code></td><td><code>number | null | undefined | Promise&lt;number | null | undefined&gt;</code></td><td><p>The last step of TOTP used by the user (codes of it and before are refused).</p></td></tr>
+                <tr><td><code>onTotp?(user: User, step: number)</code></td><td><code>void | Promise&lt;void&gt;</code></td><td><p>Called with the step of the code of a login, to keep it.</p></td></tr>
+                <tr><td><code>totpOptions?</code></td><td><code><a href="#ref-TotpOptions">TotpOptions</a> &amp; { window?: number }</code></td><td></td></tr>
+                <tr><td><code>claims?(user: User)</code></td><td><code><a href="#ref-Claims">Claims</a> | Promise&lt;<a href="#ref-Claims">Claims</a>&gt;</code></td><td><p>The claims of the access tokens of a user ({ sub: String(user.id) }).</p></td></tr>
+                <tr><td><code>reload?(subject: string, data: Claims, request: any)</code></td><td><code><a href="#ref-Claims">Claims</a> | null | Promise&lt;<a href="#ref-Claims">Claims</a> | null&gt;</code></td><td><p>The claims of a refresh (from the user again), or null when the user can no longer log in.</p></td></tr>
+                <tr><td><code>rehash?(user: User, hash: string)</code></td><td><code>void | Promise&lt;void&gt;</code></td><td><p>Called with a new hash when the one of the user was made with other parameters.</p></td></tr>
+                <tr><td><code>passwordOptions?</code></td><td><code><a href="#ref-PasswordOptions">PasswordOptions</a></code></td><td></td></tr>
+                <tr><td><code>lockout?</code></td><td><code><a href="#ref-Lockout">Lockout</a> | <a href="#ref-LockoutOptions">LockoutOptions</a> | false</code></td><td><p>A Lockout, its options, or false (no lockout).</p></td></tr>
+                <tr><td><code>fields?</code></td><td><code>{ username?: string; password?: string; code?: string }</code></td><td><p>The names of the fields of the body (username, password, code).</p></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-PluginOptions"><code>PluginOptions</code></h3>
+        <pre><code class="language-ts">export interface PluginOptions&lt;User = any&gt; { ... }</code></pre>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>keys?</code></td><td><code><a href="#ref-Keys">Keys</a> | ((request: any) =&gt; <a href="#ref-Keys">Keys</a> | Promise&lt;<a href="#ref-Keys">Keys</a>&gt;)</code></td><td><p>The keys of the tokens, or a function of the request that gives them (a KeySet per tenant). Needed by the strategy 'jwt', logins and refresh tokens.</p></td></tr>
+                <tr><td><code>strategies?</code></td><td><code>Array&lt;'jwt' | <a href="#ref-Strategy">Strategy</a>&lt;User&gt;&gt;</code></td><td><p>The strategies tried on every request, in order (['jwt'] when keys are given): 'jwt' (the access tokens of the plugin), apiKey(), basic(), passport(strategy), or your own.</p></td></tr>
+                <tr><td><code>accessToken?</code></td><td><code>{ /** '15m' */ expiresIn?: <a href="#ref-Duration">Duration</a>; issuer?: string; audience?: string | string[]; algorithms?: <a href="#ref-Algorithm">Algorithm</a>[]; clockTolerance?: <a href="#ref-Duration">Duration</a>; }</code></td><td></td></tr>
+                <tr><td><code>token?</code></td><td><code>{ header?: boolean; cookie?: string | null; query?: string | null }</code></td><td><p>Where tokens are read from, after the Authorization header (header: false to not read it).</p></td></tr>
+                <tr><td><code>user?(claims: Claims, request: any)</code></td><td><code>User | null | Promise&lt;User | null&gt;</code></td><td><p>The user of the claims of a valid token (the claims by default); null refuses it.</p></td></tr>
+                <tr><td><code>hook?</code></td><td><code>'onRequest' | 'preParsing' | 'preValidation' | 'preHandler' | false</code></td><td><p>The hook that verifies the token of every request ('onRequest'), or false (only routes with auth do).</p></td></tr>
+                <tr><td><code>login?</code></td><td><code><a href="#ref-LoginOptions">LoginOptions</a>&lt;User&gt;</code></td><td><p>The routes of login, refresh and logout, under prefix ('/auth').</p></td></tr>
+                <tr><td><code>prefix?</code></td><td><code>string</code></td><td></td></tr>
+                <tr><td><code>refresh?</code></td><td><code><a href="#ref-RefreshTokens">RefreshTokens</a> | <a href="#ref-RefreshTokensOptions">RefreshTokensOptions</a> | boolean</code></td><td><p>The refresh tokens of logins (on with login; given, for the logins of Passport): RefreshTokens, its options, true, or false (none). With them, the routes of refresh and logout.</p></td></tr>
+                <tr><td><code>reload?(subject: string, data: Claims, request: any)</code></td><td><code><a href="#ref-Claims">Claims</a> | null | Promise&lt;<a href="#ref-Claims">Claims</a> | null&gt;</code></td><td><p>The claims of a refresh when there is no login (login.reload otherwise), or null when the user can no longer.</p></td></tr>
+                <tr><td><code>tenants?</code></td><td><code>{ of?(request: any): string | number | null | undefined | Promise&lt;string | number | null | undefined&gt;; claim?(user: User): string[] | Promise&lt;string[]&gt;; }</code></td><td><p>Tenants: of(request), the tenant of a request (request.tenant, which the plugin of</p></td></tr>
+                <tr><td><code>refreshCookie?</code></td><td><code>boolean | ({ name?: string } &amp; Omit&lt;<a href="#ref-CookieOptions">CookieOptions</a>, 'maxAge'&gt;)</code></td><td><p>Keep the refresh token in a cookie (HttpOnly, Secure, SameSite=Strict, the path of prefix), not in the body.</p></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-AuthApi"><code>AuthApi</code></h3>
+        <pre><code class="language-ts">export interface AuthApi&lt;User = any&gt; { ... }</code></pre>
+        <p>What the plugin decorates the app with, as app.auth.</p>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>sign(claims: Claims, request?: any, options?: SignOptions)</code></td><td><code>Promise&lt;string&gt;</code></td><td><p>An access token of claims (the request gives the keys when they are a function of it).</p></td></tr>
+                <tr><td><code>verify(token: string, request?: any)</code></td><td><code>Promise&lt;<a href="#ref-Claims">Claims</a>&gt;</code></td><td></td></tr>
+                <tr><td><code>authenticate(request: any, reply: any)</code></td><td><code>Promise&lt;void&gt;</code></td><td></td></tr>
+                <tr><td><code>authenticateWith(...names: Array&lt;string | string[]&gt;)</code></td><td><code>(request: any, reply: any) =&gt; Promise&lt;void&gt;</code></td><td><p>The hook of routes that need a user identified by one of some strategies (by name).</p></td></tr>
+                <tr><td><code>issue(claims: Claims, request: any, reply: any, previous?: string)</code></td><td><code>Promise&lt;{ accessToken: string; tokenType: 'Bearer'; expiresIn: number; refreshToken?: string }&gt;</code></td><td><p>The tokens of a login: the access token, and the refresh token when there are refresh tokens.</p></td></tr>
+                <tr><td><code>strategies</code></td><td><code>Map&lt;string, <a href="#ref-Strategy">Strategy</a>&lt;User&gt;&gt;</code></td><td><p>The strategies by name.</p></td></tr>
+                <tr><td><code>refresh</code></td><td><code><a href="#ref-RefreshTokens">RefreshTokens</a> | null</code></td><td></td></tr>
+                <tr><td><code>authorize(...rules: Array&lt;string | string[] | ((user: User, request: any) =&gt; boolean | Promise&lt;boolean&gt;)&gt;)</code></td><td><code>(request: any, reply: any) =&gt; Promise&lt;void&gt;</code></td><td></td></tr>
+                <tr><td><code>canUseTenant(request: any, tenant: string, reply?: any)</code></td><td><code>Promise&lt;boolean&gt;</code></td><td><p>Whether the user of a request may use a tenant (a 401 is thrown without a user): the authorize of the tenants of</p></td></tr>
+                <tr><td><code>tenantsOf(user: User)</code></td><td><code>Promise&lt;string[]&gt; | string[]</code></td><td><p>The tenants a user may use (the claim of the options).</p></td></tr>
+                <tr><td><code>keys</code></td><td><code><a href="#ref-KeySet">KeySet</a> | null</code></td><td><p>The keys (null when they are a function of the request).</p></td></tr>
+                <tr><td><code>hashPassword</code></td><td><code>typeof <a href="#ref-hashPassword">hashPassword</a></code></td><td></td></tr>
+                <tr><td><code>verifyPassword</code></td><td><code>typeof <a href="#ref-verifyPassword">verifyPassword</a></code></td><td></td></tr>
+                <tr><td><code>tokenOf(request: any)</code></td><td><code>string | null</code></td><td></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h2 id="types">Types</h2>
+        <p class="ref-index"><a href="#ref-Duration"><code>Duration</code></a>, <a href="#ref-Algorithm"><code>Algorithm</code></a>, <a href="#ref-KeyInput"><code>KeyInput</code></a>, <a href="#ref-KeyEntry"><code>KeyEntry</code></a>, <a href="#ref-Keys"><code>Keys</code></a>, <a href="#ref-TotpAlgorithm"><code>TotpAlgorithm</code></a>, <a href="#ref-AuthRule"><code>AuthRule</code></a>, <a href="#ref-AuthCheck"><code>AuthCheck</code></a>, <a href="#ref-TenantRule"><code>TenantRule</code></a>, <a href="#ref-AuthRuleOf"><code>AuthRuleOf</code></a>, <a href="#ref-StrategyResult"><code>StrategyResult</code></a></p>
+
+        <h3 id="ref-Duration"><code>Duration</code></h3>
+        <pre><code class="language-ts">export type Duration = number | string;</code></pre>
+        <p>A duration: seconds, or text as '30s', '15m', '12h', '7d', '2w' (and sums: '1h30m').</p>
+
+        <h3 id="ref-Algorithm"><code>Algorithm</code></h3>
+        <pre><code class="language-ts">export type Algorithm =
+  | 'HS256'
+  | 'HS384'
+  | 'HS512'
+  | 'RS256'
+  | 'RS384'
+  | 'RS512'
+  | 'PS256'
+  | 'PS384'
+  | 'PS512'
+  | 'ES256'
+  | 'ES384'
+  | 'ES512'
+  | 'EdDSA';</code></pre>
+
+        <h3 id="ref-KeyInput"><code>KeyInput</code></h3>
+        <pre><code class="language-ts">export type KeyInput = string | Buffer | KeyObject;</code></pre>
+        <p>A key: a secret (HMAC), a PEM or a KeyObject (the private key signs, its public key verifies).</p>
+
+        <h3 id="ref-KeyEntry"><code>KeyEntry</code></h3>
+        <pre><code class="language-ts">export type KeyEntry = KeyInput | { key: KeyInput; algorithm?: Algorithm; passphrase?: string | Buffer };</code></pre>
+        <p>A key, with its algorithm; an encrypted private key in PEM with its passphrase.</p>
+
+        <h3 id="ref-Keys"><code>Keys</code></h3>
+        <pre><code class="language-ts">export type Keys = KeySet | KeyEntry | KeySetOptions;</code></pre>
+
+        <h3 id="ref-TotpAlgorithm"><code>TotpAlgorithm</code></h3>
+        <pre><code class="language-ts">export type TotpAlgorithm = 'SHA1' | 'SHA256' | 'SHA512';</code></pre>
+
+        <h3 id="ref-AuthRule"><code>AuthRule</code></h3>
+        <pre><code class="language-ts">export type AuthRule&lt;User = any&gt; =
+  true | string | string[] | ((user: User, request: any) =&gt; boolean | Promise&lt;boolean&gt;) | AuthRuleOf&lt;User&gt;;</code></pre>
+        <p>A check of a route: an authenticated user, a role, roles (any of them), a function of the user, or which strategies may identify the user (with roles or a check).</p>
+
+        <h3 id="ref-AuthCheck"><code>AuthCheck</code></h3>
+        <pre><code class="language-ts">type AuthCheck&lt;User&gt; = (user: User, request: any) =&gt; boolean | Promise&lt;boolean&gt;;</code></pre>
+
+        <h3 id="ref-TenantRule"><code>TenantRule</code></h3>
+        <pre><code class="language-ts">export type TenantRule = true | '*';</code></pre>
+        <p>The tenant of a route: true, a user of the tenant of the request; '*', a user of every tenant.</p>
+
+        <h3 id="ref-AuthRuleOf"><code>AuthRuleOf</code></h3>
+        <pre><code class="language-ts">export type AuthRuleOf&lt;User = any&gt; =
+  | { strategy: string | string[]; roles?: string | string[]; check?: AuthCheck&lt;User&gt;; tenant?: TenantRule }
+  | { strategy?: string | string[]; roles: string | string[]; check?: AuthCheck&lt;User&gt;; tenant?: TenantRule }
+  | { strategy?: string | string[]; roles?: string | string[]; check: AuthCheck&lt;User&gt;; tenant?: TenantRule }
+  | { strategy?: string | string[]; roles?: string | string[]; check?: AuthCheck&lt;User&gt;; tenant: TenantRule };</code></pre>
+        <p>Which strategies may identify the user (by name: the others are refused), any of some roles or a check, and the tenant the user must be of. One of them at least.</p>
+
+        <h3 id="ref-StrategyResult"><code>StrategyResult</code></h3>
+        <pre><code class="language-ts">export type StrategyResult&lt;User = any&gt; =
+  | { user: User; info?: unknown }
+  | { fail: { challenge?: string; message?: string; status?: number; error?: Error } }
+  | null;</code></pre>
+        <p>What a strategy finds in a request: a user, credentials that are not valid, or none of its kind (null).</p>
+      </article>
+    </div>
+
+    <footer class="footer">
+      <div class="container">
+        <span>xufa is MIT licensed. &copy; Jes&uacute;s Seijas</span>
+        <span>
+          <a href="../guide.html">Guide</a> &middot; <a href="../playground.html">Playground</a> &middot; <a href="../http/index.html">HTTP</a> &middot; <a href="../orm/index.html">ORM</a> &middot; <a href="index.html">Auth</a> &middot;
+          <a href="../sequelize/index.html">Sequelize</a> &middot; <a href="../packages.html">Packages</a> &middot;
+          <a href="../benchmarks.html">Benchmarks</a> &middot; <a href="https://github.com/xufajs/xufa">GitHub</a>
+        </span>
+      </div>
+    </footer>
+  </body>
+</html>

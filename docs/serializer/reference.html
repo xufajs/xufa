@@ -1,0 +1,375 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>@xufa/serializer: Reference · xufa</title>
+    <meta
+      name="description"
+      content="The reference of @xufa/serializer: every function, class, interface and type it declares, made from its TypeScript declarations."
+    />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%23d9502b'/%3E%3Ctext x='16' y='22.5' font-family='monospace' font-size='18' font-weight='700' fill='white' text-anchor='middle'%3Ex%3C/text%3E%3C/svg%3E"
+    />
+    <link rel="stylesheet" href="../style.css?v=0.1.0" />
+    <script src="../main.js?v=0.1.0"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js" defer></script>
+  </head>
+  <body>
+    <header class="header">
+      <div class="header-inner">
+        <a class="logo" href="../index.html"><span class="logo-mark">x</span>xufa</a>
+        <nav class="nav">
+          <a href="../guide.html">Guide</a>
+          <a href="../playground.html">Playground</a>
+          <a href="../http/index.html">HTTP</a>
+          <a href="../orm/index.html">ORM</a>
+          <a class="hide-small" href="../auth/index.html">Auth</a>
+          <a class="hide-small" href="../sequelize/index.html">Sequelize</a>
+          <a class="hide-small" href="../packages.html" aria-current="page">Packages</a>
+          <a class="hide-small" href="../benchmarks.html">Benchmarks</a>
+          <a href="https://github.com/xufajs/xufa">GitHub</a>
+          <button class="theme-toggle" type="button" aria-label="Switch between light and dark theme">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+              <path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z" />
+            </svg>
+          </button>
+        </nav>
+      </div>
+    </header>
+
+    <div class="docs">
+      <button class="menu-toggle" type="button" aria-expanded="false">☰ Contents</button>
+      <aside class="sidebar">
+        <h4>Reference</h4>
+        <ul>
+          <li><a href="#functions">Functions (1)</a></li>
+          <li><a href="#constants">Constants (2)</a></li>
+          <li><a href="#interfaces">Interfaces (14)</a></li>
+          <li><a href="#types">Types (6)</a></li>
+        </ul>
+        <h4>Packages</h4>
+        <ul>
+          <li><a href="../websocket/index.html">@xufa/websocket</a></li>
+          <li><a href="../admin/index.html">@xufa/admin</a></li>
+          <li><a href="../session/index.html">@xufa/session</a></li>
+          <li><a href="../openapi/index.html">@xufa/openapi</a></li>
+          <li><a href="../client/index.html">@xufa/client</a></li>
+          <li><a href="../schema/index.html">@xufa/schema</a></li>
+          <li><a href="../pg/index.html">@xufa/pg</a></li>
+          <li><a href="../mongo/index.html">@xufa/mongo</a></li>
+          <li><a href="../expression/index.html">@xufa/expression</a></li>
+          <li><a href="../template/index.html">@xufa/template</a></li>
+          <li><a href="../cluster/index.html">@xufa/cluster</a></li>
+          <li><a href="../scheduler/index.html">@xufa/scheduler</a></li>
+          <li><a href="../queue/index.html">@xufa/queue</a></li>
+          <li><a href="../config/index.html">@xufa/config</a></li>
+          <li><a href="../discovery/index.html">@xufa/discovery</a></li>
+          <li><a href="../netcache/index.html">@xufa/netcache</a></li>
+          <li><a href="../faults/index.html">@xufa/faults</a></li>
+          <li><a href="../marshal/index.html">@xufa/marshal</a></li>
+          <li><a href="../yaml/index.html">@xufa/yaml</a></li>
+          <li><a href="../jwt/index.html">@xufa/jwt</a></li>
+          <li><a href="../logger/index.html">@xufa/logger</a></li>
+          <li><a href="../router/index.html">@xufa/router</a></li>
+          <li><a href="index.html" aria-current="page">@xufa/serializer</a></li>
+          <li><a href="../inject/index.html">@xufa/inject</a></li>
+          <li><a href="../boot/index.html">@xufa/boot</a></li>
+          <li><a href="../errors/index.html">@xufa/errors</a></li>
+          <li><a href="../packages.html">All the packages</a></li>
+        </ul>
+      </aside>
+
+      <article class="content">
+        <nav class="package-tabs" aria-label="@xufa/serializer">
+          <a href="index.html">Overview</a>
+          <a href="reference.html" aria-current="page">Reference</a>
+          <a href="../playground.html#serializer">Playground</a>
+        </nav>
+        <h1>Reference</h1>
+        <p class="intro">
+          JSON serializers compiled from JSON Schema, with the output of fast-json-stringify and no dependencies. Every declaration of its TypeScript declarations
+          (<code>packages/serializer/index.d.ts</code>), as they are written, with their comments: made from them each time
+          the docs are built. How to use them is in <a href="index.html">the overview</a>.
+        </p>
+
+        <h2 id="functions">Functions</h2>
+        <p class="ref-index"><a href="#ref-build"><code>build</code></a></p>
+
+        <h3 id="ref-build"><code>build</code></h3>
+        <pre><code class="language-ts">declare function build(schema: build.AnySchema, options: DebugOption): { code: string };
+
+declare function build(schema: build.AnySchema, options?: build.Options): (&lt;TDoc = any&gt;(doc: TDoc) =&gt; any) &amp; ToBuffer;
+
+declare function build(
+  schema: build.StringSchema,
+  options?: build.Options
+): (&lt;TDoc extends StringCoercible = StringCoercible&gt;(doc: TDoc) =&gt; string) &amp; ToBuffer;
+
+declare function build(
+  schema: build.IntegerSchema | build.NumberSchema,
+  options?: build.Options
+): (&lt;TDoc extends IntegerCoercible = IntegerCoercible&gt;(doc: TDoc) =&gt; string) &amp; ToBuffer;
+
+declare function build(
+  schema: build.NullSchema,
+  options?: build.Options
+): (&lt;TDoc extends null = null&gt;(doc: TDoc) =&gt; 'null') &amp; ToBuffer;
+
+declare function build(
+  schema: build.BooleanSchema,
+  options?: build.Options
+): (&lt;TDoc extends boolean = boolean&gt;(doc: TDoc) =&gt; string) &amp; ToBuffer;
+
+declare function build(
+  schema: build.ArraySchema | build.TupleSchema,
+  options?: build.Options
+): (&lt;TDoc extends any[] = any[]&gt;(doc: TDoc) =&gt; string) &amp; ToBuffer;
+
+declare function build(
+  schema: build.ObjectSchema,
+  options?: build.Options
+): (&lt;TDoc extends object = object&gt;(doc: TDoc) =&gt; string) &amp; ToBuffer;
+
+declare function build(
+  schema: build.Schema,
+  options?: build.Options
+): (&lt;TDoc = object | any[] | string | number | boolean | null&gt;(doc: TDoc) =&gt; string) &amp; ToBuffer;</code></pre>
+        <p>Build a stringify function using a schema of the documents that should be stringified</p><ul class="ref-tags"><li><code>schema</code>: The schema used to stringify values</li><li><code>options</code>: The options to use (optional)</li></ul>
+
+        <h2 id="constants">Constants</h2>
+        <p class="ref-index"><a href="#ref-validLargeArrayMechanisms"><code>validLargeArrayMechanisms</code></a>, <a href="#ref-build"><code>build</code></a></p>
+
+        <h3 id="ref-validLargeArrayMechanisms"><code>validLargeArrayMechanisms</code></h3>
+        <pre><code class="language-ts">export const validLargeArrayMechanisms: string[];</code></pre>
+
+        <h3 id="ref-build"><code>build</code></h3>
+        <pre><code class="language-ts">export const build: Build;</code></pre>
+
+        <h2 id="interfaces">Interfaces</h2>
+        <p class="ref-index"><a href="#ref-ToBuffer"><code>ToBuffer</code></a>, <a href="#ref-BaseSchema"><code>BaseSchema</code></a>, <a href="#ref-RefSchema"><code>RefSchema</code></a>, <a href="#ref-AnySchema"><code>AnySchema</code></a>, <a href="#ref-StringSchema"><code>StringSchema</code></a>, <a href="#ref-IntegerSchema"><code>IntegerSchema</code></a>, <a href="#ref-NumberSchema"><code>NumberSchema</code></a>, <a href="#ref-NullSchema"><code>NullSchema</code></a>, <a href="#ref-BooleanSchema"><code>BooleanSchema</code></a>, <a href="#ref-ArraySchema"><code>ArraySchema</code></a>, <a href="#ref-TupleSchema"><code>TupleSchema</code></a>, <a href="#ref-ObjectSchema"><code>ObjectSchema</code></a>, <a href="#ref-Options"><code>Options</code></a>, <a href="#ref-DebugOption"><code>DebugOption</code></a></p>
+
+        <h3 id="ref-ToBuffer"><code>ToBuffer</code></h3>
+        <pre><code class="language-ts">interface ToBuffer { ... }</code></pre>
+        <p>What serializers that write bytes (output "bytes", or "auto" for values of unknown size) have.</p>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>toBuffer?</code></td><td><code>(doc: any) =&gt; Buffer</code></td><td><p>The JSON as UTF-8 bytes, in a buffer of their own.</p></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-BaseSchema"><code>BaseSchema</code></h3>
+        <pre><code class="language-ts">interface BaseSchema { ... }</code></pre>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>$id?</code></td><td><code>string</code></td><td><p>Schema id</p></td></tr>
+                <tr><td><code>title?</code></td><td><code>string</code></td><td><p>Schema title</p></td></tr>
+                <tr><td><code>description?</code></td><td><code>string</code></td><td><p>Schema description</p></td></tr>
+                <tr><td><code>$comment?</code></td><td><code>string</code></td><td><p>A comment to be added to the schema</p></td></tr>
+                <tr><td><code>default?</code></td><td><code>any</code></td><td><p>Default value to be assigned when no value is given in the document</p></td></tr>
+                <tr><td><code>examples?</code></td><td><code>any[]</code></td><td><p>A list of example values that match this schema</p></td></tr>
+                <tr><td><code>definitions?</code></td><td><code>Record&lt;string, <a href="#ref-Schema">Schema</a>&gt;</code></td><td><p>Additional schema definition to reference from within the schema</p></td></tr>
+                <tr><td><code>anyOf?</code></td><td><code>Partial&lt;<a href="#ref-Schema">Schema</a>&gt;[]</code></td><td><p>A set of schemas of which at least one must match</p></td></tr>
+                <tr><td><code>allOf?</code></td><td><code>Partial&lt;<a href="#ref-Schema">Schema</a>&gt;[]</code></td><td><p>A set of schemas which must all match</p></td></tr>
+                <tr><td><code>if?</code></td><td><code>Partial&lt;<a href="#ref-Schema">Schema</a>&gt;</code></td><td><p>A conditional schema to check, controls schemas defined in <code>then</code> and <code>else</code></p></td></tr>
+                <tr><td><code>then?</code></td><td><code>Partial&lt;<a href="#ref-Schema">Schema</a>&gt;</code></td><td><p>A schema to apply if the conditional schema from <code>if</code> passes</p></td></tr>
+                <tr><td><code>else?</code></td><td><code>Partial&lt;<a href="#ref-Schema">Schema</a>&gt;</code></td><td><p>A schema to apply if the conditional schema from <code>if</code> fails</p></td></tr>
+                <tr><td><code>nullable?</code></td><td><code>boolean</code></td><td><p>Open API 3.0 spec states that any value that can be null must be declared <code>nullable</code></p><ul class="ref-tags"><li>Default: <code>false</code></li></ul></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-RefSchema"><code>RefSchema</code></h3>
+        <pre><code class="language-ts">export interface RefSchema { ... }</code></pre>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>$ref</code></td><td><code>string</code></td><td><p>A json-pointer to a schema to use as a reference</p></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-AnySchema"><code>AnySchema</code></h3>
+        <pre><code class="language-ts">export interface AnySchema extends BaseSchema { ... }</code></pre>
+
+        <h3 id="ref-StringSchema"><code>StringSchema</code></h3>
+        <pre><code class="language-ts">export interface StringSchema extends BaseSchema { ... }</code></pre>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>type</code></td><td><code>'string'</code></td><td></td></tr>
+                <tr><td><code>format?</code></td><td><code>string</code></td><td></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-IntegerSchema"><code>IntegerSchema</code></h3>
+        <pre><code class="language-ts">export interface IntegerSchema extends BaseSchema { ... }</code></pre>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>type</code></td><td><code>'integer'</code></td><td></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-NumberSchema"><code>NumberSchema</code></h3>
+        <pre><code class="language-ts">export interface NumberSchema extends BaseSchema { ... }</code></pre>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>type</code></td><td><code>'number'</code></td><td></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-NullSchema"><code>NullSchema</code></h3>
+        <pre><code class="language-ts">export interface NullSchema extends BaseSchema { ... }</code></pre>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>type</code></td><td><code>'null'</code></td><td></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-BooleanSchema"><code>BooleanSchema</code></h3>
+        <pre><code class="language-ts">export interface BooleanSchema extends BaseSchema { ... }</code></pre>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>type</code></td><td><code>'boolean'</code></td><td></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-ArraySchema"><code>ArraySchema</code></h3>
+        <pre><code class="language-ts">export interface ArraySchema extends BaseSchema { ... }</code></pre>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>type</code></td><td><code>'array'</code></td><td></td></tr>
+                <tr><td><code>items</code></td><td><code><a href="#ref-Schema">Schema</a> | {}</code></td><td><p>The schema for the items in the array</p></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-TupleSchema"><code>TupleSchema</code></h3>
+        <pre><code class="language-ts">export interface TupleSchema extends BaseSchema { ... }</code></pre>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>type</code></td><td><code>'array'</code></td><td></td></tr>
+                <tr><td><code>items</code></td><td><code><a href="#ref-Schema">Schema</a>[]</code></td><td><p>The schemas for the items in the tuple</p></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-ObjectSchema"><code>ObjectSchema</code></h3>
+        <pre><code class="language-ts">export interface ObjectSchema extends BaseSchema { ... }</code></pre>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>type</code></td><td><code>'object'</code></td><td></td></tr>
+                <tr><td><code>properties?</code></td><td><code><a href="#ref-ObjectProperties">ObjectProperties</a></code></td><td><p>Describe the properties of the object</p></td></tr>
+                <tr><td><code>required?</code></td><td><code>string[]</code></td><td><p>The required properties of the object</p></td></tr>
+                <tr><td><code>patternProperties?</code></td><td><code><a href="#ref-ObjectProperties">ObjectProperties</a></code></td><td><p>Describe properties that have keys following a given pattern</p></td></tr>
+                <tr><td><code>additionalProperties?</code></td><td><code><a href="#ref-Schema">Schema</a> | boolean</code></td><td><p>Specifies whether additional properties on the object are allowed, and optionally what schema they should adhere to</p><ul class="ref-tags"><li>Default: <code>false</code></li></ul></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-Options"><code>Options</code></h3>
+        <pre><code class="language-ts">export interface Options { ... }</code></pre>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>schema?</code></td><td><code>Record&lt;string, <a href="#ref-Schema">Schema</a>&gt;</code></td><td><p>Optionally add an external definition to reference from your schema</p></td></tr>
+                <tr><td><code>ajv?</code></td><td><code><a href="#ref-AjvOptions">AjvOptions</a></code></td><td><p>Configure Ajv, which is used to evaluate conditional schemas and combined (anyOf) schemas</p></td></tr>
+                <tr><td><code>rounding?</code></td><td><code>'ceil' | 'floor' | 'round' | 'trunc'</code></td><td><p>Optionally configure how the integer will be rounded</p><ul class="ref-tags"><li>Default: <code>'trunc'</code></li></ul></td></tr>
+                <tr><td><code>mode?</code></td><td><code>'debug'</code></td><td><p>Running mode of fast-json-stringify</p></td></tr>
+                <tr><td><code>output?</code></td><td><code>'auto' | 'string' | 'bytes'</code></td><td><p>How the JSON is made: joined as a string (fastest for values of a size the schema knows), or written as bytes (fastest for arrays and maps). 'auto' picks by the schema.</p><ul class="ref-tags"><li>Default: <code>'auto'</code></li></ul></td></tr>
+                <tr><td><code>largeArraySize?</code></td><td><code>number | string | BigInt</code></td><td><p>Large arrays are defined as arrays containing, by default, <code>20000</code> elements or more. That value can be adjusted via the option parameter <code>largeArraySize</code>.</p><ul class="ref-tags"><li>Default: <code>20000</code></li></ul></td></tr>
+                <tr><td><code>largeArrayMechanism?</code></td><td><code>'default' | 'json-stringify'</code></td><td><p>Specify the function on how large Arrays should be stringified.</p><ul class="ref-tags"><li>Default: <code>'default'</code></li></ul></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-DebugOption"><code>DebugOption</code></h3>
+        <pre><code class="language-ts">interface DebugOption extends build.Options { ... }</code></pre>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>mode</code></td><td><code>'debug'</code></td><td></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h2 id="types">Types</h2>
+        <p class="ref-index"><a href="#ref-AjvOptions"><code>AjvOptions</code></a>, <a href="#ref-Build"><code>Build</code></a>, <a href="#ref-ObjectProperties"><code>ObjectProperties</code></a>, <a href="#ref-Schema"><code>Schema</code></a>, <a href="#ref-StringCoercible"><code>StringCoercible</code></a>, <a href="#ref-IntegerCoercible"><code>IntegerCoercible</code></a></p>
+
+        <h3 id="ref-AjvOptions"><code>AjvOptions</code></h3>
+        <pre><code class="language-ts">type AjvOptions = { coerceTypes?: boolean | 'array'; [option: string]: unknown };</code></pre>
+        <p>The options of ajv that</p>
+
+        <h3 id="ref-Build"><code>Build</code></h3>
+        <pre><code class="language-ts">type Build = typeof build;</code></pre>
+
+        <h3 id="ref-ObjectProperties"><code>ObjectProperties</code></h3>
+        <pre><code class="language-ts">type ObjectProperties = Record&lt;string, Partial&lt;Schema&gt;&gt; &amp; {
+    anyOf?: ObjectProperties[];
+    allOf?: ObjectProperties[];
+    if?: ObjectProperties;
+    then?: ObjectProperties;
+    else?: ObjectProperties;
+  };</code></pre>
+
+        <h3 id="ref-Schema"><code>Schema</code></h3>
+        <pre><code class="language-ts">export type Schema =
+  | RefSchema
+  | StringSchema
+  | IntegerSchema
+  | NumberSchema
+  | NullSchema
+  | BooleanSchema
+  | ArraySchema
+  | TupleSchema
+  | ObjectSchema;</code></pre>
+
+        <h3 id="ref-StringCoercible"><code>StringCoercible</code></h3>
+        <pre><code class="language-ts">type StringCoercible = string | Date | RegExp;</code></pre>
+
+        <h3 id="ref-IntegerCoercible"><code>IntegerCoercible</code></h3>
+        <pre><code class="language-ts">type IntegerCoercible = number | BigInt;</code></pre>
+      </article>
+    </div>
+
+    <footer class="footer">
+      <div class="container">
+        <span>xufa is MIT licensed. &copy; Jes&uacute;s Seijas</span>
+        <span>
+          <a href="../guide.html">Guide</a> &middot; <a href="../playground.html">Playground</a> &middot; <a href="../http/index.html">HTTP</a> &middot; <a href="../orm/index.html">ORM</a> &middot; <a href="../auth/index.html">Auth</a> &middot;
+          <a href="../sequelize/index.html">Sequelize</a> &middot; <a href="../packages.html">Packages</a> &middot;
+          <a href="../benchmarks.html">Benchmarks</a> &middot; <a href="https://github.com/xufajs/xufa">GitHub</a>
+        </span>
+      </div>
+    </footer>
+  </body>
+</html>

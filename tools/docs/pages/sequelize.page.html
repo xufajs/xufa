@@ -1,0 +1,94 @@
+<!--{
+  "file": "sequelize.html",
+  "name": "@xufa/sequelize",
+  "title": "Sequelize",
+  "description": "@xufa/sequelize: the API of Sequelize 6 over xufa's ORM. Sequelize code runs unchanged, 2 to 18 times faster, with no dependencies, checked by Sequelize's own tests.",
+  "nav": "sequelize",
+  "packages": false,
+  "groups": [
+    ["@xufa/sequelize", [["install", "Install"], ["same-code", "The same code"], ["why", "Why @xufa/sequelize"], ["tested", "Tested by Sequelize's tests"]]],
+    ["The docs", [["sequelize-guide.html", "Guide"], ["sequelize-benchmarks.html", "Benchmarks"]]]
+  ]
+}-->
+        <h1>Sequelize</h1>
+        <p class="intro">
+          <code>@xufa/sequelize</code> is the API of <a href="https://sequelize.org">Sequelize</a> 6 over xufa's
+          <a href="orm.html">ORM</a>. Code written for Sequelize runs with <code>require('@xufa/sequelize')</code> instead of
+          <code>require('sequelize')</code>: faster, and with no dependencies.
+        </p>
+
+        <div class="stats">
+          <div class="stat"><span class="value">2&times;&ndash;18&times;</span><span class="label">Sequelize 6, where the library does the work</span></div>
+          <div class="stat"><span class="value">1,971</span><span class="label">of Sequelize's own tests pass on PostgreSQL (Sequelize itself: 1,968)</span></div>
+          <div class="stat"><span class="value">0</span><span class="label">dependencies: no <code>pg</code>, no <code>sqlite3</code></span></div>
+        </div>
+
+        <h2 id="install">Install</h2>
+        <pre><code class="language-sh">npm install @xufa/sequelize
+npm uninstall sequelize pg pg-hstore sqlite3</code></pre>
+
+        <h2 id="same-code">The same code</h2>
+        <pre data-run="same-code"><code class="language-js">const { Sequelize, DataTypes, Op } = require('@xufa/sequelize'); // was: require('sequelize')
+
+const sequelize = new Sequelize('sqlite::memory:', { logging: false }); // or 'postgres://...'
+
+const Author = sequelize.define('Author', { name: { type: DataTypes.STRING, allowNull: false } });
+const Book = sequelize.define('Book', {
+  title: DataTypes.STRING,
+  pages: { type: DataTypes.INTEGER, validate: { min: 1 } },
+});
+Author.hasMany(Book, { as: 'books' });
+Book.belongsTo(Author);
+await sequelize.sync();
+
+const ada = await Author.create({ name: 'Ada' });
+await Book.bulkCreate([
+  { title: 'Notes', pages: 120, AuthorId: ada.id },
+  { title: 'Letters', pages: 80, AuthorId: ada.id },
+]);
+
+const long = await Book.findAll({ where: { pages: { [Op.gte]: 100 } }, include: Author });
+console.log(long.map((book) =&gt; `${book.title} by ${book.Author.name}`));
+const withBooks = await Author.findOne({ where: { name: 'Ada' }, include: { model: Book, as: 'books' } });
+console.log(withBooks.books.map((book) =&gt; book.title).sort());
+console.log(await Book.count({ where: { title: { [Op.like]: 'N%' } } }));
+try {
+  await Book.create({ title: 'Empty', pages: 0 });
+} catch (err) {
+  console.log(err.name, err.errors.map((e) =&gt; e.message)); // as Sequelize gives them
+}
+await sequelize.close();</code></pre>
+        <pre data-output><code class="language-plaintext">[ 'Notes by Ada' ]
+[ 'Letters', 'Notes' ]
+1
+SequelizeValidationError [ 'Validation min on pages failed' ]</code></pre>
+        <p>
+          The <a href="sequelize-guide.html">Guide</a> says what there is (models, associations, queries, transactions,
+          hooks, scopes, the QueryInterface for migrations), PostgreSQL's types, TypeScript, what differs, and a checklist to move an app.
+        </p>
+
+        <h2 id="why">Why @xufa/sequelize</h2>
+        <ul>
+          <li><strong>Speed without a rewrite.</strong> The same models and queries, from 2 to 18 times faster where the library does the work (<a href="sequelize-benchmarks.html">Benchmarks</a>).</li>
+          <li><strong>No dependencies.</strong> PostgreSQL through <a href="pg.html">@xufa/pg</a>, SQLite through <code>node:sqlite</code>: nothing to compile, nothing to audit.</li>
+          <li><strong>A way into the ORM.</strong> The models are models of <a href="orm.html">@xufa/orm</a>: new code can use its QuerySets, resources and tenants, next to the Sequelize code that is there.</li>
+        </ul>
+
+        <h2 id="tested">Tested by Sequelize's tests</h2>
+        <p>
+          Sequelize's own integration tests (its v6 branch) run against <code>@xufa/sequelize</code>, and the same harness
+          runs them against Sequelize 6.37.8 itself, on the same databases:
+        </p>
+        <div class="table-wrap">
+          <table class="numbers">
+            <thead><tr><th>Database (tests run by both)</th><th>@xufa/sequelize</th><th>Sequelize 6.37.8</th></tr></thead>
+            <tbody>
+              <tr><td>SQLite (1,746)</td><td>1,720 passed, 21 failed</td><td>1,737 passed, 4 failed</td></tr>
+              <tr><td>PostgreSQL 18, with PostGIS, hstore and btree_gist (2,006)</td><td>1,971 passed, 35 failed</td><td>1,968 passed, 38 failed</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p>
+          What fails here and passes in Sequelize checks Sequelize's internals or the exact SQL it writes, or the
+          <a href="sequelize-guide.html#differences">differences</a>, by design (<a href="sequelize-guide.html#compatibility">Compatibility</a>).
+        </p>

@@ -48,6 +48,7 @@
           <li><a href="#where">Where they are</a></li>
           <li><a href="#rules">Rules</a></li>
           <li><a href="#tests">In tests</a></li>
+          <li><a href="#scenarios">Scenarios</a></li>
           <li><a href="#http">Over HTTP (staging)</a></li>
           <li><a href="#errors">Errors</a></li>
         </ul>
@@ -58,6 +59,8 @@
         <h4>Packages</h4>
         <ul>
           <li><a href="../websocket/index.html">@xufa/websocket</a></li>
+          <li><a href="../admin/index.html">@xufa/admin</a></li>
+          <li><a href="../session/index.html">@xufa/session</a></li>
           <li><a href="../openapi/index.html">@xufa/openapi</a></li>
           <li><a href="../client/index.html">@xufa/client</a></li>
           <li><a href="../schema/index.html">@xufa/schema</a></li>
@@ -67,6 +70,7 @@
           <li><a href="../template/index.html">@xufa/template</a></li>
           <li><a href="../cluster/index.html">@xufa/cluster</a></li>
           <li><a href="../scheduler/index.html">@xufa/scheduler</a></li>
+          <li><a href="../queue/index.html">@xufa/queue</a></li>
           <li><a href="../config/index.html">@xufa/config</a></li>
           <li><a href="../discovery/index.html">@xufa/discovery</a></li>
           <li><a href="../netcache/index.html">@xufa/netcache</a></li>
@@ -85,7 +89,11 @@
       </aside>
 
       <article class="content">
-<h1>@xufa/faults</h1>
+        <nav class="package-tabs" aria-label="@xufa/faults">
+          <a href="index.html" aria-current="page">Overview</a>
+          <a href="reference.html">Reference</a>
+        </nav>
+        <h1>@xufa/faults</h1>
         <p class="intro">
           Faults made to happen, to see what an app does when what it uses fails: operations that fail, wait, hang or find
           their service down, by rules that say which operations, how often and how many times. It is the engine of the
@@ -104,7 +112,7 @@ const hung = netcache.faults.hang({ keys: 'session:' }); // until hung.release()
           <table>
             <thead><tr><th>Faults</th><th>Operations</th><th>Filters</th></tr></thead>
             <tbody>
-              <tr><td><code>db.faults</code> of <a href="../orm/index.html#faults">@xufa/orm</a> (and <code>dbs</code>, <code>tenants</code>)</td><td>select, count, aggregate, insert, update, delete, transaction, connect (<code>read</code>, <code>write</code>)</td><td><code>models</code>, <code>tenants</code></td></tr>
+              <tr><td><code>db.faults</code> of <a href="../orm/guide.html#faults">@xufa/orm</a> (and <code>dbs</code>, <code>tenants</code>)</td><td>select, count, aggregate, insert, update, delete, transaction, connect (<code>read</code>, <code>write</code>)</td><td><code>models</code>, <code>tenants</code></td></tr>
               <tr><td><code>cache.faults</code> of the ORM caches</td><td>get, set, delete, clear (<code>read</code>, <code>write</code>)</td><td><code>keys</code></td></tr>
               <tr><td><code>client.faults</code> of <a href="../client/index.html#faults">@xufa/client</a></td><td>get, head, options, post, put, patch, delete (<code>read</code>, <code>write</code>); <code>respond()</code></td><td><code>urls</code>, <code>paths</code></td></tr>
               <tr><td><code>bus.faults</code> of <a href="../cluster/index.html#faults">@xufa/cluster</a></td><td>send, sendTo, broadcast (<code>events</code>), request; <code>drop()</code></td><td><code>events</code></td></tr>
@@ -140,8 +148,35 @@ useFaults(); // the afterEach of the runner; useFaults(require('node:test')) for
           fault to the next one. <code>activeFaults()</code> gives the faults that have rules now.
           With <code>strict</code> (<code>useFaults({ strict: true })</code>, or <code>xufa/faults/register-strict</code>), a test
           that ends with faults still set fails, naming them (<code>database: fail of insert (hits 0)</code>); they are cleared all
-          the same.
+          the same. xufa's own suites that use faults run this way.
         </p>
+
+        <h2 id="scenarios">Scenarios</h2>
+        <p>
+          A scenario makes faults come and go on a timeline, as an outage does: the database gets slow, then the cache goes
+          down, then the payment provider answers 503 now and then. For game days in staging, and for tests of what an app
+          does through all of it.
+        </p>
+        <pre><code class="language-js">const { scenario } = require('xufa/faults');
+
+const brownout = scenario({
+  name: 'payments brownout',
+  steps: [
+    { at: 0, target: db, kind: 'delay', options: { operations: 'read', ms: 300 }, for: '2m' },
+    { at: '30s', target: payments, kind: 'respond', options: { status: 503, rate: 0.2 }, for: '1m' },
+    { at: '1m', target: db.cache, kind: 'down', for: '30s' },
+  ],
+  onEvent: (event) =&gt; logger.warn(event, 'fault scenario'),
+});
+await brownout.run(); // or brownout.start() ... brownout.stop()</code></pre>
+        <ul>
+          <li>A step makes its rule <code>at</code> its time from the start (<code>0</code>, <code>'30s'</code>, <code>'2m'</code>) and removes it after <code>for</code>; without <code>for</code>, it stays until the end. <code>target</code> is faults or what has them, or the name of one of <code>targets</code>.</li>
+          <li>The scenario ends at <code>duration</code>, or when its last step ends. Its end, and <code>stop()</code>, remove every rule it made and let go what they hold; the steps not made yet are skipped.</li>
+          <li>Steps are checked when the scenario is made (targets, kinds, operations, rates, durations): a mistake fails at once, not in the middle of a game day.</li>
+          <li><code>status()</code>: its state, the time gone, each step (<code>waiting</code>, <code>active</code>, <code>done</code>, <code>skipped</code>) with its hits, and the events, which <code>onEvent</code> is told of as they happen.</li>
+          <li>Every week: a job of <a href="../scheduler/index.html">@xufa/scheduler</a> whose <code>run({ signal })</code> runs it (and stops it when the signal is aborted).</li>
+          <li>Over HTTP, the plugin's <code>scenarios</code> option defines them by name (their steps name targets); they are started and stopped by the routes below and from the page.</li>
+        </ul>
 
         <h2 id="http">Over HTTP (staging)</h2>
         <pre><code class="language-js">const { plugin } = require('xufa/faults');
@@ -161,6 +196,11 @@ app.register(plugin, {
               <tr><td><code>DELETE /_faults/:target/rules/:id</code></td><td>That rule removed; <code>POST .../rules/:id/release</code> lets what it holds go on.</td></tr>
               <tr><td><code>POST /_faults/:target/up</code></td><td>No more <code>down</code>.</td></tr>
               <tr><td><code>DELETE /_faults/:target</code>, <code>DELETE /_faults</code></td><td>The rules of a target, or of all of them, removed.</td></tr>
+              <tr><td><code>GET /_faults/scenarios</code></td><td>The scenarios defined, and those run (with their status).</td></tr>
+              <tr><td><code>POST /_faults/scenarios/:name</code></td><td>A scenario defined, started (409 while it runs).</td></tr>
+              <tr><td><code>POST /_faults/scenarios</code></td><td>A scenario of the body (<code>{ name, steps, duration }</code>), started.</td></tr>
+              <tr><td><code>DELETE /_faults/scenarios/:id</code></td><td>A scenario stopped: its rules removed.</td></tr>
+              <tr><td><code>GET /_faults/ui</code></td><td>A page that does all of this.</td></tr>
             </tbody>
           </table>
         </div>
@@ -169,6 +209,7 @@ app.register(plugin, {
           <li><code>for</code>: how long the rule stays, never more than <code>maxDuration</code> (1 h); the rules made by the routes go when the app closes.</li>
           <li>Always protected: <code>token</code> (constant-time), <code>authorize(request)</code> or <code>auth</code> (a rule of <a href="../auth/index.html">@xufa/auth</a>); without one, registering fails. Off in production unless <code>enabled</code> and <code>allowProduction</code>.</li>
           <li>Every change is logged at warn; the routes are left out of OpenAPI.</li>
+          <li><strong>The page</strong> (<code>/_faults/ui</code>; <code>ui: false</code> leaves it out): the targets and their rules, refreshed every 2 seconds (hits, whether a hang holds, the time left), a form for new rules (the operations and filters of the target, the fields of each kind), buttons to remove, release, bring up and clear, and the scenarios (start, stop, their steps as they go, and one written there as JSON, checked by the server). Its files have no data, so they are served without the protection; what it shows and changes goes through the protected routes (with <code>token</code> it asks for the token and keeps it in the tab; with <code>authorize</code> or <code>auth</code>, the cookies of the browser go with its requests). Presets keep the form by name, and a button switches between light and dark (both kept in the browser). It has a strict Content-Security-Policy and sets every value as text.</li>
         </ul>
 
         <h2 id="errors">Errors</h2>
@@ -181,7 +222,7 @@ app.register(plugin, {
         </p>
 
         <h2 id="own">Faults of your own</h2>
-        <pre><code class="language-js">const { Faults, wrap, cacheFaults } = require('@xufa/faults');
+        <pre data-run><code class="language-js">const { Faults, wrap, cacheFaults } = require('@xufa/faults');
 
 const faults = new Faults({
   operations: ['charge', 'refund'],

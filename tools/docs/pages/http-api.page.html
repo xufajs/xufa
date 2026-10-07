@@ -1,0 +1,340 @@
+<!--{
+  "file": "http-api.html",
+  "name": "@xufa/http",
+  "package": "http.html",
+  "title": "@xufa/http: API",
+  "description": "The API of @xufa/http: the options of an app, its methods, the options of routes, the request, the reply, hooks, plugins, the error codes and the TypeScript types.",
+  "nav": "http",
+  "packages": false,
+  "groups": [
+    ["The app", [["exports", "Exports"], ["options", "Options"], ["router-options", "Router options"], ["validation-options", "Validation options"], ["instance", "Methods of the app"], ["listen", "listen()"]]],
+    ["Routes", [["route-options", "Route options"], ["request", "Request"], ["reply", "Reply"]]],
+    ["Lifecycle", [["hooks", "Hooks"], ["plugins", "Plugins"]]],
+    ["Reference", [["error-codes", "Error codes"], ["types", "TypeScript types"]]]
+  ]
+}-->
+        <h1>API</h1>
+        <p class="intro">
+          Everything <code>@xufa/http</code> has, as fastify's documentation describes it, with xufa's names and defaults.
+          Where xufa adds or differs, the entry says so; the reasons are in <a href="http-fastify.html">From fastify</a>.
+          The <a href="http-guide.html">Guide</a> shows them in use.
+        </p>
+
+        <h2 id="exports">Exports</h2>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Name</th><th>What it is</th></tr></thead>
+            <tbody>
+              <tr><td><code>xufa(options)</code></td><td>The module itself (and <code>default</code>, <code>xufa</code>): makes an app</td></tr>
+              <tr><td><code>plugin(fn, meta)</code></td><td>fastify-plugin: a plugin that adds to the app that registers it (<a href="#plugins">Plugins</a>)</td></tr>
+              <tr><td><code>errorCodes</code></td><td>The classes of the errors of the framework, by code (<a href="#error-codes">Error codes</a>)</td></tr>
+              <tr><td><code>LogController</code></td><td>The class that writes the framework's own log lines; extend it and give it as <code>logController</code></td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h2 id="options">Options</h2>
+        <p><code>xufa(options)</code>. <code>app.initialConfig</code> gives them back, frozen, without secrets.</p>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Option</th><th>Default</th><th>What it does</th></tr></thead>
+            <tbody>
+              <tr><td><code>logger</code></td><td><code>false</code></td><td><code>true</code>, or the options of <a href="logger.html">@xufa/logger</a> (pino's): the logs of the app and of each request</td></tr>
+              <tr><td><code>loggerInstance</code></td><td></td><td>A logger of your own (pino, or one with its API)</td></tr>
+              <tr><td><code>disableRequestLogging</code></td><td><code>false</code></td><td>No lines for each request: <code>true</code>, or a function of the request</td></tr>
+              <tr><td><code>logController</code></td><td></td><td>A <code>LogController</code> of your own: what the framework logs, and how</td></tr>
+              <tr><td><code>childLoggerFactory</code></td><td></td><td>Makes the logger of each request</td></tr>
+              <tr><td><code>requestIdHeader</code></td><td><code>false</code></td><td>A header whose value is the id of the request (<code>'x-request-id'</code>)</td></tr>
+              <tr><td><code>requestIdLogLabel</code></td><td><code>'reqId'</code></td><td>The name of the id in the log lines</td></tr>
+              <tr><td><code>genReqId(req)</code></td><td>a counter</td><td>Makes the id of a request</td></tr>
+              <tr><td><code>trustProxy</code></td><td><code>false</code></td><td>Trust <code>X-Forwarded-*</code>: <code>true</code>, a number of proxies, addresses, or a function</td></tr>
+              <tr><td><code>bodyLimit</code></td><td><code>1048576</code></td><td>The largest body, in bytes (413 above)</td></tr>
+              <tr><td><code>onProtoPoisoning</code></td><td><code>'error'</code></td><td>A JSON body with <code>__proto__</code>: <code>'error'</code> (400), <code>'remove'</code> or <code>'ignore'</code></td></tr>
+              <tr><td><code>onConstructorPoisoning</code></td><td><code>'error'</code></td><td>The same, for <code>constructor.prototype</code></td></tr>
+              <tr><td><code>handlerTimeout</code></td><td><code>0</code></td><td>ms a handler may take, for every route: then a 503 (<code>XUFA_ERR_HANDLER_TIMEOUT</code>) and <code>request.signal</code> aborted</td></tr>
+              <tr><td><code>connectionTimeout</code></td><td><code>0</code></td><td>ms of inactivity of a socket before it is closed</td></tr>
+              <tr><td><code>keepAliveTimeout</code></td><td><code>72000</code></td><td>ms a kept-alive connection waits for its next request</td></tr>
+              <tr><td><code>requestTimeout</code></td><td><code>0</code></td><td>ms to receive a whole request</td></tr>
+              <tr><td><code>maxRequestsPerSocket</code></td><td><code>0</code></td><td>Requests on a socket before it is closed (0: no limit)</td></tr>
+              <tr><td><code>forceCloseConnections</code></td><td><code>'idle'</code></td><td>On <code>close()</code>: <code>'idle'</code> closes idle kept-alive connections, <code>true</code> all of them</td></tr>
+              <tr><td><code>return503OnClosing</code></td><td><code>true</code></td><td>Requests that come while the app closes get a 503</td></tr>
+              <tr><td><code>pluginTimeout</code></td><td><code>10000</code></td><td>ms a plugin may take to load (<code>XUFA_ERR_PLUGIN_TIMEOUT</code>); 0: no limit</td></tr>
+              <tr><td><code>exposeHeadRoutes</code></td><td><code>true</code></td><td>A <code>HEAD</code> route for each <code>GET</code></td></tr>
+              <tr><td><code>http</code>, <code>https</code>, <code>http2</code></td><td></td><td>Options of the server of Node.js; <code>https</code> with keys and certificates; <code>http2: true</code></td></tr>
+              <tr><td><code>http2SessionTimeout</code></td><td><code>72000</code></td><td>ms an idle HTTP/2 session is kept</td></tr>
+              <tr><td><code>serverFactory(handler, options)</code></td><td></td><td>Makes the server of Node.js yourself</td></tr>
+              <tr><td><code>rewriteUrl(req)</code></td><td></td><td>Changes the URL of a request before it is routed</td></tr>
+              <tr><td><code>frameworkErrors(error, request, reply)</code></td><td></td><td>Answers the errors made before a route (a bad URL, an id too long)</td></tr>
+              <tr><td><code>clientErrorHandler(error, socket)</code></td><td></td><td>Answers the errors of the socket (a malformed request)</td></tr>
+              <tr><td><code>allowErrorHandlerOverride</code></td><td><code>false</code></td><td>Lets <code>setErrorHandler()</code> be called twice in the same plugin (else <code>XUFA_ERR_ERROR_HANDLER_ALREADY_SET</code>)</td></tr>
+              <tr><td><code>ajv</code></td><td></td><td><code>{ customOptions, plugins: [] }</code>: options of the validator (<a href="#validation-options">below</a>)</td></tr>
+              <tr><td><code>validation</code></td><td></td><td>xufa: options of <a href="schema-api.html">@xufa/schema</a> itself (<code>foldMessages</code>...)</td></tr>
+              <tr><td><code>serializerOpts</code></td><td></td><td>Options of the serializers (<a href="serializer.html">@xufa/serializer</a>, fast-json-stringify's)</td></tr>
+              <tr><td><code>schemaController</code></td><td></td><td><code>{ bucket, compilersFactory }</code>: where shared schemas are kept, and the compilers made</td></tr>
+              <tr><td><code>schemaErrorFormatter(errors, context)</code></td><td></td><td>Makes the error of an invalid request</td></tr>
+              <tr><td><code>routerOptions</code></td><td></td><td>Options of the router (<a href="#router-options">below</a>)</td></tr>
+              <tr><td><code>fastHead</code></td><td><code>true</code></td><td>xufa: writes the head of most responses itself; <code>false</code> leaves every head to Node.js</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h2 id="router-options">Router options</h2>
+        <p>In <code>routerOptions</code> (or, as in fastify 5, at the top of the options):</p>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Option</th><th>Default</th><th>What it does</th></tr></thead>
+            <tbody>
+              <tr><td><code>caseSensitive</code></td><td><code>true</code></td><td><code>/Books</code> and <code>/books</code> are different routes</td></tr>
+              <tr><td><code>ignoreTrailingSlash</code></td><td><code>false</code></td><td><code>/books/</code> is <code>/books</code></td></tr>
+              <tr><td><code>ignoreDuplicateSlashes</code></td><td><code>false</code></td><td><code>//books</code> is <code>/books</code></td></tr>
+              <tr><td><code>maxParamLength</code></td><td><code>100</code></td><td>The longest parameter (414 above, or <code>onMaxParamLength</code>)</td></tr>
+              <tr><td><code>allowUnsafeRegex</code></td><td><code>false</code></td><td>Allows regular expressions of parameters that could take exponential time</td></tr>
+              <tr><td><code>useSemicolonDelimiter</code></td><td><code>false</code></td><td><code>;</code> starts the query string, as <code>?</code></td></tr>
+              <tr><td><code>querystringParser(text)</code></td><td></td><td>Parses the query string (it is parsed when <code>request.query</code> is first read)</td></tr>
+              <tr><td><code>constraints</code></td><td></td><td>Strategies of constraints of your own (as <code>addConstraintStrategy</code>)</td></tr>
+              <tr><td><code>defaultRoute</code>, <code>onBadUrl</code>, <code>onMaxParamLength</code></td><td></td><td>Answers when no route matches, the URL is malformed, a parameter is too long</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h2 id="validation-options">Validation options</h2>
+        <p>
+          The validator is <a href="schema.html">@xufa/schema</a>. The ajv options it shares are read from
+          <code>ajv.customOptions</code>; the defaults are those fastify gives ajv:
+        </p>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Option</th><th>Default</th><th>What it does</th></tr></thead>
+            <tbody>
+              <tr><td><code>coerceTypes</code></td><td><code>'array'</code></td><td>Converts texts to the types of the schema; a single value to an array</td></tr>
+              <tr><td><code>useDefaults</code></td><td><code>true</code></td><td>Fills missing properties with their <code>default</code></td></tr>
+              <tr><td><code>removeAdditional</code></td><td><code>true</code></td><td>Removes the properties <code>additionalProperties: false</code> does not allow</td></tr>
+              <tr><td><code>allErrors</code></td><td><code>false</code></td><td>Every error of a request, not only the first</td></tr>
+              <tr><td><code>strict</code>, <code>strictSchema</code></td><td></td><td>Refuses schemas with unknown keywords</td></tr>
+              <tr><td><code>formats</code></td><td></td><td>Formats of your own: <code>{ slug: /^[a-z0-9-]+$/ }</code> or functions</td></tr>
+              <tr><td><code>keywords</code></td><td></td><td>Keywords of your own (ajv's <code>addKeyword</code> definitions)</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p>
+          <code>ajv.plugins</code> only accepts <code>[]</code>; options of @xufa/schema itself go in
+          <code>validation</code> (or <code>ajv.validatorOptions</code>). <code>setValidatorCompiler()</code> replaces
+          the validator, for a route or a plugin.
+        </p>
+
+        <h2 id="instance">Methods of the app</h2>
+        <h3 id="instance-routes">Routes</h3>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Method</th><th>What it does</th></tr></thead>
+            <tbody>
+              <tr><td><code>get</code>, <code>head</code>, <code>post</code>, <code>put</code>, <code>delete</code>, <code>options</code>, <code>patch</code>, <code>trace</code>, <code>all</code><code>(path, [options], handler)</code></td><td>A route of a method (<code>all</code>: every method)</td></tr>
+              <tr><td><code>route(options)</code></td><td>A route, its options and handler in one object (<code>method</code> may be a list)</td></tr>
+              <tr><td><code>addHttpMethod(method, { hasBody })</code></td><td>A method of your own (<code>PROPFIND</code>...); <code>supportedMethods</code> lists them</td></tr>
+              <tr><td><code>hasRoute({ method, url, constraints })</code>, <code>findRoute(...)</code></td><td>Whether a route is there; the route with its params</td></tr>
+              <tr><td><code>printRoutes(options)</code></td><td>The tree of the routes, as text</td></tr>
+              <tr><td><code>addConstraintStrategy(strategy)</code>, <code>hasConstraintStrategy(name)</code></td><td>Constraints of your own</td></tr>
+              <tr><td><code>setNotFoundHandler([options], handler)</code></td><td>Answers what no route matches (for its plugin and prefix)</td></tr>
+              <tr><td><code>setErrorHandler(handler)</code></td><td>Answers errors (once in each plugin, unless <code>allowErrorHandlerOverride</code>)</td></tr>
+              <tr><td><code>errorHandler</code></td><td>The default error handler, to call from yours</td></tr>
+              <tr><td><code>prefix</code></td><td>The prefix of the plugin</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <h3 id="instance-plugins">Plugins, decorators, hooks</h3>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Method</th><th>What it does</th></tr></thead>
+            <tbody>
+              <tr><td><code>register(plugin, [options])</code></td><td>Loads a plugin (<code>options.prefix</code> for its routes); awaitable</td></tr>
+              <tr><td><code>after([callback])</code></td><td>Waits for the plugins registered so far</td></tr>
+              <tr><td><code>ready([callback])</code></td><td>Waits for every plugin; the app is then ready</td></tr>
+              <tr><td><code>hasPlugin(name)</code>, <code>pluginName</code>, <code>printPlugins()</code></td><td>Whether a plugin is loaded; the name of this one; the tree of plugins</td></tr>
+              <tr><td><code>decorate(name, value, [dependencies])</code></td><td>A property of the app</td></tr>
+              <tr><td><code>decorateRequest(name, value)</code>, <code>decorateReply(name, value)</code></td><td>A property of every request, of every reply (not an object: <code>null</code>, a function, or <code>{ getter, setter }</code>)</td></tr>
+              <tr><td><code>hasDecorator</code>, <code>hasRequestDecorator</code>, <code>hasReplyDecorator</code><code>(name)</code></td><td>Whether it is there</td></tr>
+              <tr><td><code>getDecorator(name)</code></td><td>Its value; <code>XUFA_ERR_DEC_UNDECLARED</code> when it is not there</td></tr>
+              <tr><td><code>addHook(name, fn)</code></td><td>A hook (<a href="#hooks">Hooks</a>)</td></tr>
+              <tr><td><code>onClose(fn)</code></td><td>The same as <code>addHook('onClose', fn)</code></td></tr>
+            </tbody>
+          </table>
+        </div>
+        <h3 id="instance-schemas">Schemas and bodies</h3>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Method</th><th>What it does</th></tr></thead>
+            <tbody>
+              <tr><td><code>addSchema(schema)</code>, <code>getSchema(id)</code>, <code>getSchemas()</code></td><td>Shared schemas, referred to by their <code>$id</code></td></tr>
+              <tr><td><code>setValidatorCompiler(fn)</code>, <code>setSerializerCompiler(fn)</code></td><td>The compilers of the schemas of the routes</td></tr>
+              <tr><td><code>setSchemaController(options)</code>, <code>setSchemaErrorFormatter(fn)</code></td><td>The same as their options</td></tr>
+              <tr><td><code>setReplySerializer(fn)</code></td><td>Serializes replies without a response schema</td></tr>
+              <tr><td><code>addContentTypeParser(type, [options], parser)</code></td><td>Parses the bodies of a content type (a string, a list or a regular expression); <code>parseAs: 'string' | 'buffer'</code>, <code>bodyLimit</code></td></tr>
+              <tr><td><code>hasContentTypeParser</code>, <code>removeContentTypeParser</code>, <code>removeAllContentTypeParsers</code></td><td>Its parsers</td></tr>
+              <tr><td><code>getDefaultJsonParser(onProto, onConstructor)</code>, <code>defaultTextParser</code></td><td>The parsers there are, to use in yours</td></tr>
+              <tr><td><code>withTypeProvider&lt;Provider&gt;()</code></td><td>TypeScript: the app, its routes typed by their schemas</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <h3 id="instance-running">Running</h3>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Method</th><th>What it does</th></tr></thead>
+            <tbody>
+              <tr><td><code>listen(options)</code></td><td>Listens (<a href="#listen">below</a>)</td></tr>
+              <tr><td><code>inject(request)</code></td><td>A request without a socket (<a href="inject.html">@xufa/inject</a>, light-my-request's API)</td></tr>
+              <tr><td><code>close([callback])</code></td><td>Stops listening, waits for the requests in flight, runs <code>preClose</code> and <code>onClose</code></td></tr>
+              <tr><td><code>server</code></td><td>The server of Node.js</td></tr>
+              <tr><td><code>addresses()</code>, <code>listeningOrigin</code></td><td>Where it listens</td></tr>
+              <tr><td><code>log</code></td><td>The logger of the app</td></tr>
+              <tr><td><code>setGenReqId(fn)</code>, <code>setChildLoggerFactory(fn)</code></td><td>The same as their options, for a plugin</td></tr>
+              <tr><td><code>version</code>, <code>initialConfig</code></td><td>The version of xufa; the options</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h2 id="listen">listen()</h2>
+        <pre><code class="language-js">const address = await app.listen({ port: 3000, host: '0.0.0.0' }); // 'http://0.0.0.0:3000'</code></pre>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Option</th><th>Default</th><th>What it does</th></tr></thead>
+            <tbody>
+              <tr><td><code>port</code></td><td><code>0</code></td><td>The port (0: one the system gives)</td></tr>
+              <tr><td><code>host</code></td><td><code>'localhost'</code></td><td>The address; <code>localhost</code> listens on its IPv4 and IPv6 addresses, <code>'0.0.0.0'</code> or <code>'::'</code> on every interface</td></tr>
+              <tr><td><code>path</code></td><td></td><td>A Unix socket (or a named pipe on Windows) instead of a port</td></tr>
+              <tr><td><code>backlog</code>, <code>exclusive</code>, <code>ipv6Only</code>, <code>readableAll</code>, <code>writableAll</code></td><td></td><td>As <code>server.listen()</code> of Node.js</td></tr>
+              <tr><td><code>signal</code></td><td></td><td>An AbortSignal that closes the app</td></tr>
+              <tr><td><code>listenTextResolver(address)</code></td><td></td><td>The text of the line logged when it listens</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h2 id="route-options">Route options</h2>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Option</th><th>What it does</th></tr></thead>
+            <tbody>
+              <tr><td><code>method</code>, <code>url</code> (<code>path</code>), <code>handler</code></td><td>Of <code>route()</code>: the method (or a list), the path and the handler</td></tr>
+              <tr><td><code>schema</code></td><td><code>{ body, querystring, params, headers, response }</code>: <code>response</code> by status (<code>200</code>, <code>'2xx'</code>, <code>default</code>), or by content type (<code>{ 200: { content: { 'application/json': { schema } } } }</code>)</td></tr>
+              <tr><td><code>onRequest</code>, <code>preParsing</code>, <code>preValidation</code>, <code>preHandler</code>, <code>preSerialization</code>, <code>onSend</code>, <code>onResponse</code>, <code>onError</code>, <code>onTimeout</code>, <code>onRequestAbort</code></td><td>Hooks of the route (a function or a list), after those of its plugins</td></tr>
+              <tr><td><code>config</code></td><td>Values of the route, in <code>request.routeOptions.config</code></td></tr>
+              <tr><td><code>constraints</code></td><td><code>{ version, host }</code>, or of your strategies</td></tr>
+              <tr><td><code>bodyLimit</code></td><td>The largest body of this route</td></tr>
+              <tr><td><code>handlerTimeout</code></td><td>ms its handler may take</td></tr>
+              <tr><td><code>attachValidation</code></td><td>Invalid requests reach the handler, with <code>request.validationError</code></td></tr>
+              <tr><td><code>errorHandler(error, request, reply)</code></td><td>Its error handler</td></tr>
+              <tr><td><code>validatorCompiler</code>, <code>serializerCompiler</code>, <code>schemaErrorFormatter</code></td><td>For its schemas</td></tr>
+              <tr><td><code>logLevel</code>, <code>logSerializers</code>, <code>childLoggerFactory</code></td><td>The logs of the route</td></tr>
+              <tr><td><code>exposeHeadRoute</code></td><td>A <code>HEAD</code> route for this <code>GET</code> (or not)</td></tr>
+              <tr><td><code>prefixTrailingSlash</code></td><td>For the path <code>/</code> in a plugin with a prefix: <code>'both'</code> (default), <code>'slash'</code> or <code>'no-slash'</code></td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h2 id="request">Request</h2>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Member</th><th>What it is</th></tr></thead>
+            <tbody>
+              <tr><td><code>params</code>, <code>query</code>, <code>body</code>, <code>headers</code></td><td>The parameters of the path, the query string (parsed when first read), the body, the headers</td></tr>
+              <tr><td><code>method</code>, <code>url</code>, <code>originalUrl</code></td><td>The method; the URL (after <code>rewriteUrl</code>), and as it came</td></tr>
+              <tr><td><code>id</code>, <code>log</code></td><td>The id of the request; its logger</td></tr>
+              <tr><td><code>ip</code>, <code>ips</code>, <code>host</code>, <code>hostname</code>, <code>port</code>, <code>protocol</code></td><td>Of the client and of the URL it asked (from <code>X-Forwarded-*</code> with <code>trustProxy</code>)</td></tr>
+              <tr><td><code>signal</code></td><td>An AbortSignal: aborted when the client goes away, or when <code>handlerTimeout</code> passes</td></tr>
+              <tr><td><code>mediaType</code></td><td>The media type of the body (<code>content-type</code> without its parameters)</td></tr>
+              <tr><td><code>routeOptions</code></td><td>The options of its route: <code>url</code>, <code>method</code>, <code>config</code>, <code>bodyLimit</code>, <code>handlerTimeout</code>, <code>schema</code>...</td></tr>
+              <tr><td><code>is404</code></td><td>Whether it reached the not-found handler</td></tr>
+              <tr><td><code>validationError</code></td><td>The validation error, with <code>attachValidation</code></td></tr>
+              <tr><td><code>getValidationFunction(part)</code>, <code>compileValidationSchema(schema)</code>, <code>validateInput(value, schema)</code></td><td>The validators of its route; others, compiled</td></tr>
+              <tr><td><code>getDecorator(name)</code>, <code>setDecorator(name, value)</code></td><td>Its decorators, checked</td></tr>
+              <tr><td><code>server</code>, <code>raw</code>, <code>socket</code></td><td>The app of its route; Node's IncomingMessage; its socket</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h2 id="reply">Reply</h2>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Member</th><th>What it does</th></tr></thead>
+            <tbody>
+              <tr><td><code>code(status)</code> (<code>status()</code>), <code>statusCode</code></td><td>The status</td></tr>
+              <tr><td><code>header(name, value)</code>, <code>headers(object)</code>, <code>getHeader(name)</code>, <code>getHeaders()</code>, <code>hasHeader(name)</code>, <code>removeHeader(name)</code></td><td>Its headers</td></tr>
+              <tr><td><code>type(contentType)</code></td><td>The content type</td></tr>
+              <tr><td><code>send(payload)</code></td><td>Sends it: an object (JSON), a string, a Buffer, a stream, a <code>Response</code>, an Error</td></tr>
+              <tr><td><code>redirect(url, [status])</code></td><td>A redirect (302 by default)</td></tr>
+              <tr><td><code>callNotFound()</code></td><td>Sends the request to the not-found handler</td></tr>
+              <tr><td><code>serialize(payload)</code>, <code>serializer(fn)</code></td><td>Serializes as the route would; a serializer for this reply</td></tr>
+              <tr><td><code>getSerializationFunction(...)</code>, <code>compileSerializationSchema(schema)</code>, <code>serializeInput(value, schema)</code></td><td>The serializers of its route; others, compiled</td></tr>
+              <tr><td><code>trailer(name, fn)</code>, <code>hasTrailer</code>, <code>removeTrailer</code></td><td>Trailers (written after the body)</td></tr>
+              <tr><td><code>writeEarlyHints(hints)</code></td><td>A 103 Early Hints</td></tr>
+              <tr><td><code>hijack()</code></td><td>Takes over the response: xufa sends nothing (write to <code>reply.raw</code>)</td></tr>
+              <tr><td><code>sent</code>, <code>elapsedTime</code></td><td>Whether it was sent; ms since the request came</td></tr>
+              <tr><td><code>request</code>, <code>server</code>, <code>log</code>, <code>raw</code>, <code>routeOptions</code>, <code>mediaType</code></td><td>Its request, app, logger, Node's ServerResponse, route options</td></tr>
+              <tr><td><code>getDecorator(name)</code>, <code>setDecorator(name, value)</code></td><td>Its decorators, checked</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h2 id="hooks">Hooks</h2>
+        <p>Each is an async function, or a function with <code>done</code> as its last argument.</p>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Hook</th><th>Arguments</th><th>Returns</th></tr></thead>
+            <tbody>
+              <tr><td><code>onRequest</code></td><td><code>(request, reply)</code></td><td></td></tr>
+              <tr><td><code>preParsing</code></td><td><code>(request, reply, payload)</code></td><td>The stream of the body (changed or not)</td></tr>
+              <tr><td><code>preValidation</code>, <code>preHandler</code></td><td><code>(request, reply)</code></td><td></td></tr>
+              <tr><td><code>preSerialization</code></td><td><code>(request, reply, payload)</code></td><td>The payload (not for strings, Buffers, streams)</td></tr>
+              <tr><td><code>onSend</code></td><td><code>(request, reply, payload)</code></td><td>The payload, serialized</td></tr>
+              <tr><td><code>onResponse</code></td><td><code>(request, reply)</code></td><td></td></tr>
+              <tr><td><code>onError</code></td><td><code>(request, reply, error)</code></td><td></td></tr>
+              <tr><td><code>onTimeout</code>, <code>onRequestAbort</code></td><td><code>(request, reply)</code>, <code>(request)</code></td><td></td></tr>
+              <tr><td><code>onRoute</code></td><td><code>(routeOptions)</code>: synchronous, it can change them</td><td></td></tr>
+              <tr><td><code>onRegister</code></td><td><code>(instance, options)</code>: synchronous, for each encapsulated plugin</td><td></td></tr>
+              <tr><td><code>onReady</code>, <code>onListen</code></td><td><code>()</code>, with <code>this</code> the app</td><td></td></tr>
+              <tr><td><code>preClose</code>, <code>onClose</code></td><td><code>()</code>, <code>(instance)</code></td><td></td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h2 id="plugins">Plugins</h2>
+        <pre data-run><code class="language-js">const { plugin } = require('@xufa/http');
+
+module.exports = plugin(async (app, options) =&gt; { /* ... */ }, {
+  name: 'my-plugin', // for hasPlugin() and the dependencies of others
+  xufa: '0.x', // the versions of xufa it needs (a semver range)
+  dependencies: ['db'], // plugins that must be registered before
+  decorators: { xufa: ['db'], request: ['user'], reply: [] }, // decorators that must be there
+  encapsulate: false, // true: wrapped, but still encapsulated (to name it)
+});</code></pre>
+        <p>
+          A plugin of fastify's ecosystem, made with fastify-plugin, loads as it is: its <code>fastify</code> range is
+          not checked (it is of fastify's versions), and <code>decorators.fastify</code> counts as
+          <code>decorators.xufa</code>.
+        </p>
+
+        <h2 id="error-codes">Error codes</h2>
+        <p>
+          <code>require('@xufa/http').errorCodes</code>: classes of errors (<code>instanceof</code> works), each with its
+          <code>code</code> and <code>statusCode</code>. The codes are fastify's with <code>XUFA_ERR_</code> in place of
+          <code>FST_ERR_</code>; … is where a value of the error goes.
+        </p>
+<!--generated: http-error-codes-->
+
+        <h2 id="types">TypeScript types</h2>
+        <p>
+          The types of fastify, renamed: <code>XufaInstance</code>, <code>XufaRequest</code>, <code>XufaReply</code>,
+          <code>XufaPluginAsync</code>, <code>XufaPluginCallback</code>, <code>XufaPluginOptions</code>,
+          <code>XufaSchema</code>, <code>XufaServerOptions</code>, <code>XufaError</code>, <code>XufaBaseLogger</code>,
+          <code>RouteOptions</code>, <code>RouteShorthandOptions</code>, <code>RouteGenericInterface</code>,
+          <code>XufaTypeProvider</code>, <code>XufaTypeProviderDefault</code>... Decorators are declared by augmenting the
+          module:
+        </p>
+        <!--run-before: import type { Database } from '@xufa/orm'; -->
+        <pre data-run><code class="language-ts">declare module '@xufa/http' {
+  interface XufaInstance {
+    db: Database;
+  }
+  interface XufaRequest {
+    user: { id: string } | null;
+  }
+}</code></pre>

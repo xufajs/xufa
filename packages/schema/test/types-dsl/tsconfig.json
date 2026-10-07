@@ -10,6 +10,6 @@
   },
   "files": [
     "dsl.ts",
-    "../../src/index.d.ts"
+    "../../index.d.ts"
   ]
 }

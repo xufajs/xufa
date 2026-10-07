@@ -1,4 +1,4 @@
-const { Schema, String, Integer } = require('../src');
+const { Schema, String, Integer } = require('..');
 
 const personDefinition = {
   id: String(),

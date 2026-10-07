@@ -80,6 +80,8 @@
         <h4>Packages</h4>
         <ul>
           <li><a href="../websocket/index.html">@xufa/websocket</a></li>
+          <li><a href="../admin/index.html">@xufa/admin</a></li>
+          <li><a href="../session/index.html">@xufa/session</a></li>
           <li><a href="../openapi/index.html">@xufa/openapi</a></li>
           <li><a href="../client/index.html">@xufa/client</a></li>
           <li><a href="../schema/index.html">@xufa/schema</a></li>
@@ -89,6 +91,7 @@
           <li><a href="../template/index.html">@xufa/template</a></li>
           <li><a href="../cluster/index.html">@xufa/cluster</a></li>
           <li><a href="../scheduler/index.html">@xufa/scheduler</a></li>
+          <li><a href="../queue/index.html">@xufa/queue</a></li>
           <li><a href="../config/index.html">@xufa/config</a></li>
           <li><a href="../discovery/index.html">@xufa/discovery</a></li>
           <li><a href="../netcache/index.html">@xufa/netcache</a></li>
@@ -107,7 +110,11 @@
       </aside>
 
       <article class="content">
-<h1>@xufa/pg</h1>
+        <nav class="package-tabs" aria-label="@xufa/pg">
+          <a href="index.html" aria-current="page">Overview</a>
+          <a href="reference.html">Reference</a>
+        </nav>
+        <h1>@xufa/pg</h1>
         <p class="intro">
           A PostgreSQL driver with the API of <a href="https://node-postgres.com">pg</a> (node-postgres) for what
           applications use, <code>Client</code>, <code>Pool</code> and <code>query(text, values)</code>, and no
@@ -385,7 +392,7 @@ await client.query('LISTEN orders');
           the client and the result or the error), and <code>pg:pool:release</code> and <code>pg:pool:remove</code>.
           Nothing is made when no one subscribes.
         </p>
-        <pre><code class="language-js">const dc = require('node:diagnostics_channel');
+        <pre data-run><code class="language-js">const dc = require('node:diagnostics_channel');
 dc.tracingChannel('pg:query').subscribe({
   start: (ctx) =&gt; (ctx.started = performance.now()),
   asyncEnd: (ctx) =&gt; metrics.observe(ctx.query.text, performance.now() - ctx.started),
@@ -442,7 +449,7 @@ dc.tracingChannel('pg:query').subscribe({
 
         <h2 id="typescript">TypeScript</h2>
         <p>Declarations are in the package: <code>Client</code>, <code>Pool</code>, <code>PoolClient</code>, <code>QueryResult&lt;R&gt;</code>, <code>QueryConfig</code>, <code>DatabaseError</code>...</p>
-        <pre><code class="language-ts">import { Pool, QueryResult } from '@xufa/pg';
+        <pre data-run><code class="language-ts">import { Pool, QueryResult } from '@xufa/pg';
 
 interface User { id: number; name: string }
 const pool = new Pool({ connectionString: process.env.DATABASE_URL });

@@ -1,0 +1,519 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>@xufa/websocket: Reference · xufa</title>
+    <meta
+      name="description"
+      content="The reference of @xufa/websocket: every function, class, interface and type it declares, made from its TypeScript declarations."
+    />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%23d9502b'/%3E%3Ctext x='16' y='22.5' font-family='monospace' font-size='18' font-weight='700' fill='white' text-anchor='middle'%3Ex%3C/text%3E%3C/svg%3E"
+    />
+    <link rel="stylesheet" href="../style.css?v=0.1.0" />
+    <script src="../main.js?v=0.1.0"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js" defer></script>
+  </head>
+  <body>
+    <header class="header">
+      <div class="header-inner">
+        <a class="logo" href="../index.html"><span class="logo-mark">x</span>xufa</a>
+        <nav class="nav">
+          <a href="../guide.html">Guide</a>
+          <a href="../playground.html">Playground</a>
+          <a href="../http/index.html">HTTP</a>
+          <a href="../orm/index.html">ORM</a>
+          <a class="hide-small" href="../auth/index.html">Auth</a>
+          <a class="hide-small" href="../sequelize/index.html">Sequelize</a>
+          <a class="hide-small" href="../packages.html" aria-current="page">Packages</a>
+          <a class="hide-small" href="../benchmarks.html">Benchmarks</a>
+          <a href="https://github.com/xufajs/xufa">GitHub</a>
+          <button class="theme-toggle" type="button" aria-label="Switch between light and dark theme">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+              <path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z" />
+            </svg>
+          </button>
+        </nav>
+      </div>
+    </header>
+
+    <div class="docs">
+      <button class="menu-toggle" type="button" aria-expanded="false">☰ Contents</button>
+      <aside class="sidebar">
+        <h4>Reference</h4>
+        <ul>
+          <li><a href="#functions">Functions (1)</a></li>
+          <li><a href="#classes">Classes (2)</a></li>
+          <li><a href="#constants">Constants (3)</a></li>
+          <li><a href="#interfaces">Interfaces (13)</a></li>
+          <li><a href="#types">Types (7)</a></li>
+        </ul>
+        <h4>Packages</h4>
+        <ul>
+          <li><a href="index.html" aria-current="page">@xufa/websocket</a></li>
+          <li><a href="../admin/index.html">@xufa/admin</a></li>
+          <li><a href="../session/index.html">@xufa/session</a></li>
+          <li><a href="../openapi/index.html">@xufa/openapi</a></li>
+          <li><a href="../client/index.html">@xufa/client</a></li>
+          <li><a href="../schema/index.html">@xufa/schema</a></li>
+          <li><a href="../pg/index.html">@xufa/pg</a></li>
+          <li><a href="../mongo/index.html">@xufa/mongo</a></li>
+          <li><a href="../expression/index.html">@xufa/expression</a></li>
+          <li><a href="../template/index.html">@xufa/template</a></li>
+          <li><a href="../cluster/index.html">@xufa/cluster</a></li>
+          <li><a href="../scheduler/index.html">@xufa/scheduler</a></li>
+          <li><a href="../queue/index.html">@xufa/queue</a></li>
+          <li><a href="../config/index.html">@xufa/config</a></li>
+          <li><a href="../discovery/index.html">@xufa/discovery</a></li>
+          <li><a href="../netcache/index.html">@xufa/netcache</a></li>
+          <li><a href="../faults/index.html">@xufa/faults</a></li>
+          <li><a href="../marshal/index.html">@xufa/marshal</a></li>
+          <li><a href="../yaml/index.html">@xufa/yaml</a></li>
+          <li><a href="../jwt/index.html">@xufa/jwt</a></li>
+          <li><a href="../logger/index.html">@xufa/logger</a></li>
+          <li><a href="../router/index.html">@xufa/router</a></li>
+          <li><a href="../serializer/index.html">@xufa/serializer</a></li>
+          <li><a href="../inject/index.html">@xufa/inject</a></li>
+          <li><a href="../boot/index.html">@xufa/boot</a></li>
+          <li><a href="../errors/index.html">@xufa/errors</a></li>
+          <li><a href="../packages.html">All the packages</a></li>
+        </ul>
+      </aside>
+
+      <article class="content">
+        <nav class="package-tabs" aria-label="@xufa/websocket">
+          <a href="index.html">Overview</a>
+          <a href="reference.html" aria-current="page">Reference</a>
+        </nav>
+        <h1>Reference</h1>
+        <p class="intro">
+          WebSockets (RFC 6455, permessage-deflate): client and server with the API and the tests of ws, with no dependencies. Every declaration of its TypeScript declarations
+          (<code>packages/websocket/index.d.ts</code>), as they are written, with their comments: made from them each time
+          the docs are built. How to use them is in <a href="index.html">the overview</a>.
+        </p>
+
+        <h2 id="functions">Functions</h2>
+        <p class="ref-index"><a href="#ref-createWebSocketStream"><code>createWebSocketStream</code></a></p>
+
+        <h3 id="ref-createWebSocketStream"><code>createWebSocketStream</code></h3>
+        <pre><code class="language-ts">function createWebSocketStream(websocket: WebSocket, options?: DuplexOptions): Duplex;</code></pre>
+        <p>WebSocket stream</p>
+
+        <h2 id="classes">Classes</h2>
+        <p class="ref-index"><a href="#ref-WebSocket"><code>WebSocket</code></a>, <a href="#ref-Server"><code>Server</code></a></p>
+
+        <h3 id="ref-WebSocket"><code>WebSocket</code></h3>
+        <pre><code class="language-ts">declare class WebSocket extends EventEmitter { ... }</code></pre>
+        <p>WebSocket socket.</p>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>static readonly CONNECTING</code></td><td><code>0</code></td><td><p>The connection is not yet open.</p></td></tr>
+                <tr><td><code>static readonly OPEN</code></td><td><code>1</code></td><td><p>The connection is open and ready to communicate.</p></td></tr>
+                <tr><td><code>static readonly CLOSING</code></td><td><code>2</code></td><td><p>The connection is in the process of closing.</p></td></tr>
+                <tr><td><code>static readonly CLOSED</code></td><td><code>3</code></td><td><p>The connection is closed.</p></td></tr>
+                <tr><td><code>binaryType</code></td><td><code>'nodebuffer' | 'arraybuffer' | 'fragments'</code></td><td></td></tr>
+                <tr><td><code>readonly bufferedAmount</code></td><td><code>number</code></td><td></td></tr>
+                <tr><td><code>readonly extensions</code></td><td><code>string</code></td><td></td></tr>
+                <tr><td><code>readonly isPaused</code></td><td><code>boolean</code></td><td><p>Indicates whether the websocket is paused</p></td></tr>
+                <tr><td><code>readonly protocol</code></td><td><code>string</code></td><td></td></tr>
+                <tr><td><code>readonly readyState</code></td><td><code>typeof <a href="#ref-WebSocket">WebSocket</a>.CONNECTING | typeof <a href="#ref-WebSocket">WebSocket</a>.OPEN | typeof <a href="#ref-WebSocket">WebSocket</a>.CLOSING | typeof <a href="#ref-WebSocket">WebSocket</a>.CLOSED</code></td><td><p>The current state of the connection</p></td></tr>
+                <tr><td><code>readonly url</code></td><td><code>string</code></td><td></td></tr>
+                <tr><td><code>readonly CONNECTING</code></td><td><code>0</code></td><td><p>The connection is not yet open.</p></td></tr>
+                <tr><td><code>readonly OPEN</code></td><td><code>1</code></td><td><p>The connection is open and ready to communicate.</p></td></tr>
+                <tr><td><code>readonly CLOSING</code></td><td><code>2</code></td><td><p>The connection is in the process of closing.</p></td></tr>
+                <tr><td><code>readonly CLOSED</code></td><td><code>3</code></td><td><p>The connection is closed.</p></td></tr>
+                <tr><td><code>onopen</code></td><td><code>((event: <a href="#ref-WebSocket">WebSocket</a>.<a href="#ref-Event">Event</a>) =&gt; void) | null</code></td><td></td></tr>
+                <tr><td><code>onerror</code></td><td><code>((event: <a href="#ref-WebSocket">WebSocket</a>.<a href="#ref-ErrorEvent">ErrorEvent</a>) =&gt; void) | null</code></td><td></td></tr>
+                <tr><td><code>onclose</code></td><td><code>((event: <a href="#ref-WebSocket">WebSocket</a>.<a href="#ref-CloseEvent">CloseEvent</a>) =&gt; void) | null</code></td><td></td></tr>
+                <tr><td><code>onmessage</code></td><td><code>((event: <a href="#ref-WebSocket">WebSocket</a>.<a href="#ref-MessageEvent">MessageEvent</a>) =&gt; void) | null</code></td><td></td></tr>
+                <tr><td><code>new (address: null)</code></td><td></td><td></td></tr>
+                <tr><td><code>new (address: string | URL, options?: WebSocket.ClientOptions | ClientRequestArgs)</code></td><td></td><td></td></tr>
+                <tr><td><code>new (address: string | URL, protocols?: string | string[], options?: WebSocket.ClientOptions | ClientRequestArgs)</code></td><td></td><td></td></tr>
+                <tr><td><code>close(code?: number, data?: string | Buffer)</code></td><td><code>void</code></td><td></td></tr>
+                <tr><td><code>ping(data?: any, mask?: boolean, cb?: (err: Error) =&gt; void)</code></td><td><code>void</code></td><td></td></tr>
+                <tr><td><code>pong(data?: any, mask?: boolean, cb?: (err: Error) =&gt; void)</code></td><td><code>void</code></td><td></td></tr>
+                <tr><td><code>send(data: BufferLike, cb?: (err?: Error) =&gt; void)</code></td><td><code>void</code></td><td><p>https://github.com/websockets/ws/issues/2076#issuecomment-1250354722</p></td></tr>
+                <tr><td><code>send(data: BufferLike, options: {
+      mask?: boolean | undefined;
+      binary?: boolean | undefined;
+      compress?: boolean | undefined;
+      fin?: boolean | undefined;
+    }, cb?: (err?: Error) =&gt; void)</code></td><td><code>void</code></td><td></td></tr>
+                <tr><td><code>terminate()</code></td><td><code>void</code></td><td></td></tr>
+                <tr><td><code>pause()</code></td><td><code>void</code></td><td><p>Pause the websocket causing it to stop emitting events. Some events can still be emitted after this is called, until all buffered data is consumed. This method is a noop if the ready state is <code>CONNECTING</code> or <code>CLOSED</code>.</p></td></tr>
+                <tr><td><code>resume()</code></td><td><code>void</code></td><td><p>Make a paused socket resume emitting events. This method is a noop if the ready state is <code>CONNECTING</code> or <code>CLOSED</code>.</p></td></tr>
+                <tr><td><code>addEventListener&lt;K extends keyof WebSocket.WebSocketEventMap&gt;(type: K, listener:
+      ((event: WebSocket.WebSocketEventMap[K]) =&gt; void) | { handleEvent(event: WebSocket.WebSocketEventMap[K]): void }, options?: WebSocket.EventListenerOptions)</code></td><td><code>void</code></td><td><p>HTML5 WebSocket events</p></td></tr>
+                <tr><td><code>removeEventListener&lt;K extends keyof WebSocket.WebSocketEventMap&gt;(type: K, listener:
+      ((event: WebSocket.WebSocketEventMap[K]) =&gt; void) | { handleEvent(event: WebSocket.WebSocketEventMap[K]): void })</code></td><td><code>void</code></td><td></td></tr>
+                <tr><td><code>on(event: 'close', listener: (this: WebSocket, code: number, reason: Buffer) =&gt; void)</code></td><td><code>this</code></td><td><p>Events</p></td></tr>
+                <tr><td><code>on(event: 'error', listener: (this: WebSocket, error: Error) =&gt; void)</code></td><td><code>this</code></td><td></td></tr>
+                <tr><td><code>on(event: 'upgrade', listener: (this: WebSocket, request: IncomingMessage) =&gt; void)</code></td><td><code>this</code></td><td></td></tr>
+                <tr><td><code>on(event: 'message', listener: (this: WebSocket, data: WebSocket.RawData, isBinary: boolean) =&gt; void)</code></td><td><code>this</code></td><td></td></tr>
+                <tr><td><code>on(event: 'open', listener: (this: WebSocket) =&gt; void)</code></td><td><code>this</code></td><td></td></tr>
+                <tr><td><code>on(event: 'ping' | 'pong', listener: (this: WebSocket, data: Buffer) =&gt; void)</code></td><td><code>this</code></td><td></td></tr>
+                <tr><td><code>on(event: 'redirect', listener: (this: WebSocket, url: string, request: ClientRequest) =&gt; void)</code></td><td><code>this</code></td><td></td></tr>
+                <tr><td><code>on(event: 'unexpected-response', listener: (this: WebSocket, request: ClientRequest, response: IncomingMessage) =&gt; void)</code></td><td><code>this</code></td><td></td></tr>
+                <tr><td><code>on(event: string | symbol, listener: (this: WebSocket, ...args: any[]) =&gt; void)</code></td><td><code>this</code></td><td></td></tr>
+                <tr><td><code>once(event: 'close', listener: (this: WebSocket, code: number, reason: Buffer) =&gt; void)</code></td><td><code>this</code></td><td></td></tr>
+                <tr><td><code>once(event: 'error', listener: (this: WebSocket, error: Error) =&gt; void)</code></td><td><code>this</code></td><td></td></tr>
+                <tr><td><code>once(event: 'upgrade', listener: (this: WebSocket, request: IncomingMessage) =&gt; void)</code></td><td><code>this</code></td><td></td></tr>
+                <tr><td><code>once(event: 'message', listener: (this: WebSocket, data: WebSocket.RawData, isBinary: boolean) =&gt; void)</code></td><td><code>this</code></td><td></td></tr>
+                <tr><td><code>once(event: 'open', listener: (this: WebSocket) =&gt; void)</code></td><td><code>this</code></td><td></td></tr>
+                <tr><td><code>once(event: 'ping' | 'pong', listener: (this: WebSocket, data: Buffer) =&gt; void)</code></td><td><code>this</code></td><td></td></tr>
+                <tr><td><code>once(event: 'redirect', listener: (this: WebSocket, url: string, request: ClientRequest) =&gt; void)</code></td><td><code>this</code></td><td></td></tr>
+                <tr><td><code>once(event: 'unexpected-response', listener: (this: WebSocket, request: ClientRequest, response: IncomingMessage) =&gt; void)</code></td><td><code>this</code></td><td></td></tr>
+                <tr><td><code>once(event: string | symbol, listener: (this: WebSocket, ...args: any[]) =&gt; void)</code></td><td><code>this</code></td><td></td></tr>
+                <tr><td><code>off(event: 'close', listener: (this: WebSocket, code: number, reason: Buffer) =&gt; void)</code></td><td><code>this</code></td><td></td></tr>
+                <tr><td><code>off(event: 'error', listener: (this: WebSocket, error: Error) =&gt; void)</code></td><td><code>this</code></td><td></td></tr>
+                <tr><td><code>off(event: 'upgrade', listener: (this: WebSocket, request: IncomingMessage) =&gt; void)</code></td><td><code>this</code></td><td></td></tr>
+                <tr><td><code>off(event: 'message', listener: (this: WebSocket, data: WebSocket.RawData, isBinary: boolean) =&gt; void)</code></td><td><code>this</code></td><td></td></tr>
+                <tr><td><code>off(event: 'open', listener: (this: WebSocket) =&gt; void)</code></td><td><code>this</code></td><td></td></tr>
+                <tr><td><code>off(event: 'ping' | 'pong', listener: (this: WebSocket, data: Buffer) =&gt; void)</code></td><td><code>this</code></td><td></td></tr>
+                <tr><td><code>off(event: 'redirect', listener: (this: WebSocket, url: string, request: ClientRequest) =&gt; void)</code></td><td><code>this</code></td><td></td></tr>
+                <tr><td><code>off(event: 'unexpected-response', listener: (this: WebSocket, request: ClientRequest, response: IncomingMessage) =&gt; void)</code></td><td><code>this</code></td><td></td></tr>
+                <tr><td><code>off(event: string | symbol, listener: (this: WebSocket, ...args: any[]) =&gt; void)</code></td><td><code>this</code></td><td></td></tr>
+                <tr><td><code>addListener(event: 'close', listener: (code: number, reason: Buffer) =&gt; void)</code></td><td><code>this</code></td><td></td></tr>
+                <tr><td><code>addListener(event: 'error', listener: (error: Error) =&gt; void)</code></td><td><code>this</code></td><td></td></tr>
+                <tr><td><code>addListener(event: 'upgrade', listener: (request: IncomingMessage) =&gt; void)</code></td><td><code>this</code></td><td></td></tr>
+                <tr><td><code>addListener(event: 'message', listener: (data: WebSocket.RawData, isBinary: boolean) =&gt; void)</code></td><td><code>this</code></td><td></td></tr>
+                <tr><td><code>addListener(event: 'open', listener: () =&gt; void)</code></td><td><code>this</code></td><td></td></tr>
+                <tr><td><code>addListener(event: 'ping' | 'pong', listener: (data: Buffer) =&gt; void)</code></td><td><code>this</code></td><td></td></tr>
+                <tr><td><code>addListener(event: 'redirect', listener: (url: string, request: ClientRequest) =&gt; void)</code></td><td><code>this</code></td><td></td></tr>
+                <tr><td><code>addListener(event: 'unexpected-response', listener: (request: ClientRequest, response: IncomingMessage) =&gt; void)</code></td><td><code>this</code></td><td></td></tr>
+                <tr><td><code>addListener(event: string | symbol, listener: (...args: any[]) =&gt; void)</code></td><td><code>this</code></td><td></td></tr>
+                <tr><td><code>removeListener(event: 'close', listener: (code: number, reason: Buffer) =&gt; void)</code></td><td><code>this</code></td><td></td></tr>
+                <tr><td><code>removeListener(event: 'error', listener: (error: Error) =&gt; void)</code></td><td><code>this</code></td><td></td></tr>
+                <tr><td><code>removeListener(event: 'upgrade', listener: (request: IncomingMessage) =&gt; void)</code></td><td><code>this</code></td><td></td></tr>
+                <tr><td><code>removeListener(event: 'message', listener: (data: WebSocket.RawData, isBinary: boolean) =&gt; void)</code></td><td><code>this</code></td><td></td></tr>
+                <tr><td><code>removeListener(event: 'open', listener: () =&gt; void)</code></td><td><code>this</code></td><td></td></tr>
+                <tr><td><code>removeListener(event: 'ping' | 'pong', listener: (data: Buffer) =&gt; void)</code></td><td><code>this</code></td><td></td></tr>
+                <tr><td><code>removeListener(event: 'redirect', listener: (url: string, request: ClientRequest) =&gt; void)</code></td><td><code>this</code></td><td></td></tr>
+                <tr><td><code>removeListener(event: 'unexpected-response', listener: (request: ClientRequest, response: IncomingMessage) =&gt; void)</code></td><td><code>this</code></td><td></td></tr>
+                <tr><td><code>removeListener(event: string | symbol, listener: (...args: any[]) =&gt; void)</code></td><td><code>this</code></td><td></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-Server"><code>Server</code></h3>
+        <pre><code class="language-ts">class Server&lt;
+    T extends typeof WebSocket.WebSocket = typeof WebSocket.WebSocket,
+    U extends typeof IncomingMessage = typeof IncomingMessage,
+  &gt; extends EventEmitter { ... }</code></pre>
+        <p>WebSocket Server</p>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>options</code></td><td><code><a href="#ref-ServerOptions">ServerOptions</a>&lt;T, U&gt;</code></td><td></td></tr>
+                <tr><td><code>path</code></td><td><code>string</code></td><td></td></tr>
+                <tr><td><code>clients</code></td><td><code>Set&lt;InstanceType&lt;T&gt;&gt;</code></td><td></td></tr>
+                <tr><td><code>new (options?: ServerOptions&lt;T, U&gt;, callback?: () =&gt; void)</code></td><td></td><td></td></tr>
+                <tr><td><code>address()</code></td><td><code><a href="#ref-AddressInfo">AddressInfo</a> | string | null</code></td><td></td></tr>
+                <tr><td><code>close(cb?: (err?: Error) =&gt; void)</code></td><td><code>void</code></td><td></td></tr>
+                <tr><td><code>handleUpgrade(request: InstanceType&lt;U&gt;, socket: Duplex, upgradeHead: Buffer, callback: (client: InstanceType&lt;T&gt;, request: InstanceType&lt;U&gt;) =&gt; void)</code></td><td><code>void</code></td><td></td></tr>
+                <tr><td><code>shouldHandle(request: InstanceType&lt;U&gt;)</code></td><td><code>boolean | Promise&lt;boolean&gt;</code></td><td></td></tr>
+                <tr><td><code>on(event: 'connection', cb: (this: Server&lt;T&gt;, websocket: InstanceType&lt;T&gt;, request: InstanceType&lt;U&gt;) =&gt; void)</code></td><td><code>this</code></td><td><p>Events</p></td></tr>
+                <tr><td><code>on(event: 'error', cb: (this: Server&lt;T&gt;, error: Error) =&gt; void)</code></td><td><code>this</code></td><td></td></tr>
+                <tr><td><code>on(event: 'headers', cb: (this: Server&lt;T&gt;, headers: string[], request: InstanceType&lt;U&gt;) =&gt; void)</code></td><td><code>this</code></td><td></td></tr>
+                <tr><td><code>on(event: 'close' | 'listening', cb: (this: Server&lt;T&gt;) =&gt; void)</code></td><td><code>this</code></td><td></td></tr>
+                <tr><td><code>on(event: 'wsClientError', cb: (this: Server&lt;T&gt;, error: Error, socket: Duplex, request: InstanceType&lt;U&gt;) =&gt; void)</code></td><td><code>this</code></td><td></td></tr>
+                <tr><td><code>on(event: string | symbol, listener: (this: Server&lt;T&gt;, ...args: any[]) =&gt; void)</code></td><td><code>this</code></td><td></td></tr>
+                <tr><td><code>once(event: 'connection', cb: (this: Server&lt;T&gt;, websocket: InstanceType&lt;T&gt;, request: InstanceType&lt;U&gt;) =&gt; void)</code></td><td><code>this</code></td><td></td></tr>
+                <tr><td><code>once(event: 'error', cb: (this: Server&lt;T&gt;, error: Error) =&gt; void)</code></td><td><code>this</code></td><td></td></tr>
+                <tr><td><code>once(event: 'headers', cb: (this: Server&lt;T&gt;, headers: string[], request: InstanceType&lt;U&gt;) =&gt; void)</code></td><td><code>this</code></td><td></td></tr>
+                <tr><td><code>once(event: 'close' | 'listening', cb: (this: Server&lt;T&gt;) =&gt; void)</code></td><td><code>this</code></td><td></td></tr>
+                <tr><td><code>once(event: 'wsClientError', cb: (this: Server&lt;T&gt;, error: Error, socket: Duplex, request: InstanceType&lt;U&gt;) =&gt; void)</code></td><td><code>this</code></td><td></td></tr>
+                <tr><td><code>once(event: string | symbol, listener: (this: Server&lt;T&gt;, ...args: any[]) =&gt; void)</code></td><td><code>this</code></td><td></td></tr>
+                <tr><td><code>off(event: 'connection', cb: (this: Server&lt;T&gt;, socket: InstanceType&lt;T&gt;, request: InstanceType&lt;U&gt;) =&gt; void)</code></td><td><code>this</code></td><td></td></tr>
+                <tr><td><code>off(event: 'error', cb: (this: Server&lt;T&gt;, error: Error) =&gt; void)</code></td><td><code>this</code></td><td></td></tr>
+                <tr><td><code>off(event: 'headers', cb: (this: Server&lt;T&gt;, headers: string[], request: InstanceType&lt;U&gt;) =&gt; void)</code></td><td><code>this</code></td><td></td></tr>
+                <tr><td><code>off(event: 'close' | 'listening', cb: (this: Server&lt;T&gt;) =&gt; void)</code></td><td><code>this</code></td><td></td></tr>
+                <tr><td><code>off(event: 'wsClientError', cb: (this: Server&lt;T&gt;, error: Error, socket: Duplex, request: InstanceType&lt;U&gt;) =&gt; void)</code></td><td><code>this</code></td><td></td></tr>
+                <tr><td><code>off(event: string | symbol, listener: (this: Server&lt;T&gt;, ...args: any[]) =&gt; void)</code></td><td><code>this</code></td><td></td></tr>
+                <tr><td><code>addListener(event: 'connection', cb: (websocket: InstanceType&lt;T&gt;, request: InstanceType&lt;U&gt;) =&gt; void)</code></td><td><code>this</code></td><td></td></tr>
+                <tr><td><code>addListener(event: 'error', cb: (error: Error) =&gt; void)</code></td><td><code>this</code></td><td></td></tr>
+                <tr><td><code>addListener(event: 'headers', cb: (headers: string[], request: InstanceType&lt;U&gt;) =&gt; void)</code></td><td><code>this</code></td><td></td></tr>
+                <tr><td><code>addListener(event: 'close' | 'listening', cb: () =&gt; void)</code></td><td><code>this</code></td><td></td></tr>
+                <tr><td><code>addListener(event: 'wsClientError', cb: (error: Error, socket: Duplex, request: InstanceType&lt;U&gt;) =&gt; void)</code></td><td><code>this</code></td><td></td></tr>
+                <tr><td><code>addListener(event: string | symbol, listener: (...args: any[]) =&gt; void)</code></td><td><code>this</code></td><td></td></tr>
+                <tr><td><code>removeListener(event: 'connection', cb: (websocket: InstanceType&lt;T&gt;, request: InstanceType&lt;U&gt;) =&gt; void)</code></td><td><code>this</code></td><td></td></tr>
+                <tr><td><code>removeListener(event: 'error', cb: (error: Error) =&gt; void)</code></td><td><code>this</code></td><td></td></tr>
+                <tr><td><code>removeListener(event: 'headers', cb: (headers: string[], request: InstanceType&lt;U&gt;) =&gt; void)</code></td><td><code>this</code></td><td></td></tr>
+                <tr><td><code>removeListener(event: 'close' | 'listening', cb: () =&gt; void)</code></td><td><code>this</code></td><td></td></tr>
+                <tr><td><code>removeListener(event: 'wsClientError', cb: (error: Error, socket: Duplex, request: InstanceType&lt;U&gt;) =&gt; void)</code></td><td><code>this</code></td><td></td></tr>
+                <tr><td><code>removeListener(event: string | symbol, listener: (...args: any[]) =&gt; void)</code></td><td><code>this</code></td><td></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h2 id="constants">Constants</h2>
+        <p class="ref-index"><a href="#ref-WebSocketAlias"><code>WebSocketAlias</code></a>, <a href="#ref-WebSocketServer"><code>WebSocketServer</code></a>, <a href="#ref-WebSocket"><code>WebSocket</code></a></p>
+
+        <h3 id="ref-WebSocketAlias"><code>WebSocketAlias</code></h3>
+        <pre><code class="language-ts">declare const WebSocketAlias: typeof WebSocket;</code></pre>
+
+        <h3 id="ref-WebSocketServer"><code>WebSocketServer</code></h3>
+        <pre><code class="language-ts">const WebSocketServer: typeof Server;</code></pre>
+
+        <h3 id="ref-WebSocket"><code>WebSocket</code></h3>
+        <pre><code class="language-ts">const WebSocket: typeof WebSocketAlias;</code></pre>
+
+        <h2 id="interfaces">Interfaces</h2>
+        <p class="ref-index"><a href="#ref-WebSocketAlias"><code>WebSocketAlias</code></a>, <a href="#ref-ClientOptions"><code>ClientOptions</code></a>, <a href="#ref-PerMessageDeflateOptions"><code>PerMessageDeflateOptions</code></a>, <a href="#ref-Event"><code>Event</code></a>, <a href="#ref-ErrorEvent"><code>ErrorEvent</code></a>, <a href="#ref-CloseEvent"><code>CloseEvent</code></a>, <a href="#ref-MessageEvent"><code>MessageEvent</code></a>, <a href="#ref-WebSocketEventMap"><code>WebSocketEventMap</code></a>, <a href="#ref-EventListenerOptions"><code>EventListenerOptions</code></a>, <a href="#ref-ServerOptions"><code>ServerOptions</code></a>, <a href="#ref-AddressInfo"><code>AddressInfo</code></a>, <a href="#ref-WebSocketServer"><code>WebSocketServer</code></a>, <a href="#ref-WebSocket"><code>WebSocket</code></a></p>
+
+        <h3 id="ref-WebSocketAlias"><code>WebSocketAlias</code></h3>
+        <pre><code class="language-ts">interface WebSocketAlias extends WebSocket { ... }</code></pre>
+
+        <h3 id="ref-ClientOptions"><code>ClientOptions</code></h3>
+        <pre><code class="language-ts">interface ClientOptions extends SecureContextOptions { ... }</code></pre>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>protocol?</code></td><td><code>string | undefined</code></td><td></td></tr>
+                <tr><td><code>followRedirects?</code></td><td><code>boolean | undefined</code></td><td></td></tr>
+                <tr><td><code>generateMask?(mask: Buffer)</code></td><td><code>void</code></td><td></td></tr>
+                <tr><td><code>handshakeTimeout?</code></td><td><code>number | undefined</code></td><td></td></tr>
+                <tr><td><code>maxRedirects?</code></td><td><code>number | undefined</code></td><td></td></tr>
+                <tr><td><code>perMessageDeflate?</code></td><td><code>boolean | <a href="#ref-PerMessageDeflateOptions">PerMessageDeflateOptions</a> | undefined</code></td><td></td></tr>
+                <tr><td><code>localAddress?</code></td><td><code>string | undefined</code></td><td></td></tr>
+                <tr><td><code>protocolVersion?</code></td><td><code>number | undefined</code></td><td></td></tr>
+                <tr><td><code>headers?</code></td><td><code>{ [key: string]: string } | undefined</code></td><td></td></tr>
+                <tr><td><code>origin?</code></td><td><code>string | undefined</code></td><td></td></tr>
+                <tr><td><code>agent?</code></td><td><code>Agent | undefined</code></td><td></td></tr>
+                <tr><td><code>host?</code></td><td><code>string | undefined</code></td><td></td></tr>
+                <tr><td><code>family?</code></td><td><code>number | undefined</code></td><td></td></tr>
+                <tr><td><code>checkServerIdentity?(servername: string, cert: CertMeta)</code></td><td><code>boolean</code></td><td></td></tr>
+                <tr><td><code>rejectUnauthorized?</code></td><td><code>boolean | undefined</code></td><td></td></tr>
+                <tr><td><code>allowSynchronousEvents?</code></td><td><code>boolean | undefined</code></td><td></td></tr>
+                <tr><td><code>autoPong?</code></td><td><code>boolean | undefined</code></td><td></td></tr>
+                <tr><td><code>maxPayload?</code></td><td><code>number | undefined</code></td><td></td></tr>
+                <tr><td><code>maxBufferedChunks?</code></td><td><code>number | undefined</code></td><td></td></tr>
+                <tr><td><code>maxFragments?</code></td><td><code>number | undefined</code></td><td></td></tr>
+                <tr><td><code>skipUTF8Validation?</code></td><td><code>boolean | undefined</code></td><td></td></tr>
+                <tr><td><code>createConnection?</code></td><td><code>typeof createConnection | undefined</code></td><td></td></tr>
+                <tr><td><code>finishRequest?</code></td><td><code><a href="#ref-FinishRequestCallback">FinishRequestCallback</a> | undefined</code></td><td></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-PerMessageDeflateOptions"><code>PerMessageDeflateOptions</code></h3>
+        <pre><code class="language-ts">interface PerMessageDeflateOptions { ... }</code></pre>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>serverNoContextTakeover?</code></td><td><code>boolean | undefined</code></td><td></td></tr>
+                <tr><td><code>clientNoContextTakeover?</code></td><td><code>boolean | undefined</code></td><td></td></tr>
+                <tr><td><code>serverMaxWindowBits?</code></td><td><code>number | undefined</code></td><td></td></tr>
+                <tr><td><code>clientMaxWindowBits?</code></td><td><code>number | undefined</code></td><td></td></tr>
+                <tr><td><code>zlibDeflateOptions?</code></td><td><code>| { flush?: number | undefined; finishFlush?: number | undefined; chunkSize?: number | undefined; windowBits?: number | undefined; level?: number | undefined; memLevel?: number | undefined; strategy?: number | undefined; dictionary?: Buffer | Buffer[] | DataView | undefined; info?: boolean | undefined; } | undefined</code></td><td></td></tr>
+                <tr><td><code>zlibInflateOptions?</code></td><td><code>ZlibOptions | undefined</code></td><td></td></tr>
+                <tr><td><code>threshold?</code></td><td><code>number | undefined</code></td><td></td></tr>
+                <tr><td><code>concurrencyLimit?</code></td><td><code>number | undefined</code></td><td></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-Event"><code>Event</code></h3>
+        <pre><code class="language-ts">interface Event { ... }</code></pre>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>type</code></td><td><code>string</code></td><td></td></tr>
+                <tr><td><code>target</code></td><td><code><a href="#ref-WebSocket">WebSocket</a></code></td><td></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-ErrorEvent"><code>ErrorEvent</code></h3>
+        <pre><code class="language-ts">interface ErrorEvent { ... }</code></pre>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>error</code></td><td><code>any</code></td><td></td></tr>
+                <tr><td><code>message</code></td><td><code>string</code></td><td></td></tr>
+                <tr><td><code>type</code></td><td><code>string</code></td><td></td></tr>
+                <tr><td><code>target</code></td><td><code><a href="#ref-WebSocket">WebSocket</a></code></td><td></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-CloseEvent"><code>CloseEvent</code></h3>
+        <pre><code class="language-ts">interface CloseEvent { ... }</code></pre>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>wasClean</code></td><td><code>boolean</code></td><td></td></tr>
+                <tr><td><code>code</code></td><td><code>number</code></td><td></td></tr>
+                <tr><td><code>reason</code></td><td><code>string</code></td><td></td></tr>
+                <tr><td><code>type</code></td><td><code>string</code></td><td></td></tr>
+                <tr><td><code>target</code></td><td><code><a href="#ref-WebSocket">WebSocket</a></code></td><td></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-MessageEvent"><code>MessageEvent</code></h3>
+        <pre><code class="language-ts">interface MessageEvent { ... }</code></pre>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>data</code></td><td><code><a href="#ref-Data">Data</a></code></td><td></td></tr>
+                <tr><td><code>type</code></td><td><code>string</code></td><td></td></tr>
+                <tr><td><code>target</code></td><td><code><a href="#ref-WebSocket">WebSocket</a></code></td><td></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-WebSocketEventMap"><code>WebSocketEventMap</code></h3>
+        <pre><code class="language-ts">interface WebSocketEventMap { ... }</code></pre>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>open</code></td><td><code><a href="#ref-Event">Event</a></code></td><td></td></tr>
+                <tr><td><code>error</code></td><td><code><a href="#ref-ErrorEvent">ErrorEvent</a></code></td><td></td></tr>
+                <tr><td><code>close</code></td><td><code><a href="#ref-CloseEvent">CloseEvent</a></code></td><td></td></tr>
+                <tr><td><code>message</code></td><td><code><a href="#ref-MessageEvent">MessageEvent</a></code></td><td></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-EventListenerOptions"><code>EventListenerOptions</code></h3>
+        <pre><code class="language-ts">interface EventListenerOptions { ... }</code></pre>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>once?</code></td><td><code>boolean | undefined</code></td><td></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-ServerOptions"><code>ServerOptions</code></h3>
+        <pre><code class="language-ts">interface ServerOptions&lt;
+    U extends typeof WebSocket.WebSocket = typeof WebSocket.WebSocket,
+    V extends typeof IncomingMessage = typeof IncomingMessage,
+  &gt; { ... }</code></pre>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>host?</code></td><td><code>string | undefined</code></td><td></td></tr>
+                <tr><td><code>port?</code></td><td><code>number | undefined</code></td><td></td></tr>
+                <tr><td><code>backlog?</code></td><td><code>number | undefined</code></td><td></td></tr>
+                <tr><td><code>server?</code></td><td><code>HTTPServer&lt;V&gt; | HTTPSServer&lt;V&gt; | undefined</code></td><td></td></tr>
+                <tr><td><code>verifyClient?</code></td><td><code><a href="#ref-VerifyClientCallbackAsync">VerifyClientCallbackAsync</a>&lt;InstanceType&lt;V&gt;&gt; | <a href="#ref-VerifyClientCallbackSync">VerifyClientCallbackSync</a>&lt;InstanceType&lt;V&gt;&gt; | undefined</code></td><td></td></tr>
+                <tr><td><code>handleProtocols?</code></td><td><code>(protocols: Set&lt;string&gt;, request: InstanceType&lt;V&gt;) =&gt; string | false</code></td><td></td></tr>
+                <tr><td><code>path?</code></td><td><code>string | undefined</code></td><td></td></tr>
+                <tr><td><code>noServer?</code></td><td><code>boolean | undefined</code></td><td></td></tr>
+                <tr><td><code>allowSynchronousEvents?</code></td><td><code>boolean | undefined</code></td><td></td></tr>
+                <tr><td><code>autoPong?</code></td><td><code>boolean | undefined</code></td><td></td></tr>
+                <tr><td><code>clientTracking?</code></td><td><code>boolean | undefined</code></td><td></td></tr>
+                <tr><td><code>perMessageDeflate?</code></td><td><code>boolean | <a href="#ref-PerMessageDeflateOptions">PerMessageDeflateOptions</a> | undefined</code></td><td></td></tr>
+                <tr><td><code>maxPayload?</code></td><td><code>number | undefined</code></td><td></td></tr>
+                <tr><td><code>maxBufferedChunks?</code></td><td><code>number | undefined</code></td><td></td></tr>
+                <tr><td><code>maxFragments?</code></td><td><code>number | undefined</code></td><td></td></tr>
+                <tr><td><code>skipUTF8Validation?</code></td><td><code>boolean | undefined</code></td><td></td></tr>
+                <tr><td><code>WebSocket?</code></td><td><code>U | undefined</code></td><td></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-AddressInfo"><code>AddressInfo</code></h3>
+        <pre><code class="language-ts">interface AddressInfo { ... }</code></pre>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>address</code></td><td><code>string</code></td><td></td></tr>
+                <tr><td><code>family</code></td><td><code>string</code></td><td></td></tr>
+                <tr><td><code>port</code></td><td><code>number</code></td><td></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-WebSocketServer"><code>WebSocketServer</code></h3>
+        <pre><code class="language-ts">interface WebSocketServer extends Server { ... }</code></pre>
+
+        <h3 id="ref-WebSocket"><code>WebSocket</code></h3>
+        <pre><code class="language-ts">interface WebSocket extends WebSocketAlias { ... }</code></pre>
+
+        <h2 id="types">Types</h2>
+        <p class="ref-index"><a href="#ref-BufferLike"><code>BufferLike</code></a>, <a href="#ref-RawData"><code>RawData</code></a>, <a href="#ref-Data"><code>Data</code></a>, <a href="#ref-CertMeta"><code>CertMeta</code></a>, <a href="#ref-VerifyClientCallbackSync"><code>VerifyClientCallbackSync</code></a>, <a href="#ref-VerifyClientCallbackAsync"><code>VerifyClientCallbackAsync</code></a>, <a href="#ref-FinishRequestCallback"><code>FinishRequestCallback</code></a></p>
+
+        <h3 id="ref-BufferLike"><code>BufferLike</code></h3>
+        <pre><code class="language-ts">type BufferLike =
+  | string
+  | Buffer
+  | DataView
+  | number
+  | ArrayBufferView
+  | Uint8Array
+  | ArrayBuffer
+  | SharedArrayBuffer
+  | Blob
+  | readonly any[]
+  | readonly number[]
+  | { valueOf(): ArrayBuffer }
+  | { valueOf(): SharedArrayBuffer }
+  | { valueOf(): Uint8Array }
+  | { valueOf(): readonly number[] }
+  | { valueOf(): string }
+  | { [Symbol.toPrimitive](hint: string): string };</code></pre>
+        <p>can not get all overload of BufferConstructor['from'], need to copy all it's first arguments here https://github.com/microsoft/TypeScript/issues/32164</p>
+
+        <h3 id="ref-RawData"><code>RawData</code></h3>
+        <pre><code class="language-ts">type RawData = Buffer | ArrayBuffer | Buffer[];</code></pre>
+        <p>Data represents the raw message payload received over the WebSocket.</p>
+
+        <h3 id="ref-Data"><code>Data</code></h3>
+        <pre><code class="language-ts">type Data = string | Buffer | ArrayBuffer | Buffer[];</code></pre>
+        <p>Data represents the message payload received over the WebSocket.</p>
+
+        <h3 id="ref-CertMeta"><code>CertMeta</code></h3>
+        <pre><code class="language-ts">type CertMeta = string | string[] | Buffer | Buffer[];</code></pre>
+        <p>CertMeta represents the accepted types for certificate &amp; key data.</p>
+
+        <h3 id="ref-VerifyClientCallbackSync"><code>VerifyClientCallbackSync</code></h3>
+        <pre><code class="language-ts">type VerifyClientCallbackSync&lt;Request extends IncomingMessage = IncomingMessage&gt; = (info: {
+    origin: string;
+    secure: boolean;
+    req: Request;
+  }) =&gt; boolean;</code></pre>
+        <p>VerifyClientCallbackSync is a synchronous callback used to inspect the incoming message. The return value (boolean) of the function determines whether or not to accept the handshake.</p>
+
+        <h3 id="ref-VerifyClientCallbackAsync"><code>VerifyClientCallbackAsync</code></h3>
+        <pre><code class="language-ts">type VerifyClientCallbackAsync&lt;Request extends IncomingMessage = IncomingMessage&gt; = (
+    info: { origin: string; secure: boolean; req: Request },
+    callback: (res: boolean, code?: number, message?: string, headers?: OutgoingHttpHeaders) =&gt; void
+  ) =&gt; void;</code></pre>
+        <p>VerifyClientCallbackAsync is an asynchronous callback used to inspect the incoming message. The return value (boolean) of the function determines whether or not to accept the handshake.</p>
+
+        <h3 id="ref-FinishRequestCallback"><code>FinishRequestCallback</code></h3>
+        <pre><code class="language-ts">type FinishRequestCallback = (request: ClientRequest, websocket: WebSocket) =&gt; void;</code></pre>
+        <p>FinishRequestCallback is a callback for last minute customization of the headers. If finishRequest is set, then it has the responsibility to call request.end() once it is done setting request headers.</p>
+      </article>
+    </div>
+
+    <footer class="footer">
+      <div class="container">
+        <span>xufa is MIT licensed. &copy; Jes&uacute;s Seijas</span>
+        <span>
+          <a href="../guide.html">Guide</a> &middot; <a href="../playground.html">Playground</a> &middot; <a href="../http/index.html">HTTP</a> &middot; <a href="../orm/index.html">ORM</a> &middot; <a href="../auth/index.html">Auth</a> &middot;
+          <a href="../sequelize/index.html">Sequelize</a> &middot; <a href="../packages.html">Packages</a> &middot;
+          <a href="../benchmarks.html">Benchmarks</a> &middot; <a href="https://github.com/xufajs/xufa">GitHub</a>
+        </span>
+      </div>
+    </footer>
+  </body>
+</html>

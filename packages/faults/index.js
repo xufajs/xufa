@@ -227,6 +227,14 @@ class Faults {
     if (this.rules.length === 0 && this.holding.size === 0) active.delete(this);
   }
 
+  // Throws what a rule of these options would throw (its operations, rate, match; the ms of a delay), without making
+  // it: scenarios check their steps before they start.
+  check(kind, options = {}) {
+    if (kind === 'delay' && !(options.ms >= 0)) throw new TypeError('A delay of a fault has ms (milliseconds)');
+    new Rule(this, kind, kind === 'down' ? { operations: this.known, ...options } : options); // eslint-disable-line no-new
+    return this;
+  }
+
   // A rule (of a kind of its own: extra.replace(context) is what the operation gives instead).
   add(kind, options, extra) {
     const rule = new Rule(this, kind, options, extra);
@@ -364,7 +372,21 @@ function useFaults(hooksOrOptions, options) {
   });
 }
 
-module.exports = { Faults, FaultError, isFault, sleep, wrap, cacheFaults, activeFaults, clearFaults, useFaults };
+const { Scenario, scenario } = require('./lib/scenario');
+
+module.exports = {
+  Faults,
+  FaultError,
+  isFault,
+  sleep,
+  wrap,
+  cacheFaults,
+  activeFaults,
+  clearFaults,
+  useFaults,
+  scenario,
+  Scenario,
+};
 
 // The plugin of @xufa/http (and fastify) that turns faults on and off over HTTP, for staging (lib/plugin.js): loaded
 // when it is used.

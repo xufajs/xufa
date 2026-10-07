@@ -1,4 +1,4 @@
-const { Any } = require('../src');
+const { Any } = require('..');
 
 describe('Any Type', () => {
   it('Should allow undefined if not mandatory', () => {

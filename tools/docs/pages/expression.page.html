@@ -22,14 +22,29 @@
 
         <h2 id="start">Quick start</h2>
         <pre><code class="language-sh">npm install @xufa/expression   # or require('xufa/expression')</code></pre>
-        <pre><code class="language-js">const { compile, evaluate } = require('@xufa/expression');
+        <pre data-run="expression"><code class="language-js">const { compile, evaluate } = require('@xufa/expression');
+
+const items = [
+  { name: 'Pen', price: 5, quantity: 3 },
+  { name: 'Book', price: 12, quantity: 2 },
+  { name: 'Lamp', price: 30, quantity: 1 },
+];
+const user = { name: 'Ada', tags: ['admin', 'author'] };
 
 const total = compile('items.filter(i =&gt; i.price &gt; min).reduce((sum, i) =&gt; sum + i.price * i.quantity, 0)');
-total({ items, min: 10 }); // compiled once, run as often as you like
+console.log(total({ items, min: 10 })); // compiled once, run as often as you like
 
-evaluate('user.name?.toUpperCase() ?? "anonymous"', { user });
-evaluate('`${user.name} has ${user.tags.length} tags`', { user });
-evaluate('user.constructor', { user }); // ExpressionError: XUFA_EXPR_ERR_FORBIDDEN</code></pre>
+console.log(evaluate('user.name?.toUpperCase() ?? "anonymous"', { user }));
+console.log(evaluate('`${user.name} has ${user.tags.length} tags`', { user }));
+try {
+  evaluate('user.constructor', { user });
+} catch (err) {
+  console.log(err.code); // what is not data is out of reach
+}</code></pre>
+        <pre data-output><code class="language-plaintext">54
+ADA
+Ada has 2 tags
+XUFA_EXPR_ERR_FORBIDDEN</code></pre>
 
         <h2 id="uses">What it is for</h2>
         <ul>
@@ -168,7 +183,7 @@ engine.evaluate('(a || b) | round(1)', { a: 0, b: 2.25 }); // filters in parenth
             </tbody>
           </table>
         </div>
-        <pre><code class="language-js">try {
+        <pre data-run><code class="language-js">try {
   evaluate('user.name +\n  * 2');
 } catch (err) {
   err.code; // 'XUFA_EXPR_ERR_SYNTAX'
@@ -208,7 +223,7 @@ engine.evaluate('(a || b) | round(1)', { a: 0, b: 2.25 }); // filters in parenth
         </p>
 
         <h2 id="typescript">TypeScript</h2>
-        <pre><code class="language-ts">import { compile, Engine, CompiledExpression } from '@xufa/expression';
+        <pre data-run><code class="language-ts">import { compile, Engine, CompiledExpression } from '@xufa/expression';
 
 const total: CompiledExpression&lt;number&gt; = compile&lt;number&gt;('items.reduce((s, i) =&gt; s + i.price, 0)');
 const value: number = total({ items: [{ price: 2 }] });</code></pre>

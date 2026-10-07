@@ -1,4 +1,4 @@
-// Type definitions for @xufa/websocket: the ones of ws, from @types/ws 8.18.2 (DefinitelyTyped, MIT).
+/** Type definitions for @xufa/websocket: the ones of ws, from @types/ws 8.18.2 (DefinitelyTyped, MIT). */
 /// <reference types="node" />
 
 import { EventEmitter } from 'events';
@@ -17,8 +17,10 @@ import { SecureContextOptions } from 'tls';
 import { URL } from 'url';
 import { ZlibOptions } from 'zlib';
 
-// can not get all overload of BufferConstructor['from'], need to copy all it's first arguments here
-// https://github.com/microsoft/TypeScript/issues/32164
+/**
+ * can not get all overload of BufferConstructor['from'], need to copy all it's first arguments here
+ * https://github.com/microsoft/TypeScript/issues/32164
+ */
 type BufferLike =
   | string
   | Buffer
@@ -38,7 +40,7 @@ type BufferLike =
   | { valueOf(): string }
   | { [Symbol.toPrimitive](hint: string): string };
 
-// WebSocket socket.
+/** WebSocket socket. */
 declare class WebSocket extends EventEmitter {
   /** The connection is not yet open. */
   static readonly CONNECTING: 0;
@@ -85,7 +87,7 @@ declare class WebSocket extends EventEmitter {
   close(code?: number, data?: string | Buffer): void;
   ping(data?: any, mask?: boolean, cb?: (err: Error) => void): void;
   pong(data?: any, mask?: boolean, cb?: (err: Error) => void): void;
-  // https://github.com/websockets/ws/issues/2076#issuecomment-1250354722
+  /** https://github.com/websockets/ws/issues/2076#issuecomment-1250354722 */
   send(data: BufferLike, cb?: (err?: Error) => void): void;
   send(
     data: BufferLike,
@@ -111,7 +113,7 @@ declare class WebSocket extends EventEmitter {
    */
   resume(): void;
 
-  // HTML5 WebSocket events
+  /** HTML5 WebSocket events */
   addEventListener<K extends keyof WebSocket.WebSocketEventMap>(
     type: K,
     listener:
@@ -124,7 +126,7 @@ declare class WebSocket extends EventEmitter {
       ((event: WebSocket.WebSocketEventMap[K]) => void) | { handleEvent(event: WebSocket.WebSocketEventMap[K]): void }
   ): void;
 
-  // Events
+  /** Events */
   on(event: 'close', listener: (this: WebSocket, code: number, reason: Buffer) => void): this;
   on(event: 'error', listener: (this: WebSocket, error: Error) => void): this;
   on(event: 'upgrade', listener: (this: WebSocket, request: IncomingMessage) => void): this;
@@ -353,7 +355,7 @@ declare namespace WebSocket {
     port: number;
   }
 
-  // WebSocket Server
+  /** WebSocket Server */
   class Server<
     T extends typeof WebSocket.WebSocket = typeof WebSocket.WebSocket,
     U extends typeof IncomingMessage = typeof IncomingMessage,
@@ -374,7 +376,7 @@ declare namespace WebSocket {
     ): void;
     shouldHandle(request: InstanceType<U>): boolean | Promise<boolean>;
 
-    // Events
+    /** Events */
     on(event: 'connection', cb: (this: Server<T>, websocket: InstanceType<T>, request: InstanceType<U>) => void): this;
     on(event: 'error', cb: (this: Server<T>, error: Error) => void): this;
     on(event: 'headers', cb: (this: Server<T>, headers: string[], request: InstanceType<U>) => void): this;
@@ -428,7 +430,7 @@ declare namespace WebSocket {
   const WebSocket: typeof WebSocketAlias;
   interface WebSocket extends WebSocketAlias {} // eslint-disable-line @typescript-eslint/no-empty-interface
 
-  // WebSocket stream
+  /** WebSocket stream */
   function createWebSocketStream(websocket: WebSocket, options?: DuplexOptions): Duplex;
 }
 

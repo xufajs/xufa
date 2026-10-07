@@ -145,6 +145,90 @@ describe('fs backend: files', () => {
     await db.close();
   });
 
+  // The files written by the backend (fs/promises.writeFile), by name, while fn runs.
+  // (fs/promises.writeFile, and fs.writeFileSync: batches are written synchronously on Linux.)
+  async function writtenBy(fn) {
+    const fsp = require('node:fs/promises'); // eslint-disable-line global-require
+    const { writeFile } = fsp;
+    const { writeFileSync } = fs;
+    const names = [];
+    fsp.writeFile = (file, ...args) => {
+      names.push(path.basename(String(file)));
+      return writeFile(file, ...args);
+    };
+    fs.writeFileSync = (file, ...args) => {
+      names.push(path.basename(String(file)));
+      return writeFileSync(file, ...args);
+    };
+    try {
+      await fn();
+    } finally {
+      fsp.writeFile = writeFile;
+      fs.writeFileSync = writeFileSync;
+    }
+    return names;
+  }
+
+  it('layout files: a batch of many objects with a journal (no temporary file for each); small writes as before', async () => {
+    const dir = folder();
+    const { db, Owner } = await open({ dir, layout: 'files' });
+    const bulk = await writtenBy(() =>
+      Owner.objects.bulkCreate(Array.from({ length: 40 }, (_, i) => ({ name: `Owner ${i}` })))
+    );
+    expect(bulk.filter((name) => name.startsWith('.xufa-pending.json'))).toHaveLength(1); // its temporary file
+    expect(bulk.filter((name) => /^\d+\.json$/.test(name))).toHaveLength(40); // written in place
+    expect(bulk.filter((name) => /^\d+\.json\./.test(name))).toEqual([]);
+    const files = fs.readdirSync(path.join(dir, 'owner'));
+    expect([files.length, files.includes('.xufa-pending.json')]).toEqual([41, false]); // and _table.json
+    // An update of all of them, and a delete: the same.
+    const updated = await writtenBy(() => Owner.objects.update({ name: 'Same' }));
+    expect(updated.filter((name) => /^\d+\.json$/.test(name))).toHaveLength(40);
+    const one = await writtenBy(() => Owner.objects.create({ name: 'One more' }));
+    expect(one.filter((name) => /^41\.json\.\d+\.tmp$/.test(name))).toHaveLength(1); // temporary file and rename
+    expect(one.some((name) => name.startsWith('.xufa-pending'))).toBe(false);
+    await Owner.objects.filter({ pk__lte: 30 }).delete();
+    expect(fs.readdirSync(path.join(dir, 'owner')).sort()).toEqual([
+      ...Array.from({ length: 11 }, (_, i) => `${31 + i}.json`).sort(),
+      '_table.json',
+    ].sort());
+    await db.close();
+    const again = await open({ dir, layout: 'files' });
+    expect(await again.Owner.objects.count()).toBe(11);
+    await again.db.close();
+  });
+
+  it('layout files: a batch cut short is written again from its journal when the folder is opened', async () => {
+    const dir = folder();
+    const { db, Owner } = await open({ dir, layout: 'files' });
+    await Owner.objects.bulkCreate([{ name: 'Ada' }, { name: 'Grace' }]);
+    await db.close();
+    // The process ended in the middle of a batch: its journal there, 3.json half written, 1.json not yet.
+    const owners = path.join(dir, 'owner');
+    const text = (key, name) => JSON.stringify({ key, row: { id: key, name } });
+    fs.writeFileSync(
+      path.join(owners, '.xufa-pending.json'),
+      JSON.stringify({ write: [['1.json', text(1, 'Ada Lovelace')], ['3.json', text(3, 'Alan')]], remove: ['2.json'] })
+    );
+    fs.writeFileSync(path.join(owners, '3.json'), '{"key":3,"row":{"id"');
+    const reopened = await open({ dir, layout: 'files' });
+    expect(await reopened.Owner.objects.orderBy('id').valuesList('name', { flat: true })).toEqual(['Ada Lovelace', 'Alan']);
+    expect(fs.existsSync(path.join(owners, '.xufa-pending.json'))).toBe(false);
+    // The next key follows the keys there.
+    expect((await reopened.Owner.objects.create({ name: 'Edsger' })).pk).toBe(4);
+    await reopened.db.close();
+  });
+
+  it('layout files, watching: each file with a temporary file and a rename (the watcher reads no file half written)', async () => {
+    const dir = folder();
+    const { db, Owner } = await open({ dir, layout: 'files', watch: { delay: 20 } });
+    const names = await writtenBy(() =>
+      Owner.objects.bulkCreate(Array.from({ length: 40 }, (_, i) => ({ name: `Owner ${i}` })))
+    );
+    expect(names.some((name) => name.startsWith('.xufa-pending'))).toBe(false);
+    expect(names.filter((name) => /^\d+\.json\.\d+\.tmp$/.test(name))).toHaveLength(40);
+    await db.close();
+  });
+
   it('refuses a folder another process uses', async () => {
     const dir = folder();
     fs.mkdirSync(dir, { recursive: true });

@@ -1,0 +1,268 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>@xufa/inject: Reference · xufa</title>
+    <meta
+      name="description"
+      content="The reference of @xufa/inject: every function, class, interface and type it declares, made from its TypeScript declarations."
+    />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%23d9502b'/%3E%3Ctext x='16' y='22.5' font-family='monospace' font-size='18' font-weight='700' fill='white' text-anchor='middle'%3Ex%3C/text%3E%3C/svg%3E"
+    />
+    <link rel="stylesheet" href="../style.css?v=0.1.0" />
+    <script src="../main.js?v=0.1.0"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js" defer></script>
+  </head>
+  <body>
+    <header class="header">
+      <div class="header-inner">
+        <a class="logo" href="../index.html"><span class="logo-mark">x</span>xufa</a>
+        <nav class="nav">
+          <a href="../guide.html">Guide</a>
+          <a href="../playground.html">Playground</a>
+          <a href="../http/index.html">HTTP</a>
+          <a href="../orm/index.html">ORM</a>
+          <a class="hide-small" href="../auth/index.html">Auth</a>
+          <a class="hide-small" href="../sequelize/index.html">Sequelize</a>
+          <a class="hide-small" href="../packages.html" aria-current="page">Packages</a>
+          <a class="hide-small" href="../benchmarks.html">Benchmarks</a>
+          <a href="https://github.com/xufajs/xufa">GitHub</a>
+          <button class="theme-toggle" type="button" aria-label="Switch between light and dark theme">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+              <path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z" />
+            </svg>
+          </button>
+        </nav>
+      </div>
+    </header>
+
+    <div class="docs">
+      <button class="menu-toggle" type="button" aria-expanded="false">☰ Contents</button>
+      <aside class="sidebar">
+        <h4>Reference</h4>
+        <ul>
+          <li><a href="#functions">Functions (2)</a></li>
+          <li><a href="#constants">Constants (1)</a></li>
+          <li><a href="#interfaces">Interfaces (5)</a></li>
+          <li><a href="#types">Types (5)</a></li>
+        </ul>
+        <h4>Packages</h4>
+        <ul>
+          <li><a href="../websocket/index.html">@xufa/websocket</a></li>
+          <li><a href="../admin/index.html">@xufa/admin</a></li>
+          <li><a href="../session/index.html">@xufa/session</a></li>
+          <li><a href="../openapi/index.html">@xufa/openapi</a></li>
+          <li><a href="../client/index.html">@xufa/client</a></li>
+          <li><a href="../schema/index.html">@xufa/schema</a></li>
+          <li><a href="../pg/index.html">@xufa/pg</a></li>
+          <li><a href="../mongo/index.html">@xufa/mongo</a></li>
+          <li><a href="../expression/index.html">@xufa/expression</a></li>
+          <li><a href="../template/index.html">@xufa/template</a></li>
+          <li><a href="../cluster/index.html">@xufa/cluster</a></li>
+          <li><a href="../scheduler/index.html">@xufa/scheduler</a></li>
+          <li><a href="../queue/index.html">@xufa/queue</a></li>
+          <li><a href="../config/index.html">@xufa/config</a></li>
+          <li><a href="../discovery/index.html">@xufa/discovery</a></li>
+          <li><a href="../netcache/index.html">@xufa/netcache</a></li>
+          <li><a href="../faults/index.html">@xufa/faults</a></li>
+          <li><a href="../marshal/index.html">@xufa/marshal</a></li>
+          <li><a href="../yaml/index.html">@xufa/yaml</a></li>
+          <li><a href="../jwt/index.html">@xufa/jwt</a></li>
+          <li><a href="../logger/index.html">@xufa/logger</a></li>
+          <li><a href="../router/index.html">@xufa/router</a></li>
+          <li><a href="../serializer/index.html">@xufa/serializer</a></li>
+          <li><a href="index.html" aria-current="page">@xufa/inject</a></li>
+          <li><a href="../boot/index.html">@xufa/boot</a></li>
+          <li><a href="../errors/index.html">@xufa/errors</a></li>
+          <li><a href="../packages.html">All the packages</a></li>
+        </ul>
+      </aside>
+
+      <article class="content">
+        <nav class="package-tabs" aria-label="@xufa/inject">
+          <a href="index.html">Overview</a>
+          <a href="reference.html" aria-current="page">Reference</a>
+        </nav>
+        <h1>Reference</h1>
+        <p class="intro">
+          Fake HTTP requests to a Node.js request handler without a socket, with the API of light-my-request and no dependencies. Every declaration of its TypeScript declarations
+          (<code>packages/inject/index.d.ts</code>), as they are written, with their comments: made from them each time
+          the docs are built. How to use them is in <a href="index.html">the overview</a>.
+        </p>
+
+        <h2 id="functions">Functions</h2>
+        <p class="ref-index"><a href="#ref-isInjection"><code>isInjection</code></a>, <a href="#ref-inject"><code>inject</code></a></p>
+
+        <h3 id="ref-isInjection"><code>isInjection</code></h3>
+        <pre><code class="language-ts">export function isInjection(obj: http.IncomingMessage | http.ServerResponse): boolean;</code></pre>
+
+        <h3 id="ref-inject"><code>inject</code></h3>
+        <pre><code class="language-ts">declare function inject(dispatchFunc: inject.DispatchFunc, options?: string | inject.InjectOptions): inject.Chain;
+
+declare function inject(
+  dispatchFunc: inject.DispatchFunc,
+  options: string | inject.InjectOptions,
+  callback: inject.CallbackFunc
+): void;</code></pre>
+
+        <h2 id="constants">Constants</h2>
+        <p class="ref-index"><a href="#ref-inject"><code>inject</code></a></p>
+
+        <h3 id="ref-inject"><code>inject</code></h3>
+        <pre><code class="language-ts">export const inject: Inject;</code></pre>
+
+        <h2 id="interfaces">Interfaces</h2>
+        <p class="ref-index"><a href="#ref-AbortSignal"><code>AbortSignal</code></a>, <a href="#ref-InjectOptions"><code>InjectOptions</code></a>, <a href="#ref-Cookie"><code>Cookie</code></a>, <a href="#ref-Response"><code>Response</code></a>, <a href="#ref-Chain"><code>Chain</code></a></p>
+
+        <h3 id="ref-AbortSignal"><code>AbortSignal</code></h3>
+        <pre><code class="language-ts">export interface AbortSignal { ... }</code></pre>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>readonly aborted</code></td><td><code>boolean</code></td><td></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-InjectOptions"><code>InjectOptions</code></h3>
+        <pre><code class="language-ts">export interface InjectOptions { ... }</code></pre>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>url?</code></td><td><code>| string | { pathname: string; protocol?: string; hostname?: string; port?: string | number; query?: string | { [k: string]: string | string[] }; }</code></td><td></td></tr>
+                <tr><td><code>path?</code></td><td><code>| string | { pathname: string; protocol?: string; hostname?: string; port?: string | number; query?: string | { [k: string]: string | string[] }; }</code></td><td></td></tr>
+                <tr><td><code>headers?</code></td><td><code>http.IncomingHttpHeaders | http.OutgoingHttpHeaders</code></td><td></td></tr>
+                <tr><td><code>query?</code></td><td><code>string | { [k: string]: string | string[] }</code></td><td></td></tr>
+                <tr><td><code>simulate?</code></td><td><code>{ end: boolean; split: boolean; error: boolean; close: boolean; }</code></td><td></td></tr>
+                <tr><td><code>authority?</code></td><td><code>string</code></td><td></td></tr>
+                <tr><td><code>remoteAddress?</code></td><td><code>string</code></td><td></td></tr>
+                <tr><td><code>method?</code></td><td><code><a href="#ref-HTTPMethods">HTTPMethods</a></code></td><td></td></tr>
+                <tr><td><code>validate?</code></td><td><code>boolean</code></td><td></td></tr>
+                <tr><td><code>payload?</code></td><td><code><a href="#ref-InjectPayload">InjectPayload</a></code></td><td></td></tr>
+                <tr><td><code>body?</code></td><td><code><a href="#ref-InjectPayload">InjectPayload</a></code></td><td></td></tr>
+                <tr><td><code>server?</code></td><td><code>http.Server</code></td><td></td></tr>
+                <tr><td><code>autoStart?</code></td><td><code>boolean</code></td><td></td></tr>
+                <tr><td><code>cookies?</code></td><td><code>{ [k: string]: string }</code></td><td></td></tr>
+                <tr><td><code>signal?</code></td><td><code><a href="#ref-AbortSignal">AbortSignal</a></code></td><td></td></tr>
+                <tr><td><code>Request?</code></td><td><code>object</code></td><td></td></tr>
+                <tr><td><code>payloadAsStream?</code></td><td><code>boolean</code></td><td></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-Cookie"><code>Cookie</code></h3>
+        <pre><code class="language-ts">interface Cookie { ... }</code></pre>
+        <p>https://github.com/nfriedly/set-cookie-parser/blob/3eab8b7d5d12c8ed87832532861c1a35520cf5b3/lib/set-cookie.js#L41</p>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>name</code></td><td><code>string</code></td><td></td></tr>
+                <tr><td><code>value</code></td><td><code>string</code></td><td></td></tr>
+                <tr><td><code>expires?</code></td><td><code>Date</code></td><td></td></tr>
+                <tr><td><code>maxAge?</code></td><td><code>number</code></td><td></td></tr>
+                <tr><td><code>secure?</code></td><td><code>boolean</code></td><td></td></tr>
+                <tr><td><code>httpOnly?</code></td><td><code>boolean</code></td><td></td></tr>
+                <tr><td><code>sameSite?</code></td><td><code>string</code></td><td></td></tr>
+                <tr><td><code>[name: string]</code></td><td><code>unknown</code></td><td></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-Response"><code>Response</code></h3>
+        <pre><code class="language-ts">export interface Response { ... }</code></pre>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>raw</code></td><td><code>{ res: http.ServerResponse; req: http.IncomingMessage; }</code></td><td></td></tr>
+                <tr><td><code>rawPayload</code></td><td><code>Buffer</code></td><td></td></tr>
+                <tr><td><code>headers</code></td><td><code>http.OutgoingHttpHeaders</code></td><td></td></tr>
+                <tr><td><code>statusCode</code></td><td><code>number</code></td><td></td></tr>
+                <tr><td><code>statusMessage</code></td><td><code>string</code></td><td></td></tr>
+                <tr><td><code>trailers</code></td><td><code>{ [key: string]: string }</code></td><td></td></tr>
+                <tr><td><code>payload</code></td><td><code>string</code></td><td></td></tr>
+                <tr><td><code>body</code></td><td><code>string</code></td><td></td></tr>
+                <tr><td><code>json</code></td><td><code>&lt;T = any&gt;() =&gt; T</code></td><td></td></tr>
+                <tr><td><code>stream</code></td><td><code>() =&gt; Readable</code></td><td></td></tr>
+                <tr><td><code>cookies</code></td><td><code>Array&lt;<a href="#ref-Cookie">Cookie</a>&gt;</code></td><td></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-Chain"><code>Chain</code></h3>
+        <pre><code class="language-ts">export interface Chain extends Promise&lt;Response&gt; { ... }</code></pre>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>delete</code></td><td><code>(url: string) =&gt; <a href="#ref-Chain">Chain</a></code></td><td></td></tr>
+                <tr><td><code>get</code></td><td><code>(url: string) =&gt; <a href="#ref-Chain">Chain</a></code></td><td></td></tr>
+                <tr><td><code>head</code></td><td><code>(url: string) =&gt; <a href="#ref-Chain">Chain</a></code></td><td></td></tr>
+                <tr><td><code>options</code></td><td><code>(url: string) =&gt; <a href="#ref-Chain">Chain</a></code></td><td></td></tr>
+                <tr><td><code>patch</code></td><td><code>(url: string) =&gt; <a href="#ref-Chain">Chain</a></code></td><td></td></tr>
+                <tr><td><code>post</code></td><td><code>(url: string) =&gt; <a href="#ref-Chain">Chain</a></code></td><td></td></tr>
+                <tr><td><code>put</code></td><td><code>(url: string) =&gt; <a href="#ref-Chain">Chain</a></code></td><td></td></tr>
+                <tr><td><code>trace</code></td><td><code>(url: string) =&gt; <a href="#ref-Chain">Chain</a></code></td><td></td></tr>
+                <tr><td><code>body</code></td><td><code>(body: <a href="#ref-InjectPayload">InjectPayload</a>) =&gt; <a href="#ref-Chain">Chain</a></code></td><td></td></tr>
+                <tr><td><code>headers</code></td><td><code>(headers: http.IncomingHttpHeaders | http.OutgoingHttpHeaders) =&gt; <a href="#ref-Chain">Chain</a></code></td><td></td></tr>
+                <tr><td><code>payload</code></td><td><code>(payload: <a href="#ref-InjectPayload">InjectPayload</a>) =&gt; <a href="#ref-Chain">Chain</a></code></td><td></td></tr>
+                <tr><td><code>query</code></td><td><code>(query: string | { [k: string]: string | string[] }) =&gt; <a href="#ref-Chain">Chain</a></code></td><td></td></tr>
+                <tr><td><code>cookies</code></td><td><code>(query: object) =&gt; <a href="#ref-Chain">Chain</a></code></td><td></td></tr>
+                <tr><td><code>end()</code></td><td><code>Promise&lt;<a href="#ref-Response">Response</a>&gt;</code></td><td></td></tr>
+                <tr><td><code>end(callback: CallbackFunc)</code></td><td><code>void</code></td><td></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h2 id="types">Types</h2>
+        <p class="ref-index"><a href="#ref-HTTPMethods"><code>HTTPMethods</code></a>, <a href="#ref-Inject"><code>Inject</code></a>, <a href="#ref-DispatchFunc"><code>DispatchFunc</code></a>, <a href="#ref-CallbackFunc"><code>CallbackFunc</code></a>, <a href="#ref-InjectPayload"><code>InjectPayload</code></a></p>
+
+        <h3 id="ref-HTTPMethods"><code>HTTPMethods</code></h3>
+        <pre><code class="language-ts">type HTTPMethods =
+  | 'DELETE'
+  | 'delete'
+  | 'GET'
+  | 'get'
+  | 'HEAD'
+  | 'head'
+  | 'PATCH'
+  | 'patch'
+  | 'POST'
+  | 'post'
+  | 'PUT'
+  | 'put'
+  | 'OPTIONS'
+  | 'options';</code></pre>
+
+        <h3 id="ref-Inject"><code>Inject</code></h3>
+        <pre><code class="language-ts">type Inject = typeof inject;</code></pre>
+
+        <h3 id="ref-DispatchFunc"><code>DispatchFunc</code></h3>
+        <pre><code class="language-ts">export type DispatchFunc = http.RequestListener;</code></pre>
+
+        <h3 id="ref-CallbackFunc"><code>CallbackFunc</code></h3>
+        <pre><code class="language-ts">export type CallbackFunc = (err: Error | undefined, response: Response | undefined) =&gt; void;</code></pre>
+
+        <h3 id="ref-InjectPayload"><code>InjectPayload</code></h3>
+        <pre><code class="language-ts">export type InjectPayload = string | object | Buffer | NodeJS.ReadableStream;</code></pre>
+      </article>
+    </div>
+
+    <footer class="footer">
+      <div class="container">
+        <span>xufa is MIT licensed. &copy; Jes&uacute;s Seijas</span>
+        <span>
+          <a href="../guide.html">Guide</a> &middot; <a href="../playground.html">Playground</a> &middot; <a href="../http/index.html">HTTP</a> &middot; <a href="../orm/index.html">ORM</a> &middot; <a href="../auth/index.html">Auth</a> &middot;
+          <a href="../sequelize/index.html">Sequelize</a> &middot; <a href="../packages.html">Packages</a> &middot;
+          <a href="../benchmarks.html">Benchmarks</a> &middot; <a href="https://github.com/xufajs/xufa">GitHub</a>
+        </span>
+      </div>
+    </footer>
+  </body>
+</html>

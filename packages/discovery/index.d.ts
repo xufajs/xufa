@@ -1,4 +1,4 @@
-// Type definitions for @xufa/discovery.
+/** Type definitions for @xufa/discovery. */
 import { EventEmitter } from 'node:events';
 
 export type Transport = 'multicast' | 'broadcast' | 'unicast';

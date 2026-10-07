@@ -26,6 +26,31 @@ const { QuerySet } = require('./queryset');
 const { QueryError, FieldError, LookupError, NotFoundError, ValidationError } = require('./errors');
 const { resourceDocs } = require('./resource-openapi');
 
+// The objects of resources as components of the document of an app (components/schemas/<name>), by app (its server,
+// shared by all its plugins): name -> the JSON of the schema. A name taken by another schema keeps the documentation
+// of a resource inline (two resources of a model with other fields: openapi.component names the second).
+const components = new WeakMap();
+function componentRef(app, component) {
+  if (!component || typeof app.addSchema !== 'function') return null;
+  const { name, schema } = component;
+  const json = JSON.stringify(schema);
+  const key = app.server || app;
+  let taken = components.get(key);
+  if (!taken) {
+    taken = new Map();
+    components.set(key, taken);
+  }
+  if (taken.has(name)) return taken.get(name) === json ? `${name}#` : null;
+  const existing = typeof app.getSchema === 'function' ? app.getSchema(name) : undefined;
+  if (existing !== undefined) {
+    const { $id, ...rest } = existing;
+    return JSON.stringify(rest) === json ? `${name}#` : null;
+  }
+  app.addSchema({ $id: name, ...schema });
+  taken.set(name, json);
+  return `${name}#`;
+}
+
 const BadRequest = createError('XUFA_ORM_ERR_BAD_REQUEST', '%s', 400);
 
 const ACTIONS = ['list', 'get', 'create', 'update', 'delete'];
@@ -241,21 +266,25 @@ function resource(model, options = {}) {
         shown,
         exclude,
         serialize,
+        strict,
         tag: openapi && openapi.tag,
+        component: (openapi && openapi.component) || model.name,
       })
     : null;
 
   // The configuration of the route of an action: { auth } for @xufa/auth (auth: a rule for every action, or a rule
   // by action), and { openapi }, its documentation (`partial`: the PATCH of update).
+  let ref = null;
   const configOf = (action, partial = false) => {
     const config = {};
     const rule = auth && typeof auth === 'object' && !Array.isArray(auth) ? auth[action] : auth;
     if (rule !== undefined) config.auth = rule;
-    if (docs) config.openapi = docs(action, partial);
+    if (docs) config.openapi = docs(action, partial, ref);
     return Object.keys(config).length ? { config } : {};
   };
 
   async function plugin(app) {
+    if (docs) ref = componentRef(app, docs.component);
     if (actions.includes('list')) {
       app.get('/', configOf('list'), async (request) => {
         const qs = listQuery(scoped(request), request.query || {});

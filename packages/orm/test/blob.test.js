@@ -1,4 +1,4 @@
-// Blob backends (memory-blob, disk): models whose objects are objects of a store (a key, a body, what the store knows
+// Blob backends (memory-blob, disk, s3, azure-blob): models whose objects are objects of a store (a key, a body, what the store knows
 // and metadata), with the querysets of the ORM: what they ask the store (an object, a listing, the metadata only when
 // needed), bodies read when asked, writes (metadata alone, or the body), deletes; and, on disk, the files as they are
 // and keys that cannot leave the folder.
@@ -8,6 +8,7 @@ const path = require('node:path');
 const { Readable } = require('node:stream');
 const { Database, Model, fields, BlobValue, UniqueError, ModelError, Sum, Count } = require('..');
 const { fakeS3 } = require('./fake-s3');
+const { fakeAzure } = require('./fake-azure');
 
 function makeModel() {
   class Upload extends Model {
@@ -56,6 +57,13 @@ beforeAll(async () => {
 });
 afterAll(() => s3.close());
 
+// A server of the API of Azure Blob for the azure-blob backend (lists in pages of 2 blobs).
+let azure;
+beforeAll(async () => {
+  azure = await fakeAzure().start();
+});
+afterAll(() => azure.close());
+
 const optionsOf = (backend, dir) => {
   if (backend === 'disk') return { backend, dir };
   // The store of XUFA_S3_URL (a prefix of its own for each test).
@@ -72,6 +80,21 @@ const optionsOf = (backend, dir) => {
       createBucket: true,
     };
   }
+  if (backend === 'azure-blob') {
+    bucketCount += 1;
+    return { backend, container: `container-${bucketCount}`, connectionString: azure.connectionString, createContainer: true };
+  }
+  // The store of XUFA_AZURE_CONNECTION_STRING (a prefix of its own for each test).
+  if (backend === 'azure-real') {
+    bucketCount += 1;
+    return {
+      backend: 'azure-blob',
+      container: 'xufa-tests',
+      connectionString: process.env.XUFA_AZURE_CONNECTION_STRING,
+      prefix: `xufa-blob-${Date.now()}-${bucketCount}/`,
+      createContainer: true,
+    };
+  }
   if (backend === 's3') {
     bucketCount += 1;
     return { backend, bucket: `bucket-${bucketCount}`, endpoint: s3.endpoint, credentials: s3.credentials, createBucket: true };
@@ -79,7 +102,11 @@ const optionsOf = (backend, dir) => {
   return { backend };
 };
 
-for (const backend of ['memory-blob', 'disk', 's3', ...(process.env.XUFA_S3_URL ? ['s3-real'] : [])]) {
+const BACKENDS = ['memory-blob', 'disk', 's3', 'azure-blob'];
+if (process.env.XUFA_S3_URL) BACKENDS.push('s3-real');
+if (process.env.XUFA_AZURE_CONNECTION_STRING) BACKENDS.push('azure-real');
+
+for (const backend of BACKENDS) {
   describe(`blob backend: ${backend}`, () => {
     let db;
     let Upload;
@@ -96,7 +123,7 @@ for (const backend of ['memory-blob', 'disk', 's3', ...(process.env.XUFA_S3_URL 
     });
 
     afterEach(async () => {
-      if (backend === 's3-real') await db.drop();
+      if (backend === 's3-real' || backend === 'azure-real') await db.drop();
       await db.close();
     });
 
@@ -171,13 +198,28 @@ for (const backend of ['memory-blob', 'disk', 's3', ...(process.env.XUFA_S3_URL 
       expect(await Upload.objects.count()).toBe(0);
     });
 
+    it('creates of one key at the same time: one is made, the others are UniqueErrors (the store refuses them)', async () => {
+      const results = await Promise.allSettled(
+        ['a', 'b', 'c', 'd'].map((text) => Upload.objects.create({ key: 'race', content: text }))
+      );
+      const made = results.filter((result) => result.status === 'fulfilled');
+      const refused = results.filter((result) => result.status === 'rejected');
+      expect([made.length, refused.length]).toEqual([1, 3]);
+      expect(refused.every((result) => result.reason instanceof UniqueError)).toBe(true);
+      // The object is the one of the create that was made.
+      expect(await (await Upload.objects.get({ key: 'race' })).content.text()).toBe(made[0].value.content.toString());
+    });
+
     it('a key that is there already is a UniqueError; no transactions (the function runs)', async () => {
-      await Upload.objects.create({ key: 'one', content: 'a' });
+      const made = await Upload.objects.create({ key: 'one', content: 'a' });
+      // What the store knows of it, on the object created.
+      expect([made.size, typeof made.etag, made.updatedAt instanceof Date, made.contentType]).toEqual([1, 'string', true, 'application/octet-stream']);
       await expect(Upload.objects.create({ key: 'one', content: 'b' })).rejects.toThrow(UniqueError);
       expect(await (await Upload.objects.get({ key: 'one' })).content.text()).toBe('a');
       expect(await db.transaction(async () => Upload.objects.count())).toBe(1);
       const url = (await Upload.objects.get({ key: 'one' })).content.url();
       if (backend.startsWith('s3')) expect(await url).toMatch(/X-Amz-Signature=/);
+      else if (backend.startsWith('azure')) expect(await url).toMatch(/[?&]sig=/);
       else await expect(url).rejects.toThrow(/URLs of blobs is not supported by the/);
     });
   });

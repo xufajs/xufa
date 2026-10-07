@@ -25,3 +25,24 @@ expect<ErrorObject>().type.toHaveProperty('instancePath');
 
 // Response serializers may write bytes.
 expect<Serializer['toBuffer']>().type.toBe<((doc: any) => Buffer) | undefined>();
+
+// devErrors: the page of the errors for development, a plugin with its options.
+xufa().register(xufa.devErrors, { enabled: true, context: 7, notFound: false });
+expect(xufa().register).type.not.toBeCallableWith(xufa.devErrors, { context: 'many' });
+
+// health and maintenance: the routes of the health of the app, and the maintenance mode.
+xufa().register(xufa.health, {
+  checks: {
+    database: () => 1.5,
+    queue: { check: async () => ({ status: 'degraded', failed: 2 }), critical: false, timeout: '1s' },
+    pods: { check: () => true, heal: { after: '5m', run: (result) => result.error } },
+  },
+  interval: '10s',
+  onChange: (status, previous, report) => {
+    expect(status).type.toBe<'up' | 'degraded' | 'down'>();
+    expect(report.checks.database.duration).type.toBe<number>();
+  },
+});
+expect(xufa().register).type.not.toBeCallableWith(xufa.health, { checks: { database: 42 } });
+xufa().register(xufa.maintenance, { file: false, store: { get: async () => ({ message: 'soon', retryAfter: 60 }) } });
+expect(xufa().register).type.not.toBeCallableWith(xufa.maintenance, { store: { get: 1 } });

@@ -1,5 +1,7 @@
-// The declarations of jsonwebtoken (DefinitelyTyped, @types/jsonwebtoken 9.0.10, MIT, Copyright (c) Microsoft
-// Corporation), for @xufa/jwt: with EdDSA and ES256K among the algorithms, the option type of verify(), and the timespans of ms declared here.
+/**
+ * The declarations of jsonwebtoken (DefinitelyTyped, @types/jsonwebtoken 9.0.10, MIT, Copyright (c) Microsoft
+ * Corporation), for @xufa/jwt: with EdDSA and ES256K among the algorithms, the option type of verify(), and the timespans of ms declared here.
+ */
 /// <reference types="node" />
 
 import type { createPrivateKey, createPublicKey, KeyObject } from 'crypto';
@@ -129,7 +131,7 @@ export type VerifyCallback<T = Jwt | JwtPayload | string> = (
 
 export type SignCallback = (error: Error | null, encoded?: string | undefined) => void;
 
-// standard names https://www.rfc-editor.org/rfc/rfc7515.html#section-4.1
+/** standard names https://www.rfc-editor.org/rfc/rfc7515.html#section-4.1 */
 export interface JwtHeader {
   alg: string | Algorithm;
   typ?: string | undefined;
@@ -143,7 +145,7 @@ export interface JwtHeader {
   x5c?: string | string[] | undefined;
 }
 
-// standard claims https://datatracker.ietf.org/doc/html/rfc7519#section-4.1
+/** standard claims https://datatracker.ietf.org/doc/html/rfc7519#section-4.1 */
 export interface JwtPayload {
   [key: string]: any;
   iss?: string | undefined;
@@ -161,7 +163,7 @@ export interface Jwt {
   signature: string;
 }
 
-// https://github.com/auth0/node-jsonwebtoken#algorithms-supported
+/** https://github.com/auth0/node-jsonwebtoken#algorithms-supported */
 export type Algorithm =
   | 'HS256'
   | 'HS384'

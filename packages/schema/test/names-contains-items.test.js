@@ -1,4 +1,4 @@
-const { ArrayOf, Integer, Schema, String, compileJsonSchema, fromJsonSchema, toErrors } = require('../src');
+const { ArrayOf, Integer, Schema, String, compileJsonSchema, fromJsonSchema, toErrors } = require('..');
 
 // Errors of each value, after checking the interpreted type and the compiled functions agree.
 function errorsOf(json, values) {

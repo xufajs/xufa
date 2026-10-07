@@ -1,4 +1,4 @@
-const { When, Integer, Schema, String, Values, compileType, isJsonType } = require('../src');
+const { When, Integer, Schema, String, Values, compileType, isJsonType } = require('..');
 
 describe('When', () => {
   it('Should only check values of its JSON type', () => {

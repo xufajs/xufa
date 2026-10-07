@@ -1,0 +1,152 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>@xufa/sequelize: Benchmarks · xufa</title>
+    <meta
+      name="description"
+      content="The same Sequelize code on @xufa/sequelize and on Sequelize 6.37 with pg and sqlite3: creates, reads by key, queries, joins, bulk writes, updates and counts."
+    />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%23d9502b'/%3E%3Ctext x='16' y='22.5' font-family='monospace' font-size='18' font-weight='700' fill='white' text-anchor='middle'%3Ex%3C/text%3E%3C/svg%3E"
+    />
+    <link rel="stylesheet" href="../style.css?v=0.1.0" />
+    <script src="../main.js?v=0.1.0"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js" defer></script>
+  </head>
+  <body>
+    <header class="header">
+      <div class="header-inner">
+        <a class="logo" href="../index.html"><span class="logo-mark">x</span>xufa</a>
+        <nav class="nav">
+          <a href="../guide.html">Guide</a>
+          <a href="../playground.html">Playground</a>
+          <a href="../http/index.html">HTTP</a>
+          <a href="../orm/index.html">ORM</a>
+          <a class="hide-small" href="../auth/index.html">Auth</a>
+          <a class="hide-small" href="index.html" aria-current="page">Sequelize</a>
+          <a class="hide-small" href="../packages.html">Packages</a>
+          <a class="hide-small" href="../benchmarks.html">Benchmarks</a>
+          <a href="https://github.com/xufajs/xufa">GitHub</a>
+          <button class="theme-toggle" type="button" aria-label="Switch between light and dark theme">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+              <path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z" />
+            </svg>
+          </button>
+        </nav>
+      </div>
+    </header>
+
+    <div class="docs">
+      <button class="menu-toggle" type="button" aria-expanded="false">☰ Contents</button>
+      <aside class="sidebar">
+        <h4>Benchmarks</h4>
+        <ul>
+          <li><a href="#sequelize">Against Sequelize</a></li>
+          <li><a href="#run">Run them yourself</a></li>
+          <li><a href="../orm/benchmarks.html">The ORM's own API</a></li>
+        </ul>
+      </aside>
+
+      <article class="content">
+        <nav class="package-tabs" aria-label="@xufa/sequelize">
+          <a href="index.html">Overview</a>
+          <a href="guide.html">Guide</a>
+          <a href="benchmarks.html" aria-current="page">Benchmarks</a>
+        </nav>
+        <h1>Benchmarks</h1>
+        <p class="intro">
+          The same Sequelize code on <code>@xufa/sequelize</code> and on Sequelize 6 as it installs (<code>pg</code>,
+          <code>sqlite3</code>), with the ORM's own API next to them, on the same models, data and machine. Each library runs
+          every round in a process of its own; the median of the rounds is shown, with how many times Sequelize's it is
+          (⚠: rounds more than 10% apart).
+        </p>
+        <h2 id="sequelize">Against Sequelize</h2>
+        <p>
+          <code>@xufa/orm</code> on its own drivers, Sequelize 6.37.8 on <code>pg</code> and <code>sqlite3</code> as it
+          installs them, and the same Sequelize code on <code>@xufa/sequelize</code>. Next to each number, how many times
+          Sequelize's it is; more is better.
+        </p>
+        <div class="charts">
+          <div class="chart">
+            <h3>PostgreSQL: findByPk, 64 at once</h3>
+            <p class="subtitle">Operations per second. More is better.</p>
+            <div class="chart-row us win"><span class="name">@xufa/orm</span><span class="track"><span class="fill" style="width: 100%"></span></span><span class="value">76,651</span></div>
+            <div class="chart-row us win"><span class="name">@xufa/sequelize</span><span class="track"><span class="fill" style="width: 92.9%"></span></span><span class="value">71,194</span></div>
+            <div class="chart-row"><span class="name">Sequelize 6</span><span class="track"><span class="fill" style="width: 11.7%"></span></span><span class="value">8,948</span></div>
+          </div>
+          <div class="chart">
+            <h3>SQLite: create, one at a time</h3>
+            <p class="subtitle">Operations per second. More is better.</p>
+            <div class="chart-row us win"><span class="name">@xufa/orm</span><span class="track"><span class="fill" style="width: 100%"></span></span><span class="value">49,153</span></div>
+            <div class="chart-row us win"><span class="name">@xufa/sequelize</span><span class="track"><span class="fill" style="width: 85%"></span></span><span class="value">41,788</span></div>
+            <div class="chart-row"><span class="name">Sequelize 6</span><span class="track"><span class="fill" style="width: 7.9%"></span></span><span class="value">3,886</span></div>
+          </div>
+        </div>
+        <h3>PostgreSQL</h3>
+        <div class="table-wrap">
+          <table class="numbers">
+            <thead><tr><th>Workload</th><th>@xufa/orm</th><th>@xufa/sequelize</th><th>Sequelize 6</th></tr></thead>
+            <tbody>
+              <tr><td>create (one at a time) <small>(ops/s)</small></td><td>5,010 <small><strong>2.59&times;</strong> ⚠</small></td><td>4,863 <small><strong>2.52&times;</strong> ⚠</small></td><td>1,931</td></tr>
+              <tr><td>findByPk (one at a time) <small>(ops/s)</small></td><td>12,368 <small><strong>2.88&times;</strong> ⚠</small></td><td>10,591 <small><strong>2.47&times;</strong> ⚠</small></td><td>4,291</td></tr>
+              <tr><td>findByPk (64 at once) <small>(ops/s)</small></td><td>76,651 <small><strong>8.57&times;</strong> ⚠</small></td><td>71,194 <small><strong>7.96&times;</strong> ⚠</small></td><td>8,948</td></tr>
+              <tr><td>findAll where, order, limit 100 <small>(ops/s)</small></td><td>691 <small><strong>1.33&times;</strong> ⚠</small></td><td>676 <small><strong>1.30&times;</strong> ⚠</small></td><td>519</td></tr>
+              <tr><td>findAll, 10k rows <small>(rows/s)</small></td><td>504,875 <small><strong>2.36&times;</strong> ⚠</small></td><td>591,527 <small><strong>2.77&times;</strong> ⚠</small></td><td>213,691</td></tr>
+              <tr><td>findAll with author (join), 1k rows <small>(rows/s)</small></td><td>479,744 <small><strong>4.04&times;</strong> ⚠</small></td><td>421,445 <small><strong>3.55&times;</strong> ⚠</small></td><td>118,834</td></tr>
+              <tr><td>bulkCreate, 1000 per call <small>(rows/s)</small></td><td>70,835 <small><strong>2.21&times;</strong> ⚠</small></td><td>71,370 <small><strong>2.23&times;</strong> ⚠</small></td><td>32,063</td></tr>
+              <tr><td>update where (many rows) <small>(ops/s)</small></td><td>20 <small>0.99&times; ⚠</small></td><td>21 <small>1.04&times; ⚠</small></td><td>20</td></tr>
+              <tr><td>count where <small>(ops/s)</small></td><td>1,342 <small>1.10&times; ⚠</small></td><td>1,407 <small>1.16&times; ⚠</small></td><td>1,215</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <h3>SQLite</h3>
+        <div class="table-wrap">
+          <table class="numbers">
+            <thead><tr><th>Workload</th><th>@xufa/orm</th><th>@xufa/sequelize</th><th>Sequelize 6</th></tr></thead>
+            <tbody>
+              <tr><td>create (one at a time) <small>(ops/s)</small></td><td>49,153 <small><strong>12.65&times;</strong></small></td><td>41,788 <small><strong>10.75&times;</strong></small></td><td>3,886</td></tr>
+              <tr><td>findByPk (one at a time) <small>(ops/s)</small></td><td>49,174 <small><strong>12.26&times;</strong> ⚠</small></td><td>63,627 <small><strong>15.87&times;</strong> ⚠</small></td><td>4,011</td></tr>
+              <tr><td>findByPk (64 at once) <small>(ops/s)</small></td><td>70,381 <small><strong>9.57&times;</strong> ⚠</small></td><td>133,556 <small><strong>18.15&times;</strong> ⚠</small></td><td>7,357</td></tr>
+              <tr><td>findAll where, order, limit 100 <small>(ops/s)</small></td><td>333 <small><strong>1.39&times;</strong></small></td><td>331 <small><strong>1.38&times;</strong></small></td><td>239</td></tr>
+              <tr><td>findAll, 10k rows <small>(rows/s)</small></td><td>363,264 <small><strong>2.93&times;</strong> ⚠</small></td><td>386,479 <small><strong>3.12&times;</strong> ⚠</small></td><td>124,006</td></tr>
+              <tr><td>findAll with author (join), 1k rows <small>(rows/s)</small></td><td>286,177 <small><strong>3.84&times;</strong> ⚠</small></td><td>288,235 <small><strong>3.87&times;</strong> ⚠</small></td><td>74,475</td></tr>
+              <tr><td>bulkCreate, 1000 per call <small>(rows/s)</small></td><td>188,382 <small><strong>2.27&times;</strong></small></td><td>189,316 <small><strong>2.28&times;</strong></small></td><td>82,957</td></tr>
+              <tr><td>update where (many rows) <small>(ops/s)</small></td><td>628 <small><strong>1.30&times;</strong></small></td><td>566 <small><strong>1.18&times;</strong></small></td><td>481</td></tr>
+              <tr><td>count where <small>(ops/s)</small></td><td>3,351 <small><strong>1.70&times;</strong> ⚠</small></td><td>3,281 <small><strong>1.67&times;</strong> ⚠</small></td><td>1,966</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p>
+          Where the database does the work (an update of thousands of rows, a sort of a big table), the libraries are about
+          even: the time is the database's. Where the library does the work (building queries, making objects, the round
+          trips of the driver), xufa is from 2 to 18 times faster. <code>@xufa/sequelize</code> is faster than the
+          ORM's own API at <code>findByPk</code>: it reads one row, where the ORM's <code>get()</code> asks for a few to
+          make sure only one matches (as Django does).
+        </p>
+
+
+        <h2 id="run">Run them yourself</h2>
+        <pre><code class="language-sh">node bench/orm.js --orms xufa-sequelize,sequelize        # the same Sequelize code, on each
+node bench/orm.js --orms xufa-sequelize,sequelize,sequelize-xufa-pg --dialects postgres</code></pre>
+        <p>
+          <code>sequelize-xufa-pg</code> is Sequelize on <a href="../pg/index.html">@xufa/pg</a>: what the driver alone gives. The
+          tables are <code>bench_author</code> and <code>bench_book</code>, dropped before and after.
+        </p>
+      </article>
+    </div>
+
+    <footer class="footer">
+      <div class="container">
+        <span>xufa is MIT licensed. &copy; Jes&uacute;s Seijas</span>
+        <span>
+          <a href="../guide.html">Guide</a> &middot; <a href="../playground.html">Playground</a> &middot; <a href="../http/index.html">HTTP</a> &middot; <a href="../orm/index.html">ORM</a> &middot; <a href="../auth/index.html">Auth</a> &middot;
+          <a href="index.html">Sequelize</a> &middot; <a href="../packages.html">Packages</a> &middot;
+          <a href="../benchmarks.html">Benchmarks</a> &middot; <a href="https://github.com/xufajs/xufa">GitHub</a>
+        </span>
+      </div>
+    </footer>
+  </body>
+</html>

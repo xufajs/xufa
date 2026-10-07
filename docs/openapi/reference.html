@@ -1,0 +1,447 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>@xufa/openapi: Reference · xufa</title>
+    <meta
+      name="description"
+      content="The reference of @xufa/openapi: every function, class, interface and type it declares, made from its TypeScript declarations."
+    />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%23d9502b'/%3E%3Ctext x='16' y='22.5' font-family='monospace' font-size='18' font-weight='700' fill='white' text-anchor='middle'%3Ex%3C/text%3E%3C/svg%3E"
+    />
+    <link rel="stylesheet" href="../style.css?v=0.1.0" />
+    <script src="../main.js?v=0.1.0"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js" defer></script>
+  </head>
+  <body>
+    <header class="header">
+      <div class="header-inner">
+        <a class="logo" href="../index.html"><span class="logo-mark">x</span>xufa</a>
+        <nav class="nav">
+          <a href="../guide.html">Guide</a>
+          <a href="../playground.html">Playground</a>
+          <a href="../http/index.html">HTTP</a>
+          <a href="../orm/index.html">ORM</a>
+          <a class="hide-small" href="../auth/index.html">Auth</a>
+          <a class="hide-small" href="../sequelize/index.html">Sequelize</a>
+          <a class="hide-small" href="../packages.html" aria-current="page">Packages</a>
+          <a class="hide-small" href="../benchmarks.html">Benchmarks</a>
+          <a href="https://github.com/xufajs/xufa">GitHub</a>
+          <button class="theme-toggle" type="button" aria-label="Switch between light and dark theme">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+              <path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z" />
+            </svg>
+          </button>
+        </nav>
+      </div>
+    </header>
+
+    <div class="docs">
+      <button class="menu-toggle" type="button" aria-expanded="false">☰ Contents</button>
+      <aside class="sidebar">
+        <h4>Reference</h4>
+        <ul>
+          <li><a href="#functions">Functions (4)</a></li>
+          <li><a href="#classes">Classes (3)</a></li>
+          <li><a href="#constants">Constants (2)</a></li>
+          <li><a href="#interfaces">Interfaces (16)</a></li>
+          <li><a href="#types">Types (9)</a></li>
+        </ul>
+        <h4>Packages</h4>
+        <ul>
+          <li><a href="../websocket/index.html">@xufa/websocket</a></li>
+          <li><a href="../admin/index.html">@xufa/admin</a></li>
+          <li><a href="../session/index.html">@xufa/session</a></li>
+          <li><a href="index.html" aria-current="page">@xufa/openapi</a></li>
+          <li><a href="../client/index.html">@xufa/client</a></li>
+          <li><a href="../schema/index.html">@xufa/schema</a></li>
+          <li><a href="../pg/index.html">@xufa/pg</a></li>
+          <li><a href="../mongo/index.html">@xufa/mongo</a></li>
+          <li><a href="../expression/index.html">@xufa/expression</a></li>
+          <li><a href="../template/index.html">@xufa/template</a></li>
+          <li><a href="../cluster/index.html">@xufa/cluster</a></li>
+          <li><a href="../scheduler/index.html">@xufa/scheduler</a></li>
+          <li><a href="../queue/index.html">@xufa/queue</a></li>
+          <li><a href="../config/index.html">@xufa/config</a></li>
+          <li><a href="../discovery/index.html">@xufa/discovery</a></li>
+          <li><a href="../netcache/index.html">@xufa/netcache</a></li>
+          <li><a href="../faults/index.html">@xufa/faults</a></li>
+          <li><a href="../marshal/index.html">@xufa/marshal</a></li>
+          <li><a href="../yaml/index.html">@xufa/yaml</a></li>
+          <li><a href="../jwt/index.html">@xufa/jwt</a></li>
+          <li><a href="../logger/index.html">@xufa/logger</a></li>
+          <li><a href="../router/index.html">@xufa/router</a></li>
+          <li><a href="../serializer/index.html">@xufa/serializer</a></li>
+          <li><a href="../inject/index.html">@xufa/inject</a></li>
+          <li><a href="../boot/index.html">@xufa/boot</a></li>
+          <li><a href="../errors/index.html">@xufa/errors</a></li>
+          <li><a href="../packages.html">All the packages</a></li>
+        </ul>
+      </aside>
+
+      <article class="content">
+        <nav class="package-tabs" aria-label="@xufa/openapi">
+          <a href="index.html">Overview</a>
+          <a href="reference.html" aria-current="page">Reference</a>
+        </nav>
+        <h1>Reference</h1>
+        <p class="intro">
+          OpenAPI 3 and Swagger 2 documents of the routes of an app, with the API of @fastify/swagger and its tests, and an explorer; without dependencies but @xufa/yaml. Every declaration of its TypeScript declarations
+          (<code>packages/openapi/index.d.ts</code>), as they are written, with their comments: made from them each time
+          the docs are built. How to use them is in <a href="index.html">the overview</a>.
+        </p>
+
+        <h2 id="functions">Functions</h2>
+        <p class="ref-index"><a href="#ref-formatParamUrl"><code>formatParamUrl</code></a>, <a href="#ref-bundle"><code>bundle</code></a>, <a href="#ref-fromSwagger2"><code>fromSwagger2</code></a>, <a href="#ref-fastifySwagger"><code>fastifySwagger</code></a></p>
+
+        <h3 id="ref-formatParamUrl"><code>formatParamUrl</code></h3>
+        <pre><code class="language-ts">export function formatParamUrl(paramUrl: string): string;</code></pre>
+
+        <h3 id="ref-bundle"><code>bundle</code></h3>
+        <pre><code class="language-ts">export function bundle(
+    source: string | Record&lt;string, unknown&gt;,
+    options?: { baseDir?: string; remote?: boolean; fetch?: typeof globalThis.fetch }
+  ): Promise&lt;OpenAPIV3.Document &amp; Record&lt;string, unknown&gt;&gt;;</code></pre>
+        <p>A document split in files as one: schemas of other files in its schemas, the rest written in.</p>
+
+        <h3 id="ref-fromSwagger2"><code>fromSwagger2</code></h3>
+        <pre><code class="language-ts">export function fromSwagger2(document: OpenAPIV2.Document | Record&lt;string, unknown&gt;): OpenAPIV3.Document;</code></pre>
+        <p>A Swagger 2.0 document as OpenAPI 3.0.3.</p>
+
+        <h3 id="ref-fastifySwagger"><code>fastifySwagger</code></h3>
+        <pre><code class="language-ts">declare function fastifySwagger(...params: Parameters&lt;XufaSwagger&gt;): ReturnType&lt;XufaSwagger&gt;;</code></pre>
+
+        <h2 id="classes">Classes</h2>
+        <p class="ref-index"><a href="#ref-OpenapiError"><code>OpenapiError</code></a>, <a href="#ref-BundleError"><code>BundleError</code></a>, <a href="#ref-ResponseValidationError"><code>ResponseValidationError</code></a></p>
+
+        <h3 id="ref-OpenapiError"><code>OpenapiError</code></h3>
+        <pre><code class="language-ts">export class OpenapiError extends Error { ... }</code></pre>
+
+        <h3 id="ref-BundleError"><code>BundleError</code></h3>
+        <pre><code class="language-ts">export class BundleError extends Error { ... }</code></pre>
+
+        <h3 id="ref-ResponseValidationError"><code>ResponseValidationError</code></h3>
+        <pre><code class="language-ts">export class ResponseValidationError extends OpenapiError { ... }</code></pre>
+        <p>A response out of its contract (500).</p>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>code</code></td><td><code>'XUFA_OPENAPI_INVALID_RESPONSE'</code></td><td></td></tr>
+                <tr><td><code>statusCode</code></td><td><code>500</code></td><td></td></tr>
+                <tr><td><code>errors</code></td><td><code>Array&lt;{ instancePath: string; message?: string; keyword: string; params: Record&lt;string, unknown&gt; }&gt;</code></td><td></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h2 id="constants">Constants</h2>
+        <p class="ref-index"><a href="#ref-operations"><code>operations</code></a>, <a href="#ref-fastifySwagger"><code>fastifySwagger</code></a></p>
+
+        <h3 id="ref-operations"><code>operations</code></h3>
+        <pre><code class="language-ts">export const operations: XufaPluginCallback&lt;OperationsOptions&gt;;</code></pre>
+        <p>Routes made from an OpenAPI 3 document (design first).</p>
+
+        <h3 id="ref-fastifySwagger"><code>fastifySwagger</code></h3>
+        <pre><code class="language-ts">export const fastifySwagger: XufaSwagger;</code></pre>
+
+        <h2 id="interfaces">Interfaces</h2>
+        <p class="ref-index"><a href="#ref-OAuth2SecurityScheme"><code>OAuth2SecurityScheme</code></a>, <a href="#ref-SecuritySchemeOauth2Base"><code>SecuritySchemeOauth2Base</code></a>, <a href="#ref-XufaRequest"><code>XufaRequest</code></a>, <a href="#ref-XufaInstance"><code>XufaInstance</code></a>, <a href="#ref-XufaSchema"><code>XufaSchema</code></a>, <a href="#ref-RouteShorthandOptions"><code>RouteShorthandOptions</code></a>, <a href="#ref-XufaContextConfig"><code>XufaContextConfig</code></a>, <a href="#ref-TagObject"><code>TagObject</code></a>, <a href="#ref-ServerObject"><code>ServerObject</code></a>, <a href="#ref-XufaSwaggerOptions"><code>XufaSwaggerOptions</code></a>, <a href="#ref-JSONObject"><code>JSONObject</code></a>, <a href="#ref-XufaDynamicSwaggerOptions"><code>XufaDynamicSwaggerOptions</code></a>, <a href="#ref-StaticPathSpec"><code>StaticPathSpec</code></a>, <a href="#ref-StaticDocumentSpec"><code>StaticDocumentSpec</code></a>, <a href="#ref-XufaStaticSwaggerOptions"><code>XufaStaticSwaggerOptions</code></a>, <a href="#ref-OperationsOptions"><code>OperationsOptions</code></a></p>
+
+        <h3 id="ref-OAuth2SecurityScheme"><code>OAuth2SecurityScheme</code></h3>
+        <pre><code class="language-ts">interface OAuth2SecurityScheme { ... }</code></pre>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>'x-tokenName'?</code></td><td><code>string</code></td><td></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-SecuritySchemeOauth2Base"><code>SecuritySchemeOauth2Base</code></h3>
+        <pre><code class="language-ts">interface SecuritySchemeOauth2Base { ... }</code></pre>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>'x-tokenName'?</code></td><td><code>string</code></td><td></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-XufaRequest"><code>XufaRequest</code></h3>
+        <pre><code class="language-ts">interface XufaRequest { ... }</code></pre>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>operation</code></td><td><code>{ id: string; /** Throws the error of the validation of the request (with attachValidation: true). */ validateRequest(): void; /** Throws a <a href="#ref-ResponseValidationError">ResponseValidationError</a> when the payload does not match the schema of the status (200). */ validateResponse(payload: unknown, status?: number): void; } | null</code></td><td><p>The operation of a route of openapi.operations (null on other routes).</p></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-XufaInstance"><code>XufaInstance</code></h3>
+        <pre><code class="language-ts">interface XufaInstance { ... }</code></pre>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>swagger</code></td><td><code>((opts?: { yaml?: false }) =&gt; OpenAPI.<a href="#ref-Document">Document</a>) &amp; ((opts: { yaml: true }) =&gt; string) &amp; ((opts: { yaml: boolean }) =&gt; OpenAPI.<a href="#ref-Document">Document</a> | string)</code></td><td></td></tr>
+                <tr><td><code>swaggerCSP</code></td><td><code>{ script: string[]; style: string[]; }</code></td><td></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-XufaSchema"><code>XufaSchema</code></h3>
+        <pre><code class="language-ts">interface XufaSchema { ... }</code></pre>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>hide?</code></td><td><code>boolean</code></td><td></td></tr>
+                <tr><td><code>deprecated?</code></td><td><code>boolean</code></td><td></td></tr>
+                <tr><td><code>tags?</code></td><td><code>readonly string[]</code></td><td></td></tr>
+                <tr><td><code>description?</code></td><td><code>string</code></td><td></td></tr>
+                <tr><td><code>summary?</code></td><td><code>string</code></td><td></td></tr>
+                <tr><td><code>consumes?</code></td><td><code>readonly string[]</code></td><td></td></tr>
+                <tr><td><code>produces?</code></td><td><code>readonly string[]</code></td><td></td></tr>
+                <tr><td><code>externalDocs?</code></td><td><code>OpenAPIV2.ExternalDocumentationObject | OpenAPIV3.ExternalDocumentationObject</code></td><td></td></tr>
+                <tr><td><code>security?</code></td><td><code>ReadonlyArray&lt;{ [securityLabel: string]: readonly string[] }&gt;</code></td><td></td></tr>
+                <tr><td><code>operationId?</code></td><td><code>string</code></td><td><p>OpenAPI operation unique identifier</p></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-RouteShorthandOptions"><code>RouteShorthandOptions</code></h3>
+        <pre><code class="language-ts">interface RouteShorthandOptions { ... }</code></pre>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>links?</code></td><td><code>{ [statusCode: string]: OpenAPIV3.ResponseObject['links']; }</code></td><td></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-XufaContextConfig"><code>XufaContextConfig</code></h3>
+        <pre><code class="language-ts">interface XufaContextConfig { ... }</code></pre>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>openapi?</code></td><td><code><a href="#ref-XufaSchema">XufaSchema</a> &amp; Record&lt;string, unknown&gt;</code></td><td><p>Documentation of the route (@xufa/openapi): a schema only described, under its own schema.</p></td></tr>
+                <tr><td><code>swaggerTransform?</code></td><td><code><a href="#ref-fastifySwagger">fastifySwagger</a>.<a href="#ref-SwaggerTransform">SwaggerTransform</a> | false</code></td><td></td></tr>
+                <tr><td><code>swagger?</code></td><td><code>{ exposeHeadRoute?: boolean; }</code></td><td></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-TagObject"><code>TagObject</code></h3>
+        <pre><code class="language-ts">export interface TagObject extends OpenAPIV3.TagObject { ... }</code></pre>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>summary?</code></td><td><code>string</code></td><td></td></tr>
+                <tr><td><code>parent?</code></td><td><code>string</code></td><td></td></tr>
+                <tr><td><code>kind?</code></td><td><code>string</code></td><td></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-ServerObject"><code>ServerObject</code></h3>
+        <pre><code class="language-ts">export interface ServerObject extends OpenAPIV3_1.ServerObject { ... }</code></pre>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>name?</code></td><td><code>string</code></td><td></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-XufaSwaggerOptions"><code>XufaSwaggerOptions</code></h3>
+        <pre><code class="language-ts">export interface XufaSwaggerOptions { ... }</code></pre>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>mode?</code></td><td><code>'static' | 'dynamic'</code></td><td></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-JSONObject"><code>JSONObject</code></h3>
+        <pre><code class="language-ts">export interface JSONObject { ... }</code></pre>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>[key: string]</code></td><td><code><a href="#ref-JSONValue">JSONValue</a></code></td><td></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-XufaDynamicSwaggerOptions"><code>XufaDynamicSwaggerOptions</code></h3>
+        <pre><code class="language-ts">export interface XufaDynamicSwaggerOptions extends XufaSwaggerOptions { ... }</code></pre>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>mode?</code></td><td><code>'dynamic'</code></td><td></td></tr>
+                <tr><td><code>xufa?</code></td><td><code>boolean</code></td><td><p>false: without what xufa adds (config.openapi of routes, security of</p></td></tr>
+                <tr><td><code>swagger?</code></td><td><code>Partial&lt;OpenAPIV2.<a href="#ref-Document">Document</a>&gt;</code></td><td></td></tr>
+                <tr><td><code>openapi?</code></td><td><code>Partial&lt;OpenAPIV3.<a href="#ref-Document">Document</a> | OpenAPIV3_1.<a href="#ref-Document">Document</a> | OpenAPIV3_2.<a href="#ref-Document">Document</a>&gt;</code></td><td></td></tr>
+                <tr><td><code>hiddenTag?</code></td><td><code>string</code></td><td></td></tr>
+                <tr><td><code>hideUntagged?</code></td><td><code>boolean</code></td><td></td></tr>
+                <tr><td><code>exposeHeadRoutes?</code></td><td><code>boolean</code></td><td><p>Include HEAD routes in the definitions</p></td></tr>
+                <tr><td><code>stripBasePath?</code></td><td><code>boolean</code></td><td><p>Strips matching base path from routes in documentation</p><ul class="ref-tags"><li>Default: <code>true</code></li></ul></td></tr>
+                <tr><td><code>transform?</code></td><td><code><a href="#ref-SwaggerTransform">SwaggerTransform</a></code></td><td><p>custom function to transform the route's schema and url</p></td></tr>
+                <tr><td><code>transformObject?</code></td><td><code><a href="#ref-SwaggerTransformObject">SwaggerTransformObject</a></code></td><td><p>custom function to transform the openapi or swagger object before it is rendered</p></td></tr>
+                <tr><td><code>decorator?</code></td><td><code>'swagger' | (string &amp; Record&lt;never, never&gt;)</code></td><td><p>Overrides the Xufa decorator.</p></td></tr>
+                <tr><td><code>refResolver?</code></td><td><code>{ /** Clone the input schema without changing it. Default to `false`. */ clone?: boolean; buildLocalReference: ( /** The `json` that is being resolved. */ json: <a href="#ref-JSONObject">JSONObject</a>, /** The `baseUri` object of the schema. */ baseUri: { scheme?: string; userinfo?: string; host?: string; port?: number | string; path?: string; query?: string; fragment?: string; reference?: string; error?: string; }, /** `fragment` is the `$ref` string when the `$ref` is a relative reference. */ fragment: string, /** `i` is a local counter to generate a unique key. */ i: number ) =&gt; string; }</code></td><td></td></tr>
+                <tr><td><code>convertConstToEnum?</code></td><td><code>boolean</code></td><td><p>Whether to convert const definitions to enum definitions. const support was added in OpenAPI 3.1, but not all tools support it. This option only affects OpenAPI documents.</p><ul class="ref-tags"><li>Default: <code>true</code></li></ul></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-StaticPathSpec"><code>StaticPathSpec</code></h3>
+        <pre><code class="language-ts">export interface StaticPathSpec { ... }</code></pre>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>path</code></td><td><code>string</code></td><td></td></tr>
+                <tr><td><code>postProcessor?</code></td><td><code>(spec: OpenAPI.<a href="#ref-Document">Document</a>) =&gt; OpenAPI.<a href="#ref-Document">Document</a></code></td><td></td></tr>
+                <tr><td><code>baseDir</code></td><td><code>string</code></td><td></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-StaticDocumentSpec"><code>StaticDocumentSpec</code></h3>
+        <pre><code class="language-ts">export interface StaticDocumentSpec { ... }</code></pre>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>document</code></td><td><code>OpenAPIV2.<a href="#ref-Document">Document</a> | OpenAPIV3.<a href="#ref-Document">Document</a></code></td><td></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-XufaStaticSwaggerOptions"><code>XufaStaticSwaggerOptions</code></h3>
+        <pre><code class="language-ts">export interface XufaStaticSwaggerOptions extends XufaSwaggerOptions { ... }</code></pre>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>mode</code></td><td><code>'static'</code></td><td></td></tr>
+                <tr><td><code>specification</code></td><td><code><a href="#ref-StaticPathSpec">StaticPathSpec</a> | <a href="#ref-StaticDocumentSpec">StaticDocumentSpec</a></code></td><td></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-OperationsOptions"><code>OperationsOptions</code></h3>
+        <pre><code class="language-ts">export interface OperationsOptions { ... }</code></pre>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>document?</code></td><td><code>OpenAPIV3.<a href="#ref-Document">Document</a> | OpenAPIV3_1.<a href="#ref-Document">Document</a> | Record&lt;string, unknown&gt;</code></td><td><p>The OpenAPI 3 (or Swagger 2.0) document, or the path of its file (JSON or YAML); its $refs to other files are taken in.</p></td></tr>
+                <tr><td><code>path?</code></td><td><code>string</code></td><td></td></tr>
+                <tr><td><code>handlers?</code></td><td><code>Record&lt;string, <a href="#ref-OperationHandler">OperationHandler</a>&gt;</code></td><td><p>The handlers by operationId (or "METHOD /path"): the others answer 501.</p></td></tr>
+                <tr><td><code>missing?</code></td><td><code>'answer' | 'throw'</code></td><td><p>'throw': every operation needs a handler.</p></td></tr>
+                <tr><td><code>schemaPrefix?</code></td><td><code>string</code></td><td><p>Before the names of the shared schemas of components.schemas.</p></td></tr>
+                <tr><td><code>security?</code></td><td><code>Record&lt;string, string&gt;</code></td><td><p>The strategy of</p></td></tr>
+                <tr><td><code>baseDir?</code></td><td><code>string</code></td><td><p>The folder the relative $refs of a document given are of (the working directory).</p></td></tr>
+                <tr><td><code>remote?</code></td><td><code>boolean</code></td><td><p>$refs to URLs are fetched (false: they are refused).</p></td></tr>
+                <tr><td><code>validateResponses?</code></td><td><code>boolean</code></td><td><p>What a handler answers is checked against the schema of its status (a 500 when it does not match).</p></td></tr>
+                <tr><td><code>missingStatus?</code></td><td><code>501 | 404</code></td><td><p>What operations without a handler answer (501).</p></td></tr>
+                <tr><td><code>requestIdHeader?</code></td><td><code>string</code></td><td><p>The header the id of each request is answered in (x-request-id).</p></td></tr>
+                <tr><td><code>prefix?</code></td><td><code>string</code></td><td></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h2 id="types">Types</h2>
+        <p class="ref-index"><a href="#ref-SwaggerDocumentObject"><code>SwaggerDocumentObject</code></a>, <a href="#ref-XufaSwagger"><code>XufaSwagger</code></a>, <a href="#ref-PathItemObject"><code>PathItemObject</code></a>, <a href="#ref-Document"><code>Document</code></a>, <a href="#ref-SwaggerOptions"><code>SwaggerOptions</code></a>, <a href="#ref-JSONValue"><code>JSONValue</code></a>, <a href="#ref-SwaggerTransform"><code>SwaggerTransform</code></a>, <a href="#ref-SwaggerTransformObject"><code>SwaggerTransformObject</code></a>, <a href="#ref-OperationHandler"><code>OperationHandler</code></a></p>
+
+        <h3 id="ref-SwaggerDocumentObject"><code>SwaggerDocumentObject</code></h3>
+        <pre><code class="language-ts">type SwaggerDocumentObject =
+  | {
+      swaggerObject: Partial&lt;OpenAPIV2.Document&gt;;
+    }
+  | {
+      // eslint-disable-next-line camelcase
+      openapiObject: Partial&lt;OpenAPIV3.Document | OpenAPIV3_1.Document | fastifySwagger.OpenAPIV3_2.Document&gt;;
+    };</code></pre>
+
+        <h3 id="ref-XufaSwagger"><code>XufaSwagger</code></h3>
+        <pre><code class="language-ts">type XufaSwagger = XufaPluginCallback&lt;fastifySwagger.SwaggerOptions&gt;;</code></pre>
+
+        <h3 id="ref-PathItemObject"><code>PathItemObject</code></h3>
+        <pre><code class="language-ts">export type PathItemObject&lt;T extends {} = {}&gt; = OpenAPIV3_1.PathItemObject&lt;T&gt; &amp; {
+    // eslint-disable-next-line camelcase
+    query?: OpenAPIV3_1.OperationObject&lt;T&gt;;
+    /** Operations of the HTTP methods without a fixed field, keyed by the method as sent in the request */
+    // eslint-disable-next-line camelcase
+    additionalOperations?: Record&lt;string, OpenAPIV3_1.OperationObject&lt;T&gt;&gt;;
+  };</code></pre>
+
+        <h3 id="ref-Document"><code>Document</code></h3>
+        <pre><code class="language-ts">export type Document&lt;T extends {} = {}&gt; = Omit&lt;OpenAPIV3_1.Document&lt;T&gt;, 'tags' | 'servers' | 'paths'&gt; &amp; {
+    $self?: string;
+    tags?: TagObject[];
+    servers?: ServerObject[];
+    paths?: Record&lt;string, PathItemObject&lt;T&gt; | undefined&gt;;
+  };</code></pre>
+
+        <h3 id="ref-SwaggerOptions"><code>SwaggerOptions</code></h3>
+        <pre><code class="language-ts">export type SwaggerOptions = XufaStaticSwaggerOptions | XufaDynamicSwaggerOptions;</code></pre>
+
+        <h3 id="ref-JSONValue"><code>JSONValue</code></h3>
+        <pre><code class="language-ts">type JSONValue = string | null | number | boolean | JSONObject | Array&lt;JSONValue&gt;;</code></pre>
+
+        <h3 id="ref-SwaggerTransform"><code>SwaggerTransform</code></h3>
+        <pre><code class="language-ts">export type SwaggerTransform&lt;S extends XufaSchema = XufaSchema&gt; = ({
+    schema,
+    url,
+    route,
+    ...documentObject
+  }: {
+    schema: S;
+    url: string;
+    route: RouteOptions;
+  } &amp; SwaggerDocumentObject) =&gt; { schema: XufaSchema; url: string };</code></pre>
+
+        <h3 id="ref-SwaggerTransformObject"><code>SwaggerTransformObject</code></h3>
+        <pre><code class="language-ts">export type SwaggerTransformObject = (
+    documentObject: SwaggerDocumentObject
+  ) =&gt; Partial&lt;OpenAPIV2.Document&gt; | Partial&lt;OpenAPIV3.Document | OpenAPIV3_1.Document | OpenAPIV3_2.Document&gt;;</code></pre>
+
+        <h3 id="ref-OperationHandler"><code>OperationHandler</code></h3>
+        <pre><code class="language-ts">export type OperationHandler =
+  | RouteOptions['handler']
+  | (Partial&lt;RouteOptions&gt; &amp; {
+      handler: RouteOptions['handler'];
+      /** Checks its responses (validateResponses by default). */ validateResponse?: boolean;
+    });</code></pre>
+        <p>A handler of an operation, or the options of its route (with its handler).</p>
+      </article>
+    </div>
+
+    <footer class="footer">
+      <div class="container">
+        <span>xufa is MIT licensed. &copy; Jes&uacute;s Seijas</span>
+        <span>
+          <a href="../guide.html">Guide</a> &middot; <a href="../playground.html">Playground</a> &middot; <a href="../http/index.html">HTTP</a> &middot; <a href="../orm/index.html">ORM</a> &middot; <a href="../auth/index.html">Auth</a> &middot;
+          <a href="../sequelize/index.html">Sequelize</a> &middot; <a href="../packages.html">Packages</a> &middot;
+          <a href="../benchmarks.html">Benchmarks</a> &middot; <a href="https://github.com/xufajs/xufa">GitHub</a>
+        </span>
+      </div>
+    </footer>
+  </body>
+</html>

@@ -8,7 +8,7 @@
 const fs = require('node:fs');
 const path = require('node:path');
 const vm = require('node:vm');
-const { compileJsonSchema, standaloneJsonSchema } = require('../src');
+const { compileJsonSchema, standaloneJsonSchema } = require('..');
 
 const SUITE = path.dirname(require.resolve('json-schema-test-suite/package.json'));
 
@@ -112,6 +112,30 @@ for (const [draft, { option, formats }] of Object.entries(DRAFTS)) {
       }
     });
   }
+
+  // foldMessages writes the messages known when compiling as one literal: the same messages, every one of them.
+  describe(`JSON-Schema-Test-Suite ${draft} (foldMessages: the same errors)`, () => {
+    const errorsOf = (schema, extra, data) => {
+      try {
+        return compileJsonSchema(clone(schema), options(extra))(data);
+      } catch (err) {
+        return `throws: ${err.message}`;
+      }
+    };
+    for (const { file, groups } of filesOf(draft)) {
+      it(file, () => {
+        for (const group of groups) {
+          for (const test of group.tests) {
+            for (const extra of [{}, { allErrors: false }]) {
+              const plain = errorsOf(group.schema, extra, test.data);
+              const folded = errorsOf(group.schema, { ...extra, foldMessages: true }, test.data);
+              expect([group.description, test.description, folded]).toEqual([group.description, test.description, plain]);
+            }
+          }
+        }
+      });
+    }
+  });
 
   // The optional tests of format: unknown formats are annotations there (strict mode would throw on them).
   if (formats) {

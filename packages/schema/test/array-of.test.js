@@ -1,4 +1,4 @@
-const { ArrayOf, Schema, String, Integer } = require('../src');
+const { ArrayOf, Schema, String, Integer } = require('..');
 
 const personDefinition = {
   id: String(),

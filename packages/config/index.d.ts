@@ -135,10 +135,15 @@ export interface RemoteContext {
   signal: AbortSignal;
 }
 
-/** A remote source: sources.http(), consul(), vault(), directory(), or one of your own. */
+/** A remote source: sources.http(), consul(), vault(), directory(), ssm(), secretsManager(), or one of your own. */
 export interface RemoteSource extends RemoteSourceOptions {
   name: string;
   load(context: RemoteContext): Promise<Record<string, unknown> | undefined> | Record<string, unknown> | undefined;
+  /**
+   * Waits for a change (Consul's blocking queries): the index of what it watches, when it changes or after a while;
+   * null when the server cannot wait (watchConfig() then reads it every interval only).
+   */
+  watch?(context: RemoteContext & { index: number | null }): Promise<{ index: number | null }>;
 }
 
 export declare const sources: {
@@ -170,7 +175,21 @@ export declare const sources: {
   ): RemoteSource;
   /** The files of a folder, a key each (Docker secrets, ConfigMaps and Secrets of Kubernetes). */
   directory(options: RemoteSourceOptions & { dir: string }): RemoteSource;
+  /** The parameters of the Parameter Store of AWS under a path (/shop/production) as a tree, decrypted. Sensitive. */
+  ssm(options: RemoteSourceOptions & { path: string } & AwsOptions): RemoteSource;
+  /** A secret of AWS Secrets Manager: its JSON as keys, or its text under `value`. Sensitive. */
+  secretsManager(
+    options: RemoteSourceOptions & { secretId: string; versionStage?: string; versionId?: string } & AwsOptions
+  ): RemoteSource;
 };
+
+/** Where and as whom the sources of AWS call: AWS_REGION, AWS_ACCESS_KEY_ID... by default. */
+export interface AwsOptions {
+  region?: string;
+  credentials?: { accessKeyId: string; secretAccessKey: string; sessionToken?: string };
+  /** Another server of the API (LocalStack, a VPC endpoint). */
+  endpoint?: string;
+}
 
 export interface RemoteLoadOptions extends LoadOptions {
   /** Read at once; merged in their order, after the files and before the variables. */
@@ -196,6 +215,8 @@ export interface WatchOptions<C> {
   onChange?: (config: C, previous: C, changed: string[]) => void | Promise<void>;
   /** A reading that failed (the configuration there was is kept). A warning by default. */
   onError?: (error: Error) => void;
+  /** Sources that can wait for their changes (Consul) are followed, a change read at once (true by default). */
+  blocking?: boolean;
 }
 
 export interface ConfigWatcher<C> {

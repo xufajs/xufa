@@ -29,6 +29,10 @@ autocannon loads each server, the frameworks taking turns round after round, and
 - **⚠ marks rounds more than 10% apart**: something else used the machine during the run; run it again. Close
   browsers and games, and prefer Linux: on Windows the loopback is slow and noisy (node:http alone costs about 20 µs a
   request there).
+- **WSL 2 is Linux on a shared machine**: its processors are virtual, scheduled by Windows with everything else that
+  runs there. Rounds of the `openapi-*` scenarios still varied 13-24% with the machine idle, on AC power and the
+  highest performance mode, and pinning the servers and autocannon to processors of their own (`taskset`) did not
+  change that (2026-10-07). For numbers without ⚠, use a Linux machine (or a VM with dedicated processors).
 - `BENCH_SERVER_FLAGS='--no-turbo-inlining'` passes flags to the servers (V8 experiments).
 
 `profile.js <framework> <scenario> <dir>` profiles one server under load (`--cpu-prof`): open the `.cpuprofile` in
@@ -56,6 +60,7 @@ node bench/micro/jwt.js         # @xufa/jwt against jsonwebtoken
 node bench/micro/jwt-async.js   # node:crypto signing and verifying, synchronous against in the thread pool
 node bench/micro/marshal.js     # @xufa/marshal against JSON, v8.serialize (and the serializer of Agentic, given its path)
 node bench/micro/websocket.js   # @xufa/websocket against ws, each without and with bufferutil
+node bench/micro/s3.js          # the s3 backend of @xufa/orm against the AWS SDK v3 (XUFA_S3_URL: a store of your own)
 ```
 
 `expression.js` and `template.js` take `[ms per measure] [rounds]` (1000 and 3) and run each engine and case in a process
@@ -112,6 +117,12 @@ node bench/orm.js [--dialects postgres,sqlite] [--rounds 5] [--orms xufa,sequeli
 ```
 
 @xufa/orm against Sequelize 6, and the same Sequelize code on @xufa/sequelize, on PostgreSQL and SQLite.
+
+## Schema validation: `schema/`
+
+@xufa/schema against ajv and nine other JSON Schema validators: the tests of the JSON-Schema-Test-Suite each one passes,
+its speed on the suite and on payloads, compile time, and the features beyond validating. Each measurement runs in a
+process of its own. `pnpm run schema:all` runs them all; see [schema/README.md](schema/README.md).
 
 ## Results
 

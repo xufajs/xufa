@@ -1,4 +1,4 @@
-const { Boolean } = require('../src');
+const { Boolean } = require('..');
 
 describe('Boolean Type', () => {
   it('Should allow undefined if not mandatory', () => {

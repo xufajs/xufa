@@ -3,6 +3,7 @@ packages:
   - bench
   - tools/*
   - '!tools/sequelize-compat'
+  - '!tools/fastify-plugins'
 
 onlyBuiltDependencies:
   - sqlite3

@@ -18,7 +18,9 @@
 // transactions are not: db.transaction() runs its function, its writes made at once (as MongoDB without a replica set).
 //
 // A backend of a store gives (all async, `table` the name of the container):
-//   storePut(table, key, body, { contentType, metadata })   body a Buffer or a readable stream; gives the info
+//   storePut(table, key, body, { contentType, metadata, create })   body a Buffer or a readable stream; gives the
+//                                                            info. create: refused (an error of code EXISTS) when
+//                                                            the object is there
 //   storeRead(table, key)                                    a Buffer or a readable stream of the body, or null
 //   storeHead(table, key)                                    { info, contentType, metadata } or null
 //   storeList(table, prefix)                                 an async iterable of { key, info } (info without metadata)
@@ -31,6 +33,10 @@ const { MemoryBackend } = require('../memory');
 const { encodeValue, decodeValue } = require('../fs');
 const { BlobValue, bodyOf, contentTypeOf } = require('../../blob');
 const { BackendError, ModelError } = require('../../errors');
+
+// The code of the error of a store when a create finds the object there (storePut with create).
+const EXISTS = 'XUFA_BLOB_EXISTS';
+const exists = (table, key) => Object.assign(new BackendError(`${table}/${key} is there already`), { code: EXISTS });
 
 // A memory backend for one query: the objects listed, filtered, ordered, sliced and aggregated as the memory backend
 // does; the bodies (BlobValue) are given as they are.
@@ -249,23 +255,39 @@ class BlobBackend extends Backend {
     const keys = [];
     for (const row of rows) {
       const key = this.keyOf(shape, row[shape.pk.attname]);
-      if (await this.storeHead(shape.table, key)) {
-        throw Object.assign(new BackendError(`Duplicate primary key ${key} in ${shape.table}`), {
+      const duplicate = () =>
+        Object.assign(new BackendError(`Duplicate primary key ${key} in ${shape.table}`), {
           unique: [shape.pk.column],
         });
+      if (await this.storeHead(shape.table, key)) throw duplicate();
+      // A create: the store refuses it when the object is there by then (another create of the same key), so two
+      // creates of one key never both succeed (S3: If-None-Match: *; disk: a link that does not replace a file).
+      try {
+        const info = await this.put(shape, key, row[shape.blob.attname], row, { create: true });
+        // What the store knows of the object, for the object created (Model.save() takes it from the row).
+        for (const kind of ['size', 'etag', 'updatedAt', 'contentType']) {
+          if (shape.info[kind] && info && info[kind] !== undefined) row[shape.info[kind].attname] = info[kind];
+        }
+      } catch (err) {
+        if (err.code === EXISTS) throw duplicate();
+        throw err;
       }
-      await this.put(shape, key, row[shape.blob.attname], row);
       keys.push(key);
     }
     return keys;
   }
 
   // Writes the body of an object (and its metadata and content type).
-  async put(shape, key, value, row) {
+  async put(shape, key, value, row, { create = false } = {}) {
     const given = shape.info.contentType ? row[shape.info.contentType.attname] : null;
     const contentType = given || (value instanceof BlobValue ? value.contentType : null) || contentTypeOf(key);
     const body = value === null || value === undefined ? Buffer.alloc(0) : await bodyOf(value);
-    return this.storePut(shape.table, key, body, { contentType, metadata: this.metadataOf(shape, row) });
+    const info = await this.storePut(shape.table, key, body, {
+      contentType,
+      metadata: this.metadataOf(shape, row),
+      create,
+    });
+    return { ...info, contentType };
   }
 
   async update(query, assignments) {
@@ -320,4 +342,4 @@ class BlobBackend extends Backend {
   }
 }
 
-module.exports = { BlobBackend };
+module.exports = { BlobBackend, EXISTS, exists };

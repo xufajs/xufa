@@ -61,4 +61,39 @@ describe('sqlite files', () => {
     await db.close();
     fs.rmSync(dir, { recursive: true, force: true });
   });
+
+  it('writes outside wait for the transactions of the process, and transactions for each other', async () => {
+    class Item extends Model {
+      static fields = { name: fields.string() };
+    }
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'xufa-sqlite-'));
+    const db = new Database({ backend: 'sqlite', filename: path.join(dir, 'db.sqlite') }).register(Item);
+    await db.connect();
+    await db.sync();
+    const order = [];
+    let release;
+    const gate = new Promise((resolve) => {
+      release = resolve;
+    });
+    const first = db.transaction(async () => {
+      await Item.objects.create({ name: 'first' });
+      await gate;
+      order.push('first');
+    });
+    await new Promise((resolve) => setImmediate(resolve));
+    // Both meet the lock of the first: they are made when it commits (not SQLITE_BUSY).
+    const second = db.transaction(async () => {
+      await Item.objects.create({ name: 'second' });
+      order.push('second');
+    });
+    const outside = Item.objects.create({ name: 'outside' }).then(() => order.push('outside'));
+    await new Promise((resolve) => setTimeout(resolve, 20));
+    expect(order).toEqual([]);
+    release();
+    await Promise.all([first, second, outside]);
+    expect(order[0]).toBe('first');
+    expect((await Item.objects.valuesList('name', { flat: true })).sort()).toEqual(['first', 'outside', 'second']);
+    await db.close();
+    fs.rmSync(dir, { recursive: true, force: true });
+  });
 });

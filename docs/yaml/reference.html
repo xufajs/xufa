@@ -1,0 +1,335 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>@xufa/yaml: Reference · xufa</title>
+    <meta
+      name="description"
+      content="The reference of @xufa/yaml: every function, class, interface and type it declares, made from its TypeScript declarations."
+    />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%23d9502b'/%3E%3Ctext x='16' y='22.5' font-family='monospace' font-size='18' font-weight='700' fill='white' text-anchor='middle'%3Ex%3C/text%3E%3C/svg%3E"
+    />
+    <link rel="stylesheet" href="../style.css?v=0.1.0" />
+    <script src="../main.js?v=0.1.0"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js" defer></script>
+  </head>
+  <body>
+    <header class="header">
+      <div class="header-inner">
+        <a class="logo" href="../index.html"><span class="logo-mark">x</span>xufa</a>
+        <nav class="nav">
+          <a href="../guide.html">Guide</a>
+          <a href="../playground.html">Playground</a>
+          <a href="../http/index.html">HTTP</a>
+          <a href="../orm/index.html">ORM</a>
+          <a class="hide-small" href="../auth/index.html">Auth</a>
+          <a class="hide-small" href="../sequelize/index.html">Sequelize</a>
+          <a class="hide-small" href="../packages.html" aria-current="page">Packages</a>
+          <a class="hide-small" href="../benchmarks.html">Benchmarks</a>
+          <a href="https://github.com/xufajs/xufa">GitHub</a>
+          <button class="theme-toggle" type="button" aria-label="Switch between light and dark theme">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+              <path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z" />
+            </svg>
+          </button>
+        </nav>
+      </div>
+    </header>
+
+    <div class="docs">
+      <button class="menu-toggle" type="button" aria-expanded="false">☰ Contents</button>
+      <aside class="sidebar">
+        <h4>Reference</h4>
+        <ul>
+          <li><a href="#functions">Functions (3)</a></li>
+          <li><a href="#classes">Classes (3)</a></li>
+          <li><a href="#constants">Constants (5)</a></li>
+          <li><a href="#interfaces">Interfaces (6)</a></li>
+          <li><a href="#types">Types (1)</a></li>
+        </ul>
+        <h4>Packages</h4>
+        <ul>
+          <li><a href="../websocket/index.html">@xufa/websocket</a></li>
+          <li><a href="../admin/index.html">@xufa/admin</a></li>
+          <li><a href="../session/index.html">@xufa/session</a></li>
+          <li><a href="../openapi/index.html">@xufa/openapi</a></li>
+          <li><a href="../client/index.html">@xufa/client</a></li>
+          <li><a href="../schema/index.html">@xufa/schema</a></li>
+          <li><a href="../pg/index.html">@xufa/pg</a></li>
+          <li><a href="../mongo/index.html">@xufa/mongo</a></li>
+          <li><a href="../expression/index.html">@xufa/expression</a></li>
+          <li><a href="../template/index.html">@xufa/template</a></li>
+          <li><a href="../cluster/index.html">@xufa/cluster</a></li>
+          <li><a href="../scheduler/index.html">@xufa/scheduler</a></li>
+          <li><a href="../queue/index.html">@xufa/queue</a></li>
+          <li><a href="../config/index.html">@xufa/config</a></li>
+          <li><a href="../discovery/index.html">@xufa/discovery</a></li>
+          <li><a href="../netcache/index.html">@xufa/netcache</a></li>
+          <li><a href="../faults/index.html">@xufa/faults</a></li>
+          <li><a href="../marshal/index.html">@xufa/marshal</a></li>
+          <li><a href="index.html" aria-current="page">@xufa/yaml</a></li>
+          <li><a href="../jwt/index.html">@xufa/jwt</a></li>
+          <li><a href="../logger/index.html">@xufa/logger</a></li>
+          <li><a href="../router/index.html">@xufa/router</a></li>
+          <li><a href="../serializer/index.html">@xufa/serializer</a></li>
+          <li><a href="../inject/index.html">@xufa/inject</a></li>
+          <li><a href="../boot/index.html">@xufa/boot</a></li>
+          <li><a href="../errors/index.html">@xufa/errors</a></li>
+          <li><a href="../packages.html">All the packages</a></li>
+        </ul>
+      </aside>
+
+      <article class="content">
+        <nav class="package-tabs" aria-label="@xufa/yaml">
+          <a href="index.html">Overview</a>
+          <a href="reference.html" aria-current="page">Reference</a>
+          <a href="../playground.html#yaml">Playground</a>
+        </nav>
+        <h1>Reference</h1>
+        <p class="intro">
+          YAML 1.2 parser and writer with the API of js-yaml (4.1.0) and its test suite, without dependencies. Every declaration of its TypeScript declarations
+          (<code>packages/yaml/index.d.ts</code>), as they are written, with their comments: made from them each time
+          the docs are built. How to use them is in <a href="index.html">the overview</a>.
+        </p>
+
+        <h2 id="functions">Functions</h2>
+        <p class="ref-index"><a href="#ref-load"><code>load</code></a>, <a href="#ref-loadAll"><code>loadAll</code></a>, <a href="#ref-dump"><code>dump</code></a></p>
+
+        <h3 id="ref-load"><code>load</code></h3>
+        <pre><code class="language-ts">export function load(str: string, opts?: LoadOptions): unknown;</code></pre>
+
+        <h3 id="ref-loadAll"><code>loadAll</code></h3>
+        <pre><code class="language-ts">export function loadAll(str: string, iterator?: null, opts?: LoadOptions): unknown[];
+
+export function loadAll(str: string, iterator: (doc: unknown) =&gt; void, opts?: LoadOptions): void;</code></pre>
+
+        <h3 id="ref-dump"><code>dump</code></h3>
+        <pre><code class="language-ts">export function dump(obj: any, opts?: DumpOptions): string;</code></pre>
+
+        <h2 id="classes">Classes</h2>
+        <p class="ref-index"><a href="#ref-Type"><code>Type</code></a>, <a href="#ref-Schema"><code>Schema</code></a>, <a href="#ref-YAMLException"><code>YAMLException</code></a></p>
+
+        <h3 id="ref-Type"><code>Type</code></h3>
+        <pre><code class="language-ts">export class Type { ... }</code></pre>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>new (tag: string, opts?: TypeConstructorOptions)</code></td><td></td><td></td></tr>
+                <tr><td><code>kind</code></td><td><code>'sequence' | 'scalar' | 'mapping' | null</code></td><td></td></tr>
+                <tr><td><code>resolve(data: any)</code></td><td><code>boolean</code></td><td></td></tr>
+                <tr><td><code>construct(data: any, type?: string)</code></td><td><code>any</code></td><td></td></tr>
+                <tr><td><code>instanceOf</code></td><td><code>object | null</code></td><td></td></tr>
+                <tr><td><code>predicate</code></td><td><code>((data: object) =&gt; boolean) | null</code></td><td></td></tr>
+                <tr><td><code>represent</code></td><td><code>((data: object) =&gt; any) | { [x: string]: (data: object) =&gt; any } | null</code></td><td></td></tr>
+                <tr><td><code>representName</code></td><td><code>((data: object) =&gt; any) | null</code></td><td></td></tr>
+                <tr><td><code>defaultStyle</code></td><td><code>string | null</code></td><td></td></tr>
+                <tr><td><code>multi</code></td><td><code>boolean</code></td><td></td></tr>
+                <tr><td><code>styleAliases</code></td><td><code>{ [x: string]: any }</code></td><td></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-Schema"><code>Schema</code></h3>
+        <pre><code class="language-ts">export class Schema { ... }</code></pre>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>new (definition: SchemaDefinition | Type[] | Type)</code></td><td></td><td></td></tr>
+                <tr><td><code>extend(types: SchemaDefinition | Type[] | Type)</code></td><td><code><a href="#ref-Schema">Schema</a></code></td><td></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-YAMLException"><code>YAMLException</code></h3>
+        <pre><code class="language-ts">export class YAMLException extends Error { ... }</code></pre>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>new (reason?: string, mark?: Mark)</code></td><td></td><td></td></tr>
+                <tr><td><code>toString(compact?: boolean)</code></td><td><code>string</code></td><td></td></tr>
+                <tr><td><code>name</code></td><td><code>string</code></td><td></td></tr>
+                <tr><td><code>reason</code></td><td><code>string</code></td><td></td></tr>
+                <tr><td><code>message</code></td><td><code>string</code></td><td></td></tr>
+                <tr><td><code>mark</code></td><td><code><a href="#ref-Mark">Mark</a></code></td><td></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h2 id="constants">Constants</h2>
+        <p class="ref-index"><a href="#ref-FAILSAFE_SCHEMA"><code>FAILSAFE_SCHEMA</code></a>, <a href="#ref-JSON_SCHEMA"><code>JSON_SCHEMA</code></a>, <a href="#ref-CORE_SCHEMA"><code>CORE_SCHEMA</code></a>, <a href="#ref-DEFAULT_SCHEMA"><code>DEFAULT_SCHEMA</code></a>, <a href="#ref-types"><code>types</code></a></p>
+
+        <h3 id="ref-FAILSAFE_SCHEMA"><code>FAILSAFE_SCHEMA</code></h3>
+        <pre><code class="language-ts">export let FAILSAFE_SCHEMA: Schema;</code></pre>
+        <p>only strings, arrays and plain objects: http://www.yaml.org/spec/1.2/spec.html#id2802346</p>
+
+        <h3 id="ref-JSON_SCHEMA"><code>JSON_SCHEMA</code></h3>
+        <pre><code class="language-ts">export let JSON_SCHEMA: Schema;</code></pre>
+        <p>only strings, arrays and plain objects: http://www.yaml.org/spec/1.2/spec.html#id2802346</p>
+
+        <h3 id="ref-CORE_SCHEMA"><code>CORE_SCHEMA</code></h3>
+        <pre><code class="language-ts">export let CORE_SCHEMA: Schema;</code></pre>
+        <p>same as JSON_SCHEMA: http://www.yaml.org/spec/1.2/spec.html#id2804923</p>
+
+        <h3 id="ref-DEFAULT_SCHEMA"><code>DEFAULT_SCHEMA</code></h3>
+        <pre><code class="language-ts">export let DEFAULT_SCHEMA: Schema;</code></pre>
+        <p>all supported YAML types</p>
+
+        <h3 id="ref-types"><code>types</code></h3>
+        <pre><code class="language-ts">export const types: {
+  binary: Type;
+  float: Type;
+  map: Type;
+  null: Type;
+  pairs: Type;
+  set: Type;
+  timestamp: Type;
+  bool: Type;
+  int: Type;
+  merge: Type;
+  omap: Type;
+  seq: Type;
+  str: Type;
+};</code></pre>
+        <p>The types of the default schema, to make schemas of your own (added: js-yaml exports them,</p>
+
+        <h2 id="interfaces">Interfaces</h2>
+        <p class="ref-index"><a href="#ref-LoadOptions"><code>LoadOptions</code></a>, <a href="#ref-State"><code>State</code></a>, <a href="#ref-DumpOptions"><code>DumpOptions</code></a>, <a href="#ref-TypeConstructorOptions"><code>TypeConstructorOptions</code></a>, <a href="#ref-SchemaDefinition"><code>SchemaDefinition</code></a>, <a href="#ref-Mark"><code>Mark</code></a></p>
+
+        <h3 id="ref-LoadOptions"><code>LoadOptions</code></h3>
+        <pre><code class="language-ts">export interface LoadOptions { ... }</code></pre>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>filename?</code></td><td><code>string | undefined</code></td><td><p>string to be used as a file path in error/warning messages.</p></td></tr>
+                <tr><td><code>onWarning?(this: null, e: YAMLException)</code></td><td><code>void</code></td><td><p>function to call on warning messages.</p></td></tr>
+                <tr><td><code>schema?</code></td><td><code><a href="#ref-Schema">Schema</a> | undefined</code></td><td><p>specifies a schema to use.</p></td></tr>
+                <tr><td><code>json?</code></td><td><code>boolean | undefined</code></td><td><p>compatibility with JSON.parse behaviour.</p></td></tr>
+                <tr><td><code>listener?(this: State, eventType: EventType, state: State)</code></td><td><code>void</code></td><td><p>listener for parse events</p></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-State"><code>State</code></h3>
+        <pre><code class="language-ts">export interface State { ... }</code></pre>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>input</code></td><td><code>string</code></td><td></td></tr>
+                <tr><td><code>filename</code></td><td><code>string | null</code></td><td></td></tr>
+                <tr><td><code>schema</code></td><td><code><a href="#ref-Schema">Schema</a></code></td><td></td></tr>
+                <tr><td><code>onWarning</code></td><td><code>(this: null, e: <a href="#ref-YAMLException">YAMLException</a>) =&gt; void</code></td><td></td></tr>
+                <tr><td><code>json</code></td><td><code>boolean</code></td><td></td></tr>
+                <tr><td><code>length</code></td><td><code>number</code></td><td></td></tr>
+                <tr><td><code>position</code></td><td><code>number</code></td><td></td></tr>
+                <tr><td><code>line</code></td><td><code>number</code></td><td></td></tr>
+                <tr><td><code>lineStart</code></td><td><code>number</code></td><td></td></tr>
+                <tr><td><code>lineIndent</code></td><td><code>number</code></td><td></td></tr>
+                <tr><td><code>version</code></td><td><code>null | number</code></td><td></td></tr>
+                <tr><td><code>checkLineBreaks</code></td><td><code>boolean</code></td><td></td></tr>
+                <tr><td><code>kind</code></td><td><code>string</code></td><td></td></tr>
+                <tr><td><code>result</code></td><td><code>any</code></td><td></td></tr>
+                <tr><td><code>implicitTypes</code></td><td><code><a href="#ref-Type">Type</a>[]</code></td><td></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-DumpOptions"><code>DumpOptions</code></h3>
+        <pre><code class="language-ts">export interface DumpOptions { ... }</code></pre>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>indent?</code></td><td><code>number | undefined</code></td><td><p>indentation width to use (in spaces).</p></td></tr>
+                <tr><td><code>noArrayIndent?</code></td><td><code>boolean | undefined</code></td><td><p>when true, will not add an indentation level to array elements</p></td></tr>
+                <tr><td><code>skipInvalid?</code></td><td><code>boolean | undefined</code></td><td><p>do not throw on invalid types (like function in the safe schema) and skip pairs and single values with such types.</p></td></tr>
+                <tr><td><code>flowLevel?</code></td><td><code>number | undefined</code></td><td><p>specifies level of nesting, when to switch from block to flow style for collections. -1 means block style everwhere</p></td></tr>
+                <tr><td><code>styles?</code></td><td><code>{ [x: string]: any } | undefined</code></td><td><p>Each tag may have own set of styles.    - "tag" =&gt; "style" map.</p></td></tr>
+                <tr><td><code>schema?</code></td><td><code><a href="#ref-Schema">Schema</a> | undefined</code></td><td><p>specifies a schema to use.</p></td></tr>
+                <tr><td><code>sortKeys?</code></td><td><code>boolean | ((a: any, b: any) =&gt; number) | undefined</code></td><td><p>if true, sort keys when dumping YAML. If a function, use the function to sort the keys. (default: false)</p></td></tr>
+                <tr><td><code>lineWidth?</code></td><td><code>number | undefined</code></td><td><p>set max line width. (default: 80)</p></td></tr>
+                <tr><td><code>noRefs?</code></td><td><code>boolean | undefined</code></td><td><p>if true, don't convert duplicate objects into references (default: false)</p></td></tr>
+                <tr><td><code>noCompatMode?</code></td><td><code>boolean | undefined</code></td><td><p>if true don't try to be compatible with older yaml versions. Currently: don't quote "yes", "no" and so on, as required for YAML 1.1 (default: false)</p></td></tr>
+                <tr><td><code>condenseFlow?</code></td><td><code>boolean | undefined</code></td><td><p>if true flow sequences will be condensed, omitting the space between <code>key: value</code> or <code>a, b</code>. Eg. <code>'[a,b]'</code> or <code>{a:{b:c}}</code>. Can be useful when using yaml for pretty URL query params as spaces are %-encoded. (default: false).</p></td></tr>
+                <tr><td><code>quotingType?</code></td><td><code>"'" | '"' | undefined</code></td><td><p>strings will be quoted using this quoting style. If you specify single quotes, double quotes will still be used for non-printable characters. (default: <code>'</code>)</p></td></tr>
+                <tr><td><code>forceQuotes?</code></td><td><code>boolean | undefined</code></td><td><p>if true, all non-key strings will be quoted even if they normally don't need to. (default: false)</p></td></tr>
+                <tr><td><code>replacer?</code></td><td><code>((key: string, value: any) =&gt; any) | undefined</code></td><td><p>callback <code>function (key, value)</code> called recursively on each key/value in source object (see <code>replacer</code> docs for <code>JSON.stringify</code>).</p></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-TypeConstructorOptions"><code>TypeConstructorOptions</code></h3>
+        <pre><code class="language-ts">export interface TypeConstructorOptions { ... }</code></pre>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>kind?</code></td><td><code>'sequence' | 'scalar' | 'mapping' | undefined</code></td><td></td></tr>
+                <tr><td><code>resolve?</code></td><td><code>((data: any) =&gt; boolean) | undefined</code></td><td></td></tr>
+                <tr><td><code>construct?</code></td><td><code>((data: any, type?: string) =&gt; any) | undefined</code></td><td></td></tr>
+                <tr><td><code>instanceOf?</code></td><td><code>object | undefined</code></td><td></td></tr>
+                <tr><td><code>predicate?</code></td><td><code>((data: object) =&gt; boolean) | undefined</code></td><td></td></tr>
+                <tr><td><code>represent?</code></td><td><code>((data: object) =&gt; any) | { [x: string]: (data: object) =&gt; any } | undefined</code></td><td></td></tr>
+                <tr><td><code>representName?</code></td><td><code>((data: object) =&gt; any) | undefined</code></td><td></td></tr>
+                <tr><td><code>defaultStyle?</code></td><td><code>string | undefined</code></td><td></td></tr>
+                <tr><td><code>multi?</code></td><td><code>boolean | undefined</code></td><td></td></tr>
+                <tr><td><code>styleAliases?</code></td><td><code>{ [x: string]: any } | undefined</code></td><td></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-SchemaDefinition"><code>SchemaDefinition</code></h3>
+        <pre><code class="language-ts">export interface SchemaDefinition { ... }</code></pre>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>implicit?</code></td><td><code><a href="#ref-Type">Type</a>[] | undefined</code></td><td></td></tr>
+                <tr><td><code>explicit?</code></td><td><code><a href="#ref-Type">Type</a>[] | undefined</code></td><td></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-Mark"><code>Mark</code></h3>
+        <pre><code class="language-ts">export interface Mark { ... }</code></pre>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>buffer</code></td><td><code>string</code></td><td></td></tr>
+                <tr><td><code>column</code></td><td><code>number</code></td><td></td></tr>
+                <tr><td><code>line</code></td><td><code>number</code></td><td></td></tr>
+                <tr><td><code>name</code></td><td><code>string</code></td><td></td></tr>
+                <tr><td><code>position</code></td><td><code>number</code></td><td></td></tr>
+                <tr><td><code>snippet</code></td><td><code>string</code></td><td></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h2 id="types">Types</h2>
+        <p class="ref-index"><a href="#ref-EventType"><code>EventType</code></a></p>
+
+        <h3 id="ref-EventType"><code>EventType</code></h3>
+        <pre><code class="language-ts">export type EventType = 'open' | 'close';</code></pre>
+      </article>
+    </div>
+
+    <footer class="footer">
+      <div class="container">
+        <span>xufa is MIT licensed. &copy; Jes&uacute;s Seijas</span>
+        <span>
+          <a href="../guide.html">Guide</a> &middot; <a href="../playground.html">Playground</a> &middot; <a href="../http/index.html">HTTP</a> &middot; <a href="../orm/index.html">ORM</a> &middot; <a href="../auth/index.html">Auth</a> &middot;
+          <a href="../sequelize/index.html">Sequelize</a> &middot; <a href="../packages.html">Packages</a> &middot;
+          <a href="../benchmarks.html">Benchmarks</a> &middot; <a href="https://github.com/xufajs/xufa">GitHub</a>
+        </span>
+      </div>
+    </footer>
+  </body>
+</html>

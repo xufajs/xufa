@@ -9,7 +9,7 @@ const path = require('node:path');
 
 // The pages of the packages, by their old flat names: [flat name, path from the root].
 const PACKAGE_PAGES = [
-  // Written by hand (in their folders): http, orm, auth, sequelize.
+  // The pages of the header.
   ['http', 'http/'],
   ['orm', 'orm/'],
   ['auth', 'auth/'],
@@ -17,6 +17,8 @@ const PACKAGE_PAGES = [
   // Made from pages/*.page.html.
   ...[
     'websocket',
+    'admin',
+    'session',
     'openapi',
     'client',
     'schema',
@@ -27,6 +29,7 @@ const PACKAGE_PAGES = [
     'jwt',
     'cluster',
     'scheduler',
+    'queue',
     'config',
     'discovery',
     'netcache',
@@ -44,6 +47,16 @@ const PACKAGE_PAGES = [
 
 // The other pages of a package, and their scripts: flat name -> path from the root.
 const PACKAGE_FILES = {
+  'auth-guide.html': 'auth/guide.html',
+  'sequelize-guide.html': 'sequelize/guide.html',
+  'sequelize-benchmarks.html': 'sequelize/benchmarks.html',
+  'orm-guide.html': 'orm/guide.html',
+  'orm-django.html': 'orm/django.html',
+  'orm-benchmarks.html': 'orm/benchmarks.html',
+  'http-guide.html': 'http/guide.html',
+  'http-api.html': 'http/api.html',
+  'http-fastify.html': 'http/fastify.html',
+  'http-benchmarks.html': 'http/benchmarks.html',
   'schema-guide.html': 'schema/guide.html',
   'schema-api.html': 'schema/api.html',
   'schema-playground.html': 'schema/playground.html',
@@ -66,11 +79,14 @@ const ROOT_FILES = [
   'style.css',
   'main.js',
   'xufa.js',
+  'xufa-http.js',
   'playground.js',
 ];
 
 const MAP = new Map([
   ...PACKAGE_PAGES.map(([name, dir]) => [`${name}.html`, dir]),
+  // The references made from the declarations of the packages (lib/reference.js).
+  ...PACKAGE_PAGES.map(([name, dir]) => [`${name}-reference.html`, `${dir}reference.html`]),
   ...Object.entries(PACKAGE_FILES),
   ...ROOT_FILES.map((file) => [file, file]),
   ['./', './'],

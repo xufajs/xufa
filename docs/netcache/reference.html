@@ -1,0 +1,208 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>@xufa/netcache: Reference · xufa</title>
+    <meta
+      name="description"
+      content="The reference of @xufa/netcache: every function, class, interface and type it declares, made from its TypeScript declarations."
+    />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%23d9502b'/%3E%3Ctext x='16' y='22.5' font-family='monospace' font-size='18' font-weight='700' fill='white' text-anchor='middle'%3Ex%3C/text%3E%3C/svg%3E"
+    />
+    <link rel="stylesheet" href="../style.css?v=0.1.0" />
+    <script src="../main.js?v=0.1.0"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js" defer></script>
+  </head>
+  <body>
+    <header class="header">
+      <div class="header-inner">
+        <a class="logo" href="../index.html"><span class="logo-mark">x</span>xufa</a>
+        <nav class="nav">
+          <a href="../guide.html">Guide</a>
+          <a href="../playground.html">Playground</a>
+          <a href="../http/index.html">HTTP</a>
+          <a href="../orm/index.html">ORM</a>
+          <a class="hide-small" href="../auth/index.html">Auth</a>
+          <a class="hide-small" href="../sequelize/index.html">Sequelize</a>
+          <a class="hide-small" href="../packages.html" aria-current="page">Packages</a>
+          <a class="hide-small" href="../benchmarks.html">Benchmarks</a>
+          <a href="https://github.com/xufajs/xufa">GitHub</a>
+          <button class="theme-toggle" type="button" aria-label="Switch between light and dark theme">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+              <path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z" />
+            </svg>
+          </button>
+        </nav>
+      </div>
+    </header>
+
+    <div class="docs">
+      <button class="menu-toggle" type="button" aria-expanded="false">☰ Contents</button>
+      <aside class="sidebar">
+        <h4>Reference</h4>
+        <ul>
+          <li><a href="#classes">Classes (2)</a></li>
+          <li><a href="#interfaces">Interfaces (3)</a></li>
+        </ul>
+        <h4>Packages</h4>
+        <ul>
+          <li><a href="../websocket/index.html">@xufa/websocket</a></li>
+          <li><a href="../admin/index.html">@xufa/admin</a></li>
+          <li><a href="../session/index.html">@xufa/session</a></li>
+          <li><a href="../openapi/index.html">@xufa/openapi</a></li>
+          <li><a href="../client/index.html">@xufa/client</a></li>
+          <li><a href="../schema/index.html">@xufa/schema</a></li>
+          <li><a href="../pg/index.html">@xufa/pg</a></li>
+          <li><a href="../mongo/index.html">@xufa/mongo</a></li>
+          <li><a href="../expression/index.html">@xufa/expression</a></li>
+          <li><a href="../template/index.html">@xufa/template</a></li>
+          <li><a href="../cluster/index.html">@xufa/cluster</a></li>
+          <li><a href="../scheduler/index.html">@xufa/scheduler</a></li>
+          <li><a href="../queue/index.html">@xufa/queue</a></li>
+          <li><a href="../config/index.html">@xufa/config</a></li>
+          <li><a href="../discovery/index.html">@xufa/discovery</a></li>
+          <li><a href="index.html" aria-current="page">@xufa/netcache</a></li>
+          <li><a href="../faults/index.html">@xufa/faults</a></li>
+          <li><a href="../marshal/index.html">@xufa/marshal</a></li>
+          <li><a href="../yaml/index.html">@xufa/yaml</a></li>
+          <li><a href="../jwt/index.html">@xufa/jwt</a></li>
+          <li><a href="../logger/index.html">@xufa/logger</a></li>
+          <li><a href="../router/index.html">@xufa/router</a></li>
+          <li><a href="../serializer/index.html">@xufa/serializer</a></li>
+          <li><a href="../inject/index.html">@xufa/inject</a></li>
+          <li><a href="../boot/index.html">@xufa/boot</a></li>
+          <li><a href="../errors/index.html">@xufa/errors</a></li>
+          <li><a href="../packages.html">All the packages</a></li>
+        </ul>
+      </aside>
+
+      <article class="content">
+        <nav class="package-tabs" aria-label="@xufa/netcache">
+          <a href="index.html">Overview</a>
+          <a href="reference.html" aria-current="page">Reference</a>
+        </nav>
+        <h1>Reference</h1>
+        <p class="intro">
+          A cache shared by the machines of a service: a copy in each, writes sent to all over TCP (sealed with a secret), nodes found by @xufa/discovery. Every declaration of its TypeScript declarations
+          (<code>packages/netcache/index.d.ts</code>), as they are written, with their comments: made from them each time
+          the docs are built. How to use them is in <a href="index.html">the overview</a>.
+        </p>
+
+        <h2 id="classes">Classes</h2>
+        <p class="ref-index"><a href="#ref-NetCache"><code>NetCache</code></a>, <a href="#ref-NetCacheError"><code>NetCacheError</code></a></p>
+
+        <h3 id="ref-NetCache"><code>NetCache</code></h3>
+        <pre><code class="language-ts">export declare class NetCache extends EventEmitter&lt;NetCacheEvents&gt; { ... }</code></pre>
+        <p>A cache shared by the machines of a service: a copy in each, every write sent to all.</p>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>new (options?: NetCacheOptions)</code></td><td></td><td></td></tr>
+                <tr><td><code>readonly faults</code></td><td><code>CacheFaults</code></td><td><p>Its faults: get, set, delete and clear made to fail, wait or hang.</p></td></tr>
+                <tr><td><code>readonly id</code></td><td><code>string</code></td><td></td></tr>
+                <tr><td><code>readonly started</code></td><td><code>boolean</code></td><td></td></tr>
+                <tr><td><code>readonly port</code></td><td><code>number</code></td><td></td></tr>
+                <tr><td><code>readonly size</code></td><td><code>number</code></td><td></td></tr>
+                <tr><td><code>readonly connected</code></td><td><code>string[]</code></td><td><p>The ids of the peers connected now.</p></td></tr>
+                <tr><td><code>readonly stats</code></td><td><code><a href="#ref-NetCacheStats">NetCacheStats</a></code></td><td></td></tr>
+                <tr><td><code>readonly discovery</code></td><td><code>Discovery</code></td><td></td></tr>
+                <tr><td><code>start()</code></td><td><code>Promise&lt;this&gt;</code></td><td></td></tr>
+                <tr><td><code>stop()</code></td><td><code>Promise&lt;void&gt;</code></td><td></td></tr>
+                <tr><td><code>get&lt;T = unknown&gt;(key: string)</code></td><td><code>Promise&lt;T | undefined&gt;</code></td><td><p>A copy of the value, or undefined.</p></td></tr>
+                <tr><td><code>set(key: string, value: unknown, ttl?: number)</code></td><td><code>Promise&lt;void&gt;</code></td><td><p><code>ttl</code>: milliseconds (the default of the cache when not given).</p></td></tr>
+                <tr><td><code>delete(keys: string | string[])</code></td><td><code>Promise&lt;void&gt;</code></td><td></td></tr>
+                <tr><td><code>clear(prefix?: string)</code></td><td><code>Promise&lt;void&gt;</code></td><td><p>The keys of a prefix ('' for all).</p></td></tr>
+                <tr><td><code>publish(channel: string, data: unknown)</code></td><td><code>number</code></td><td><p>A message to the nodes connected now ('publish' on them; not kept): how many it was sent to.</p></td></tr>
+                <tr><td><code>health(options?: { minPeers?: number; critical?: boolean; timeout?: number | string })</code></td><td><code>{ check(): Promise&lt;{ status: 'up' | 'degraded' | 'down'; error?: string; peers?: number; connected?: number; keys?: number; unacknowledged?: number; resets?: number; }&gt;; critical: boolean; timeout?: number | string; }</code></td><td><p>A check of xufa.health of</p></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-NetCacheError"><code>NetCacheError</code></h3>
+        <pre><code class="language-ts">export declare class NetCacheError extends Error { ... }</code></pre>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>code</code></td><td><code>'XUFA_NETCACHE_ERR_OPTIONS'</code></td><td></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h2 id="interfaces">Interfaces</h2>
+        <p class="ref-index"><a href="#ref-NetCacheOptions"><code>NetCacheOptions</code></a>, <a href="#ref-NetCacheStats"><code>NetCacheStats</code></a>, <a href="#ref-NetCacheEvents"><code>NetCacheEvents</code></a></p>
+
+        <h3 id="ref-NetCacheOptions"><code>NetCacheOptions</code></h3>
+        <pre><code class="language-ts">export interface NetCacheOptions { ... }</code></pre>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>secret?</code></td><td><code>string | Buffer</code></td><td><p>16 bytes or more: connections are authenticated and every frame sealed. Required unless <code>insecure</code>.</p></td></tr>
+                <tr><td><code>insecure?</code></td><td><code>boolean</code></td><td><p>No secret: plain frames, any machine of the network can read and write the cache.</p></td></tr>
+                <tr><td><code>service?</code></td><td><code>string</code></td><td><p>Nodes of other services are not peers ('xufa').</p></td></tr>
+                <tr><td><code>max?</code></td><td><code>number</code></td><td><p>Keys kept in each copy (10000), the least used dropped first.</p></td></tr>
+                <tr><td><code>ttl?</code></td><td><code>number</code></td><td><p>Milliseconds values live by default (0: until dropped).</p></td></tr>
+                <tr><td><code>port?</code></td><td><code>number</code></td><td><p>The TCP port of this node (0: any).</p></td></tr>
+                <tr><td><code>host?</code></td><td><code>string</code></td><td><p>The address it listens on ('0.0.0.0').</p></td></tr>
+                <tr><td><code>advertise?</code></td><td><code>string</code></td><td><p>The address the others connect to, when not the one they see (NAT, containers).</p></td></tr>
+                <tr><td><code>queue?</code></td><td><code>number</code></td><td><p>Writes kept for each peer until it acknowledges them (10000): a peer that misses more is emptied.</p></td></tr>
+                <tr><td><code>sync?</code></td><td><code>boolean</code></td><td><p>A node that starts gets the entries of its first peer (true).</p></td></tr>
+                <tr><td><code>settle?</code></td><td><code>number</code></td><td><p>Milliseconds start() waits for the nodes there to answer (300).</p></td></tr>
+                <tr><td><code>tombstoneTtl?</code></td><td><code>number</code></td><td><p>Milliseconds deletes and clears are remembered, so late older writes do not bring values back (60000).</p></td></tr>
+                <tr><td><code>maxFrame?</code></td><td><code>number</code></td><td><p>The largest frame accepted, in bytes (16 MiB).</p></td></tr>
+                <tr><td><code>discovery?</code></td><td><code>DiscoveryOptions | Discovery</code></td><td><p>The options of the discovery of the nodes, or a Discovery of the app (its meta gets <code>netcache</code>).</p></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-NetCacheStats"><code>NetCacheStats</code></h3>
+        <pre><code class="language-ts">export interface NetCacheStats { ... }</code></pre>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>sent</code></td><td><code>number</code></td><td></td></tr>
+                <tr><td><code>applied</code></td><td><code>number</code></td><td></td></tr>
+                <tr><td><code>ignored</code></td><td><code>number</code></td><td></td></tr>
+                <tr><td><code>resent</code></td><td><code>number</code></td><td></td></tr>
+                <tr><td><code>resets</code></td><td><code>number</code></td><td></td></tr>
+                <tr><td><code>snapshots</code></td><td><code>number</code></td><td></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-NetCacheEvents"><code>NetCacheEvents</code></h3>
+        <pre><code class="language-ts">export interface NetCacheEvents { ... }</code></pre>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>peer</code></td><td><code>[id: string, state: 'connected' | 'disconnected']</code></td><td></td></tr>
+                <tr><td><code>change</code></td><td><code>[change: { op: 'set' | 'del' | 'clear'; key: string; peer: string }]</code></td><td></td></tr>
+                <tr><td><code>reset</code></td><td><code>[peer: string]</code></td><td></td></tr>
+                <tr><td><code>synced</code></td><td><code>[peer: string]</code></td><td></td></tr>
+                <tr><td><code>publish</code></td><td><code>[channel: string, data: unknown, peer: string]</code></td><td></td></tr>
+                <tr><td><code>error</code></td><td><code>[error: Error]</code></td><td></td></tr>
+              </tbody>
+            </table>
+          </div>
+      </article>
+    </div>
+
+    <footer class="footer">
+      <div class="container">
+        <span>xufa is MIT licensed. &copy; Jes&uacute;s Seijas</span>
+        <span>
+          <a href="../guide.html">Guide</a> &middot; <a href="../playground.html">Playground</a> &middot; <a href="../http/index.html">HTTP</a> &middot; <a href="../orm/index.html">ORM</a> &middot; <a href="../auth/index.html">Auth</a> &middot;
+          <a href="../sequelize/index.html">Sequelize</a> &middot; <a href="../packages.html">Packages</a> &middot;
+          <a href="../benchmarks.html">Benchmarks</a> &middot; <a href="https://github.com/xufajs/xufa">GitHub</a>
+        </span>
+      </div>
+    </footer>
+  </body>
+</html>

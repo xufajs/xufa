@@ -1,4 +1,4 @@
-const { compileJsonSchema } = require('../src');
+const { compileJsonSchema } = require('..');
 
 const DRAFT_2020 = 'https://json-schema.org/draft/2020-12/schema';
 

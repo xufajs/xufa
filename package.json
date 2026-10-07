@@ -19,12 +19,16 @@
     "bench": "node bench/run.js",
     "bench:quick": "node bench/run.js --duration 3 --warmup 1 --rounds 1",
     "docs": "node tools/docs/build.js",
-    "docs:check": "node tools/docs/build.js --check",
+    "docs:check": "node tools/docs/jsdoc-comments.js --check && node tools/docs/build.js --check && node tools/docs/crawl.js && node tools/docs/examples/run.js && node tools/docs/examples/types.js",
     "test:types": "pnpm -r --filter \"./packages/**\" test:types",
-    "bench:linux": "node tools/bench-linux/run.js"
+    "bench:linux": "node tools/bench-linux/run.js",
+    "docs:crawl": "node tools/docs/crawl.js",
+    "test:linux": "node tools/bench-linux/test.js",
+    "docs:examples": "node tools/docs/examples/run.js",
+    "docs:types": "node tools/docs/examples/types.js"
   },
   "engines": {
-    "node": ">=22"
+    "node": "^22.22.3 || ^24.15.0 || >=25.7.0"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.2",
@@ -34,6 +38,7 @@
     "eslint-plugin-prettier": "^5.5.5",
     "fastify-plugin": "^5.1.0",
     "globals": "^17.0.0",
+    "playwright-core": "^1.63.0",
     "prettier": "^3.8.0",
     "tsd": "^0.33.0",
     "tstyche": "^7.2.5",

@@ -1,0 +1,325 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>@xufa/orm: From Django · xufa</title>
+    <meta
+      name="description"
+      content="@xufa/orm for those who know Django's ORM: models, fields, Meta, managers and QuerySets, lookups, expressions, transactions, migrations and signals, what is the same, what is written differently, and what it does not have."
+    />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%23d9502b'/%3E%3Ctext x='16' y='22.5' font-family='monospace' font-size='18' font-weight='700' fill='white' text-anchor='middle'%3Ex%3C/text%3E%3C/svg%3E"
+    />
+    <link rel="stylesheet" href="../style.css?v=0.1.0" />
+    <script src="../main.js?v=0.1.0"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js" defer></script>
+  </head>
+  <body>
+    <header class="header">
+      <div class="header-inner">
+        <a class="logo" href="../index.html"><span class="logo-mark">x</span>xufa</a>
+        <nav class="nav">
+          <a href="../guide.html">Guide</a>
+          <a href="../playground.html">Playground</a>
+          <a href="../http/index.html">HTTP</a>
+          <a href="index.html" aria-current="page">ORM</a>
+          <a class="hide-small" href="../auth/index.html">Auth</a>
+          <a class="hide-small" href="../sequelize/index.html">Sequelize</a>
+          <a class="hide-small" href="../packages.html">Packages</a>
+          <a class="hide-small" href="../benchmarks.html">Benchmarks</a>
+          <a href="https://github.com/xufajs/xufa">GitHub</a>
+          <button class="theme-toggle" type="button" aria-label="Switch between light and dark theme">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+              <path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z" />
+            </svg>
+          </button>
+        </nav>
+      </div>
+    </header>
+
+    <div class="docs">
+      <button class="menu-toggle" type="button" aria-expanded="false">☰ Contents</button>
+      <aside class="sidebar">
+        <h4>From Django</h4>
+        <ul>
+          <li><a href="#same-queries">The same queries</a></li>
+          <li><a href="#models">Models and Meta</a></li>
+          <li><a href="#fields">Fields</a></li>
+          <li><a href="#querysets">QuerySets</a></li>
+          <li><a href="#lookups">Lookups</a></li>
+          <li><a href="#expressions">Q, F and aggregates</a></li>
+          <li><a href="#instances">Objects</a></li>
+          <li><a href="#transactions">Transactions</a></li>
+          <li><a href="#migrations">Migrations</a></li>
+          <li><a href="#signals">Signals</a></li>
+          <li><a href="#databases">Several databases</a></li>
+          <li><a href="#errors">Exceptions</a></li>
+        </ul>
+        <h4>What differs</h4>
+        <ul>
+          <li><a href="#async">Everything is awaited</a></li>
+          <li><a href="#relations">Relations are loaded on purpose</a></li>
+          <li><a href="#missing">Not in @xufa/orm</a></li>
+        </ul>
+      </aside>
+
+      <article class="content">
+        <nav class="package-tabs" aria-label="@xufa/orm">
+          <a href="index.html">Overview</a>
+          <a href="guide.html">Guide</a>
+          <a href="reference.html">Reference</a>
+          <a href="django.html" aria-current="page">From Django</a>
+          <a href="benchmarks.html">Benchmarks</a>
+        </nav>
+        <h1>From Django</h1>
+        <p class="intro">
+          @xufa/orm follows Django's ORM: models with fields, a manager (<code>objects</code>), lazy QuerySets that chain,
+          lookups with <code>__</code>, <code>Q</code> and <code>F</code>, migrations made from the models. In JavaScript the
+          names are camelCase and every query is awaited. This page is the map from one to the other.
+        </p>
+
+        <h2 id="same-queries">The same queries</h2>
+        <pre><code class="language-python"># Django
+class Author(models.Model):
+    name = models.CharField(max_length=100)
+
+class Book(models.Model):
+    title = models.CharField(max_length=200)
+    pages = models.IntegerField(default=0)
+    author = models.ForeignKey(Author, related_name="books", on_delete=models.CASCADE)
+
+    class Meta:
+        ordering = ["title"]
+
+books = Book.objects.filter(author__name__istartswith="a", pages__gte=100).select_related("author")[:10]
+counts = Author.objects.values("name").annotate(books=Count("books"))
+Book.objects.filter(pk=1).update(pages=F("pages") + 1)
+book, created = Book.objects.get_or_create(title="Notes", defaults={"pages": 10, "author": ada})</code></pre>
+        <pre data-run="same-queries"><code class="language-js">// @xufa/orm
+const { Database, Model, fields, F, Count } = require('@xufa/orm');
+
+class Author extends Model {
+  static fields = { name: fields.string({ maxLength: 100 }) };
+}
+
+class Book extends Model {
+  static fields = {
+    title: fields.string({ maxLength: 200 }),
+    pages: fields.integer({ default: 0 }),
+    author: fields.foreignKey(() =&gt; Author, { relatedName: 'books', onDelete: 'cascade' }),
+  };
+
+  static options = { ordering: ['title'] };
+}
+
+const db = new Database({ backend: 'sqlite', filename: ':memory:' });
+db.register(Author, Book);
+await db.connect();
+await db.sync();
+const ada = await Author.objects.create({ name: 'Ada' });
+await Book.objects.create({ title: 'Engines', pages: 300, author: ada });
+
+const books = await Book.objects
+  .filter({ author__name__istartswith: 'a', pages__gte: 100 })
+  .selectRelated('author')
+  .limit(10);
+const counts = await Author.objects.values('name').annotate({ books: Count('books') });
+await Book.objects.filter({ pk: 1 }).update({ pages: F('pages').add(1) });
+const [book, created] = await Book.objects.getOrCreate({ title: 'Notes' }, { pages: 10, author: ada });
+
+console.log(books.map((b) =&gt; `${b.title} (${b.author.name})`), counts);
+console.log(book.title, created, (await Book.objects.get({ pk: 1 })).pages);
+await db.close();</code></pre>
+        <pre data-output><code class="language-plaintext">[ 'Engines (Ada)' ] [ { name: 'Ada', books: 1 } ]
+Notes true 301</code></pre>
+
+        <h2 id="models">Models and Meta</h2>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Django</th><th>@xufa/orm</th></tr></thead>
+            <tbody>
+              <tr><td><code>class Book(models.Model)</code>, fields as attributes</td><td><code>class Book extends Model</code>, <code>static fields = { ... }</code></td></tr>
+              <tr><td><code>class Meta</code></td><td><code>static options = { ... }</code></td></tr>
+              <tr><td><code>db_table</code>, <code>ordering</code>, <code>indexes</code></td><td><code>table</code>, <code>ordering</code>, <code>indexes</code></td></tr>
+              <tr><td><code>unique_together</code>, <code>UniqueConstraint</code></td><td><code>indexes: [{ fields: ['a', 'b'], unique: true }]</code> (with <code>condition</code>: a partial index, in SQL)</td></tr>
+              <tr><td><code>abstract = True</code></td><td><code>abstract: true</code> (its fields go to its children)</td></tr>
+              <tr><td><code>CompositePrimaryKey</code></td><td><code>primaryKey: ['student', 'course']</code></td></tr>
+              <tr><td><code>clean()</code>, <code>CheckConstraint</code></td><td><code>rules</code>: expressions, checked in <code>validate()</code> (in the app, not in the database)</td></tr>
+              <tr><td>Registering the app</td><td><code>db.register(Author, Book)</code></td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h2 id="fields">Fields</h2>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Django</th><th>@xufa/orm</th></tr></thead>
+            <tbody>
+              <tr><td><code>CharField(max_length=100)</code>, <code>TextField</code></td><td><code>fields.string({ maxLength: 100 })</code>, <code>fields.text()</code></td></tr>
+              <tr><td><code>IntegerField</code>, <code>BigIntegerField</code>, <code>FloatField</code></td><td><code>fields.integer()</code>, <code>fields.bigint()</code>, <code>fields.float()</code></td></tr>
+              <tr><td><code>DecimalField(max_digits=8, decimal_places=2)</code></td><td><code>fields.decimal({ precision: 8, scale: 2 })</code> (a string, exact, with its decimal places: <code>'3.00'</code>)</td></tr>
+              <tr><td><code>BooleanField</code>, <code>DateField</code>, <code>DateTimeField(auto_now_add=True)</code></td><td><code>fields.boolean()</code>, <code>fields.date()</code>, <code>fields.datetime({ autoNowAdd: true })</code> (<code>autoNow</code>)</td></tr>
+              <tr><td><code>JSONField</code>, <code>UUIDField</code>, <code>BinaryField</code></td><td><code>fields.json()</code>, <code>fields.uuid()</code>, <code>fields.bytes()</code></td></tr>
+              <tr><td><code>ForeignKey(Author, on_delete=CASCADE, related_name="books")</code></td><td><code>fields.foreignKey(() =&gt; Author, { onDelete: 'cascade', relatedName: 'books' })</code> (<code>setNull</code>, <code>protect</code>, <code>doNothing</code>; <code>dbOnDelete</code>, the database's own: <code>cascade</code>, <code>setNull</code>, <code>restrict</code>, <code>noAction</code>)</td></tr>
+              <tr><td><code>ManyToManyField(Tag, through=...)</code></td><td><code>fields.manyToMany(() =&gt; Tag, { through })</code></td></tr>
+              <tr><td><code>ArrayField</code>, <code>HStoreField</code> (contrib.postgres), GIS fields</td><td><code>fields.array()</code>, <code>fields.hstore()</code>, <code>fields.geometry()</code>, <code>fields.geography()</code></td></tr>
+              <tr><td><code>FileField</code></td><td><code>fields.blob()</code>: in a store of objects (S3, a folder)</td></tr>
+              <tr><td>(django-fernet-fields and others)</td><td><code>fields.encrypted(fields.string())</code>, built in</td></tr>
+              <tr><td><code>GeneratedField</code></td><td>Computed fields (<code>computed</code>, <code>stored</code>)</td></tr>
+              <tr><td><code>null=True</code>, <code>default</code>, <code>unique</code>, <code>db_index</code>, <code>choices</code>, <code>db_column</code>, <code>db_default</code></td><td><code>null: true</code>, <code>default</code>, <code>unique</code>, <code>index</code>, <code>choices</code>, <code>column</code>, <code>dbDefault</code></td></tr>
+              <tr><td><code>validators</code>, <code>MinValueValidator</code>, <code>MaxLengthValidator</code></td><td><code>min</code>, <code>max</code>, <code>minLength</code>, <code>maxLength</code>, and <code>rules</code></td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h2 id="querysets">QuerySets</h2>
+        <p>The same methods, camelCase. QuerySets are lazy and chain; <code>await</code> runs them.</p>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Django</th><th>@xufa/orm</th></tr></thead>
+            <tbody>
+              <tr><td><code>all</code>, <code>filter</code>, <code>exclude</code>, <code>get</code>, <code>count</code>, <code>exists</code>, <code>first</code>, <code>last</code></td><td>The same: <code>filter({ pages__gte: 100 })</code></td></tr>
+              <tr><td><code>order_by("-pages")</code></td><td><code>orderBy('-pages')</code></td></tr>
+              <tr><td><code>qs[10:20]</code></td><td><code>slice(10, 20)</code>, or <code>offset(10).limit(10)</code></td></tr>
+              <tr><td><code>create</code>, <code>bulk_create</code>, <code>update</code>, <code>delete</code></td><td><code>create</code>, <code>bulkCreate</code>, <code>update</code>, <code>delete</code></td></tr>
+              <tr><td><code>get_or_create(defaults=...)</code>, <code>update_or_create</code></td><td><code>getOrCreate(conditions, defaults)</code>, <code>updateOrCreate</code>: <code>[object, created]</code></td></tr>
+              <tr><td><code>values</code>, <code>values_list(flat=True)</code>, <code>only</code></td><td><code>values</code>, <code>valuesList('title', { flat: true })</code>, <code>only</code></td></tr>
+              <tr><td><code>select_related</code>, <code>prefetch_related</code></td><td><code>selectRelated</code>, <code>prefetchRelated</code></td></tr>
+              <tr><td><code>annotate</code>, <code>aggregate</code></td><td><code>annotate</code>, <code>aggregate</code></td></tr>
+              <tr><td><code>values(month=ExtractMonth("at"))</code>, <code>TruncMonth</code></td><td><code>values({ month: Extract('at', 'month') })</code>, <code>Trunc('at', 'month')</code>: then <code>annotate()</code> groups by them</td></tr>
+              <tr><td><code>select_for_update</code>, <code>using("other")</code></td><td><code>selectForUpdate</code>, <code>using('other')</code></td></tr>
+              <tr><td><code>raw</code>, <code>extra</code>, <code>RawSQL</code></td><td><code>Raw</code>, <code>extra</code> (SQL databases)</td></tr>
+              <tr><td>The top N of each group (a window function by hand)</td><td><code>limitPer('author', 3)</code></td></tr>
+              <tr><td><code>distinct()</code>, <code>distinct("author")</code> (PostgreSQL)</td><td><code>distinct()</code> of values; <code>distinct('author')</code> on every backend</td></tr>
+              <tr><td><code>union(other, all=True)</code>, <code>intersection</code>, <code>difference</code></td><td><code>union(other, { all: true })</code>, <code>intersection</code>, <code>difference</code>: one query when they can be (the conditions ORed, ANDed or excluded), the rows combined otherwise</td></tr>
+              <tr><td><code>defer</code>, <code>in_bulk</code></td><td><code>defer</code>, <code>inBulk</code> (a Map)</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h2 id="lookups">Lookups</h2>
+        <p>
+          <code>exact</code>, <code>iexact</code>, <code>contains</code>, <code>icontains</code>, <code>in</code>,
+          <code>gt</code>, <code>gte</code>, <code>lt</code>, <code>lte</code>, <code>startswith</code>,
+          <code>istartswith</code>, <code>endswith</code>, <code>iendswith</code>, <code>range</code>, <code>isnull</code>,
+          <code>regex</code>, <code>iregex</code>, as Django has them, across relations (<code>author__name__icontains</code>,
+          and reverse ones: <code>books__title</code>) and inside json fields (<code>meta__a__b</code>). And
+          <code>like</code> and <code>ilike</code>, with the patterns of SQL. And the parts of dates:
+          <code>__year</code> and <code>__date</code> (ranges of the field), <code>__month</code>, <code>__day</code>,
+          <code>__week_day</code>, <code>__iso_week_day</code>, <code>__week</code>, <code>__quarter</code>,
+          <code>__hour</code>, <code>__minute</code> and <code>__second</code>, in UTC.
+        </p>
+
+        <h2 id="expressions">Q, F and aggregates</h2>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Django</th><th>@xufa/orm</th></tr></thead>
+            <tbody>
+              <tr><td><code>Q(a=1) | Q(b=2)</code>, <code>~Q(c=3)</code></td><td><code>or({ a: 1 }, { b: 2 })</code>, <code>not({ c: 3 })</code> (and <code>and()</code>; or <code>new Q({...}).or(...)</code>)</td></tr>
+              <tr><td><code>F("pages") + 1</code>, <code>F("a") * F("b")</code></td><td><code>F('pages').add(1)</code>, <code>F('a').mul(F('b'))</code> (<code>sub</code>, <code>div</code>)</td></tr>
+              <tr><td><code>Count</code>, <code>Sum</code>, <code>Avg</code>, <code>Min</code>, <code>Max</code></td><td>The same: <code>annotate({ books: Count('books') })</code></td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h2 id="instances">Objects</h2>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Django</th><th>@xufa/orm</th></tr></thead>
+            <tbody>
+              <tr><td><code>book.save()</code>, <code>book.delete()</code></td><td><code>await book.save()</code>, <code>await book.delete()</code></td></tr>
+              <tr><td><code>book.refresh_from_db()</code>, <code>book.full_clean()</code></td><td><code>await book.refresh()</code>, <code>book.validate()</code></td></tr>
+              <tr><td><code>book.pk</code>, <code>book.author_id</code></td><td><code>book.pk</code>, <code>book.authorId</code></td></tr>
+              <tr><td><code>author.books.all()</code>, <code>author.books.create(...)</code></td><td><code>author.books</code> (a QuerySet), <code>author.books.create(...)</code></td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h2 id="transactions">Transactions</h2>
+        <pre><code class="language-js">// with transaction.atomic(): ...
+await db.transaction(async () =&gt; {
+  const order = await Order.objects.selectForUpdate().get({ pk: id });
+  order.status = 'paid';
+  await order.save();
+}); // committed when it ends; rolled back when it throws; one inside another is a savepoint</code></pre>
+
+        <h2 id="migrations">Migrations</h2>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Django</th><th>@xufa/orm</th></tr></thead>
+            <tbody>
+              <tr><td><code>manage.py makemigrations</code></td><td><code>await db.makeMigrations({ dir: 'migrations' })</code>: a file with the operations between the models and the migrations there</td></tr>
+              <tr><td><code>manage.py migrate</code>, <code>showmigrations</code></td><td><code>await db.migrate({ dir })</code>, <code>db.showMigrations({ dir })</code> (or the option <code>migrate</code> of the plugin of @xufa/http)</td></tr>
+              <tr><td><code>RenameField</code>, <code>RunSQL</code>, <code>RunPython</code></td><td><code>{ op: 'renameColumn' }</code> (renames are not detected), <code>{ op: 'sql' }</code>, <code>{ op: 'run', fn }</code></td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p>There is no command line yet: call them from a script of yours.</p>
+
+        <h2 id="signals">Signals</h2>
+        <p>
+          <code>pre_save</code>, <code>post_save</code>, <code>pre_delete</code>, <code>post_delete</code> are hooks of the
+          model: <code>Book.on('beforeSave' | 'afterSave' | 'beforeDelete' | 'afterDelete', fn)</code>. As in Django,
+          <code>bulkCreate</code> and <code>update</code> of QuerySets do not run them.
+        </p>
+
+        <h2 id="databases">Several databases</h2>
+        <p>
+          <code>DATABASES</code> and routers are <code>Databases</code> with <code>routes</code> (a model to a database);
+          <code>using()</code> chooses one for a query. <code>Tenants</code> give each tenant a database of its own, chosen
+          by the request (<a href="guide.html#tenants">Tenants</a>).
+        </p>
+
+        <h2 id="errors">Exceptions</h2>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Django</th><th>@xufa/orm (<code>err.code</code>)</th></tr></thead>
+            <tbody>
+              <tr><td><code>Book.DoesNotExist</code></td><td><code>NotFoundError</code> (<code>XUFA_ORM_ERR_NOT_FOUND</code>, 404 in a route)</td></tr>
+              <tr><td><code>MultipleObjectsReturned</code></td><td><code>MultipleObjectsError</code> (<code>XUFA_ORM_ERR_MULTIPLE_OBJECTS</code>)</td></tr>
+              <tr><td><code>ValidationError</code> (<code>message_dict</code>)</td><td><code>ValidationError</code> (<code>XUFA_ORM_ERR_VALIDATION</code>, <code>err.errors</code>: the messages by field)</td></tr>
+              <tr><td><code>IntegrityError</code> of a unique</td><td><code>UniqueError</code>, with the fields</td></tr>
+              <tr><td><code>ProtectedError</code></td><td><code>ProtectedError</code></td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h2 id="async">Everything is awaited</h2>
+        <p>
+          Every query is a promise: <code>await Book.objects.filter(...)</code> runs it (as Django's <code>async for</code>
+          and <code>aget()</code> do), and a QuerySet that is not awaited sends nothing. Saving, deleting, loading a relation
+          are awaited too.
+        </p>
+
+        <h2 id="relations">Relations are loaded on purpose</h2>
+        <p>
+          Django loads a foreign key when it is first read, with a query each time (the N+1 queries of a loop). Here
+          <code>book.author</code> is <code>undefined</code> until it is loaded: with <code>selectRelated('author')</code>
+          (a join), <code>prefetchRelated</code> (one query for many objects) or <code>await book.load('author')</code>.
+          The key is always there: <code>book.authorId</code>.
+        </p>
+
+        <h2 id="missing">Not in @xufa/orm</h2>
+        <ul>
+          <li>Ordering and values across reverse relations (conditions and aggregates follow them).</li>
+          <li>Multi-table and proxy inheritance (abstract parents are there), generic relations (contenttypes).</li>
+          <li>Custom managers are written as scopes (<code>static scopes = { published: (qs) =&gt; qs.filter(...) }</code>: <code>Post.objects.published()</code>), and soft deletes are an option of the model (<code>softDelete</code>): see <a href="guide.html#scopes">Scopes and soft deletes</a>.</li>
+          <li>Forms: <a href="../openapi/index.html">@xufa/openapi</a> documents the routes, and resources give a model its routes (<a href="guide.html#resources">Resources</a>). The admin is <a href="../admin/index.html">@xufa/admin</a>, and the command line (migrations, generators, shell) is <a href="../guide.html#command-line">xufa</a>.</li>
+        </ul>
+      </article>
+    </div>
+
+    <footer class="footer">
+      <div class="container">
+        <span>xufa is MIT licensed. &copy; Jes&uacute;s Seijas</span>
+        <span>
+          <a href="../guide.html">Guide</a> &middot; <a href="../playground.html">Playground</a> &middot; <a href="../http/index.html">HTTP</a> &middot; <a href="index.html">ORM</a> &middot; <a href="../auth/index.html">Auth</a> &middot;
+          <a href="../sequelize/index.html">Sequelize</a> &middot; <a href="../packages.html">Packages</a> &middot;
+          <a href="../benchmarks.html">Benchmarks</a> &middot; <a href="https://github.com/xufajs/xufa">GitHub</a>
+        </span>
+      </div>
+    </footer>
+  </body>
+</html>

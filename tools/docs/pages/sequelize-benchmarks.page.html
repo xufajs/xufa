@@ -1,0 +1,28 @@
+<!--{
+  "file": "sequelize-benchmarks.html",
+  "name": "@xufa/sequelize",
+  "package": "sequelize.html",
+  "title": "@xufa/sequelize: Benchmarks",
+  "description": "The same Sequelize code on @xufa/sequelize and on Sequelize 6.37 with pg and sqlite3: creates, reads by key, queries, joins, bulk writes, updates and counts.",
+  "nav": "sequelize",
+  "packages": false,
+  "groups": [
+    ["Benchmarks", [["sequelize", "Against Sequelize"], ["run", "Run them yourself"], ["orm-benchmarks.html", "The ORM's own API"]]]
+  ]
+}-->
+        <h1>Benchmarks</h1>
+        <p class="intro">
+          The same Sequelize code on <code>@xufa/sequelize</code> and on Sequelize 6 as it installs (<code>pg</code>,
+          <code>sqlite3</code>), with the ORM's own API next to them, on the same models, data and machine. Each library runs
+          every round in a process of its own; the median of the rounds is shown, with how many times Sequelize's it is
+          (⚠: rounds more than 10% apart).
+        </p>
+<!--generated: orm-benchmarks-->
+
+        <h2 id="run">Run them yourself</h2>
+        <pre><code class="language-sh">node bench/orm.js --orms xufa-sequelize,sequelize        # the same Sequelize code, on each
+node bench/orm.js --orms xufa-sequelize,sequelize,sequelize-xufa-pg --dialects postgres</code></pre>
+        <p>
+          <code>sequelize-xufa-pg</code> is Sequelize on <a href="pg.html">@xufa/pg</a>: what the driver alone gives. The
+          tables are <code>bench_author</code> and <code>bench_book</code>, dropped before and after.
+        </p>

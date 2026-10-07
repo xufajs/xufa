@@ -1,4 +1,4 @@
-const { Never, compileJsonSchema, fromJsonSchema, never, toErrors } = require('../src');
+const { Never, compileJsonSchema, fromJsonSchema, never, toErrors } = require('..');
 
 // Errors of each value, after checking the interpreted type and the compiled functions agree.
 function errorsOf(json, values) {

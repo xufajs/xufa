@@ -1,0 +1,488 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>@xufa/cluster: Reference · xufa</title>
+    <meta
+      name="description"
+      content="The reference of @xufa/cluster: every function, class, interface and type it declares, made from its TypeScript declarations."
+    />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%23d9502b'/%3E%3Ctext x='16' y='22.5' font-family='monospace' font-size='18' font-weight='700' fill='white' text-anchor='middle'%3Ex%3C/text%3E%3C/svg%3E"
+    />
+    <link rel="stylesheet" href="../style.css?v=0.1.0" />
+    <script src="../main.js?v=0.1.0"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js" defer></script>
+  </head>
+  <body>
+    <header class="header">
+      <div class="header-inner">
+        <a class="logo" href="../index.html"><span class="logo-mark">x</span>xufa</a>
+        <nav class="nav">
+          <a href="../guide.html">Guide</a>
+          <a href="../playground.html">Playground</a>
+          <a href="../http/index.html">HTTP</a>
+          <a href="../orm/index.html">ORM</a>
+          <a class="hide-small" href="../auth/index.html">Auth</a>
+          <a class="hide-small" href="../sequelize/index.html">Sequelize</a>
+          <a class="hide-small" href="../packages.html" aria-current="page">Packages</a>
+          <a class="hide-small" href="../benchmarks.html">Benchmarks</a>
+          <a href="https://github.com/xufajs/xufa">GitHub</a>
+          <button class="theme-toggle" type="button" aria-label="Switch between light and dark theme">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+              <path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z" />
+            </svg>
+          </button>
+        </nav>
+      </div>
+    </header>
+
+    <div class="docs">
+      <button class="menu-toggle" type="button" aria-expanded="false">☰ Contents</button>
+      <aside class="sidebar">
+        <h4>Reference</h4>
+        <ul>
+          <li><a href="#functions">Functions (5)</a></li>
+          <li><a href="#classes">Classes (6)</a></li>
+          <li><a href="#constants">Constants (3)</a></li>
+          <li><a href="#interfaces">Interfaces (13)</a></li>
+          <li><a href="#types">Types (2)</a></li>
+        </ul>
+        <h4>Packages</h4>
+        <ul>
+          <li><a href="../websocket/index.html">@xufa/websocket</a></li>
+          <li><a href="../admin/index.html">@xufa/admin</a></li>
+          <li><a href="../session/index.html">@xufa/session</a></li>
+          <li><a href="../openapi/index.html">@xufa/openapi</a></li>
+          <li><a href="../client/index.html">@xufa/client</a></li>
+          <li><a href="../schema/index.html">@xufa/schema</a></li>
+          <li><a href="../pg/index.html">@xufa/pg</a></li>
+          <li><a href="../mongo/index.html">@xufa/mongo</a></li>
+          <li><a href="../expression/index.html">@xufa/expression</a></li>
+          <li><a href="../template/index.html">@xufa/template</a></li>
+          <li><a href="index.html" aria-current="page">@xufa/cluster</a></li>
+          <li><a href="../scheduler/index.html">@xufa/scheduler</a></li>
+          <li><a href="../queue/index.html">@xufa/queue</a></li>
+          <li><a href="../config/index.html">@xufa/config</a></li>
+          <li><a href="../discovery/index.html">@xufa/discovery</a></li>
+          <li><a href="../netcache/index.html">@xufa/netcache</a></li>
+          <li><a href="../faults/index.html">@xufa/faults</a></li>
+          <li><a href="../marshal/index.html">@xufa/marshal</a></li>
+          <li><a href="../yaml/index.html">@xufa/yaml</a></li>
+          <li><a href="../jwt/index.html">@xufa/jwt</a></li>
+          <li><a href="../logger/index.html">@xufa/logger</a></li>
+          <li><a href="../router/index.html">@xufa/router</a></li>
+          <li><a href="../serializer/index.html">@xufa/serializer</a></li>
+          <li><a href="../inject/index.html">@xufa/inject</a></li>
+          <li><a href="../boot/index.html">@xufa/boot</a></li>
+          <li><a href="../errors/index.html">@xufa/errors</a></li>
+          <li><a href="../packages.html">All the packages</a></li>
+        </ul>
+      </aside>
+
+      <article class="content">
+        <nav class="package-tabs" aria-label="@xufa/cluster">
+          <a href="index.html">Overview</a>
+          <a href="reference.html" aria-current="page">Reference</a>
+        </nav>
+        <h1>Reference</h1>
+        <p class="intro">
+          An app in a cluster of processes, the messages between them, and pools of nodes shared by its workers, with no dependencies. Every declaration of its TypeScript declarations
+          (<code>packages/cluster/index.d.ts</code>), as they are written, with their comments: made from them each time
+          the docs are built. How to use them is in <a href="index.html">the overview</a>.
+        </p>
+
+        <h2 id="functions">Functions</h2>
+        <p class="ref-index"><a href="#ref-start"><code>start</code></a>, <a href="#ref-stop"><code>stop</code></a>, <a href="#ref-createPool"><code>createPool</code></a>, <a href="#ref-usePool"><code>usePool</code></a>, <a href="#ref-ormSlots"><code>ormSlots</code></a></p>
+
+        <h3 id="ref-start"><code>start</code></h3>
+        <pre><code class="language-ts">export declare function start(options?: StartOptions): Promise&lt;ClusterContext&gt;;</code></pre>
+
+        <h3 id="ref-stop"><code>stop</code></h3>
+        <pre><code class="language-ts">export declare function stop(): Promise&lt;void&gt;;</code></pre>
+
+        <h3 id="ref-createPool"><code>createPool</code></h3>
+        <pre><code class="language-ts">export declare function createPool&lt;N extends PoolNode = PoolNode&gt;(name: string, options?: PoolOptions): Pool&lt;N&gt;;</code></pre>
+        <p>In the primary (or the only process): a pool of nodes.</p>
+
+        <h3 id="ref-usePool"><code>usePool</code></h3>
+        <pre><code class="language-ts">export declare function usePool&lt;N extends PoolNode = PoolNode&gt;(
+  name: string,
+  options?: { bus?: Bus; busy?: (err: unknown) =&gt; boolean }
+): PoolClient&lt;N&gt;;</code></pre>
+        <p>From a worker (or any process): the pool of the primary.</p>
+
+        <h3 id="ref-ormSlots"><code>ormSlots</code></h3>
+        <pre><code class="language-ts">export declare function ormSlots(
+  db: unknown,
+  options?: { ttl?: Duration; table?: string; model?: string | unknown; owner?: string }
+): SlotStore &amp; {
+  ttl: number;
+  owner: string;
+  model: unknown;
+  /** The slots held now, by node of a pool. */
+  held(pool: string): Promise&lt;Record&lt;string, number&gt;&gt;;
+};</code></pre>
+        <p>The slots in a database of</p>
+
+        <h2 id="classes">Classes</h2>
+        <p class="ref-index"><a href="#ref-Bus"><code>Bus</code></a>, <a href="#ref-BusError"><code>BusError</code></a>, <a href="#ref-Lease"><code>Lease</code></a>, <a href="#ref-PoolClient"><code>PoolClient</code></a>, <a href="#ref-Pool"><code>Pool</code></a>, <a href="#ref-PoolError"><code>PoolError</code></a></p>
+
+        <h3 id="ref-Bus"><code>Bus</code></h3>
+        <pre><code class="language-ts">export declare class Bus { ... }</code></pre>
+        <p>The messages between the processes of a cluster (in one process, to the handlers of that process).</p>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>readonly clustered</code></td><td><code>boolean</code></td><td><p>Whether messages go to other processes (a primary with workers, or a worker).</p></td></tr>
+                <tr><td><code>readonly isPrimary</code></td><td><code>boolean</code></td><td></td></tr>
+                <tr><td><code>readonly workers</code></td><td><code>number[]</code></td><td><p>The ids of the workers (in the primary).</p></td></tr>
+                <tr><td><code>readonly faults</code></td><td><code>any</code></td><td><p>Faults of</p></td></tr>
+                <tr><td><code>on(event: string, handler: (data: any, sender: Worker | null) =&gt; unknown)</code></td><td><code>this</code></td><td><p>handler(data, sender): sender is the worker (in the primary) or null. Its result is the reply of requests.</p></td></tr>
+                <tr><td><code>off(event: string, handler: (data: any, sender: Worker | null) =&gt; unknown)</code></td><td><code>this</code></td><td></td></tr>
+                <tr><td><code>send(event: string, data?: unknown)</code></td><td><code>void</code></td><td><p>An event to the primary (in a worker).</p></td></tr>
+                <tr><td><code>sendTo(workerId: number, event: string, data?: unknown)</code></td><td><code>void</code></td><td><p>An event to one worker (in the primary).</p></td></tr>
+                <tr><td><code>broadcast(event: string, data?: unknown, options?: { except?: number; others?: boolean })</code></td><td><code>void</code></td><td><p>An event to every worker: from the primary, or from a worker (others: but itself).</p></td></tr>
+                <tr><td><code>request&lt;T = any&gt;(event: string, data?: unknown, options?: { timeout?: number })</code></td><td><code>Promise&lt;T&gt;</code></td><td><p>A request to the primary: the reply of its handler (timeout: 30 s, 0 for none).</p></td></tr>
+                <tr><td><code>useMarshal(registry?: unknown)</code></td><td><code>this</code></td><td><p>Data written by</p></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-BusError"><code>BusError</code></h3>
+        <pre><code class="language-ts">export declare class BusError extends Error { ... }</code></pre>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>code?</code></td><td><code>string</code></td><td></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-Lease"><code>Lease</code></h3>
+        <pre><code class="language-ts">export declare class Lease&lt;N extends PoolNode = PoolNode&gt; { ... }</code></pre>
+        <p>A node given: release() it when done; its signal is aborted when the pool takes it back.</p>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>readonly node</code></td><td><code>N</code></td><td></td></tr>
+                <tr><td><code>readonly signal</code></td><td><code>AbortSignal</code></td><td></td></tr>
+                <tr><td><code>release(failed?: boolean | unknown)</code></td><td><code>void</code></td><td><p>failed: true, or the error of the work (a busy answer leaves the node aside instead).</p></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-PoolClient"><code>PoolClient</code></h3>
+        <pre><code class="language-ts">export declare class PoolClient&lt;N extends PoolNode = PoolNode&gt; { ... }</code></pre>
+        <p>The pool of the primary, from any process.</p>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>new (name: string, options: { bus: Bus; busy?: (err: unknown) =&gt; boolean })</code></td><td></td><td></td></tr>
+                <tr><td><code>readonly name</code></td><td><code>string</code></td><td></td></tr>
+                <tr><td><code>acquire(options?: AcquireOptions)</code></td><td><code>Promise&lt;<a href="#ref-Lease">Lease</a>&lt;N&gt;&gt;</code></td><td><p>Waits for a free node.</p></td></tr>
+                <tr><td><code>use&lt;T&gt;(fn: (node: N, context: { signal: AbortSignal; attempt: number }) =&gt; T | Promise&lt;T&gt;, options?: UseOptions)</code></td><td><code>Promise&lt;T&gt;</code></td><td><p>Runs fn on a free node, and gives the slot back when it ends.</p></td></tr>
+                <tr><td><code>stats()</code></td><td><code>Promise&lt;<a href="#ref-PoolStats">PoolStats</a>&gt;</code></td><td></td></tr>
+                <tr><td><code>health(options?: PoolHealthOptions)</code></td><td><code><a href="#ref-PoolHealthCheck">PoolHealthCheck</a></code></td><td><p>A check of xufa.health, with the stats of the primary.</p></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-Pool"><code>Pool</code></h3>
+        <pre><code class="language-ts">export declare class Pool&lt;N extends PoolNode = PoolNode&gt; extends EventEmitter { ... }</code></pre>
+        <p>A pool of nodes, in the primary: its nodes, their slots, the tickets waiting and the leases given.</p>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>new (name: string, options: PoolOptions &amp; { bus: Bus })</code></td><td></td><td></td></tr>
+                <tr><td><code>readonly name</code></td><td><code>string</code></td><td></td></tr>
+                <tr><td><code>add(node: string | number | N)</code></td><td><code>this</code></td><td><p>Adds a node (or updates the one with its id).</p></td></tr>
+                <tr><td><code>remove(id: string | number)</code></td><td><code>this</code></td><td><p>Takes a node away: its leases are taken back.</p></td></tr>
+                <tr><td><code>stats()</code></td><td><code><a href="#ref-PoolStats">PoolStats</a></code></td><td></td></tr>
+                <tr><td><code>health(options?: PoolHealthOptions)</code></td><td><code><a href="#ref-PoolHealthCheck">PoolHealthCheck</a></code></td><td><p>A check of xufa.health: down without nodes (minNodes), degraded with too many waiting (maxWaiting).</p></td></tr>
+                <tr><td><code>acquire(options?: AcquireOptions)</code></td><td><code>Promise&lt;<a href="#ref-Lease">Lease</a>&lt;N&gt;&gt;</code></td><td></td></tr>
+                <tr><td><code>use&lt;T&gt;(fn: (node: N, context: { signal: AbortSignal; attempt: number }) =&gt; T | Promise&lt;T&gt;, options?: UseOptions)</code></td><td><code>Promise&lt;T&gt;</code></td><td></td></tr>
+                <tr><td><code>close()</code></td><td><code>void</code></td><td><p>Rejects the tickets, takes the leases back and stops watching the nodes.</p></td></tr>
+                <tr><td><code>on(event: 'demand', listener: (stats: PoolStats) =&gt; void)</code></td><td><code>this</code></td><td></td></tr>
+                <tr><td><code>on(event: 'scale', listener: (info: PoolStats &amp; { from: number; to: number }) =&gt; void)</code></td><td><code>this</code></td><td></td></tr>
+                <tr><td><code>on(event: 'up' | 'down', listener: (node: N) =&gt; void)</code></td><td><code>this</code></td><td></td></tr>
+                <tr><td><code>on(event: 'revoke', listener: (info: { node: string | number; worker: number; reason: PoolError }) =&gt; void)</code></td><td><code>this</code></td><td></td></tr>
+                <tr><td><code>on(event: 'busy', listener: (info: { node: N; for: number }) =&gt; void)</code></td><td><code>this</code></td><td></td></tr>
+                <tr><td><code>on(event: 'error', listener: (err: unknown) =&gt; void)</code></td><td><code>this</code></td><td></td></tr>
+                <tr><td><code>on(event: string | symbol, listener: (...args: any[]) =&gt; void)</code></td><td><code>this</code></td><td></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-PoolError"><code>PoolError</code></h3>
+        <pre><code class="language-ts">export declare class PoolError extends Error { ... }</code></pre>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>code</code></td><td><code><a href="#ref-PoolErrorCode">PoolErrorCode</a></code></td><td></td></tr>
+                <tr><td><code>statusCode</code></td><td><code>number</code></td><td></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h2 id="constants">Constants</h2>
+        <p class="ref-index"><a href="#ref-bus"><code>bus</code></a>, <a href="#ref-isPrimary"><code>isPrimary</code></a>, <a href="#ref-isWorker"><code>isWorker</code></a></p>
+
+        <h3 id="ref-bus"><code>bus</code></h3>
+        <pre><code class="language-ts">export declare const bus: Bus;</code></pre>
+        <p>The bus of this process (the same in every module).</p>
+
+        <h3 id="ref-isPrimary"><code>isPrimary</code></h3>
+        <pre><code class="language-ts">export declare const isPrimary: boolean;</code></pre>
+
+        <h3 id="ref-isWorker"><code>isWorker</code></h3>
+        <pre><code class="language-ts">export declare const isWorker: boolean;</code></pre>
+
+        <h2 id="interfaces">Interfaces</h2>
+        <p class="ref-index"><a href="#ref-ClusterContext"><code>ClusterContext</code></a>, <a href="#ref-StartOptions"><code>StartOptions</code></a>, <a href="#ref-PoolNode"><code>PoolNode</code></a>, <a href="#ref-PoolNodeSource"><code>PoolNodeSource</code></a>, <a href="#ref-PoolHealthCheck"><code>PoolHealthCheck</code></a>, <a href="#ref-PoolHealthOptions"><code>PoolHealthOptions</code></a>, <a href="#ref-PoolStats"><code>PoolStats</code></a>, <a href="#ref-PoolAutoscale"><code>PoolAutoscale</code></a>, <a href="#ref-PoolOptions"><code>PoolOptions</code></a>, <a href="#ref-AcquireOptions"><code>AcquireOptions</code></a>, <a href="#ref-UseOptions"><code>UseOptions</code></a>, <a href="#ref-PoolNotifier"><code>PoolNotifier</code></a>, <a href="#ref-SlotStore"><code>SlotStore</code></a></p>
+
+        <h3 id="ref-ClusterContext"><code>ClusterContext</code></h3>
+        <pre><code class="language-ts">export interface ClusterContext { ... }</code></pre>
+        <p>What primary() and worker() get.</p>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>bus</code></td><td><code><a href="#ref-Bus">Bus</a></code></td><td></td></tr>
+                <tr><td><code>id</code></td><td><code>number</code></td><td><p>0 in the primary (and in one process).</p></td></tr>
+                <tr><td><code>isPrimary</code></td><td><code>boolean</code></td><td></td></tr>
+                <tr><td><code>isWorker</code></td><td><code>boolean</code></td><td></td></tr>
+                <tr><td><code>onShutdown(fn: () =&gt; unknown)</code></td><td><code>void</code></td><td><p>A function run when the cluster stops (in reverse order of registration).</p></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-StartOptions"><code>StartOptions</code></h3>
+        <pre><code class="language-ts">export interface StartOptions { ... }</code></pre>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>workers?</code></td><td><code>number | false</code></td><td><p>os.availableParallelism() by default; 0 (or false) runs everything in one process.</p></td></tr>
+                <tr><td><code>primary?</code></td><td><code>(context: <a href="#ref-ClusterContext">ClusterContext</a>) =&gt; unknown</code></td><td></td></tr>
+                <tr><td><code>worker?</code></td><td><code>(context: <a href="#ref-ClusterContext">ClusterContext</a>) =&gt; unknown</code></td><td></td></tr>
+                <tr><td><code>shutdownTimeout?</code></td><td><code>number</code></td><td><p>Milliseconds a worker has to stop before it is killed (10000).</p></td></tr>
+                <tr><td><code>restart?</code></td><td><code>boolean</code></td><td><p>Workers that die are forked again (true).</p></td></tr>
+                <tr><td><code>onWorkerExit?</code></td><td><code>(info: { id: number; code: number | null; signal: string | null; delay: number }) =&gt; void</code></td><td></td></tr>
+                <tr><td><code>signals?</code></td><td><code>boolean</code></td><td><p>SIGINT and SIGTERM stop the cluster (true).</p></td></tr>
+                <tr><td><code>env?</code></td><td><code>Record&lt;string, string | undefined&gt;</code></td><td></td></tr>
+                <tr><td><code>exec?</code></td><td><code>string</code></td><td></td></tr>
+                <tr><td><code>marshal?</code></td><td><code>boolean | unknown</code></td><td><p>true, or a Registry of</p></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-PoolNode"><code>PoolNode</code></h3>
+        <pre><code class="language-ts">export interface PoolNode { ... }</code></pre>
+        <p>A node of a pool: an object with an id (a Discovery's peer, or one of a list), sent to the work as it is.</p>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>id</code></td><td><code>string | number</code></td><td></td></tr>
+                <tr><td><code>[key: string]</code></td><td><code>any</code></td><td></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-PoolNodeSource"><code>PoolNodeSource</code></h3>
+        <pre><code class="language-ts">export interface PoolNodeSource { ... }</code></pre>
+        <p>A source of nodes: its peers now, and the events 'up' and 'down' (a Discovery of</p>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>peers?</code></td><td><code><a href="#ref-PoolNode">PoolNode</a>[]</code></td><td></td></tr>
+                <tr><td><code>on(event: 'up' | 'down', listener: (peer: PoolNode) =&gt; void)</code></td><td><code>unknown</code></td><td></td></tr>
+                <tr><td><code>off(event: 'up' | 'down', listener: (peer: PoolNode) =&gt; void)</code></td><td><code>unknown</code></td><td></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-PoolHealthCheck"><code>PoolHealthCheck</code></h3>
+        <pre><code class="language-ts">export interface PoolHealthCheck { ... }</code></pre>
+        <p>A check of xufa.health of</p>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>check()</code></td><td><code>Promise&lt; { status: 'up' | 'degraded' | 'down'; error?: string } &amp; { nodes?: number; slots?: number; free?: number; running?: number; waiting?: number; } &gt;</code></td><td></td></tr>
+                <tr><td><code>critical</code></td><td><code>boolean</code></td><td></td></tr>
+                <tr><td><code>timeout?</code></td><td><code>number | string</code></td><td></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-PoolHealthOptions"><code>PoolHealthOptions</code></h3>
+        <pre><code class="language-ts">export interface PoolHealthOptions { ... }</code></pre>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>minNodes?</code></td><td><code>number</code></td><td><p>Down with fewer nodes (1).</p></td></tr>
+                <tr><td><code>maxWaiting?</code></td><td><code>number</code></td><td><p>Degraded with more tickets waiting.</p></td></tr>
+                <tr><td><code>critical?</code></td><td><code>boolean</code></td><td><p>false by default: the app serves without it.</p></td></tr>
+                <tr><td><code>timeout?</code></td><td><code>number | string</code></td><td></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-PoolStats"><code>PoolStats</code></h3>
+        <pre><code class="language-ts">export interface PoolStats { ... }</code></pre>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>name</code></td><td><code>string</code></td><td></td></tr>
+                <tr><td><code>nodes</code></td><td><code>number</code></td><td></td></tr>
+                <tr><td><code>slots</code></td><td><code>number</code></td><td></td></tr>
+                <tr><td><code>free</code></td><td><code>number</code></td><td></td></tr>
+                <tr><td><code>running</code></td><td><code>number</code></td><td><p>Leases given (works running).</p></td></tr>
+                <tr><td><code>waiting</code></td><td><code>number</code></td><td><p>Tickets waiting for a node.</p></td></tr>
+                <tr><td><code>byNode</code></td><td><code>{ id: string | number; slots: number; running: number; failures: number }[]</code></td><td></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-PoolAutoscale"><code>PoolAutoscale</code></h3>
+        <pre><code class="language-ts">export interface PoolAutoscale { ... }</code></pre>
+        <p>Scales the nodes by the demand (waiting plus running): up at once, down only after downAfter.</p>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>scale(count: number, stats: PoolStats)</code></td><td><code>unknown</code></td><td><p>Called with the nodes wanted: ceil((waiting + running) / perNode), between min and max.</p></td></tr>
+                <tr><td><code>perNode?</code></td><td><code>number</code></td><td><p>Works a node takes (1).</p></td></tr>
+                <tr><td><code>min?</code></td><td><code>number</code></td><td></td></tr>
+                <tr><td><code>max?</code></td><td><code>number</code></td><td></td></tr>
+                <tr><td><code>upEvery?</code></td><td><code><a href="#ref-Duration">Duration</a></code></td><td><p>The least time between scale ups ('10s').</p></td></tr>
+                <tr><td><code>downAfter?</code></td><td><code><a href="#ref-Duration">Duration</a></code></td><td><p>How long the demand is lower before scaling down ('10m').</p></td></tr>
+                <tr><td><code>initial?</code></td><td><code>number</code></td><td><p>The nodes there are when it starts (the nodes of the pool).</p></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-PoolOptions"><code>PoolOptions</code></h3>
+        <pre><code class="language-ts">export interface PoolOptions { ... }</code></pre>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>nodes?</code></td><td><code>(string | number | <a href="#ref-PoolNode">PoolNode</a>)[] | <a href="#ref-PoolNodeSource">PoolNodeSource</a></code></td><td><p>Ids or nodes, or a source of peers (a Discovery).</p></td></tr>
+                <tr><td><code>slots?</code></td><td><code>number | ((node: <a href="#ref-PoolNode">PoolNode</a>) =&gt; number)</code></td><td><p>Works a node takes at once (1), or a function of the node.</p></td></tr>
+                <tr><td><code>leaseTimeout?</code></td><td><code><a href="#ref-Duration">Duration</a></code></td><td><p>A lease longer is taken back: its work's signal aborted (none by default).</p></td></tr>
+                <tr><td><code>waitTimeout?</code></td><td><code><a href="#ref-Duration">Duration</a></code></td><td><p>A ticket that waits longer is rejected (XUFA_POOL_WAIT_TIMEOUT; none by default).</p></td></tr>
+                <tr><td><code>maxWaiting?</code></td><td><code>number</code></td><td><p>Tickets waiting at most: more are rejected (XUFA_POOL_FULL).</p></td></tr>
+                <tr><td><code>autoscale?</code></td><td><code><a href="#ref-PoolAutoscale">PoolAutoscale</a></code></td><td></td></tr>
+                <tr><td><code>shared?</code></td><td><code><a href="#ref-SlotStore">SlotStore</a></code></td><td><p>A store of slots shared with the pools of other machines (ormSlots(db)).</p></td></tr>
+                <tr><td><code>notify?</code></td><td><code>| <a href="#ref-PoolNotifier">PoolNotifier</a> | { publish(channel: string, data: unknown): unknown; on(event: 'publish', listener: (...args: any[]) =&gt; void): unknown; off(event: string, listener: (...args: any[]) =&gt; void): unknown; } | { send(event: string, data: unknown): unknown; on(event: 'message', listener: (...args: any[]) =&gt; void): unknown; off(event: string, listener: (...args: any[]) =&gt; void): unknown; }</code></td><td><p>Tells the pools of other machines when a slot comes back, so their tickets waiting are served at once: a NetCache of</p></td></tr>
+                <tr><td><code>pollEvery?</code></td><td><code><a href="#ref-Duration">Duration</a></code></td><td><p>How often to look again when every free slot is taken by other machines ('500ms').</p></td></tr>
+                <tr><td><code>busyFor?</code></td><td><code><a href="#ref-Duration">Duration</a></code></td><td><p>How long a node that answered busy is left aside, when it does not say (Retry-After): '1s'.</p></td></tr>
+                <tr><td><code>busy?</code></td><td><code>(err: unknown) =&gt; boolean</code></td><td><p>Which errors are busy answers (an HTTP 429 by default), for the pool's own use().</p></td></tr>
+                <tr><td><code>bus?</code></td><td><code><a href="#ref-Bus">Bus</a></code></td><td><p>A bus other than this process's one.</p></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-AcquireOptions"><code>AcquireOptions</code></h3>
+        <pre><code class="language-ts">export interface AcquireOptions { ... }</code></pre>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>priority?</code></td><td><code>number</code></td><td><p>Higher first (0).</p></td></tr>
+                <tr><td><code>exclude?</code></td><td><code>(string | number)[]</code></td><td><p>Ids of nodes to avoid while there are others.</p></td></tr>
+                <tr><td><code>signal?</code></td><td><code>AbortSignal</code></td><td><p>Stops waiting.</p></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-UseOptions"><code>UseOptions</code></h3>
+        <pre><code class="language-ts">export interface UseOptions extends AcquireOptions { ... }</code></pre>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>retries?</code></td><td><code>number</code></td><td><p>Tries again on other nodes (0).</p></td></tr>
+                <tr><td><code>retryOn?</code></td><td><code>(err: unknown, attempt: number) =&gt; boolean</code></td><td><p>Which errors are tried again (all).</p></td></tr>
+                <tr><td><code>avoidFailed?</code></td><td><code>boolean</code></td><td><p>Retries avoid the nodes where the work failed (true).</p></td></tr>
+                <tr><td><code>maxBusy?</code></td><td><code>number</code></td><td><p>Busy answers tried again on other nodes (not attempts) before giving up (20).</p></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-PoolNotifier"><code>PoolNotifier</code></h3>
+        <pre><code class="language-ts">export interface PoolNotifier { ... }</code></pre>
+        <p>What tells the other machines that a slot came back.</p>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>publish(data: { pool: string; node: string | number })</code></td><td><code>unknown</code></td><td></td></tr>
+                <tr><td><code>subscribe(handler: (data: { pool: string; node: string | number }) =&gt; void)</code></td><td><code>(() =&gt; void) | void</code></td><td><p>Its result: what unsubscribes.</p></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-SlotStore"><code>SlotStore</code></h3>
+        <pre><code class="language-ts">export interface SlotStore { ... }</code></pre>
+        <p>Where the slots of nodes shared by several machines are kept.</p>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>claim(pool: string, node: string | number, slots: number)</code></td><td><code>Promise&lt;string | null&gt;</code></td><td><p>A token of a free slot of the node, or null when every one is taken.</p></td></tr>
+                <tr><td><code>release(token: string)</code></td><td><code>Promise&lt;unknown&gt;</code></td><td></td></tr>
+                <tr><td><code>renew?(tokens: string[])</code></td><td><code>Promise&lt;unknown&gt;</code></td><td><p>Extends the slots held (every ttl / 3).</p></td></tr>
+                <tr><td><code>ttl?</code></td><td><code>number</code></td><td><p>Milliseconds a slot is held without renewal.</p></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h2 id="types">Types</h2>
+        <p class="ref-index"><a href="#ref-Duration"><code>Duration</code></a>, <a href="#ref-PoolErrorCode"><code>PoolErrorCode</code></a></p>
+
+        <h3 id="ref-Duration"><code>Duration</code></h3>
+        <pre><code class="language-ts">export type Duration = number | string;</code></pre>
+        <p>Milliseconds, or a text: '500ms', '30s', '5m', '1h', '1m30s'.</p>
+
+        <h3 id="ref-PoolErrorCode"><code>PoolErrorCode</code></h3>
+        <pre><code class="language-ts">export type PoolErrorCode =
+  | 'XUFA_POOL_FULL'
+  | 'XUFA_POOL_BUSY'
+  | 'XUFA_POOL_WAIT_TIMEOUT'
+  | 'XUFA_POOL_LEASE_TIMEOUT'
+  | 'XUFA_POOL_NODE_DOWN'
+  | 'XUFA_POOL_WORKER_EXIT'
+  | 'XUFA_POOL_CANCELLED'
+  | 'XUFA_POOL_CLOSED'
+  | 'XUFA_POOL_UNKNOWN'
+  | 'XUFA_POOL_ERR';</code></pre>
+      </article>
+    </div>
+
+    <footer class="footer">
+      <div class="container">
+        <span>xufa is MIT licensed. &copy; Jes&uacute;s Seijas</span>
+        <span>
+          <a href="../guide.html">Guide</a> &middot; <a href="../playground.html">Playground</a> &middot; <a href="../http/index.html">HTTP</a> &middot; <a href="../orm/index.html">ORM</a> &middot; <a href="../auth/index.html">Auth</a> &middot;
+          <a href="../sequelize/index.html">Sequelize</a> &middot; <a href="../packages.html">Packages</a> &middot;
+          <a href="../benchmarks.html">Benchmarks</a> &middot; <a href="https://github.com/xufajs/xufa">GitHub</a>
+        </span>
+      </div>
+    </footer>
+  </body>
+</html>

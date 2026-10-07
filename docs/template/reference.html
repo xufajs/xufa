@@ -1,0 +1,287 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>@xufa/template: Reference · xufa</title>
+    <meta
+      name="description"
+      content="The reference of @xufa/template: every function, class, interface and type it declares, made from its TypeScript declarations."
+    />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%23d9502b'/%3E%3Ctext x='16' y='22.5' font-family='monospace' font-size='18' font-weight='700' fill='white' text-anchor='middle'%3Ex%3C/text%3E%3C/svg%3E"
+    />
+    <link rel="stylesheet" href="../style.css?v=0.1.0" />
+    <script src="../main.js?v=0.1.0"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js" defer></script>
+  </head>
+  <body>
+    <header class="header">
+      <div class="header-inner">
+        <a class="logo" href="../index.html"><span class="logo-mark">x</span>xufa</a>
+        <nav class="nav">
+          <a href="../guide.html">Guide</a>
+          <a href="../playground.html">Playground</a>
+          <a href="../http/index.html">HTTP</a>
+          <a href="../orm/index.html">ORM</a>
+          <a class="hide-small" href="../auth/index.html">Auth</a>
+          <a class="hide-small" href="../sequelize/index.html">Sequelize</a>
+          <a class="hide-small" href="../packages.html" aria-current="page">Packages</a>
+          <a class="hide-small" href="../benchmarks.html">Benchmarks</a>
+          <a href="https://github.com/xufajs/xufa">GitHub</a>
+          <button class="theme-toggle" type="button" aria-label="Switch between light and dark theme">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+              <path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z" />
+            </svg>
+          </button>
+        </nav>
+      </div>
+    </header>
+
+    <div class="docs">
+      <button class="menu-toggle" type="button" aria-expanded="false">☰ Contents</button>
+      <aside class="sidebar">
+        <h4>Reference</h4>
+        <ul>
+          <li><a href="#functions">Functions (5)</a></li>
+          <li><a href="#classes">Classes (3)</a></li>
+          <li><a href="#constants">Constants (1)</a></li>
+          <li><a href="#interfaces">Interfaces (5)</a></li>
+          <li><a href="#types">Types (4)</a></li>
+        </ul>
+        <h4>Packages</h4>
+        <ul>
+          <li><a href="../websocket/index.html">@xufa/websocket</a></li>
+          <li><a href="../admin/index.html">@xufa/admin</a></li>
+          <li><a href="../session/index.html">@xufa/session</a></li>
+          <li><a href="../openapi/index.html">@xufa/openapi</a></li>
+          <li><a href="../client/index.html">@xufa/client</a></li>
+          <li><a href="../schema/index.html">@xufa/schema</a></li>
+          <li><a href="../pg/index.html">@xufa/pg</a></li>
+          <li><a href="../mongo/index.html">@xufa/mongo</a></li>
+          <li><a href="../expression/index.html">@xufa/expression</a></li>
+          <li><a href="index.html" aria-current="page">@xufa/template</a></li>
+          <li><a href="../cluster/index.html">@xufa/cluster</a></li>
+          <li><a href="../scheduler/index.html">@xufa/scheduler</a></li>
+          <li><a href="../queue/index.html">@xufa/queue</a></li>
+          <li><a href="../config/index.html">@xufa/config</a></li>
+          <li><a href="../discovery/index.html">@xufa/discovery</a></li>
+          <li><a href="../netcache/index.html">@xufa/netcache</a></li>
+          <li><a href="../faults/index.html">@xufa/faults</a></li>
+          <li><a href="../marshal/index.html">@xufa/marshal</a></li>
+          <li><a href="../yaml/index.html">@xufa/yaml</a></li>
+          <li><a href="../jwt/index.html">@xufa/jwt</a></li>
+          <li><a href="../logger/index.html">@xufa/logger</a></li>
+          <li><a href="../router/index.html">@xufa/router</a></li>
+          <li><a href="../serializer/index.html">@xufa/serializer</a></li>
+          <li><a href="../inject/index.html">@xufa/inject</a></li>
+          <li><a href="../boot/index.html">@xufa/boot</a></li>
+          <li><a href="../errors/index.html">@xufa/errors</a></li>
+          <li><a href="../packages.html">All the packages</a></li>
+        </ul>
+      </aside>
+
+      <article class="content">
+        <nav class="package-tabs" aria-label="@xufa/template">
+          <a href="index.html">Overview</a>
+          <a href="reference.html" aria-current="page">Reference</a>
+          <a href="../playground.html#template">Playground</a>
+        </nav>
+        <h1>Reference</h1>
+        <p class="intro">
+          Templates of text and HTML with safe expressions, blocks, filters and partials, compiled once, with no dependencies. Every declaration of its TypeScript declarations
+          (<code>packages/template/index.d.ts</code>), as they are written, with their comments: made from them each time
+          the docs are built. How to use them is in <a href="index.html">the overview</a>.
+        </p>
+
+        <h2 id="functions">Functions</h2>
+        <p class="ref-index"><a href="#ref-escapeHtml"><code>escapeHtml</code></a>, <a href="#ref-compile"><code>compile</code></a>, <a href="#ref-render"><code>render</code></a>, <a href="#ref-fill"><code>fill</code></a>, <a href="#ref-plugin"><code>plugin</code></a></p>
+
+        <h3 id="ref-escapeHtml"><code>escapeHtml</code></h3>
+        <pre><code class="language-ts">export declare function escapeHtml(value: unknown): string;</code></pre>
+
+        <h3 id="ref-compile"><code>compile</code></h3>
+        <pre><code class="language-ts">export declare function compile(source: string, options?: CompileOptions): CompiledTemplate;</code></pre>
+
+        <h3 id="ref-render"><code>render</code></h3>
+        <pre><code class="language-ts">export declare function render(source: string, context?: TemplateContext, options?: CompileOptions): string;</code></pre>
+
+        <h3 id="ref-fill"><code>fill</code></h3>
+        <pre><code class="language-ts">export declare function fill(value: unknown, context?: TemplateContext): unknown;</code></pre>
+
+        <h3 id="ref-plugin"><code>plugin</code></h3>
+        <pre><code class="language-ts">export declare function plugin(app: any, options: TemplatePluginOptions, done: (err?: Error) =&gt; void): void;</code></pre>
+        <p>The plugin for</p>
+
+        <h2 id="classes">Classes</h2>
+        <p class="ref-index"><a href="#ref-TemplateEngine"><code>TemplateEngine</code></a>, <a href="#ref-TemplateError"><code>TemplateError</code></a>, <a href="#ref-SafeString"><code>SafeString</code></a></p>
+
+        <h3 id="ref-TemplateEngine"><code>TemplateEngine</code></h3>
+        <pre><code class="language-ts">export declare class TemplateEngine { ... }</code></pre>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>new (options?: TemplateEngineOptions)</code></td><td></td><td></td></tr>
+                <tr><td><code>readonly filters</code></td><td><code>Record&lt;string, Filter&gt;</code></td><td></td></tr>
+                <tr><td><code>readonly partials</code></td><td><code>Map&lt;string, string&gt;</code></td><td></td></tr>
+                <tr><td><code>compile(source: string, options?: CompileOptions)</code></td><td><code><a href="#ref-CompiledTemplate">CompiledTemplate</a></code></td><td></td></tr>
+                <tr><td><code>render(source: string, context?: TemplateContext, options?: CompileOptions)</code></td><td><code>string</code></td><td></td></tr>
+                <tr><td><code>fill&lt;T = unknown&gt;(value: T, context?: TemplateContext)</code></td><td><code>unknown</code></td><td><p>Data with templates in its strings: a string that is one {{ expression }} alone gives its value.</p></td></tr>
+                <tr><td><code>filter(name: string, fn: Filter)</code></td><td><code>this</code></td><td><p>Adds a filter (or replaces one).</p></td></tr>
+                <tr><td><code>partial(name: string, source: string)</code></td><td><code>this</code></td><td><p>Adds a partial (or replaces one).</p></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-TemplateError"><code>TemplateError</code></h3>
+        <pre><code class="language-ts">export declare class TemplateError extends Error { ... }</code></pre>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>code</code></td><td><code><a href="#ref-TemplateErrorCode">TemplateErrorCode</a></code></td><td></td></tr>
+                <tr><td><code>template?</code></td><td><code>string</code></td><td><p>The name of the template, when it has one.</p></td></tr>
+                <tr><td><code>position?</code></td><td><code>number</code></td><td></td></tr>
+                <tr><td><code>line?</code></td><td><code>number</code></td><td></td></tr>
+                <tr><td><code>column?</code></td><td><code>number</code></td><td></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-SafeString"><code>SafeString</code></h3>
+        <pre><code class="language-ts">export declare class SafeString { ... }</code></pre>
+        <p>A text that is HTML already: written as it is.</p>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>new (value: unknown)</code></td><td></td><td></td></tr>
+                <tr><td><code>readonly value</code></td><td><code>string</code></td><td></td></tr>
+                <tr><td><code>toString()</code></td><td><code>string</code></td><td></td></tr>
+                <tr><td><code>toJSON()</code></td><td><code>string</code></td><td></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h2 id="constants">Constants</h2>
+        <p class="ref-index"><a href="#ref-FILTERS"><code>FILTERS</code></a></p>
+
+        <h3 id="ref-FILTERS"><code>FILTERS</code></h3>
+        <pre><code class="language-ts">export declare const FILTERS: Readonly&lt;Record&lt;string, Filter&gt;&gt;;</code></pre>
+        <p>The default filters.</p>
+
+        <h2 id="interfaces">Interfaces</h2>
+        <p class="ref-index"><a href="#ref-CompiledTemplate"><code>CompiledTemplate</code></a>, <a href="#ref-TemplateEngineOptions"><code>TemplateEngineOptions</code></a>, <a href="#ref-CompileOptions"><code>CompileOptions</code></a>, <a href="#ref-TemplatePluginOptions"><code>TemplatePluginOptions</code></a>, <a href="#ref-ViewOptions"><code>ViewOptions</code></a></p>
+
+        <h3 id="ref-CompiledTemplate"><code>CompiledTemplate</code></h3>
+        <pre><code class="language-ts">export interface CompiledTemplate { ... }</code></pre>
+        <p>A template compiled: it gives its text for a context.</p>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>(context?: TemplateContext)</code></td><td><code>string</code></td><td></td></tr>
+                <tr><td><code>readonly source</code></td><td><code>string</code></td><td><p>The source it was compiled from.</p></td></tr>
+                <tr><td><code>value?</code></td><td><code>(context?: <a href="#ref-TemplateContext">TemplateContext</a>) =&gt; unknown</code></td><td><p>With one expression alone ({{ expression }}): its value, not as text.</p></td></tr>
+                <tr><td><code>stream(context?: TemplateContext, options?: { chunkSize?: number })</code></td><td><code>Generator&lt;string, void, undefined&gt;</code></td><td><p>The text in chunks of at least chunkSize characters (65536), made as they are read.</p></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-TemplateEngineOptions"><code>TemplateEngineOptions</code></h3>
+        <pre><code class="language-ts">export interface TemplateEngineOptions { ... }</code></pre>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>filters?</code></td><td><code>Record&lt;string, Filter&gt;</code></td><td><p>Filters over the default ones ({{ value | name(args) }}: the value first).</p></td></tr>
+                <tr><td><code>globals?</code></td><td><code>Record&lt;string, unknown&gt;</code></td><td><p>Names of the expressions over the default globals (Math, JSON, Number...).</p></td></tr>
+                <tr><td><code>builtins?</code></td><td><code>boolean</code></td><td><p>false: no default globals in expressions.</p></td></tr>
+                <tr><td><code>escape?</code></td><td><code>boolean | ((text: string) =&gt; string)</code></td><td><p>true (HTML, the default), false, or a function that escapes a text.</p></td></tr>
+                <tr><td><code>strict?</code></td><td><code>boolean</code></td><td><p>Names not given and members of null are errors (by default they are nothing).</p></td></tr>
+                <tr><td><code>partials?</code></td><td><code>Record&lt;string, string&gt;</code></td><td><p>Sources of partials by name ({{&gt; name}}).</p></td></tr>
+                <tr><td><code>maxDepth?</code></td><td><code>number</code></td><td><p>How deep partials can be in partials (32).</p></td></tr>
+                <tr><td><code>cacheSize?</code></td><td><code>number</code></td><td><p>How many templates compiled are kept (500).</p></td></tr>
+                <tr><td><code>inline?</code></td><td><code>boolean</code></td><td><p>false: templates rendered often stay closures (they do not become one function with their paths inline).</p></td></tr>
+                <tr><td><code>loadPartial?</code></td><td><code>(name: string) =&gt; string | undefined | null</code></td><td><p>The source of a partial that is not registered ({{&gt; name}}), or undefined: the plugin reads them from files.</p></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-CompileOptions"><code>CompileOptions</code></h3>
+        <pre><code class="language-ts">export interface CompileOptions { ... }</code></pre>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>name?</code></td><td><code>string</code></td><td><p>The name of the template, in its errors.</p></td></tr>
+                <tr><td><code>escape?</code></td><td><code>false</code></td><td><p>false: values are written as they are.</p></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-TemplatePluginOptions"><code>TemplatePluginOptions</code></h3>
+        <pre><code class="language-ts">export interface TemplatePluginOptions extends TemplateEngineOptions { ... }</code></pre>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>root?</code></td><td><code>string</code></td><td><p>The folder of the views ('views').</p></td></tr>
+                <tr><td><code>extension?</code></td><td><code>string</code></td><td><p>Added to names without one ('.html').</p></td></tr>
+                <tr><td><code>layout?</code></td><td><code>string | null</code></td><td><p>The view a view is rendered in, as body (none by default).</p></td></tr>
+                <tr><td><code>defaultContext?</code></td><td><code>Record&lt;string, unknown&gt;</code></td><td><p>The context of every view, under reply.locals and the data given.</p></td></tr>
+                <tr><td><code>cache?</code></td><td><code>boolean</code></td><td><p>Files read once (by default when NODE_ENV is production); without it, read at every render.</p></td></tr>
+                <tr><td><code>propertyName?</code></td><td><code>string</code></td><td><p>The name of the decorations ('view': reply.view, reply.viewAsync, app.view).</p></td></tr>
+                <tr><td><code>stream?</code></td><td><code>boolean</code></td><td><p>Every view sent in chunks made as the client reads them (false).</p></td></tr>
+                <tr><td><code>chunkSize?</code></td><td><code>number</code></td><td><p>The size of those chunks, in characters (65536).</p></td></tr>
+                <tr><td><code>engine?</code></td><td><code><a href="#ref-TemplateEngine">TemplateEngine</a></code></td><td><p>An engine of your own (the options of the engine are then those it has).</p></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-ViewOptions"><code>ViewOptions</code></h3>
+        <pre><code class="language-ts">export interface ViewOptions { ... }</code></pre>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>layout?</code></td><td><code>string | false | null</code></td><td><p>The layout of this view (false: none).</p></td></tr>
+                <tr><td><code>stream?</code></td><td><code>boolean</code></td><td><p>Sent in chunks made as the client reads them (the option of the plugin by default).</p></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h2 id="types">Types</h2>
+        <p class="ref-index"><a href="#ref-TemplateContext"><code>TemplateContext</code></a>, <a href="#ref-TemplateErrorCode"><code>TemplateErrorCode</code></a>, <a href="#ref-ReplyView"><code>ReplyView</code></a>, <a href="#ref-RenderView"><code>RenderView</code></a></p>
+
+        <h3 id="ref-TemplateContext"><code>TemplateContext</code></h3>
+        <pre><code class="language-ts">export type TemplateContext = Record&lt;string, unknown&gt; | object | null | undefined;</code></pre>
+
+        <h3 id="ref-TemplateErrorCode"><code>TemplateErrorCode</code></h3>
+        <pre><code class="language-ts">export type TemplateErrorCode =
+  'XUFA_TEMPLATE_ERR_SYNTAX' | 'XUFA_TEMPLATE_ERR_RUNTIME' | 'XUFA_TEMPLATE_ERR_PARTIAL' | 'XUFA_EXPR_ERR_FORBIDDEN';</code></pre>
+
+        <h3 id="ref-ReplyView"><code>ReplyView</code></h3>
+        <pre><code class="language-ts">export type ReplyView&lt;Reply = any&gt; = (name: string, data?: Record&lt;string, unknown&gt;, options?: ViewOptions) =&gt; Reply;</code></pre>
+        <p>reply.view: renders a view and sends it (text/html unless the reply has a content type).</p>
+
+        <h3 id="ref-RenderView"><code>RenderView</code></h3>
+        <pre><code class="language-ts">export type RenderView = (name: string, data?: Record&lt;string, unknown&gt;, options?: ViewOptions) =&gt; Promise&lt;string&gt;;</code></pre>
+        <p>reply.viewAsync and app.view: the text of a view.</p>
+      </article>
+    </div>
+
+    <footer class="footer">
+      <div class="container">
+        <span>xufa is MIT licensed. &copy; Jes&uacute;s Seijas</span>
+        <span>
+          <a href="../guide.html">Guide</a> &middot; <a href="../playground.html">Playground</a> &middot; <a href="../http/index.html">HTTP</a> &middot; <a href="../orm/index.html">ORM</a> &middot; <a href="../auth/index.html">Auth</a> &middot;
+          <a href="../sequelize/index.html">Sequelize</a> &middot; <a href="../packages.html">Packages</a> &middot;
+          <a href="../benchmarks.html">Benchmarks</a> &middot; <a href="https://github.com/xufajs/xufa">GitHub</a>
+        </span>
+      </div>
+    </footer>
+  </body>
+</html>

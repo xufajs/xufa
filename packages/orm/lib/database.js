@@ -16,11 +16,20 @@ const { followWrites, inTransaction } = require('./query-cache');
 const backends = new Map();
 let nextName = 0;
 
+// Milliseconds of an option of health(): a number, or '500ms', '2s', '5m', '1h'.
+function healthMs(value, what) {
+  if (value === undefined || value === null) return undefined;
+  if (typeof value === 'number') return value;
+  const match = /^(\d+(?:\.\d+)?)\s*(ms|s|m|h)$/.exec(String(value).trim());
+  if (!match) throw new TypeError(`health(): ${what} '${value}' is not a duration (as '5m')`);
+  return Number(match[1]) * { ms: 1, s: 1000, m: 60000, h: 3600000 }[match[2]];
+}
+
 class Database {
   // `backend` is the name of a backend ('memory', 'sqlite'...), a class of backend or an instance of one. The rest of
   // the options are given to the backend.
   constructor(options = {}) {
-    const { backend = 'memory', name, cache, onCacheError, ...rest } = options;
+    const { backend = 'memory', name, cache, onCacheError, audit, ...rest } = options;
     this.options = rest;
     // The name of the database (in the keys of its cache), and the cache of its models (lib/cache.js).
     this.name = name || `db${(nextName += 1)}`;
@@ -39,6 +48,39 @@ class Database {
     // Writes give new versions to the models with the option cache (the results of cached() querysets: lib/query-cache.js).
     followWrites(this);
     this.expiryTimer = null;
+    // The audit log of the changes of its objects (lib/audit.js), with the option audit; null without it.
+    this.audit = null;
+    if (audit) {
+      if (this.backend.blobs || this.backend.mail)
+        throw new BackendError(`The audit log needs a database, not a blob or mail backend (${this.backend.name})`);
+      const { Audit, AuditEntry } = require('./audit'); // eslint-disable-line global-require
+      this.audit = new Audit(this, audit);
+      this.register(AuditEntry);
+    }
+  }
+
+  // The options of a database from a URL, as DATABASE_URL: postgres://..., mongodb:// (and mongodb+srv://),
+  // sqlite:path (sqlite::memory:), memory:, fs:folder, smtp:// and smtps://, with the options given over them.
+  static optionsFromUrl(url, options = {}) {
+    const text = String(url || '').trim();
+    const scheme = /^([a-z][a-z0-9+.-]*):/i.exec(text);
+    const kind = scheme ? scheme[1].toLowerCase() : '';
+    const rest = text.slice(kind.length + 1).replace(/^\/\//, '');
+    if (kind === 'postgres' || kind === 'postgresql') return { backend: 'postgres', url: text, ...options };
+    if (kind === 'mongodb' || kind === 'mongodb+srv') return { backend: 'mongodb', url: text, ...options };
+    if (kind === 'sqlite')
+      return { backend: 'sqlite', filename: rest === ':memory:' || rest === '' ? ':memory:' : rest, ...options };
+    if (kind === 'memory') return { backend: 'memory', ...options };
+    if (kind === 'fs') return { backend: 'fs', dir: rest, ...options };
+    if (kind === 'smtp' || kind === 'smtps') return { backend: 'smtp', url: text, ...options };
+    throw new BackendError(
+      `Not a URL of a database: ${text.replace(/\/\/[^@/]*@/, '//***@')} (postgres://, mongodb://, sqlite:, memory:, fs:)`
+    );
+  }
+
+  // A database from a URL (Database.fromUrl(process.env.DATABASE_URL)).
+  static fromUrl(url, options = {}) {
+    return new Database(Database.optionsFromUrl(url, options));
   }
 
   static registerBackend(name, factory) {
@@ -54,11 +96,17 @@ class Database {
       const existing = this.models.get(model.name);
       if (existing && existing !== model) throw new ModelError(model.name, 'another model has the same name');
       const blobs = meta.fields.some((field) => field.type === 'blob');
-      if (this.backend.blobs) this.backend.shape(meta);
+      const mail = meta.fields.some((field) => field.mailInfo);
+      if (this.backend.blobs || this.backend.mail) this.backend.shape(meta);
       else if (blobs) {
         throw new ModelError(
           model.name,
-          `fields.blob() is of blob backends (disk, memory-blob), not of ${this.backend.name}`
+          `fields.blob() is of blob backends (disk, memory-blob, s3, azure-blob), not of ${this.backend.name}`
+        );
+      } else if (mail) {
+        throw new ModelError(
+          model.name,
+          `fields.mailInfo() is of mail backends (smtp, memory-mail), not of ${this.backend.name}`
         );
       }
       if (!meta.db) meta.db = this;
@@ -169,6 +217,25 @@ class Database {
     await this.backend.close();
   }
 
+  // A check of xufa.health of @xufa/http: up with the milliseconds of a ping (degraded when they are more than
+  // slow), down when the database does not answer. Critical by default. checks: { database: db.health() }.
+  health({ slow, critical = true, timeout } = {}) {
+    const limit = healthMs(slow, 'slow');
+    const check = async () => {
+      const latency = Math.round((await this.ping()) * 100) / 100;
+      return { status: limit !== undefined && latency > limit ? 'degraded' : 'up', latency };
+    };
+    return { check, critical, ...(timeout !== undefined ? { timeout } : {}) };
+  }
+
+  // A round trip to the database (SELECT 1, MongoDB's ping; nothing for memory and files): the milliseconds it took.
+  // It throws when the database does not answer: health checks call it.
+  async ping() {
+    const started = process.hrtime.bigint();
+    await this.backend.ping();
+    return Number(process.hrtime.bigint() - started) / 1e6;
+  }
+
   // Deletes the objects of the models of TTL indexes (indexes with expireAfter) that expired: those whose date is
   // older than expireAfter seconds (`now`: a Date, now by default). They are deleted as QuerySets delete (their
   // relations as onDelete says). Returns the number of objects deleted, by model.
@@ -183,6 +250,11 @@ class Database {
           .delete();
         deleted[model.name] = (deleted[model.name] || 0) + count;
       }
+    }
+    // The entries of the audit log older than its option retain.
+    if (this.audit && this.audit.retain !== null) {
+      const count = await this.audit.expire(now);
+      if (count) deleted.AuditEntry = (deleted.AuditEntry || 0) + count;
     }
     return deleted;
   }

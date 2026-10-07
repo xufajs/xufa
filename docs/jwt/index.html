@@ -66,6 +66,8 @@
         <h4>Packages</h4>
         <ul>
           <li><a href="../websocket/index.html">@xufa/websocket</a></li>
+          <li><a href="../admin/index.html">@xufa/admin</a></li>
+          <li><a href="../session/index.html">@xufa/session</a></li>
           <li><a href="../openapi/index.html">@xufa/openapi</a></li>
           <li><a href="../client/index.html">@xufa/client</a></li>
           <li><a href="../schema/index.html">@xufa/schema</a></li>
@@ -75,6 +77,7 @@
           <li><a href="../template/index.html">@xufa/template</a></li>
           <li><a href="../cluster/index.html">@xufa/cluster</a></li>
           <li><a href="../scheduler/index.html">@xufa/scheduler</a></li>
+          <li><a href="../queue/index.html">@xufa/queue</a></li>
           <li><a href="../config/index.html">@xufa/config</a></li>
           <li><a href="../discovery/index.html">@xufa/discovery</a></li>
           <li><a href="../netcache/index.html">@xufa/netcache</a></li>
@@ -93,7 +96,11 @@
       </aside>
 
       <article class="content">
-<h1>@xufa/jwt</h1>
+        <nav class="package-tabs" aria-label="@xufa/jwt">
+          <a href="index.html" aria-current="page">Overview</a>
+          <a href="reference.html">Reference</a>
+        </nav>
+        <h1>@xufa/jwt</h1>
         <p class="intro">
           JSON Web Tokens with the API of <a href="https://github.com/auth0/node-jsonwebtoken">jsonwebtoken</a>, and of
           jws and jwa below it, without dependencies: everything is done by <code>node:crypto</code>. It passes the test
@@ -104,15 +111,26 @@
 
         <h2 id="start">Quick start</h2>
         <pre><code class="language-sh">npm install @xufa/jwt</code></pre>
-        <pre><code class="language-js">const jwt = require('@xufa/jwt');
+<!--run-before: process.env.JWT_SECRET = 'a-secret-of-at-least-32-bytes-long!'; -->
+        <pre data-run="jwt"><code class="language-js">const crypto = require('node:crypto');
+const jwt = require('@xufa/jwt');
 
 const token = jwt.sign({ sub: '42', role: 'admin' }, process.env.JWT_SECRET, { expiresIn: '15m', issuer: 'app' });
 const claims = jwt.verify(token, process.env.JWT_SECRET, { algorithms: ['HS256'], issuer: 'app' });
-claims.sub; // '42'
+console.log(claims.sub, claims.role, claims.exp - claims.iat);
 
 // Asymmetric keys: the private one signs, the public one verifies.
+const { privateKey, publicKey } = crypto.generateKeyPairSync('ec', { namedCurve: 'P-256' });
 const signed = jwt.sign({ sub: '42' }, privateKey, { algorithm: 'ES256', keyid: 'k1' });
-jwt.verify(signed, publicKey); // an EC key takes ES256/384/512 only: never HMAC nor none</code></pre>
+console.log(jwt.verify(signed, publicKey).sub, jwt.decode(signed, { complete: true }).header);
+try {
+  jwt.verify(signed, publicKey, { algorithms: ['HS256'] }); // an EC key takes ES256/384/512 only: never HMAC nor none
+} catch (err) {
+  console.log(err.name, err.message);
+}</code></pre>
+        <pre data-output><code class="language-plaintext">42 admin 900
+42 { alg: 'ES256', typ: 'JWT', kid: 'k1' }
+JsonWebTokenError invalid algorithm</code></pre>
 
         <h2 id="sign">sign()</h2>
         <p><code>sign(payload, secretOrPrivateKey, options, callback)</code>: the token, or with a callback <code>(err, token)</code>.</p>
@@ -189,7 +207,7 @@ jwt.verify(signed, publicKey); // an EC key takes ES256/384/512 only: never HMAC
         </p>
 
         <h2 id="jws">jws and jwa</h2>
-        <pre><code class="language-js">const jws = require('@xufa/jwt/jws'); // sign, verify, decode, isValid, createSign, createVerify (streams)
+        <pre data-run><code class="language-js">const jws = require('@xufa/jwt/jws'); // sign, verify, decode, isValid, createSign, createVerify (streams)
 const jwa = require('@xufa/jwt/jwa'); // jwa('ES256') is { sign(input, key), verify(input, signature, key) }</code></pre>
 
         <h2 id="from-jsonwebtoken">Coming from jsonwebtoken</h2>

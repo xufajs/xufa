@@ -1,7 +1,13 @@
 # @xufa/orm
 
 The ORM of [xufa](../xufa): models and QuerySets in the spirit of Django, over SQL and NoSQL databases, with no
-dependencies outside xufa. The same models and queries run on every backend:
+dependencies outside xufa.
+
+Its documentation is in `docs/orm/`: an [overview](../../docs/orm/index.html), a [guide](../../docs/orm/guide.html)
+(its examples run when the docs are checked), the [reference](../../docs/orm/reference.html) of its declarations,
+[From Django](../../docs/orm/django.html) and the [benchmarks](../../docs/orm/benchmarks.html). This file is the summary.
+
+The same models and queries run on every backend:
 
 | Backend       | Database                            | Made with                     |
 | ------------- | ----------------------------------- | ----------------------------- |
@@ -13,6 +19,9 @@ dependencies outside xufa. The same models and queries run on every backend:
 | `disk`        | Objects (blobs) as files            | `node:fs`                     |
 | `memory-blob` | Objects (blobs) in memory           | JavaScript                    |
 | `s3`          | Objects (blobs) in S3, R2, MinIO... | `fetch` (SigV4 of its own)    |
+| `azure-blob`  | Objects (blobs) in Azure Blob       | `node:http` (Shared Key, SAS) |
+| `smtp`        | Email sent (a server of SMTP)       | `node:net`, `node:tls`        |
+| `memory-mail` | Email kept in memory (tests)        | JavaScript                    |
 
 ```js
 const { Database, Model, fields, or, F, Count, Sum } = require('@xufa/orm'); // or require('xufa/orm')
@@ -83,7 +92,7 @@ throw, as do `last()` without an order and updates or deletes whose conditions f
 key can point to it (but to a unique field, with `toField`), and it has no many-to-many fields.
 
 Fields: `id` (`mode` in SQL databases: keys as numbers, bigints or strings, as `bigint` fields), `string` (`maxLength`, `minLength`), `text`, `integer` and `float` (`min`, `max`), `bigint` (numbers
-when they are safe integers, bigints otherwise; `mode: 'bigint'` always gives bigints, `mode: 'string'` their text), `decimal` (`precision`, `scale`; strings, so no precision is lost),
+when they are safe integers, bigints otherwise; `mode: 'bigint'` always gives bigints, `mode: 'string'` their text), `decimal` (`precision`, `scale`; strings, so no precision is lost, with the places of the scale on every backend: `'3'` is `'3.00'`; more places or digits are a validation error, as in Django),
 `boolean`, `datetime` (`autoNow`, `autoNowAdd`), `date` ('YYYY-MM-DD' strings), `json`, `uuid` (generated when it is
 the primary key), `bytes` (Buffers) and
 `foreignKey(Model | () => Model | 'Name' | 'self', { onDelete, relatedName, attname, dbOnDelete })` and
@@ -286,15 +295,66 @@ class Event extends Model {
 - An expression that does not compile throws when the model is first used; a rule that throws when it runs throws its
   error (a mistake of the rule, not of the object).
 
+## Scopes and soft deletes
+
+```js
+class Post extends Model {
+  static options = { softDelete: true }; // a field deletedAt (added when the model has none; or softDelete: 'removedAt')
+  static fields = { title: fields.string(), status: fields.string(), views: fields.integer({ default: 0 }) };
+  static scopes = {
+    published: (qs) => qs.filter({ status: 'published' }),
+    popular: (qs, min = 100) => qs.filter({ views__gte: min }),
+  };
+}
+
+await Post.objects.published().popular(50).orderBy('-views'); // scopes: methods of the querysets of the model
+await post.delete(); // sets deletedAt; querysets leave the post out
+await Post.objects.withDeleted().count(); // onlyDeleted(), restore(), forceDelete(), post.isDeleted
+```
+
+Scopes are the scopes of Rails and Laravel (and Django's custom managers): functions of a queryset, with arguments,
+that give a queryset; the parent's are the child's too. With `softDelete`, `delete()` (of an object or a queryset)
+sets the date and every queryset leaves those objects out (`get()` too); `withDeleted()` and `onlyDeleted()` give
+them, `restore()` takes them back and `forceDelete()` deletes for good, taking the related objects with it (those
+deleted softly too). A soft delete does not cascade.
+
+## Factories
+
+```js
+const { factory, sequence } = require('@xufa/orm');
+
+const Teams = factory(Team, { name: (n) => `Team ${n}` });
+const Users = factory(
+  User,
+  {
+    name: (n) => `User ${n}`, // n: the number of the object (1, 2...)
+    email: (n, values) => `user${n}@example.com`, // values: those made before it
+    color: sequence(['red', 'green']),
+    team: Teams, // an object of another factory, made for each
+  },
+  { states: { admin: { role: 'admin' } } }
+);
+
+await Users.create(); // saved; make() does not save
+await Users.state('admin').createMany(3, { team }); // values given replace those of the factory
+await Users.using(db).create(); // in another database
+```
+
+As Laravel's model factories (and factory_bot): values are constants, functions (async too) or factories; states and
+the values given replace them. `createMany` saves with `bulkCreate`.
+
 ## QuerySets
 
 `Model.objects` is a lazy QuerySet: refining it (`filter`, `exclude`, `orderBy`, `limit`, `offset`, `slice`,
-`only`, `values`, `valuesList`, `selectRelated`, `prefetchRelated`, `annotate`, `using`, `selectForUpdate`: `FOR
+`only`, `defer`, `values`, `valuesList`, `selectRelated`, `prefetchRelated`, `annotate`, `using`, `selectForUpdate`: `FOR
 UPDATE` of PostgreSQL, with `skipLocked`, `noWait` or `mode: 'share'`, `limitPer(names, count, offset)`: the first
-objects of every group, as `Book.objects.orderBy('-pages').limitPer('author', 3)`, a window of `ROW_NUMBER()` in SQL)
+objects of every group, as `Book.objects.orderBy('-pages').limitPer('author', 3)`, a window of `ROW_NUMBER()` in SQL;
+`distinct()`: the rows of `values()` once, and `distinct('author')` the first object of each group; `union(other, {
+all })`, `intersection(other)` and `difference(other)`: one query for objects of one model without slices, the
+conditions ORed, ANDed or excluded, and the rows of the queries combined otherwise, values by their values)
 gives a new one, and it
-runs when it is awaited or iterated (`for await`). Then: `get`, `first`, `last`, `count`, `exists`, `aggregate`,
-`create`, `getOrCreate`, `updateOrCreate`, `bulkCreate`, `update` and `delete`. In PostgreSQL, `bulkCreate` of 500
+runs when it is awaited or iterated (`for await`). Then: `get`, `first`, `last`, `count`, `exists`, `inBulk` (a Map of
+the objects by key, or by a unique field: `inBulk(codes, { field: 'code' })`), `aggregate`, `create`, `getOrCreate`, `updateOrCreate`, `bulkCreate`, `update` and `delete`. In PostgreSQL, `bulkCreate` of 500
 objects or more uses COPY (the keys are taken from the sequence of the table first); the option `copyRows` of the
 database changes that number (`false`: never). As in Django, `bulkCreate` can ignore the rows that break a unique key
 (`{ ignoreConflicts: true }`: their objects get no key) or update the rows there
@@ -305,14 +365,24 @@ ON CONFLICT`, in SQL databases.
 Conditions are those of Django: `field__lookup` with the lookups `exact`, `iexact`, `contains`, `icontains`,
 `startswith`, `istartswith`, `endswith`, `iendswith`, `like` and `ilike` (patterns of SQL LIKE: `%`, `_`, and `\` to
 escape them; GLOB in SQLite and regular expressions in MongoDB, with the same results), `gt`, `gte`, `lt`, `lte`,
-`in`, `range` and `isnull`;
+`in`, `range` and `isnull`; the parts of dates, in UTC, as Django's: `createdAt__year: 2026` and `__date` (ranges of the
+field, served by its indexes), `__month`, `__day`, `__week_day` (1 is Sunday), `__iso_week_day`, `__week` (ISO),
+`__quarter`, `__hour`, `__minute` and `__second` (taken out by each backend), with the comparisons, `in` and `range`;
 `relation__field` follows foreign keys (joins in SQL, `$lookup` in MongoDB), and reverse and many-to-many relations
 (`Author.objects.filter({ books__title__contains: 'x' })`: the authors with a book that matches, each once; the
 conditions of one `filter()` are of the same book, those of chained ones of any; `EXISTS` in SQL); `Q`, `and`, `or` and `not` combine
 conditions; `F('field')` compares with another field, and updates from its value (`F('views').add(1)`). Aggregates:
-`Count` (with `{ distinct: true }`), `Sum`, `Avg`, `Min`, `Max`; in SQL databases they follow reverse relations too
-(`Author.objects.values('name').annotate({ books: Count('books'), pages: Sum('books__pages') })`, with LEFT JOINs).
-Nested transactions are savepoints; those started at the same time in one transaction run one after another.
+`Count` (with `{ distinct: true }`), `Sum`, `Avg`, `Min`, `Max`; they follow reverse relations too
+(`Author.objects.values('name').annotate({ books: Count('books'), pages: Sum('books__pages') })`: LEFT JOINs in SQL,
+computed by the ORM in the other backends). Without `values()`, `annotate()` gives the objects, each with its
+aggregates, as Django's: `Author.objects.annotate({ numBooks: Count('books') }).orderBy('-numBooks')` (its names cannot
+be those of fields or relations). Reports by dates: `values({ month: Extract('at', 'month') })` (a number: `year`,
+`quarter`, `month`, `week`, `day`, `week_day`, `iso_week_day`, `hour`, `minute`, `second`) and `Trunc('at', 'month')`
+(the start of the unit: a Date, a date for dates), grouped by `annotate()`: `strftime`, `EXTRACT`/`date_trunc` and
+`$month`/`$dateTrunc` (MongoDB 5.0+), in UTC.
+Nested transactions are savepoints; those started at the same time in one transaction run one after another. In a
+SQLite file, the transactions of a process run one after another (SQLite has one writer), and writes outside them wait
+for them instead of failing with `SQLITE_BUSY`.
 
 ## Migrations
 
@@ -346,7 +416,8 @@ new Database({ backend: 'fs', dir: 'content', layout: 'files', watch: true, onCh
 - Dates, bytes, bigints and infinite numbers are kept with their type; encrypted fields are written encrypted.
 - One process writes a folder: a lock file (`.xufa.lock`) refuses a second one while the first is alive.
 - `watch: true` (or `{ delay }`, 50 ms by default) reads again the files changed from outside while the database is
-  open (edits by hand, a deploy, `git pull`): the collections whose files changed, or in `layout: 'files'` only the
+  open (edits by hand, a deploy, `git pull`; on Linux the folder, and the folder of each table, are watched one by
+  one, as Node's recursive watching there misses the files replaced by a rename): the collections whose files changed, or in `layout: 'files'` only the
   objects whose files were changed, added or removed. What changes while a transaction is open is read when it ends.
   `onChange(tables)` is called after, and the cached objects of those models are dropped; `onError(err)` is called when
   a file cannot be read (JSON half saved by an editor), and the data stays as it was until the file changes again.
@@ -355,9 +426,16 @@ new Database({ backend: 'fs', dir: 'content', layout: 'files', watch: true, onCh
   `onError` error of code `XUFA_ORM_ERR_FS_CONFLICT` (with `table` and `keys`).
 - Only the objects that changed are serialized again, so a write to a large collection costs the writing of its file;
   `layout: 'files'` writes only the files of the objects that changed (several at a time). Each new or changed
-  object is a file written (to a temporary file, then renamed): about 0.5 ms an object on Windows (NTFS and the
-  antivirus look at each new file), about 0.1 ms on Linux. Thousands of objects written at once take seconds on
-  Windows: the layout is for content edited a few objects at a time.
+  object is a file written (to a temporary file, then renamed): about 1 ms an object on Windows (NTFS and the
+  antivirus look at each new file), about 0.1 ms on Linux. A batch of 16 objects or more of a table (`bulkCreate()`,
+  `update()` of a QuerySet...) is written with a journal instead: the batch in one file (`.xufa-pending.json`, in the
+  folder of the table), then each object written in place, then the journal removed. It takes half the time on Windows
+  (2,000 objects: 1.4 s instead of 2.2 s to create them, 1.3 s instead of 2.4 s to update them) and, on Linux, where
+  the files of a batch are written synchronously (by 256, the event loop let go between them), a tenth (20 ms instead
+  of 150 to create them). A batch is all or nothing: one cut short is written again from its journal when the folder is
+  opened.
+  With `watch`, files are always written with a rename (the watcher never reads one half written). The layout is still
+  for content edited a few objects at a time: thousands of objects take a second or more on Windows.
 - With tenants or several databases, a collection can live in files while others are in a database
   (`databases: { default: {...}, content: { backend: 'fs', dir: 'content' } }`).
 
@@ -399,6 +477,9 @@ await Upload.objects.filter({ key__startswith: 'reports/' }).only('key', 'size')
 - A model of these backends has a primary key that is a string and one `fields.blob()`, and no relations nor unique
   fields but the key; `fields.blob()` in another backend is an error when the model is registered. There are no
   transactions: `db.transaction(fn)` runs `fn`, its writes made at once.
+- A create of a key that is there is a `UniqueError`, and so are creates of one key at the same time but one: the
+  store refuses them when it writes (S3: `If-None-Match: *`, which AWS, R2, MinIO and SeaweedFS honor; disk: a link
+  that does not replace a file; memory-blob: checked as it is stored), so no create writes over another.
 
 Backends:
 
@@ -410,7 +491,9 @@ Backends:
   delete). Files put in the folder by other means are objects too. `url: (table, key) => string` gives the URLs of
   `url()` where the folder is served.
 - `s3` (`bucket`, `region`): S3, and the stores that speak its API (Cloudflare R2, MinIO, Backblaze B2, Wasabi,
-  DigitalOcean Spaces, Alibaba OSS...), with `fetch` and SigV4 signatures of its own (no SDK). The objects of a model
+  DigitalOcean Spaces, Alibaba OSS...), with `node:http(s)` (connections kept for the next requests) and SigV4
+  signatures of its own (no SDK): 1.6 to 3.3 times as many requests a second as the AWS SDK v3 on the same store
+  (`bench/micro/s3.js`, `bench/results/s3-1.md`; `fetch` gives one of your own). The objects of a model
   are in the bucket under `<prefix><table>/`. `endpoint` is the URL of a store that is not AWS (the bucket then goes
   in the path; `forcePathStyle: true` on AWS too); `credentials` (`{ accessKeyId, secretAccessKey, sessionToken }`)
   are the variables `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY` and `AWS_SESSION_TOKEN` when not given. Streams are
@@ -418,8 +501,8 @@ Backends:
   known and no more than a part is kept in memory. The metadata is one header (`x-amz-meta-xufa`, at most 2 KB), and
   changing it alone copies the object on itself (its body is not sent again). `url()` is a signed URL (`expiresIn`:
   `'15m'` by default, up to 7 days), or the URL under `publicUrl` (a CDN). `createBucket: true` makes the bucket in
-  `sync()`; `drop()` deletes the objects of the models (the bucket stays). Writing a key checks it is not taken first
-  (a HEAD): two processes writing the same new key at once can both write it.
+  `sync()`; `drop()` deletes the objects of the models (the bucket stays). A create is a conditional write
+  (`If-None-Match: *`): of two processes creating the same key at once, one gets a `UniqueError`.
 
   ```js
   new Database({ backend: 's3', bucket: 'uploads', region: 'eu-west-1' }); // AWS, credentials of AWS_* variables
@@ -435,8 +518,92 @@ Backends:
   Its tests run against a server of the API of S3 that checks every signature (and the examples of the documentation
   of AWS), and with `XUFA_S3_URL` (`http://<key>:<secret>@<host>:<port>/<bucket>?region=<region>`) against that store.
 
+- `azure-blob` (`container`): Azure Blob Storage, and Azurite (its emulator), with `node:http(s)` and Shared Key
+  signatures of its own (no SDK). The account is a connection string (`connectionString`, or the variable
+  `AZURE_STORAGE_CONNECTION_STRING`; `'UseDevelopmentStorage=true'` for Azurite), or `account` and `accountKey`
+  (`AZURE_STORAGE_ACCOUNT`, `AZURE_STORAGE_KEY`), or `account` and a `sasToken` instead of the key. The objects of a
+  model are blobs of the container under `<prefix><table>/`; `endpoint` is the URL of the blob service when it is not
+  `https://<account>.blob.core.windows.net`. Streams are sent in blocks (`blockSize`, 8 MiB, then their list), so
+  their size need not be known; the blocks of an upload that fails are never committed. The metadata is one header
+  (`x-ms-meta-xufa`), and changing it does not send the body. `url()` is a SAS of reading the blob (`expiresIn`,
+  `'15m'` by default), the URL with the `sasToken`, or the one under `publicUrl`. `createContainer: true` makes the
+  container in `sync()`; creates are conditional writes (`If-None-Match: *`), as with S3.
+
+  ```js
+  new Database({ backend: 'azure-blob', container: 'uploads' }); // AZURE_STORAGE_CONNECTION_STRING
+  new Database({ backend: 'azure-blob', container: 'uploads', account: 'acme', accountKey });
+  new Database({ backend: 'azure-blob', container: 'uploads', connectionString: 'UseDevelopmentStorage=true' });
+  ```
+
+  Its tests run against a server of the API of Azure Blob that checks every signature (and requests Azurite
+  accepted), and with `XUFA_AZURE_CONNECTION_STRING` against that account (or Azurite).
+
 With tenants, a store can be a database of each tenant:
 `config: (id) => ({ databases: { files: { backend: 'disk', dir: 'files/' + id } }, routes: { Upload: 'files' } })`.
+
+## Email (mail backends)
+
+Email is a backend too: a model whose objects are messages, routed to a database of `smtp` (a server of mail) or
+`memory-mail` (kept in memory, for tests, as Django's locmem backend). Creating an object sends it, and
+`fields.mailInfo()` are what the sending gave.
+
+```js
+class Email extends Model {
+  static fields = {
+    to: fields.json(), // 'ada@example.com', 'Ada <ada@example.com>, bob@...', { name, address }, or an array
+    subject: fields.string(),
+    text: fields.text({ null: true }),
+    html: fields.text({ null: true }),
+    attachments: fields.json({ null: true }), // [{ filename, content, contentType, cid }]
+    messageId: fields.mailInfo('messageId'),
+    accepted: fields.mailInfo('accepted'),
+  };
+}
+
+const dbs = new Databases(
+  {
+    default: { backend: 'postgres', url: process.env.DATABASE_URL },
+    mail: { backend: 'smtp', url: process.env.SMTP_URL, from: 'Shop <shop@example.com>' }, // memory-mail in tests
+  },
+  { routes: { Email: 'mail' } }
+);
+
+const sent = await Email.objects.create({ to: 'Ada <ada@example.com>', subject: 'Your order', text: 'On its way.' });
+sent.accepted; // ['ada@example.com']
+```
+
+- The fields of a message are those of these names: `from` (the option `from` of the backend when the model has none
+  or it is null), `to`, `cc`, `bcc`, `replyTo`, `subject`, `text`, `html`, `attachments` (`{ filename, content:
+Buffer or string, contentType, cid, encoding: 'base64' }`, `cid` for images of the HTML: `<img src="cid:logo">`)
+  and `headers` (`{ name: value }`). Other fields are refused. `fields.mailInfo(kind)`: `messageId`, `accepted`,
+  `rejected` (`[{ address, code, response }]`), `response` (the answer of the server), `sentAt` and `raw` (the
+  message as sent).
+- Messages are made as RFC 5322 and MIME ask: text and HTML as alternatives, inline images and attachments (names in
+  RFC 2231), non-ASCII headers as encoded words (a line break in a value cannot add a header), bodies in
+  quoted-printable or base64, domains in punycode, `bcc` only in the envelope. A message that is wrong (an address, a
+  header) is a `MailError` of 400.
+- `smtp` (`url: 'smtp://user:password@host:587'`, `smtps://` for TLS from the start, or `host`, `port`, `secure`,
+  `auth`): its own client (no dependencies), with STARTTLS whenever the server offers it (`requireTLS` refuses a
+  server without it), AUTH PLAIN, LOGIN or XOAUTH2 (`auth: { user, accessToken }`), SMTPUTF8 for addresses that are not
+  ASCII, and connections kept for the next messages (`pool: { maxConnections: 3, maxMessages: 100, idleTimeout }`;
+  one the server closed while it waited is opened again). Recipients the server refuses are in `rejected`; when it
+  refuses all of them, or the message, or cannot be reached, the error is a `MailError` of 502 (`responseCode`,
+  `response`, `rejected`). `db.backend.verify()` connects, secures and logs in. A server of mail does not keep what
+  it sends: queries, updates and deletes of the model are `UnsupportedError`s.
+- `memory-mail` makes the messages as `smtp` does (the same checks), accepts every recipient and keeps them: tests
+  query them (`Email.objects.filter({ subject__startswith: 'Your' })`).
+- The primary key is the automatic one (`smtp` gives none), or a string with a default, which is then the
+  Message-ID.
+
+Its tests run against a server of SMTP that checks the protocol (STARTTLS, TLS from the start, the three AUTH, refused
+recipients, closed connections); its messages were checked with mailparser, and its client against nodemailer's
+smtp-server.
+
+## Databases from URLs
+
+`Database.fromUrl(process.env.DATABASE_URL)` makes a database from a URL: `postgres://`, `mongodb://` (and
+`mongodb+srv://`), `sqlite:data/app.db` (`sqlite::memory:`), `memory:`, `fs:folder`, `smtp://` and `smtps://`;
+options given go over those of the URL (`Database.optionsFromUrl()` gives them).
 
 ## Several databases and tenants
 
@@ -469,6 +636,58 @@ await tenants.run('acme', () => Event.objects.create({ kind: 'login' })); // in 
 
 The database of a model is its option `database`, else its route (of the tenant, else of the Tenants), else the route
 `'*'`, else `default`. The docs (`docs/orm/`, "Several databases in a tenant") have the whole of it.
+
+## Audit log
+
+A database with the option `audit` keeps every change of its objects in a table of its own (`xufa_audit`, the model
+`AuditEntry`): what changed (the values before and after, field by field and inside json fields), who changed it, and
+in what context. With `Tenants`, each tenant has its own log, in its database (the option in the config of the tenant).
+
+```js
+const { Database, plugin } = require('xufa/orm');
+
+const db = new Database({ backend: 'postgres', url, audit: { redact: ['passwordHash'], retain: '365d' } });
+
+await db.audit.with({ actor: user.id, reason: 'ticket 42' }, () => order.save()); // who, and in what context
+await db.audit.log('export', { rows: 1200 }); // events of your own (log('viewed', null, { object }) for one object)
+const history = await db.audit.history(order); // what happened to an object, oldest first
+const today = await db.audit.entries({ model: Order, action: 'delete', since: midnight });
+
+// In an app: the actor and context of each request (asked when an entry is made: the user is known then).
+app.register(plugin, {
+  database: db,
+  audit: { actor: (request) => request.user && request.user.id, context: (request) => ({ ip: request.ip }) },
+});
+```
+
+- **What is recorded:** the writes of the database: `save()`, `create()`, `bulkCreate()`, `update()` and
+  `delete()` of QuerySets, and what deleting does to related objects (cascades, `setNull`). A save that changes
+  nothing makes no entry.
+- **An entry:** `at`, `action` (`create`, `update`, `delete`, `upsert`, or that of `log()`), `model`, `key` (the
+  primary key as text; the JSON of the values of a composite one), `changes`, `data` (of `log()`), `actor` and
+  `context`. `changes` is a list of `{ field, from, to }`: `from` is missing when a value was added, `to` when it
+  was removed, and `path` says where inside a json field.
+- **One transaction:** each write and its entries are made in one transaction, so a change is never without its entry
+  (MongoDB without a replica set has no transactions). Updates read the rows before (locked, in PostgreSQL) and after;
+  an update assigning only texts, integers, booleans, uuids and datetimes (values every backend gives back as
+  given) is not read after (saves 15–30% faster), so a trigger that changes those values is not seen.
+- **Redacted and left out:** encrypted fields, fields with the option `audit: 'redact'` and the names in `redact` are
+  recorded as `{ field, redacted: true }`, without values. Fields with `audit: false` are left out (a change of only
+  them makes no entry). Rows whose encrypted values cannot be decrypted (an old key gone) are still updated and
+  deleted, their entries without those fields.
+- **The models audited:** all of them, or those of `models`, without those of `exclude` and those with the option
+  `audit: false`.
+- **Retention:** `retain` (seconds, or text as `'365d'`): `db.expire()` and `startExpiry()` delete older entries.
+- `auditResource({ auth })`: the entries over HTTP, read only (`GET /`, `GET /:id`), newest first, filtered by
+  `model`, `key`, `action`, `actor` and date (`?at__gte=`, `?at__lt=`); with tenants, those of the tenant of the request.
+  `auth` is required (a rule of @xufa/auth, or `false` to leave it open):
+  `app.register(auditResource({ auth: 'admin' }), { prefix: '/audit' })`. `db.audit.resource({ auth })` gives the
+  entries of that database (as `database`: for several databases audited without tenants).
+- `group(fn)`: several writes that are one change make one entry for each object (the first value before and the
+  last after of each field; a field back where it was is no change). An `update()` of fields that stored computed
+  fields read is one, so its entry has both.
+- `with(context, fn)` merges with the context of the code that runs it; `actor` and `context` can be functions,
+  asked when an entry is made. Blob backends have no audit log.
 
 ## Caches
 
@@ -510,6 +729,14 @@ the results between processes, and then `name` tells functions apart).
 const rates = orm.cached(async (currency) => fetchRates(currency), { ttl: 600000 });
 ```
 
+## Health and maintenance
+
+`db.ping()` makes a round trip to the database (`SELECT 1`, MongoDB's `ping`; nothing for memory and files) and gives
+its milliseconds, or throws; `db.health({ slow })` is the check of the database of `xufa.health` (critical, with its
+latency; degraded when slower than `slow`). `maintenance(db)` keeps the maintenance mode
+of an app in the database (table `xufa_maintenance`) so every machine sees it: `get()`, `set(state)`, `clear()`, the
+store of `xufa.maintenance` of [@xufa/http](../http) that `xufa down --everywhere` sets.
+
 ## With @xufa/http
 
 `app.register(orm.plugin, { database: db, migrate: { dir: 'migrations' } })` connects the database when the app
@@ -547,10 +774,21 @@ app.post('/books', { schema: { body: NewBook, response: { 201: BookOut } } }, as
   [TypeScript](#typescript)): `Infer<typeof BookOut>`,
   and typed requests with `SchemaTypeProvider`. `choices` give their values as a type when written `as const`.
 - A model without a primary key (`primaryKey: false`) or with a composite one (`primaryKey: ['a', 'b']`) has no
-  automatic `id`, in the schema and in its type when `static options` keeps the literal: `as const`, or
-  `satisfies ModelOptions` (`{ primaryKey: false }` alone is a boolean to TypeScript, and the type keeps an `id` that is
-  not required). `primaryKey` is not inherited (a child of a model without one has its `id`), but TypeScript reads the
-  options of the parent in a child without options of its own.
+  automatic `id`, in the schema and in its type when `static options` keeps the literal: `modelOptions()`, `as const`
+  or `satisfies ModelOptions` (`{ primaryKey: false }` alone is a boolean to TypeScript, and the type keeps an `id`
+  that is not required). `modelOptions()` returns the options as they are, keeps their values without `as const`,
+  and refuses a misspelled name (`primarykey`): TypeScript when it checks the code, and JavaScript when the model is
+  defined (a TypeError that names the option meant). `primaryKey` is not inherited (a child of a model
+  without one has its `id`), but TypeScript reads the options of the parent in a child without options of its own.
+
+```ts
+import { Model, fields, modelOptions } from 'xufa/orm';
+
+class Membership extends Model {
+  static options = modelOptions({ primaryKey: ['team', 'user'] }); // no as const
+  static fields = { team: fields.string(), user: fields.string() };
+}
+```
 
 `Model.schema()` is the one source of the schemas of a model: `Model.jsonSchema({ exclude, partial })` is the same
 schema in the form of OpenAPI 3.0 (`nullable: true`, no `null` type), and the resources of `orm.resource()` document
@@ -634,9 +872,14 @@ nope.'] }`). In a PUT or PATCH, a read-only key with the value the object has is
   `maxPageSize` (500), `pagination: false` (arrays), `lookup` (the field of `/:id`, `pk` by default).
 - `auth`: the rule of [@xufa/auth](../auth) (`config.auth` of the routes) for every action, or one by action.
 - `openapi`: with [@xufa/openapi](../openapi), the routes are documented (operations, parameters, bodies and objects
-  from `Model.schema()`, responses, the security of `auth`): `{ tag }` names their tag, `false` leaves them out. Only
+  from `Model.schema()`, responses, the security of `auth`): `{ tag }` names their tag, `false` leaves them out.
+  The object answered is a schema of its own (`app.addSchema({ $id: 'Book' })`, so `components/schemas` of the
+  document) that every operation refers to; `{ component }` names it (the name of the model by default), and a name
+  another schema has keeps the object inline. Only
   documented: what they accept and answer does not change. Bodies are checked by the resource and the model (unknown
-  keys refused, read-only ones ignored or refused with `strict`, 400 with the errors of each field), not by a schema of the route.
+  keys refused, read-only ones ignored or refused with `strict`, 400 with the errors of each field), not by a schema of
+  the route. The documented bodies list the read-only fields too, as `readOnly`, with what the resource does with
+  them.
 - `hooks`: `beforeCreate(values, request)` and `beforeUpdate(object, values, request)` (they can change the values,
   or throw), `afterCreate`, `afterUpdate` and `beforeDelete(object, request)`.
 - Errors are answered with their status: 400 for values that are not valid (with the messages of each field), 404,

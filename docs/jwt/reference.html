@@ -1,0 +1,447 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>@xufa/jwt: Reference · xufa</title>
+    <meta
+      name="description"
+      content="The reference of @xufa/jwt: every function, class, interface and type it declares, made from its TypeScript declarations."
+    />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%23d9502b'/%3E%3Ctext x='16' y='22.5' font-family='monospace' font-size='18' font-weight='700' fill='white' text-anchor='middle'%3Ex%3C/text%3E%3C/svg%3E"
+    />
+    <link rel="stylesheet" href="../style.css?v=0.1.0" />
+    <script src="../main.js?v=0.1.0"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js" defer></script>
+  </head>
+  <body>
+    <header class="header">
+      <div class="header-inner">
+        <a class="logo" href="../index.html"><span class="logo-mark">x</span>xufa</a>
+        <nav class="nav">
+          <a href="../guide.html">Guide</a>
+          <a href="../playground.html">Playground</a>
+          <a href="../http/index.html">HTTP</a>
+          <a href="../orm/index.html">ORM</a>
+          <a class="hide-small" href="../auth/index.html">Auth</a>
+          <a class="hide-small" href="../sequelize/index.html">Sequelize</a>
+          <a class="hide-small" href="../packages.html" aria-current="page">Packages</a>
+          <a class="hide-small" href="../benchmarks.html">Benchmarks</a>
+          <a href="https://github.com/xufajs/xufa">GitHub</a>
+          <button class="theme-toggle" type="button" aria-label="Switch between light and dark theme">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+              <path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z" />
+            </svg>
+          </button>
+        </nav>
+      </div>
+    </header>
+
+    <div class="docs">
+      <button class="menu-toggle" type="button" aria-expanded="false">☰ Contents</button>
+      <aside class="sidebar">
+        <h4>Reference</h4>
+        <ul>
+          <li><a href="#functions">Functions (3)</a></li>
+          <li><a href="#classes">Classes (3)</a></li>
+          <li><a href="#interfaces">Interfaces (6)</a></li>
+          <li><a href="#types">Types (12)</a></li>
+        </ul>
+        <h4>Packages</h4>
+        <ul>
+          <li><a href="../websocket/index.html">@xufa/websocket</a></li>
+          <li><a href="../admin/index.html">@xufa/admin</a></li>
+          <li><a href="../session/index.html">@xufa/session</a></li>
+          <li><a href="../openapi/index.html">@xufa/openapi</a></li>
+          <li><a href="../client/index.html">@xufa/client</a></li>
+          <li><a href="../schema/index.html">@xufa/schema</a></li>
+          <li><a href="../pg/index.html">@xufa/pg</a></li>
+          <li><a href="../mongo/index.html">@xufa/mongo</a></li>
+          <li><a href="../expression/index.html">@xufa/expression</a></li>
+          <li><a href="../template/index.html">@xufa/template</a></li>
+          <li><a href="../cluster/index.html">@xufa/cluster</a></li>
+          <li><a href="../scheduler/index.html">@xufa/scheduler</a></li>
+          <li><a href="../queue/index.html">@xufa/queue</a></li>
+          <li><a href="../config/index.html">@xufa/config</a></li>
+          <li><a href="../discovery/index.html">@xufa/discovery</a></li>
+          <li><a href="../netcache/index.html">@xufa/netcache</a></li>
+          <li><a href="../faults/index.html">@xufa/faults</a></li>
+          <li><a href="../marshal/index.html">@xufa/marshal</a></li>
+          <li><a href="../yaml/index.html">@xufa/yaml</a></li>
+          <li><a href="index.html" aria-current="page">@xufa/jwt</a></li>
+          <li><a href="../logger/index.html">@xufa/logger</a></li>
+          <li><a href="../router/index.html">@xufa/router</a></li>
+          <li><a href="../serializer/index.html">@xufa/serializer</a></li>
+          <li><a href="../inject/index.html">@xufa/inject</a></li>
+          <li><a href="../boot/index.html">@xufa/boot</a></li>
+          <li><a href="../errors/index.html">@xufa/errors</a></li>
+          <li><a href="../packages.html">All the packages</a></li>
+        </ul>
+      </aside>
+
+      <article class="content">
+        <nav class="package-tabs" aria-label="@xufa/jwt">
+          <a href="index.html">Overview</a>
+          <a href="reference.html" aria-current="page">Reference</a>
+        </nav>
+        <h1>Reference</h1>
+        <p class="intro">
+          JSON Web Tokens with the API of jsonwebtoken (and jws, jwa) and their test suites, without dependencies. Every declaration of its TypeScript declarations
+          (<code>packages/jwt/index.d.ts</code>), as they are written, with their comments: made from them each time
+          the docs are built. How to use them is in <a href="index.html">the overview</a>.
+        </p>
+
+        <h2 id="functions">Functions</h2>
+        <p class="ref-index"><a href="#ref-sign"><code>sign</code></a>, <a href="#ref-verify"><code>verify</code></a>, <a href="#ref-decode"><code>decode</code></a></p>
+
+        <h3 id="ref-sign"><code>sign</code></h3>
+        <pre><code class="language-ts">export function sign(
+  payload: string | Buffer | object,
+  secretOrPrivateKey: Secret | PrivateKey,
+  options?: SignOptions
+): string;
+
+export function sign(
+  payload: string | Buffer | object,
+  secretOrPrivateKey: null,
+  options?: SignOptions &amp; { algorithm: 'none' }
+): string;
+
+export function sign(
+  payload: string | Buffer | object,
+  secretOrPrivateKey: Secret | PrivateKey,
+  callback: SignCallback
+): void;
+
+export function sign(
+  payload: string | Buffer | object,
+  secretOrPrivateKey: Secret | PrivateKey,
+  options: SignOptions,
+  callback: SignCallback
+): void;
+
+export function sign(
+  payload: string | Buffer | object,
+  secretOrPrivateKey: null,
+  options: SignOptions &amp; { algorithm: 'none' },
+  callback: SignCallback
+): void;</code></pre>
+        <p>Synchronously sign the given payload into a JSON Web Token string payload - Payload to sign, could be an literal, buffer or string secretOrPrivateKey - Either the secret for HMAC algorithms, or the PEM encoded private key for RSA and ECDSA. [options] - Options for the signature returns - The JSON Web Token string</p>
+
+        <h3 id="ref-verify"><code>verify</code></h3>
+        <pre><code class="language-ts">export function verify(
+  token: string,
+  secretOrPublicKey: Secret | PublicKey,
+  options: VerifyOptions &amp; { complete: true }
+): Jwt;
+
+export function verify(
+  token: string,
+  secretOrPublicKey: Secret | PublicKey,
+  options?: VerifyOptions &amp; { complete?: false }
+): JwtPayload | string;
+
+export function verify(
+  token: string,
+  secretOrPublicKey: Secret | PublicKey,
+  options?: VerifyOptions
+): Jwt | JwtPayload | string;
+
+export function verify(
+  token: string,
+  secretOrPublicKey: Secret | PublicKey | GetPublicKeyOrSecret,
+  callback?: VerifyCallback&lt;JwtPayload | string&gt;
+): void;
+
+export function verify(
+  token: string,
+  secretOrPublicKey: Secret | PublicKey | GetPublicKeyOrSecret,
+  options: VerifyOptions &amp; { complete: true },
+  callback?: VerifyCallback&lt;Jwt&gt;
+): void;
+
+export function verify(
+  token: string,
+  secretOrPublicKey: Secret | PublicKey | GetPublicKeyOrSecret,
+  options?: VerifyOptions &amp; { complete?: false },
+  callback?: VerifyCallback&lt;JwtPayload | string&gt;
+): void;
+
+export function verify(
+  token: string,
+  secretOrPublicKey: Secret | PublicKey | GetPublicKeyOrSecret,
+  options?: VerifyOptions,
+  callback?: VerifyCallback
+): void;</code></pre>
+        <p>Synchronously verify given token using a secret or a public key to get a decoded token token - JWT string to verify secretOrPublicKey - Either the secret for HMAC algorithms, or the PEM encoded public key for RSA and ECDSA. [options] - Options for the verification returns - The decoded token.</p>
+
+        <h3 id="ref-decode"><code>decode</code></h3>
+        <pre><code class="language-ts">export function decode(token: string, options: DecodeOptions &amp; { complete: true }): null | Jwt;
+
+export function decode(token: string, options: DecodeOptions &amp; { json: true }): null | JwtPayload;
+
+export function decode(token: string, options?: DecodeOptions): null | JwtPayload | string;</code></pre>
+        <p>Returns the decoded payload without verifying if the signature is valid. token - JWT string to decode [options] - Options for decoding returns - The decoded Token</p>
+
+        <h2 id="classes">Classes</h2>
+        <p class="ref-index"><a href="#ref-JsonWebTokenError"><code>JsonWebTokenError</code></a>, <a href="#ref-TokenExpiredError"><code>TokenExpiredError</code></a>, <a href="#ref-NotBeforeError"><code>NotBeforeError</code></a></p>
+
+        <h3 id="ref-JsonWebTokenError"><code>JsonWebTokenError</code></h3>
+        <pre><code class="language-ts">export class JsonWebTokenError extends Error { ... }</code></pre>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>inner</code></td><td><code>Error</code></td><td></td></tr>
+                <tr><td><code>new (message: string, error?: Error)</code></td><td></td><td></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-TokenExpiredError"><code>TokenExpiredError</code></h3>
+        <pre><code class="language-ts">export class TokenExpiredError extends JsonWebTokenError { ... }</code></pre>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>expiredAt</code></td><td><code>Date</code></td><td></td></tr>
+                <tr><td><code>new (message: string, expiredAt: Date)</code></td><td></td><td></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-NotBeforeError"><code>NotBeforeError</code></h3>
+        <pre><code class="language-ts">export class NotBeforeError extends JsonWebTokenError { ... }</code></pre>
+        <p>Thrown if current time is before the nbf claim.</p>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>date</code></td><td><code>Date</code></td><td></td></tr>
+                <tr><td><code>new (message: string, date: Date)</code></td><td></td><td></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h2 id="interfaces">Interfaces</h2>
+        <p class="ref-index"><a href="#ref-SignOptions"><code>SignOptions</code></a>, <a href="#ref-VerifyOptions"><code>VerifyOptions</code></a>, <a href="#ref-DecodeOptions"><code>DecodeOptions</code></a>, <a href="#ref-JwtHeader"><code>JwtHeader</code></a>, <a href="#ref-JwtPayload"><code>JwtPayload</code></a>, <a href="#ref-Jwt"><code>Jwt</code></a></p>
+
+        <h3 id="ref-SignOptions"><code>SignOptions</code></h3>
+        <pre><code class="language-ts">export interface SignOptions { ... }</code></pre>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>algorithm?</code></td><td><code><a href="#ref-Algorithm">Algorithm</a> | undefined</code></td><td><p>Signature algorithm. Could be one of these values : - HS256:    HMAC using SHA-256 hash algorithm (default) - HS384:    HMAC using SHA-384 hash algorithm - HS512:    HMAC using SHA-512 hash algorithm - RS256:    RSASSA using SHA-256 hash algorithm - RS384:    RSASSA using SHA-384 hash algorithm - RS512:    RSASSA using SHA-512 hash algorithm - ES256:    ECDSA using P-256 curve and SHA-256 hash algorithm - ES384:    ECDSA using P-384 curve and SHA-384 hash algorithm - ES512:    ECDSA using P-521 curve and SHA-512 hash algorithm - none:     No digital signature or MAC value included</p></td></tr>
+                <tr><td><code>keyid?</code></td><td><code>string | undefined</code></td><td></td></tr>
+                <tr><td><code>expiresIn?</code></td><td><code><a href="#ref-StringValue">StringValue</a> | number</code></td><td></td></tr>
+                <tr><td><code>notBefore?</code></td><td><code><a href="#ref-StringValue">StringValue</a> | number | undefined</code></td><td></td></tr>
+                <tr><td><code>audience?</code></td><td><code>string | string[] | undefined</code></td><td></td></tr>
+                <tr><td><code>subject?</code></td><td><code>string | undefined</code></td><td></td></tr>
+                <tr><td><code>issuer?</code></td><td><code>string | undefined</code></td><td></td></tr>
+                <tr><td><code>jwtid?</code></td><td><code>string | undefined</code></td><td></td></tr>
+                <tr><td><code>mutatePayload?</code></td><td><code>boolean | undefined</code></td><td></td></tr>
+                <tr><td><code>noTimestamp?</code></td><td><code>boolean | undefined</code></td><td></td></tr>
+                <tr><td><code>header?</code></td><td><code><a href="#ref-JwtHeader">JwtHeader</a> | undefined</code></td><td></td></tr>
+                <tr><td><code>encoding?</code></td><td><code>string | undefined</code></td><td></td></tr>
+                <tr><td><code>allowInsecureKeySizes?</code></td><td><code>boolean | undefined</code></td><td></td></tr>
+                <tr><td><code>allowInvalidAsymmetricKeyTypes?</code></td><td><code>boolean | undefined</code></td><td></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-VerifyOptions"><code>VerifyOptions</code></h3>
+        <pre><code class="language-ts">export interface VerifyOptions { ... }</code></pre>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>algorithms?</code></td><td><code><a href="#ref-Algorithm">Algorithm</a>[] | undefined</code></td><td></td></tr>
+                <tr><td><code>audience?</code></td><td><code>string | RegExp | [string | RegExp, ...(string | RegExp)[]] | undefined</code></td><td></td></tr>
+                <tr><td><code>clockTimestamp?</code></td><td><code>number | undefined</code></td><td></td></tr>
+                <tr><td><code>clockTolerance?</code></td><td><code>number | undefined</code></td><td></td></tr>
+                <tr><td><code>complete?</code></td><td><code>boolean | undefined</code></td><td><p>return an object with the decoded <code>{ payload, header, signature }</code> instead of only the usual content of the payload.</p></td></tr>
+                <tr><td><code>issuer?</code></td><td><code>string | [string, ...string[]] | undefined</code></td><td></td></tr>
+                <tr><td><code>ignoreExpiration?</code></td><td><code>boolean | undefined</code></td><td></td></tr>
+                <tr><td><code>ignoreNotBefore?</code></td><td><code>boolean | undefined</code></td><td></td></tr>
+                <tr><td><code>jwtid?</code></td><td><code>string | undefined</code></td><td></td></tr>
+                <tr><td><code>nonce?</code></td><td><code>string | undefined</code></td><td><p>If you want to check <code>nonce</code> claim, provide a string value here. It is used on Open ID for the ID Tokens. ([Open ID implementation notes](https://openid.net/specs/openid-connect-core-1_0.html#NonceNotes))</p></td></tr>
+                <tr><td><code>type?</code></td><td><code>string | string[] | undefined</code></td><td><p>The typ the header must have (RFC 8725 3.11), such as <code>'at+jwt'</code> for access tokens (RFC 9068), or a list of them: compared ignoring case and an <code>application/</code> prefix.</p></td></tr>
+                <tr><td><code>subject?</code></td><td><code>string | undefined</code></td><td></td></tr>
+                <tr><td><code>maxAge?</code></td><td><code>string | number | undefined</code></td><td></td></tr>
+                <tr><td><code>allowInvalidAsymmetricKeyTypes?</code></td><td><code>boolean | undefined</code></td><td></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-DecodeOptions"><code>DecodeOptions</code></h3>
+        <pre><code class="language-ts">export interface DecodeOptions { ... }</code></pre>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>complete?</code></td><td><code>boolean | undefined</code></td><td></td></tr>
+                <tr><td><code>json?</code></td><td><code>boolean | undefined</code></td><td></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-JwtHeader"><code>JwtHeader</code></h3>
+        <pre><code class="language-ts">export interface JwtHeader { ... }</code></pre>
+        <p>standard names https://www.rfc-editor.org/rfc/rfc7515.html#section-4.1</p>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>alg</code></td><td><code>string | <a href="#ref-Algorithm">Algorithm</a></code></td><td></td></tr>
+                <tr><td><code>typ?</code></td><td><code>string | undefined</code></td><td></td></tr>
+                <tr><td><code>cty?</code></td><td><code>string | undefined</code></td><td></td></tr>
+                <tr><td><code>crit?</code></td><td><code>Array&lt;string | Exclude&lt;keyof <a href="#ref-JwtHeader">JwtHeader</a>, 'crit'&gt;&gt; | undefined</code></td><td></td></tr>
+                <tr><td><code>kid?</code></td><td><code>string | undefined</code></td><td></td></tr>
+                <tr><td><code>jku?</code></td><td><code>string | undefined</code></td><td></td></tr>
+                <tr><td><code>x5u?</code></td><td><code>string | string[] | undefined</code></td><td></td></tr>
+                <tr><td><code>'x5t#S256'?</code></td><td><code>string | undefined</code></td><td></td></tr>
+                <tr><td><code>x5t?</code></td><td><code>string | undefined</code></td><td></td></tr>
+                <tr><td><code>x5c?</code></td><td><code>string | string[] | undefined</code></td><td></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-JwtPayload"><code>JwtPayload</code></h3>
+        <pre><code class="language-ts">export interface JwtPayload { ... }</code></pre>
+        <p>standard claims https://datatracker.ietf.org/doc/html/rfc7519#section-4.1</p>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>[key: string]</code></td><td><code>any</code></td><td></td></tr>
+                <tr><td><code>iss?</code></td><td><code>string | undefined</code></td><td></td></tr>
+                <tr><td><code>sub?</code></td><td><code>string | undefined</code></td><td></td></tr>
+                <tr><td><code>aud?</code></td><td><code>string | string[] | undefined</code></td><td></td></tr>
+                <tr><td><code>exp?</code></td><td><code>number | undefined</code></td><td></td></tr>
+                <tr><td><code>nbf?</code></td><td><code>number | undefined</code></td><td></td></tr>
+                <tr><td><code>iat?</code></td><td><code>number | undefined</code></td><td></td></tr>
+                <tr><td><code>jti?</code></td><td><code>string | undefined</code></td><td></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-Jwt"><code>Jwt</code></h3>
+        <pre><code class="language-ts">export interface Jwt { ... }</code></pre>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>header</code></td><td><code><a href="#ref-JwtHeader">JwtHeader</a></code></td><td></td></tr>
+                <tr><td><code>payload</code></td><td><code><a href="#ref-JwtPayload">JwtPayload</a> | string</code></td><td></td></tr>
+                <tr><td><code>signature</code></td><td><code>string</code></td><td></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h2 id="types">Types</h2>
+        <p class="ref-index"><a href="#ref-Unit"><code>Unit</code></a>, <a href="#ref-UnitAnyCase"><code>UnitAnyCase</code></a>, <a href="#ref-StringValue"><code>StringValue</code></a>, <a href="#ref-VerifyErrors"><code>VerifyErrors</code></a>, <a href="#ref-VerifyCallback"><code>VerifyCallback</code></a>, <a href="#ref-SignCallback"><code>SignCallback</code></a>, <a href="#ref-Algorithm"><code>Algorithm</code></a>, <a href="#ref-SigningKeyCallback"><code>SigningKeyCallback</code></a>, <a href="#ref-GetPublicKeyOrSecret"><code>GetPublicKeyOrSecret</code></a>, <a href="#ref-PublicKey"><code>PublicKey</code></a>, <a href="#ref-PrivateKey"><code>PrivateKey</code></a>, <a href="#ref-Secret"><code>Secret</code></a></p>
+
+        <h3 id="ref-Unit"><code>Unit</code></h3>
+        <pre><code class="language-ts">type Unit =
+  | 'Years'
+  | 'Year'
+  | 'Yrs'
+  | 'Yr'
+  | 'Y'
+  | 'Weeks'
+  | 'Week'
+  | 'W'
+  | 'Days'
+  | 'Day'
+  | 'D'
+  | 'Hours'
+  | 'Hour'
+  | 'Hrs'
+  | 'Hr'
+  | 'H'
+  | 'Minutes'
+  | 'Minute'
+  | 'Mins'
+  | 'Min'
+  | 'M'
+  | 'Seconds'
+  | 'Second'
+  | 'Secs'
+  | 'Sec'
+  | 's'
+  | 'Milliseconds'
+  | 'Millisecond'
+  | 'Msecs'
+  | 'Msec'
+  | 'Ms';</code></pre>
+
+        <h3 id="ref-UnitAnyCase"><code>UnitAnyCase</code></h3>
+        <pre><code class="language-ts">type UnitAnyCase = Unit | Uppercase&lt;Unit&gt; | Lowercase&lt;Unit&gt;;</code></pre>
+
+        <h3 id="ref-StringValue"><code>StringValue</code></h3>
+        <pre><code class="language-ts">export type StringValue = `${number}` | `${number}${UnitAnyCase}` | `${number} ${UnitAnyCase}`;</code></pre>
+        <p>A span of time as text: '2 days', '10h', '7d'.</p>
+
+        <h3 id="ref-VerifyErrors"><code>VerifyErrors</code></h3>
+        <pre><code class="language-ts">export type VerifyErrors = JsonWebTokenError | NotBeforeError | TokenExpiredError;</code></pre>
+
+        <h3 id="ref-VerifyCallback"><code>VerifyCallback</code></h3>
+        <pre><code class="language-ts">export type VerifyCallback&lt;T = Jwt | JwtPayload | string&gt; = (
+  error: VerifyErrors | null,
+  decoded?: T | undefined
+) =&gt; void;</code></pre>
+
+        <h3 id="ref-SignCallback"><code>SignCallback</code></h3>
+        <pre><code class="language-ts">export type SignCallback = (error: Error | null, encoded?: string | undefined) =&gt; void;</code></pre>
+
+        <h3 id="ref-Algorithm"><code>Algorithm</code></h3>
+        <pre><code class="language-ts">export type Algorithm =
+  | 'HS256'
+  | 'HS384'
+  | 'HS512'
+  | 'RS256'
+  | 'RS384'
+  | 'RS512'
+  | 'ES256'
+  | 'ES384'
+  | 'ES512'
+  | 'PS256'
+  | 'PS384'
+  | 'PS512'
+  | 'ES256K'
+  | 'none'
+  | 'EdDSA';</code></pre>
+        <p>https://github.com/auth0/node-jsonwebtoken#algorithms-supported</p>
+
+        <h3 id="ref-SigningKeyCallback"><code>SigningKeyCallback</code></h3>
+        <pre><code class="language-ts">export type SigningKeyCallback = (error: Error | null, signingKey?: Secret | PublicKey) =&gt; void;</code></pre>
+
+        <h3 id="ref-GetPublicKeyOrSecret"><code>GetPublicKeyOrSecret</code></h3>
+        <pre><code class="language-ts">export type GetPublicKeyOrSecret = (header: JwtHeader, callback: SigningKeyCallback) =&gt; void;</code></pre>
+
+        <h3 id="ref-PublicKey"><code>PublicKey</code></h3>
+        <pre><code class="language-ts">export type PublicKey = Parameters&lt;typeof createPublicKey&gt;[0];</code></pre>
+
+        <h3 id="ref-PrivateKey"><code>PrivateKey</code></h3>
+        <pre><code class="language-ts">export type PrivateKey = Parameters&lt;typeof createPrivateKey&gt;[0];</code></pre>
+
+        <h3 id="ref-Secret"><code>Secret</code></h3>
+        <pre><code class="language-ts">export type Secret = string | Buffer | KeyObject | { key: string | Buffer; passphrase: string };</code></pre>
+      </article>
+    </div>
+
+    <footer class="footer">
+      <div class="container">
+        <span>xufa is MIT licensed. &copy; Jes&uacute;s Seijas</span>
+        <span>
+          <a href="../guide.html">Guide</a> &middot; <a href="../playground.html">Playground</a> &middot; <a href="../http/index.html">HTTP</a> &middot; <a href="../orm/index.html">ORM</a> &middot; <a href="../auth/index.html">Auth</a> &middot;
+          <a href="../sequelize/index.html">Sequelize</a> &middot; <a href="../packages.html">Packages</a> &middot;
+          <a href="../benchmarks.html">Benchmarks</a> &middot; <a href="https://github.com/xufajs/xufa">GitHub</a>
+        </span>
+      </div>
+    </footer>
+  </body>
+</html>

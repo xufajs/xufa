@@ -1,4 +1,4 @@
-const { Enum, enumt, oenumt } = require('../src');
+const { Enum, enumt, oenumt } = require('..');
 
 describe('Enum Type', () => {
   it('Should allow undefined if not mandatory', () => {

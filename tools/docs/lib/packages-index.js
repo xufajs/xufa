@@ -40,13 +40,25 @@ const GROUPS = [
         'orm.html',
         '@xufa/orm',
         'the Django ORM',
-        'Models, querysets and migrations for PostgreSQL, MongoDB, SQLite, files and stores of objects, with tenants and caches.',
+        'Models, querysets and migrations for PostgreSQL, MongoDB, SQLite, files, stores of objects (S3, Azure Blob) and email, with tenants and caches.',
       ],
       [
         'auth.html',
         '@xufa/auth',
         'jsonwebtoken, otplib',
         'Passwords, JWT, refresh tokens, TOTP and lockout, as a plugin of @xufa/http.',
+      ],
+      [
+        'admin.html',
+        '@xufa/admin',
+        'the Django admin',
+        'The admin of the models: lists with search, filters and pages, forms with their validation, for every backend.',
+      ],
+      [
+        'session.html',
+        '@xufa/session',
+        '@fastify/session, express-session',
+        'Sessions of browsers: signed cookies, stores in memory or in the database, flash messages and CSRF tokens.',
       ],
       [
         'sequelize.html',
@@ -107,7 +119,7 @@ const GROUPS = [
         'cluster.html',
         '@xufa/cluster',
         'node:cluster',
-        'An app in a cluster of processes, restarted when they die, stopped gracefully, with a message bus.',
+        'An app in a cluster of processes, restarted when they die, stopped gracefully, with a message bus and pools of nodes.',
       ],
       [
         'config.html',
@@ -120,6 +132,12 @@ const GROUPS = [
         '@xufa/scheduler',
         'node-cron, agenda',
         'Jobs on intervals, cron or once: no overlaps, timeouts, isolated failures, once among machines with a lock.',
+      ],
+      [
+        'queue.html',
+        '@xufa/queue',
+        'BullMQ, Laravel queues, workflow engines',
+        'Jobs in the background kept in a database of the ORM: workers anywhere, retries, timeouts, enqueued in transactions; pipelines of steps.',
       ],
       [
         'discovery.html',

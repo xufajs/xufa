@@ -17,3 +17,5 @@ packages/openapi/lib/mode/
 packages/openapi/lib/spec/
 packages/openapi/lib/util/
 packages/openapi/examples/
+# Generated from Unicode confusables.txt (packages/auth/scripts/generate-confusables.js).
+packages/auth/lib/confusables-data.js

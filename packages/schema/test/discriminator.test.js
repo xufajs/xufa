@@ -1,4 +1,4 @@
-const { compileJsonSchema, standaloneJsonSchema, toErrors, Float, OneOfType, Schema, Values } = require('../src');
+const { compileJsonSchema, standaloneJsonSchema, toErrors, Float, OneOfType, Schema, Values } = require('..');
 
 const pets = {
   type: 'object',

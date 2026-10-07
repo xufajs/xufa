@@ -358,3 +358,29 @@ describe('netcache.faults', () => {
     expect(await cache.get('session:1')).toBe('a');
   });
 });
+
+describe('health', () => {
+  it('down when not started; degraded with peers not connected or fewer than minPeers; up otherwise', async () => {
+    const stopped = new NetCache({ secret: SECRET });
+    expect(await stopped.health().check()).toEqual({ status: 'down', error: 'The netcache is not started' });
+    const [a] = await nodes(1);
+    expect(a.health().critical).toBe(false);
+    expect(await a.health().check()).toMatchObject({ status: 'up', peers: 0, connected: 0, unacknowledged: 0 });
+    expect(await a.health({ minPeers: 1 }).check()).toMatchObject({
+      status: 'degraded',
+      error: '0 peers connected (1 at least)',
+    });
+    const b = await node(a);
+    expect(await allConnected([a, b])).toEqual([1, 1]);
+    await a.set('k', 1);
+    const up = await a.health({ minPeers: 1 }).check();
+    expect(up).toMatchObject({ status: 'up', peers: 1, connected: 1, keys: 1 });
+    // Until b acknowledges the write.
+    const until = Date.now() + 2000;
+    while ((await a.health().check()).unacknowledged > 0 && Date.now() < until) await sleep(10);
+    // A peer known whose connection is gone.
+    a.peers.set('ghost', { id: 'ghost', log: [{ seq: 1 }] });
+    expect(await a.health().check()).toMatchObject({ status: 'degraded', error: '1 peers not connected', unacknowledged: 1 });
+    a.peers.delete('ghost');
+  });
+});

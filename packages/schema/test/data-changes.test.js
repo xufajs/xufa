@@ -1,4 +1,4 @@
-const { compileJsonSchema, standaloneJsonSchema, fromJsonSchema } = require('../src');
+const { compileJsonSchema, standaloneJsonSchema, fromJsonSchema } = require('..');
 
 // Validates a copy of `data` in every mode (and with the interpreter and standalone code), and checks that each one
 // leaves the same data: returns the errors and that data.

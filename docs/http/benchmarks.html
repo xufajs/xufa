@@ -1,0 +1,479 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>@xufa/http: Benchmarks · xufa</title>
+    <meta
+      name="description"
+      content="@xufa/http against fastify and node:http: requests a second in the process and over the loopback, on Linux and Windows, and the routes of an OpenAPI document."
+    />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%23d9502b'/%3E%3Ctext x='16' y='22.5' font-family='monospace' font-size='18' font-weight='700' fill='white' text-anchor='middle'%3Ex%3C/text%3E%3C/svg%3E"
+    />
+    <link rel="stylesheet" href="../style.css?v=0.1.0" />
+    <script src="../main.js?v=0.1.0"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js" defer></script>
+  </head>
+  <body>
+    <header class="header">
+      <div class="header-inner">
+        <a class="logo" href="../index.html"><span class="logo-mark">x</span>xufa</a>
+        <nav class="nav">
+          <a href="../guide.html">Guide</a>
+          <a href="../playground.html">Playground</a>
+          <a href="index.html" aria-current="page">HTTP</a>
+          <a href="../orm/index.html">ORM</a>
+          <a class="hide-small" href="../auth/index.html">Auth</a>
+          <a class="hide-small" href="../sequelize/index.html">Sequelize</a>
+          <a class="hide-small" href="../packages.html">Packages</a>
+          <a class="hide-small" href="../benchmarks.html">Benchmarks</a>
+          <a href="https://github.com/xufajs/xufa">GitHub</a>
+          <button class="theme-toggle" type="button" aria-label="Switch between light and dark theme">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+              <path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z" />
+            </svg>
+          </button>
+        </nav>
+      </div>
+    </header>
+
+    <div class="docs">
+      <button class="menu-toggle" type="button" aria-expanded="false">☰ Contents</button>
+      <aside class="sidebar">
+        <h4>Benchmarks</h4>
+        <ul>
+          <li><a href="#http">HTTP</a></li>
+          <li><a href="#scenarios">The scenarios</a></li>
+          <li><a href="#openapi">OpenAPI routes</a></li>
+          <li><a href="#run">Run them yourself</a></li>
+          <li><a href="../benchmarks.html">Every benchmark of xufa</a></li>
+        </ul>
+      </aside>
+
+      <article class="content">
+        <nav class="package-tabs" aria-label="@xufa/http">
+          <a href="index.html">Overview</a>
+          <a href="guide.html">Guide</a>
+          <a href="api.html">API</a>
+          <a href="../playground.html#http">Playground</a>
+          <a href="fastify.html">From fastify</a>
+          <a href="benchmarks.html" aria-current="page">Benchmarks</a>
+        </nav>
+        <h1>Benchmarks</h1>
+        <p class="intro">
+          Requests a second of <code>@xufa/http</code>, fastify and <code>node:http</code> answering by hand, on the same
+          machine, in scenarios from a small JSON reply to a body validated and a large reply serialized. Where xufa is
+          faster, and why, is in <a href="fastify.html#speed">From fastify</a>.
+        </p>
+        <h2 id="http">HTTP</h2>
+        <p>
+          <code>@xufa/http</code> against fastify 5.12.5 and <code>node:http</code> (where it can answer the same), in
+          requests a second (more is better), on Linux (Ubuntu 26.04 on WSL2, on the same machine; Windows below). In the
+          process, without sockets, the numbers are the cost of the framework alone; over the loopback (autocannon, 100
+          connections, pipelining 10), the socket and Node.js's HTTP parser are part of the cost of every response.
+        </p>
+        <h3 id="scenarios">The scenarios</h3>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Scenario</th><th>What each request does</th></tr></thead>
+            <tbody>
+              <tr><td><code>async</code></td><td>async handler returning an object</td></tr>
+              <tr><td><code>big-json</code></td><td>GET 100 records (about 12 KB) with a response schema</td></tr>
+              <tr><td><code>error</code></td><td>handler throwing an error with statusCode 400</td></tr>
+              <tr><td><code>headers</code></td><td>reads request headers, sets 4 response headers and a status</td></tr>
+              <tr><td><code>hello-schema</code></td><td>GET / with a response schema (compiled serializer)</td></tr>
+              <tr><td><code>hello</code></td><td>GET / returning a small object, no schema</td></tr>
+              <tr><td><code>hooks</code></td><td>onRequest + async preHandler + onSend hooks, decorators</td></tr>
+              <tr><td><code>many-routes</code></td><td>300 routes (static and parametric), hitting /api/tasks/:id/comments/:commentId</td></tr>
+              <tr><td><code>not-found</code></td><td>unknown route, default 404 handler</td></tr>
+              <tr><td><code>params</code></td><td>GET /users/:id/posts/:postId with two parameters</td></tr>
+              <tr><td><code>plugins</code></td><td>route in nested encapsulated plugins (prefixes, scoped hook)</td></tr>
+              <tr><td><code>post-json</code></td><td>POST a small JSON body, echoed back</td></tr>
+              <tr><td><code>post-validate</code></td><td>POST a JSON body validated by a schema, with a response schema</td></tr>
+              <tr><td><code>query</code></td><td>GET /search?q=...&amp;page=2&amp;tags=a&amp;tags=b, echoing the query</td></tr>
+              <tr><td><code>text</code></td><td>GET returning a string (text/plain)</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <h3>In the process: the cost of the framework</h3>
+        <div class="pairs">
+          <div class="pair win">
+            <div class="head"><span>big-json</span><span class="times">1.96&times; ⚠</span></div>
+            <div class="chart-row us"><span class="name">xufa</span><span class="track"><span class="fill" style="width: 100.0%"></span></span><span class="value">25k</span></div>
+            <div class="chart-row"><span class="name">fastify</span><span class="track"><span class="fill" style="width: 51.0%"></span></span><span class="value">13k</span></div>
+            <div class="chart-row"><span class="name">node:http</span><span class="track"><span class="fill" style="width: 89.8%"></span></span><span class="value">22k</span></div>
+          </div>
+          <div class="pair win">
+            <div class="head"><span>headers</span><span class="times">1.24&times; ⚠</span></div>
+            <div class="chart-row us"><span class="name">xufa</span><span class="track"><span class="fill" style="width: 100.0%"></span></span><span class="value">363k</span></div>
+            <div class="chart-row"><span class="name">fastify</span><span class="track"><span class="fill" style="width: 80.9%"></span></span><span class="value">293k</span></div>
+          </div>
+          <div class="pair win">
+            <div class="head"><span>post-validate</span><span class="times">1.21&times;</span></div>
+            <div class="chart-row us"><span class="name">xufa</span><span class="track"><span class="fill" style="width: 100.0%"></span></span><span class="value">209k</span></div>
+            <div class="chart-row"><span class="name">fastify</span><span class="track"><span class="fill" style="width: 82.6%"></span></span><span class="value">173k</span></div>
+          </div>
+          <div class="pair win">
+            <div class="head"><span>post-json</span><span class="times">1.18&times;</span></div>
+            <div class="chart-row us"><span class="name">xufa</span><span class="track"><span class="fill" style="width: 100.0%"></span></span><span class="value">216k</span></div>
+            <div class="chart-row"><span class="name">fastify</span><span class="track"><span class="fill" style="width: 84.5%"></span></span><span class="value">183k</span></div>
+          </div>
+          <div class="pair win">
+            <div class="head"><span>hello</span><span class="times">1.18&times;</span></div>
+            <div class="chart-row us"><span class="name">xufa</span><span class="track"><span class="fill" style="width: 99.9%"></span></span><span class="value">506k</span></div>
+            <div class="chart-row"><span class="name">fastify</span><span class="track"><span class="fill" style="width: 84.7%"></span></span><span class="value">430k</span></div>
+            <div class="chart-row"><span class="name">node:http</span><span class="track"><span class="fill" style="width: 100.0%"></span></span><span class="value">507k</span></div>
+          </div>
+          <div class="pair win">
+            <div class="head"><span>many-routes</span><span class="times">1.18&times;</span></div>
+            <div class="chart-row us"><span class="name">xufa</span><span class="track"><span class="fill" style="width: 100.0%"></span></span><span class="value">447k</span></div>
+            <div class="chart-row"><span class="name">fastify</span><span class="track"><span class="fill" style="width: 85.0%"></span></span><span class="value">380k</span></div>
+          </div>
+          <div class="pair win">
+            <div class="head"><span>params</span><span class="times">1.17&times; ⚠</span></div>
+            <div class="chart-row us"><span class="name">xufa</span><span class="track"><span class="fill" style="width: 100.0%"></span></span><span class="value">408k</span></div>
+            <div class="chart-row"><span class="name">fastify</span><span class="track"><span class="fill" style="width: 85.3%"></span></span><span class="value">348k</span></div>
+          </div>
+          <div class="pair win">
+            <div class="head"><span>text</span><span class="times">1.17&times;</span></div>
+            <div class="chart-row us"><span class="name">xufa</span><span class="track"><span class="fill" style="width: 96.5%"></span></span><span class="value">528k</span></div>
+            <div class="chart-row"><span class="name">fastify</span><span class="track"><span class="fill" style="width: 82.5%"></span></span><span class="value">451k</span></div>
+            <div class="chart-row"><span class="name">node:http</span><span class="track"><span class="fill" style="width: 100.0%"></span></span><span class="value">547k</span></div>
+          </div>
+          <div class="pair win">
+            <div class="head"><span>hooks</span><span class="times">1.17&times;</span></div>
+            <div class="chart-row us"><span class="name">xufa</span><span class="track"><span class="fill" style="width: 100.0%"></span></span><span class="value">470k</span></div>
+            <div class="chart-row"><span class="name">fastify</span><span class="track"><span class="fill" style="width: 85.5%"></span></span><span class="value">402k</span></div>
+          </div>
+          <div class="pair win">
+            <div class="head"><span>not-found</span><span class="times">1.16&times; ⚠</span></div>
+            <div class="chart-row us"><span class="name">xufa</span><span class="track"><span class="fill" style="width: 100.0%"></span></span><span class="value">415k</span></div>
+            <div class="chart-row"><span class="name">fastify</span><span class="track"><span class="fill" style="width: 86.1%"></span></span><span class="value">358k</span></div>
+          </div>
+          <div class="pair win">
+            <div class="head"><span>plugins</span><span class="times">1.16&times; ⚠</span></div>
+            <div class="chart-row us"><span class="name">xufa</span><span class="track"><span class="fill" style="width: 100.0%"></span></span><span class="value">447k</span></div>
+            <div class="chart-row"><span class="name">fastify</span><span class="track"><span class="fill" style="width: 86.3%"></span></span><span class="value">386k</span></div>
+          </div>
+          <div class="pair win">
+            <div class="head"><span>async</span><span class="times">1.12&times; ⚠</span></div>
+            <div class="chart-row us"><span class="name">xufa</span><span class="track"><span class="fill" style="width: 100.0%"></span></span><span class="value">458k</span></div>
+            <div class="chart-row"><span class="name">fastify</span><span class="track"><span class="fill" style="width: 89.0%"></span></span><span class="value">408k</span></div>
+          </div>
+          <div class="pair win">
+            <div class="head"><span>hello-schema</span><span class="times">1.12&times; ⚠</span></div>
+            <div class="chart-row us"><span class="name">xufa</span><span class="track"><span class="fill" style="width: 95.7%"></span></span><span class="value">495k</span></div>
+            <div class="chart-row"><span class="name">fastify</span><span class="track"><span class="fill" style="width: 85.2%"></span></span><span class="value">441k</span></div>
+            <div class="chart-row"><span class="name">node:http</span><span class="track"><span class="fill" style="width: 100.0%"></span></span><span class="value">517k</span></div>
+          </div>
+          <div class="pair win">
+            <div class="head"><span>query</span><span class="times">1.12&times;</span></div>
+            <div class="chart-row us"><span class="name">xufa</span><span class="track"><span class="fill" style="width: 100.0%"></span></span><span class="value">345k</span></div>
+            <div class="chart-row"><span class="name">fastify</span><span class="track"><span class="fill" style="width: 89.6%"></span></span><span class="value">310k</span></div>
+          </div>
+          <div class="pair win">
+            <div class="head"><span>error</span><span class="times">1.06&times;</span></div>
+            <div class="chart-row us"><span class="name">xufa</span><span class="track"><span class="fill" style="width: 100.0%"></span></span><span class="value">111k</span></div>
+            <div class="chart-row"><span class="name">fastify</span><span class="track"><span class="fill" style="width: 94.1%"></span></span><span class="value">104k</span></div>
+          </div>
+        </div>
+        <h3>Over the loopback</h3>
+        <div class="pairs">
+          <div class="pair win">
+            <div class="head"><span>big-json</span><span class="times">1.66&times;</span></div>
+            <div class="chart-row us"><span class="name">xufa</span><span class="track"><span class="fill" style="width: 98.7%"></span></span><span class="value">18k</span></div>
+            <div class="chart-row"><span class="name">fastify</span><span class="track"><span class="fill" style="width: 59.6%"></span></span><span class="value">11k</span></div>
+            <div class="chart-row"><span class="name">node:http</span><span class="track"><span class="fill" style="width: 100.0%"></span></span><span class="value">19k</span></div>
+          </div>
+          <div class="pair win">
+            <div class="head"><span>hello-schema</span><span class="times">1.19&times;</span></div>
+            <div class="chart-row us"><span class="name">xufa</span><span class="track"><span class="fill" style="width: 100.0%"></span></span><span class="value">123k</span></div>
+            <div class="chart-row"><span class="name">fastify</span><span class="track"><span class="fill" style="width: 83.8%"></span></span><span class="value">103k</span></div>
+            <div class="chart-row"><span class="name">node:http</span><span class="track"><span class="fill" style="width: 94.7%"></span></span><span class="value">117k</span></div>
+          </div>
+          <div class="pair win">
+            <div class="head"><span>hooks</span><span class="times">1.19&times;</span></div>
+            <div class="chart-row us"><span class="name">xufa</span><span class="track"><span class="fill" style="width: 100.0%"></span></span><span class="value">118k</span></div>
+            <div class="chart-row"><span class="name">fastify</span><span class="track"><span class="fill" style="width: 84.3%"></span></span><span class="value">100k</span></div>
+          </div>
+          <div class="pair win">
+            <div class="head"><span>headers</span><span class="times">1.17&times;</span></div>
+            <div class="chart-row us"><span class="name">xufa</span><span class="track"><span class="fill" style="width: 100.0%"></span></span><span class="value">103k</span></div>
+            <div class="chart-row"><span class="name">fastify</span><span class="track"><span class="fill" style="width: 85.2%"></span></span><span class="value">87k</span></div>
+          </div>
+          <div class="pair win">
+            <div class="head"><span>params</span><span class="times">1.16&times;</span></div>
+            <div class="chart-row us"><span class="name">xufa</span><span class="track"><span class="fill" style="width: 100.0%"></span></span><span class="value">113k</span></div>
+            <div class="chart-row"><span class="name">fastify</span><span class="track"><span class="fill" style="width: 86.1%"></span></span><span class="value">97k</span></div>
+          </div>
+          <div class="pair win">
+            <div class="head"><span>post-json</span><span class="times">1.16&times;</span></div>
+            <div class="chart-row us"><span class="name">xufa</span><span class="track"><span class="fill" style="width: 100.0%"></span></span><span class="value">49k</span></div>
+            <div class="chart-row"><span class="name">fastify</span><span class="track"><span class="fill" style="width: 86.4%"></span></span><span class="value">43k</span></div>
+          </div>
+          <div class="pair win">
+            <div class="head"><span>text</span><span class="times">1.14&times;</span></div>
+            <div class="chart-row us"><span class="name">xufa</span><span class="track"><span class="fill" style="width: 100.0%"></span></span><span class="value">126k</span></div>
+            <div class="chart-row"><span class="name">fastify</span><span class="track"><span class="fill" style="width: 87.8%"></span></span><span class="value">111k</span></div>
+            <div class="chart-row"><span class="name">node:http</span><span class="track"><span class="fill" style="width: 94.9%"></span></span><span class="value">120k</span></div>
+          </div>
+          <div class="pair win">
+            <div class="head"><span>many-routes</span><span class="times">1.13&times;</span></div>
+            <div class="chart-row us"><span class="name">xufa</span><span class="track"><span class="fill" style="width: 100.0%"></span></span><span class="value">105k</span></div>
+            <div class="chart-row"><span class="name">fastify</span><span class="track"><span class="fill" style="width: 88.2%"></span></span><span class="value">93k</span></div>
+          </div>
+          <div class="pair win">
+            <div class="head"><span>async</span><span class="times">1.13&times;</span></div>
+            <div class="chart-row us"><span class="name">xufa</span><span class="track"><span class="fill" style="width: 100.0%"></span></span><span class="value">115k</span></div>
+            <div class="chart-row"><span class="name">fastify</span><span class="track"><span class="fill" style="width: 88.8%"></span></span><span class="value">102k</span></div>
+          </div>
+          <div class="pair win">
+            <div class="head"><span>hello</span><span class="times">1.11&times;</span></div>
+            <div class="chart-row us"><span class="name">xufa</span><span class="track"><span class="fill" style="width: 100.0%"></span></span><span class="value">118k</span></div>
+            <div class="chart-row"><span class="name">fastify</span><span class="track"><span class="fill" style="width: 90.0%"></span></span><span class="value">106k</span></div>
+            <div class="chart-row"><span class="name">node:http</span><span class="track"><span class="fill" style="width: 97.0%"></span></span><span class="value">115k</span></div>
+          </div>
+          <div class="pair win">
+            <div class="head"><span>query</span><span class="times">1.09&times;</span></div>
+            <div class="chart-row us"><span class="name">xufa</span><span class="track"><span class="fill" style="width: 100.0%"></span></span><span class="value">94k</span></div>
+            <div class="chart-row"><span class="name">fastify</span><span class="track"><span class="fill" style="width: 91.8%"></span></span><span class="value">86k</span></div>
+          </div>
+          <div class="pair win">
+            <div class="head"><span>plugins</span><span class="times">1.09&times;</span></div>
+            <div class="chart-row us"><span class="name">xufa</span><span class="track"><span class="fill" style="width: 100.0%"></span></span><span class="value">110k</span></div>
+            <div class="chart-row"><span class="name">fastify</span><span class="track"><span class="fill" style="width: 91.9%"></span></span><span class="value">101k</span></div>
+          </div>
+          <div class="pair win">
+            <div class="head"><span>post-validate</span><span class="times">1.09&times;</span></div>
+            <div class="chart-row us"><span class="name">xufa</span><span class="track"><span class="fill" style="width: 100.0%"></span></span><span class="value">46k</span></div>
+            <div class="chart-row"><span class="name">fastify</span><span class="track"><span class="fill" style="width: 92.1%"></span></span><span class="value">42k</span></div>
+          </div>
+          <div class="pair win">
+            <div class="head"><span>not-found</span><span class="times">1.06&times;</span></div>
+            <div class="chart-row us"><span class="name">xufa</span><span class="track"><span class="fill" style="width: 100.0%"></span></span><span class="value">102k</span></div>
+            <div class="chart-row"><span class="name">fastify</span><span class="track"><span class="fill" style="width: 94.2%"></span></span><span class="value">96k</span></div>
+          </div>
+          <div class="pair even">
+            <div class="head"><span>error</span><span class="times">1.02&times;</span></div>
+            <div class="chart-row us"><span class="name">xufa</span><span class="track"><span class="fill" style="width: 100.0%"></span></span><span class="value">49k</span></div>
+            <div class="chart-row"><span class="name">fastify</span><span class="track"><span class="fill" style="width: 97.6%"></span></span><span class="value">47k</span></div>
+          </div>
+        </div>
+        <p>
+          In the process, xufa is ahead in every scenario: 1.96&times; on large JSON responses
+          (written as bytes), 1.21&times; on bodies parsed and validated, and from
+          1.06&times; to 1.24&times; on the rest, level with <code>node:http</code> answering by hand on hello: xufa writes the head of most
+          responses itself (<code>fastHead</code>), where Node.js checks and assembles every header. Over the loopback, the
+          socket and the HTTP parser of Node.js are a part of each response that is the same for both, so the frameworks
+          come closer: from 1.02&times; to 1.66&times; where the rounds agree.
+        </p>
+        <details class="raw">
+          <summary>All numbers on Linux (bench/results/inproc-linux-2.md; over the loopback, full-linux-2.md)</summary>
+          <div class="table-wrap">
+            <table class="numbers">
+              <thead><tr><th>Scenario</th><th>In the process: xufa / fastify</th><th>Over the loopback: xufa / fastify</th></tr></thead>
+              <tbody>
+                <tr><td>big-json</td><td><strong>1.96&times;</strong> ⚠</td><td><strong>1.66&times;</strong></td></tr>
+                <tr><td>headers</td><td><strong>1.24&times;</strong> ⚠</td><td><strong>1.17&times;</strong></td></tr>
+                <tr><td>post-validate</td><td><strong>1.21&times;</strong></td><td>1.09&times;</td></tr>
+                <tr><td>post-json</td><td><strong>1.18&times;</strong></td><td><strong>1.16&times;</strong></td></tr>
+                <tr><td>hello</td><td><strong>1.18&times;</strong></td><td><strong>1.11&times;</strong></td></tr>
+                <tr><td>many-routes</td><td><strong>1.18&times;</strong></td><td><strong>1.13&times;</strong></td></tr>
+                <tr><td>params</td><td><strong>1.17&times;</strong> ⚠</td><td><strong>1.16&times;</strong></td></tr>
+                <tr><td>text</td><td><strong>1.17&times;</strong></td><td><strong>1.14&times;</strong></td></tr>
+                <tr><td>hooks</td><td><strong>1.17&times;</strong></td><td><strong>1.19&times;</strong></td></tr>
+                <tr><td>not-found</td><td><strong>1.16&times;</strong> ⚠</td><td>1.06&times;</td></tr>
+                <tr><td>plugins</td><td><strong>1.16&times;</strong> ⚠</td><td>1.09&times;</td></tr>
+                <tr><td>async</td><td><strong>1.12&times;</strong> ⚠</td><td><strong>1.13&times;</strong></td></tr>
+                <tr><td>hello-schema</td><td><strong>1.12&times;</strong> ⚠</td><td><strong>1.19&times;</strong></td></tr>
+                <tr><td>query</td><td><strong>1.12&times;</strong></td><td>1.09&times;</td></tr>
+                <tr><td>error</td><td>1.06&times;</td><td>1.02&times;</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </details>
+        <h3>On Windows</h3>
+        <p>
+          The same runs on Windows 11, on the same machine (<code>bench/results/inproc-6.md</code> and
+          <code>full-5.md</code>). Its loopback is slower, so the socket is most of the cost of a small
+          response there, and the frameworks come closer.
+        </p>
+          <div class="table-wrap">
+            <table class="numbers">
+              <thead><tr><th>Scenario</th><th>In the process: xufa / fastify</th><th>Over the loopback: xufa / fastify</th></tr></thead>
+              <tbody>
+                <tr><td>big-json</td><td><strong>1.66&times;</strong></td><td><strong>1.39&times;</strong></td></tr>
+                <tr><td>headers</td><td><strong>1.24&times;</strong></td><td>1.05&times;</td></tr>
+                <tr><td>params</td><td><strong>1.20&times;</strong></td><td>1.02&times;</td></tr>
+                <tr><td>async</td><td><strong>1.20&times;</strong> ⚠</td><td>0.99&times;</td></tr>
+                <tr><td>plugins</td><td><strong>1.19&times;</strong></td><td>1.01&times;</td></tr>
+                <tr><td>many-routes</td><td><strong>1.18&times;</strong></td><td>0.98&times;</td></tr>
+                <tr><td>text</td><td><strong>1.17&times;</strong></td><td>1.01&times; ⚠</td></tr>
+                <tr><td>hooks</td><td><strong>1.17&times;</strong></td><td>0.97&times;</td></tr>
+                <tr><td>post-validate</td><td><strong>1.16&times;</strong></td><td><strong>2.05&times;</strong> ⚠</td></tr>
+                <tr><td>post-json</td><td><strong>1.15&times;</strong> ⚠</td><td>1.00&times;</td></tr>
+                <tr><td>hello-schema</td><td><strong>1.15&times;</strong></td><td>1.02&times;</td></tr>
+                <tr><td>hello</td><td><strong>1.13&times;</strong></td><td>1.02&times;</td></tr>
+                <tr><td>query</td><td><strong>1.11&times;</strong></td><td>0.80&times; ⚠</td></tr>
+                <tr><td>not-found</td><td><strong>1.10&times;</strong></td><td>1.03&times;</td></tr>
+                <tr><td>error</td><td>0.98&times;</td><td>0.92&times;</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h2 id="openapi">OpenAPI routes</h2>
+        <p>
+          The routes of an OpenAPI 3 document, made by <code>openapi.operations</code> of <code>@xufa/openapi</code>: the
+          same layer on <code>@xufa/http</code> and on fastify 5, the same document and handlers. Requests a second over
+          the loopback on Linux (autocannon, 100 connections, pipelining 10), more is better; each server runs in a
+          process of its own; the median of 10 rounds (two runs of 5).
+        </p>
+        <div class="pairs">
+          <div class="pair win">
+            <div class="head"><span>A book by id (path and query validated)</span><span class="times">1.05&times; ⚠</span></div>
+            <div class="chart-row us"><span class="name">xufa</span><span class="track"><span class="fill" style="width: 100.0%"></span></span><span class="value">77k</span></div>
+            <div class="chart-row"><span class="name">fastify</span><span class="track"><span class="fill" style="width: 94.8%"></span></span><span class="value">73k</span></div>
+          </div>
+          <div class="pair win">
+            <div class="head"><span>A list of 20 books</span><span class="times">1.16&times; ⚠</span></div>
+            <div class="chart-row us"><span class="name">xufa</span><span class="track"><span class="fill" style="width: 100.0%"></span></span><span class="value">71k</span></div>
+            <div class="chart-row"><span class="name">fastify</span><span class="track"><span class="fill" style="width: 86.0%"></span></span><span class="value">61k</span></div>
+          </div>
+          <div class="pair win">
+            <div class="head"><span>A list of 20 books, its reply validated</span><span class="times">1.19&times; ⚠</span></div>
+            <div class="chart-row us"><span class="name">xufa</span><span class="track"><span class="fill" style="width: 100.0%"></span></span><span class="value">56k</span></div>
+            <div class="chart-row"><span class="name">fastify</span><span class="track"><span class="fill" style="width: 83.7%"></span></span><span class="value">47k</span></div>
+          </div>
+          <div class="pair even">
+            <div class="head"><span>A create (its body validated)</span><span class="times">1.00&times;</span></div>
+            <div class="chart-row us"><span class="name">xufa</span><span class="track"><span class="fill" style="width: 99.9%"></span></span><span class="value">45k</span></div>
+            <div class="chart-row"><span class="name">fastify</span><span class="track"><span class="fill" style="width: 100.0%"></span></span><span class="value">45k</span></div>
+          </div>
+          <div class="pair win">
+            <div class="head"><span>A create, its body and its reply validated</span><span class="times">1.08&times; ⚠</span></div>
+            <div class="chart-row us"><span class="name">xufa</span><span class="track"><span class="fill" style="width: 100.0%"></span></span><span class="value">46k</span></div>
+            <div class="chart-row"><span class="name">fastify</span><span class="track"><span class="fill" style="width: 92.5%"></span></span><span class="value">43k</span></div>
+          </div>
+          <div class="pair win">
+            <div class="head"><span>An id the document refuses (400)</span><span class="times">1.55&times; ⚠</span></div>
+            <div class="chart-row us"><span class="name">xufa</span><span class="track"><span class="fill" style="width: 100.0%"></span></span><span class="value">71k</span></div>
+            <div class="chart-row"><span class="name">fastify</span><span class="track"><span class="fill" style="width: 64.5%"></span></span><span class="value">46k</span></div>
+          </div>
+        </div>
+        <p>
+          On <code>@xufa/http</code>, the routes of the document answer from 1.00&times; to
+          1.55&times; the requests of the same routes on fastify (5 of 6 marked ⚠: their rounds more than 10% apart, so read them as approximate). Validating the
+          replies against the document too (<code>validateResponses</code>) costs what the table says: each reply is
+          checked as plain data before it is serialized (the larger the reply, the more), and the validators are made on
+          the first request of each route, not before (which slows a whole process: see
+          <a href="../benchmarks.html#how">How they are measured</a>).
+        </p>
+        <div class="table-wrap">
+          <table class="numbers">
+            <thead><tr><th>Replies validated</th><th>Requests a second lost, xufa</th><th>Requests a second lost, fastify</th></tr></thead>
+            <tbody>
+              <tr><td>A list of 20 books</td><td>21%</td><td>23%</td></tr>
+              <tr><td>A create</td><td>none measurable</td><td>4%</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <details class="raw">
+          <summary>All numbers (bench/results/openapi-linux-1.md)</summary>
+          <pre><code>{"node":"v22.21.1","xufa":"0.1.0","fastify":"5.12.5","autocannon":"8.0.0","cpu":"13th Gen Intel(R) Core(TM) i7-13700H","cores":20,"platform":"linux 6.18.40.1-microsoft-standard-WSL2","date":"2026-10-06T18:47:28.995Z","options":{"duration":6,"warmup":2,"rounds":5,"connections":100,"pipelining":10}}
+
+| Scenario | xufa req/s | fastify req/s | xufa / fastify |
+| --- | ---: | ---: | ---: |
+| openapi-get | 81,408 ⚠24% | 83,179 ⚠17% | **0.98x** |
+| openapi-list | 71,317 | 61,429 | **1.16x** |
+| openapi-list-validated | 57,392 | 50,171 | **1.14x** |
+| openapi-post | 45,643 | 45,365 | **1.01x** |
+| openapi-post-validated | 47,200 | 42,752 | **1.10x** |
+| openapi-invalid | 70,429 | 45,003 | **1.57x** |
+
+⚠ marks rounds spread more than 10% apart: the machine was busy, run again.
+
+Server processor time per request (lower is better):
+
+| Scenario | xufa µs/req | fastify µs/req | fastify / xufa |
+| --- | ---: | ---: | ---: |
+| openapi-get | 12.5 | 12.3 | **0.98x** |
+| openapi-list | 14.4 | 16.7 | **1.16x** |
+| openapi-list-validated | 17.8 | 20.4 | **1.14x** |
+| openapi-post | 22.8 | 22.9 | **1.00x** |
+| openapi-post-validated | 22.0 | 24.3 | **1.10x** |
+| openapi-invalid | 14.6 | 22.7 | **1.56x** |
+
+| Scenario | xufa p50 / p99 ms | fastify p50 / p99 ms |
+| --- | ---: | ---: |
+| openapi-get | 13 / 17 | 13 / 18 |
+| openapi-list | 15 / 19 | 18 / 23 |
+| openapi-list-validated | 20 / 24 | 23 / 28 |
+| openapi-post | 17 / 40 | 17 / 38 |
+| openapi-post-validated | 17 / 39 | 19 / 42 |
+| openapi-invalid | 15 / 20 | 25 / 37 |</code></pre>
+        </details>
+        <details class="raw">
+          <summary>All numbers (bench/results/openapi-linux-2.md)</summary>
+          <pre><code>{"node":"v22.21.1","xufa":"0.1.0","fastify":"5.12.5","autocannon":"8.0.0","cpu":"13th Gen Intel(R) Core(TM) i7-13700H","cores":20,"platform":"linux 6.18.40.1-microsoft-standard-WSL2","date":"2026-10-06T18:56:39.650Z","options":{"duration":6,"warmup":2,"rounds":5,"connections":100,"pipelining":10}}
+
+| Scenario | xufa req/s | fastify req/s | xufa / fastify |
+| --- | ---: | ---: | ---: |
+| openapi-get | 75,488 ⚠16% | 66,179 ⚠19% | **1.14x** |
+| openapi-list | 71,957 ⚠24% | 61,861 | **1.16x** |
+| openapi-list-validated | 55,136 ⚠16% | 45,035 ⚠19% | **1.22x** |
+| openapi-post | 44,848 | 44,117 | **1.02x** |
+| openapi-post-validated | 44,144 ⚠11% | 43,531 | **1.01x** |
+| openapi-invalid | 70,848 ⚠30% | 46,128 ⚠14% | **1.54x** |
+
+⚠ marks rounds spread more than 10% apart: the machine was busy, run again.
+
+Server processor time per request (lower is better):
+
+| Scenario | xufa µs/req | fastify µs/req | fastify / xufa |
+| --- | ---: | ---: | ---: |
+| openapi-get | 13.6 | 15.5 | **1.14x** |
+| openapi-list | 14.2 | 16.5 | **1.16x** |
+| openapi-list-validated | 18.7 | 23.0 | **1.23x** |
+| openapi-post | 23.3 | 23.5 | **1.01x** |
+| openapi-post-validated | 23.7 | 23.8 | **1.00x** |
+| openapi-invalid | 14.5 | 22.2 | **1.53x** |
+
+| Scenario | xufa p50 / p99 ms | fastify p50 / p99 ms |
+| --- | ---: | ---: |
+| openapi-get | 14 / 25 | 15 / 29 |
+| openapi-list | 15 / 21 | 18 / 24 |
+| openapi-list-validated | 20 / 29 | 24 / 34 |
+| openapi-post | 18 / 42 | 18 / 40 |
+| openapi-post-validated | 18 / 41 | 19 / 41 |
+| openapi-invalid | 16 / 20 | 24 / 31 |</code></pre>
+        </details>
+
+        <h2 id="run">Run them yourself</h2>
+        <pre><code class="language-sh">node bench/inproc.js                                  # in the process: the cost of the framework alone
+node bench/run.js --workers 4                         # over the loopback, with autocannon
+node bench/run.js --workers 4 --scenarios hello,big-json --rounds 5 --out results/mine</code></pre>
+        <p>
+          Every framework and scenario runs in a process of its own, so that no measure inherits the optimizations (or
+          the garbage) of another, and each response is checked before it is measured. The scenarios are in
+          <code>bench/scenarios</code>, the same routes for each framework. Read the processor time per request as much as
+          the requests a second, close what else uses the machine, and prefer Linux: on Windows the loopback is slow and
+          noisy. From Windows, <code>tools/bench-linux</code> runs them in WSL. The options are in
+          <code>bench/README.md</code>; every benchmark of xufa is in <a href="../benchmarks.html">Benchmarks</a>.
+        </p>
+      </article>
+    </div>
+
+    <footer class="footer">
+      <div class="container">
+        <span>xufa is MIT licensed. &copy; Jes&uacute;s Seijas</span>
+        <span>
+          <a href="../guide.html">Guide</a> &middot; <a href="../playground.html">Playground</a> &middot; <a href="index.html">HTTP</a> &middot; <a href="../orm/index.html">ORM</a> &middot; <a href="../auth/index.html">Auth</a> &middot;
+          <a href="../sequelize/index.html">Sequelize</a> &middot; <a href="../packages.html">Packages</a> &middot;
+          <a href="../benchmarks.html">Benchmarks</a> &middot; <a href="https://github.com/xufajs/xufa">GitHub</a>
+        </span>
+      </div>
+    </footer>
+  </body>
+</html>

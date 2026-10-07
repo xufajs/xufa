@@ -1,4 +1,4 @@
-const { compileJsonSchema, standaloneJsonSchema, fromJsonSchema } = require('../src');
+const { compileJsonSchema, standaloneJsonSchema, fromJsonSchema } = require('..');
 
 // Every mode, the interpreter and standalone code give the same verdict; returns the errors.
 function check(schema, value, options = { formats: true }) {

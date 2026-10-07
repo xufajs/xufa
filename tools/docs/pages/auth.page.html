@@ -1,0 +1,119 @@
+<!--{
+  "file": "auth.html",
+  "name": "@xufa/auth",
+  "title": "Auth",
+  "description": "@xufa/auth: logins, passwords with scrypt, JSON Web Tokens with rotating keys, refresh tokens that rotate, TOTP, lockout, API keys and roles on routes, for @xufa/http. No dependencies.",
+  "nav": "auth",
+  "packages": false,
+  "groups": [
+    ["@xufa/auth", [["install", "Install"], ["first", "An app with logins"], ["why", "Why @xufa/auth"], ["parts", "Its parts"]]],
+    ["The docs", [["auth-guide.html", "Guide"], ["auth-reference.html", "Reference"]]]
+  ]
+}-->
+        <h1>Auth</h1>
+        <p class="intro">
+          <code>@xufa/auth</code> is the authentication of xufa: logins with passwords, JSON Web Tokens, refresh tokens,
+          one-time codes, API keys and who may use each route, for <a href="http.html">@xufa/http</a>. No dependencies:
+          everything is <code>node:crypto</code>.
+        </p>
+
+        <div class="stats">
+          <div class="stat"><span class="value">3</span><span class="label">routes made for you: login, refresh and logout</span></div>
+          <div class="stat"><span class="value">1</span><span class="label">option on a route says who may use it: <code>config: { auth: ['admin'] }</code></span></div>
+          <div class="stat"><span class="value">0</span><span class="label">dependencies</span></div>
+        </div>
+
+        <h2 id="install">Install</h2>
+        <pre><code class="language-sh">npm install @xufa/auth   # or: npm install xufa, and require('xufa/auth')</code></pre>
+
+        <h2 id="first">An app with logins</h2>
+        <p>Users in a database of <a href="orm.html">@xufa/orm</a> (SQLite in memory here), the routes of login, and two routes for users and for admins:</p>
+<!--run-before: process.env.JWT_KEY = 'a-secret-of-32-bytes-or-more-for-hs256!'; -->
+        <pre data-run="first"><code class="language-js">const xufa = require('@xufa/http');
+const { Database, Model, fields, plugin: orm } = require('@xufa/orm');
+const auth = require('@xufa/auth');
+
+class User extends Model {
+  static fields = {
+    email: fields.string({ unique: true }),
+    password: fields.string(), // a hash of hashPassword()
+    role: fields.string({ default: 'user' }),
+  };
+}
+class RefreshToken extends Model {
+  static fields = auth.refreshTokenFields(fields);
+}
+
+const db = new Database({ backend: 'sqlite', filename: ':memory:' });
+db.register(User, RefreshToken);
+
+const app = xufa();
+app.register(orm, { database: db, sync: true });
+app.register(auth.plugin, {
+  keys: process.env.JWT_KEY, // signs the access tokens (a KeySet rotates them)
+  login: {
+    findUser: (email) =&gt; User.objects.filter({ email: email.toLowerCase() }).first(),
+    claims: (user) =&gt; ({ sub: String(user.id), role: user.role }),
+  },
+  refresh: { store: auth.modelStore(RefreshToken), ttl: '30d' },
+}); // POST /auth/login, /auth/refresh, /auth/logout
+app.get('/me', { config: { auth: true } }, async (request) =&gt; ({ id: request.user.sub, role: request.user.role }));
+app.get('/admin', { config: { auth: ['admin'] } }, async () =&gt; ({ secret: 42 }));
+await app.ready();
+await User.objects.create({ email: 'ada@example.com', password: await auth.hashPassword('correct horse') });
+
+const login = await app.inject({
+  method: 'POST',
+  url: '/auth/login',
+  payload: { username: 'ada@example.com', password: 'correct horse' },
+});
+const { accessToken, refreshToken } = login.json();
+const bearer = { authorization: `Bearer ${accessToken}` };
+console.log((await app.inject({ url: '/me', headers: bearer })).body);
+console.log((await app.inject({ url: '/admin', headers: bearer })).statusCode); // a user, not an admin
+
+const refresh = (token) =&gt; app.inject({ method: 'POST', url: '/auth/refresh', payload: { refreshToken: token } });
+console.log((await refresh(refreshToken)).statusCode, (await refresh(refreshToken)).statusCode); // spent once used
+await app.close();</code></pre>
+        <pre data-output><code class="language-plaintext">{"id":"1","role":"user"}
+403
+200 401</code></pre>
+        <p>
+          The <a href="auth-guide.html">Guide</a> goes on: one-time codes (TOTP), lockout after failures, keys that rotate
+          and keys per tenant, API keys, cookies, the strategies of Passport, and each part used alone.
+        </p>
+
+        <h2 id="why">Why @xufa/auth</h2>
+        <ul>
+          <li>
+            <strong>The routes, not only the parts.</strong> Login, refresh and logout are made by the plugin from two
+            functions of yours (find a user, its claims); routes say who may use them in their <code>config</code>.
+          </li>
+          <li>
+            <strong>Safe defaults.</strong> scrypt with the parameters OWASP recommends (and a rehash when they change), access tokens of
+            minutes and refresh tokens that rotate (a token used twice ends its family: a stolen one is found out), lockout
+            after failed logins, identifiers normalized against look-alike characters (Unicode's confusables).
+          </li>
+          <li>
+            <strong>Tenants.</strong> Each tenant can have its own keys and users: a token of one is refused by the others.
+          </li>
+          <li>
+            <strong>Each part alone.</strong> Passwords, tokens, TOTP, lockout and API keys are functions of their own, for
+            code that is not an app of xufa.
+          </li>
+        </ul>
+
+        <h2 id="parts">Its parts</h2>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Part</th><th>In the Guide</th></tr></thead>
+            <tbody>
+              <tr><td>The plugin: users, routes, roles and tenants</td><td><a href="auth-guide.html#plugin">The plugin</a>, <a href="auth-guide.html#login">Login routes</a>, <a href="auth-guide.html#tenants">Tenants</a></td></tr>
+              <tr><td>Passwords (<code>hashPassword</code>, <code>verifyPassword</code>, <code>needsRehash</code>)</td><td><a href="auth-guide.html#passwords">Passwords</a></td></tr>
+              <tr><td>JSON Web Tokens with key sets that rotate (<a href="jwt.html">@xufa/jwt</a> signs them)</td><td><a href="auth-guide.html#jwt">JSON Web Tokens</a>, <a href="auth-guide.html#vault">Keys per tenant</a></td></tr>
+              <tr><td>One-time codes of authenticator apps, recovery codes</td><td><a href="auth-guide.html#totp">One-time codes</a></td></tr>
+              <tr><td>Lockout after failed logins; refresh tokens that rotate</td><td><a href="auth-guide.html#lockout">Lockout</a>, <a href="auth-guide.html#refresh">Refresh tokens</a></td></tr>
+              <tr><td>Strategies (API keys, HTTP Basic) and Passport's</td><td><a href="auth-guide.html#strategies">Strategies</a>, <a href="auth-guide.html#passport">Passport</a></td></tr>
+            </tbody>
+          </table>
+        </div>

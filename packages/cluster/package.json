@@ -1,25 +1,33 @@
 {
   "name": "@xufa/cluster",
   "version": "0.1.0",
-  "description": "An app in a cluster of processes, and the messages between them, with no dependencies",
+  "description": "An app in a cluster of processes, the messages between them, and pools of nodes shared by its workers, with no dependencies",
   "main": "./index.js",
+  "types": "./index.d.ts",
   "type": "commonjs",
   "exports": {
-    ".": "./index.js",
+    ".": {
+      "types": "./index.d.ts",
+      "default": "./index.js"
+    },
     "./package.json": "./package.json"
   },
   "files": [
     "index.js",
+    "index.d.ts",
     "lib"
   ],
   "scripts": {
-    "test": "vyntra"
+    "test": "vyntra",
+    "test:types": "tsd"
   },
   "keywords": [
     "cluster",
     "workers",
     "ipc",
-    "messages"
+    "messages",
+    "pool",
+    "autoscale"
   ],
   "author": "Jesús Seijas <jseijas@gmail.com>",
   "license": "MIT",
@@ -33,9 +41,13 @@
     "url": "https://github.com/xufajs/xufa/issues"
   },
   "engines": {
-    "node": ">=22"
+    "node": "^22.22.3 || ^24.15.0 || >=25.7.0"
   },
   "devDependencies": {
+    "@xufa/discovery": "workspace:*",
+    "@xufa/netcache": "workspace:*",
+    "@xufa/orm": "workspace:*",
+    "tsd": "^0.33.0",
     "vyntra": "^0.6.0"
   },
   "publishConfig": {
@@ -44,5 +56,21 @@
   "dependencies": {
     "@xufa/faults": "workspace:*",
     "@xufa/marshal": "workspace:*"
+  },
+  "vyntra": {
+    "setupFiles": [
+      "@xufa/faults/register-strict"
+    ]
+  },
+  "tsd": {
+    "directory": "test/types"
+  },
+  "peerDependencies": {
+    "@xufa/orm": "workspace:*"
+  },
+  "peerDependenciesMeta": {
+    "@xufa/orm": {
+      "optional": true
+    }
   }
 }

@@ -33,6 +33,9 @@ const errors = {
   UniqueError: createError('XUFA_ORM_ERR_UNIQUE', '%s', 409),
   // An encrypted value that cannot be read (a key that is not in the keyring, a changed value), or no keys.
   EncryptionError: createError('XUFA_ORM_ERR_ENCRYPTION', '%s', 500),
+  // A message of a mail backend that cannot be sent: 400 when the message is wrong (an address, a header), 502 when
+  // the server refuses it or cannot be reached (with `response`, `rejected` and the SMTP `responseCode` when it answered).
+  MailError: createError('XUFA_ORM_ERR_MAIL', '%s', 502),
 };
 
 // The columns of the error of a database for a duplicate value of a unique field or key, or null when it is not one:

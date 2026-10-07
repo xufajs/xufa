@@ -5,7 +5,7 @@
 //   class Book extends Model {
 //     static fields = { title: fields.string({ maxLength: 200 }), author: fields.foreignKey(() => Author) };
 //   }
-const { Meta, STATE, State, defineState } = require('./meta');
+const { Meta, STATE, State, defineState, takeGiven } = require('./meta');
 const modelCache = require('./model-cache');
 const { currentDatabase } = require('./context');
 const { ForeignKey } = require('./fields');
@@ -108,9 +108,10 @@ class Model {
     return db;
   }
 
-  // The QuerySet of every object of the model.
+  // The QuerySet of every object of the model (with the methods of its scopes).
   static get objects() {
-    return new (querysets().QuerySet)(this);
+    const { QuerySet, querySetClass } = querysets();
+    return new (querySetClass(this) || QuerySet)(this);
   }
 
   // The same as objects, for TypeScript (a static getter cannot be typed by the class it is called on).
@@ -266,11 +267,13 @@ class Model {
     this.prepareSave(created);
     if (validate) this.validate();
     if (created) {
+      const row = this.toRow();
       const [pk] = await database.backend
-        .insert(meta, [this.toRow()])
+        .insert(meta, [row])
         .catch((err) => Promise.reject(uniqueErrorOf(meta, err) || err));
       // A composite key is given (the database makes none); a model without a key has none.
       if (meta.pk && !meta.pk.composite) this[meta.pk.attname] = pk;
+      takeGiven(meta, this, row);
       state.adding = false;
     } else {
       let saved = meta.fields.filter((field) => !field.primaryKey);
@@ -301,12 +304,62 @@ class Model {
     const state = this[STATE];
     if (state.adding) throw new QueryError(`The ${model.name} cannot be deleted: it is not saved`);
     keyed(model, 'deleted');
-    await model.callHooks('beforeDelete', this, {});
+    const soft = model.meta.softDelete;
+    await model.callHooks('beforeDelete', this, { soft: Boolean(soft) });
+    if (soft) {
+      // A soft delete: the object stays, with the date it was deleted (restore() takes it back).
+      const field = model.meta.field(soft);
+      const at = new Date();
+      const count = await model.objects
+        .using(state.db)
+        .filter({ pk: this.pk })
+        .update({ [field.name]: at });
+      this[field.attname] = at;
+      await model.callHooks('afterDelete', this, { soft: true });
+      return count;
+    }
     const count = await model.objects.using(state.db).filter({ pk: this.pk }).delete();
     state.adding = true;
     this.pk = null;
     await model.callHooks('afterDelete', this, {});
     return count;
+  }
+
+  // Deletes the object for good, also when the model has soft deletes.
+  async forceDelete() {
+    const model = this.constructor;
+    const state = this[STATE];
+    if (!model.meta.softDelete) return this.delete();
+    if (state.adding) throw new QueryError(`The ${model.name} cannot be deleted: it is not saved`);
+    await model.callHooks('beforeDelete', this, { soft: false });
+    const count = await model.objects.using(state.db).withDeleted().filter({ pk: this.pk }).forceDelete();
+    state.adding = true;
+    this.pk = null;
+    await model.callHooks('afterDelete', this, { soft: false });
+    return count;
+  }
+
+  // Takes back an object deleted softly.
+  async restore() {
+    const model = this.constructor;
+    const soft = model.meta.softDelete;
+    if (!soft) throw new QueryError(`${model.name} has no soft deletes (options.softDelete)`);
+    const field = model.meta.field(soft);
+    await model.objects
+      .using(this[STATE].db)
+      .onlyDeleted()
+      .filter({ pk: this.pk })
+      .update({ [field.name]: null });
+    this[field.attname] = null;
+    return this;
+  }
+
+  // Whether the object was deleted softly.
+  get isDeleted() {
+    const soft = this.constructor.meta.softDelete;
+    if (!soft) return false;
+    const value = this[this.constructor.meta.field(soft).attname];
+    return value !== null && value !== undefined;
   }
 
   // Loads again the values of the fields from the database.
@@ -400,4 +453,42 @@ function defineManyToManyAccessor(owner, name, field, from, to, otherName) {
   });
 }
 
-module.exports = { Model, defineReverseAccessor, defineManyToManyAccessor, STATE };
+// The options a model has (those of ModelOptions in index.d.ts).
+const MODEL_OPTIONS = [
+  'table',
+  'schema',
+  'primaryKey',
+  'ordering',
+  'rules',
+  'indexes',
+  'abstract',
+  'fillfactor',
+  'strict',
+  'cache',
+  'database',
+  'audit',
+  'softDelete',
+];
+
+// The options of a model, as they are: `static options = modelOptions({ primaryKey: ['a', 'b'] })`. For TypeScript,
+// which then keeps their values (primaryKey: false, the fields of a composite key) without `as const`; and in
+// JavaScript too, a name that is no option is refused (`primarykey`: did you mean primaryKey?).
+function modelOptions(options) {
+  if (options === null || typeof options !== 'object' || Array.isArray(options)) {
+    throw new TypeError('The options of a model are an object');
+  }
+  const unknown = Object.keys(options).filter((name) => !MODEL_OPTIONS.includes(name));
+  if (unknown.length) {
+    const hint = (name) => {
+      const close = MODEL_OPTIONS.find((option) => option.toLowerCase() === name.toLowerCase());
+      return close ? `${name} (did you mean ${close}?)` : name;
+    };
+    throw new TypeError(
+      `${unknown.length === 1 ? 'An option' : 'Options'} a model does not have: ${unknown.map(hint).join(', ')} ` +
+        `(it has ${MODEL_OPTIONS.join(', ')})`
+    );
+  }
+  return options;
+}
+
+module.exports = { Model, modelOptions, MODEL_OPTIONS, defineReverseAccessor, defineManyToManyAccessor, STATE };

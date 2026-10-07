@@ -1,0 +1,186 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>@xufa/errors: Reference · xufa</title>
+    <meta
+      name="description"
+      content="The reference of @xufa/errors: every function, class, interface and type it declares, made from its TypeScript declarations."
+    />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%23d9502b'/%3E%3Ctext x='16' y='22.5' font-family='monospace' font-size='18' font-weight='700' fill='white' text-anchor='middle'%3Ex%3C/text%3E%3C/svg%3E"
+    />
+    <link rel="stylesheet" href="../style.css?v=0.1.0" />
+    <script src="../main.js?v=0.1.0"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js" defer></script>
+  </head>
+  <body>
+    <header class="header">
+      <div class="header-inner">
+        <a class="logo" href="../index.html"><span class="logo-mark">x</span>xufa</a>
+        <nav class="nav">
+          <a href="../guide.html">Guide</a>
+          <a href="../playground.html">Playground</a>
+          <a href="../http/index.html">HTTP</a>
+          <a href="../orm/index.html">ORM</a>
+          <a class="hide-small" href="../auth/index.html">Auth</a>
+          <a class="hide-small" href="../sequelize/index.html">Sequelize</a>
+          <a class="hide-small" href="../packages.html" aria-current="page">Packages</a>
+          <a class="hide-small" href="../benchmarks.html">Benchmarks</a>
+          <a href="https://github.com/xufajs/xufa">GitHub</a>
+          <button class="theme-toggle" type="button" aria-label="Switch between light and dark theme">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+              <path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z" />
+            </svg>
+          </button>
+        </nav>
+      </div>
+    </header>
+
+    <div class="docs">
+      <button class="menu-toggle" type="button" aria-expanded="false">☰ Contents</button>
+      <aside class="sidebar">
+        <h4>Reference</h4>
+        <ul>
+          <li><a href="#functions">Functions (1)</a></li>
+          <li><a href="#constants">Constants (3)</a></li>
+          <li><a href="#interfaces">Interfaces (2)</a></li>
+          <li><a href="#types">Types (1)</a></li>
+        </ul>
+        <h4>Packages</h4>
+        <ul>
+          <li><a href="../websocket/index.html">@xufa/websocket</a></li>
+          <li><a href="../admin/index.html">@xufa/admin</a></li>
+          <li><a href="../session/index.html">@xufa/session</a></li>
+          <li><a href="../openapi/index.html">@xufa/openapi</a></li>
+          <li><a href="../client/index.html">@xufa/client</a></li>
+          <li><a href="../schema/index.html">@xufa/schema</a></li>
+          <li><a href="../pg/index.html">@xufa/pg</a></li>
+          <li><a href="../mongo/index.html">@xufa/mongo</a></li>
+          <li><a href="../expression/index.html">@xufa/expression</a></li>
+          <li><a href="../template/index.html">@xufa/template</a></li>
+          <li><a href="../cluster/index.html">@xufa/cluster</a></li>
+          <li><a href="../scheduler/index.html">@xufa/scheduler</a></li>
+          <li><a href="../queue/index.html">@xufa/queue</a></li>
+          <li><a href="../config/index.html">@xufa/config</a></li>
+          <li><a href="../discovery/index.html">@xufa/discovery</a></li>
+          <li><a href="../netcache/index.html">@xufa/netcache</a></li>
+          <li><a href="../faults/index.html">@xufa/faults</a></li>
+          <li><a href="../marshal/index.html">@xufa/marshal</a></li>
+          <li><a href="../yaml/index.html">@xufa/yaml</a></li>
+          <li><a href="../jwt/index.html">@xufa/jwt</a></li>
+          <li><a href="../logger/index.html">@xufa/logger</a></li>
+          <li><a href="../router/index.html">@xufa/router</a></li>
+          <li><a href="../serializer/index.html">@xufa/serializer</a></li>
+          <li><a href="../inject/index.html">@xufa/inject</a></li>
+          <li><a href="../boot/index.html">@xufa/boot</a></li>
+          <li><a href="index.html" aria-current="page">@xufa/errors</a></li>
+          <li><a href="../packages.html">All the packages</a></li>
+        </ul>
+      </aside>
+
+      <article class="content">
+        <nav class="package-tabs" aria-label="@xufa/errors">
+          <a href="index.html">Overview</a>
+          <a href="reference.html" aria-current="page">Reference</a>
+        </nav>
+        <h1>Reference</h1>
+        <p class="intro">
+          Error classes with a code, a status code and formatted messages, with no dependencies. Every declaration of its TypeScript declarations
+          (<code>packages/errors/index.d.ts</code>), as they are written, with their comments: made from them each time
+          the docs are built. How to use them is in <a href="index.html">the overview</a>.
+        </p>
+
+        <h2 id="functions">Functions</h2>
+        <p class="ref-index"><a href="#ref-createError"><code>createError</code></a></p>
+
+        <h3 id="ref-createError"><code>createError</code></h3>
+        <pre><code class="language-ts">declare function createError&lt;C extends string, SC extends number, Arg extends unknown[] = [any?, any?, any?]&gt;(
+  code: C,
+  message: string,
+  statusCode: SC,
+  Base?: ErrorConstructor,
+  captureStackTrace?: boolean
+): createError.XufaErrorConstructor&lt;{ code: C; statusCode: SC }, Arg&gt;;
+
+declare function createError&lt;C extends string, Arg extends unknown[] = [any?, any?, any?]&gt;(
+  code: C,
+  message: string,
+  statusCode?: number,
+  Base?: ErrorConstructor,
+  captureStackTrace?: boolean
+): createError.XufaErrorConstructor&lt;{ code: C }, Arg&gt;;
+
+declare function createError&lt;Arg extends unknown[] = [any?, any?, any?]&gt;(
+  code: string,
+  message: string,
+  statusCode?: number,
+  Base?: ErrorConstructor,
+  captureStackTrace?: boolean
+): createError.XufaErrorConstructor&lt;{ code: string }, Arg&gt;;</code></pre>
+
+        <h2 id="constants">Constants</h2>
+        <p class="ref-index"><a href="#ref-XufaError"><code>XufaError</code></a>, <a href="#ref-createError"><code>createError</code></a>, <a href="#ref-captureStackTrace"><code>captureStackTrace</code></a></p>
+
+        <h3 id="ref-XufaError"><code>XufaError</code></h3>
+        <pre><code class="language-ts">export const XufaError: XufaErrorConstructor;</code></pre>
+
+        <h3 id="ref-createError"><code>createError</code></h3>
+        <pre><code class="language-ts">export const createError: CreateError;</code></pre>
+
+        <h3 id="ref-captureStackTrace"><code>captureStackTrace</code></h3>
+        <pre><code class="language-ts">export let captureStackTrace: boolean;</code></pre>
+        <p>Whether the errors created after this is set capture a stack trace (the default of the fifth argument).</p>
+
+        <h2 id="interfaces">Interfaces</h2>
+        <p class="ref-index"><a href="#ref-XufaError"><code>XufaError</code></a>, <a href="#ref-XufaErrorConstructor"><code>XufaErrorConstructor</code></a></p>
+
+        <h3 id="ref-XufaError"><code>XufaError</code></h3>
+        <pre><code class="language-ts">export interface XufaError extends Error { ... }</code></pre>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>code</code></td><td><code>string</code></td><td></td></tr>
+                <tr><td><code>name</code></td><td><code>string</code></td><td></td></tr>
+                <tr><td><code>statusCode?</code></td><td><code>number</code></td><td></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-XufaErrorConstructor"><code>XufaErrorConstructor</code></h3>
+        <pre><code class="language-ts">export interface XufaErrorConstructor&lt;
+    E extends { ... }</code></pre>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>new (...arg: T)</code></td><td><code><a href="#ref-XufaError">XufaError</a> &amp; E</code></td><td></td></tr>
+                <tr><td><code>(...arg: T)</code></td><td><code><a href="#ref-XufaError">XufaError</a> &amp; E</code></td><td></td></tr>
+                <tr><td><code>readonly prototype</code></td><td><code><a href="#ref-XufaError">XufaError</a> &amp; E</code></td><td></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h2 id="types">Types</h2>
+        <p class="ref-index"><a href="#ref-CreateError"><code>CreateError</code></a></p>
+
+        <h3 id="ref-CreateError"><code>CreateError</code></h3>
+        <pre><code class="language-ts">type CreateError = typeof createError;</code></pre>
+      </article>
+    </div>
+
+    <footer class="footer">
+      <div class="container">
+        <span>xufa is MIT licensed. &copy; Jes&uacute;s Seijas</span>
+        <span>
+          <a href="../guide.html">Guide</a> &middot; <a href="../playground.html">Playground</a> &middot; <a href="../http/index.html">HTTP</a> &middot; <a href="../orm/index.html">ORM</a> &middot; <a href="../auth/index.html">Auth</a> &middot;
+          <a href="../sequelize/index.html">Sequelize</a> &middot; <a href="../packages.html">Packages</a> &middot;
+          <a href="../benchmarks.html">Benchmarks</a> &middot; <a href="https://github.com/xufajs/xufa">GitHub</a>
+        </span>
+      </div>
+    </footer>
+  </body>
+</html>

@@ -34,6 +34,7 @@ describe('rules', () => {
     faults.fail({ operations: ['send'], match: (context) => context.size > 10 });
     expect(await faults.apply({ operation: 'send', size: 5 }, () => 'small')).toBe('small');
     expect(await failure(faults.apply({ operation: 'send', size: 50 }, () => 'big'))).toBeInstanceOf(FaultError);
+    faults.clear();
   });
 
   it('after, times, rate (faults.random), and the errors of fail', async () => {
@@ -89,6 +90,7 @@ describe('rules', () => {
     const aborted = faults.apply({ operation: 'get', signal: stop.signal }, () => 1);
     stop.abort(new Error('timeout'));
     expect((await failure(aborted)).message).toBe('timeout');
+    faults.clear();
   });
 
   it('down and up; kinds of their own; pick() for what cannot wait', async () => {
@@ -104,6 +106,7 @@ describe('rules', () => {
     faults.fail({ operations: 'set' });
     expect(faults.pick({ operation: 'set' }).map((action) => action.kind)).toEqual(['delay', 'fail']);
     expect(faults.pick({ operation: 'get' }).map((action) => action.kind)).toEqual(['delay']);
+    faults.clear();
   });
 
   it('errors of the options', () => {

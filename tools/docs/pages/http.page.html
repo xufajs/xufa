@@ -1,0 +1,153 @@
+<!--{
+  "file": "http.html",
+  "name": "@xufa/http",
+  "title": "HTTP",
+  "description": "@xufa/http: a fast web framework for Node.js with the API of fastify, its test suite and its TypeScript declarations, and no dependencies.",
+  "nav": "http",
+  "packages": false,
+  "groups": [
+    ["@xufa/http", [["install", "Install"], ["first-app", "A first app"], ["why", "Why @xufa/http"], ["fastify", "The API is fastify's"], ["parts", "Its parts"], ["with-xufa", "With the rest of xufa"]]],
+    ["The docs", [["http-guide.html", "Guide"], ["http-api.html", "API"], ["http-fastify.html", "From fastify"], ["http-benchmarks.html", "Benchmarks"]]]
+  ]
+}-->
+        <h1>HTTP</h1>
+        <p class="intro">
+          <code>@xufa/http</code> is the HTTP layer of xufa: a fast web framework for Node.js with the API of
+          <a href="https://fastify.dev">fastify</a>: routes, hooks, plugins, decorators, schemas that validate requests
+          and serialize replies. It has no dependencies outside the packages of xufa, and the package <code>xufa</code>
+          gives it too. Try an app of it in your browser, in the <a href="playground.html#http">playground</a>.
+        </p>
+
+        <div class="stats">
+          <div class="stat"><span class="value">2,288</span><span class="label">tests of fastify's own suite pass, ported</span></div>
+          <div class="stat"><span class="value">1.06&times;&ndash;1.96&times;</span><span class="label">the requests a second of fastify, in the process, on Linux</span></div>
+          <div class="stat"><span class="value">0</span><span class="label">dependencies outside xufa</span></div>
+        </div>
+
+        <h2 id="install">Install</h2>
+        <pre><code class="language-sh">npm install @xufa/http   # or: npm install xufa</code></pre>
+        <p>It needs Node.js 22.22.3 or later (24.15 or later on the 24 line). CommonJS and ES modules both work:</p>
+        <pre data-run><code class="language-js">const xufa = require('@xufa/http');
+// import xufa from '@xufa/http'
+// import { xufa } from '@xufa/http'</code></pre>
+
+        <h2 id="first-app">A first app</h2>
+        <pre><code class="language-js">const xufa = require('@xufa/http');
+
+const app = xufa({ logger: true });
+
+const books = new Map([[1, { id: 1, title: 'Dune', pages: 412 }]]);
+
+const Book = {
+  type: 'object',
+  properties: { id: { type: 'integer' }, title: { type: 'string' }, pages: { type: 'integer' } },
+};
+
+// GET /books/1: the id converted to a number, the reply written by a serializer compiled from Book.
+app.get(
+  '/books/:id',
+  { schema: { params: { type: 'object', properties: { id: { type: 'integer' } } }, response: { 200: Book } } },
+  async (request, reply) =&gt; books.get(request.params.id) ?? reply.code(404).send({ message: 'No such book' })
+);
+
+// POST /books: the body validated (400 with the reason when it is not valid).
+app.post(
+  '/books',
+  {
+    schema: {
+      body: {
+        type: 'object',
+        required: ['title'],
+        properties: { title: { type: 'string', minLength: 1 }, pages: { type: 'integer', minimum: 1 } },
+        additionalProperties: false,
+      },
+      response: { 201: Book },
+    },
+  },
+  async (request, reply) =&gt; {
+    const book = { id: books.size + 1, ...request.body };
+    books.set(book.id, book);
+    reply.code(201);
+    return book;
+  }
+);
+
+await app.listen({ port: 3000 });</code></pre>
+        <pre><code class="language-sh">$ curl -s localhost:3000/books/1
+{"id":1,"title":"Dune","pages":412}
+$ curl -s -X POST localhost:3000/books -H 'content-type: application/json' -d '{"title":""}'
+{"statusCode":400,"code":"XUFA_ERR_VALIDATION","error":"Bad Request","message":"body/title must NOT have fewer than 1 characters"}</code></pre>
+        <p>
+          The <a href="http-guide.html">Guide</a> goes on from here: routes, requests and replies, validation, plugins,
+          hooks, errors, tests, TypeScript and running in production.
+        </p>
+
+        <h2 id="why">Why @xufa/http</h2>
+        <ul>
+          <li>
+            <strong>fastify's API, and its tests.</strong> Code written for fastify runs on it, and so do plugins written
+            with <code>fastify-plugin</code>. fastify's own test suite runs against it (main branch, 6.0.0-alpha.4,
+            ported), and its TypeScript declarations are fastify's, with their type tests.
+          </li>
+          <li>
+            <strong>Faster.</strong> It writes the head of most responses itself, compiles its router, leaves the query
+            string unparsed until it is read, and writes large JSON replies as bytes: from 1.06&times; to 1.96&times; the
+            requests of fastify in the process, 1.02&times; to 1.66&times; over the loopback
+            (<a href="http-benchmarks.html">Benchmarks</a>).
+          </li>
+          <li>
+            <strong>One set of packages.</strong> What fastify takes from a dozen packages (a logger, a router, ajv, a
+            serializer...), xufa has in its own, written together and tested together, with no dependencies to audit.
+          </li>
+          <li>
+            <strong>The rest of the framework around it.</strong> An ORM, authentication, OpenAPI, WebSockets,
+            configuration, a cluster, a scheduler: each one a plugin of the app (<a href="#with-xufa">below</a>).
+          </li>
+        </ul>
+
+        <h2 id="fastify">The API is fastify's</h2>
+        <p>
+          Everything in <a href="https://fastify.dev/docs/latest/">fastify's documentation</a> applies: server options,
+          routes, hooks, plugins and encapsulation, decorators, validation and serialization, content type parsers,
+          <code>reply</code>, <code>request</code>, the logger, <code>inject()</code> and the type providers of
+          TypeScript. The <a href="http-api.html">API</a> page lists all of it as xufa has it. What is different (the
+          names of errors, the validator, the logger, a few options) is in <a href="http-fastify.html">From fastify</a>:
+          for most apps, moving is changing <code>require('fastify')</code> into <code>require('@xufa/http')</code>.
+        </p>
+
+        <h2 id="parts">Its parts</h2>
+        <p>What fastify takes from other packages, xufa has in its own, each usable alone:</p>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>fastify uses</th><th>xufa uses</th><th>For</th></tr></thead>
+            <tbody>
+              <tr><td><code>pino</code></td><td><a href="logger.html"><code>@xufa/logger</code></a></td><td>The logs of the app and of each request</td></tr>
+              <tr><td><code>find-my-way</code></td><td><a href="router.html"><code>@xufa/router</code></a></td><td>Finding the route of a request</td></tr>
+              <tr><td><code>ajv</code></td><td><a href="schema.html"><code>@xufa/schema</code></a></td><td>Validating requests (and replies, when asked)</td></tr>
+              <tr><td><code>fast-json-stringify</code></td><td><a href="serializer.html"><code>@xufa/serializer</code></a></td><td>Writing replies with a response schema</td></tr>
+              <tr><td><code>light-my-request</code></td><td><a href="inject.html"><code>@xufa/inject</code></a></td><td><code>app.inject()</code>: requests without a socket, for tests</td></tr>
+              <tr><td><code>avvio</code></td><td><a href="boot.html"><code>@xufa/boot</code></a></td><td>Loading plugins in order</td></tr>
+              <tr><td><code>@fastify/error</code></td><td><a href="errors.html"><code>@xufa/errors</code></a></td><td>Errors with a code and a status</td></tr>
+              <tr><td><code>fastify-plugin</code></td><td><code>xufa.plugin</code></td><td>Plugins that share what they add</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h2 id="with-xufa">With the rest of xufa</h2>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Package</th><th>What it adds to an app</th></tr></thead>
+            <tbody>
+              <tr><td><a href="schema.html">@xufa/schema</a></td><td>Schemas written with <code>s</code>, and typed requests (<code>SchemaTypeProvider</code>)</td></tr>
+              <tr><td><a href="orm.html">@xufa/orm</a></td><td>Models and databases, the database of each request, resources (CRUD routes) from models</td></tr>
+              <tr><td><a href="auth.html">@xufa/auth</a></td><td>Logging in, tokens, and who may use each route (<code>config: { auth }</code>)</td></tr>
+              <tr><td><a href="openapi.html">@xufa/openapi</a></td><td>The OpenAPI document of the routes, its explorer, and routes made from a document</td></tr>
+              <tr><td><a href="websocket.html">@xufa/websocket</a></td><td>Routes with <code>{ websocket: true }</code>, rooms across processes</td></tr>
+              <tr><td><a href="client.html">@xufa/client</a></td><td>Calls to other APIs, cancelled with the request that made them</td></tr>
+              <tr><td><a href="config.html">@xufa/config</a></td><td>The configuration of the app, checked by a schema</td></tr>
+              <tr><td><a href="cluster.html">@xufa/cluster</a></td><td>The app in a process for each CPU</td></tr>
+              <tr><td><a href="faults.html">@xufa/faults</a></td><td>Faults made on purpose (slow databases, failing calls), for tests and staging</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p>The <a href="http-guide.html#with-xufa">Guide</a> shows each one in an app.</p>

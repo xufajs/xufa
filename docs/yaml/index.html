@@ -58,6 +58,8 @@
         <h4>Packages</h4>
         <ul>
           <li><a href="../websocket/index.html">@xufa/websocket</a></li>
+          <li><a href="../admin/index.html">@xufa/admin</a></li>
+          <li><a href="../session/index.html">@xufa/session</a></li>
           <li><a href="../openapi/index.html">@xufa/openapi</a></li>
           <li><a href="../client/index.html">@xufa/client</a></li>
           <li><a href="../schema/index.html">@xufa/schema</a></li>
@@ -67,6 +69,7 @@
           <li><a href="../template/index.html">@xufa/template</a></li>
           <li><a href="../cluster/index.html">@xufa/cluster</a></li>
           <li><a href="../scheduler/index.html">@xufa/scheduler</a></li>
+          <li><a href="../queue/index.html">@xufa/queue</a></li>
           <li><a href="../config/index.html">@xufa/config</a></li>
           <li><a href="../discovery/index.html">@xufa/discovery</a></li>
           <li><a href="../netcache/index.html">@xufa/netcache</a></li>
@@ -85,7 +88,12 @@
       </aside>
 
       <article class="content">
-<h1>@xufa/yaml</h1>
+        <nav class="package-tabs" aria-label="@xufa/yaml">
+          <a href="index.html" aria-current="page">Overview</a>
+          <a href="reference.html">Reference</a>
+          <a href="../playground.html#yaml">Playground</a>
+        </nav>
+        <h1>@xufa/yaml</h1>
         <p class="intro">
           YAML 1.2 for Node.js with no dependencies: the code of <a href="https://github.com/nodeca/js-yaml">js-yaml</a>
           4.1.0 and its test suite. <a href="../openapi/index.html">@xufa/openapi</a> reads and writes OpenAPI documents with it.
@@ -93,10 +101,25 @@
 
         <h2 id="start">Quick start</h2>
         <pre><code class="language-sh">npm install @xufa/yaml</code></pre>
-        <pre><code class="language-js">const yaml = require('@xufa/yaml');
+        <pre data-run="yaml"><code class="language-js">const yaml = require('@xufa/yaml');
 
-const doc = yaml.load(fs.readFileSync('openapi.yaml', 'utf8'));
-const text = yaml.dump(doc, { noRefs: true, lineWidth: -1 });</code></pre>
+const doc = yaml.load(`
+openapi: 3.1.0
+info: { title: Books, version: 1.0.0 }
+servers:
+  - url: https://api.example.com
+released: 2026-10-07
+`); // or yaml.load(fs.readFileSync('openapi.yaml', 'utf8'), { filename: 'openapi.yaml' })
+console.log(doc.info.title, doc.released instanceof Date);
+console.log(yaml.dump(doc, { noRefs: true, lineWidth: -1 }));</code></pre>
+        <pre data-output><code class="language-yaml">Books true
+openapi: 3.1.0
+info:
+  title: Books
+  version: 1.0.0
+servers:
+  - url: https://api.example.com
+released: 2026-10-07T00:00:00.000Z</code></pre>
 
         <h2 id="load">Loading</h2>
         <p>

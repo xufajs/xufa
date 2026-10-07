@@ -68,6 +68,12 @@ await cache.clear('book:'); // the keys of a prefix, everywhere</code></pre>
           <code>'connected'</code> or <code>'disconnected'</code>), <code>change</code> (a write of another node applied),
           <code>reset</code>, <code>synced</code>, <code>error</code>.
         </p>
+        <p>
+          <code>health({ minPeers })</code> is a check of <a href="http-guide.html#health">xufa.health</a>: down when the
+          cache is not started, degraded when peers it knows are not connected (or fewer than <code>minPeers</code> are),
+          with the peers, those connected, the keys and the writes not acknowledged yet. Not critical by default: a cache
+          that misses asks the database.
+        </p>
 
         <h2 id="orm">With @xufa/orm</h2>
         <p>
@@ -103,7 +109,7 @@ start({
         <p>
           <code>cache.faults</code> (of <a href="faults.html">@xufa/faults</a>) makes <code>get</code>, <code>set</code>,
           <code>delete</code> and <code>clear</code> fail, wait or hang (<code>read</code>, <code>write</code>; <code>keys</code>
-          by prefix or regular expression). As the store of <a href="orm.html#cache">@xufa/orm</a>, reads and writes that
+          by prefix or regular expression). As the store of <a href="orm-guide.html#cache">@xufa/orm</a>, reads and writes that
           fail are misses (the database answers, <code>onCacheError</code> is told); deletes that fail are errors.
         </p>
         <pre><code class="language-js">cache.faults.down(); // until cache.faults.up()

@@ -17,7 +17,7 @@
 
         <h2 id="start">Quick start</h2>
         <pre><code class="language-sh">npm install @xufa/marshal</code></pre>
-        <pre><code class="language-js">const { stringify, parse, clone, registry } = require('@xufa/marshal');
+        <pre data-run="marshal"><code class="language-js">const { stringify, parse, clone, registry } = require('@xufa/marshal');
 
 class Point {
   constructor(x, y) {
@@ -31,11 +31,17 @@ class Point {
 registry.register(Point);
 
 const shared = { n: 1 };
-const back = parse(stringify({ at: new Date(), point: new Point(3, 4), big: 10n, a: shared, b: shared }));
-back.point.norm(); // 5: a Point again
-back.a === back.b; // true: one object, as it was
+const back = parse(stringify({ at: new Date(0), point: new Point(3, 4), big: 10n, a: shared, b: shared }));
+console.log(back.point.norm()); // 5: a Point again
+console.log(back.a === back.b); // true: one object, as it was
+console.log(back.at.toISOString(), typeof back.big);
 
-clone(value); // a deep copy that keeps classes, references and cycles</code></pre>
+const copy = clone(back); // a deep copy that keeps classes, references and cycles
+console.log(copy.point instanceof Point, copy.a === copy.b);</code></pre>
+        <pre data-output><code class="language-plaintext">5
+true
+1970-01-01T00:00:00.000Z bigint
+true true</code></pre>
 
         <h2 id="classes">Classes</h2>
         <p>

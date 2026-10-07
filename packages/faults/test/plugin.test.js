@@ -169,7 +169,7 @@ describe('faults plugin: registration', () => {
   it('authorize(request), and auth as the config of the routes (for @xufa/auth)', async () => {
     const app = xufa();
     const seen = [];
-    app.addHook('onRoute', (route) => seen.push(route.config && route.config.auth));
+    app.addHook('onRoute', (route) => seen.push([route.url, route.config && route.config.auth, route.method]));
     await app.register(plugin, {
       targets: { cache: cacheWithFaults() },
       authorize: (request) => request.headers['x-role'] === 'admin',
@@ -178,7 +178,48 @@ describe('faults plugin: registration', () => {
     await app.ready();
     expect((await app.inject({ url: '/_faults' })).statusCode).toBe(401);
     expect((await app.inject({ url: '/_faults', headers: { 'x-role': 'admin' } })).statusCode).toBe(200);
-    expect(seen.every((rule) => rule === 'admin')).toBe(true);
+    // Every route of the faults has the rule; the files of the page (no data in them) have none.
+    const pages = ['/_faults/ui', '/_faults/ui.js', '/_faults/ui.css'];
+    expect(seen.filter(([url]) => !pages.includes(url)).every(([, rule]) => rule === 'admin')).toBe(true);
+    expect(seen.filter(([url, , method]) => pages.includes(url) && method === 'GET').map(([, rule]) => rule)).toEqual([
+      undefined,
+      undefined,
+      undefined,
+    ]);
+    await app.close();
+  });
+
+  it('the page: served without the protection (it has no data), strict headers, the routes still protected', async () => {
+    const app = xufa();
+    await app.register(plugin, { targets: { cache: cacheWithFaults() }, token: TOKEN, path: '/ops/"faults' });
+    await app.ready();
+    const page = await app.inject({ url: '/ops/"faults/ui' });
+    expect(page.statusCode).toBe(200);
+    expect(page.headers['content-type']).toMatch(/^text\/html/);
+    expect(page.headers['content-security-policy']).toMatch(/default-src 'none'; script-src 'self'/);
+    expect(page.headers['content-security-policy']).toMatch(/frame-ancestors 'none'/);
+    expect([page.headers['x-content-type-options'], page.headers['cache-control']]).toEqual(['nosniff', 'no-store']);
+    // The path of the routes, escaped in its attribute; no inline scripts (the CSP would refuse them).
+    expect(page.body).toContain('data-base="/ops/&quot;faults"');
+    expect(page.body).not.toMatch(/<script(?![^>]*\ssrc=)[^>]*>/);
+    expect(page.body).toContain('<script src="ui.js" defer></script>');
+    const script = await app.inject({ url: '/ops/"faults/ui.js' });
+    const style = await app.inject({ url: '/ops/"faults/ui.css' });
+    expect([script.statusCode, script.headers['content-type']]).toEqual([200, 'text/javascript; charset=utf-8']);
+    expect([style.statusCode, style.headers['content-type']]).toEqual([200, 'text/css; charset=utf-8']);
+    // Values of the server are set as text, never as HTML.
+    expect(script.body).not.toMatch(/innerHTML|outerHTML|insertAdjacentHTML|document\.write/);
+    expect((await app.inject({ url: '/ops/"faults' })).statusCode).toBe(401);
+    await app.close();
+  });
+
+  it('ui: false leaves the page out', async () => {
+    const app = xufa();
+    await app.register(plugin, { targets: { cache: cacheWithFaults() }, token: TOKEN, ui: false });
+    await app.ready();
+    // No route: not found, with or without the token.
+    expect((await app.inject({ url: '/_faults/ui' })).statusCode).toBe(404);
+    expect((await app.inject({ url: '/_faults/ui', headers: auth })).statusCode).toBe(404);
     await app.close();
   });
 

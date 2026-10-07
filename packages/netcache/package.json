@@ -40,7 +40,7 @@
     "url": "https://github.com/xufajs/xufa/issues"
   },
   "engines": {
-    "node": ">=22"
+    "node": "^22.22.3 || ^24.15.0 || >=25.7.0"
   },
   "tsd": {
     "directory": "test/types"
@@ -56,5 +56,10 @@
     "@xufa/discovery": "workspace:*",
     "@xufa/faults": "workspace:*",
     "@xufa/marshal": "workspace:*"
+  },
+  "vyntra": {
+    "setupFiles": [
+      "@xufa/faults/register-strict"
+    ]
   }
 }

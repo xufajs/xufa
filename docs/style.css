@@ -976,7 +976,7 @@ table.numbers td:not(:first-child) {
 }
 
 .progress.full .fill {
-  background: var(--accent);
+  background: var(--good);
 }
 
 .progress .count {
@@ -1976,4 +1976,57 @@ td small {
 
 .package-home-tabs .package-tabs {
   margin-bottom: 0;
+}
+
+/* The pages of reference (made from the declarations of the packages): their members, and the index of each kind. */
+table.ref-members {
+  table-layout: fixed;
+  min-width: 40rem;
+}
+
+table.ref-members th:nth-child(1) {
+  width: 34%;
+}
+
+table.ref-members th:nth-child(2) {
+  width: 30%;
+}
+
+table.ref-members td > code:first-child:last-child,
+table.ref-members code {
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
+table.ref-members td p,
+table.ref-members td ul {
+  margin: 0 0 0.4rem;
+}
+
+.ref-index {
+  line-height: 2;
+}
+
+.ref-tags {
+  margin: 0.4rem 0;
+  padding-left: 1.2rem;
+}
+
+/* What an example prints (<pre data-output>, checked by tools/docs/examples): under its code, labelled. */
+pre[data-output] {
+  margin-top: -0.75rem;
+  border-top-left-radius: 0;
+  border-top-right-radius: 0;
+  border-left: 3px solid var(--accent);
+}
+
+pre[data-output]::before {
+  content: 'Output';
+  display: block;
+  padding: 0.5rem 1rem 0;
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-soft);
 }

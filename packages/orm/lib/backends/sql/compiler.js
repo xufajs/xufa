@@ -16,6 +16,15 @@ const MAX_PLANS = 500;
 const JSON_VALUE = { dbType: 'jsonValue' };
 // The field of values of fragments of SQL (given as the driver gives them).
 const RAW_VALUE = { dbType: 'raw' };
+// The field of numbers of dates (Extract).
+const INTEGER_VALUE = { dbType: 'integer' };
+
+// The SQL of a value of values(): its column, or a number (Extract) or a start (Trunc) of a date of it.
+function dateValueSql(dialect, sql, item) {
+  if (item.part) return dialect.datePart(sql, item.part, lastOf(item.fields).dbType);
+  if (item.trunc) return dialect.dateTrunc(sql, item.trunc, lastOf(item.fields).dbType);
+  return sql;
+}
 const TABLE_MARKER = '\u0000table\u0000';
 const TEXT_LOOKUPS = new Set(['contains', 'startswith', 'endswith', 'icontains', 'istartswith', 'iendswith']);
 
@@ -65,6 +74,7 @@ function shapeOf(node, leaves) {
     const sample = Array.isArray(value) ? value.find((item) => item !== null) : value;
     extra += `>${JSON.stringify(node.path)}:${typeof sample}`;
   }
+  if (node.part) extra += `#${node.part}`;
   return `${pathKey(node.fields)}~${lookup}${extra}`;
 }
 
@@ -329,6 +339,7 @@ class SqlCompiler {
         else if (kind === 'fragment') params[i] = node.params[k];
         else if (kind === 'json') params[i] = this.dialect.jsonParam(k === undefined ? node.value : node.value[k]);
         else if (kind === 'like') params[i] = this.dialect.likePattern(node.value);
+        else if (kind === 'number') params[i] = k === undefined ? node.value : node.value[k];
         else if (kind === 'item') params[i] = this.encode(lastOf(node.fields), node.value[k]);
         else params[i] = this.encode(lastOf(node.fields), node.value);
       }
@@ -357,7 +368,8 @@ class SqlCompiler {
     if (query.values) {
       if (query.values.some((item) => item.raw && item.params.length)) return null;
       const values = query.values.map(
-        (item) => `${item.key}=${item.raw ? `R${JSON.stringify(item.raw)}` : pathKey(item.fields)}`
+        (item) =>
+          `${item.key}=${item.raw ? `R${JSON.stringify(item.raw)}` : pathKey(item.fields)}${item.part ? `#${item.part}` : ''}${item.trunc ? `%${item.trunc}` : ''}`
       );
       return `${key}|v:${values.join(',')}`;
     }
@@ -465,8 +477,31 @@ class SqlCompiler {
     }
   }
 
+  // A condition on a part of a date: the number the dialect takes out of the column (NULL for no date).
+  partLeaf(ctx, node) {
+    const { fields, part, lookup, value } = node;
+    const column = this.dialect.datePart(ctx.column(fields), part, lastOf(fields).dbType);
+    const param = (k) => ctx.param(k === undefined ? value : value[k], { node, kind: 'number', k });
+    switch (lookup) {
+      case 'exact':
+      case 'gt':
+      case 'gte':
+      case 'lt':
+      case 'lte':
+        return `${column} ${OPERATORS[lookup]} ${param()}`;
+      case 'in':
+        if (value.length === 0) return this.dialect.false;
+        return `${column} IN (${value.map((item, k) => param(k)).join(', ')})`;
+      case 'range':
+        return `${column} BETWEEN ${param(0)} AND ${param(1)}`;
+      default:
+        throw new Error(`Unknown lookup ${lookup} of a part of a date`);
+    }
+  }
+
   leaf(ctx, node) {
     if (node.path) return this.jsonLeaf(ctx, node);
+    if (node.part) return this.partLeaf(ctx, node);
     const { fields, lookup, value } = node;
     const { dialect } = this;
     const field = lastOf(fields);
@@ -558,15 +593,17 @@ class SqlCompiler {
     const ctx = new Context(dialect, query.meta, true);
     const columns = [];
     if (query.values) {
-      query.values.forEach(({ key, fields, jsonPath, raw, params }) =>
+      query.values.forEach(({ key, fields, jsonPath, raw, params, part, trunc }) =>
         columns.push({
           key,
           path: [],
-          field: raw ? RAW_VALUE : jsonPath ? JSON_VALUE : lastOf(fields),
+          field: raw ? RAW_VALUE : jsonPath ? JSON_VALUE : part ? INTEGER_VALUE : lastOf(fields),
           fields,
           jsonPath,
           raw,
           params,
+          part,
+          trunc,
         })
       );
     } else {
@@ -586,7 +623,7 @@ class SqlCompiler {
     const select = columns
       .map((column, i) => {
         if (column.raw) return `(${this.fragment(ctx, column.raw, column.params)}) AS c${i}`;
-        const sql = ctx.column(column.fields);
+        const sql = dateValueSql(dialect, ctx.column(column.fields), column);
         return `${column.jsonPath ? dialect.jsonValue(sql, column.jsonPath) : sql} AS c${i}`;
       })
       .join(', ');
@@ -704,7 +741,10 @@ class SqlCompiler {
   aggregate(query, aggregates, groupBy) {
     const { dialect } = this;
     const ctx = new Context(dialect, query.meta, true);
-    const groups = (groupBy || []).map((item) => ({ ...item, sql: ctx.column(item.fields) }));
+    const groups = (groupBy || []).map((item) => ({
+      ...item,
+      sql: dateValueSql(dialect, ctx.column(item.fields), item),
+    }));
     const select = [
       ...groups.map((item, i) => `${item.sql} AS g${i}`),
       ...aggregates.map((item, i) => {
@@ -729,7 +769,9 @@ class SqlCompiler {
     const decode = (row) => {
       const result = {};
       groups.forEach((item, i) => {
-        result[item.key] = decodeField(dialect, lastOf(item.fields), row[`g${i}`]);
+        const value = row[`g${i}`];
+        if (item.part) result[item.key] = value === null || value === undefined ? null : Number(value);
+        else result[item.key] = decodeField(dialect, lastOf(item.fields), value);
       });
       aggregates.forEach((item, i) => {
         const value = row[`a${i}`];

@@ -418,7 +418,7 @@ await compileJsonSchemaAsync(orderSchema, { loadSchema }); // loads them</code><
           validation runs on @xufa/schema. Copy it into your project, replace <code>new Ajv(options)</code> with
           <code>createAjvLike(options)</code>, and move the code to @xufa/schema's own API when convenient.
         </p>
-        <pre><code class="language-js">// ajv-like.js: ajv's compile(), validate.errors and error objects, on @xufa/schema.
+        <pre data-run><code class="language-js">// ajv-like.js: ajv's compile(), validate.errors and error objects, on @xufa/schema.
 const { compileJsonSchema } = require('@xufa/schema');
 
 // Errors that ajv reports at the object, with the key in params.
@@ -505,7 +505,7 @@ console.log(compareOn(orderSchema, orderSamples));</code></pre>
         <p>
           With <a href="http.html">@xufa/http</a> (the API of fastify) there is nothing to do: its default validator compiler
           is @xufa/schema, with fastify's options and errors in the shape of ajv's, shared schemas included
-          (<a href="http.html#validation">Validation</a>). With fastify itself:
+          (<a href="http-guide.html#validation">Validation</a>). With fastify itself:
         </p>
         <p>
           Fastify validates with ajv, with the options <code>coerceTypes: 'array'</code>, <code>useDefaults: true</code>,
@@ -649,7 +649,7 @@ fs.writeFileSync('validate-order.mjs', standaloneJsonSchema(orderSchema, { forma
               <tr><td>Asynchronous validation (<code>$async</code> schemas)</td><td><code>$async</code> throws (ignored with <code>strict: false</code>): validation is synchronous. Loading documents is supported, with <code>compileJsonSchemaAsync()</code>. Run asynchronous checks (a database lookup) after validating.</td></tr>
               <tr><td>JSON Type Definition (JTD, <code>ajv/dist/jtd</code>)</td><td>Not supported.</td></tr>
               <tr><td>ajv-errors (<code>errorMessage</code>), ajv-i18n</td><td>Build messages from error objects (see <a href="#custom-messages">Custom messages</a>).</td></tr>
-              <tr><td>ajv-merge-patch (<code>$merge</code>, <code>$patch</code>)</td><td>Not supported: merge the schemas in your code before compiling, or use <code>allOf</code>.</td></tr>
+              <tr><td>ajv-merge-patch (<code>$merge</code>, <code>$patch</code>)</td><td>Built in, no plugin: <code>{ $merge: { source, with } }</code> (a JSON Merge Patch) and <code>{ $patch: { source, with: [operations] } }</code> (a JSON Patch), the source inline or by a <code>$ref</code> (a schema of <code>schemas</code>, a JSON Pointer).</td></tr>
               <tr><td><code>schemaPath</code> in errors</td><td>Not given; errors have the path of the value, the keyword and its params.</td></tr>
               <tr><td>Checking schemas against the meta-schema when compiling</td><td>Keywords and types are checked, values are not; compile the meta-schema to check them (see <a href="#api">API</a>).</td></tr>
             </tbody>

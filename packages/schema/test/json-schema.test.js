@@ -1,4 +1,4 @@
-const { compileJsonSchema, fromJsonSchema, Schema, toErrors } = require('../src');
+const { compileJsonSchema, fromJsonSchema, Schema, toErrors } = require('..');
 
 const indexesSchema = {
   type: 'array',
