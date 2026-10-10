@@ -13,8 +13,8 @@ npm install @xufa/queue
 ```
 
 ```js
-const { Database } = require('@xufa/orm');
-const { Queue } = require('@xufa/queue');
+import { Database } from '@xufa/orm';
+import { Queue } from '@xufa/queue';
 
 const db = new Database({ backend: 'postgres', url: process.env.DATABASE_URL });
 const queue = new Queue(db); // its model (table xufa_jobs) is registered in db: db.sync() makes it
@@ -62,7 +62,7 @@ can be stored, edited and shown): steps that run a block (a kind of work registe
 other steps (fan out, join), when a condition holds, and whose outputs make the result of the run.
 
 ```js
-const { Pipelines } = require('@xufa/queue');
+import { Pipelines } from '@xufa/queue';
 
 const pipelines = new Pipelines(queue); // its models (xufa_pipeline_runs, xufa_pipeline_steps) registered in db
 pipelines.block('fetch', async (input, { signal }) => fetchDocument(input.url, { signal }));
@@ -109,11 +109,19 @@ const { run: state, steps } = await pipelines.get(run.pk); // statuses, outputs,
 - Every change of a step or run is an update made from the status it expects: two branches that end at once do not
   overwrite each other, and a step whose job runs twice runs once. A run keeps the definition it started with.
 - Events: `started`, `step` (run, step, status), `completed`, `failed`.
+- `start()` takes the options of the jobs of its steps: `priority` and `queue` (for steps without their own), and
+  `delay` or `at` (when its first steps run): `pipelines.start('ingest', input, { delay: '1h', priority: 5 })`.
+- `pipelines.task(name, run, options)`: a block and a pipeline of one step by one name, for one piece of work whose
+  runs you want kept, retried and shown (a job is cheaper when they are many and need no history).
+- `pipelines.schedule(scheduler, pipeline, { cron | every, timezone, input, priority, catchUp... })`: recurring
+  tasks. A job of [@xufa/scheduler](../scheduler) starts a run of the pipeline at each time (trigger
+  `schedule:<name>`, key `schedule:<name>:<time>`: a time already started is not started again); the runs are kept,
+  retried and shown in the admin's Work as any other.
 
 ## With @xufa/http
 
 ```js
-const { queuePlugin } = require('@xufa/queue');
+import { queuePlugin } from '@xufa/queue';
 
 app.register(queuePlugin, { queue, work: { concurrency: 4 } }); // work: leave it out in processes that only enqueue
 app.post('/signup', async (request, reply) => {

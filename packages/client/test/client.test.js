@@ -1,11 +1,11 @@
 // The client against a server made here: URLs, query strings, JSON, answers parsed, errors by status, timeouts,
 // retries (idempotent methods only, Retry-After), hooks, extend(), and a client bound to a request of @xufa/http
 // (cancelled when the client of that request goes away, its id sent on). And retry().
-const http = require('node:http');
-const { Readable } = require('node:stream');
-const zlib = require('node:zlib');
-const xufa = require('@xufa/http');
-const { createClient, retry, HTTPError, TimeoutError, RequestError, RetryError } = require('..');
+import http from 'node:http';
+import { Readable } from 'node:stream';
+import zlib from 'node:zlib';
+import xufa from '@xufa/http';
+import { createClient, retry, HTTPError, TimeoutError, RequestError, RetryError } from '../index.js';
 
 const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 

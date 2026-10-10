@@ -1,7 +1,7 @@
 'use strict'
 
 
-const Fastify = require('@xufa/http')
+const Fastify = require('..')
 const jsonParser = require('fast-json-body')
 const { plainTextParser } = require('./helper')
 

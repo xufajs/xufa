@@ -5,9 +5,9 @@
 //
 // The API of light-my-request: options or a chain (inject(handler).post('/users').payload(...).end()), a callback
 // or a promise.
-const Request = require('./lib/request');
-const Response = require('./lib/response');
-const { validateOptions } = require('./lib/options');
+import Request from './lib/request.js';
+import Response from './lib/response.js';
+import { validateOptions } from './lib/options.js';
 
 const ALREADY_INVOKED = 'The dispatch function has already been invoked';
 
@@ -139,9 +139,13 @@ function isInjection(obj) {
   );
 }
 
-module.exports = inject;
-module.exports.default = inject;
-module.exports.inject = inject;
-module.exports.isInjection = isInjection;
-module.exports.Request = Request;
-module.exports.Response = Response;
+export default inject;
+inject.default = inject;
+inject.inject = inject;
+inject.isInjection = isInjection;
+inject.Request = Request;
+inject.Response = Response;
+
+export { inject as 'module.exports' };
+
+export { inject, isInjection, Request, Response };

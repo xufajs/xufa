@@ -8,11 +8,11 @@
 //
 // A plugin runs after the one registering it finished its own code, and before the plugins registered after it.
 // override(server, plugin, opts) gives the instance a plugin runs with (an encapsulated copy, for xufa).
-const { EventEmitter } = require('node:events');
-const { createQueue } = require('./lib/queue');
-const { Plugin, kPluginMeta, isPromiseLike } = require('./lib/plugin');
-const { TimeTree } = require('./lib/time-tree');
-const errors = require('./lib/errors');
+import { EventEmitter } from 'node:events';
+import { createQueue } from './lib/queue.js';
+import { Plugin, kPluginMeta, isPromiseLike } from './lib/plugin.js';
+import { TimeTree } from './lib/time-tree.js';
+import * as errors from './lib/errors.js';
 
 const {
   BOOT_ERR_EXPOSE_ALREADY_DEFINED,
@@ -479,8 +479,12 @@ function encapsulateThreeParam(func, that) {
   return wrapped;
 }
 
-module.exports = Boot;
-module.exports.Boot = Boot;
-module.exports.errors = errors;
-module.exports.kBoot = kBoot;
-module.exports.kPluginMeta = kPluginMeta;
+export default Boot;
+Boot.Boot = Boot;
+Boot.errors = errors;
+Boot.kBoot = kBoot;
+Boot.kPluginMeta = kPluginMeta;
+
+export { Boot as 'module.exports' };
+
+export { Boot, errors, kBoot, kPluginMeta };

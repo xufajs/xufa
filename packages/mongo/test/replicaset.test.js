@@ -1,6 +1,6 @@
 // A replica set: XUFA_MONGO_RS_URL, or one of three members on 27031-27033 (rs3). Skipped when it cannot be reached.
-const { spawnSync } = require('node:child_process');
-const { MongoClient, parseUrl } = require('..');
+import { spawnSync } from 'node:child_process';
+import { MongoClient, parseUrl } from '../index.js';
 
 const url =
   process.env.XUFA_MONGO_RS_URL || 'mongodb://127.0.0.1:27031,127.0.0.1:27032,127.0.0.1:27033/xufa_test?replicaSet=rs3';
@@ -73,6 +73,29 @@ describe.skipIf(!available)('replica set', () => {
     ).rejects.toThrow('rolled back');
     await session.endSession();
     expect(await collection.countDocuments({ tx: { $exists: true } })).toBe(2);
+  }, 30000);
+
+  it('transactions that write the same document at once: the one in conflict runs again, both count', async () => {
+    await collection.insertOne({ _id: 'counter', n: 0 });
+    let runs = 0;
+    // Each reads the counter, waits (so the other one writes it too), then writes it.
+    const increment = async () => {
+      const session = client.startSession();
+      try {
+        await session.withTransaction(async () => {
+          runs += 1;
+          const doc = await collection.findOne({ _id: 'counter' }, { session });
+          await new Promise((resolve) => setTimeout(resolve, 50));
+          await collection.updateOne({ _id: 'counter' }, { $set: { n: doc.n + 1 } }, { session });
+        });
+      } finally {
+        await session.endSession();
+      }
+    };
+    await Promise.all([increment(), increment(), increment()]);
+    expect((await collection.findOne({ _id: 'counter' })).n).toBe(3);
+    // At least one met a WriteConflict (TransientTransactionError) and ran again.
+    expect(runs).toBeGreaterThan(3);
   }, 30000);
 
   it('keeps writing when the primary steps down (retryable writes)', async () => {

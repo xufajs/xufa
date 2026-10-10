@@ -1,7 +1,4 @@
-'use strict'
-
-
-const FindMyWay = require('..')
+import FindMyWay from '../index.js';
 const noop = () => {}
 
 test('Should throw when not sending a string', () => {

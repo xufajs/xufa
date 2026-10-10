@@ -2,7 +2,7 @@
 
 
 const fs = require('node:fs')
-const Fastify = require('@xufa/http')
+const Fastify = require('..')
 
 test('should respond with a stream', async () => {
   expect.assertions(4)

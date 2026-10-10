@@ -1,8 +1,5 @@
-'use strict'
-
-
-const querystring = require('node:querystring')
-const FindMyWay = require('../')
+import querystring from 'node:querystring';
+import FindMyWay from '../index.js';
 
 test('Custom querystring parser', () => {
   expect.assertions(2)

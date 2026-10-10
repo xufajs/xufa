@@ -1,7 +1,4 @@
-'use strict'
-
-
-const FindMyWay = require('../')
+import FindMyWay from '../index.js';
 
 test('issue-190', () => {
   expect.assertions(6)

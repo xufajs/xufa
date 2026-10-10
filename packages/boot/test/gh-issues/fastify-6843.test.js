@@ -1,7 +1,4 @@
-'use strict'
-
-
-const boot = require('../..')
+import boot from '../../index.js';
 
 for (const timeout of [0, 10000]) {
   test(`synchronous ready callbacks do not overflow the stack with a ${timeout} ms timeout`, async () => {

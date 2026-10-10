@@ -1,29 +1,13 @@
-const { execFileSync } = require('child_process');
-const fs = require('fs');
-const os = require('os');
-const path = require('path');
-const vm = require('vm');
-const {
-  ArrayOf,
-  ClosedSchema,
-  Const,
-  Enum,
-  Float,
-  Integer,
-  OneOf,
-  Schema,
-  String,
-  ValidateType,
-  Values,
-  compileJsonSchema,
-  standaloneCode,
-  standaloneJsonSchema,
-  standaloneModule,
-} = require('..');
-const { HELPER_SOURCES } = require('../lib/standalone-helpers');
-const { deepEqual } = require('../lib/deep-equal');
-const { codePointLength } = require('../lib/types/code-point-length');
-const { hasDuplicates } = require('../lib/types/has-duplicates');
+import { execFileSync } from 'child_process';
+import fs from 'fs';
+import os from 'os';
+import path from 'path';
+import vm from 'vm';
+import { ArrayOf, ClosedSchema, Const, Enum, Float, Integer, OneOf, Schema, String, ValidateType, Values, compileJsonSchema, standaloneCode, standaloneJsonSchema, standaloneModule } from '../index.js';
+import { HELPER_SOURCES } from '../lib/standalone-helpers.js';
+import { deepEqual } from '../lib/deep-equal.js';
+import { codePointLength } from '../lib/types/code-point-length.js';
+import { hasDuplicates } from '../lib/types/has-duplicates.js';
 
 // Loads CommonJS source in a context where code generation from strings (eval, new Function) throws. Values are
 // made in that context too, so objects compare as they do when the data and the validator share one.

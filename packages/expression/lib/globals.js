@@ -54,4 +54,4 @@ const GLOBALS = Object.freeze({
   NaN,
 });
 
-module.exports = { GLOBALS };
+export { GLOBALS };

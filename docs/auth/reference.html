@@ -44,11 +44,11 @@
       <aside class="sidebar">
         <h4>Reference</h4>
         <ul>
-          <li><a href="#functions">Functions (37)</a></li>
-          <li><a href="#classes">Classes (8)</a></li>
-          <li><a href="#constants">Constants (7)</a></li>
-          <li><a href="#interfaces">Interfaces (31)</a></li>
-          <li><a href="#types">Types (11)</a></li>
+          <li><a href="#functions">Functions (46)</a></li>
+          <li><a href="#classes">Classes (14)</a></li>
+          <li><a href="#constants">Constants (9)</a></li>
+          <li><a href="#interfaces">Interfaces (45)</a></li>
+          <li><a href="#types">Types (16)</a></li>
         </ul>
       </aside>
 
@@ -61,12 +61,12 @@
         <h1>Reference</h1>
         <p class="intro">
           Authentication with no dependencies: scrypt passwords, JSON Web Tokens with rotating keys, TOTP, login lockout, rotating refresh tokens, API keys, HTTP Basic, Passport strategies and a plugin for @xufa/http. Every declaration of its TypeScript declarations
-          (<code>packages/auth/index.d.ts</code>), as they are written, with their comments: made from them each time
+          (<code>packages/auth/index.d.ts</code> or <code>index.d.cts</code>), as they are written, with their comments: made from them each time
           the docs are built. How to use them is in <a href="index.html">the overview</a>.
         </p>
 
         <h2 id="functions">Functions</h2>
-        <p class="ref-index"><a href="#ref-hashPassword"><code>hashPassword</code></a>, <a href="#ref-verifyPassword"><code>verifyPassword</code></a>, <a href="#ref-needsRehash"><code>needsRehash</code></a>, <a href="#ref-vaultModelStore"><code>vaultModelStore</code></a>, <a href="#ref-vaultFields"><code>vaultFields</code></a>, <a href="#ref-signJwt"><code>signJwt</code></a>, <a href="#ref-verifyJwt"><code>verifyJwt</code></a>, <a href="#ref-signJwtAsync"><code>signJwtAsync</code></a>, <a href="#ref-verifyJwtAsync"><code>verifyJwtAsync</code></a>, <a href="#ref-decodeJwt"><code>decodeJwt</code></a>, <a href="#ref-base32Encode"><code>base32Encode</code></a>, <a href="#ref-base32Decode"><code>base32Decode</code></a>, <a href="#ref-generateSecret"><code>generateSecret</code></a>, <a href="#ref-hotp"><code>hotp</code></a>, <a href="#ref-totp"><code>totp</code></a>, <a href="#ref-verifyTotp"><code>verifyTotp</code></a>, <a href="#ref-totpUri"><code>totpUri</code></a>, <a href="#ref-generateRecoveryCodes"><code>generateRecoveryCodes</code></a>, <a href="#ref-hashRecoveryCode"><code>hashRecoveryCode</code></a>, <a href="#ref-normalizeIdentifier"><code>normalizeIdentifier</code></a>, <a href="#ref-skeleton"><code>skeleton</code></a>, <a href="#ref-modelStore"><code>modelStore</code></a>, <a href="#ref-refreshTokenFields"><code>refreshTokenFields</code></a>, <a href="#ref-parseCookies"><code>parseCookies</code></a>, <a href="#ref-serializeCookie"><code>serializeCookie</code></a>, <a href="#ref-tenantsOf"><code>tenantsOf</code></a>, <a href="#ref-rolesOf"><code>rolesOf</code></a>, <a href="#ref-apiKey"><code>apiKey</code></a>, <a href="#ref-generateApiKey"><code>generateApiKey</code></a>, <a href="#ref-hashApiKey"><code>hashApiKey</code></a>, <a href="#ref-parseApiKey"><code>parseApiKey</code></a>, <a href="#ref-verifyApiKey"><code>verifyApiKey</code></a>, <a href="#ref-apiKeyFields"><code>apiKeyFields</code></a>, <a href="#ref-basic"><code>basic</code></a>, <a href="#ref-passport"><code>passport</code></a>, <a href="#ref-oauthState"><code>oauthState</code></a>, <a href="#ref-plugin"><code>plugin</code></a></p>
+        <p class="ref-index"><a href="#ref-hashPassword"><code>hashPassword</code></a>, <a href="#ref-verifyPassword"><code>verifyPassword</code></a>, <a href="#ref-needsRehash"><code>needsRehash</code></a>, <a href="#ref-vaultModelStore"><code>vaultModelStore</code></a>, <a href="#ref-vaultFields"><code>vaultFields</code></a>, <a href="#ref-signJwt"><code>signJwt</code></a>, <a href="#ref-verifyJwt"><code>verifyJwt</code></a>, <a href="#ref-signJwtAsync"><code>signJwtAsync</code></a>, <a href="#ref-verifyJwtAsync"><code>verifyJwtAsync</code></a>, <a href="#ref-decodeJwt"><code>decodeJwt</code></a>, <a href="#ref-base32Encode"><code>base32Encode</code></a>, <a href="#ref-base32Decode"><code>base32Decode</code></a>, <a href="#ref-generateSecret"><code>generateSecret</code></a>, <a href="#ref-hotp"><code>hotp</code></a>, <a href="#ref-totp"><code>totp</code></a>, <a href="#ref-verifyTotp"><code>verifyTotp</code></a>, <a href="#ref-totpUri"><code>totpUri</code></a>, <a href="#ref-generateRecoveryCodes"><code>generateRecoveryCodes</code></a>, <a href="#ref-qrCode"><code>qrCode</code></a>, <a href="#ref-qrSvg"><code>qrSvg</code></a>, <a href="#ref-hashRecoveryCode"><code>hashRecoveryCode</code></a>, <a href="#ref-normalizeIdentifier"><code>normalizeIdentifier</code></a>, <a href="#ref-skeleton"><code>skeleton</code></a>, <a href="#ref-modelStore"><code>modelStore</code></a>, <a href="#ref-refreshTokenFields"><code>refreshTokenFields</code></a>, <a href="#ref-parseCookies"><code>parseCookies</code></a>, <a href="#ref-serializeCookie"><code>serializeCookie</code></a>, <a href="#ref-tenantsOf"><code>tenantsOf</code></a>, <a href="#ref-rolesOf"><code>rolesOf</code></a>, <a href="#ref-apiKey"><code>apiKey</code></a>, <a href="#ref-generateApiKey"><code>generateApiKey</code></a>, <a href="#ref-hashApiKey"><code>hashApiKey</code></a>, <a href="#ref-parseApiKey"><code>parseApiKey</code></a>, <a href="#ref-verifyApiKey"><code>verifyApiKey</code></a>, <a href="#ref-apiKeyFields"><code>apiKeyFields</code></a>, <a href="#ref-basic"><code>basic</code></a>, <a href="#ref-passport"><code>passport</code></a>, <a href="#ref-oauthState"><code>oauthState</code></a>, <a href="#ref-plugin"><code>plugin</code></a>, <a href="#ref-accounts"><code>accounts</code></a>, <a href="#ref-pages"><code>pages</code></a>, <a href="#ref-emailOf"><code>emailOf</code></a>, <a href="#ref-authMessage"><code>authMessage</code></a>, <a href="#ref-setTranslator"><code>setTranslator</code></a>, <a href="#ref-AbstractGroup"><code>AbstractGroup</code></a>, <a href="#ref-AbstractUser"><code>AbstractUser</code></a></p>
 
         <h3 id="ref-hashPassword"><code>hashPassword</code></h3>
         <pre><code class="language-ts">export function hashPassword(password: string, options?: PasswordOptions): Promise&lt;string&gt;;</code></pre>
@@ -143,6 +143,24 @@
 
         <h3 id="ref-generateRecoveryCodes"><code>generateRecoveryCodes</code></h3>
         <pre><code class="language-ts">export function generateRecoveryCodes(count?: number): string[];</code></pre>
+
+        <h3 id="ref-qrCode"><code>qrCode</code></h3>
+        <pre><code class="language-ts">export function qrCode(
+  text: string,
+  options?: { level?: QrLevel; minVersion?: number }
+): {
+  version: number;
+  size: number;
+  modules: boolean[][];
+};</code></pre>
+        <p>The matrix of the QR code of a text (UTF-8): modules[y][x], true is dark; the smallest version that holds it.</p>
+
+        <h3 id="ref-qrSvg"><code>qrSvg</code></h3>
+        <pre><code class="language-ts">export function qrSvg(
+  text: string,
+  options?: { level?: QrLevel; border?: number; dark?: string; light?: string; size?: number }
+): string;</code></pre>
+        <p>The SVG of the QR code of a text (totpUri() for an authenticator app), with a quiet zone of border modules.</p>
 
         <h3 id="ref-hashRecoveryCode"><code>hashRecoveryCode</code></h3>
         <pre><code class="language-ts">export function hashRecoveryCode(code: string): string;</code></pre>
@@ -227,8 +245,54 @@
         <pre><code class="language-ts">export function plugin(app: any, options: PluginOptions): Promise&lt;void&gt;;</code></pre>
         <p>The plugin for</p>
 
+        <h3 id="ref-accounts"><code>accounts</code></h3>
+        <pre><code class="language-ts">export function accounts(app: any, options: AccountsOptions, done: (err?: Error) =&gt; void): void;</code></pre>
+        <p>The accounts of the users of an app with sessions (@xufa/session registered before): POST &lt;prefix&gt;/signup, /login, /logout ({ everywhere }), /password/forgot, /password/reset, /password/change, /email/verify, /email/resend, and GET /me, /sessions, /security; with users.setTotp, POST /totp/start, /totp/confirm, /totp/disable, and with recovery codes /recovery-codes. app.accounts, and request.account (the user of a request, once app.accounts.user() read it).</p>
+
+        <h3 id="ref-pages"><code>pages</code></h3>
+        <pre><code class="language-ts">export function pages(app: any, options: PagesOptions, done: (err?: Error) =&gt; void): void;</code></pre>
+        <p>Pages of the accounts as Django's django.contrib.auth.urls (after accounts): app.accountPages.urls and its forms.</p>
+
+        <h3 id="ref-emailOf"><code>emailOf</code></h3>
+        <pre><code class="language-ts">export function emailOf(value: unknown): string | null;</code></pre>
+        <p>An email as the accounts keep it (trimmed, NFKC, lower case), or null when it is not one.</p>
+
+        <h3 id="ref-authMessage"><code>authMessage</code></h3>
+        <pre><code class="language-ts">export function authMessage(key: string, params?: Record&lt;string, unknown&gt;): string;</code></pre>
+        <p>The message of a key with its parameters, translated (auth.&lt;key&gt;) when a translator is set.</p>
+
+        <h3 id="ref-setTranslator"><code>setTranslator</code></h3>
+        <pre><code class="language-ts">export function setTranslator(
+  fn: ((key: string, params: Record&lt;string, unknown&gt;, english: string) =&gt; string) | null
+): void;</code></pre>
+        <p>The translator of the messages (as i18n.translateAuth(auth) of</p>
+
+        <h3 id="ref-AbstractGroup"><code>AbstractGroup</code></h3>
+        <pre><code class="language-ts">export declare function AbstractGroup&lt;M extends abstract new (...args: any[]) =&gt; any&gt;(
+  Model: M,
+  fields: any
+): M &amp; { new (...args: any[]): InstanceType&lt;M&gt; &amp; AbstractGroupFields };</code></pre>
+        <p>An abstract model of groups, as Django's Group: roles of an Rbac in the database (its option model).</p>
+
+        <h3 id="ref-AbstractUser"><code>AbstractUser</code></h3>
+        <pre><code class="language-ts">export declare function AbstractUser&lt;M extends abstract new (...args: any[]) =&gt; any&gt;(
+  Model: M,
+  fields: any,
+  options?: AbstractUserOptions
+): M &amp; {
+  new (...args: any[]): InstanceType&lt;M&gt; &amp; AbstractUserFields;
+  readonly userModel: true;
+  createUser(
+    values: Record&lt;string, unknown&gt; &amp; { password?: string | null }
+  ): Promise&lt;InstanceType&lt;M&gt; &amp; AbstractUserFields&gt;;
+  createSuperuser(
+    values: Record&lt;string, unknown&gt; &amp; { password?: string | null }
+  ): Promise&lt;InstanceType&lt;M&gt; &amp; AbstractUserFields&gt;;
+};</code></pre>
+        <p>An abstract model of users, as Django's AbstractUser, of the Model and fields of</p>
+
         <h2 id="classes">Classes</h2>
-        <p class="ref-index"><a href="#ref-KeySet"><code>KeySet</code></a>, <a href="#ref-KeyVault"><code>KeyVault</code></a>, <a href="#ref-MemoryKeyStore"><code>MemoryKeyStore</code></a>, <a href="#ref-VaultError"><code>VaultError</code></a>, <a href="#ref-MemoryStore"><code>MemoryStore</code></a>, <a href="#ref-Lockout"><code>Lockout</code></a>, <a href="#ref-MemoryTokenStore"><code>MemoryTokenStore</code></a>, <a href="#ref-RefreshTokens"><code>RefreshTokens</code></a></p>
+        <p class="ref-index"><a href="#ref-KeySet"><code>KeySet</code></a>, <a href="#ref-KeyVault"><code>KeyVault</code></a>, <a href="#ref-MemoryKeyStore"><code>MemoryKeyStore</code></a>, <a href="#ref-VaultError"><code>VaultError</code></a>, <a href="#ref-QrError"><code>QrError</code></a>, <a href="#ref-MemoryStore"><code>MemoryStore</code></a>, <a href="#ref-Lockout"><code>Lockout</code></a>, <a href="#ref-MemoryTokenStore"><code>MemoryTokenStore</code></a>, <a href="#ref-RefreshTokens"><code>RefreshTokens</code></a>, <a href="#ref-Rbac"><code>Rbac</code></a>, <a href="#ref-RbacError"><code>RbacError</code></a>, <a href="#ref-AccountError"><code>AccountError</code></a>, <a href="#ref-Credentials"><code>Credentials</code></a>, <a href="#ref-CredentialError"><code>CredentialError</code></a></p>
 
         <h3 id="ref-KeySet"><code>KeySet</code></h3>
         <pre><code class="language-ts">export class KeySet { ... }</code></pre>
@@ -289,6 +353,9 @@
               </tbody>
             </table>
           </div>
+
+        <h3 id="ref-QrError"><code>QrError</code></h3>
+        <pre><code class="language-ts">export class QrError extends Error { ... }</code></pre>
 
         <h3 id="ref-MemoryStore"><code>MemoryStore</code></h3>
         <pre><code class="language-ts">export class MemoryStore implements ExpiringStore { ... }</code></pre>
@@ -353,8 +420,97 @@
             </table>
           </div>
 
+        <h3 id="ref-Rbac"><code>Rbac</code></h3>
+        <pre><code class="language-ts">export class Rbac&lt;User = any&gt; { ... }</code></pre>
+        <p>Roles and their permissions, granted to users in tenants (or in every tenant), and superusers.</p>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>new (options: RbacOptions&lt;User&gt;)</code></td><td></td><td></td></tr>
+                <tr><td><code>access(user: User | null | undefined)</code></td><td><code>Promise&lt;<a href="#ref-Access">Access</a>&gt;</code></td><td><p>What a user may: { superuser, grants }.</p></td></tr>
+                <tr><td><code>allows(access: Access | null | undefined, permission: string | string[], tenant?: string | number | null)</code></td><td><code>boolean</code></td><td><p>Whether an access has a permission (or all those of a list) in a tenant (without one: its grants of every tenant).</p></td></tr>
+                <tr><td><code>can(user: User | null | undefined, permission: string | string[], options?: { tenant?: string | number | null })</code></td><td><code>Promise&lt;boolean&gt;</code></td><td><p>Whether a user has a permission (or all those of a list) in a tenant.</p></td></tr>
+                <tr><td><code>rolesIn(access: Access | null | undefined, tenant?: string | number | null)</code></td><td><code>string[]</code></td><td><p>The roles of an access in a tenant (and those of every tenant).</p></td></tr>
+                <tr><td><code>permissionsIn(access: Access | null | undefined, tenant?: string | number | null)</code></td><td><code>string[]</code></td><td><p>The patterns of the permissions of an access in a tenant (['*'] for a superuser).</p></td></tr>
+                <tr><td><code>tenantsIn(access: Access | null | undefined)</code></td><td><code>string[]</code></td><td><p>The tenants an access may use: ['*'] (every one) or their ids.</p></td></tr>
+                <tr><td><code>inTenant(access: Access | null | undefined, tenant: string | number | null | undefined)</code></td><td><code>boolean</code></td><td><p>Whether an access may use a tenant.</p></td></tr>
+                <tr><td><code>scopeOf(access: Access | null | undefined, user: User | null | undefined, permission: string, tenant?: string | number | null)</code></td><td><code><a href="#ref-Scope">Scope</a></code></td><td><p>The objects of a permission for a user (the where of its roles): null for all, false for none, or conditions.</p></td></tr>
+                <tr><td><code>load()</code></td><td><code>Promise&lt;this&gt;</code></td><td><p>The roles of the model, read now.</p></td></tr>
+                <tr><td><code>fresh()</code></td><td><code>Promise&lt;this&gt;</code></td><td><p>The roles of the model, read again when they may have changed (access() calls it).</p></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-RbacError"><code>RbacError</code></h3>
+        <pre><code class="language-ts">export class RbacError extends TypeError { ... }</code></pre>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>code</code></td><td><code>'XUFA_AUTH_ERR_RBAC'</code></td><td></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-AccountError"><code>AccountError</code></h3>
+        <pre><code class="language-ts">export declare class AccountError extends Error { ... }</code></pre>
+        <p>An error of the accounts: its status, and the errors by field.</p>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>statusCode</code></td><td><code>number</code></td><td></td></tr>
+                <tr><td><code>errors?</code></td><td><code>Record&lt;string, string[]&gt;</code></td><td></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-Credentials"><code>Credentials</code></h3>
+        <pre><code class="language-ts">export declare class Credentials&lt;User = any&gt; { ... }</code></pre>
+        <p>The credentials of the users of an app: logins (password, then the code of an authenticator app or a recovery code; lockouts by identifier and by address; the same answer and time for every wrong user or password; rehashes), and the account of a user (a new password, an app set up with a QR code, recovery codes). Refusals are CredentialErrors.</p>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>new (options?: CredentialsOptions&lt;User&gt;)</code></td><td></td><td></td></tr>
+                <tr><td><code>readonly lockout</code></td><td><code><a href="#ref-Lockout">Lockout</a> | null</code></td><td></td></tr>
+                <tr><td><code>readonly ipLockout</code></td><td><code><a href="#ref-Lockout">Lockout</a> | null</code></td><td></td></tr>
+                <tr><td><code>readonly recovery</code></td><td><code>boolean</code></td><td><p>Whether recovery codes are kept.</p></td></tr>
+                <tr><td><code>login(input: { identifier: unknown; password: unknown; code?: unknown; ip?: string; request?: any })</code></td><td><code>Promise&lt;User&gt;</code></td><td></td></tr>
+                <tr><td><code>validatePassword(password: unknown, values?: { email?: string | null })</code></td><td><code>string | null</code></td><td><p>What is wrong with a new password, or null.</p></td></tr>
+                <tr><td><code>confirmPassword(user: User, password: unknown, field?: string)</code></td><td><code>Promise&lt;void&gt;</code></td><td><p>The password of a user asked again (failures locked out by account).</p></td></tr>
+                <tr><td><code>state(user: User)</code></td><td><code>Promise&lt;{ password: boolean; <a href="#ref-totp">totp</a>: { can: boolean; enabled: boolean }; recovery: { left: number } | null }&gt;</code></td><td></td></tr>
+                <tr><td><code>changePassword(user: User, input: { current?: unknown; password?: unknown; email?: string }, request?: any)</code></td><td><code>Promise&lt;void&gt;</code></td><td></td></tr>
+                <tr><td><code>setPassword(user: User, password: unknown, request?: any, values?: { email?: string | null })</code></td><td><code>Promise&lt;void&gt;</code></td><td><p>A password set without the one before (a reset): checked, hashed, kept.</p></td></tr>
+                <tr><td><code>startTotp(user: User, input: { password: unknown; label: string; issuer?: string; session: CredentialSession })</code></td><td><code>Promise&lt;{ secret: string; uri: string; svg: string }&gt;</code></td><td></td></tr>
+                <tr><td><code>confirmTotp(user: User, input: { code: unknown; session: CredentialSession; request?: any })</code></td><td><code>Promise&lt;{ recoveryCodes: string[] | null }&gt;</code></td><td></td></tr>
+                <tr><td><code>disableTotp(user: User, input: { password: unknown; request?: any })</code></td><td><code>Promise&lt;void&gt;</code></td><td></td></tr>
+                <tr><td><code>renewRecoveryCodes(user: User, input: { password: unknown; request?: any })</code></td><td><code>Promise&lt;{ recoveryCodes: string[] }&gt;</code></td><td></td></tr>
+                <tr><td><code>newRecoveryCodes(user: User, request?: any)</code></td><td><code>Promise&lt;string[] | null&gt;</code></td><td></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-CredentialError"><code>CredentialError</code></h3>
+        <pre><code class="language-ts">export declare class CredentialError extends Error { ... }</code></pre>
+        <p>A refusal of the Credentials: its reason, status, errors by field, and whether a code is asked for.</p>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>reason</code></td><td><code><a href="#ref-CredentialReason">CredentialReason</a></code></td><td></td></tr>
+                <tr><td><code>statusCode</code></td><td><code>number</code></td><td></td></tr>
+                <tr><td><code>errors</code></td><td><code>Record&lt;string, string[]&gt;</code></td><td></td></tr>
+                <tr><td><code>needsCode</code></td><td><code>boolean</code></td><td><p>The code of an authenticator app is asked for (and, with recovery, a recovery code works too).</p></td></tr>
+                <tr><td><code>recovery</code></td><td><code>boolean</code></td><td></td></tr>
+                <tr><td><code>retryAfter?</code></td><td><code>number</code></td><td><p>Seconds until a lockout ends (throttled).</p></td></tr>
+              </tbody>
+            </table>
+          </div>
+
         <h2 id="constants">Constants</h2>
-        <p class="ref-index"><a href="#ref-PASSWORD_DEFAULTS"><code>PASSWORD_DEFAULTS</code></a>, <a href="#ref-TokenError"><code>TokenError</code></a>, <a href="#ref-Unauthorized"><code>Unauthorized</code></a>, <a href="#ref-TotpRequired"><code>TotpRequired</code></a>, <a href="#ref-Forbidden"><code>Forbidden</code></a>, <a href="#ref-Locked"><code>Locked</code></a>, <a href="#ref-ALL_TENANTS"><code>ALL_TENANTS</code></a></p>
+        <p class="ref-index"><a href="#ref-PASSWORD_DEFAULTS"><code>PASSWORD_DEFAULTS</code></a>, <a href="#ref-TokenError"><code>TokenError</code></a>, <a href="#ref-Unauthorized"><code>Unauthorized</code></a>, <a href="#ref-TotpRequired"><code>TotpRequired</code></a>, <a href="#ref-Forbidden"><code>Forbidden</code></a>, <a href="#ref-Locked"><code>Locked</code></a>, <a href="#ref-ALL_TENANTS"><code>ALL_TENANTS</code></a>, <a href="#ref-AUTH_MESSAGES"><code>AUTH_MESSAGES</code></a>, <a href="#ref-UNUSABLE_PASSWORD"><code>UNUSABLE_PASSWORD</code></a></p>
 
         <h3 id="ref-PASSWORD_DEFAULTS"><code>PASSWORD_DEFAULTS</code></h3>
         <pre><code class="language-ts">export const PASSWORD_DEFAULTS: Required&lt;PasswordOptions&gt;;</code></pre>
@@ -387,8 +543,16 @@
         <pre><code class="language-ts">export const ALL_TENANTS: '*';</code></pre>
         <p>Every tenant, in the tenants of a user ('*').</p>
 
+        <h3 id="ref-AUTH_MESSAGES"><code>AUTH_MESSAGES</code></h3>
+        <pre><code class="language-ts">export const AUTH_MESSAGES: Readonly&lt;Record&lt;string, string&gt;&gt;;</code></pre>
+        <p>The messages users read (logins, passwords, authenticator apps, accounts and their emails), by key, in English.</p>
+
+        <h3 id="ref-UNUSABLE_PASSWORD"><code>UNUSABLE_PASSWORD</code></h3>
+        <pre><code class="language-ts">export const UNUSABLE_PASSWORD: '!';</code></pre>
+        <p>The password of setUnusablePassword().</p>
+
         <h2 id="interfaces">Interfaces</h2>
-        <p class="ref-index"><a href="#ref-PasswordOptions"><code>PasswordOptions</code></a>, <a href="#ref-KeySetOptions"><code>KeySetOptions</code></a>, <a href="#ref-Key"><code>Key</code></a>, <a href="#ref-VaultRecord"><code>VaultRecord</code></a>, <a href="#ref-VaultStore"><code>VaultStore</code></a>, <a href="#ref-KeyVaultOptions"><code>KeyVaultOptions</code></a>, <a href="#ref-Claims"><code>Claims</code></a>, <a href="#ref-SignOptions"><code>SignOptions</code></a>, <a href="#ref-VerifyOptions"><code>VerifyOptions</code></a>, <a href="#ref-TotpOptions"><code>TotpOptions</code></a>, <a href="#ref-ExpiringStore"><code>ExpiringStore</code></a>, <a href="#ref-LockoutOptions"><code>LockoutOptions</code></a>, <a href="#ref-LockoutStatus"><code>LockoutStatus</code></a>, <a href="#ref-RefreshTokenRecord"><code>RefreshTokenRecord</code></a>, <a href="#ref-TokenStore"><code>TokenStore</code></a>, <a href="#ref-RefreshTokensOptions"><code>RefreshTokensOptions</code></a>, <a href="#ref-IssuedToken"><code>IssuedToken</code></a>, <a href="#ref-CookieOptions"><code>CookieOptions</code></a>, <a href="#ref-Strategy"><code>Strategy</code></a>, <a href="#ref-ApiKeyRecord"><code>ApiKeyRecord</code></a>, <a href="#ref-ApiKeyOptions"><code>ApiKeyOptions</code></a>, <a href="#ref-BasicOptions"><code>BasicOptions</code></a>, <a href="#ref-PassportStrategy"><code>PassportStrategy</code></a>, <a href="#ref-PassportFailure"><code>PassportFailure</code></a>, <a href="#ref-PassportLoginOptions"><code>PassportLoginOptions</code></a>, <a href="#ref-PassportAdapter"><code>PassportAdapter</code></a>, <a href="#ref-OAuthStateOptions"><code>OAuthStateOptions</code></a>, <a href="#ref-OAuthStateStore"><code>OAuthStateStore</code></a>, <a href="#ref-LoginOptions"><code>LoginOptions</code></a>, <a href="#ref-PluginOptions"><code>PluginOptions</code></a>, <a href="#ref-AuthApi"><code>AuthApi</code></a></p>
+        <p class="ref-index"><a href="#ref-PasswordOptions"><code>PasswordOptions</code></a>, <a href="#ref-KeySetOptions"><code>KeySetOptions</code></a>, <a href="#ref-Key"><code>Key</code></a>, <a href="#ref-VaultRecord"><code>VaultRecord</code></a>, <a href="#ref-VaultStore"><code>VaultStore</code></a>, <a href="#ref-KeyVaultOptions"><code>KeyVaultOptions</code></a>, <a href="#ref-Claims"><code>Claims</code></a>, <a href="#ref-SignOptions"><code>SignOptions</code></a>, <a href="#ref-VerifyOptions"><code>VerifyOptions</code></a>, <a href="#ref-TotpOptions"><code>TotpOptions</code></a>, <a href="#ref-ExpiringStore"><code>ExpiringStore</code></a>, <a href="#ref-LockoutOptions"><code>LockoutOptions</code></a>, <a href="#ref-LockoutStatus"><code>LockoutStatus</code></a>, <a href="#ref-RefreshTokenRecord"><code>RefreshTokenRecord</code></a>, <a href="#ref-TokenStore"><code>TokenStore</code></a>, <a href="#ref-RefreshTokensOptions"><code>RefreshTokensOptions</code></a>, <a href="#ref-IssuedToken"><code>IssuedToken</code></a>, <a href="#ref-CookieOptions"><code>CookieOptions</code></a>, <a href="#ref-AuthRuleParts"><code>AuthRuleParts</code></a>, <a href="#ref-Grant"><code>Grant</code></a>, <a href="#ref-RbacOptions"><code>RbacOptions</code></a>, <a href="#ref-Access"><code>Access</code></a>, <a href="#ref-Strategy"><code>Strategy</code></a>, <a href="#ref-ApiKeyRecord"><code>ApiKeyRecord</code></a>, <a href="#ref-ApiKeyOptions"><code>ApiKeyOptions</code></a>, <a href="#ref-BasicOptions"><code>BasicOptions</code></a>, <a href="#ref-PassportStrategy"><code>PassportStrategy</code></a>, <a href="#ref-PassportFailure"><code>PassportFailure</code></a>, <a href="#ref-PassportLoginOptions"><code>PassportLoginOptions</code></a>, <a href="#ref-PassportAdapter"><code>PassportAdapter</code></a>, <a href="#ref-OAuthStateOptions"><code>OAuthStateOptions</code></a>, <a href="#ref-OAuthStateStore"><code>OAuthStateStore</code></a>, <a href="#ref-LoginOptions"><code>LoginOptions</code></a>, <a href="#ref-PluginOptions"><code>PluginOptions</code></a>, <a href="#ref-AuthApi"><code>AuthApi</code></a>, <a href="#ref-AccountUsers"><code>AccountUsers</code></a>, <a href="#ref-AccountMail"><code>AccountMail</code></a>, <a href="#ref-AccountsOptions"><code>AccountsOptions</code></a>, <a href="#ref-AccountsApi"><code>AccountsApi</code></a>, <a href="#ref-PagesOptions"><code>PagesOptions</code></a>, <a href="#ref-CredentialsOptions"><code>CredentialsOptions</code></a>, <a href="#ref-CredentialSession"><code>CredentialSession</code></a>, <a href="#ref-AbstractUserFields"><code>AbstractUserFields</code></a>, <a href="#ref-AbstractUserOptions"><code>AbstractUserOptions</code></a>, <a href="#ref-AbstractGroupFields"><code>AbstractGroupFields</code></a></p>
 
         <h3 id="ref-PasswordOptions"><code>PasswordOptions</code></h3>
         <pre><code class="language-ts">export interface PasswordOptions { ... }</code></pre>
@@ -661,6 +825,62 @@
             </table>
           </div>
 
+        <h3 id="ref-AuthRuleParts"><code>AuthRuleParts</code></h3>
+        <pre><code class="language-ts">interface AuthRuleParts&lt;User&gt; { ... }</code></pre>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>strategy?</code></td><td><code>string | string[]</code></td><td></td></tr>
+                <tr><td><code>roles?</code></td><td><code>string | string[]</code></td><td></td></tr>
+                <tr><td><code>check?</code></td><td><code><a href="#ref-AuthCheck">AuthCheck</a>&lt;User&gt;</code></td><td></td></tr>
+                <tr><td><code>tenant?</code></td><td><code><a href="#ref-TenantRule">TenantRule</a></code></td><td></td></tr>
+                <tr><td><code>can?</code></td><td><code>string | string[]</code></td><td><p>A permission (or all those of a list) in the tenant of the request: needs the option rbac of the plugin.</p></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-Grant"><code>Grant</code></h3>
+        <pre><code class="language-ts">export interface Grant { ... }</code></pre>
+        <p>A role of a user in a tenant, or in every tenant ('*', the default).</p>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>role</code></td><td><code>string</code></td><td></td></tr>
+                <tr><td><code>tenant?</code></td><td><code>string | number | null</code></td><td></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-RbacOptions"><code>RbacOptions</code></h3>
+        <pre><code class="language-ts">export interface RbacOptions&lt;User = any&gt; { ... }</code></pre>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>roles?</code></td><td><code>Record&lt;string, <a href="#ref-RoleSpec">RoleSpec</a>&gt;</code></td><td></td></tr>
+                <tr><td><code>model?</code></td><td><code>any</code></td><td><p>A model of roles in the database (Django's Group: AbstractGroup): its rows are roles too, next to those in code (a group named as a role in code adds to it), read again after its saves and deletes, and every refresh ms (60000).</p></td></tr>
+                <tr><td><code>refresh?</code></td><td><code>number</code></td><td></td></tr>
+                <tr><td><code>grants?(user: User)</code></td><td><code><a href="#ref-Grants">Grants</a> | null | undefined | Promise&lt;<a href="#ref-Grants">Grants</a> | null | undefined&gt;</code></td><td><p>The grants of a user (by default user.grants, or its roles in its tenants, or in every tenant).</p></td></tr>
+                <tr><td><code>superuser?</code></td><td><code>((user: User) =&gt; boolean | Promise&lt;boolean&gt;) | false</code></td><td><p>Whether a user may do everything in every tenant (by default user.superuser or user.isSuperuser), or false.</p></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-Access"><code>Access</code></h3>
+        <pre><code class="language-ts">export interface Access { ... }</code></pre>
+        <p>What a user may, as plain data (for a session or the claims of a token).</p>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>superuser</code></td><td><code>boolean</code></td><td></td></tr>
+                <tr><td><code>grants</code></td><td><code>Array&lt;{ role: string; tenant: string }&gt;</code></td><td></td></tr>
+              </tbody>
+            </table>
+          </div>
+
         <h3 id="ref-Strategy"><code>Strategy</code></h3>
         <pre><code class="language-ts">export interface Strategy&lt;User = any&gt; { ... }</code></pre>
         <div class="table-wrap">
@@ -845,6 +1065,7 @@
                 <tr><td><code>reload?(subject: string, data: Claims, request: any)</code></td><td><code><a href="#ref-Claims">Claims</a> | null | Promise&lt;<a href="#ref-Claims">Claims</a> | null&gt;</code></td><td><p>The claims of a refresh when there is no login (login.reload otherwise), or null when the user can no longer.</p></td></tr>
                 <tr><td><code>tenants?</code></td><td><code>{ of?(request: any): string | number | null | undefined | Promise&lt;string | number | null | undefined&gt;; claim?(user: User): string[] | Promise&lt;string[]&gt;; }</code></td><td><p>Tenants: of(request), the tenant of a request (request.tenant, which the plugin of</p></td></tr>
                 <tr><td><code>refreshCookie?</code></td><td><code>boolean | ({ name?: string } &amp; Omit&lt;<a href="#ref-CookieOptions">CookieOptions</a>, 'maxAge'&gt;)</code></td><td><p>Keep the refresh token in a cookie (HttpOnly, Secure, SameSite=Strict, the path of prefix), not in the body.</p></td></tr>
+                <tr><td><code>rbac?</code></td><td><code><a href="#ref-Rbac">Rbac</a>&lt;User&gt; | <a href="#ref-RbacOptions">RbacOptions</a>&lt;User&gt;</code></td><td><p>Roles and permissions by tenant: rules { can }, app.auth.can() and request.can(); the tenants of a user are those of its grants.</p></td></tr>
               </tbody>
             </table>
           </div>
@@ -866,6 +1087,10 @@
                 <tr><td><code>authorize(...rules: Array&lt;string | string[] | ((user: User, request: any) =&gt; boolean | Promise&lt;boolean&gt;)&gt;)</code></td><td><code>(request: any, reply: any) =&gt; Promise&lt;void&gt;</code></td><td></td></tr>
                 <tr><td><code>canUseTenant(request: any, tenant: string, reply?: any)</code></td><td><code>Promise&lt;boolean&gt;</code></td><td><p>Whether the user of a request may use a tenant (a 401 is thrown without a user): the authorize of the tenants of</p></td></tr>
                 <tr><td><code>tenantsOf(user: User)</code></td><td><code>Promise&lt;string[]&gt; | string[]</code></td><td><p>The tenants a user may use (the claim of the options).</p></td></tr>
+                <tr><td><code>can(request: any, permission: string | string[], tenant?: string | number | null)</code></td><td><code>Promise&lt;boolean&gt;</code></td><td><p>Whether the user of a request has a permission (or all those of a list) in a tenant (that of the request by default); needs rbac. With rbac, requests have can(permission, tenant?) too.</p></td></tr>
+                <tr><td><code>scopeOf(request: any, permission: string, tenant?: string | number | null)</code></td><td><code>Promise&lt;<a href="#ref-Scope">Scope</a>&gt;</code></td><td><p>The objects of a permission for the user of a request (the where of its roles): null, false or conditions.</p></td></tr>
+                <tr><td><code>rbac</code></td><td><code><a href="#ref-Rbac">Rbac</a>&lt;User&gt; | null</code></td><td><p>The rbac of the plugin (null without it).</p></td></tr>
+                <tr><td><code>access(user: User | null | undefined)</code></td><td><code>Promise&lt;<a href="#ref-Access">Access</a>&gt;</code></td><td><p>What a user may (needs rbac).</p></td></tr>
                 <tr><td><code>keys</code></td><td><code><a href="#ref-KeySet">KeySet</a> | null</code></td><td><p>The keys (null when they are a function of the request).</p></td></tr>
                 <tr><td><code>hashPassword</code></td><td><code>typeof <a href="#ref-hashPassword">hashPassword</a></code></td><td></td></tr>
                 <tr><td><code>verifyPassword</code></td><td><code>typeof <a href="#ref-verifyPassword">verifyPassword</a></code></td><td></td></tr>
@@ -874,8 +1099,239 @@
             </table>
           </div>
 
+        <h3 id="ref-AccountUsers"><code>AccountUsers</code></h3>
+        <pre><code class="language-ts">export interface AccountUsers&lt;User = any&gt; { ... }</code></pre>
+        <p>The users of the app, as the accounts ask for them and change them.</p>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>findByEmail(email: string, request: any)</code></td><td><code>User | null | undefined | Promise&lt;User | null | undefined&gt;</code></td><td></td></tr>
+                <tr><td><code>findById(id: string, request: any)</code></td><td><code>User | null | undefined | Promise&lt;User | null | undefined&gt;</code></td><td></td></tr>
+                <tr><td><code>findBySkeleton?(skeleton: string, request: any)</code></td><td><code>User | null | undefined | Promise&lt;User | null | undefined&gt;</code></td><td><p>Another account with the same skeleton (look-alike characters) is taken too.</p></td></tr>
+                <tr><td><code>create?(values: Record&lt;string, unknown&gt;, request: any)</code></td><td><code>User | Promise&lt;User&gt;</code></td><td><p>Sign up: { email, emailSkeleton, password (its hash), and the fields of signup.fields }. Without it, no signup.</p></td></tr>
+                <tr><td><code>setPassword?(user: User, hash: string, request: any)</code></td><td><code>unknown</code></td><td><p>A new hash of the password (resets, changes, rehashes).</p></td></tr>
+                <tr><td><code>markVerified?(user: User, request: any)</code></td><td><code>unknown</code></td><td><p>The email of the user was verified.</p></td></tr>
+                <tr><td><code>findByUsername?(username: string, request: any)</code></td><td><code>User | null | undefined | Promise&lt;User | null | undefined&gt;</code></td><td><p>The user of a username (loginBy: username).</p></td></tr>
+                <tr><td><code>setTotp?(user: User, secret: string | null, request: any)</code></td><td><code>unknown</code></td><td><p>The secret of an authenticator app the user set up (its first code checked), or null to remove it.</p></td></tr>
+                <tr><td><code>setRecoveryCodes?(user: User, hashes: string[], request: any)</code></td><td><code>unknown</code></td><td><p>The hashes of the recovery codes to keep (fewer after one is used, new ones, [] with the app removed).</p></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-AccountMail"><code>AccountMail</code></h3>
+        <pre><code class="language-ts">export interface AccountMail { ... }</code></pre>
+        <p>An email of accounts given as data: its subject, and its text or html (templates of</p>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>subject</code></td><td><code>string</code></td><td></td></tr>
+                <tr><td><code>text?</code></td><td><code>string</code></td><td></td></tr>
+                <tr><td><code>html?</code></td><td><code>string</code></td><td></td></tr>
+                <tr><td><code>with?</code></td><td><code>Record&lt;string, unknown&gt;</code></td><td></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-AccountsOptions"><code>AccountsOptions</code></h3>
+        <pre><code class="language-ts">export interface AccountsOptions&lt;User = any&gt; { ... }</code></pre>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>secret</code></td><td><code>string</code></td><td><p>32 characters or more: signs the links of resets and verifications.</p></td></tr>
+                <tr><td><code>users?</code></td><td><code>Partial&lt;<a href="#ref-AccountUsers">AccountUsers</a>&lt;User&gt;&gt;</code></td><td><p>The users (findByEmail, findById...); with model, only those to change.</p></td></tr>
+                <tr><td><code>model?</code></td><td><code>any</code></td><td><p>A model of users (AbstractUser): its users found and changed, isActive, and lastLogin set at each login.</p></td></tr>
+                <tr><td><code>loginBy?</code></td><td><code>'email' | 'username'</code></td><td><p>What users log in with: their email (default) or their username (users.findByUsername).</p></td></tr>
+                <tr><td><code>onLogin?</code></td><td><code>((user: User, request: any) =&gt; unknown) | null</code></td><td><p>After each login (a model sets its lastLogin).</p></td></tr>
+                <tr><td><code>prefix?</code></td><td><code>string</code></td><td><p>Where the routes are ('/account').</p></td></tr>
+                <tr><td><code>mailer?</code></td><td><code>{ send(mail: any, overrides?: any): Promise&lt;unknown&gt; } | null</code></td><td><p>A Mailer of</p></td></tr>
+                <tr><td><code>links?</code></td><td><code>{ reset?: (token: string) =&gt; string; verify?: (token: string) =&gt; string }</code></td><td><p>The addresses of the pages that take the tokens of the links.</p></td></tr>
+                <tr><td><code>mails?</code></td><td><code>{ reset?: ((user: User, url: string) =&gt; unknown) | <a href="#ref-AccountMail">AccountMail</a>; verify?: ((user: User, url: string) =&gt; unknown) | <a href="#ref-AccountMail">AccountMail</a>; }</code></td><td><p>The emails of the links, of your own: a function that gives a Mailable or a plain email, or a plain email (as in a file of configuration) whose templates have url (and link), email and user.</p></td></tr>
+                <tr><td><code>app?</code></td><td><code>{ name?: string }</code></td><td><p>The name of the app, in the subjects of the emails.</p></td></tr>
+                <tr><td><code>id?</code></td><td><code>(user: User) =&gt; string | number</code></td><td><p>The fields of the user: its key, email, password hash and whether its email is verified.</p></td></tr>
+                <tr><td><code>email?</code></td><td><code>(user: User) =&gt; string</code></td><td></td></tr>
+                <tr><td><code>password?</code></td><td><code>(user: User) =&gt; string | null | undefined</code></td><td></td></tr>
+                <tr><td><code>verified?</code></td><td><code>(user: User) =&gt; boolean</code></td><td></td></tr>
+                <tr><td><code>active?</code></td><td><code>(user: User) =&gt; boolean | Promise&lt;boolean&gt;</code></td><td><p>Whether an account may be used (not locked nor disabled): a login is refused (403), and its sessions end at their next request.</p></td></tr>
+                <tr><td><code>profile?</code></td><td><code>(user: User) =&gt; unknown</code></td><td><p>What the routes answer of a user ({ id, email, verified }).</p></td></tr>
+                <tr><td><code>totp?</code></td><td><code>(user: User) =&gt; string | null | undefined | Promise&lt;string | null | undefined&gt;</code></td><td><p>Codes of authenticator apps: the secret of a user (none: no code), its last step, and the one used.</p></td></tr>
+                <tr><td><code>lastTotpStep?</code></td><td><code>(user: User) =&gt; number | null | undefined | Promise&lt;number | null | undefined&gt;</code></td><td></td></tr>
+                <tr><td><code>onTotp?</code></td><td><code>(user: User, step: number) =&gt; unknown</code></td><td></td></tr>
+                <tr><td><code>totpOptions?</code></td><td><code>{ window?: number; digits?: number; period?: number; algorithm?: string }</code></td><td></td></tr>
+                <tr><td><code>recoveryCodes?</code></td><td><code>(user: User) =&gt; string[] | null | undefined | Promise&lt;string[] | null | undefined&gt;</code></td><td><p>The hashes of the recovery codes of a user (with users.setRecoveryCodes): each logs in once in place of a code.</p></td></tr>
+                <tr><td><code>messages?</code></td><td><code>Partial&lt;Record&lt;<a href="#ref-CredentialReason">CredentialReason</a> | 'notYours' | 'sameAsBefore', string&gt;&gt;</code></td><td><p>Messages of your own, by reason of the Credentials (invalid, throttled...).</p></td></tr>
+                <tr><td><code>passwordOptions?</code></td><td><code><a href="#ref-PasswordOptions">PasswordOptions</a></code></td><td></td></tr>
+                <tr><td><code>minPassword?</code></td><td><code>number</code></td><td><p>The policy of passwords: 8 to 256 characters, not the email in it, and checkPassword (a message, or nothing).</p></td></tr>
+                <tr><td><code>maxPassword?</code></td><td><code>number</code></td><td></td></tr>
+                <tr><td><code>checkPassword?</code></td><td><code>(password: string, values: { email?: string | null }) =&gt; string | null | undefined</code></td><td></td></tr>
+                <tr><td><code>signup?</code></td><td><code>{ fields?: string[]; login?: boolean }</code></td><td><p>signup.fields: the other fields a signup takes (name...); login: false (not logged in after it).</p></td></tr>
+                <tr><td><code>requireVerified?</code></td><td><code>boolean</code></td><td><p>The routes of required need a verified email.</p></td></tr>
+                <tr><td><code>lockout?</code></td><td><code><a href="#ref-Lockout">Lockout</a> | <a href="#ref-LockoutOptions">LockoutOptions</a> | false</code></td><td><p>Lockouts: by email (5 in 15 min), by address (20), links asked by email (5); a Lockout, its options, or false.</p></td></tr>
+                <tr><td><code>ipLockout?</code></td><td><code><a href="#ref-Lockout">Lockout</a> | <a href="#ref-LockoutOptions">LockoutOptions</a> | false</code></td><td></td></tr>
+                <tr><td><code>linkLockout?</code></td><td><code><a href="#ref-Lockout">Lockout</a> | <a href="#ref-LockoutOptions">LockoutOptions</a> | false</code></td><td></td></tr>
+                <tr><td><code>loginUrl?</code></td><td><code>string | ((request: any) =&gt; string) | null</code></td><td><p>Where loginRequired sends pages of users who did not log in (with ?next=): an address, or a function of the request.</p></td></tr>
+                <tr><td><code>rbac?</code></td><td><code><a href="#ref-Rbac">Rbac</a> | <a href="#ref-RbacOptions">RbacOptions</a> | null</code></td><td><p>The roles and their permissions, for permissionRequired: an Rbac or its options.</p></td></tr>
+                <tr><td><code>userPermissions?</code></td><td><code>(user: User) =&gt; string[] | null | undefined | Promise&lt;string[] | null | undefined&gt;</code></td><td><p>The permissions of each user besides those of its roles (user.permissions by default, as Django's user_permissions).</p></td></tr>
+                <tr><td><code>resetTtl?</code></td><td><code>number | string</code></td><td><p>How long the links work ('1h' and '2d').</p></td></tr>
+                <tr><td><code>verifyTtl?</code></td><td><code>number | string</code></td><td></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-AccountsApi"><code>AccountsApi</code></h3>
+        <pre><code class="language-ts">export interface AccountsApi&lt;User = any&gt; { ... }</code></pre>
+        <p>What accounts decorates the app with, as app.accounts.</p>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>user(request: any)</code></td><td><code>Promise&lt;User | null&gt;</code></td><td><p>The user of a request (its session), or null.</p></td></tr>
+                <tr><td><code>required(request: any, reply: any)</code></td><td><code>Promise&lt;unknown&gt;</code></td><td><p>The hook of the routes that need a user (and a verified email, with requireVerified): 401, or 403.</p></td></tr>
+                <tr><td><code>logIn(request: any, user: User)</code></td><td><code>Promise&lt;void&gt;</code></td><td><p>Logs a user in, in the session of the request.</p></td></tr>
+                <tr><td><code>sendVerification(user: User)</code></td><td><code>Promise&lt;unknown&gt;</code></td><td><p>Sends a link to verify the email of a user.</p></td></tr>
+                <tr><td><code>resetLink(user: User)</code></td><td><code>string</code></td><td><p>A link to reset the password of a user.</p></td></tr>
+                <tr><td><code>checkResetToken(token: string, request?: any)</code></td><td><code>Promise&lt;User | null&gt;</code></td><td><p>The user of the token of a reset link while it is good (not expired, not used), else null: Django's validlink.</p></td></tr>
+                <tr><td><code>resetPassword(token: string, password: string, request?: any)</code></td><td><code>Promise&lt;User&gt;</code></td><td><p>A new password with the token of a reset link: the sessions of the user end. AccountError (400) with errors.token (a link not good) or errors.password (a weak one).</p></td></tr>
+                <tr><td><code>authenticate(given: { email?: string; username?: string; password?: string; code?: string }, request?: any)</code></td><td><code>Promise&lt;User&gt;</code></td><td><p>Django's authenticate(): the user of { email or username, password, code }, or a CredentialError.</p></td></tr>
+                <tr><td><code>logOut(request: any, options?: { everywhere?: boolean })</code></td><td><code>Promise&lt;void&gt;</code></td><td><p>Out of this session, or of every session of the user.</p></td></tr>
+                <tr><td><code>requestReset(email: string, request?: any, options?: { link?: (token: string) =&gt; string })</code></td><td><code>Promise&lt;void&gt;</code></td><td><p>A reset link by email (the same whatever the email); link(token): its address (links.reset by default).</p></td></tr>
+                <tr><td><code>changePassword(request: any, given: { current: string; password: string })</code></td><td><code>Promise&lt;void&gt;</code></td><td><p>A new password for the user of a request, with the one now; its other sessions end.</p></td></tr>
+                <tr><td><code>loginBy</code></td><td><code>'email' | 'username'</code></td><td><p>What users log in with.</p></td></tr>
+                <tr><td><code>endSessions(user: User)</code></td><td><code>Promise&lt;void&gt;</code></td><td><p>Ends every session of a user now (locked, disabled...): every browser, process and machine with the store.</p></td></tr>
+                <tr><td><code>loginRequired(request: any, reply: any)</code></td><td><code>Promise&lt;unknown&gt;</code></td><td><p>login_required: pages go to loginUrl with ?next=, other clients get 401.</p></td></tr>
+                <tr><td><code>permissionRequired(...permissions: string[])</code></td><td><code>(request: any, reply: any) =&gt; Promise&lt;unknown&gt;</code></td><td><p>permission_required: the login without a user, 403 without every permission given.</p></td></tr>
+                <tr><td><code>perms(request: any)</code></td><td><code>Promise&lt;{ has(permission: string): boolean; all: string[]; superuser?: boolean }&gt;</code></td><td><p>The permissions of the user of a request, once a request.</p></td></tr>
+                <tr><td><code>can(user: User, permission: string)</code></td><td><code>Promise&lt;boolean&gt;</code></td><td><p>Whether a user has a permission (its roles, or its own).</p></td></tr>
+                <tr><td><code>readonly rbac</code></td><td><code><a href="#ref-Rbac">Rbac</a> | null</code></td><td><p>The Rbac of the option rbac, or null.</p></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-PagesOptions"><code>PagesOptions</code></h3>
+        <pre><code class="language-ts">export interface PagesOptions { ... }</code></pre>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>prefix?</code></td><td><code>string</code></td><td><p>Where the pages are ('/accounts').</p></td></tr>
+                <tr><td><code>views?</code></td><td><code>string | null</code></td><td><p>A folder of views of</p></td></tr>
+                <tr><td><code>loginRedirectUrl?</code></td><td><code>string</code></td><td><p>Where a login goes without next ('/').</p></td></tr>
+                <tr><td><code>logoutRedirectUrl?</code></td><td><code>string | null</code></td><td><p>Where a logout goes (null: the page that says so).</p></td></tr>
+                <tr><td><code>siteUrl?</code></td><td><code>string | null</code></td><td><p>The site of the links of the emails (else the host of the request).</p></td></tr>
+                <tr><td><code>names?</code></td><td><code>boolean</code></td><td><p>Django's names for the routes (true).</p></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-CredentialsOptions"><code>CredentialsOptions</code></h3>
+        <pre><code class="language-ts">export interface CredentialsOptions&lt;User = any&gt; { ... }</code></pre>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>findUser?</code></td><td><code>(identifier: string, request: any) =&gt; User | null | undefined | Promise&lt;User | null | undefined&gt;</code></td><td><p>The user of an identifier (an email, a user name), or null: for login().</p></td></tr>
+                <tr><td><code>password?</code></td><td><code>(user: User) =&gt; string | null | undefined</code></td><td><p>Its hash (user.password).</p></td></tr>
+                <tr><td><code>totp?</code></td><td><code>(user: User) =&gt; string | null | undefined | Promise&lt;string | null | undefined&gt;</code></td><td><p>The secret of its authenticator app (none: no code), its last step, and the step of a code used.</p></td></tr>
+                <tr><td><code>lastTotpStep?</code></td><td><code>(user: User) =&gt; number | null | undefined | Promise&lt;number | null | undefined&gt;</code></td><td></td></tr>
+                <tr><td><code>onTotp?</code></td><td><code>(user: User, step: number) =&gt; unknown</code></td><td></td></tr>
+                <tr><td><code>rehash?</code></td><td><code>(user: User, hash: string, request: any) =&gt; unknown</code></td><td><p>A new hash of the password made with passwordOptions (setPassword when not given).</p></td></tr>
+                <tr><td><code>allow?</code></td><td><code>(user: User) =&gt; boolean | Promise&lt;boolean&gt;</code></td><td><p>Users it refuses get the answer of a wrong password.</p></td></tr>
+                <tr><td><code>active?</code></td><td><code>(user: User) =&gt; boolean | Promise&lt;boolean&gt;</code></td><td><p>Users it refuses are told the account is locked (403), once their password is right.</p></td></tr>
+                <tr><td><code>setPassword?</code></td><td><code>(user: User, hash: string, request: any) =&gt; unknown</code></td><td></td></tr>
+                <tr><td><code>setTotp?</code></td><td><code>(user: User, secret: string | null, request: any) =&gt; unknown</code></td><td></td></tr>
+                <tr><td><code>recoveryCodes?</code></td><td><code>(user: User) =&gt; string[] | null | undefined | Promise&lt;string[] | null | undefined&gt;</code></td><td><p>Recovery codes: the hashes kept, and new ones to keep (both, or neither).</p></td></tr>
+                <tr><td><code>setRecoveryCodes?</code></td><td><code>(user: User, hashes: string[], request: any) =&gt; unknown</code></td><td></td></tr>
+                <tr><td><code>lockout?</code></td><td><code><a href="#ref-Lockout">Lockout</a> | <a href="#ref-LockoutOptions">LockoutOptions</a> | false</code></td><td><p>Failures by identifier (5 in 15 minutes) and by address (20): a Lockout, its options, or false.</p></td></tr>
+                <tr><td><code>ipLockout?</code></td><td><code><a href="#ref-Lockout">Lockout</a> | <a href="#ref-LockoutOptions">LockoutOptions</a> | false</code></td><td></td></tr>
+                <tr><td><code>passwordOptions?</code></td><td><code><a href="#ref-PasswordOptions">PasswordOptions</a></code></td><td></td></tr>
+                <tr><td><code>totpOptions?</code></td><td><code>{ window?: number; digits?: number; period?: number; algorithm?: string }</code></td><td></td></tr>
+                <tr><td><code>minPassword?</code></td><td><code>number</code></td><td><p>The policy of new passwords: 8 to 256 characters, not the email in it, and checkPassword (a message, or nothing).</p></td></tr>
+                <tr><td><code>maxPassword?</code></td><td><code>number</code></td><td></td></tr>
+                <tr><td><code>checkPassword?</code></td><td><code>(password: string, values: { email?: string | null }) =&gt; string | null | undefined</code></td><td></td></tr>
+                <tr><td><code>id?</code></td><td><code>(user: User) =&gt; string | number</code></td><td></td></tr>
+                <tr><td><code>messages?</code></td><td><code>Partial&lt;Record&lt;<a href="#ref-CredentialReason">CredentialReason</a> | 'notYours' | 'sameAsBefore', string&gt;&gt;</code></td><td></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-CredentialSession"><code>CredentialSession</code></h3>
+        <pre><code class="language-ts">export interface CredentialSession { ... }</code></pre>
+        <p>A session as</p>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>get(key: string)</code></td><td><code>any</code></td><td></td></tr>
+                <tr><td><code>set(key: string, value: unknown)</code></td><td><code>unknown</code></td><td></td></tr>
+                <tr><td><code>delete(key: string)</code></td><td><code>unknown</code></td><td></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-AbstractUserFields"><code>AbstractUserFields</code></h3>
+        <pre><code class="language-ts">export interface AbstractUserFields { ... }</code></pre>
+        <p>The fields and methods of the users of AbstractUser.</p>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>username</code></td><td><code>string</code></td><td></td></tr>
+                <tr><td><code>email</code></td><td><code>string | null</code></td><td></td></tr>
+                <tr><td><code>password</code></td><td><code>string</code></td><td></td></tr>
+                <tr><td><code>firstName</code></td><td><code>string</code></td><td></td></tr>
+                <tr><td><code>lastName</code></td><td><code>string</code></td><td></td></tr>
+                <tr><td><code>isStaff</code></td><td><code>boolean</code></td><td></td></tr>
+                <tr><td><code>isSuperuser</code></td><td><code>boolean</code></td><td></td></tr>
+                <tr><td><code>isActive</code></td><td><code>boolean</code></td><td></td></tr>
+                <tr><td><code>dateJoined</code></td><td><code>Date</code></td><td></td></tr>
+                <tr><td><code>lastLogin</code></td><td><code>Date | null</code></td><td></td></tr>
+                <tr><td><code>sessionGeneration</code></td><td><code>number</code></td><td><p>Raised by each "log out everywhere": sessions logged in with a lower one are over (read with the user).</p></td></tr>
+                <tr><td><code>role</code></td><td><code>string | null</code></td><td><p>The role of the user in an Rbac (Django's groups).</p></td></tr>
+                <tr><td><code>permissions</code></td><td><code>string[]</code></td><td><p>Its own permissions (Django's user_permissions).</p></td></tr>
+                <tr><td><code>setPassword(raw: string, options?: PasswordOptions)</code></td><td><code>Promise&lt;this&gt;</code></td><td><p>Hashes a password (scrypt) into password.</p></td></tr>
+                <tr><td><code>setUnusablePassword()</code></td><td><code>this</code></td><td><p>A password that never matches (a user who logs in elsewhere).</p></td></tr>
+                <tr><td><code>readonly hasUsablePassword</code></td><td><code>boolean</code></td><td></td></tr>
+                <tr><td><code>checkPassword(raw: string)</code></td><td><code>Promise&lt;boolean&gt;</code></td><td></td></tr>
+                <tr><td><code>hasPerm(permission: string)</code></td><td><code>boolean</code></td><td><p>Its own permissions, and every one for an active superuser.</p></td></tr>
+                <tr><td><code>readonly fullName</code></td><td><code>string</code></td><td></td></tr>
+                <tr><td><code>readonly shortName</code></td><td><code>string</code></td><td></td></tr>
+                <tr><td><code>readonly isAuthenticated</code></td><td><code>true</code></td><td></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-AbstractUserOptions"><code>AbstractUserOptions</code></h3>
+        <pre><code class="language-ts">export interface AbstractUserOptions { ... }</code></pre>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>passwordOptions?</code></td><td><code><a href="#ref-PasswordOptions">PasswordOptions</a></code></td><td><p>The options of hashPassword (lighter in tests).</p></td></tr>
+                <tr><td><code>email?</code></td><td><code>Record&lt;string, unknown&gt;</code></td><td><p>Options of the fields email and username over their defaults ({ unique: true }...).</p></td></tr>
+                <tr><td><code>username?</code></td><td><code>Record&lt;string, unknown&gt;</code></td><td></td></tr>
+                <tr><td><code>groups?</code></td><td><code>() =&gt; any</code></td><td><p>The model of the groups (AbstractGroup): a many-to-many groups, as Django's user.groups.</p></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-AbstractGroupFields"><code>AbstractGroupFields</code></h3>
+        <pre><code class="language-ts">export interface AbstractGroupFields { ... }</code></pre>
+        <p>The fields of a group.</p>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>name</code></td><td><code>string</code></td><td></td></tr>
+                <tr><td><code>permissions</code></td><td><code>string[]</code></td><td><p>Its permissions: Model.action, with * for any (Book.*, *.view).</p></td></tr>
+                <tr><td><code>inherits</code></td><td><code>string[]</code></td><td><p>The roles whose permissions it has too.</p></td></tr>
+              </tbody>
+            </table>
+          </div>
+
         <h2 id="types">Types</h2>
-        <p class="ref-index"><a href="#ref-Duration"><code>Duration</code></a>, <a href="#ref-Algorithm"><code>Algorithm</code></a>, <a href="#ref-KeyInput"><code>KeyInput</code></a>, <a href="#ref-KeyEntry"><code>KeyEntry</code></a>, <a href="#ref-Keys"><code>Keys</code></a>, <a href="#ref-TotpAlgorithm"><code>TotpAlgorithm</code></a>, <a href="#ref-AuthRule"><code>AuthRule</code></a>, <a href="#ref-AuthCheck"><code>AuthCheck</code></a>, <a href="#ref-TenantRule"><code>TenantRule</code></a>, <a href="#ref-AuthRuleOf"><code>AuthRuleOf</code></a>, <a href="#ref-StrategyResult"><code>StrategyResult</code></a></p>
+        <p class="ref-index"><a href="#ref-Duration"><code>Duration</code></a>, <a href="#ref-Algorithm"><code>Algorithm</code></a>, <a href="#ref-KeyInput"><code>KeyInput</code></a>, <a href="#ref-KeyEntry"><code>KeyEntry</code></a>, <a href="#ref-Keys"><code>Keys</code></a>, <a href="#ref-TotpAlgorithm"><code>TotpAlgorithm</code></a>, <a href="#ref-QrLevel"><code>QrLevel</code></a>, <a href="#ref-AuthRule"><code>AuthRule</code></a>, <a href="#ref-AuthCheck"><code>AuthCheck</code></a>, <a href="#ref-TenantRule"><code>TenantRule</code></a>, <a href="#ref-AuthRuleOf"><code>AuthRuleOf</code></a>, <a href="#ref-RoleSpec"><code>RoleSpec</code></a>, <a href="#ref-Scope"><code>Scope</code></a>, <a href="#ref-Grants"><code>Grants</code></a>, <a href="#ref-StrategyResult"><code>StrategyResult</code></a>, <a href="#ref-CredentialReason"><code>CredentialReason</code></a></p>
 
         <h3 id="ref-Duration"><code>Duration</code></h3>
         <pre><code class="language-ts">export type Duration = number | string;</code></pre>
@@ -911,6 +1367,10 @@
         <h3 id="ref-TotpAlgorithm"><code>TotpAlgorithm</code></h3>
         <pre><code class="language-ts">export type TotpAlgorithm = 'SHA1' | 'SHA256' | 'SHA512';</code></pre>
 
+        <h3 id="ref-QrLevel"><code>QrLevel</code></h3>
+        <pre><code class="language-ts">export type QrLevel = 'L' | 'M' | 'Q' | 'H';</code></pre>
+        <p>The error correction of a QR code: L (7%), M (15%), Q (25%), H (30%).</p>
+
         <h3 id="ref-AuthRule"><code>AuthRule</code></h3>
         <pre><code class="language-ts">export type AuthRule&lt;User = any&gt; =
   true | string | string[] | ((user: User, request: any) =&gt; boolean | Promise&lt;boolean&gt;) | AuthRuleOf&lt;User&gt;;</code></pre>
@@ -925,11 +1385,40 @@
 
         <h3 id="ref-AuthRuleOf"><code>AuthRuleOf</code></h3>
         <pre><code class="language-ts">export type AuthRuleOf&lt;User = any&gt; =
-  | { strategy: string | string[]; roles?: string | string[]; check?: AuthCheck&lt;User&gt;; tenant?: TenantRule }
-  | { strategy?: string | string[]; roles: string | string[]; check?: AuthCheck&lt;User&gt;; tenant?: TenantRule }
-  | { strategy?: string | string[]; roles?: string | string[]; check: AuthCheck&lt;User&gt;; tenant?: TenantRule }
-  | { strategy?: string | string[]; roles?: string | string[]; check?: AuthCheck&lt;User&gt;; tenant: TenantRule };</code></pre>
-        <p>Which strategies may identify the user (by name: the others are refused), any of some roles or a check, and the tenant the user must be of. One of them at least.</p>
+  | (AuthRuleParts&lt;User&gt; &amp; { strategy: string | string[] })
+  | (AuthRuleParts&lt;User&gt; &amp; { roles: string | string[] })
+  | (AuthRuleParts&lt;User&gt; &amp; { check: AuthCheck&lt;User&gt; })
+  | (AuthRuleParts&lt;User&gt; &amp; { tenant: TenantRule })
+  | (AuthRuleParts&lt;User&gt; &amp; { can: string | string[] });</code></pre>
+        <p>Which strategies may identify the user (by name: the others are refused), any of some roles or a check, the tenant the user must be of, and the permissions it needs (rbac). One of them at least.</p>
+
+        <h3 id="ref-RoleSpec"><code>RoleSpec</code></h3>
+        <pre><code class="language-ts">export type RoleSpec =
+  | string[]
+  | {
+      permissions?: string[];
+      inherits?: string | string[];
+      /**
+       * The objects each permission of the role is for, by patterns of permissions (Django's get_queryset and
+       * has_change_permission(obj)): conditions of the ORM of the user ({ ownerId: user.id }), true (all), false (none).
+       */
+      where?: Record&lt;
+        string,
+        (
+          user: any,
+          context: { tenant: string | number | null; permission: string }
+        ) =&gt; Record&lt;string, unknown&gt; | boolean | null | undefined
+      &gt;;
+    };</code></pre>
+        <p>A role: its permissions ('Book.change', 'Book.*', '*.view', '*'), or those and the roles whose permissions it takes too.</p>
+
+        <h3 id="ref-Scope"><code>Scope</code></h3>
+        <pre><code class="language-ts">export type Scope = null | false | Array&lt;Record&lt;string, unknown&gt;&gt;;</code></pre>
+        <p>The objects of a permission: null (all), false (none), or conditions of the ORM (any of them).</p>
+
+        <h3 id="ref-Grants"><code>Grants</code></h3>
+        <pre><code class="language-ts">export type Grants = Grant[] | Record&lt;string, string | string[]&gt;;</code></pre>
+        <p>The grants of a user: a list of them, or a map { tenant: role | roles }.</p>
 
         <h3 id="ref-StrategyResult"><code>StrategyResult</code></h3>
         <pre><code class="language-ts">export type StrategyResult&lt;User = any&gt; =
@@ -937,6 +1426,23 @@
   | { fail: { challenge?: string; message?: string; status?: number; error?: Error } }
   | null;</code></pre>
         <p>What a strategy finds in a request: a user, credentials that are not valid, or none of its kind (null).</p>
+
+        <h3 id="ref-CredentialReason"><code>CredentialReason</code></h3>
+        <pre><code class="language-ts">export type CredentialReason =
+  | 'missing'
+  | 'invalid'
+  | 'code'
+  | 'wrongCode'
+  | 'locked'
+  | 'throttled'
+  | 'wrongPassword'
+  | 'weak'
+  | 'pending'
+  | 'noTotp'
+  | 'noPasswords'
+  | 'noApps'
+  | 'noRecovery';</code></pre>
+        <p>Why a CredentialError refused.</p>
       </article>
     </div>
 

@@ -4,7 +4,7 @@
 //
 //   plain:  X D 1 0 | JSON
 //   sealed: X D 1 1 | nonce (12) | ciphertext | tag (16)
-const crypto = require('node:crypto');
+import crypto from 'node:crypto';
 
 const MAGIC_0 = 0x58; // X
 const MAGIC_1 = 0x44; // D
@@ -71,4 +71,4 @@ function createCodec({ secret, service }) {
   return { encode, decode, sealed: Boolean(key) };
 }
 
-module.exports = { createCodec, MAX_PACKET };
+export { createCodec, MAX_PACKET };

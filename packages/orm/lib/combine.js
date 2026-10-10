@@ -1,5 +1,3 @@
-'use strict';
-
 // union(), intersection() and difference() of QuerySets, as Django's (UNION, INTERSECT and EXCEPT): the rows of
 // several queries, each once (union({ all: true }) keeps those in several).
 //
@@ -12,8 +10,8 @@
 //   Book.objects.filter({ pages__gt: 500 }).union(Book.objects.filter({ authorId: 1 }))       // one query
 //   Book.objects.filter({ year: 2001 }).difference(Book.objects.filter({ genre: 'sf' }))      // one query
 //   Book.objects.values('genre').filter({ year: 2001 }).intersection(Book.objects.values('genre').filter({ year: 2005 }))
-const { QueryError } = require('./errors');
-const { resolveWhere } = require('./query');
+import { QueryError } from './errors.js';
+import { resolveWhere } from './query.js';
 
 const OPERATIONS = new Set(['union', 'intersection', 'difference']);
 
@@ -285,4 +283,4 @@ function combine(op, given, { all = false } = {}) {
   return new CombinedQuerySet(op, parts, { all });
 }
 
-module.exports = { combine, CombinedQuerySet, isOptions, optionsOf };
+export { combine, CombinedQuerySet, isOptions, optionsOf };

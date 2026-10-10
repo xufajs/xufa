@@ -23,10 +23,11 @@
 // JSON of the values of a composite one), changes ([{ field, path, from, to }]: `from` missing when added, `to` when
 // removed, `path` inside json fields, `redacted: true` without values), data (of log()), actor and context (of
 // with(), or of the requests of the plugin of the ORM).
-const { AsyncLocalStorage } = require('node:async_hooks');
-const { Model } = require('./model');
-const fields = require('./fields');
-const { seconds } = require('./duration');
+import { AsyncLocalStorage } from 'node:async_hooks';
+import { Model } from './model.js';
+import fields from './fields.js';
+import { seconds } from './duration.js';
+import * as resourceModule from './resource.js';
 
 class AuditEntry extends Model {
   static fields = {
@@ -422,7 +423,7 @@ function auditResource(options = {}) {
       'auditResource() needs auth: a rule of @xufa/auth (who may read it), or false to leave it open'
     );
   }
-  const { resource } = require('./resource'); // eslint-disable-line global-require
+  const { resource } = resourceModule;
   const { database, ...rest } = options;
   return resource(AuditEntry, {
     actions: ['list', 'get'],
@@ -434,4 +435,4 @@ function auditResource(options = {}) {
   });
 }
 
-module.exports = { Audit, AuditEntry, auditResource, enterRequest, plain };
+export { Audit, AuditEntry, auditResource, enterRequest, plain };

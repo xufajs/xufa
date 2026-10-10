@@ -1,6 +1,6 @@
 // The request: the raw IncomingMessage with its route context, parameters, query and body.
-const proxyAddr = require('./proxy-addr');
-const {
+import * as proxyAddr from './proxy-addr.js';
+import {
   kHasBeenDecorated,
   kSchemaBody,
   kSchemaHeaders,
@@ -17,11 +17,11 @@ const {
   kRequestResponse,
   kRequestQuery,
   kRequestQuerystring,
-} = require('./symbols');
-const { XUFA_ERR_REQ_INVALID_VALIDATION_INVOCATION, XUFA_ERR_DEC_UNDECLARED } = require('./errors');
-const decorators = require('./decorate');
-const ContentType = require('./content-type');
-const querystring = require('./querystring');
+} from './symbols.js';
+import { XUFA_ERR_REQ_INVALID_VALIDATION_INVOCATION, XUFA_ERR_DEC_UNDECLARED } from './errors.js';
+import * as decorators from './decorate.js';
+import ContentType from './content-type.js';
+import * as querystring from './querystring.js';
 
 const HTTP_PART_SYMBOL_MAP = {
   body: kSchemaBody,
@@ -352,6 +352,11 @@ Object.defineProperties(Request.prototype, {
   },
 });
 
-module.exports = Request;
-module.exports.buildRequest = buildRequest;
-module.exports.onClientGone = onClientGone;
+export default Request;
+Request.buildRequest = buildRequest;
+Request.onClientGone = onClientGone;
+
+export { buildRequest, onClientGone };
+
+// What require() gives (the tests of fastify are CommonJS).
+export { Request as 'module.exports' };

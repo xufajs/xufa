@@ -1,11 +1,9 @@
-'use strict';
-
 // The plugin of @xufa/http (and fastify): app.queue, its workers started when the app is ready (work: false, or
 // leave out the option, to only enqueue: web processes that hand the work to others) and stopped when it closes.
 //
 //   app.register(queuePlugin, { queue, work: { concurrency: 4 } });
 //   app.post('/signup', async (request) => { ...; await app.queue.enqueue('welcome', { userId }); });
-const { QueueError } = require('./errors');
+import { QueueError } from './errors.js';
 
 function queuePlugin(app, options, done) {
   const { queue, work = false, stopTimeout } = options || {};
@@ -30,4 +28,4 @@ queuePlugin[Symbol.for('skip-override')] = true;
 queuePlugin[Symbol.for('fastify.display-name')] = '@xufa/queue';
 queuePlugin[Symbol.for('plugin-meta')] = { name: '@xufa/queue' };
 
-module.exports = { queuePlugin };
+export { queuePlugin };

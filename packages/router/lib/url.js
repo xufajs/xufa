@@ -157,12 +157,12 @@ function trimLastSlash(path) {
   return path.length > 1 && path.charCodeAt(path.length - 1) === 47 ? path.slice(0, -1) : path;
 }
 
-module.exports = {
+export {
   splitURL,
   splitEncoded,
   decodeParam,
   safeDecodeURI,
-  safeDecodeURIComponent: decodeParam,
+  decodeParam as safeDecodeURIComponent,
   pathFromAbsoluteURL,
   removeDuplicateSlashes,
   trimLastSlash,

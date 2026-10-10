@@ -1,7 +1,4 @@
-'use strict'
-
-
-const FindMyWay = require('../')
+import FindMyWay from '../index.js';
 
 test('Wildcard route match when regexp route fails', () => {
   expect.assertions(1)

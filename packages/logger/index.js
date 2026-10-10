@@ -1,12 +1,13 @@
 // @xufa/logger: a JSON logger with the API of pino. Lines are built as strings: the bindings of a logger are
 // serialized once, when it is created, and each line adds its level, time, the properties logged and the message.
-const os = require('node:os');
-const { asString, asKey, stringify } = require('./lib/stringify');
-const { format } = require('./lib/format');
-const { createRedactor } = require('./lib/redact');
-const stdSerializers = require('./lib/serializers');
-const { Destination } = require('./lib/destination');
-const { version } = require('./package.json');
+import os from 'node:os';
+import { asString, asKey, stringify } from './lib/stringify.js';
+import { format } from './lib/format.js';
+import { createRedactor } from './lib/redact.js';
+import * as stdSerializers from './lib/serializers.js';
+import { Destination } from './lib/destination.js';
+import __package_json1 from './package.json' with { type: 'json' };
+const { version } = __package_json1;
 
 const DEFAULT_LEVELS = { trace: 10, debug: 20, info: 30, warn: 40, error: 50, fatal: 60 };
 
@@ -539,4 +540,6 @@ createLogger.createLogger = createLogger;
 createLogger.pino = createLogger;
 createLogger.default = createLogger;
 
-module.exports = createLogger;
+export default createLogger;
+
+export { createLogger as 'module.exports' };

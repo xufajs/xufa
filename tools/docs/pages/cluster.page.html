@@ -22,9 +22,9 @@
 
         <h2 id="start">Quick start</h2>
         <pre><code class="language-sh">npm install @xufa/cluster</code></pre>
-        <pre><code class="language-js">const { start, bus } = require('@xufa/cluster');
-const xufa = require('xufa');
-const config = require('./config'); // loadConfig() of @xufa/config: read in every process
+        <pre><code class="language-js">import { start, bus } from '@xufa/cluster';
+import xufa from 'xufa';
+import config from './config.js'; // loadConfig() of @xufa/config: read in every process
 
 start({
   workers: config.cluster.workers, // os.availableParallelism() when undefined; 0 runs everything in one process
@@ -48,7 +48,7 @@ start({
           and one with errors stops the primary before it forks a worker. Its schema can hold the cluster's own options:
         </p>
         <pre><code class="language-js">// config.js
-module.exports = loadConfig({
+export default loadConfig({
   schema: {
     server: { port: { type: 'port', default: 3000, env: 'PORT' } },
     cluster: { workers: { type: 'integer', min: 0, env: 'WORKERS' } }, // WORKERS=0 in development: one process
@@ -160,7 +160,7 @@ bus.broadcast('config', newConfig); // to every worker</code></pre>
           and gives each free slot to the next ticket, whichever worker sent it. The work itself (the function, the request
           it answers, its promise) stays in the worker that waits; only the ticket and the node go through the bus.
         </p>
-        <pre data-run><code class="language-js">const { createPool } = require('@xufa/cluster');
+        <pre data-run><code class="language-js">import { createPool } from '@xufa/cluster';
 
 // In the primary (here, the only process): the nodes, one task at once each.
 const pool = createPool('converters', {
@@ -194,8 +194,8 @@ pool.close();</code></pre>
   ]
 }</code></pre>
         <p>In a cluster, the primary makes the pool and the workers use it by its name:</p>
-        <pre><code class="language-js">const { start, createPool, usePool } = require('@xufa/cluster');
-const { Discovery } = require('@xufa/discovery');
+        <pre><code class="language-js">import { start, createPool, usePool } from '@xufa/cluster';
+import { Discovery } from '@xufa/discovery';
 
 start({
   primary: async () =&gt; {
@@ -228,6 +228,7 @@ start({
         <h2 id="pool-use">Using a node</h2>
         <ul>
           <li><code>pool.use(fn, options)</code> runs <code>fn(node, { signal, attempt })</code> on a free node and gives the slot back when it ends, whether it gave a result or failed. With <code>retries</code>, a failure tries again on another node while there are others (<code>avoidFailed</code>), for the errors <code>retryOn(err, attempt)</code> says (all).</li>
+          <li><code>fallback: { node, after, wait }</code>: somewhere else for the work, as a load balancer in front of the nodes. From the attempt <code>after</code> on (<code>{ retries: 5, fallback: { after: 3, node: { id: 'lb', url } } }</code>: three attempts on the pool, then the balancer), or when no node is free in <code>wait</code> (every node down, or busy), <code>fn</code> runs on its node, without a slot, with <code>fallback: true</code> in its context. <code>node</code> can be <code>node(attempt, error)</code>, made for each attempt.</li>
           <li><code>pool.acquire(options)</code> waits for a node and gives its lease: <code>lease.node</code>, <code>lease.signal</code>, and <code>lease.release(failed)</code>, which you call when done.</li>
           <li>Both take <code>priority</code> (higher first) and <code>signal</code> (to stop waiting: the ticket leaves the queue). <code>pool.stats()</code> gives the nodes, slots, free slots, leases running and tickets waiting, by node too.</li>
           <li><code>createPool(name, options)</code> in the primary gives the pool (with <code>use</code> and <code>acquire</code> for the primary itself); <code>usePool(name)</code> in any process gives its client. With <code>workers: 0</code> both are in the one process.</li>
@@ -286,7 +287,7 @@ start({
             what they cannot take protect themselves from any client, of xufa or not.
           </li>
         </ul>
-        <pre><code class="language-js">const { createPool, ormSlots } = require('@xufa/cluster');
+        <pre><code class="language-js">import { createPool, ormSlots } from '@xufa/cluster';
 
 // In the primary of every machine: the same database, the same nodes.
 const db = new Database({ backend: 'postgres', url: process.env.DATABASE_URL });

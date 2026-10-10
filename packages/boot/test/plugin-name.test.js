@@ -1,8 +1,5 @@
-'use strict'
-
-
-const boot = require('..')
-const { kPluginMeta } = require('..')
+import boot from '../index.js';
+import { kPluginMeta } from '../index.js';
 
 test('plugins get a name from the plugin metadata if it is set', async () => {
   expect.assertions(2)

@@ -1,7 +1,4 @@
-'use strict'
-
-
-const FindMyWay = require('..')
+import FindMyWay from '../index.js';
 
 test('Decode the URL before the routing', () => {
   expect.assertions(8)

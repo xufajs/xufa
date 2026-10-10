@@ -1,8 +1,8 @@
-const fs = require('node:fs');
-const os = require('node:os');
-const path = require('node:path');
-const xufa = require('@xufa/http');
-const { plugin, TemplateEngine } = require('..');
+import fs from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
+import xufa from '@xufa/http';
+import { plugin, TemplateEngine } from '../index.js';
 
 const root = fs.mkdtempSync(path.join(os.tmpdir(), 'xufa-views-'));
 const write = (name, text) => {
@@ -130,5 +130,16 @@ describe('app.view and reply.viewAsync', () => {
     app.get('/', (request, reply) => reply.render('shout', { name: 'hey' }));
     expect((await app.inject('/')).body).toBe('hey!');
     expect(await app.render('shout', { name: 'ho' })).toBe('ho!');
+    expect(app.hasRender('shout')).toBe(true);
+  });
+
+  it('app.hasView: whether a view is in a root (none out of them)', async () => {
+    const app = makeApp();
+    await app.ready();
+    expect(app.hasView('hello')).toBe(true);
+    expect(app.hasView('users/show.html')).toBe(true);
+    expect(app.hasView('nope')).toBe(false);
+    expect(app.hasView('../outside')).toBe(false);
+    expect(app.hasView('')).toBe(false);
   });
 });

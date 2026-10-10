@@ -1,0 +1,17 @@
+# The models in the admin (catalog/admin.py), with the options of their lists, forms and related rows.
+Genre:
+Language:
+Author:
+  list: [lastName, firstName, dateOfBirth, dateOfDeath]
+  fields: [firstName, lastName, [dateOfBirth, dateOfDeath]] # the dates on one line
+  inlines: [{ relation: bookSet, fields: [title, summary, isbn, language] }] # BooksInline (a TabularInline)
+Book:
+  list: [title, author, displayGenre] # display_genre: a method of Book
+  inlines: [{ relation: bookInstanceSet, fields: [imprint, status, dueBack, borrower] }]
+BookInstance:
+  list: [book, status, borrower, dueBack, id]
+  filters: [status, dueBack]
+  editable: [status] # not in the LocalLibrary: Django's list_editable
+  fieldsets:
+    - [null, { fields: [book, imprint, id] }]
+    - [Availability, { fields: [status, dueBack, borrower] }]

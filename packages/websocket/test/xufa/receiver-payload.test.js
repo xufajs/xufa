@@ -1,9 +1,9 @@
 // Payloads over several socket chunks: masked frames cut at every offset and in random pieces arrive as sent, and so do
 // fragmented and compressed messages, each kept as it arrived while the next ones are received.
-const crypto = require('node:crypto');
-const Receiver = require('../../lib/receiver');
-const Sender = require('../../lib/sender');
-const { WebSocket, WebSocketServer } = require('../..');
+import crypto from 'node:crypto';
+import Receiver from '../../lib/receiver.js';
+import Sender from '../../lib/sender.js';
+import { WebSocket, WebSocketServer } from '../../index.js';
 
 function frame(data, mask, fin = true, opcode = 2) {
   return Buffer.concat(Sender.frame(data, { fin, mask, opcode, readOnly: true }));

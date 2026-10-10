@@ -13,8 +13,8 @@
 //
 // Deterministic values (an IV made from the value, by HMAC) are the same for the same value and key: they can be found
 // by equality and be unique, at the cost of telling which rows have the same value.
-const crypto = require('node:crypto');
-const { EncryptionError } = require('./errors');
+import crypto from 'node:crypto';
+import { EncryptionError } from './errors.js';
 
 const PREFIX = '$xenc$1$';
 const IV_BYTES = 12;
@@ -152,8 +152,6 @@ function generateEncryptionKey() {
   return crypto.randomBytes(32).toString('base64');
 }
 
-module.exports = { Keyring, setEncryptionKeys, getKeyring, generateEncryptionKey, isEncrypted, keyIdOf };
-
 // Writes the encrypted fields of every object of a model again, with the current key: after a key is added (so the
 // old one can be removed, and deterministic values found by equality again), or after a field became encrypted (its
 // values written before, read with acceptPlaintext, are encrypted). In batches of `batchSize` objects; `fields`: the
@@ -172,4 +170,4 @@ async function reencrypt(Model, { fields, batchSize = 500 } = {}) {
   }
 }
 
-module.exports.reencrypt = reencrypt;
+export { Keyring, setEncryptionKeys, getKeyring, generateEncryptionKey, isEncrypted, keyIdOf, reencrypt };

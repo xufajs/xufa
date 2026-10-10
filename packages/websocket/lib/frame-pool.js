@@ -1,12 +1,12 @@
-'use strict';
-
 // The buffers of masked frames (what a client sends), used again once the socket has written them. Writing into a
 // buffer just allocated costs from 5 to 20 times what writing into one used before does (the pages of memory are
 // new: 3 µs instead of 0.3 for 16 KB, 200 µs instead of 40 for 1 MB on Windows; on Linux about half of that), and a
 // masked frame is a copy of the message. Only the Sender takes and gives them back, and only on a net.Socket, which
 // is done with a buffer when it calls the callback of its write (another Duplex can hand it to someone else).
 
-// Below, Buffer.allocUnsafe takes from the pool of Node.js already; above, a buffer is not kept.
+// Below, Buffer.allocUnsafe takes from the pool of Node.js already; above, a buffer is not kept. Node.js 24 pools up
+// to 32 KB, but its pool is slower for the frames between 4 and 32 KB (15% at 16 KB, 7% at 30 KB:
+// bench/results/websocket-5.md), so these stay here.
 const MIN = 4 * 1024;
 const MAX = 4 * 1024 * 1024;
 // What is kept, at most, between frames.
@@ -47,4 +47,4 @@ function release(buffer) {
   freeBytes += buffer.length;
 }
 
-module.exports = { MAX, MIN, release, take, free };
+export { MAX, MIN, release, take, free };

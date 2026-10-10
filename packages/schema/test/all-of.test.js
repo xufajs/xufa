@@ -1,4 +1,4 @@
-const { AllOf, Integer, Float, Schema } = require('..');
+import { AllOf, Integer, Float, Schema } from '../index.js';
 
 describe('AllOf', () => {
   it('Should return an error if value is undefined and is mandatory', () => {

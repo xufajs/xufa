@@ -1,8 +1,8 @@
-const fs = require('node:fs');
-const os = require('node:os');
-const path = require('node:path');
-const xufa = require('@xufa/http');
-const { TemplateEngine, plugin } = require('..');
+import fs from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
+import xufa from '@xufa/http';
+import { TemplateEngine, plugin } from '../index.js';
 
 const data = () => ({
   title: 'Big <list>',

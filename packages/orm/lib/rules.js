@@ -4,16 +4,24 @@
 //   validate: 'value >= 0'
 //   validate: { rule: 'value.length >= 3', message: 'At least 3 characters.' }
 //   static options = { rules: [{ rule: 'end > start', message: 'The end comes after the start.', field: 'end' }] }
-const { ModelError } = require('./errors');
-const { expressionEngine } = require('./computed');
+import { message as defaultMessage, custom } from './messages.js';
+import { ModelError } from './errors.js';
+import { expressionEngine } from './computed.js';
 
 const FIELD_MESSAGE = 'The value is not valid.';
 const OBJECT_MESSAGE = 'The object is not valid.';
 
 // The message of what a rule gave, or null when it is valid.
-function messageOf(result, message) {
+function messageOf(result, given) {
+  // The default messages by key (translated); a message of your own is translated when it is a key of the catalogs.
+  const message =
+    given === FIELD_MESSAGE
+      ? defaultMessage('invalid')
+      : given === OBJECT_MESSAGE
+        ? defaultMessage('invalidObject')
+        : custom(given);
   if (result === false) return message;
-  if (typeof result === 'string') return result === '' ? message : result;
+  if (typeof result === 'string') return result === '' ? message : custom(result);
   return null;
 }
 
@@ -73,4 +81,4 @@ function modelRules(specs, model, fieldNames) {
   });
 }
 
-module.exports = { fieldValidators, modelRules, compileRule };
+export { fieldValidators, modelRules, compileRule };

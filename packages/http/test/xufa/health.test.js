@@ -2,11 +2,11 @@
 // its checks (up, degraded, down, timeouts, critical or not), the background run and onChange, heal for a check down
 // too long, and readiness down while the app closes; and maintenance, the 503 of the maintenance mode with its file
 // and stores, the routes that go through, the addresses allowed and the secret path's cookie.
-const fs = require('node:fs');
-const os = require('node:os');
-const path = require('node:path');
-const xufa = require('@xufa/http');
-const { bypassOf } = require('../../lib/maintenance');
+import fs from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
+import xufa from '../../index.js';
+import { bypassOf } from '../../lib/maintenance.js';
 
 const sleep = (wait) => new Promise((resolve) => setTimeout(resolve, wait));
 

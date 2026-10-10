@@ -1,4 +1,4 @@
-const { Boolean } = require('..');
+import { Boolean } from '../index.js';
 
 describe('Boolean Type', () => {
   it('Should allow undefined if not mandatory', () => {

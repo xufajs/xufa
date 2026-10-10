@@ -5,12 +5,14 @@
 //   class Book extends Model {
 //     static fields = { title: fields.string({ maxLength: 200 }), author: fields.foreignKey(() => Author) };
 //   }
-const { Meta, STATE, State, defineState, takeGiven } = require('./meta');
-const modelCache = require('./model-cache');
-const { currentDatabase } = require('./context');
-const { ForeignKey } = require('./fields');
-const { ValidationError, NotRegisteredError, ModelError, FieldError, QueryError } = require('./errors');
-const { uniqueErrorOf } = require('./errors');
+import { Meta, STATE, State, defineState, stateOf, takeGiven } from './meta.js';
+import * as modelCache from './model-cache.js';
+import { currentDatabase, tenantModels } from './context.js';
+import { ForeignKey } from './fields.js';
+import { ValidationError, NotRegisteredError, ModelError, FieldError, QueryError } from './errors.js';
+import { uniqueErrorOf } from './errors.js';
+import * as querysetModule_ from './queryset.js';
+import * as modelSchemaModule from './model-schema.js';
 
 const META = Symbol('xufa.orm.meta');
 
@@ -18,7 +20,7 @@ const META = Symbol('xufa.orm.meta');
 // every time it is called.
 let querysetModule = null;
 function querysets() {
-  if (querysetModule === null) querysetModule = require('./queryset');
+  if (querysetModule === null) querysetModule = querysetModule_;
   return querysetModule;
 }
 const HOOKS = ['beforeSave', 'afterSave', 'beforeDelete', 'afterDelete'];
@@ -59,7 +61,45 @@ function keyed(model, action) {
   );
 }
 
+// The value of a path of an object (book.title of a copy), undefined where a relation is not loaded.
+// The parts of a text of display ('{lastName}, {firstName}'): texts, and the paths of the values ({ path: ['a', 'b'] }
+// for {a.b}), cut once for each text (toString() is called for every object a page shows).
+const displays = new Map();
+function displayParts(display) {
+  let parts = displays.get(display);
+  if (parts === undefined) {
+    parts = [];
+    let last = 0;
+    for (const match of display.matchAll(/\{([\w.]+)\}/g)) {
+      if (match.index > last) parts.push(display.slice(last, match.index));
+      parts.push({ path: match[1].split('.') });
+      last = match.index + match[0].length;
+    }
+    if (last < display.length) parts.push(display.slice(last));
+    displays.set(display, parts);
+  }
+  return parts;
+}
+
+function valueAtPath(object, path) {
+  let value = object;
+  for (const key of typeof path === 'string' ? path.split('.') : path.path) {
+    if (value === null || value === undefined) return undefined;
+    try {
+      value = value[key];
+    } catch {
+      return undefined;
+    }
+  }
+  return value;
+}
+
 class Model {
+  // The state of the object (lib/meta.js: a private field, not a property of it).
+  get [STATE]() {
+    return stateOf(this);
+  }
+
   constructor(data = {}) {
     const { meta } = this.constructor;
     if (meta.abstract) throw new ModelError(meta.name, 'it is abstract');
@@ -102,6 +142,13 @@ class Model {
     if (tenant) {
       const database = tenant.databaseOf ? tenant.databaseOf(this) : tenant;
       if (database && database.models.get(this.name) === this) return database;
+    }
+    // A model of tenants out of one: no database of another tenant (nor a default) answers for it.
+    if (tenantModels.has(this)) {
+      throw new ModelError(
+        this.name,
+        'it is a model of tenants: its queries run in a tenant (tenants.run(), or a request of one)'
+      );
     }
     const { db } = this.meta;
     if (!db) throw new NotRegisteredError(this.name);
@@ -146,14 +193,14 @@ class Model {
   // The schema of Model.schema() in the form of OpenAPI 3.0 (null as `nullable: true`), to document routes or
   // validate with it. `exclude` leaves fields out, and `partial` makes no field required (for updates).
   static jsonSchema(options) {
-    const { openapiSchema } = require('./model-schema'); // eslint-disable-line global-require
+    const { openapiSchema } = modelSchemaModule;
     return openapiSchema(this, options);
   }
 
   // The schema of the objects of the model as @xufa/schema makes them (lib/model-schema.js): typed in TypeScript, and
   // taken by s.omit(), s.partial()... `input: true` leaves out what is never given (computed fields).
   static schema(options) {
-    const { modelSchema } = require('./model-schema'); // eslint-disable-line global-require
+    const { modelSchema } = modelSchemaModule;
     return modelSchema(this, options);
   }
 
@@ -165,6 +212,36 @@ class Model {
   }
 
   // The primary key: its value, or the array of those of the fields of a composite one.
+  // The label of the value of a field of choices (Django's get_status_display()): its label, or the value itself.
+  // Its text (Django's __str__): options.display, a text with {field} and {relation.field} of the loaded relations
+  // ('{lastName}, {firstName}'), or a function of the object; else 'Book object (1)'.
+  toString() {
+    const { display } = this.constructor.meta.options;
+    if (typeof display === 'function') return String(display(this));
+    if (typeof display === 'string') {
+      const parts = displayParts(display);
+      let text = '';
+      for (let i = 0; i < parts.length; i += 1) {
+        const part = parts[i];
+        if (typeof part === 'string') text += part;
+        else {
+          const value = valueAtPath(this, part);
+          if (value !== null && value !== undefined) text += String(value);
+        }
+      }
+      return text;
+    }
+    return `${this.constructor.name} object (${this.pk})`;
+  }
+
+  display(name) {
+    const field = this.constructor.meta.fields.find((item) => item.name === name);
+    if (!field) throw new TypeError(`${this.constructor.name} has no field ${name}`);
+    const value = this[name];
+    if (field.choiceLabels && field.choiceLabels.has(value)) return field.choiceLabels.get(value);
+    return value === null || value === undefined ? value : String(value);
+  }
+
   get pk() {
     const { pk } = this.constructor.meta;
     if (!pk) return undefined;
@@ -461,6 +538,7 @@ const MODEL_OPTIONS = [
   'ordering',
   'rules',
   'indexes',
+  'constraints',
   'abstract',
   'fillfactor',
   'strict',
@@ -468,6 +546,10 @@ const MODEL_OPTIONS = [
   'database',
   'audit',
   'softDelete',
+  'label',
+  'labelPlural',
+  'display',
+  'permissions',
 ];
 
 // The options of a model, as they are: `static options = modelOptions({ primaryKey: ['a', 'b'] })`. For TypeScript,
@@ -491,4 +573,4 @@ function modelOptions(options) {
   return options;
 }
 
-module.exports = { Model, modelOptions, MODEL_OPTIONS, defineReverseAccessor, defineManyToManyAccessor, STATE };
+export { Model, modelOptions, MODEL_OPTIONS, defineReverseAccessor, defineManyToManyAccessor, STATE };

@@ -1,7 +1,4 @@
-'use strict'
-
-
-const FindMyWay = require('..')
+import FindMyWay from '../index.js';
 
 test('Double colon and parametric children', () => {
   expect.assertions(2)

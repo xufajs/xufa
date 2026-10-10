@@ -19,14 +19,14 @@
 // committed, and Azure deletes them. The metadata is one header (x-ms-meta-xufa: base64 of its JSON, 8 KB at most as
 // Azure allows); changing it does not send the body again. url() of a body is a SAS of reading it (expiresIn: '15m' by
 // default), signed with the key (with a sasToken instead, the URL carries that token).
-const crypto = require('node:crypto');
-const { Readable } = require('node:stream');
-const { BlobBackend, exists } = require('./base');
-const { encode } = require('./sigv4');
-const { httpClient } = require('./http-client');
-const { tag, tags } = require('./xml');
-const { BackendError } = require('../../errors');
-const { seconds } = require('../../duration');
+import crypto from 'node:crypto';
+import { Readable } from 'node:stream';
+import { BlobBackend, exists } from './base.js';
+import { encode } from './sigv4.js';
+import { httpClient } from './http-client.js';
+import { tag, tags } from './xml.js';
+import { BackendError } from '../../errors.js';
+import { seconds } from '../../duration.js';
 
 const MIB = 1024 * 1024;
 const VERSION = '2021-12-02';
@@ -431,4 +431,4 @@ class AzureBackend extends BlobBackend {
   }
 }
 
-module.exports = { AzureBackend, AzureError, sharedKey, blobSas, parseConnectionString, DEVELOPMENT };
+export { AzureBackend, AzureError, sharedKey, blobSas, parseConnectionString, DEVELOPMENT };

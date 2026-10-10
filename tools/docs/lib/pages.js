@@ -9,33 +9,38 @@
 // sidebar (the pages of the header). An item of the sidebar is an id of the page, or a page of the site
 // (benchmarks.html#http). The header, the sidebar (its sections, then every package) and the footer are the site's. A comment
 // <!--generated: name--> in a content file is replaced by what the generator of that name makes.
-const fs = require('node:fs');
-const { pathOf, fileOf, rewriteLinks } = require('./paths');
-const path = require('node:path');
-const { routerPerformance } = require('./router-performance');
-const { loggerPerformance } = require('./logger-performance');
-const { referenceOf, REFERENCE_PACKAGES } = require('./reference');
+import fs from 'node:fs';
+import { pathOf, fileOf, rewriteLinks } from './paths.js';
+import path from 'node:path';
+import { routerPerformance } from './router-performance.js';
+import { loggerPerformance } from './logger-performance.js';
+import { referenceOf, REFERENCE_PACKAGES } from './reference.js';
+import { createRequire } from 'node:module';
 
-const PAGES = path.join(__dirname, '../pages');
+const require = createRequire(import.meta.url);
+
+const PAGES = path.join(import.meta.dirname, '../pages');
 const GENERATED = {
   'router-performance': routerPerformance,
   'logger-performance': loggerPerformance,
   // The benchmarks of @xufa/schema, from bench/results/schema.
-  'schema-benchmarks': () => require('../../../bench/schema/report').article(), // eslint-disable-line global-require
+  'schema-benchmarks': () => require('../../../bench/schema/report.js').article(), // eslint-disable-line global-require
   // The table of the packages of the home page: kept as it is, for buildHomeTable() (lib/packages-index.js), which
   // fills it after the page is made (see build.js).
   'packages-table': () => '<!--generated: packages-table-->\n',
   // The HTTP benchmarks of benchmarks.html, with their scenarios explained.
-  'http-benchmarks': () => require('./benchmarks').httpSection({ scenarios: true }), // eslint-disable-line global-require
+  'http-benchmarks': () => require('./benchmarks.js').httpSection({ scenarios: true }), // eslint-disable-line global-require
   // The error codes of @xufa/http, from its errorCodes.
   'http-error-codes': () => httpErrorCodes(),
   // The ORM against Sequelize: the section of benchmarks.html (written there, from bench/results/orm-*.md).
   'orm-benchmarks': () => ormBenchmarks(),
+  // xufa against Django, from bench/results/django-1.json (bench/django.js).
+  'django-benchmarks': () => require('./django-benchmarks.js').djangoBenchmarks(), // eslint-disable-line global-require
 };
 
 // The section "ORM and Sequelize" of benchmarks.html, for the page of benchmarks of the ORM.
 function ormBenchmarks() {
-  const page = fs.readFileSync(path.join(__dirname, '../../../docs/benchmarks.html'), 'utf8');
+  const page = fs.readFileSync(path.join(import.meta.dirname, '../../../docs/benchmarks.html'), 'utf8');
   const start = page.indexOf('        <h2 id="orm">');
   const end = page.indexOf('        <h2 id=', start + 1);
   if (start < 0 || end < 0) throw new Error('benchmarks.html: no section "orm"');
@@ -47,7 +52,7 @@ function ormBenchmarks() {
 // A table of the error codes of @xufa/http: code, status and message (… where the error puts the values it is made
 // with).
 function httpErrorCodes() {
-  const { errorCodes } = require('../../../packages/http'); // eslint-disable-line global-require
+  const { errorCodes } = require('../../../packages/http/index.js'); // eslint-disable-line global-require
   const rows = Object.entries(errorCodes).map(([code, ErrorClass]) => {
     const error = new ErrorClass();
     const message = esc(String(error.message).replace(/%[sdifjoO]/g, '…'));
@@ -70,6 +75,10 @@ const ORDER = [
   ['websocket.html', '@xufa/websocket', 'The framework'],
   ['admin.html', '@xufa/admin', 'The framework'],
   ['session.html', '@xufa/session', 'The framework'],
+  ['forms.html', '@xufa/forms', 'The framework'],
+  ['views.html', '@xufa/views', 'The framework'],
+  ['mail.html', '@xufa/mail', 'The framework'],
+  ['i18n.html', '@xufa/i18n', 'The framework'],
   ['openapi.html', '@xufa/openapi', 'The framework'],
   ['client.html', '@xufa/client', 'The framework'],
   ['schema.html', '@xufa/schema', 'The framework'],
@@ -163,7 +172,7 @@ function referencePage(name, overview) {
   const article = `        <h1>Reference</h1>
         <p class="intro">
           ${esc(intro.replace(/\.?$/, '.'))} Every declaration of its TypeScript declarations
-          (<code>packages/${name}/index.d.ts</code>), as they are written, with their comments: made from them each time
+          (<code>packages/${name}/index.d.ts</code> or <code>index.d.cts</code>), as they are written, with their comments: made from them each time
           the docs are built. How to use them is in <a href="${name}.html">the overview</a>.
         </p>
 
@@ -339,4 +348,4 @@ function buildPages() {
   return pages;
 }
 
-module.exports = { buildPages, ORDER, SECTIONS };
+export { buildPages, ORDER, SECTIONS };

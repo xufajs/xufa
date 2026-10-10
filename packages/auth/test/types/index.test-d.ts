@@ -38,6 +38,7 @@ import {
   oauthState,
   PassportAdapter,
 } from '../..';
+import * as auth from '../..';
 
 // Passwords
 expectType<Promise<string>>(hashPassword('secret', { ln: 16 }));
@@ -210,8 +211,147 @@ expectError(passport(new FakeStrategy(), { openapi: 'bearer' }));
 // Tenants.
 expectType<string[]>(tenantsOf({ tenants: ['a'] }));
 expectType<'*'>(ALL_TENANTS);
-const tenantRules: AuthRule[] = [{ tenant: true }, { tenant: '*', roles: 'admin' }, { strategy: 'apiKey', tenant: true }];
+const tenantRules: AuthRule[] = [
+  { tenant: true },
+  { tenant: '*', roles: 'admin' },
+  { strategy: 'apiKey', tenant: true },
+];
 expectError<AuthRule>({ tenant: 'acme' });
 declare const tenantApi: AuthApi;
 expectType<Promise<boolean>>(tenantApi.canUseTenant({}, 'acme', {}));
-const withTenants: AuthPluginOptions = { keys: 'k'.repeat(32), tenants: { of: (request) => request.params.tenant, claim: (user) => user.orgs } };
+const withTenants: AuthPluginOptions = {
+  keys: 'k'.repeat(32),
+  tenants: { of: (request) => request.params.tenant, claim: (user) => user.orgs },
+};
+
+// Roles and permissions by tenant.
+{
+  const rbac = new auth.Rbac<{ id: number; admin?: boolean }>({
+    roles: {
+      viewer: ['*.view'],
+      editor: { inherits: 'viewer', permissions: ['Book.add', 'Book.change'] },
+      owner: ['*'],
+    },
+    grants: async (user) => (user.id === 1 ? { acme: 'editor', '*': ['viewer'] } : [{ role: 'owner', tenant: 'acme' }]),
+    superuser: (user) => user.admin === true,
+  });
+  expectType<Promise<boolean>>(rbac.can({ id: 1 }, 'Book.change', { tenant: 'acme' }));
+  rbac.access({ id: 1 }).then((access) => {
+    expectType<boolean>(access.superuser);
+    expectType<string>(access.grants[0].tenant);
+    expectType<boolean>(rbac.allows(access, ['Book.view', 'Book.add'], 'acme'));
+    expectType<string[]>(rbac.tenantsIn(access));
+    expectType<string[]>(rbac.permissionsIn(access, 'acme'));
+  });
+  expectError(new auth.Rbac({ roles: { viewer: 'Book.view' } }));
+  new auth.Rbac({ roles: {}, superuser: false });
+  const rule: auth.AuthRule = { can: ['Book.view', 'Book.add'], tenant: true };
+  const ruleOfCan: auth.AuthRule = { can: 'Book.delete' };
+  expectAssignable<auth.AuthRule>(rule);
+  expectAssignable<auth.AuthRule>(ruleOfCan);
+  const options: auth.PluginOptions = { keys: 'secret', rbac: { roles: { viewer: ['*.view'] } } };
+  expectType<auth.PluginOptions>(options);
+  const api = {} as auth.AuthApi;
+  expectType<Promise<boolean>>(api.can({}, 'Book.view'));
+  expectType<Promise<auth.Access>>(api.access({}));
+}
+
+// The accounts of an app with sessions.
+{
+  interface Member {
+    pk: number;
+    email: string;
+    password: string;
+  }
+  const app = xufa();
+  app.register(auth.accounts, {
+    secret: 'a secret of the accounts, 32 chars or more',
+    users: {
+      findByEmail: async (email: string) => ({ pk: 1, email, password: 'x' }) as Member,
+      findById: async () => null,
+      create: async (values) => ({ pk: 2, ...values }) as unknown as Member,
+      setPassword: async () => {},
+    },
+    links: { reset: (token) => `https://app.example/reset?token=${token}` },
+    signup: { fields: ['name'] },
+    lockout: { maxAttempts: 3 },
+  });
+  const api = {} as auth.AccountsApi<Member>;
+  api.user({}).then((user) => expectType<Member | null>(user));
+  expectType<(request: any, reply: any) => Promise<unknown>>(api.permissionRequired('Book.add', 'Book.change'));
+  api.can({} as Member, 'Book.add').then((yes) => expectType<boolean>(yes));
+  api.perms({}).then((perms) => expectType<boolean>(perms.has('Book.add')));
+  expectError(api.permissionRequired(7));
+  expectType<string | null>(auth.emailOf(' Ada@Example.com '));
+  expectError(app.register(auth.accounts, { users: {} }));
+  api.checkResetToken('t').then((user) => expectType<Member | null>(user));
+  api.authenticate({ username: 'ada', password: 'x' }).then((user) => expectType<Member>(user));
+  expectType<Promise<void>>(api.requestReset('ada@example.com', {}, { link: (token) => `/reset/${token}/` }));
+  app.register(auth.pages, { prefix: '/accounts', views: 'registration', siteUrl: 'https://library.example' });
+  expectError(app.register(auth.pages, { views: 7 }));
+}
+
+// Credentials: the logins and accounts of @xufa/auth and @xufa/admin.
+{
+  interface Member {
+    email: string;
+    password: string;
+    totpSecret: string | null;
+    codes: string[];
+  }
+  const credentials = new auth.Credentials<Member>({
+    findUser: async (email) => ({ email, password: 'x', totpSecret: null, codes: [] }),
+    totp: (user) => user.totpSecret,
+    setTotp: (user, secret) => (secret === null ? 0 : secret.length),
+    recoveryCodes: (user) => user.codes,
+    setRecoveryCodes: async (user, hashes) => hashes.length,
+    lockout: { maxAttempts: 3 },
+    messages: { invalid: 'Wrong email or password' },
+  });
+  expectType<Promise<Member>>(credentials.login({ identifier: 'ada@example.com', password: 'p', ip: '10.0.0.1' }));
+  expectType<string | null>(credentials.validatePassword('short'));
+  const session = { get: (key: string) => key, set: () => undefined, delete: () => true };
+  expectType<Promise<{ secret: string; uri: string; svg: string }>>(
+    credentials.startTotp({ email: 'a', password: 'x', totpSecret: null, codes: [] }, { password: 'p', label: 'a', session })
+  );
+  const err = new Error() as auth.CredentialError;
+  expectType<auth.CredentialReason>(err.reason);
+  // @ts-expect-error a reason of its own is not a reason
+  const wrong: auth.CredentialReason = 'nope';
+}
+
+// AbstractUser.
+{
+  // eslint-disable-next-line @typescript-eslint/no-var-requires
+  const orm = require('@xufa/orm');
+  class Member extends auth.AbstractUser(orm.Model as abstract new (...args: any[]) => { pk: unknown }, orm.fields) {}
+  Member.createSuperuser({ username: 'admin', password: 'secret' }).then((user) => {
+    expectType<boolean>(user.isSuperuser);
+    expectType<boolean>(user.hasPerm('Book.add'));
+    user.checkPassword('x').then((ok) => expectType<boolean>(ok));
+  });
+  expectType<true>(Member.userModel);
+}
+
+// Groups in the database (Django's Group), roles of an Rbac.
+{
+  // eslint-disable-next-line @typescript-eslint/no-var-requires
+  const orm = require('@xufa/orm');
+  class Group extends auth.AbstractGroup(orm.Model as abstract new (...args: any[]) => { pk: unknown }, orm.fields) {}
+  const rbac = new auth.Rbac({ model: Group, refresh: 30000 });
+  rbac.fresh().then((loaded) => expectType<auth.Rbac>(loaded));
+  expectType<string[]>(new Group().permissions);
+  class Member extends auth.AbstractUser(orm.Model as abstract new (...args: any[]) => { pk: unknown }, orm.fields, {
+    groups: () => Group,
+  }) {}
+  expectType<string>(new Member().username);
+}
+
+// Rules of objects (where).
+{
+  const rbac = new auth.Rbac({
+    roles: { editor: { permissions: ['Book.change'], where: { 'Book.change': (user) => ({ ownerId: user.id }) } } },
+  });
+  expectType<auth.Scope>(rbac.scopeOf({ superuser: false, grants: [] }, { id: 1 }, 'Book.change'));
+  expectError(new auth.Rbac({ roles: { editor: { where: { 'Book.change': 7 } } } }));
+}

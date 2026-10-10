@@ -1,8 +1,7 @@
 /* eslint no-unused-vars: ["error", { "varsIgnorePattern": "^WebSocket$" }] */
-'use strict';
 
-const WebSocket = require('./websocket');
-const { Duplex } = require('node:stream');
+import WebSocket from './websocket.js';
+import { Duplex } from 'node:stream';
 
 /**
  * Emits the `'close'` event on a stream.
@@ -157,4 +156,7 @@ function createWebSocketStream(ws, options) {
   return duplex;
 }
 
-module.exports = createWebSocketStream;
+export default createWebSocketStream;
+
+// What require() gives (the tests of ws are CommonJS).
+export { createWebSocketStream as 'module.exports' };

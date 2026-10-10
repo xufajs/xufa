@@ -1,7 +1,4 @@
-'use strict'
-
-
-const build = require('..')
+import build from '../index.js';
 
 test('nested objects with same properties', () => {
   expect.assertions(1)

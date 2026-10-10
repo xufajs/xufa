@@ -173,15 +173,19 @@ export declare class Db {
 }
 
 /**
- * A session of the client (startSession()): transactions on replica sets and sharded clusters
- * (withTransaction() commits, or aborts when its function throws; unlike the official driver, it does not retry on transient errors).
+ * A session of the client (startSession()): transactions on replica sets and sharded clusters. withTransaction()
+ * commits, or aborts when its function throws; as the official drivers, it runs the transaction again on a
+ * TransientTransactionError and its commit again on an UnknownTransactionCommitResult, until `timeout` (120 s).
  */
 export declare class ClientSession {
   readonly inTransaction: boolean;
   startTransaction(): void;
   commitTransaction(): Promise<void>;
   abortTransaction(): Promise<void>;
-  withTransaction<R>(fn: (session: ClientSession) => Promise<R>): Promise<R>;
+  /** fn may run more than once (a transient error runs the whole transaction again): it should only write in it. */
+  withTransaction<R>(fn: (session: ClientSession) => Promise<R>, options?: { timeout?: number }): Promise<R>;
+  /** Commits the last transaction again, with a majority write concern (its result was unknown). */
+  retryCommit(): Promise<void>;
   endSession(): Promise<void>;
 }
 
@@ -279,16 +283,17 @@ export declare function serialize(doc: Document, reserve?: number): Buffer;
 /** The document of BSON bytes (from offset). */
 export declare function deserialize(buffer: Buffer, offset?: number): Document;
 
-/** The class of the errors of @xufa/mongo. */
-export declare class MongoError extends Error {}
+/** The class of the errors of @xufa/mongo, with their labels (of the server, or of the driver for network errors). */
+export declare class MongoError extends Error {
+  errorLabels: string[];
+  hasErrorLabel(label: string): boolean;
+}
 /** An error of the connection to a server (it could not connect, or the connection was lost). */
 export declare class MongoNetworkError extends MongoError {}
 /** An error the server answered, with its code and codeName (11000: a duplicate key). */
 export declare class MongoServerError extends MongoError {
   code?: number;
   codeName?: string;
-  errorLabels: string[];
   reply: Document;
   writeErrors?: Document[];
-  hasErrorLabel(label: string): boolean;
 }

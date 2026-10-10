@@ -1,7 +1,10 @@
-'use strict';
-
 // @xufa/admin: the admin of the models of @xufa/orm, as Django's (lib/plugin.js).
-const { adminPlugin, AdminError } = require('./lib/plugin');
-const { describeModel, labelOf } = require('./lib/describe');
+import { adminPlugin, AdminError } from './lib/plugin.js';
+import { describeModel, labelOf } from './lib/describe.js';
+import * as messages from './lib/messages.js';
 
-module.exports = { admin: adminPlugin, adminPlugin, plugin: adminPlugin, AdminError, describeModel, labelOf };
+export const ADMIN_MESSAGES = messages.MESSAGES;
+export const adminMessage = messages.message;
+export const setTranslator = messages.setTranslator;
+
+export { adminPlugin as admin, adminPlugin, adminPlugin as plugin, AdminError, describeModel, labelOf };

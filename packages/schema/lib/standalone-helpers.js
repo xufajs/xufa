@@ -680,4 +680,4 @@ const HELPER_SOURCES = {
   },
 };
 
-module.exports = { HELPER_SOURCES };
+export { HELPER_SOURCES };

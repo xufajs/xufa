@@ -1,8 +1,8 @@
 // The tree of an expression (nodes as those of ESTree: Literal, Identifier, MemberExpression...), by precedence
 // climbing. Expressions only: no statements, assignments, `new`, `this`, functions other than arrow functions with an
 // expression body, nor comments.
-const { tokenize } = require('./tokenizer');
-const { ExpressionError } = require('./errors');
+import { tokenize } from './tokenizer.js';
+import { ExpressionError } from './errors.js';
 
 // Binding power of binary operators (higher binds tighter). The tables have no prototype: a name such as
 // constructor is not in them.
@@ -416,4 +416,4 @@ function parse(source, options = {}) {
   return new Parser(source, tokens, options).parseAll();
 }
 
-module.exports = { parse, Parser };
+export { parse, Parser };

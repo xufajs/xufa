@@ -1,6 +1,8 @@
 // The KeyVault: the keys of each tenant, encrypted in a store, rotated without failures, and the plugin with them.
-const { KeyVault, MemoryKeyStore, vaultModelStore, vaultFields, signJwt, verifyJwt } = require('..');
-const auth = require('..');
+import { KeyVault, MemoryKeyStore, vaultModelStore, vaultFields, signJwt, verifyJwt } from '../index.js';
+import * as auth from '../index.js';
+import * as ormModule from '@xufa/orm';
+import httpModule from '@xufa/http';
 
 const SECRET = 'a secret of the vault, 32 bytes or more!';
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
@@ -116,7 +118,7 @@ describe('KeyVault', () => {
   });
 
   it('a store on a model of @xufa/orm', async () => {
-    const { Database, Model, fields } = require('@xufa/orm');
+    const { Database, Model, fields } = ormModule;
     class TenantKeys extends Model {
       static fields = vaultFields(fields);
     }
@@ -142,7 +144,7 @@ describe('KeyVault', () => {
 
 describe('the plugin with a KeyVault', () => {
   it('signs and verifies with the keys of the tenant of each request', async () => {
-    const xufa = require('@xufa/http');
+    const xufa = httpModule;
     const vault = new KeyVault({ secret: SECRET });
     await vault.create('acme');
     await vault.create('globex');

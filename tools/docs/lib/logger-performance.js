@@ -1,12 +1,12 @@
 // The Performance section of docs/logger.html, from bench/results/logger-2.md: included in pages/logger.page.html.
-const fs = require('node:fs');
-const path = require('node:path');
+import fs from 'node:fs';
+import path from 'node:path';
 
 const REPORT = 'logger-2.md';
 
 // [case, pino, xufa, times] of the report.
 function loggerResults() {
-  const text = fs.readFileSync(path.join(__dirname, '../../../bench/results', REPORT), 'utf8');
+  const text = fs.readFileSync(path.join(import.meta.dirname, '../../../bench/results', REPORT), 'utf8');
   return text
     .trim()
     .split('\n')
@@ -82,4 +82,4 @@ ${loggerNotes(results)}
 `;
 }
 
-module.exports = { loggerPerformance, loggerResults, loggerNotes, label, REPORT };
+export { loggerPerformance, loggerResults, loggerNotes, label, REPORT };

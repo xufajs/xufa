@@ -60,6 +60,10 @@
           <li><a href="index.html" aria-current="page">@xufa/websocket</a></li>
           <li><a href="../admin/index.html">@xufa/admin</a></li>
           <li><a href="../session/index.html">@xufa/session</a></li>
+          <li><a href="../forms/index.html">@xufa/forms</a></li>
+          <li><a href="../views/index.html">@xufa/views</a></li>
+          <li><a href="../mail/index.html">@xufa/mail</a></li>
+          <li><a href="../i18n/index.html">@xufa/i18n</a></li>
           <li><a href="../openapi/index.html">@xufa/openapi</a></li>
           <li><a href="../client/index.html">@xufa/client</a></li>
           <li><a href="../schema/index.html">@xufa/schema</a></li>
@@ -102,10 +106,11 @@
 
         <h2 id="start">Quick start</h2>
         <pre><code class="language-sh">npm install @xufa/websocket</code></pre>
-        <pre><code class="language-js">const xufa = require('xufa');
+        <pre><code class="language-js">import xufa from 'xufa';
+import websocketPlugin from '@xufa/websocket/plugin';
 
 const app = xufa();
-app.register(require('@xufa/websocket/plugin'));
+app.register(websocketPlugin);
 
 app.get('/chat', { websocket: true }, (socket, request) =&gt; {
   socket.on('message', (message) =&gt; socket.send(`echo: ${message}`));
@@ -137,7 +142,7 @@ await app.listen({ port: 3000 });</code></pre>
         </p>
 
         <h2 id="hub">Rooms everywhere</h2>
-        <pre><code class="language-js">const { Hub } = require('@xufa/websocket/hub');
+        <pre><code class="language-js">import { Hub } from '@xufa/websocket/hub';
 
 const hub = new Hub({ bus, cache }); // the bus of @xufa/cluster, a NetCache of @xufa/netcache: as there are
 
@@ -168,7 +173,7 @@ hub.to('user:42').send({ notice: 'You have mail' }); // every socket of user 42,
         </div>
 
         <h2 id="ws">The client and server of ws</h2>
-        <pre><code class="language-js">const { WebSocket, WebSocketServer } = require('@xufa/websocket');
+        <pre><code class="language-js">import { WebSocket, WebSocketServer } from '@xufa/websocket';
 
 const wss = new WebSocketServer({ port: 8080, perMessageDeflate: true });
 wss.on('connection', (socket) =&gt; socket.on('message', (data) =&gt; socket.send(data)));
@@ -178,9 +183,9 @@ ws.on('open', () =&gt; ws.send('hello'));</code></pre>
 
         <h2 id="from-ws">Coming from ws</h2>
         <ul>
-          <li><code>require('ws')</code> can be replaced by <code>require('@xufa/websocket')</code>, and <code>import { WebSocketServer } from 'ws'</code> by <code>'@xufa/websocket'</code>: the code is the one of ws 8.22.0.</li>
+          <li><code>ws</code> can be replaced by <code>@xufa/websocket</code> (in imports or requires), and <code>import { WebSocketServer } from 'ws'</code> by <code>from '@xufa/websocket'</code>: the code is the one of ws 8.22.0.</li>
           <li>For Node.js 22 and later: UTF-8 is validated by <code>buffer.isUtf8</code>, native, so <code>utf-8-validate</code> is left out. <code>bufferutil</code> is used as ws uses it: when the application has installed it (<code>npm i bufferutil</code>), unless <code>WS_NO_BUFFER_UTIL</code> is set. It is not a dependency; without it, frames are masked 8 bytes at a time in JavaScript.</li>
-          <li><code>require('@fastify/websocket')</code> can be replaced by <code>require('@xufa/websocket/plugin')</code>, on @xufa/http or fastify.</li>
+          <li><code>@fastify/websocket</code> can be replaced by <code>@xufa/websocket/plugin</code> (in imports or requires), on @xufa/http or fastify.</li>
         </ul>
 
         <h2 id="tests">Tests</h2>

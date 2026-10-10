@@ -1,8 +1,8 @@
 'use strict'
 
 
-const fp = require('@xufa/http').plugin
-const { spyWarning } = require('@xufa/http/lib/warnings')
+const fp = require('..').plugin
+const { spyWarning } = require('../lib/warnings')
 const Fastify = require('..')
 const deepClone = require('rfdc')({ circles: true, proto: false })
 const Ajv = require('ajv')

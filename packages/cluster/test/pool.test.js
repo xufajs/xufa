@@ -1,7 +1,7 @@
-const path = require('node:path');
-const { spawnSync } = require('node:child_process');
-const { EventEmitter } = require('node:events');
-const { Bus, Pool, PoolClient, PoolError } = require('..');
+import path from 'node:path';
+import { spawnSync } from 'node:child_process';
+import { EventEmitter } from 'node:events';
+import { Bus, Pool, PoolClient, PoolError } from '../index.js';
 
 const tick = () => new Promise((resolve) => setImmediate(resolve));
 const sleep = (wait) => new Promise((resolve) => setTimeout(resolve, wait));
@@ -93,9 +93,9 @@ describe('pool', () => {
     const stats = pool.stats();
     expect(stats.free).toBe(3);
     expect(stats.byNode.reduce((sum, node) => sum + node.failures, 0)).toBe(2);
-    await expect(client.use(() => Promise.reject(new Error('no')), { retries: 1, retryOn: () => false })).rejects.toThrow(
-      'no'
-    );
+    await expect(
+      client.use(() => Promise.reject(new Error('no')), { retries: 1, retryOn: () => false })
+    ).rejects.toThrow('no');
   });
 
   it('takes a lease back after leaseTimeout: the signal of the work is aborted, and its slot given to another', async () => {
@@ -120,7 +120,10 @@ describe('pool', () => {
     const discovery = new EventEmitter();
     discovery.peers = [{ id: 'p1', meta: { url: 'http://p1' } }];
     const { pool, client } = makePool({ nodes: discovery });
-    const held = client.use((node, { signal }) => new Promise((resolve, reject) => signal.addEventListener('abort', () => reject(signal.reason))));
+    const held = client.use(
+      (node, { signal }) =>
+        new Promise((resolve, reject) => signal.addEventListener('abort', () => reject(signal.reason)))
+    );
     await tick();
     expect(pool.stats().running).toBe(1);
     discovery.emit('down', { id: 'p1' });
@@ -129,6 +132,80 @@ describe('pool', () => {
     await tick();
     discovery.emit('up', { id: 'p2', meta: { url: 'http://p2' } });
     expect(await waiting).toBe('http://p2');
+  });
+
+  it('fallback: from the attempt `after` on, the work goes to its node (a load balancer), without a slot', async () => {
+    const { pool, client } = makePool({ nodes: ['a', 'b'] });
+    const tried = [];
+    const balancer = { id: 'balancer', url: 'http://lb' };
+    const result = await client.use(
+      (node, { attempt, fallback, signal }) => {
+        tried.push([node.id, attempt, fallback]);
+        expect(signal).toBeInstanceOf(AbortSignal);
+        if (!fallback) {
+          expect(pool.stats().free).toBe(1); // a slot taken by the work
+          throw new Error(`failed on ${node.id}`);
+        }
+        expect(pool.stats().free).toBe(2); // none for the balancer
+        return `done by ${node.url}`;
+      },
+      { retries: 4, fallback: { after: 2, node: balancer } }
+    );
+    expect(result).toBe('done by http://lb');
+    expect(tried.map(([, attempt, fallback]) => [attempt, fallback])).toEqual([
+      [0, false],
+      [1, false],
+      [2, true],
+    ]);
+    // A node made for each attempt, with the error before it; its failures count as attempts too.
+    const made = [];
+    await expect(
+      client.use(
+        (node) => {
+          throw new Error(`failed on ${node.id}`);
+        },
+        {
+          retries: 2,
+          fallback: {
+            after: 1,
+            node: (attempt, error) => {
+              made.push([attempt, error.message]);
+              return { id: `lb${attempt}` };
+            },
+          },
+        }
+      )
+    ).rejects.toThrow('failed on lb2');
+    expect(made).toEqual([
+      [1, made[0][1]],
+      [2, 'failed on lb1'],
+    ]);
+    expect(made[0][1]).toMatch(/^failed on [ab]$/);
+  });
+
+  it('fallback.wait: no node free in that time (none, or all busy), the fallback takes the work', async () => {
+    const { client } = makePool({ nodes: [] });
+    const started = Date.now();
+    const result = await client.use((node, { fallback }) => [node.id, fallback], {
+      fallback: { wait: 50, node: { id: 'balancer' } },
+    });
+    expect(result).toEqual(['balancer', true]);
+    expect(Date.now() - started).toBeGreaterThanOrEqual(40);
+    // A node free in time: the pool.
+    const { client: other } = makePool({ nodes: ['a'] });
+    expect(
+      await other.use((node, { fallback }) => [node.id, fallback], { fallback: { wait: '1s', node: { id: 'lb' } } })
+    ).toEqual(['a', false]);
+    // The caller's signal still stops it.
+    const controller = new AbortController();
+    const stopped = client.use(() => 1, { signal: controller.signal, fallback: { wait: '1m', node: { id: 'lb' } } });
+    await tick();
+    controller.abort(new Error('not any more'));
+    await expect(stopped).rejects.toThrow('not any more');
+    // Wrong fallbacks.
+    await expect(client.use(() => 1, { fallback: { node: { id: 'lb' } } })).rejects.toThrow('needs after');
+    await expect(client.use(() => 1, { fallback: { after: -1, node: { id: 'lb' } } })).rejects.toThrow(PoolError);
+    await expect(client.use(() => 1, { fallback: { after: 1 } })).rejects.toThrow('node is an object');
   });
 
   it('rejects tickets past maxWaiting or waitTimeout, and stops waiting when its signal aborts', async () => {
@@ -226,7 +303,7 @@ describe('pool autoscale', () => {
 
 describe('pool in a cluster', () => {
   it('shares the slots among workers, and frees those of a worker that dies', () => {
-    const result = spawnSync(process.execPath, [path.join(__dirname, 'fixtures', 'pool.js')], { timeout: 30000 });
+    const result = spawnSync(process.execPath, [path.join(import.meta.dirname, 'fixtures', 'pool.js')], { timeout: 30000 });
     const lines = result.stdout
       .toString()
       .trim()

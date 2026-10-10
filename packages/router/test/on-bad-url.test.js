@@ -1,7 +1,4 @@
-'use strict'
-
-
-const FindMyWay = require('../')
+import FindMyWay from '../index.js';
 
 test('If onBadUrl is defined, then a bad url should be handled differently (find)', () => {
   expect.assertions(1)

@@ -1,7 +1,4 @@
-'use strict'
-
-
-const inject = require('../index')
+import inject from '../index.js';
 
 test('basic async await', async () => {
   const dispatch = function (_req, res) {

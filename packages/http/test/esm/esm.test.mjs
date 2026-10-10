@@ -1,5 +1,5 @@
 
-import Fastify from '@xufa/http'
+import Fastify from '../../index.js'
 
 test('esm support', async () => {
   const fastify = Fastify()

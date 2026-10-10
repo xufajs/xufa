@@ -1,9 +1,6 @@
-'use strict'
-
 /* eslint no-prototype-builtins: off */
 
-
-const boot = require('..')
+import boot from '../index.js';
 
 test('do not load', async () => {
   const app = boot({}, { timeout: 10 })

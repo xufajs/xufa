@@ -5,8 +5,8 @@
 //
 //   curl -o confusables.txt https://www.unicode.org/Public/security/latest/confusables.txt
 //   node scripts/generate-confusables.js confusables.txt
-const fs = require('node:fs');
-const path = require('node:path');
+import fs from 'node:fs';
+import path from 'node:path';
 
 const NOTICE = `// Data from confusables.txt of the Unicode Character Database (UTS #39, Unicode Security Mechanisms).
 //
@@ -66,9 +66,8 @@ const out = `${NOTICE}
 //
 // confusables.txt of ${date}${version ? `, version ${version}` : ''}: ${pairs.length} characters and their prototypes,
 // written by scripts/generate-confusables.js (do not edit).
-'use strict';
 
-module.exports = ${JSON.stringify(pairs.join(''))};
+export default ${JSON.stringify(pairs.join(''))};
 `;
-fs.writeFileSync(path.join(__dirname, '../lib/confusables-data.js'), out);
+fs.writeFileSync(path.join(import.meta.dirname, '../lib/confusables-data.js'), out);
 console.log(`Wrote lib/confusables-data.js: ${pairs.length} characters (${Math.round(out.length / 1024)} KB)`);

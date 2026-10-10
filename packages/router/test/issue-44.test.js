@@ -1,7 +1,4 @@
-'use strict'
-
-
-const FindMyWay = require('../')
+import FindMyWay from '../index.js';
 
 test('Parametric and static with shared prefix / 1', () => {
   expect.assertions(1)

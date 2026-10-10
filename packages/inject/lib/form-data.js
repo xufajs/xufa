@@ -1,6 +1,6 @@
 // A FormData payload as a multipart/form-data stream (the encoding of undici's fetch).
-const { randomUUID } = require('node:crypto');
-const { Readable } = require('node:stream');
+import { randomUUID } from 'node:crypto';
+import { Readable } from 'node:stream';
 
 function isFormDataLike(payload) {
   return (
@@ -45,4 +45,4 @@ function formDataToStream(formData) {
   return { stream: Readable.from(parts()), contentType: `multipart/form-data; boundary=${boundary}` };
 }
 
-module.exports = { isFormDataLike, formDataToStream };
+export { isFormDataLike, formDataToStream };

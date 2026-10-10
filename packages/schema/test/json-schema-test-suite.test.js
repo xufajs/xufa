@@ -5,10 +5,13 @@
 //
 // The documents the tests reference are the remotes of the suite (served at http://localhost:1234/ by its runner) and
 // the meta-schemas of the draft, which ajv's packages ship.
-const fs = require('node:fs');
-const path = require('node:path');
-const vm = require('node:vm');
-const { compileJsonSchema, standaloneJsonSchema } = require('..');
+import fs from 'node:fs';
+import path from 'node:path';
+import vm from 'node:vm';
+import { compileJsonSchema, standaloneJsonSchema } from '../index.js';
+import { createRequire } from 'node:module';
+
+const require = createRequire(import.meta.url);
 
 const SUITE = path.dirname(require.resolve('json-schema-test-suite/package.json'));
 

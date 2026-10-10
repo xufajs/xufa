@@ -120,4 +120,4 @@ function deepEqualConstraints(a, b) {
   return true;
 }
 
-module.exports = { version, host, httpMethod, SemVerStore, HostStorage, deepEqualConstraints };
+export { version, host, httpMethod, SemVerStore, HostStorage, deepEqualConstraints };

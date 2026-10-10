@@ -1,7 +1,4 @@
-'use strict'
-
-
-const build = require('..')
+import build from '../index.js';
 
 process.env.TZ = 'UTC'
 

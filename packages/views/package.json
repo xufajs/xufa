@@ -1,0 +1,73 @@
+{
+  "name": "@xufa/views",
+  "version": "0.1.0",
+  "description": "Views of classes, as Django's generic views: View, TemplateView, RedirectView, ListView and DetailView of models of @xufa/orm, and FormView, CreateView, UpdateView and DeleteView with the forms of @xufa/forms",
+  "main": "./index.js",
+  "types": "./index.d.ts",
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./index.d.ts",
+      "default": "./index.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "index.js",
+    "index.d.ts",
+    "lib",
+    "templates",
+    "LICENSE"
+  ],
+  "scripts": {
+    "test": "vyntra",
+    "test:types": "tsd"
+  },
+  "keywords": [
+    "views",
+    "generic views",
+    "class-based views",
+    "crud",
+    "django"
+  ],
+  "author": "Jesús Seijas <jseijas@gmail.com>",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/xufajs/xufa.git",
+    "directory": "packages/views"
+  },
+  "homepage": "https://github.com/xufajs/xufa/tree/main/packages/views#readme",
+  "bugs": {
+    "url": "https://github.com/xufajs/xufa/issues"
+  },
+  "engines": {
+    "node": "^22.22.3 || ^24.15.0 || >=25.7.0"
+  },
+  "dependencies": {
+    "@xufa/forms": "workspace:*"
+  },
+  "devDependencies": {
+    "@xufa/orm": "workspace:*",
+    "@xufa/http": "workspace:*",
+    "@xufa/template": "workspace:*",
+    "@xufa/session": "workspace:*",
+    "@xufa/auth": "workspace:*",
+    "tsd": "^0.33.0",
+    "vyntra": "^0.7.0"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "tsd": {
+    "directory": "test/types"
+  },
+  "peerDependencies": {
+    "@xufa/orm": "workspace:*"
+  },
+  "peerDependenciesMeta": {
+    "@xufa/orm": {
+      "optional": true
+    }
+  }
+}

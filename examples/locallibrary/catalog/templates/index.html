@@ -1,0 +1,36 @@
+{{extends 'base_generic'}}
+
+{{#block content}}
+<h1>Local Library Home</h1>
+
+<p>
+  Welcome to <em>LocalLibrary</em>, a very basic website developed as a
+  <a href="https://developer.mozilla.org/en-US/docs/Learn/Server-side/Django/Tutorial_local_library_website"
+    >tutorial example</a
+  >
+  on the Mozilla Developer Network, ported from Django to <a href="https://github.com/xufajs/xufa">xufa</a>.
+</p>
+<p>
+  The tutorial demonstrates how to create a skeleton website and application, define URL mappings, views (including list
+  and detail views), models and templates.
+</p>
+
+<h2>UML Models</h2>
+<p>An UML diagram of the site's model structure is shown below.</p>
+
+<div>
+  <img src="{{ staticUrl('images/local_library_model_uml.png') }}" alt="My image" width="600px" />
+</div>
+
+<h2>Dynamic content</h2>
+
+<p>The library has the following record counts:</p>
+<ul>
+  <li><strong>Books:</strong> {{ numBooks }}</li>
+  <li><strong>Copies:</strong> {{ numInstances }}</li>
+  <li><strong>Copies available:</strong> {{ numInstancesAvailable }}</li>
+  <li><strong>Authors:</strong> {{ numAuthors }}</li>
+</ul>
+
+<p>You have visited this page {{ numVisits }} time{{ numVisits === 1 ? '' : 's' }}.</p>
+{{/block content}}

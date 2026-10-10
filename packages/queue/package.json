@@ -4,7 +4,7 @@
   "description": "Jobs in the background and pipelines of steps, kept in a database of @xufa/orm, with no dependencies",
   "main": "./index.js",
   "types": "./index.d.ts",
-  "type": "commonjs",
+  "type": "module",
   "exports": {
     ".": {
       "types": "./index.d.ts",
@@ -50,8 +50,9 @@
   "devDependencies": {
     "@xufa/cluster": "workspace:*",
     "@xufa/http": "workspace:*",
+    "@xufa/scheduler": "workspace:*",
     "tsd": "^0.33.0",
-    "vyntra": "^0.6.0"
+    "vyntra": "^0.7.0"
   },
   "publishConfig": {
     "access": "public"

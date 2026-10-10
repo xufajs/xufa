@@ -9,16 +9,16 @@
 //
 // node tools/docs/build.js           writes the pages that changed
 // node tools/docs/build.js --check   writes nothing; lists the pages that differ from what would be made, and fails
-const fs = require('node:fs');
-const path = require('node:path');
-const { buildPages } = require('./lib/pages');
-const { buildPackagesIndex, buildHomeTable } = require('./lib/packages-index');
-const { buildBenchmarks } = require('./lib/benchmarks');
-const { markOutcomes } = require('./lib/outcomes');
-const { schemaBundle, xufaBundle, httpBundle } = require('./lib/browser-bundle');
-const { rewriteLinks, redirects } = require('./lib/paths');
+import fs from 'node:fs';
+import path from 'node:path';
+import { buildPages } from './lib/pages.js';
+import { buildPackagesIndex, buildHomeTable } from './lib/packages-index.js';
+import { buildBenchmarks } from './lib/benchmarks.js';
+import { markOutcomes } from './lib/outcomes.js';
+import { schemaBundle, xufaBundle, httpBundle } from './lib/browser-bundle.js';
+import { rewriteLinks, redirects } from './lib/paths.js';
 
-const DOCS = path.join(__dirname, '../../docs');
+const DOCS = path.join(import.meta.dirname, '../../docs');
 
 function main() {
   const check = process.argv.includes('--check');

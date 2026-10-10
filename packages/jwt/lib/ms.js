@@ -67,4 +67,5 @@ function ms(value) {
   throw new Error(`val is not a non-empty string or a valid number. val=${JSON.stringify(value)}`);
 }
 
-module.exports = ms;
+export default ms;
+export { ms as 'module.exports' };

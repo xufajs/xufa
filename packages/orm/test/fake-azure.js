@@ -3,8 +3,8 @@
 // metadata and properties set apart, and SAS of reading. Every request has to be signed with Shared Key (the signature
 // of the request as it arrives), or carry a SAS; conditional writes (If-None-Match: *) are refused when the blob is
 // there; what it did is in `log`.
-const http = require('node:http');
-const { sharedKey, blobSas } = require('../lib/backends/blob/azure');
+import http from 'node:http';
+import { sharedKey, blobSas } from '../lib/backends/blob/azure.js';
 
 const xml = (body) => `<?xml version="1.0" encoding="utf-8"?>${body}`;
 const escape = (text) => text.replace(/[&<>]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' })[c]);
@@ -175,4 +175,4 @@ function fakeAzure({ account = 'devaccount', accountKey = Buffer.from('a key of 
   return fake;
 }
 
-module.exports = { fakeAzure };
+export { fakeAzure };

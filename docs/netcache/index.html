@@ -67,6 +67,10 @@
           <li><a href="../websocket/index.html">@xufa/websocket</a></li>
           <li><a href="../admin/index.html">@xufa/admin</a></li>
           <li><a href="../session/index.html">@xufa/session</a></li>
+          <li><a href="../forms/index.html">@xufa/forms</a></li>
+          <li><a href="../views/index.html">@xufa/views</a></li>
+          <li><a href="../mail/index.html">@xufa/mail</a></li>
+          <li><a href="../i18n/index.html">@xufa/i18n</a></li>
           <li><a href="../openapi/index.html">@xufa/openapi</a></li>
           <li><a href="../client/index.html">@xufa/client</a></li>
           <li><a href="../schema/index.html">@xufa/schema</a></li>
@@ -109,7 +113,7 @@
 
         <h2 id="start">Quick start</h2>
         <pre><code class="language-sh">npm install @xufa/netcache</code></pre>
-        <pre><code class="language-js">const { NetCache } = require('@xufa/netcache');
+        <pre><code class="language-js">import { NetCache } from '@xufa/netcache';
 
 const cache = await new NetCache({ secret: process.env.CACHE_SECRET, service: 'shop' }).start();
 
@@ -174,9 +178,9 @@ await cache.clear('book:'); // the keys of a prefix, everywhere</code></pre>
 
         <h2 id="cluster">With @xufa/cluster</h2>
         <p>One NetCache by machine, in the primary; the workers reach it through the bus with the <code>SharedCache</code> of @xufa/orm and its option <code>store</code>:</p>
-        <pre><code class="language-js">const { start, bus } = require('@xufa/cluster');
-const { SharedCache, Database } = require('@xufa/orm');
-const { NetCache } = require('@xufa/netcache');
+        <pre><code class="language-js">import { start, bus } from '@xufa/cluster';
+import { SharedCache, Database } from '@xufa/orm';
+import { NetCache } from '@xufa/netcache';
 
 start({
   primary: async ({ onShutdown }) =&gt; {

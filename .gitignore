@@ -3,3 +3,12 @@ coverage
 bench/results/*.json
 .vyntra
 *.log
+
+# The MongoDB replica set of the tests (tools/mongo-rs.js).
+.mongo-rs/
+# Folders the tests make (and remove): left by a run that stopped
+.tmp-*/
+
+# Python bytecode (the Django app of the benchmarks, examples/django-locallibrary).
+__pycache__/
+*.py[cod]

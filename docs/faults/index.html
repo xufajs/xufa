@@ -61,6 +61,10 @@
           <li><a href="../websocket/index.html">@xufa/websocket</a></li>
           <li><a href="../admin/index.html">@xufa/admin</a></li>
           <li><a href="../session/index.html">@xufa/session</a></li>
+          <li><a href="../forms/index.html">@xufa/forms</a></li>
+          <li><a href="../views/index.html">@xufa/views</a></li>
+          <li><a href="../mail/index.html">@xufa/mail</a></li>
+          <li><a href="../i18n/index.html">@xufa/i18n</a></li>
           <li><a href="../openapi/index.html">@xufa/openapi</a></li>
           <li><a href="../client/index.html">@xufa/client</a></li>
           <li><a href="../schema/index.html">@xufa/schema</a></li>
@@ -137,11 +141,11 @@ const hung = netcache.faults.hang({ keys: 'session:' }); // until hung.release()
 
         <h2 id="tests">In tests</h2>
         <pre><code class="language-js">// In the setup files of the runner (setupFiles of Jest, Vitest or vyntra; --require of Mocha):
-require('xufa/faults/register'); // or require('@xufa/faults/register')
+import 'xufa/faults/register'; // or '@xufa/faults/register'
 
 // Or in a test file:
-const { useFaults } = require('xufa/faults');
-useFaults(); // the afterEach of the runner; useFaults(require('node:test')) for node:test</code></pre>
+import { useFaults } from 'xufa/faults';
+useFaults(); // the afterEach of the runner; useFaults(await import('node:test')) for node:test</code></pre>
         <p>
           After each test, <code>clearFaults()</code> removes every rule of every faults (the database, its caches, the
           clients, the bus...) and lets go what they hold, so a test that fails before its <code>clear()</code> leaves no
@@ -157,7 +161,7 @@ useFaults(); // the afterEach of the runner; useFaults(require('node:test')) for
           down, then the payment provider answers 503 now and then. For game days in staging, and for tests of what an app
           does through all of it.
         </p>
-        <pre><code class="language-js">const { scenario } = require('xufa/faults');
+        <pre><code class="language-js">import { scenario } from 'xufa/faults';
 
 const brownout = scenario({
   name: 'payments brownout',
@@ -179,7 +183,7 @@ await brownout.run(); // or brownout.start() ... brownout.stop()</code></pre>
         </ul>
 
         <h2 id="http">Over HTTP (staging)</h2>
-        <pre><code class="language-js">const { plugin } = require('xufa/faults');
+        <pre><code class="language-js">import { plugin } from 'xufa/faults';
 
 app.register(plugin, {
   targets: { db, cache: db.cache, payments, bus }, // faults, or what has them
@@ -222,7 +226,7 @@ app.register(plugin, {
         </p>
 
         <h2 id="own">Faults of your own</h2>
-        <pre data-run><code class="language-js">const { Faults, wrap, cacheFaults } = require('@xufa/faults');
+        <pre data-run><code class="language-js">import { Faults, wrap, cacheFaults } from '@xufa/faults';
 
 const faults = new Faults({
   operations: ['charge', 'refund'],

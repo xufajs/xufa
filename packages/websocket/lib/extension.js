@@ -1,6 +1,4 @@
-'use strict';
-
-const { tokenChars } = require('./validation');
+import { tokenChars } from './validation.js';
 
 /**
  * Adds an offer to the map of extension offers or a parameter to the map of
@@ -195,4 +193,4 @@ function format(extensions) {
     .join(', ');
 }
 
-module.exports = { format, parse };
+export { format, parse };

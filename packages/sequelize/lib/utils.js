@@ -2,7 +2,7 @@
 // (author_id) for underscored models.
 
 // The rules of Sequelize (those of the inflection package), so the names of tables and accessors are the same.
-const inflection = require('./inflection');
+import * as inflection from './inflection.js';
 
 // The inflector of Sequelize.useInflection(), when one is given: { pluralize, singularize } (as the inflection package).
 let inflector = null;
@@ -52,4 +52,4 @@ function isPlainObject(value) {
   return proto === Object.prototype || proto === null;
 }
 
-module.exports = { useInflection, pluralize, singularize, lowerFirst, upperFirst, camelize, underscore, isPlainObject };
+export { useInflection, pluralize, singularize, lowerFirst, upperFirst, camelize, underscore, isPlainObject };

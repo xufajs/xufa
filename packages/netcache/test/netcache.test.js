@@ -1,13 +1,15 @@
 // Nodes of this machine only: TCP and discovery (unicast) on 127.0.0.1.
-const net = require('node:net');
-const { isDeepStrictEqual } = require('node:util');
-const os = require('node:os');
-const path = require('node:path');
-const fs = require('node:fs');
-const { NetCache, NetCacheError } = require('..');
-const { Store } = require('../lib/store');
-const { Clock, compare } = require('../lib/clock');
-const { Wire, baseKey } = require('../lib/wire');
+import net from 'node:net';
+import { isDeepStrictEqual } from 'node:util';
+import os from 'node:os';
+import path from 'node:path';
+import fs from 'node:fs';
+import { NetCache, NetCacheError } from '../index.js';
+import { Store } from '../lib/store.js';
+import { Clock, compare } from '../lib/clock.js';
+import { Wire, baseKey } from '../lib/wire.js';
+import * as marshalModule from '@xufa/marshal';
+import * as ormModule from '@xufa/orm';
 
 const SECRET = 'a secret of sixteen bytes or more';
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
@@ -217,7 +219,7 @@ describe('values written by @xufa/marshal', () => {
   }
 
   it('marshal: instances of registered classes come back as themselves on every node', async () => {
-    const { Registry } = require('@xufa/marshal');
+    const { Registry } = marshalModule;
     const registry = new Registry().register(Point);
     const [a, b] = await nodes(2, { marshal: registry });
     const shared = { n: 1 };
@@ -231,7 +233,7 @@ describe('values written by @xufa/marshal', () => {
   });
 
   it('nodes with and without marshal read the values of each other', async () => {
-    const { Registry } = require('@xufa/marshal');
+    const { Registry } = marshalModule;
     const [a] = await nodes(1, { marshal: new Registry().register(Point) });
     const plain = await node(a);
     await allConnected([a, plain]);
@@ -316,7 +318,7 @@ describe('the wire', () => {
 
 describe('with @xufa/orm', () => {
   it('two machines with one database: what one saves, the cache of the other forgets', async () => {
-    const { Database, Model, fields } = require('@xufa/orm');
+    const { Database, Model, fields } = ormModule;
     const filename = path.join(fs.mkdtempSync(path.join(os.tmpdir(), 'netcache-')), 'db.sqlite');
     class Book extends Model {
       static fields = { title: fields.string() };

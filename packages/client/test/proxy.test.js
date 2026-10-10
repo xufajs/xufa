@@ -3,14 +3,17 @@
 // password of its URL); the proxy of the environment (HTTP_PROXY, HTTPS_PROXY, NO_PROXY; by default only with
 // NODE_USE_ENV_PROXY, as Node.js); and the option tls (the CA of a server). The certificates of test/fixtures are of a
 // CA made for these tests (localhost and 127.0.0.1, valid until 2126).
-const fs = require('node:fs');
-const http = require('node:http');
-const https = require('node:https');
-const net = require('node:net');
-const path = require('node:path');
-const { createClient, RequestError, HTTPError } = require('..');
+import fs from 'node:fs';
+import http from 'node:http';
+import https from 'node:https';
+import net from 'node:net';
+import path from 'node:path';
+import { createClient, RequestError, HTTPError } from '../index.js';
+import { createRequire } from 'node:module';
 
-const fixture = (name) => fs.readFileSync(path.join(__dirname, 'fixtures', name));
+const require = createRequire(import.meta.url);
+
+const fixture = (name) => fs.readFileSync(path.join(import.meta.dirname, 'fixtures', name));
 const ca = fixture('ca.pem');
 
 const listen = (server) =>

@@ -1,0 +1,64 @@
+{
+  "name": "@xufa/i18n",
+  "version": "0.1.0",
+  "description": "Messages in the languages of an app: catalogs, plurals by the rules of each language, fallbacks, the locale of each request (Accept-Language, cookie, query) in its async context, and the messages users read of @xufa/orm, @xufa/auth and @xufa/admin translated, with no dependencies",
+  "main": "./index.js",
+  "types": "./index.d.ts",
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./index.d.ts",
+      "default": "./index.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "index.js",
+    "index.d.ts",
+    "lib",
+    "LICENSE"
+  ],
+  "scripts": {
+    "test": "vyntra",
+    "test:types": "tsd"
+  },
+  "keywords": [
+    "i18n",
+    "internationalization",
+    "translations",
+    "locale",
+    "plural",
+    "accept-language"
+  ],
+  "author": "Jesús Seijas <jseijas@gmail.com>",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/xufajs/xufa.git",
+    "directory": "packages/i18n"
+  },
+  "homepage": "https://github.com/xufajs/xufa/tree/main/packages/i18n#readme",
+  "bugs": {
+    "url": "https://github.com/xufajs/xufa/issues"
+  },
+  "engines": {
+    "node": "^22.22.3 || ^24.15.0 || >=25.7.0"
+  },
+  "devDependencies": {
+    "@xufa/admin": "workspace:*",
+    "@xufa/auth": "workspace:*",
+    "@xufa/forms": "workspace:*",
+    "@xufa/http": "workspace:*",
+    "@xufa/orm": "workspace:*",
+    "@xufa/session": "workspace:*",
+    "@xufa/template": "workspace:*",
+    "tsd": "^0.33.0",
+    "vyntra": "^0.7.0"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "tsd": {
+    "directory": "test/types"
+  }
+}

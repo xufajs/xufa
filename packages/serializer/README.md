@@ -5,7 +5,7 @@ JSON serializers compiled from JSON Schema, with the output of
 of [xufa](../xufa), and works on its own.
 
 ```js
-const build = require('@xufa/serializer');
+import build from '@xufa/serializer';
 
 const stringify = build({
   type: 'object',

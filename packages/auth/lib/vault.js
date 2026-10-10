@@ -14,9 +14,9 @@
 // token of a key it does not know. The key it replaces still verifies for `keep` (a day) after it stops signing, as
 // long as the tokens it signed may live. The records change by compare-and-swap on their version: two processes that
 // rotate at once do not lose a key.
-const crypto = require('node:crypto');
-const { KeySet, HMAC } = require('./keys');
-const { seconds } = require('./duration');
+import crypto from 'node:crypto';
+import { KeySet, HMAC } from './keys.js';
+import { seconds } from './duration.js';
 
 const ALGORITHMS = {
   HS256: { kind: 'secret', bytes: 32 },
@@ -372,4 +372,4 @@ class KeyVault {
   }
 }
 
-module.exports = { KeyVault, MemoryKeyStore, vaultModelStore, vaultFields, VaultError };
+export { KeyVault, MemoryKeyStore, vaultModelStore, vaultFields, VaultError };

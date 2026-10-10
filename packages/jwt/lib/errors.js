@@ -24,4 +24,4 @@ class NotBeforeError extends JsonWebTokenError {
   }
 }
 
-module.exports = { JsonWebTokenError, TokenExpiredError, NotBeforeError };
+export { JsonWebTokenError, TokenExpiredError, NotBeforeError };

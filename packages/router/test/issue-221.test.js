@@ -1,7 +1,4 @@
-'use strict'
-
-
-const FindMyWay = require('..')
+import FindMyWay from '../index.js';
 
 test('Should return correct param after switching from static route', () => {
   expect.assertions(1)

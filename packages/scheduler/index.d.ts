@@ -185,6 +185,43 @@ export class Scheduler extends EventEmitter<SchedulerEvents> {
   history(name: string, options?: { limit?: number }): Promise<HistoryEntry[]>;
   /** Runs a job now (with its lock, overlap and retries): its result, or undefined when skipped. */
   runNow<T = unknown>(name: string): Promise<T | undefined>;
+  /**
+   * A check of xufa.health: degraded when a job missed a run (due more than `late` ago, '1m', and nothing ran it: in
+   * the history, every machine's runs; without one, this process's), failed its last `failures` runs (1), or runs for
+   * longer than `maxRun`. `jobs`: the names checked (every job). Not critical by default.
+   */
+  health(options?: {
+    late?: Duration;
+    failures?: number;
+    maxRun?: Duration;
+    jobs?: string[];
+    critical?: boolean;
+    timeout?: number | string;
+  }): SchedulerHealthCheck;
+}
+
+/** What scheduler.health() checks of a job. */
+export interface JobHealth {
+  schedule: string;
+  next: string | null;
+  running: boolean;
+  lastRun: string | null;
+  lastStatus: 'done' | 'failed' | 'timeout' | null;
+  failuresInRow: number;
+  /** The run it missed, when it missed one. */
+  missed?: string;
+}
+
+/** A check of xufa.health of @xufa/http (checks: { scheduler: scheduler.health() }). */
+export interface SchedulerHealthCheck {
+  check(): Promise<{
+    status: 'up' | 'degraded' | 'down';
+    error?: string;
+    started: boolean;
+    jobs: Record<string, JobHealth>;
+  }>;
+  critical: boolean;
+  timeout?: number | string;
 }
 
 export function createScheduler(options?: SchedulerOptions): Scheduler;

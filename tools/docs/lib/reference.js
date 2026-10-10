@@ -6,11 +6,12 @@
 //
 //   const { referenceOf } = require('./reference');
 //   referenceOf('client'); // { intro, kinds: [[kind, label, count]], body } for pages/... (see pages.js)
-const fs = require('node:fs');
-const path = require('node:path');
-const ts = require('typescript');
+import fs from 'node:fs';
+import path from 'node:path';
+import { declarationsOf as declarationFileOf } from './declarations.js';
+import ts from 'typescript';
 
-const PACKAGES = path.join(__dirname, '../../../packages');
+const PACKAGES = path.join(import.meta.dirname, '../../../packages');
 
 const esc = (text) => String(text).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 
@@ -177,7 +178,7 @@ function linkerOf(names) {
 }
 
 function referenceOf(name) {
-  const file = path.join(PACKAGES, name, 'index.d.ts');
+  const file = declarationFileOf(path.join(PACKAGES, name));
   const text = fs.readFileSync(file, 'utf8');
   const source = ts.createSourceFile(file, text, ts.ScriptTarget.Latest, true);
   const declarations = declarationsOf(source.statements);
@@ -238,7 +239,7 @@ ${rows
 // only re-exports @xufa/http; @xufa/http and @xufa/schema have an API page written by hand).
 const REFERENCE_PACKAGES = fs
   .readdirSync(PACKAGES)
-  .filter((name) => fs.existsSync(path.join(PACKAGES, name, 'index.d.ts')))
+  .filter((name) => declarationFileOf(path.join(PACKAGES, name)))
   .filter((name) => !['xufa', 'http', 'schema'].includes(name));
 
-module.exports = { referenceOf, REFERENCE_PACKAGES };
+export { referenceOf, REFERENCE_PACKAGES };

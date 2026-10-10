@@ -1,7 +1,7 @@
 // The errors of templates: their syntax (XUFA_TEMPLATE_ERR_SYNTAX, also for expressions in them), what fails while they
 // render (XUFA_TEMPLATE_ERR_RUNTIME, with the ExpressionError as cause) and partials not found or too deep
 // (XUFA_TEMPLATE_ERR_PARTIAL). With the template's name, line and column.
-const { locate } = require('@xufa/expression');
+import { locate } from '@xufa/expression';
 
 class TemplateError extends Error {
   constructor(message, { code = 'XUFA_TEMPLATE_ERR_SYNTAX', source, position, name, cause } = {}) {
@@ -19,4 +19,4 @@ class TemplateError extends Error {
   }
 }
 
-module.exports = { TemplateError };
+export { TemplateError };

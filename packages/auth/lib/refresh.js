@@ -11,9 +11,9 @@
 //
 // A token is '<id>.<secret>' (base64url). Records: { id, family, subject, data, hash, createdAt, expiresAt, usedAt,
 // revokedAt }, dates as milliseconds since the epoch.
-const crypto = require('node:crypto');
-const { seconds } = require('./duration');
-const { Unauthorized } = require('./errors');
+import crypto from 'node:crypto';
+import { seconds } from './duration.js';
+import { Unauthorized } from './errors.js';
 
 const hashOf = (secret) => crypto.createHash('sha256').update(secret).digest('base64url');
 
@@ -214,4 +214,4 @@ class RefreshTokens {
   }
 }
 
-module.exports = { RefreshTokens, MemoryTokenStore, modelStore, refreshTokenFields };
+export { RefreshTokens, MemoryTokenStore, modelStore, refreshTokenFields };

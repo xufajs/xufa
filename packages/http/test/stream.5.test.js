@@ -1,7 +1,18 @@
 'use strict'
 
 
-const proxyquire = require('proxyquire')
+
+// The library with some of the modules it imports replaced (its modules are ES modules: proxyquire, which replaced
+// the requires of CommonJS, cannot reach them; vyntra's doMock and a fresh import can).
+async function xufaWith (mocks) {
+  vi.resetModules()
+  for (const [name, factory] of Object.entries(mocks)) vi.doMock(name, factory)
+  try {
+    return (await import('../lib/xufa.js')).default
+  } finally {
+    for (const name of Object.keys(mocks)) vi.doUnmock(name)
+  }
+}
 const fs = require('node:fs')
 const Readable = require('node:stream').Readable
 const Fastify = require('..')
@@ -35,20 +46,14 @@ test('should mark reply as sent before pumping the payload stream into response 
   expect.assertions(2)
   onTestFinished(() => fastify.close())
 
-  const handleRequest = proxyquire('../lib/handle-request', {
-    './wrap-thenable': (thenable, reply) => {
-      thenable.then(function (payload) {
-        expect(reply.sent).toBe(true)
-      })
-    }
-  })
-
-  const route = proxyquire('../lib/route', {
-    './handle-request': handleRequest
-  })
-
-  const Fastify = proxyquire('../lib/xufa', {
-    './route': route
+  const Fastify = await xufaWith({
+    '../lib/wrap-thenable.js': () => ({
+      default: (thenable, reply) => {
+        thenable.then(function (payload) {
+          expect(reply.sent).toBe(true)
+        })
+      }
+    })
   })
 
   const fastify = Fastify()

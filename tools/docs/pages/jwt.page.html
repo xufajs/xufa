@@ -21,8 +21,8 @@
         <h2 id="start">Quick start</h2>
         <pre><code class="language-sh">npm install @xufa/jwt</code></pre>
 <!--run-before: process.env.JWT_SECRET = 'a-secret-of-at-least-32-bytes-long!'; -->
-        <pre data-run="jwt"><code class="language-js">const crypto = require('node:crypto');
-const jwt = require('@xufa/jwt');
+        <pre data-run="jwt"><code class="language-js">import crypto from 'node:crypto';
+import * as jwt from '@xufa/jwt';
 
 const token = jwt.sign({ sub: '42', role: 'admin' }, process.env.JWT_SECRET, { expiresIn: '15m', issuer: 'app' });
 const claims = jwt.verify(token, process.env.JWT_SECRET, { algorithms: ['HS256'], issuer: 'app' });
@@ -116,12 +116,12 @@ JsonWebTokenError invalid algorithm</code></pre>
         </p>
 
         <h2 id="jws">jws and jwa</h2>
-        <pre data-run><code class="language-js">const jws = require('@xufa/jwt/jws'); // sign, verify, decode, isValid, createSign, createVerify (streams)
-const jwa = require('@xufa/jwt/jwa'); // jwa('ES256') is { sign(input, key), verify(input, signature, key) }</code></pre>
+        <pre data-run><code class="language-js">import * as jws from '@xufa/jwt/jws'; // sign, verify, decode, isValid, createSign, createVerify (streams)
+import jwa from '@xufa/jwt/jwa'; // jwa('ES256') is { sign(input, key), verify(input, signature, key) }</code></pre>
 
         <h2 id="from-jsonwebtoken">Coming from jsonwebtoken</h2>
         <ul>
-          <li><code>require('jsonwebtoken')</code> can be replaced by <code>require('@xufa/jwt')</code>: the options, the checks, the messages and the errors are those of jsonwebtoken 9.</li>
+          <li><code>jsonwebtoken</code> can be replaced by <code>@xufa/jwt</code> (in imports or requires): the options, the checks, the messages and the errors are those of jsonwebtoken 9.</li>
           <li>Added: EdDSA and ES256K; the option <code>type</code> of verify(); named imports from ES modules (<code>import { sign } from '@xufa/jwt'</code>).</li>
           <li>Stricter: tokens with <code>crit</code> are refused; a RegExp in <code>audience</code> tests strings only (jsonwebtoken tests a missing <code>aud</code> as the text <code>"undefined"</code>, which <code>/.*/</code> takes); <code>maxAge: 0</code> is a limit; <code>clockTolerance</code> must be a number of seconds (jsonwebtoken joins a string such as <code>'5'</code> to <code>exp</code> as text, and takes <code>Infinity</code>); <code>exp</code>, <code>nbf</code> and <code>iat</code> of <code>Infinity</code> or <code>NaN</code>, and empty payloads, are refused when signing.</li>
           <li>Fixed: an <code>iat</code> of 0 is kept; a payload with keys such as <code>toString</code> signs; a payload that is not JSON and an ECDSA signature of the wrong size are <code>JsonWebTokenError</code>s, not a <code>SyntaxError</code> or <code>TypeError</code>; <code>decode()</code> of a payload that is not JSON is <code>null</code>, as any token that is not one.</li>

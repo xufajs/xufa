@@ -1,9 +1,5 @@
-'use strict'
-
-
-
-const validator = require('is-my-json-valid')
-const build = require('..')
+import validator from 'is-my-json-valid';
+import build from '../index.js';
 const ROUNDING_TYPES = ['ceil', 'floor', 'round']
 
 test('render an integer as JSON', () => {

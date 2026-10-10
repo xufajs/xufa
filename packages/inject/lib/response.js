@@ -1,9 +1,9 @@
 // The fake ServerResponse: a real http.ServerResponse on a socket that drops its bytes, whose writes are kept to
 // build the result of the injection.
-const http = require('node:http');
-const { Writable, Readable, addAbortSignal } = require('node:stream');
-const util = require('node:util');
-const { parseResponseCookies } = require('./cookies');
+import http from 'node:http';
+import { Writable, Readable, addAbortSignal } from 'node:stream';
+import util from 'node:util';
+import { parseResponseCookies } from './cookies.js';
 
 function nullSocket() {
   return new Writable({
@@ -178,4 +178,4 @@ function generatePayload(response) {
   return res;
 }
 
-module.exports = Response;
+export default Response;

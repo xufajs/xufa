@@ -25,8 +25,4 @@ function hasMoreCodePoints(value, max) {
   return value.length > 2 * max || (value.length > max && codePointLength(value) > max);
 }
 
-module.exports = {
-  codePointLength,
-  hasFewerCodePoints,
-  hasMoreCodePoints,
-};
+export { codePointLength, hasFewerCodePoints, hasMoreCodePoints };

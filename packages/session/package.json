@@ -4,7 +4,7 @@
   "description": "Sessions of browsers for @xufa/http, with no dependencies: signed cookies, stores in memory or in a database of @xufa/orm (any backend, expired by a TTL index), flash messages and CSRF tokens",
   "main": "./index.js",
   "types": "./index.d.ts",
-  "type": "commonjs",
+  "type": "module",
   "exports": {
     ".": {
       "types": "./index.d.ts",
@@ -46,7 +46,7 @@
   "devDependencies": {
     "@xufa/http": "workspace:*",
     "tsd": "^0.33.0",
-    "vyntra": "^0.6.0",
+    "vyntra": "^0.7.0",
     "@xufa/orm": "workspace:*"
   },
   "publishConfig": {

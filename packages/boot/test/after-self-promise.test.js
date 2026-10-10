@@ -1,7 +1,4 @@
-'use strict'
-
-
-const boot = require('..')
+import boot from '../index.js';
 
 test('after does not await itself', async () => {
   expect.assertions(3)

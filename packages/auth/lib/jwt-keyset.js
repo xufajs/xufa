@@ -4,11 +4,11 @@
 //
 //   const token = signJwt({ sub: '42', role: 'admin' }, keys, { expiresIn: '15m', issuer: 'app' });
 //   const claims = verifyJwt(token, keys, { issuer: 'app' });   // or a TokenError (401) with its reason
-const crypto = require('node:crypto');
-const jwt = require('@xufa/jwt');
-const { KeySet, HMAC } = require('./keys');
-const { seconds } = require('./duration');
-const { TokenError } = require('./errors');
+import crypto from 'node:crypto';
+import * as jwt from '@xufa/jwt';
+import { KeySet, HMAC } from './keys.js';
+import { seconds } from './duration.js';
+import { TokenError } from './errors.js';
 
 const now = () => Math.floor(Date.now() / 1000);
 
@@ -171,4 +171,4 @@ function checkOf(token, keys, options) {
   };
 }
 
-module.exports = { signJwt, signJwtAsync, verifyJwt, verifyJwtAsync, decodeJwt };
+export { signJwt, signJwtAsync, verifyJwt, verifyJwtAsync, decodeJwt };

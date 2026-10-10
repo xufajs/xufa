@@ -5,7 +5,7 @@
   "description": "@xufa/template: templates of text and HTML with safe expressions, blocks, filters, partials, layouts and streaming, and reply.view for @xufa/http and fastify. No dependencies.",
   "groups": [
     ["Using it", [["start", "Quick start"], ["api", "API"]]],
-    ["Templates", [["output", "Values"], ["if", "if"], ["each", "each"], ["with", "with"], ["partials", "Partials"], ["comments", "Comments and white space"], ["filters", "Filters"]]],
+    ["Templates", [["output", "Values"], ["if", "if"], ["each", "each"], ["with", "with"], ["partials", "Partials"], ["extends", "Extends and blocks"], ["comments", "Comments and white space"], ["filters", "Filters"]]],
     ["Views of HTTP", [["plugin", "reply.view"], ["layouts", "Layouts"], ["streaming", "Large pages"], ["plugin-options", "Options of the plugin"]]],
     ["More", [["fill", "Data with templates"], ["escaping", "Escaping"], ["engine", "Engines"], ["errors", "Errors"]]],
     ["About it", [["performance", "Performance"], ["typescript", "TypeScript"]]]
@@ -21,8 +21,8 @@
         </p>
 
         <h2 id="start">Quick start</h2>
-        <pre><code class="language-sh">npm install @xufa/template   # or require('xufa/template')</code></pre>
-        <pre data-run="template"><code class="language-js">const { compile, render } = require('@xufa/template');
+        <pre><code class="language-sh">npm install @xufa/template   # or: import from 'xufa/template'</code></pre>
+        <pre data-run="template"><code class="language-js">import { compile, render } from '@xufa/template';
 
 const items = [
   { name: 'Pen', price: 5 },
@@ -119,6 +119,33 @@ engine.render('{{#each items as item}}{{&gt; row}}{{/each}}{{&gt; card user}}', 
           plugin, partials are files of the folder: <code>{{&gt; partials/header}}</code>.
         </p>
 
+        <h2 id="extends">Extends and blocks</h2>
+        <p>
+          As Django's <code>{% extends %}</code> and <code>{% block %}</code>: a base names its blocks (their contents are
+          the defaults), and a template that extends it (<code>{{extends 'name'}}</code>, its first tag) fills those it
+          wants; <code>{{ block.super }}</code> writes the contents of the one it extends. Chains of them (a page extends
+          the base of its section, which extends that of the site), blocks in blocks, and <code>{{/block name}}</code> to
+          say which one closes. The texts out of the blocks of a template that extends another are not written. The base
+          is found as partials are (with the plugin: a file of the folder; give such views <code>layout: false</code>).
+          As Django's <code>{% extends variable %}</code>, <code>{{extends layout}}</code> takes the name an expression
+          gives when it renders (<code>{{extends layout ?? 'base'}}</code>): the built-in templates of
+          <a href="views.html#builtin">@xufa/views</a> extend the app's base so. <code>app.hasView(name)</code> says
+          whether a view is a file of the folders.
+        </p>
+<!--run-before: import { TemplateEngine } from '@xufa/template'; -->
+        <pre data-run><code class="language-js">const engine = new TemplateEngine({
+  partials: {
+    base: '&lt;title&gt;{{#block title}}Library{{/block}}&lt;/title&gt;&lt;nav&gt;{{#block sidebar}}Home{{/block}}&lt;/nav&gt;{{#block content}}{{/block}}',
+    'catalog/base': "{{extends 'base'}}{{#block title}}Catalog - {{ block.super }}{{/block}}",
+  },
+});
+const page = engine.compile(`{{extends 'catalog/base'}}
+{{#block title}}{{ book.title }} | {{ block.super }}{{/block}}
+{{#block sidebar}}{{ block.super }}, Books{{/block}}
+{{#block content}}&lt;h1&gt;{{ book.title }}&lt;/h1&gt;{{/block content}}`);
+console.log(page({ book: { title: 'Emma' } }));</code></pre>
+        <pre data-output><code class="language-plaintext">&lt;title&gt;Emma | Catalog - Library&lt;/title&gt;&lt;nav&gt;Home, Books&lt;/nav&gt;&lt;h1&gt;Emma&lt;/h1&gt;</code></pre>
+
         <h2 id="comments">Comments and white space</h2>
         <pre><code class="language-html">{{! a comment }}
 {{!-- a comment that can hold }} --}}
@@ -154,8 +181,8 @@ engine.render('{{ total | money }} by {{ user.name | initials }}', { total: 12, 
           The plugin renders views, files of a folder, as <a href="https://github.com/fastify/point-of-view">@fastify/view</a>
           does, on @xufa/http or fastify:
         </p>
-        <pre><code class="language-js">const xufa = require('xufa');
-const template = require('xufa/template');
+        <pre><code class="language-js">import xufa from 'xufa';
+import * as template from 'xufa/template';
 
 const app = xufa();
 app.register(template.plugin, { root: 'views', layout: 'layout', defaultContext: { site: 'Books' } });
@@ -187,7 +214,35 @@ const html = await app.view('emails/welcome', { user }); // the text, for emails
 &lt;!doctype html&gt;
 &lt;html&gt;&lt;head&gt;&lt;title&gt;{{ title ?? site }}&lt;/title&gt;&lt;/head&gt;
 &lt;body&gt;{{&gt; partials/nav}}&lt;main&gt;{{ body }}&lt;/main&gt;&lt;/body&gt;&lt;/html&gt;</code></pre>
-        <p>The view is rendered first and given to its layout as <code>body</code>. The layout of the plugin, or of a call; <code>layout: false</code> for none.</p>
+        <p>The view is rendered first and given to its layout as <code>body</code>. The layout of the plugin, or of a call; <code>layout: false</code> for none. Pages whose parts change by page (a sidebar, the title) <a href="#extends">extend a base</a> instead.</p>
+
+        <h2 id="context">The context of every view</h2>
+        <p>
+          What every page shows (the user, the links of the sidebar, the CSRF token of its forms) comes from functions of
+          the request, as Django's context processors: <code>context</code> of the plugin, and
+          <code>app.viewContext(fn)</code> of other plugins (<a href="../auth/guide.html#accounts">the accounts of
+          @xufa/auth</a> add <code>user</code> and <code>perms</code>). Each runs for every <code>reply.view()</code>, and may
+          be async.
+        </p>
+        <pre><code class="language-js">app.register(template.plugin, {
+  root: 'views',
+  layout: 'layout',
+  context: [async (request) =&gt; ({ cart: await Cart.of(request), year: new Date().getFullYear() })],
+});</code></pre>
+        <pre><code class="language-html">&lt;a href="{{ url('book-detail', book.pk) }}"&gt;{{ book.title }}&lt;/a&gt;
+&lt;link rel="stylesheet" href="{{ staticUrl('css/site.css') }}"&gt;
+&lt;form method="post"&gt;&lt;input type="hidden" name="_csrf" value="{{ csrfToken }}"&gt;...&lt;/form&gt;
+{{#each messages as message}}&lt;p class="{{ message.level }}"&gt;{{ message.text }}&lt;/p&gt;{{/each}}
+{{#if request.path === '/'}}...{{/if}}</code></pre>
+        <p>
+          With <code>builtins</code> (true), every view of a request has <code>request</code> (<code>path</code>,
+          <code>url</code>, <code>query</code>, <code>method</code>), <code>url(name, ...params)</code> (the
+          <a href="../http/guide.html#route-names">named routes</a>), <code>staticUrl(path)</code> (with
+          <a href="../http/guide.html#static">xufa.staticFiles</a>), <code>csrfToken</code> and <code>messages</code> (of
+          <a href="../session/index.html#flash">@xufa/session</a>). The order: <code>defaultContext</code>, the builtins,
+          the functions, <code>reply.locals</code>, then the data of the call. <code>app.view()</code> has no request: no
+          context of requests.
+        </p>
 
         <h2 id="streaming">Large pages</h2>
         <p>
@@ -218,6 +273,8 @@ for (const chunk of compile(source).stream(context, { chunkSize: 16384 })) socke
               <tr><td><code>cache</code></td><td><code>NODE_ENV === 'production'</code></td><td>Files read once; without it, every render reads them, so edits are seen at once (templates are compiled again only when they changed).</td></tr>
               <tr><td><code>stream</code>, <code>chunkSize</code></td><td><code>false</code>, <code>65536</code></td><td>Every view sent in chunks, of that many characters.</td></tr>
               <tr><td><code>propertyName</code></td><td><code>'view'</code></td><td>The name of the decorations.</td></tr>
+              <tr><td><code>context</code></td><td><code>[]</code></td><td>Functions of <code>(request, reply)</code>: the values of every view of a request (<a href="#context">The context of every view</a>).</td></tr>
+              <tr><td><code>builtins</code></td><td><code>true</code></td><td><code>request</code>, <code>url()</code>, <code>staticUrl()</code>, <code>csrfToken</code> and <code>messages</code> in every view of a request.</td></tr>
               <tr><td><code>engine</code></td><td>a new one</td><td>A <code>TemplateEngine</code> of your own; or its options (<code>filters</code>...) here.</td></tr>
             </tbody>
           </table>

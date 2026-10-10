@@ -1,4 +1,4 @@
-const { ValidateType, toType } = require('./validate-type');
+import { ValidateType, toType } from './validate-type.js';
 
 const JSON_TYPES = ['object', 'array', 'string', 'number'];
 
@@ -56,8 +56,4 @@ function When(options) {
   return new WhenType(options);
 }
 
-module.exports = {
-  WhenType,
-  When,
-  isJsonType,
-};
+export { WhenType, When, isJsonType };

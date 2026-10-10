@@ -176,4 +176,4 @@ function nestRow(row) {
   return result;
 }
 
-module.exports = { QueryTypes, formatQuery, escapeValue, nestRow };
+export { QueryTypes, formatQuery, escapeValue, nestRow };

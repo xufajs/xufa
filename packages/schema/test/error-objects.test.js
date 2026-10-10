@@ -1,18 +1,7 @@
-const vm = require('vm');
-const {
-  AllOf,
-  ArrayOf,
-  ClosedSchema,
-  Float,
-  Integer,
-  Schema,
-  String: StringType,
-  ValidateType,
-  compileJsonSchema,
-  standaloneCode,
-} = require('..');
-const { errorObject, pathName } = require('../lib/error-objects');
-const { HELPER_SOURCES } = require('../lib/standalone-helpers');
+import vm from 'vm';
+import { AllOf, ArrayOf, ClosedSchema, Float, Integer, Schema, String as StringType, ValidateType, compileJsonSchema, standaloneCode } from '../index.js';
+import { errorObject, pathName } from '../lib/error-objects.js';
+import { HELPER_SOURCES } from '../lib/standalone-helpers.js';
 
 const order = new ClosedSchema({
   id: StringType({ pattern: /^O-/ }),

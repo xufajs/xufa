@@ -1,7 +1,4 @@
-'use strict'
-
-
-const FindMyWay = require('../')
+import FindMyWay from '../index.js';
 
 test('should return null when maxParamLength is exceeded (current behavior)', () => {
   expect.assertions(1)

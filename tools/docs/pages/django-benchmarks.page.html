@@ -1,0 +1,108 @@
+<!--{
+  "file": "django-benchmarks.html",
+  "name": "xufa and Django",
+  "title": "xufa and Django: Benchmarks",
+  "description": "The same app on xufa and on Django served at its best (gunicorn, granian, uvicorn): the LocalLibrary of the Django tutorial and its port, on the same PostgreSQL and data, 4 processes each.",
+  "nav": "guide",
+  "packages": false,
+  "groups": [
+    ["Benchmarks", [["results", "Results"], ["app", "The app"], ["django", "Django at its best"], ["scenarios", "The scenarios"], ["notes", "What to keep in mind"], ["run", "Run them yourself"], ["benchmarks.html", "Every benchmark of xufa"]]]
+  ]
+}-->
+        <h1>xufa and Django</h1>
+        <p class="intro">
+          The same app on both: the LocalLibrary of the Django tutorial, and its port to xufa
+          (<code>examples/locallibrary</code>), on the same PostgreSQL with the same data, the same number of processes,
+          and Django served by each server that serves it well. Each card compares xufa with the fastest of them in that
+          scenario.
+        </p>
+
+        <h2 id="results">Results</h2>
+<!--generated: django-benchmarks-->
+
+        <h2 id="app">The app</h2>
+        <p>
+          <code>examples/django-locallibrary</code> is the MDN tutorial as it is published; <code>examples/locallibrary</code>
+          is its port, page by page. Both get the same rows (<code>bench/django/data.mjs</code>: 500 authors, 2,000 books,
+          6,000 copies, 10 genres, 5 languages, a reader with loans and a librarian), each in a database of its own on one
+          PostgreSQL, vacuumed and analyzed after the rows go in. Both apps have an index on the books' title and author,
+          the order of their list, that also holds the id (<code>INCLUDE</code>; the tutorial has none: each page sorted
+          every book), and keep the four counts of the home page for 10 s (Django's cache,
+          xufa's <code>cached()</code>, which also forgets them when their model is written). Sessions are kept in the
+          database on both sides; xufa's app writes them with <code>asyncCommit</code>, the setting of a new project
+          (PostgreSQL confirms them before they reach the disk; Django has no such option for its sessions). Two pages are only for the benchmark, the same on
+          each: a plain text, and a book as JSON.
+        </p>
+
+        <h2 id="django">Django at its best</h2>
+        <p>
+          The tutorial is written to learn, not to be fast, so Django runs as it would be deployed
+          (<code>bench/django/site/benchsite</code>): <code>DEBUG</code> off (cached templates), psycopg 3 with its
+          compiled implementation, persistent connections (Django's pool under ASGI, as its docs advise), no static files
+          middleware, no log of requests. The tutorial's list views load the author of each book with a query of its own;
+          here they load their relations as the port does (<code>select_related</code>, <code>prefetch_related</code>),
+          so both make the same queries. Four servers run it, four processes each: gunicorn with sync workers and with
+          threads (<code>gthread</code>, 4 per process), granian (WSGI, 4 threads per process) and uvicorn (ASGI). xufa
+          runs as deployed: <code>NODE_ENV=production</code>, four workers of <code>node:cluster</code>, no log of
+          requests.
+        </p>
+
+        <h2 id="scenarios">The scenarios</h2>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Scenario</th><th>What it does</th></tr></thead>
+            <tbody>
+              <tr><td>Plain text</td><td>A text of 13 bytes: the framework alone</td></tr>
+              <tr><td>A book as JSON</td><td>A book with its author, language and genres: 2 queries, as JSON</td></tr>
+              <tr><td>Home page</td><td>4 counts (kept 10 s), the visits of the browser kept in its session (a write), a template; 100 visitors</td></tr>
+              <tr><td>Book list</td><td>A page of 10 books with their authors, ordered by title, and its paginator</td></tr>
+              <tr><td>Book detail</td><td>A book with its author, language, genres and copies</td></tr>
+              <tr><td>Loans of the user</td><td>The copies the reader borrowed: a logged-in page</td></tr>
+              <tr><td>Edit an author</td><td>The form of an author sent back (CSRF token, validation, an UPDATE, a redirect) by a librarian; 50 authors</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p>
+          Each request is checked before it is measured (its status, and the size of its answer, about the same on both
+          sides). The writes go to rows of their own (100 visitors, 50 authors), as real traffic does: on one row, every
+          request would wait for the lock of the one before it, and both would measure PostgreSQL.
+        </p>
+
+        <h2 id="notes">What to keep in mind</h2>
+        <ul>
+          <li>
+            The book list is the closest. Its pages go up to the 200th (<code>OFFSET 1990</code>, as Django's
+            paginator). From an offset of 100, xufa's ORM asks PostgreSQL for the ids of the page first, from the index
+            alone, then loads those ten books with their authors; Django skips the rows of the whole join. Django orders by <code>author</code> through the author's own order (last name, first
+            name), which the index cannot give: it still sorts.
+          </li>
+          <li>
+            The home page writes its session on every visit. With <code>asyncCommit</code> that write doesn't wait for
+            the disk (a crash of PostgreSQL could lose the last fraction of a second of session writes); without it,
+            xufa's home page answers about half as many requests.
+          </li>
+          <li>
+            gunicorn's sync workers serve one request at a time: with 64 connections, requests wait seconds in its queue
+            (its p99). They are still the most common way to deploy Django.
+          </li>
+          <li>
+            xufa takes more memory under load, and it is not data it keeps: each worker starts at about 93 MB, as a
+            process of Django, and after a collection its live heap is the same 21 MB as when idle. What grows is V8's
+            young generation, made bigger to collect less often: <code>@xufa/cluster</code> caps it at 32 MB a half
+            (<code>semiSpace</code>), which keeps a worker near 200 MB with the same speed.
+          </li>
+          <li>
+            Linux in WSL 2 shares the machine with Windows: ⚠ marks rounds more than 10% apart. Even so, in every scenario
+            the slowest round of xufa answered at least six times as many requests as the fastest round of any server of
+            Django.
+          </li>
+        </ul>
+
+        <h2 id="run">Run them yourself</h2>
+        <pre><code class="language-sh">pnpm bench:linux django --out results/django-5       # from Windows, in WSL
+node bench/django.js --rounds 3 --duration 10          # on Linux
+node bench/django.js --servers xufa,granian-wsgi --scenarios hello,json,book</code></pre>
+        <p>
+          It needs PostgreSQL (<code>apt install postgresql</code>) and Python 3; it makes a cluster of PostgreSQL of its
+          own and a venv with Django and its servers in <code>~/bench-django</code>.
+        </p>

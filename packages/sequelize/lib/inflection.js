@@ -503,4 +503,4 @@ function applyRules(str, rules, skip) {
 const pluralize = (str) => applyRules(str, plural_rules, uncountable_words);
 const singularize = (str) => applyRules(str, singular_rules, uncountable_words);
 
-module.exports = { pluralize, singularize };
+export { pluralize, singularize };

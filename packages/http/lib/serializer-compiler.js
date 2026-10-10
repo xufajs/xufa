@@ -1,6 +1,6 @@
 // The default serializer compiler: @xufa/serializer with the shared schemas, one compiler per set of schemas and
 // options (what @fastify/fast-json-stringify-compiler gives fastify).
-const build = require('@xufa/serializer');
+import build from '@xufa/serializer';
 
 function SerializerSelector() {
   return function buildSerializerFactory(externalSchemas, serializerOpts) {
@@ -11,4 +11,4 @@ function SerializerSelector() {
   };
 }
 
-module.exports = { SerializerSelector };
+export { SerializerSelector };

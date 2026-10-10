@@ -56,4 +56,4 @@ function deepEqual(a, b) {
   return false;
 }
 
-module.exports = { deepEqual };
+export { deepEqual };

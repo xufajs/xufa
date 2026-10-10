@@ -2,7 +2,7 @@
 
 
 const Fastify = require('..')
-const fp = require('@xufa/http').plugin
+const fp = require('..').plugin
 const symbols = require('../lib/symbols')
 
 test('server methods should exist', async () => {

@@ -1,7 +1,4 @@
-'use strict'
-
-
-const FindMyWay = require('..')
+import FindMyWay from '../index.js';
 
 test('removeDuplicateSlashes should return the same path when there are no duplicate slashes', () => {
   expect.assertions(1)

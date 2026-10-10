@@ -2,11 +2,11 @@
 // .env files, variables of the schema and prefixed, overrides), the formats (JSON, YAML, JS), templates, the schema
 // (conversions, defaults, checks, every error at once), and the configuration made (frozen, get, has, secrets
 // redacted).
-const fs = require('node:fs');
-const os = require('node:os');
-const path = require('node:path');
-const util = require('node:util');
-const { loadConfig, parseDotenv, ConfigError } = require('..');
+import fs from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
+import util from 'node:util';
+import { loadConfig, parseDotenv, ConfigError } from '../index.js';
 
 let dirs = [];
 function project(files) {
@@ -67,7 +67,9 @@ describe('layers', () => {
   });
 
   it('variables of the schema, prefixed ones, then overrides, over the files', () => {
-    const cwd = project({ 'config/default.json': { db: { url: 'from-file', maxConnections: 10, ssl: false }, port: 1 } });
+    const cwd = project({
+      'config/default.json': { db: { url: 'from-file', maxConnections: 10, ssl: false }, port: 1 },
+    });
     const environment = {
       DATABASE_URL: 'postgres://env/app',
       APP__DB__MAX_CONNECTIONS: '20',
@@ -81,7 +83,11 @@ describe('layers', () => {
       environment,
       envPrefix: 'APP',
       schema: {
-        db: { url: { type: 'url', env: 'DATABASE_URL' }, maxConnections: { type: 'integer' }, ssl: { type: 'boolean' } },
+        db: {
+          url: { type: 'url', env: 'DATABASE_URL' },
+          maxConnections: { type: 'integer' },
+          ssl: { type: 'boolean' },
+        },
       },
       overrides: { port: 3 },
     });
@@ -100,13 +106,49 @@ describe('layers', () => {
 
   it('errors: several files of one layer, a folder given that is not there, a file that is not an object, bad JSON', () => {
     const two = project({ 'config/default.json': {}, 'config/default.yaml': 'a: 1' });
-    expect(() => loadConfig({ cwd: two, environment: {} })).toThrow(/Several files of default .*default.json, default.yaml/);
+    expect(() => loadConfig({ cwd: two, environment: {} })).toThrow(
+      /Several files of default .*default.json, default.yaml/
+    );
     expect(() => loadConfig({ cwd: two, dir: 'nope', environment: {} })).toThrow(/does not exist/);
     expect(loadConfig({ cwd: project({}), environment: {} })).toEqual({}); // no folder (not given): no files
     const list = project({ 'config/default.json': [1, 2] });
     expect(() => loadConfig({ cwd: list, environment: {} })).toThrow(/a configuration is an object/);
     const bad = project({ 'config/default.json': '{ "a": ' });
     expect(() => loadConfig({ cwd: bad, environment: {} })).toThrow(/default\.json: .*JSON/);
+  });
+});
+
+describe('the file of the app (option file)', () => {
+  it('xufa.yaml (or .json, .js) below config/, with templates', () => {
+    const cwd = project({
+      'xufa.yaml': [
+        'name: Library',
+        'database:',
+        `  url: "{{ env.DATABASE_URL ?? 'sqlite:data/app.db' }}"`,
+        'apps: [catalog]',
+      ].join('\n'),
+      'config/production.json': { database: { pool: 4 } },
+    });
+    const config = loadConfig({ cwd, file: 'xufa', env: 'production', environment: { DATABASE_URL: 'memory:' } });
+    expect(config).toEqual({ name: 'Library', database: { url: 'memory:', pool: 4 }, apps: ['catalog'] });
+    expect(config.sources.map((file) => path.basename(file))).toEqual(['xufa.yaml', 'production.json']);
+    const js = project({ 'xufa.js': "module.exports = ({ name }) => ({ env: name, debug: name !== 'production' });" });
+    expect(loadConfig({ cwd: js, file: 'xufa.js', env: 'test', environment: {} })).toEqual({
+      env: 'test',
+      debug: true,
+    });
+  });
+
+  it('verbatim: texts that are templates of something else', () => {
+    const cwd = project({ 'xufa.json': { mails: { reset: { text: 'Hi {{ name }}' } }, port: '{{ 1 + 1 }}' } });
+    const config = loadConfig({ cwd, file: 'xufa', environment: {}, verbatim: ['mails'] });
+    expect(config).toEqual({ mails: { reset: { text: 'Hi {{ name }}' } }, port: 2 });
+  });
+
+  it('missing, or two of them', () => {
+    expect(() => loadConfig({ cwd: project({}), file: 'xufa', environment: {} })).toThrow('does not exist');
+    const two = project({ 'xufa.json': {}, 'xufa.yaml': 'a: 1\n' });
+    expect(() => loadConfig({ cwd: two, file: 'xufa', environment: {} })).toThrow('one only');
   });
 });
 
@@ -117,16 +159,31 @@ describe('.env files', () => {
       '.env.production': 'B=production\n',
       '.env.local': 'C=local\n',
       '.env.production.local': 'D=production-local\n',
-      'config/default.json': { a: '{{ env.A }}', b: '{{ env.B }}', c: '{{ env.C }}', d: '{{ env.D }}', e: '{{ env.E }}' },
+      'config/default.json': {
+        a: '{{ env.A }}',
+        b: '{{ env.B }}',
+        c: '{{ env.C }}',
+        d: '{{ env.D }}',
+        e: '{{ env.E }}',
+      },
     });
     const config = loadConfig({ cwd, env: 'production', environment: { A: 'process' } });
     expect(config).toEqual({ a: 'process', b: 'production', c: 'local', d: 'production-local' });
-    expect(config.sources.map((f) => path.basename(f))).toEqual(['.env', '.env.production', '.env.local', '.env.production.local', 'default.json']);
+    expect(config.sources.map((f) => path.basename(f))).toEqual([
+      '.env',
+      '.env.production',
+      '.env.local',
+      '.env.production.local',
+      'default.json',
+    ]);
     expect(loadConfig({ cwd, env: 'production', environment: {}, dotenv: false }).a).toBe(undefined);
   });
 
   it('files given (they must exist), and populate', () => {
-    const cwd = project({ 'secrets.env': 'XUFA_CONFIG_TEST_SECRET=s3cret\n', 'config/default.json': { s: '{{ env.XUFA_CONFIG_TEST_SECRET }}' } });
+    const cwd = project({
+      'secrets.env': 'XUFA_CONFIG_TEST_SECRET=s3cret\n',
+      'config/default.json': { s: '{{ env.XUFA_CONFIG_TEST_SECRET }}' },
+    });
     expect(loadConfig({ cwd, environment: {}, dotenv: 'secrets.env' }).s).toBe('s3cret');
     expect(() => loadConfig({ cwd, environment: {}, dotenv: ['missing.env'] })).toThrow(/missing\.env does not exist/);
     expect(process.env.XUFA_CONFIG_TEST_SECRET).toBe(undefined);
@@ -196,7 +253,11 @@ describe('templates', () => {
   });
 
   it('undefined alone: the key is missing (its default); in a text: empty', () => {
-    const config = load({ a: '{{ env.NOPE }}', b: 'x{{ env.NOPE }}y' }, {}, { a: { type: 'string', default: 'fallback' }, b: { type: 'string' } });
+    const config = load(
+      { a: '{{ env.NOPE }}', b: 'x{{ env.NOPE }}y' },
+      {},
+      { a: { type: 'string', default: 'fallback' }, b: { type: 'string' } }
+    );
     expect(config).toEqual({ a: 'fallback', b: 'xy' });
   });
 
@@ -205,7 +266,9 @@ describe('templates', () => {
       expect.stringMatching(/^a: the template \{\{ 1 \+ \}\}: /),
       expect.stringMatching(/^b\.c: the template \{\{ env\.constructor \}\}: .*constructor/),
     ]);
-    expect(() => load({ a: '{{ config.b }}', b: '{{ config.c }}', c: '{{ config.a }}' })).toThrow(/refer to each other: a -> b -> c -> a/);
+    expect(() => load({ a: '{{ config.b }}', b: '{{ config.c }}', c: '{{ config.a }}' })).toThrow(
+      /refer to each other: a -> b -> c -> a/
+    );
     expect(errorsOf(() => load({ a: '{{ process.exit() }}', b: '{{ evn.PORT }}' }))).toEqual([
       expect.stringMatching(/^a: .*process/),
       expect.stringMatching(/^b: .*evn/),
@@ -214,7 +277,8 @@ describe('templates', () => {
 });
 
 describe('the schema', () => {
-  const load = (defaults, schema, options = {}) => loadConfig({ cwd: project({}), environment: {}, defaults, schema, ...options });
+  const load = (defaults, schema, options = {}) =>
+    loadConfig({ cwd: project({}), environment: {}, defaults, schema, ...options });
 
   it('converts texts to their types', () => {
     const schema = {
@@ -233,10 +297,38 @@ describe('the schema', () => {
       any: { type: 'any' },
     };
     const config = load(
-      { i: '42', n: '1.5', b1: 'off', b2: 'YES', p: '8080', u: 'https://x.org/a', d1: '1h30m', d2: 250, a1: 'a, b ,c', a2: '[1,"2"]', o: '{"k":1}', s: 5, any: [1] },
+      {
+        i: '42',
+        n: '1.5',
+        b1: 'off',
+        b2: 'YES',
+        p: '8080',
+        u: 'https://x.org/a',
+        d1: '1h30m',
+        d2: 250,
+        a1: 'a, b ,c',
+        a2: '[1,"2"]',
+        o: '{"k":1}',
+        s: 5,
+        any: [1],
+      },
       schema
     );
-    expect(config).toEqual({ i: 42, n: 1.5, b1: false, b2: true, p: 8080, u: 'https://x.org/a', d1: 5400000, d2: 250, a1: ['a', 'b', 'c'], a2: [1, 2], o: { k: 1 }, s: '5', any: [1] });
+    expect(config).toEqual({
+      i: 42,
+      n: 1.5,
+      b1: false,
+      b2: true,
+      p: 8080,
+      u: 'https://x.org/a',
+      d1: 5400000,
+      d2: 250,
+      a1: ['a', 'b', 'c'],
+      a2: [1, 2],
+      o: { k: 1 },
+      s: '5',
+      any: [1],
+    });
   });
 
   it('defaults, required (with its variable), nullable', () => {
@@ -264,7 +356,21 @@ describe('the schema', () => {
     };
     const err = (() => {
       try {
-        load({ port: 70000, level: 'trace', code: 'abcd', workers: 9, name: 'x', tags: '1,b', big: 1.5, nested: { ok: 'maybe', extra: 1 }, extra: true }, schema, { strict: true });
+        load(
+          {
+            port: 70000,
+            level: 'trace',
+            code: 'abcd',
+            workers: 9,
+            name: 'x',
+            tags: '1,b',
+            big: 1.5,
+            nested: { ok: 'maybe', extra: 1 },
+            extra: true,
+          },
+          schema,
+          { strict: true }
+        );
       } catch (e) {
         return e;
       }
@@ -296,7 +402,12 @@ describe('the configuration', () => {
     loadConfig({
       cwd: project({}),
       environment: {},
-      defaults: { db: { password: 'pw', url: 'u', apiKey: 'k', token: null }, auth: { jwtSecret: 's', passphrase: 'p' }, list: [{ secret: 'x' }], name: 'app' },
+      defaults: {
+        db: { password: 'pw', url: 'u', apiKey: 'k', token: null },
+        auth: { jwtSecret: 's', passphrase: 'p' },
+        list: [{ secret: 'x' }],
+        name: 'app',
+      },
       schema,
     });
 
@@ -332,6 +443,8 @@ describe('the configuration', () => {
   });
 
   it('the names of its methods cannot be keys', () => {
-    expect(() => loadConfig({ cwd: project({}), environment: {}, defaults: { get: 1 } })).toThrow(/'get' cannot be a key/);
+    expect(() => loadConfig({ cwd: project({}), environment: {}, defaults: { get: 1 } })).toThrow(
+      /'get' cannot be a key/
+    );
   });
 });

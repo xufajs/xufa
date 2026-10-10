@@ -1,8 +1,8 @@
 // The strategies of the plugin: API keys and HTTP Basic beside the access tokens (JWT), tried in order on every
 // request; routes that ask for some of them; the challenges of 401 answers; and the keys and their hashes.
-const xufa = require('@xufa/http');
-const { Model, fields, Database } = require('@xufa/orm');
-const auth = require('..');
+import xufa from '@xufa/http';
+import { Model, fields, Database } from '@xufa/orm';
+import * as auth from '../index.js';
 
 const KEY = 'a secret of at least thirty-two bytes!';
 const FAST = { ln: 10 };

@@ -9,22 +9,23 @@ Its documentation is in `docs/orm/`: an [overview](../../docs/orm/index.html), a
 
 The same models and queries run on every backend:
 
-| Backend       | Database                            | Made with                     |
-| ------------- | ----------------------------------- | ----------------------------- |
-| `memory`      | In memory, for tests and prototypes | JavaScript                    |
-| `fs`          | Files (JSON) in a folder            | `node:fs`                     |
-| `sqlite`      | SQLite                              | `node:sqlite` (Node.js 22.5+) |
-| `postgres`    | PostgreSQL                          | [`@xufa/pg`](../pg)           |
-| `mongodb`     | MongoDB                             | [`@xufa/mongo`](../mongo)     |
-| `disk`        | Objects (blobs) as files            | `node:fs`                     |
-| `memory-blob` | Objects (blobs) in memory           | JavaScript                    |
-| `s3`          | Objects (blobs) in S3, R2, MinIO... | `fetch` (SigV4 of its own)    |
-| `azure-blob`  | Objects (blobs) in Azure Blob       | `node:http` (Shared Key, SAS) |
-| `smtp`        | Email sent (a server of SMTP)       | `node:net`, `node:tls`        |
-| `memory-mail` | Email kept in memory (tests)        | JavaScript                    |
+| Backend        | Database                                   | Made with                     |
+| -------------- | ------------------------------------------ | ----------------------------- |
+| `memory`       | In memory, for tests and prototypes        | JavaScript                    |
+| `fs`           | Files (JSON) in a folder                   | `node:fs`                     |
+| `sqlite`       | SQLite                                     | `node:sqlite` (Node.js 22.5+) |
+| `postgres`     | PostgreSQL                                 | [`@xufa/pg`](../pg)           |
+| `mongodb`      | MongoDB                                    | [`@xufa/mongo`](../mongo)     |
+| `disk`         | Objects (blobs) as files                   | `node:fs`                     |
+| `memory-blob`  | Objects (blobs) in memory                  | JavaScript                    |
+| `s3`           | Objects (blobs) in S3, R2, MinIO...        | `fetch` (SigV4 of its own)    |
+| `azure-blob`   | Objects (blobs) in Azure Blob              | `node:http` (Shared Key, SAS) |
+| `smtp`         | Email sent (a server of SMTP)              | `node:net`, `node:tls`        |
+| `memory-mail`  | Email kept in memory (tests)               | JavaScript                    |
+| `console-mail` | Email written to the console (development) | JavaScript                    |
 
 ```js
-const { Database, Model, fields, or, F, Count, Sum } = require('@xufa/orm'); // or require('xufa/orm')
+import { Database, Model, fields, or, F, Count, Sum } from '@xufa/orm'; // or from 'xufa/orm'
 
 class Author extends Model {
   static fields = {
@@ -74,7 +75,9 @@ A model is a class extending `Model` with `static fields` and, optionally, `stat
 case of the class name by default; a name, dots included), `schema` (the schema of the table in PostgreSQL; SQLite names
 the table `schema.table`, MongoDB the collection), `ordering`, `indexes` (`[['a', 'b'], { fields: ['c'], unique: true }]`; in SQL
 databases, `condition` is the SQL of the rows of a partial index: `{ fields: ['c'], unique: true, condition:
-'"deleted" IS NULL' }`; `expireAfter` makes a [TTL index](#ttl-indexes)),
+'"deleted" IS NULL' }`; `expireAfter` makes a [TTL index](#ttl-indexes)), `constraints` (as Django's
+Meta.constraints: `{ unique: ['author', 'title'], message }`, `{ unique: [Lower('name')], message }` unique without
+case, on every backend, its message that of the `UniqueError`; `{ check: 'pages > 0', message, field }` a rule),
 `abstract` (a parent whose fields its children have; `fields.extend(Parent, { ... })` writes them for TypeScript), `strict` (SQLite: a STRICT table, its columns of the types
 STRICT has) and `fillfactor` (PostgreSQL, 10 to 100: room left in the pages
 of the table for the new versions of updated rows, which makes updates of tables updated often about twice as fast
@@ -98,7 +101,15 @@ the primary key), `bytes` (Buffers) and
 `foreignKey(Model | () => Model | 'Name' | 'self', { onDelete, relatedName, attname, dbOnDelete })` and
 `manyToMany(Model | () => Model | 'Name' | 'self', { relatedName, through })`. Every field takes `null`, `default`
 (a value or a function), `unique`, `index`, `primaryKey`, `choices`, `column` and `validate` (rules of the value:
-functions or expressions that give a message, or false, when it is not valid; see Validation rules).
+functions or expressions that give a message, or false, when it is not valid; see Validation rules). `choices` may have
+labels (`[['o', 'On loan'], ...]` or `{ o: 'On loan' }`): `object.display('status')` gives them, as Django's
+`get_status_display()`. `label` and `help` (verbose_name, help_text) are for forms, the admin and schemas;
+`blank: false` refuses an empty text. A model's own names for people are `options.label` and `options.labelPlural`
+(Django's `verbose_name`; `Model.meta.label` is `'book instance'` of `BookInstance` by default), for the titles of
+views; `options.display` is its text (`'{lastName}, {firstName}'`, or a function; Django's `__str__`), and
+`options.permissions` its own permissions (`{ markReturned: 'Set book as returned' }`, listed in `meta.permissions`
+after `add`, `change`, `delete` and `view`). `unique: 'ci'` makes a text unique whatever its case, and
+`messages: { unique }` gives its message (Django's `error_messages`).
 
 `array(field, options)` holds arrays of the values of a field, as Django's ArrayField:
 `tags: fields.array(fields.string({ maxLength: 20 }))`. They are native arrays in PostgreSQL (`VARCHAR(20)[]`), json text
@@ -128,6 +139,8 @@ number); how `NaN` compares is the database's (PostgreSQL and SQLite put it afte
 A foreign key `author` keeps the key in `authorId` and, once loaded (`selectRelated`, `prefetchRelated`,
 `await book.load('author')`, or assigned), the object in `author`. The model it points to gets the reverse relation,
 `relatedName` (`<model>Set` by default): `author.books` is a QuerySet, and `author.books.create()` sets the key.
+`prefetchRelated('books', 'books__publisher')` follows paths, and a loaded QuerySet is read without waiting
+(`[...author.books]`, `{{#each author.books as book}}` in a template); one that is not loaded says so.
 `onDelete` is `cascade` (default), `setNull`, `protect` or `doNothing`, done by the ORM so that it is the same on
 every database. `attname` names the key otherwise (`author_id`), `toField` points it to a unique field of the other
 model instead of its primary key (`foreignKey(Country, { toField: 'code' })`), `dbOnDelete` (`cascade`, `setNull`,
@@ -321,7 +334,7 @@ deleted softly too). A soft delete does not cascade.
 ## Factories
 
 ```js
-const { factory, sequence } = require('@xufa/orm');
+import { factory, sequence } from '@xufa/orm';
 
 const Teams = factory(Team, { name: (n) => `Team ${n}` });
 const Users = factory(
@@ -378,11 +391,20 @@ computed by the ORM in the other backends). Without `values()`, `annotate()` giv
 aggregates, as Django's: `Author.objects.annotate({ numBooks: Count('books') }).orderBy('-numBooks')` (its names cannot
 be those of fields or relations). Reports by dates: `values({ month: Extract('at', 'month') })` (a number: `year`,
 `quarter`, `month`, `week`, `day`, `week_day`, `iso_week_day`, `hour`, `minute`, `second`) and `Trunc('at', 'month')`
-(the start of the unit: a Date, a date for dates), grouped by `annotate()`: `strftime`, `EXTRACT`/`date_trunc` and
+(the start of the unit: a Date, a date for dates), grouped by `annotate()`, or plain and ordered by their keys
+(`values('title', { month: Extract('at', 'month') }).orderBy('-month')`): `strftime`, `EXTRACT`/`date_trunc` and
 `$month`/`$dateTrunc` (MongoDB 5.0+), in UTC.
+Tests: `rollbackEach(db, { beforeEach, afterEach })` runs each test in a transaction rolled back at its end (as
+Django's TestCase), the requests it makes to the app too; databases that cannot roll back are emptied (`db.flush()`).
 Nested transactions are savepoints; those started at the same time in one transaction run one after another. In a
 SQLite file, the transactions of a process run one after another (SQLite has one writer), and writes outside them wait
 for them instead of failing with `SQLITE_BUSY`.
+
+### Pages
+
+`new Paginator(Book.objects.orderBy('title'), 10, { orphans })`, as Django's: `await paginator.page(n)` (its
+`objectList`, `number`, `hasNext`, `hasPrevious`, `startIndex`...; `PageNotAnInteger` and `EmptyPage` are 404s),
+`getPage(n)` (the first or the last page instead), `numPages()`, `elidedPageRange(n)` for a pager.
 
 ## Migrations
 
@@ -590,6 +612,8 @@ Buffer or string, contentType, cid, encoding: 'base64' }`, `cid` for images of t
   refuses all of them, or the message, or cannot be reached, the error is a `MailError` of 502 (`responseCode`,
   `response`, `rejected`). `db.backend.verify()` connects, secures and logs in. A server of mail does not keep what
   it sends: queries, updates and deletes of the model are `UnsupportedError`s.
+- `console-mail` writes each message to the console as it would be sent, and keeps it as `memory-mail` does
+  (Django's console backend; `write(text)` to write it elsewhere). URLs: `console:` and `memory-mail:`, as `smtp://`.
 - `memory-mail` makes the messages as `smtp` does (the same checks), accepts every recipient and keeps them: tests
   query them (`Email.objects.filter({ subject__startswith: 'Your' })`).
 - The primary key is the automatic one (`smtp` gives none), or a string with a default, which is then the
@@ -644,7 +668,7 @@ A database with the option `audit` keeps every change of its objects in a table 
 in what context. With `Tenants`, each tenant has its own log, in its database (the option in the config of the tenant).
 
 ```js
-const { Database, plugin } = require('xufa/orm');
+import { Database, plugin } from 'xufa/orm';
 
 const db = new Database({ backend: 'postgres', url, audit: { redact: ['passwordHash'], retain: '365d' } });
 
@@ -750,7 +774,7 @@ app. Validation errors are answered with 400 and the messages of each field (`er
 functions take it and, in TypeScript, it carries the type of the objects (as JSON):
 
 ```js
-const { s } = require('@xufa/schema');
+import { s } from '@xufa/schema';
 
 const BookOut = Book.schema(); // the objects: replies
 const NewBook = s.omit(Book.schema({ input: true, additionalProperties: false }), ['id', 'createdAt']);
@@ -871,6 +895,8 @@ nope.'] }`). In a PUT or PATCH, a read-only key with the value the object has is
   `?ordering=-pages,title`, `?search=ada`, with `?limit=` and `?offset=`); others are a 400. `pageSize` (50),
   `maxPageSize` (500), `pagination: false` (arrays), `lookup` (the field of `/:id`, `pk` by default).
 - `auth`: the rule of [@xufa/auth](../auth) (`config.auth` of the routes) for every action, or one by action.
+  `permissions` (`true`: the name of the model, or a name) adds the permissions of the roles of @xufa/auth each
+  action needs in the tenant of the request: `Book.view` (list, get), `Book.add`, `Book.change`, `Book.delete`.
 - `openapi`: with [@xufa/openapi](../openapi), the routes are documented (operations, parameters, bodies and objects
   from `Model.schema()`, responses, the security of `auth`): `{ tag }` names their tag, `false` leaves them out.
   The object answered is a schema of its own (`app.addSchema({ $id: 'Book' })`, so `components/schemas` of the
@@ -883,7 +909,8 @@ nope.'] }`). In a PUT or PATCH, a read-only key with the value the object has is
 - `hooks`: `beforeCreate(values, request)` and `beforeUpdate(object, values, request)` (they can change the values,
   or throw), `afterCreate`, `afterUpdate` and `beforeDelete(object, request)`.
 - Errors are answered with their status: 400 for values that are not valid (with the messages of each field), 404,
-  and 409 for duplicates (`UniqueError`) and for objects others protect (`ProtectedError`).
+  and 409 for duplicates (`UniqueError`) and for objects others protect (`ProtectedError`, with
+  `protectedObjects`, a QuerySet of them, and `relation`, as Django's `protected_objects`).
 
 ## Faults (tests of resilience)
 

@@ -1,0 +1,23 @@
+{{!-- The built-in question of a DeleteView (<model>_confirm_delete.html when the app has none): what keeps the
+object (blockers), or the button. --}}
+{{extends baseTemplate}}
+
+{{#block content}}
+<h1>{{ title }}</h1>
+
+{{#if blockers?.length}}
+<p>{{ blockedText }}</p>
+<ul>
+  {{#each blockers as blocker}}
+  <li>{{#if blocker.href}}<a href="{{ blocker.href }}">{{ blocker.text }}</a>{{else}}{{ blocker.text }}{{/if}}</li>
+  {{/each}}
+</ul>
+{{else}}
+<p>{{ question }}</p>
+
+<form action="" method="post">
+  {{#if csrfToken}}<input type="hidden" name="_csrf" value="{{ csrfToken }}" />{{/if}}
+  <input type="submit" value="Yes, delete." />
+</form>
+{{/if}}
+{{/block content}}

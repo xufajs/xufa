@@ -47,4 +47,4 @@ class ConnectionError extends PgError {
   }
 }
 
-module.exports = { PgError, DatabaseError, ConnectionError, FIELDS };
+export { PgError, DatabaseError, ConnectionError, FIELDS };

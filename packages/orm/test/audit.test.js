@@ -2,25 +2,14 @@
 // on every backend; who and in what context (with(), the requests of the plugin); events of log(); what is redacted
 // or left out; the models audited; a change and its entries in one transaction; retain; tenants; and the shared suite
 // of the backends on an audited database (auditing changes nothing else).
-const fs = require('node:fs');
-const os = require('node:os');
-const path = require('node:path');
-const xufa = require('@xufa/http');
-const {
-  Database,
-  Tenants,
-  Model,
-  AuditEntry,
-  auditResource,
-  fields,
-  F,
-  plugin,
-  setEncryptionKeys,
-  generateEncryptionKey,
-} = require('..');
-const { defineSuite } = require('./suite');
-const pg = require('../../pg/test/server');
-const mongo = require('../../mongo/test/server');
+import fs from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
+import xufa from '@xufa/http';
+import { Database, Tenants, Model, AuditEntry, auditResource, fields, F, plugin, setEncryptionKeys, generateEncryptionKey } from '../index.js';
+import { defineSuite } from './suite.js';
+import * as pg from '../../pg/test/server.js';
+import * as mongo from '../../mongo/test/server.js';
 
 // composite: false for MongoDB (no composite primary keys).
 function makeModels({ composite = true } = {}) {

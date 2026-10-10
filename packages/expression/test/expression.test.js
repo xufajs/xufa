@@ -1,4 +1,7 @@
-const { compile, evaluate, parse, Engine, ExpressionError, GLOBALS } = require('..');
+import { compile, evaluate, parse, Engine, ExpressionError, GLOBALS } from '../index.js';
+import { createRequire } from 'node:module';
+
+const require = createRequire(import.meta.url);
 
 const context = () => ({
   a: 3,

@@ -1,8 +1,8 @@
 // Locks: several schedulers with the same jobs (as processes on several machines) and one lock: each time of a job
 // runs in one of them. memoryLock(), and ormLock() on the memory and SQLite backends of @xufa/orm: claims, a claim
 // kept while its run goes on (no other process starts it), released, and expired when its process died.
-const { Database } = require('@xufa/orm');
-const { Scheduler, memoryLock, ormLock } = require('..');
+import { Database } from '@xufa/orm';
+import { Scheduler, memoryLock, ormLock } from '../index.js';
 
 const flush = () => new Promise((resolve) => setImmediate(resolve));
 const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));

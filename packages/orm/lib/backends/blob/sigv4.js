@@ -1,7 +1,7 @@
 // AWS Signature Version 4: the signatures of requests to S3 (and to stores that speak its API: R2, MinIO, OSS...),
 // in the Authorization header (sign) or in the query of a URL that works without credentials for a while (presign).
 // https://docs.aws.amazon.com/AmazonS3/latest/API/sig-v4-authenticating-requests.html
-const crypto = require('node:crypto');
+import crypto from 'node:crypto';
 
 const ALGORITHM = 'AWS4-HMAC-SHA256';
 const EMPTY_HASH = 'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855';
@@ -123,4 +123,4 @@ function presign({ method = 'GET', url, region, service = 's3', credentials, dat
   return signedUrl.toString();
 }
 
-module.exports = { sign, presign, signature, encode, sha256, EMPTY_HASH, UNSIGNED };
+export { sign, presign, signature, encode, sha256, EMPTY_HASH, UNSIGNED };

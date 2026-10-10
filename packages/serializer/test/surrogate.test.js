@@ -1,8 +1,5 @@
-'use strict'
-
-
-const validator = require('is-my-json-valid')
-const build = require('..')
+import validator from 'is-my-json-valid';
+import build from '../index.js';
 
 test('render a string with surrogate pairs as JSON:test 1', () => {
   expect.assertions(2)

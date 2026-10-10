@@ -3,12 +3,12 @@
 // async. Model.objects gives a QuerySet of every object of the model.
 //
 //   const books = await Book.objects.filter({ author__name: 'Ada', pages__gte: 100 }).orderBy('-pages').limit(10);
-const { ForeignKey } = require('./fields');
-const { STATE, takeGiven } = require('./meta');
-const { currentSignal } = require('./context');
-const { cachedQuery } = require('./query-cache');
-const { aggregateAcross, isReverse } = require('./js-aggregates');
-const {
+import { ForeignKey } from './fields.js';
+import { STATE, takeGiven } from './meta.js';
+import { currentSignal } from './context.js';
+import { cachedQuery } from './query-cache.js';
+import { aggregateAcross, isReverse } from './js-aggregates.js';
+import {
   Q,
   F,
   Raw,
@@ -27,12 +27,12 @@ const {
   Extract,
   Trunc,
   resolveDateValue,
-} = require('./query');
-const modelCache = require('./model-cache');
-const { NotFoundError, MultipleObjectsError, QueryError, ProtectedError, ValidationError } = require('./errors');
-const { uniqueErrorOf } = require('./errors');
-const { affects } = require('./computed');
-const { combine: combineQueries, isOptions, optionsOf } = require('./combine');
+} from './query.js';
+import * as modelCache from './model-cache.js';
+import { NotFoundError, MultipleObjectsError, QueryError, ProtectedError, ValidationError } from './errors.js';
+import { uniqueErrorOf } from './errors.js';
+import { affects } from './computed.js';
+import { combine as combineQueries, isOptions, optionsOf } from './combine.js';
 
 const MAX_GET_RESULTS = 21;
 
@@ -60,6 +60,68 @@ const INITIAL = {
   // Rows of values() with the same values given once.
   distinct: false,
 };
+
+// Whether conditions match one row at most: the primary key (not composite) equal to a value, alone or in an AND.
+function onePkRow(where, meta) {
+  if (!where || !meta.pk || meta.pk.composite) return false;
+  if (where.op === 'and') return where.children.some((child) => onePkRow(child, meta));
+  if (where.op) return false;
+  const { fields, lookup, value } = where;
+  return (
+    Array.isArray(fields) &&
+    fields.length === 1 &&
+    fields[0] === meta.pk &&
+    lookup === 'exact' &&
+    value !== null &&
+    (typeof value !== 'object' || value instanceof Date)
+  );
+}
+
+// The chains of foreign keys of selectRelated(names) for a model, each after its prefixes; kept by model and names,
+// frozen (shared by the queries). At most MAX_KEPT sets of names a model.
+const MAX_KEPT = 500;
+const keptRelated = new WeakMap();
+function relatedChains(model, names) {
+  let known = keptRelated.get(model);
+  if (!known) {
+    known = new Map();
+    keptRelated.set(model, known);
+  }
+  const key = names.join('\u0000');
+  let chains = known.get(key);
+  if (chains === undefined) {
+    const found = new Map();
+    for (const name of names) {
+      const { fields } = resolvePath(model, name, false);
+      if (
+        !fields.every((field) => field instanceof ForeignKey) ||
+        lastOf(fields).attname === name.split(SEPARATOR).pop()
+      ) {
+        throw new QueryError(`selectRelated(): ${name} is not a foreign key of ${model.name}`);
+      }
+      for (let i = 1; i <= fields.length; i += 1) {
+        const chain = fields.slice(0, i);
+        const chainKey = pathKey(chain);
+        if (!found.has(chainKey)) found.set(chainKey, Object.freeze(chain));
+      }
+    }
+    chains = Object.freeze([...found.values()]);
+    if (known.size >= MAX_KEPT) known.clear();
+    known.set(key, chains);
+  }
+  return chains;
+}
+
+// The order of a model (options.ordering), resolved once a model (and again if its ordering changes).
+const keptOrders = new WeakMap();
+function defaultOrder(model) {
+  const { ordering } = model.meta;
+  const known = keptOrders.get(model);
+  if (known && known.ordering === ordering) return known.orderBy;
+  const orderBy = Object.freeze(expandPkOrder(model, ordering).map((name) => Object.freeze(resolveOrder(model, name))));
+  keptOrders.set(model, { ordering, orderBy });
+  return orderBy;
+}
 
 class QuerySet {
   constructor(model, state = INITIAL) {
@@ -339,30 +401,39 @@ class QuerySet {
       query.only = meta.fields.filter((field) => only.has(field));
     }
     if (!state.values) {
-      // Every chain comes after its prefixes: selectRelated('author__publisher') loads the author too.
-      const chains = new Map();
-      state.related.forEach((name) => {
-        const { fields } = resolvePath(model, name, false);
-        if (
-          !fields.every((field) => field instanceof ForeignKey) ||
-          lastOf(fields).attname === name.split(SEPARATOR).pop()
-        ) {
-          throw new QueryError(`selectRelated(): ${name} is not a foreign key of ${model.name}`);
-        }
-        for (let i = 1; i <= fields.length; i += 1) {
-          const chain = fields.slice(0, i);
-          const key = pathKey(chain);
-          if (!chains.has(key)) chains.set(key, chain);
-        }
-      });
-      query.related = [...chains.values()];
+      // Every chain comes after its prefixes: selectRelated('author__publisher') loads the author too. Kept by model
+      // and names (the same for every query that asks for them).
+      query.related = state.related.length ? relatedChains(model, state.related) : [];
     }
-    const order = state.orderBy || meta.ordering;
+    // One row at most (the primary key equal to a value): no order to ask the database for.
+    const order = !state.per && onePkRow(query.where, meta) ? [] : state.orderBy || meta.ordering;
     if (!state.annotations) {
-      query.orderBy = expandPkOrder(model, order).map((name) => resolveOrder(model, name));
+      // The model's own order, with no values computed: resolved once for the model.
+      const plain =
+        order === meta.ordering && !(query.values || []).some((item) => item.part || item.trunc || item.raw);
+      if (plain) query.orderBy = defaultOrder(model);
+      else query.orderBy = this.resolveOrderBy(model, order, query);
     }
     checkDatabases(query);
     return query;
+  }
+
+  // The order of a query: names of fields, or the keys of values() made of Extract, Trunc or Raw, which order by their
+  // expression: values({ month: Extract('createdAt', 'month') }).orderBy('-month').
+  resolveOrderBy(model, order, query) {
+    const computed = new Map(
+      (query.values || []).filter((item) => item.part || item.trunc || item.raw).map((item) => [item.key, item])
+    );
+    return expandPkOrder(model, order).map((name) => {
+      const key = typeof name === 'string' ? name.replace(/^-/, '') : null;
+      const item = key === null ? undefined : computed.get(key);
+      if (!item) return resolveOrder(model, name);
+      const desc = name.startsWith('-');
+      if (item.raw) return { raw: `${item.raw}${desc ? ' DESC' : ''}`, params: item.params, desc };
+      return item.part
+        ? { fields: item.fields, part: item.part, desc }
+        : { fields: item.fields, trunc: item.trunc, desc };
+    });
   }
 
   // Reading
@@ -373,6 +444,17 @@ class QuerySet {
 
   catch(reject) {
     return this.fetch().catch(reject);
+  }
+
+  // Its objects once loaded (awaited, or a relation of prefetchRelated), for what cannot wait: the templates of an
+  // object ({{#each book.genre as genre}}, as Django's book.genre.all). Not loaded: an error that says how.
+  *[Symbol.iterator]() {
+    if (!this.cache) {
+      throw new QueryError(
+        `A QuerySet of ${this.model.name} is read before it is loaded: await it, or load the relation (prefetchRelated)`
+      );
+    }
+    yield* this.cache;
   }
 
   async *[Symbol.asyncIterator]() {
@@ -579,7 +661,12 @@ class QuerySet {
   }
 
   async getFromDatabase(conditions) {
-    const qs = (conditions.length ? this.filter(...conditions) : this).clone({ limit: MAX_GET_RESULTS });
+    const base = conditions.length ? this.filter(...conditions) : this;
+    // As Django's get(): no order for one object (a sort the database made for nothing), unless the query is sliced or
+    // per group, where the order chooses the rows.
+    const { limit, offset, per } = base.state;
+    const unordered = limit === null && !offset && !per;
+    const qs = base.clone(unordered ? { limit: MAX_GET_RESULTS, orderBy: [] } : { limit: MAX_GET_RESULTS });
     const items = await qs.fetch();
     if (items.length === 0) throw new NotFoundError(this.model.name);
     if (items.length > 1) {
@@ -1095,7 +1182,7 @@ async function collectAndDelete(qs, seen) {
       const values = await qs.valuesList(field.targetField.attname, { flat: true }).orderBy();
       const related = allObjects(field.model, qs.state.db).filter({ [`${field.attname}__in`]: values });
       if (field.onDelete === 'protect') {
-        if (await related.exists()) throw new ProtectedError(model.name, `${field.model.name}.${field.name}`);
+        if (await related.exists()) throw protectedError(model, field, related);
       } else if (field.onDelete === 'setNull') await related.update({ [field.name]: null });
       else await collectAndDelete(related, seen);
     }
@@ -1111,7 +1198,7 @@ async function collectAndDelete(qs, seen) {
     const field = reverse[i];
     const related = allObjects(field.model, qs.state.db).filter({ [`${field.attname}__in`]: pks });
     if (field.onDelete === 'protect') {
-      if (await related.exists()) throw new ProtectedError(model.name, `${field.model.name}.${field.name}`);
+      if (await related.exists()) throw protectedError(model, field, related);
     } else if (field.onDelete === 'setNull') await related.update({ [field.name]: null });
     else await collectAndDelete(related, seen);
   }
@@ -1121,46 +1208,73 @@ async function collectAndDelete(qs, seen) {
 }
 
 // Loads the relations named for the objects given, with one query for each relation.
+// Django's ProtectedError: what keeps the objects (protectedObjects, a QuerySet of them) and the relation.
+function protectedError(model, field, related) {
+  const err = new ProtectedError(model.name, `${field.model.name}.${field.name}`);
+  err.protectedObjects = related;
+  err.relation = `${field.model.name}.${field.name}`;
+  return err;
+}
+
+// prefetchRelated: each relation of names once (a foreign key, a many-to-many, a reverse one), then the rest of
+// their paths (bookSet__author) on the objects it loaded.
 async function prefetch(model, instances, names, db) {
   if (instances.length === 0) return;
-  const { meta } = model;
-  for (let i = 0; i < names.length; i += 1) {
-    const name = names[i];
-    const field = meta.field(name);
-    if (field instanceof ForeignKey && field.name === name) {
-      const keys = [...new Set(instances.map((item) => item[field.attname]).filter((key) => key !== null))];
-      const { attname } = field.targetField;
-      const related = keys.length ? await field.target.objects.using(db).filter({ [`${attname}__in`]: keys }) : [];
-      const byKey = new Map(related.map((item) => [item[attname], item]));
-      instances.forEach((item) => {
-        const target = byKey.get(item[field.attname]);
-        if (target) item[STATE].related.set(name, target);
-      });
-      continue;
-    }
-    const many = meta.manyToManyRelation(name);
-    if (many) {
-      const keys = instances.map((item) => item.pk);
-      const links = await many.field.through.objects
-        .using(db)
-        .filter({ [`${many.from.attname}__in`]: keys })
-        .selectRelated(many.to.name);
-      const groups = new Map(keys.map((key) => [key, []]));
-      links.forEach((link) => groups.get(link[many.from.attname]).push(link[many.to.name]));
-      instances.forEach((item) => item[STATE].related.set(name, groups.get(item.pk)));
-      continue;
-    }
-    const reverse = meta.reverseRelation(name);
-    if (!reverse) throw new QueryError(`prefetchRelated(): ${model.name} has no relation ${name}`);
-    const keys = instances.map((item) => item.pk);
-    const related = await reverse.model.objects.using(db).filter({ [`${reverse.attname}__in`]: keys });
-    const groups = new Map(keys.map((key) => [key, []]));
-    related.forEach((item) => {
-      const group = groups.get(item[reverse.attname]);
-      if (group) group.push(item);
-    });
-    instances.forEach((item) => item[STATE].related.set(name, groups.get(item.pk)));
+  const paths = new Map();
+  for (const path of names) {
+    const [first, ...rest] = path.split('__');
+    if (!paths.has(first)) paths.set(first, []);
+    if (rest.length) paths.get(first).push(rest.join('__'));
+  }
+  for (const [name, rest] of paths) {
+    const { target, loaded } = await prefetchOne(model, instances, name, db);
+    if (rest.length) await prefetch(target, loaded, rest, db);
   }
 }
 
-module.exports = { QuerySet, RelatedSet, pathKey, lastOf, querySetClass };
+// One relation of the objects: { target: its model, loaded: the objects it loaded }.
+async function prefetchOne(model, instances, name, db) {
+  const { meta } = model;
+  const field = meta.field(name);
+  if (field instanceof ForeignKey && field.name === name) {
+    const keys = [...new Set(instances.map((item) => item[field.attname]).filter((key) => key !== null))];
+    const { attname } = field.targetField;
+    const related = keys.length ? await field.target.objects.using(db).filter({ [`${attname}__in`]: keys }) : [];
+    const byKey = new Map(related.map((item) => [item[attname], item]));
+    instances.forEach((item) => {
+      const target = byKey.get(item[field.attname]);
+      if (target) item[STATE].related.set(name, target);
+    });
+    return { target: field.target, loaded: related };
+  }
+  const many = meta.manyToManyRelation(name);
+  if (many) {
+    const keys = instances.map((item) => item.pk);
+    const links = await many.field.through.objects
+      .using(db)
+      .filter({ [`${many.from.attname}__in`]: keys })
+      .selectRelated(many.to.name);
+    const groups = new Map(keys.map((key) => [key, []]));
+    const loaded = new Map();
+    links.forEach((link) => {
+      const target = link[many.to.name];
+      groups.get(link[many.from.attname]).push(target);
+      loaded.set(target.pk, target);
+    });
+    instances.forEach((item) => item[STATE].related.set(name, groups.get(item.pk)));
+    return { target: many.to.target, loaded: [...loaded.values()] };
+  }
+  const reverse = meta.reverseRelation(name);
+  if (!reverse) throw new QueryError(`prefetchRelated(): ${model.name} has no relation ${name}`);
+  const keys = instances.map((item) => item.pk);
+  const related = await reverse.model.objects.using(db).filter({ [`${reverse.attname}__in`]: keys });
+  const groups = new Map(keys.map((key) => [key, []]));
+  related.forEach((item) => {
+    const group = groups.get(item[reverse.attname]);
+    if (group) group.push(item);
+  });
+  instances.forEach((item) => item[STATE].related.set(name, groups.get(item.pk)));
+  return { target: reverse.model, loaded: related };
+}
+
+export { QuerySet, RelatedSet, pathKey, lastOf, querySetClass };

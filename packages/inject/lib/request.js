@@ -1,10 +1,10 @@
 // The fake IncomingMessage: a Readable stream of the payload with the url, method and headers of a request.
-const { Readable, addAbortSignal } = require('node:stream');
-const util = require('node:util');
-const { EventEmitter } = require('node:events');
-const { parseURL } = require('./url');
-const { serialize } = require('./cookies');
-const { isFormDataLike, formDataToStream } = require('./form-data');
+import { Readable, addAbortSignal } from 'node:stream';
+import util from 'node:util';
+import { EventEmitter } from 'node:events';
+import { parseURL } from './url.js';
+import { serialize } from './cookies.js';
+import { isFormDataLike, formDataToStream } from './form-data.js';
 
 let connectionWarned = false;
 
@@ -169,6 +169,8 @@ function CustomRequest(options) {
 
 util.inherits(CustomRequest, Request);
 
-module.exports = Request;
-module.exports.Request = Request;
-module.exports.CustomRequest = CustomRequest;
+export default Request;
+Request.Request = Request;
+Request.CustomRequest = CustomRequest;
+
+export { Request as Request, CustomRequest };

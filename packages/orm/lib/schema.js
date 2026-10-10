@@ -10,6 +10,18 @@ function indexName(table, columns, unique) {
   return `${table}_${columns.join('_')}_${unique ? 'uniq' : 'idx'}`;
 }
 
+// The name of an index of the options of a model (its own, or one made of its table and columns).
+function indexNameOf(meta, index) {
+  if (index.name) return index.name;
+  const lower = new Set(index.lower || []);
+  const named = index.fields.map((name) => {
+    const field = meta.field(name);
+    const column = field ? field.column : name;
+    return lower.has(name) ? `lower_${column}` : column;
+  });
+  return indexName(meta.table, named, Boolean(index.unique));
+}
+
 function columnOf(field) {
   const column = { type: field.dbType, primaryKey: field.primaryKey, null: Boolean(field.null) };
   if (field.type === 'string' && field.maxLength !== undefined) column.maxLength = field.maxLength;
@@ -64,9 +76,21 @@ function specOf(meta) {
     if (fields.some((field) => !field)) throw new Error(`Invalid index ${index.fields} in ${meta.name}`);
     const names = fields.map((field) => field.column);
     const unique = Boolean(index.unique);
-    const spec = { name: index.name || indexName(meta.table, names, unique), columns: names, unique };
+    // lower: the columns compared in lower case (Lower(name)).
+    const lower = (index.lower || []).map((name) => meta.field(name).column);
+    const spec = { name: indexNameOf(meta, index), columns: names, unique };
+    if (lower.length) spec.lower = lower;
     // condition: the SQL of the rows of a partial index (SQL backends).
     if (index.condition) spec.condition = index.condition;
+    // include: columns kept in the index besides its keys (PostgreSQL's INCLUDE), so a query of them reads the index
+    // alone (an index-only scan: the pages of a list skipped without reading their rows).
+    if (index.include && index.include.length) {
+      spec.include = index.include.map((name) => {
+        const field = name === 'pk' ? meta.pk : meta.field(name);
+        if (!field) throw new Error(`Invalid include ${name} of an index of ${meta.name}`);
+        return field.column;
+      });
+    }
     // expireAfter: a TTL index (seconds after the date of its field): native in MongoDB, swept by db.expire() in all.
     if (index.expireAfter !== undefined) spec.expireAfter = index.expireAfter;
     indexes.push(spec);
@@ -86,4 +110,4 @@ function defaultOf(field) {
   return field.default;
 }
 
-module.exports = { specOf, columnOf, defaultOf, indexName };
+export { specOf, columnOf, defaultOf, indexName, indexNameOf };

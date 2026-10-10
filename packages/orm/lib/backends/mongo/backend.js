@@ -3,13 +3,20 @@
 //
 // Transactions need a replica set or a sharded cluster: on a standalone server, db.transaction() runs its function
 // without one (its writes are not atomic). Transactions inside transactions are part of the outer one: when one
-// throws, the outer one is rolled back when it ends.
-const { MongoCompiler, column } = require('./compiler');
-const { specOf } = require('../../schema');
-const { Backend } = require('../base');
-const { lastOf } = require('../../query');
-const { BackendError } = require('../../errors');
-const { tableKey } = require('../../meta');
+// throws, the outer one is rolled back when it ends. As the drivers of MongoDB do, a transaction runs again when it
+// meets a transient error (a write conflict with another one, an election, a network error inside it), and its commit
+// again when its result is unknown, for 120 s (db.transaction(fn, { retry: false }): once; { timeout }: other than
+// 120 s): fn may run more than once, so it should only write through the ORM.
+import { MongoCompiler, column } from './compiler.js';
+import { specOf } from '../../schema.js';
+import { Backend } from '../base.js';
+import { lastOf } from '../../query.js';
+import { BackendError } from '../../errors.js';
+import { tableKey } from '../../meta.js';
+import { createRequire } from 'node:module';
+
+// @xufa/mongo is loaded by the first database of MongoDB (require() of an ES module): not by apps without one.
+const require = createRequire(import.meta.url);
 
 // Composite primary keys are not supported: their models fail clearly.
 function noComposite(meta) {
@@ -369,7 +376,26 @@ class MongoBackend extends Backend {
     for (let i = 0; i < metas.length; i += 1) await this.collection(metas[i]).drop();
   }
 
-  async transaction(fn) {
+  // The transaction of a test: a session in a transaction (a replica set), aborted at its end. Without transactions,
+  // tests are emptied instead (rollbackEach() does it: flush).
+  async openPinned() {
+    if (!this.supportsTransactions) throw this.unsupported('Transactions of tests (a standalone server has none)');
+    return { session: this.client.startSession() };
+  }
+
+  async closePinned(store) {
+    await store.session.endSession();
+  }
+
+  async begin() {
+    this.pinned.session.startTransaction();
+  }
+
+  async rollback() {
+    await this.pinned.session.abortTransaction();
+  }
+
+  async transaction(fn, options = {}) {
     const store = this.context.getStore();
     if (store) {
       try {
@@ -381,30 +407,25 @@ class MongoBackend extends Backend {
     }
     if (!this.supportsTransactions) return this.context.run({ session: undefined }, fn);
     const session = this.client.startSession();
-    const state = { session, failed: null };
-    try {
-      return await this.context.run(state, async () => {
-        session.startTransaction();
-        let result;
-        try {
-          result = await fn();
-        } catch (err) {
-          await session.abortTransaction();
-          throw err;
-        }
+    // One run of the transaction: fn in the session (aborted by withTransaction when it throws).
+    const attempt = () => {
+      const state = { session, failed: null };
+      return this.context.run(state, async () => {
+        const result = await fn();
         if (state.failed) {
-          await session.abortTransaction();
           throw new BackendError('The transaction was rolled back: a transaction inside it failed', {
             cause: state.failed,
           });
         }
-        await session.commitTransaction();
         return result;
       });
+    };
+    try {
+      return await session.withTransaction(attempt, { timeout: options.retry === false ? 0 : options.timeout });
     } finally {
       await session.endSession();
     }
   }
 }
 
-module.exports = { MongoBackend };
+export { MongoBackend };

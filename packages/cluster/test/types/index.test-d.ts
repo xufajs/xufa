@@ -1,5 +1,5 @@
 import { expectType, expectError } from 'tsd';
-import { start, bus, createPool, usePool, PoolStats, Lease, PoolError, ormSlots } from '../..';
+import { start, bus, createPool, usePool, PoolStats, Lease, PoolError, ormSlots, PoolClient, Bus } from '../..';
 import { Database } from '@xufa/orm';
 
 start({
@@ -46,4 +46,18 @@ declare const discovery: import('@xufa/discovery').Discovery;
 createPool('by-netcache', { nodes: ['a'], shared: slots, notify: netcache });
 createPool('by-discovery', { nodes: ['a'], shared: slots, notify: discovery });
 expectType<boolean>(pool.health({ minNodes: 2, maxWaiting: 10 }).critical);
-converters.health().check().then((result) => expectType<number | undefined>(result.waiting));
+converters
+  .health()
+  .check()
+  .then((result) => expectType<number | undefined>(result.waiting));
+
+// use() with a fallback: a load balancer after two attempts, or when no node is free in 10 s.
+{
+  const lbClient = new PoolClient('converters', { bus: new Bus() });
+  lbClient.use((node, { fallback, attempt }) => (fallback ? `lb ${attempt}` : node.id), {
+    retries: 3,
+    fallback: { after: 2, node: { id: 'lb', url: 'http://lb' } },
+  });
+  lbClient.use(() => 1, { fallback: { wait: '10s', node: (attempt) => ({ id: `lb${attempt}` }) } });
+  expectError(lbClient.use(() => 1, { fallback: { node: { id: 'lb' } } }));
+}

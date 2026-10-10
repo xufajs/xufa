@@ -19,7 +19,7 @@
 
         <h2 id="start">Quick start</h2>
         <pre><code class="language-sh">npm install @xufa/discovery</code></pre>
-        <pre><code class="language-js">const { Discovery } = require('@xufa/discovery');
+        <pre><code class="language-js">import { Discovery } from '@xufa/discovery';
 
 const discovery = new Discovery({
   service: 'shop-api',
@@ -107,8 +107,8 @@ await discovery.waitFor((peers) =&gt; peers.length &gt;= 2); // three nodes, thi
 
         <h2 id="cluster">With @xufa/cluster</h2>
         <p>One discovery by machine, in the primary; the workers ask it through the <a href="cluster.html">bus</a>:</p>
-        <pre><code class="language-js">const { start, bus } = require('@xufa/cluster');
-const { Discovery } = require('@xufa/discovery');
+        <pre><code class="language-js">import { start, bus } from '@xufa/cluster';
+import { Discovery } from '@xufa/discovery';
 
 start({
   primary: async ({ onShutdown }) =&gt; {

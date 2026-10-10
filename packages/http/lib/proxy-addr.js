@@ -175,4 +175,4 @@ function all(req, trust) {
   return addresses;
 }
 
-module.exports = { compile, all, forwarded, parseIp };
+export { compile, all, forwarded, parseIp };

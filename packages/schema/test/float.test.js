@@ -1,4 +1,4 @@
-const { Float, Integer, compileJsonSchema } = require('..');
+import { Float, Integer, compileJsonSchema } from '../index.js';
 
 describe('Float Type', () => {
   it('Should allow undefined if not mandatory', () => {

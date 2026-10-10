@@ -1,4 +1,4 @@
-const { ValidateType, toType } = require('./validate-type');
+import { ValidateType, toType } from './validate-type.js';
 
 class ObjType extends ValidateType {
   constructor(options = {}) {
@@ -66,9 +66,4 @@ function oobj(schema, isMandatory = false, isNullable = false) {
   return new ObjType({ schema, isMandatory, isNullable });
 }
 
-module.exports = {
-  ObjType,
-  Obj,
-  obj,
-  oobj,
-};
+export { ObjType, Obj, obj, oobj };

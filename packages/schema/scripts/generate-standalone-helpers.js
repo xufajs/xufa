@@ -2,13 +2,13 @@
 // Writes lib/standalone-helpers.js: the source of the library functions that standalone code calls, as text (see
 // standalone.js), with the other helpers each one calls. Run it (npm run build:helpers) after changing one of them;
 // test/standalone.test.js checks that each copy behaves as the function it copies.
-const fs = require('fs');
-const path = require('path');
-const { deepEqual } = require('../lib/deep-equal');
-const { codePointLength } = require('../lib/types/code-point-length');
-const { hasDuplicates } = require('../lib/types/has-duplicates');
-const { FORMAT_FUNCTIONS } = require('../lib/formats');
-const { errorObject, pathName } = require('../lib/error-objects');
+import fs from 'fs';
+import path from 'path';
+import { deepEqual } from '../lib/deep-equal.js';
+import { codePointLength } from '../lib/types/code-point-length.js';
+import { hasDuplicates } from '../lib/types/has-duplicates.js';
+import { FORMAT_FUNCTIONS } from '../lib/formats.js';
+import { errorObject, pathName } from '../lib/error-objects.js';
 
 const functions = { codePointLength, deepEqual, hasDuplicates, pathName, errorObject, ...FORMAT_FUNCTIONS };
 const names = Object.keys(functions);
@@ -35,5 +35,5 @@ names.forEach((name) => {
 });
 out += '};\n\nmodule.exports = { HELPER_SOURCES };\n';
 
-fs.writeFileSync(path.join(__dirname, '../lib/standalone-helpers.js'), out);
+fs.writeFileSync(path.join(import.meta.dirname, '../lib/standalone-helpers.js'), out);
 console.log(`Wrote lib/standalone-helpers.js with ${names.length} helpers`);

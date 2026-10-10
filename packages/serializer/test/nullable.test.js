@@ -1,8 +1,4 @@
-'use strict'
-
-
-
-const build = require('..')
+import build from '../index.js';
 
 const nullable = true
 

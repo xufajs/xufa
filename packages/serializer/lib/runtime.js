@@ -1,5 +1,5 @@
 // Functions the generated serializers call to write values: the same results as fast-json-stringify.
-const { writeNumberText } = require('./writer');
+import { writeNumberText } from './writer.js';
 
 // eslint-disable-next-line no-control-regex
 const NEEDS_ESCAPE = /[\x00-\x1f"\\\ud800-\udfff]/;
@@ -129,4 +129,4 @@ function createRuntime(options = {}) {
   };
 }
 
-module.exports = { createRuntime, asString, asNumber, asBoolean, asDateTime, asDate, asTime };
+export { createRuntime, asString, asNumber, asBoolean, asDateTime, asDate, asTime };

@@ -1,7 +1,7 @@
 // A cluster of 3 workers sharing a pool of 2 nodes of 1 slot: worker 1 takes a lease and dies with it, the others run
 // 6 works each. The primary counts the works running at once and reports (JSON lines).
-const cluster = require('node:cluster');
-const xufa = require('../..');
+import cluster from 'node:cluster';
+import * as xufa from '../../index.js';
 
 const report = (data) => process.stdout.write(`${JSON.stringify(data)}\n`);
 const sleep = (wait) => new Promise((resolve) => setTimeout(resolve, wait));

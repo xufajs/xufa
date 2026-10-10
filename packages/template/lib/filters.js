@@ -79,6 +79,8 @@ const FILTERS = {
     if (value === null || value === undefined) return 0;
     if (typeof value === 'string' || Array.isArray(value)) return value.length;
     if (value instanceof Map || value instanceof Set) return value.size;
+    // Other iterables (a loaded QuerySet: Django's |length of a queryset) by their items.
+    if (typeof value[Symbol.iterator] === 'function') return listOf(value).length;
     return typeof value === 'object' ? Object.keys(value).length : 0;
   },
   first: (value) => listOf(value)[0],
@@ -110,4 +112,4 @@ const FILTERS = {
   safe: (value) => new SafeString(text(value)),
 };
 
-module.exports = { FILTERS, SafeString, escapeHtml };
+export { FILTERS, SafeString, escapeHtml };

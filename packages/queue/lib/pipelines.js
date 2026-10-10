@@ -1,5 +1,3 @@
-'use strict';
-
 // Pipelines: graphs of steps run as jobs of a queue, each run and each of its steps kept in the database. A pipeline
 // is data (it can be stored, edited and shown): steps that run a block (a kind of work registered by code) with their
 // config, after other steps (fan out, join), when a condition holds, and whose outputs make the result of the run.
@@ -32,9 +30,10 @@
 // A step of the block 'pipeline' runs another pipeline (config.pipeline, with the step's input or config.input) and
 // waits for it as a paused step: the child run's result is its output; a child that fails or is cancelled fails it;
 // its waitTimeout holds (the child is cancelled then); cancelling a run cancels its children.
-const { EventEmitter } = require('node:events');
-const { QueueError } = require('./errors');
-const { ms } = require('./duration');
+import { EventEmitter } from 'node:events';
+import { QueueError } from './errors.js';
+import { ms } from './duration.js';
+import * as expressionModule from '@xufa/expression';
 
 const RUN_STATUSES = ['running', 'done', 'failed', 'cancelled'];
 const STEP_STATUSES = ['waiting', 'queued', 'running', 'retrying', 'paused', 'done', 'skipped', 'failed', 'cancelled'];
@@ -71,6 +70,10 @@ function models(orm, prefix, names) {
         key: fields.string({ maxLength: 200, null: true, index: true }),
         // Its steps queued or running, with a limit of concurrency.
         inFlight: fields.integer({ default: 0 }),
+        // The jobs of its steps: their priority and queue (those of a step win), and when its first steps run.
+        priority: fields.integer({ default: 0 }),
+        queue: fields.string({ maxLength: 200, null: true }),
+        runAt: fields.datetime({ null: true }),
         // A run of a step of another run (the block 'pipeline'): that run and step, and how deep it is.
         parent: fields.string({ maxLength: 64, null: true, index: true }),
         parentStep: fields.string({ maxLength: 200, null: true }),
@@ -110,7 +113,7 @@ let expressions = null;
 function expression(source) {
   if (!expressions) {
     try {
-      expressions = require('@xufa/expression'); // eslint-disable-line global-require
+      expressions = expressionModule;
     } catch (err) {
       throw new PipelineError(`Conditions and transforms written as text need @xufa/expression (${err.message})`);
     }
@@ -151,6 +154,8 @@ class Pipelines extends EventEmitter {
     }
     this.blocks = new Map();
     this.pipelines = new Map();
+    // The schedules that start runs (schedule()): by the name of their job of the scheduler.
+    this.schedules = new Map();
     // Functions of steps defined in code (run, when), by pipeline and step: a run keeps its definition as data.
     this.functions = new Map();
     this.block('transform', {
@@ -328,8 +333,67 @@ class Pipelines extends EventEmitter {
     return this;
   }
 
+  // A task: a block and a pipeline of one step that runs it, by one name (its runs kept, retried and shown as those of
+  // any pipeline). Options: those of the block (attempts, backoff, timeout, queue, pool, validate) and of the pipeline
+  // (trigger, description).
+  //
+  //   pipelines.task('monthly-report', async ({ month }) => makeReport(month), { attempts: 3 });
+  //   await pipelines.start('monthly-report', { month: 10 }, { delay: '1h' });
+  task(name, run, options = {}) {
+    if (typeof name !== 'string' || name === '') throw new PipelineError('task(name, run): name is a string');
+    if (typeof run !== 'function') throw new PipelineError(`task(${name}): run(input, ctx) is a function`);
+    const { trigger, description, ...blockOptions } = options;
+    this.block(name, { ...blockOptions, run });
+    this.define({
+      name,
+      ...(trigger ? { trigger } : {}),
+      ...(description ? { description } : {}),
+      steps: [{ id: name, block: name, result: true }],
+    });
+    return this;
+  }
+
+  // A pipeline (a task too) started on a schedule of a Scheduler of @xufa/scheduler: a job of the scheduler (its every,
+  // cron, timezone, at or in, catchUp, lock, retries...) whose run starts a run of the pipeline, kept and retried as
+  // any other (trigger 'schedule:<name>', key 'schedule:<name>:<time due>': a time already started is not started
+  // again). input: a value, or input({ scheduledAt, name }) for each time. Options of the run: priority, queue. With
+  // the lock of the scheduler (ormLock(db)), one machine starts each time. The info of the job.
+  //
+  //   pipelines.task('monthly-report', async ({ month }) => makeReport(month), { attempts: 3 });
+  //   pipelines.schedule(scheduler, 'monthly-report', { cron: '0 6 1 * *', input: ({ scheduledAt }) => ({ month: scheduledAt.getMonth() }) });
+  schedule(scheduler, pipeline, spec = {}) {
+    if (!scheduler || typeof scheduler.add !== 'function') {
+      throw new PipelineError('schedule(scheduler, pipeline, spec): a Scheduler of @xufa/scheduler');
+    }
+    if (!this.pipelines.has(pipeline)) throw new PipelineError(`schedule(): no pipeline named ${pipeline}`);
+    const { name = pipeline, input = null, priority, queue, run, ...timing } = spec;
+    if (run !== undefined) throw new PipelineError(`schedule(${name}): the run is that of the pipeline (no run)`);
+    const trigger = `schedule:${name}`;
+    const info = scheduler.add({
+      ...timing,
+      name,
+      // Its runs record the run of the pipeline they started.
+      run: async ({ scheduledAt }) => {
+        const key = `${trigger}:${scheduledAt.toISOString()}`;
+        const started = await this.Run.objects.filter({ key }).first();
+        if (started) return { run: String(started.pk), again: true };
+        const given = typeof input === 'function' ? await input({ scheduledAt, name }) : input;
+        const created = await this.start(pipeline, given === undefined ? null : given, {
+          key,
+          trigger,
+          ...(priority !== undefined ? { priority } : {}),
+          ...(queue !== undefined ? { queue } : {}),
+        });
+        return { run: String(created.pk) };
+      },
+    });
+    this.schedules.set(name, { name, pipeline, trigger, scheduler });
+    return info;
+  }
+
   // Starts a run of a pipeline (its name, or a definition not defined before): its steps without after are queued.
-  // Options: key (a run with that key running is given instead of another), trigger.
+  // Options: key (a run with that key running is given instead of another), trigger; and those of the jobs of its
+  // steps, as enqueue(): priority and queue (for every step without its own), delay or at (when its first steps run).
   async start(pipeline, input = null, options = {}) {
     const definition = typeof pipeline === 'string' ? this.pipelines.get(pipeline) : null;
     if (typeof pipeline === 'string' && !definition) throw new PipelineError(`No pipeline named ${pipeline}`);
@@ -341,7 +405,23 @@ class Pipelines extends EventEmitter {
       const existing = await this.Run.objects.filter({ key: options.key, status: 'running' }).first();
       if (existing) return existing;
     }
+    if (options.priority !== undefined && !Number.isInteger(options.priority)) {
+      throw new PipelineError(`The priority of a run is an integer: ${options.priority}`);
+    }
+    if (options.delay !== undefined && options.at !== undefined) {
+      throw new PipelineError('A run takes delay or at, not both');
+    }
+    const runAt =
+      options.at !== undefined
+        ? new Date(options.at)
+        : options.delay !== undefined
+          ? new Date(Date.now() + ms(options.delay))
+          : null;
+    if (runAt && Number.isNaN(runAt.getTime())) throw new PipelineError(`Not a date: ${options.at}`);
     const run = await this.Run.objects.create({
+      priority: options.priority || 0,
+      queue: options.queue || null,
+      runAt,
       pipeline: definition.name,
       input,
       definition,
@@ -443,7 +523,7 @@ class Pipelines extends EventEmitter {
         // Only the process that moves it to queued enqueues its job.
         const moved = await this.Step.objects.filter({ pk: row.pk, status: 'waiting' }).update({ status: 'queued' });
         statuses[step.id] = 'queued';
-        if (moved) await this.enqueueStep(id, step);
+        if (moved) await this.enqueueStep(run, step);
         else if (limit) await this.givePlace(run);
       }
     }
@@ -483,9 +563,14 @@ class Pipelines extends EventEmitter {
     await this.Run.objects.filter({ pk: run.pk }).update({ inFlight });
   }
 
-  enqueueStep(runId, step) {
+  // The job of a step: the priority and queue of the step, else of the run; its first steps when the run is due.
+  enqueueStep(run, step) {
+    const runId = String(run.pk);
     const options = { key: `${JOB_PREFIX}${runId}:${step.id}` };
+    if (run.priority) options.priority = run.priority;
+    if (run.queue) options.queue = run.queue;
     for (const key of ['attempts', 'priority', 'queue']) if (step[key] !== undefined) options[key] = step[key];
+    if (step.after.length === 0 && run.runAt && new Date(run.runAt).getTime() > Date.now()) options.at = run.runAt;
     return this.queue.enqueue(`${JOB_PREFIX}${step.block}`, { run: runId, step: step.id }, options);
   }
 
@@ -820,7 +905,7 @@ class Pipelines extends EventEmitter {
       for (const row of await this.Step.objects.filter({ run: id, status: 'queued' })) {
         const step = run.definition.steps.find((item) => item.id === row.step);
         // Keyed: a job pending or running for the step is given back instead of another.
-        if (step) await this.enqueueStep(id, step);
+        if (step) await this.enqueueStep(run, step);
       }
       await this.advance(run);
     }
@@ -828,4 +913,4 @@ class Pipelines extends EventEmitter {
   }
 }
 
-module.exports = { Pipelines, PipelineError, WAIT };
+export { Pipelines, PipelineError, WAIT };

@@ -17,7 +17,7 @@
 //
 // Values are constants, functions (n, values) (async too) or factories; the values given replace them, and a
 // function given is called as those of the definition.
-const { QueryError } = require('./errors');
+import { QueryError } from './errors.js';
 
 class Factory {
   constructor(model, definition, options = {}, state = {}) {
@@ -125,4 +125,4 @@ function sequence(items) {
   return (n) => items[(n - 1) % items.length];
 }
 
-module.exports = { factory, sequence, Factory };
+export { factory, sequence, Factory };

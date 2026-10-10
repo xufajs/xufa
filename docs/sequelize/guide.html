@@ -68,15 +68,15 @@
         <h1>Guide</h1>
         <p class="intro">
           <code>@xufa/sequelize</code> is the API of <a href="https://sequelize.org">Sequelize</a> 6 over xufa's
-          <a href="../orm/index.html">ORM</a>. Code written for Sequelize runs with <code>require('@xufa/sequelize')</code>
-          instead of <code>require('sequelize')</code>, faster, and with no dependencies: PostgreSQL through
+          <a href="../orm/index.html">ORM</a>. Code written for Sequelize runs with <code>@xufa/sequelize</code>
+          instead of <code>sequelize</code> in its imports (or requires), faster, and with no dependencies: PostgreSQL through
           <a href="../pg/index.html"><code>@xufa/pg</code></a>, SQLite through <code>node:sqlite</code>.
         </p>
 
         <h2 id="switching">Switching</h2>
         <pre><code class="language-sh">npm install @xufa/sequelize
 npm uninstall sequelize pg pg-hstore sqlite3</code></pre>
-        <pre><code class="language-js">const { Sequelize, DataTypes, Op } = require('@xufa/sequelize'); // was: require('sequelize')
+        <pre><code class="language-js">import { Sequelize, DataTypes, Op } from '@xufa/sequelize'; // was: from 'sequelize'
 
 const sequelize = new Sequelize('postgres://user:pass@localhost:5432/db', { logging: false });
 const Author = sequelize.define('Author', { name: { type: DataTypes.STRING, allowNull: false } });
@@ -350,7 +350,7 @@ const ada = await User.create({ name: 'Ada' }); // id is optional</code></pre>
 
         <h2 id="checklist">Moving an app</h2>
         <ol>
-          <li>Replace <code>require('sequelize')</code> (or <code>import ... from 'sequelize'</code>) with <code>@xufa/sequelize</code>.</li>
+          <li>Replace <code>'sequelize'</code> in imports (or requires) with <code>@xufa/sequelize</code>.</li>
           <li>Remove <code>pg</code>, <code>pg-hstore</code> and <code>sqlite3</code>: they are not used.</li>
           <li>If your code reads <code>BIGINT</code> values as strings, read them as numbers (or bigints).</li>
           <li>If it counts with <code>hasMany</code> includes and <code>distinct: false</code>, check the counts.</li>

@@ -1,7 +1,4 @@
-'use strict'
-
-
-const build = require('..')
+import build from '../index.js';
 
 test('sanitize 2', () => {
   const payload = '(throw "pwoned")'

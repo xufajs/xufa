@@ -5,16 +5,16 @@
 // themselves are not changed.
 //
 // node tools/port-jwt/port.js <node-jsonwebtoken> [<node-jws> <node-jwa>]  (checkouts of their repositories)
-const fs = require('node:fs');
-const path = require('node:path');
-const { spawnSync } = require('node:child_process');
+import fs from 'node:fs';
+import path from 'node:path';
+import { spawnSync } from 'node:child_process';
 
 const [jsonwebtoken, jws, jwa] = process.argv.slice(2);
 if (!jsonwebtoken) {
   console.error('Usage: node tools/port-jwt/port.js <node-jsonwebtoken> [<node-jws> <node-jwa>]');
   process.exit(1);
 }
-const TESTS = path.join(__dirname, '../../packages/jwt/test');
+const TESTS = path.join(import.meta.dirname, '../../packages/jwt/test');
 
 // The requires, by what they name (quoted either way): what they become. `up` reaches packages/jwt from the file.
 function rewriteRequires(text, rules) {

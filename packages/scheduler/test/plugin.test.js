@@ -1,8 +1,8 @@
 // The plugin on @xufa/http and on fastify: app.scheduler with the jobs given, started when the app is ready (or not,
 // with start: false), stopped when it closes (its runs waited for); the logger of the app by default.
-const xufa = require('@xufa/http');
-const fastify = require('fastify');
-const { Scheduler, schedulerPlugin } = require('..');
+import xufa from '@xufa/http';
+import fastify from 'fastify';
+import { Scheduler, schedulerPlugin } from '../index.js';
 
 for (const [name, make] of [
   ['@xufa/http', () => xufa({ logger: false })],

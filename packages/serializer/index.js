@@ -6,12 +6,12 @@
 // Only the properties of the schema are written, each with the writer of its type. Objects and arrays are written
 // inline in the generated function; schemas reached by $ref get functions of their own (which is how recursive
 // schemas are written). The branch of anyOf, oneOf and if/then/else is chosen by predicates compiled from the schemas.
-const { RefResolver, resolveURI } = require('./lib/resolver');
-const { mergeSchemas } = require('./lib/merge');
-const { createMatcher } = require('./lib/match');
-const { createRuntime } = require('./lib/runtime');
-const { validateSchema } = require('./lib/meta');
-const writer = require('./lib/writer');
+import { RefResolver, resolveURI } from './lib/resolver.js';
+import { mergeSchemas } from './lib/merge.js';
+import { createMatcher } from './lib/match.js';
+import { createRuntime } from './lib/runtime.js';
+import { validateSchema } from './lib/meta.js';
+import * as writer from './lib/writer.js';
 
 const { bytesOf } = writer;
 const ROUNDING = new Set(['floor', 'ceil', 'round', 'trunc']);
@@ -676,7 +676,11 @@ function typeCondition(type, value) {
   }
 }
 
-module.exports = build;
-module.exports.build = build;
-module.exports.default = build;
-module.exports.validLargeArrayMechanisms = LARGE_ARRAY_MECHANISMS;
+export default build;
+build.build = build;
+build.default = build;
+build.validLargeArrayMechanisms = LARGE_ARRAY_MECHANISMS;
+
+export { build as 'module.exports' };
+
+export { build, LARGE_ARRAY_MECHANISMS as validLargeArrayMechanisms };

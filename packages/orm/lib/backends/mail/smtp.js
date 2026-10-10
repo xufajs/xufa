@@ -9,8 +9,8 @@
 // (options of tls.connect: ca, rejectUnauthorized, servername...); requireTLS (refuse a server without STARTTLS,
 // which is used whenever offered), ignoreTLS (do not use it); connectionTimeout (10 s) and socketTimeout (60 s); pool
 // ({ maxConnections: 3, maxMessages: 100, idleTimeout: 30000 }).
-const { MailBackend } = require('./base');
-const { SmtpConnection, SmtpPool } = require('./smtp-client');
+import { MailBackend } from './base.js';
+import { SmtpConnection, SmtpPool } from './smtp-client.js';
 
 // The options of an smtp:// or smtps:// URL.
 function parseUrl(text) {
@@ -71,4 +71,4 @@ class SmtpBackend extends MailBackend {
   }
 }
 
-module.exports = { SmtpBackend, parseUrl };
+export { SmtpBackend, parseUrl };

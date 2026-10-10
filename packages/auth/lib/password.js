@@ -5,8 +5,8 @@
 // ln is log2 of the cost N. verifyPassword() reads the parameters from the hash, so hashes made with older ones still
 // verify; needsRehash() says when one should be made again with the current ones (after a login, when the password
 // is at hand).
-const crypto = require('node:crypto');
-const { promisify } = require('node:util');
+import crypto from 'node:crypto';
+import { promisify } from 'node:util';
 
 const scrypt = promisify(crypto.scrypt);
 
@@ -82,4 +82,4 @@ function needsRehash(phc, options) {
   );
 }
 
-module.exports = { hashPassword, verifyPassword, needsRehash, PASSWORD_DEFAULTS: DEFAULTS };
+export { hashPassword, verifyPassword, needsRehash, DEFAULTS as PASSWORD_DEFAULTS };

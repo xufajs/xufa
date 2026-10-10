@@ -1,5 +1,8 @@
-const { execFileSync } = require('node:child_process');
-const { TemplateEngine, SafeString } = require('..');
+import { execFileSync } from 'node:child_process';
+import { TemplateEngine, SafeString } from '../index.js';
+import { createRequire } from 'node:module';
+
+const require = createRequire(import.meta.url);
 
 // Paths ({{ user.name }}) are read in a function made for each list of nodes rendered often; with inline: false, by
 // closures. Both must give the same.

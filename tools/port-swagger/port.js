@@ -4,16 +4,16 @@
 // plugin as fastify-plugin does), and so are test/xufa and test/shims.
 //
 // node tools/port-swagger/port.js <fastify-swagger>  (a checkout of github.com/fastify/fastify-swagger)
-const fs = require('node:fs');
-const path = require('node:path');
-const { convert } = require('../node-test-to-vyntra/convert');
+import fs from 'node:fs';
+import path from 'node:path';
+import { convert } from '../node-test-to-vyntra/convert.js';
 
 const [swagger] = process.argv.slice(2);
 if (!swagger) {
   console.error('Usage: node tools/port-swagger/port.js <fastify-swagger>');
   process.exit(1);
 }
-const PACKAGE = path.join(__dirname, '../../packages/openapi');
+const PACKAGE = path.join(import.meta.dirname, '../../packages/openapi');
 const version = JSON.parse(fs.readFileSync(path.join(swagger, 'package.json'), 'utf8')).version;
 
 // LF, as the repository keeps it (a checkout on Windows may have made it CRLF).

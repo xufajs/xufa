@@ -1,5 +1,3 @@
-'use strict';
-
 // @xufa/faults: faults made to happen, to see what an app does when what it uses fails, is slow or hangs (tests of
 // resilience, chaos in staging). The rules of the faults of xufa: the ORM (db.faults), the HTTP client
 // (client.faults), the caches (cache.faults) and the bus of the cluster (bus.faults) are made of it, each with the
@@ -372,25 +370,8 @@ function useFaults(hooksOrOptions, options) {
   });
 }
 
-const { Scenario, scenario } = require('./lib/scenario');
+// The plugin of @xufa/http (and fastify) that turns faults on and off over HTTP, for staging (lib/plugin.js).
+export { faultsPlugin as plugin } from './lib/plugin.js';
+export { Scenario, scenario } from './lib/scenario.js';
 
-module.exports = {
-  Faults,
-  FaultError,
-  isFault,
-  sleep,
-  wrap,
-  cacheFaults,
-  activeFaults,
-  clearFaults,
-  useFaults,
-  scenario,
-  Scenario,
-};
-
-// The plugin of @xufa/http (and fastify) that turns faults on and off over HTTP, for staging (lib/plugin.js): loaded
-// when it is used.
-Object.defineProperty(module.exports, 'plugin', {
-  enumerable: true,
-  get: () => require('./lib/plugin').faultsPlugin, // eslint-disable-line global-require
-});
+export { Faults, FaultError, isFault, sleep, wrap, cacheFaults, activeFaults, clearFaults, useFaults };

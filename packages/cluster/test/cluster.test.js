@@ -1,8 +1,8 @@
-const path = require('node:path');
-const { spawnSync } = require('node:child_process');
-const { Bus } = require('..');
+import path from 'node:path';
+import { spawnSync } from 'node:child_process';
+import { Bus } from '../index.js';
 
-const fixture = path.join(__dirname, 'fixtures', 'app.js');
+const fixture = path.join(import.meta.dirname, 'fixtures', 'app.js');
 
 function run(workers) {
   const result = spawnSync(process.execPath, [fixture], {
@@ -72,7 +72,7 @@ describe('bus in one process', () => {
 
 describe('start({ marshal })', () => {
   it('sends instances of registered classes, and errors of handlers, as themselves', () => {
-    const result = spawnSync(process.execPath, [path.join(__dirname, 'fixtures', 'marshal.js')], { timeout: 30000 });
+    const result = spawnSync(process.execPath, [path.join(import.meta.dirname, 'fixtures', 'marshal.js')], { timeout: 30000 });
     const lines = result.stdout
       .toString()
       .trim()

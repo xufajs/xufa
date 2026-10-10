@@ -1,8 +1,8 @@
 // Fragments of SQL of Sequelize (literal(), fn(), col()) as Raw of @xufa/orm: their columns refer to the table of the
 // model in the query ("User"."name" in a literal is the column of the model User, wherever its table is).
-const { Raw } = require('@xufa/orm');
-const { NotSupportedError } = require('./errors');
-const { Op } = require('./operators');
+import { Raw } from '@xufa/orm';
+import { NotSupportedError } from './errors.js';
+import { Op } from './operators.js';
 
 const quote = (name) => `"${String(name).replace(/"/g, '""')}"`;
 
@@ -147,4 +147,4 @@ function isFragment(value) {
   return Boolean(value && (value.xufaLiteral !== undefined || value.xufaFn !== undefined || value.xufaCast));
 }
 
-module.exports = { Raw, literalSql, columnSql, fragmentOf, isFragment };
+export { Raw, literalSql, columnSql, fragmentOf, isFragment };

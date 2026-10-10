@@ -1,0 +1,15 @@
+{{extends 'base_generic'}}
+
+{{#block content}}
+<h1>Book List</h1>
+
+{{#if bookList.length}}
+<ul>
+  {{#each bookList as book}}
+  <li><a href="{{ book.absoluteUrl }}">{{ book.title }}</a> ({{ book.author }})</li>
+  {{/each}}
+</ul>
+{{else}}
+<p>There are no books in the library.</p>
+{{/if}}
+{{/block content}}

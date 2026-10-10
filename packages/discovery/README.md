@@ -10,7 +10,7 @@ npm install @xufa/discovery
 ```
 
 ```js
-const { Discovery } = require('@xufa/discovery');
+import { Discovery } from '@xufa/discovery';
 
 const discovery = new Discovery({
   service: 'shop-api',
@@ -80,8 +80,8 @@ ones do not make a node flood the network.
 One discovery by machine, in the primary; the workers ask it through the bus:
 
 ```js
-const { start, bus } = require('@xufa/cluster');
-const { Discovery } = require('@xufa/discovery');
+import { start, bus } from '@xufa/cluster';
+import { Discovery } from '@xufa/discovery';
 
 start({
   primary: async ({ onShutdown }) => {

@@ -1,6 +1,6 @@
 // The keyring of encrypted fields, and what encrypted fields can be.
-const { Keyring, setEncryptionKeys, generateEncryptionKey, isEncrypted, fields, Model, Database } = require('..');
-const { EncryptionError } = require('..');
+import { Keyring, setEncryptionKeys, generateEncryptionKey, isEncrypted, fields, Model, Database } from '../index.js';
+import { EncryptionError } from '../index.js';
 
 describe('keyring', () => {
   const key = generateEncryptionKey();

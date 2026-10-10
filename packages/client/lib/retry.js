@@ -3,7 +3,7 @@
 // by `factor` each time (up to `maxDelay`), with jitter. A signal stops the waits:
 //
 //   const status = await retry(() => job.status(), { until: (value) => value === 'done', attempts: 10, delay: 500 });
-const { RetryError } = require('./errors');
+import { RetryError } from './errors.js';
 
 // A wait that the signal stops (rejected with its reason).
 function sleep(ms, signal) {
@@ -61,4 +61,4 @@ async function retry(fn, options = {}) {
   }
 }
 
-module.exports = { retry, backoff, sleep };
+export { retry, backoff, sleep };

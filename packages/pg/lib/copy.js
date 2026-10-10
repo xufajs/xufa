@@ -2,8 +2,8 @@
 // COPY ... FROM STDIN. The types of the columns are read from the table, and the rows are written in the binary
 // format of COPY when every column has a binary encoder here (the server then parses nothing), and in the text format
 // otherwise.
-const { paramToText } = require('./types');
-const { Writer } = require('./writer');
+import { paramToText } from './types.js';
+import { Writer } from './writer.js';
 
 const TWO_32 = 4294967296;
 const EPOCH_2000 = 946684800000;
@@ -275,4 +275,4 @@ async function copyRows(connection, table, columns, rows) {
   return result.rowCount;
 }
 
-module.exports = { copyRows, encodeRows, encoders, quoteIdentifier, textValue };
+export { copyRows, encodeRows, encoders, quoteIdentifier, textValue };

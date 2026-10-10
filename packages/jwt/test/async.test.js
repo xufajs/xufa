@@ -1,9 +1,9 @@
 // sign() and verify() with a callback: RSA keys sign in libuv's thread pool, the rest is done on the event loop; the
 // results are those of the calls without a callback.
-const crypto = require('node:crypto');
-const { promisify } = require('node:util');
-const jwt = require('..');
-const jwa = require('../lib/jwa');
+import crypto from 'node:crypto';
+import { promisify } from 'node:util';
+import * as jwt from '../index.js';
+import jwa from '../lib/jwa.js';
 
 const signCb = promisify(jwt.sign);
 const verifyCb = promisify(jwt.verify);

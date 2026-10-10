@@ -5,7 +5,8 @@
 // so listing and filtering objects reads no bodies. What can be written as a body: a Buffer or Uint8Array, a string
 // (UTF-8), a readable stream or async iterable of chunks, a Blob of the web, or a BlobValue (of this backend or
 // another: it is copied).
-const { Readable } = require('node:stream');
+import { Readable } from 'node:stream';
+import * as errorsModule from './errors.js';
 
 // The body of a stored object, read when asked.
 class BlobValue {
@@ -50,7 +51,7 @@ class BlobValue {
   // A URL that reads the body without the app (signed, for a while), where the store has them.
   async url(options = {}) {
     if (!this.urlOf) {
-      const { UnsupportedError } = require('./errors'); // eslint-disable-line global-require
+      const { UnsupportedError } = errorsModule;
       throw new UnsupportedError('URLs of blobs', this.backend);
     }
     return this.urlOf(options);
@@ -148,4 +149,4 @@ function contentTypeOf(key) {
   return (match && TYPES[match[1].toLowerCase()]) || 'application/octet-stream';
 }
 
-module.exports = { BlobValue, isBody, bodyOf, bufferOf, contentTypeOf };
+export { BlobValue, isBody, bodyOf, bufferOf, contentTypeOf };

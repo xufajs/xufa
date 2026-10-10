@@ -1,7 +1,4 @@
-'use strict'
-
-
-const boot = require('..')
+import boot from '../index.js';
 
 test('await self', async () => {
   const app = {}

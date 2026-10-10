@@ -1,6 +1,4 @@
-'use strict';
-
-const { tokenChars } = require('./validation');
+import { tokenChars } from './validation.js';
 
 /**
  * Parses the `Sec-WebSocket-Protocol` header into a set of subprotocol names.
@@ -56,4 +54,4 @@ function parse(header) {
   return protocols;
 }
 
-module.exports = { parse };
+export { parse };

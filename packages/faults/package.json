@@ -4,7 +4,7 @@
   "description": "Faults made to happen (fail, delay, hang, down), to test what an app does when what it uses fails: the rules of the faults of the ORM, the HTTP client, the caches and the bus of xufa. No dependencies",
   "main": "./index.js",
   "types": "./index.d.ts",
-  "type": "commonjs",
+  "type": "module",
   "exports": {
     ".": {
       "types": "./index.d.ts",
@@ -57,7 +57,7 @@
   },
   "devDependencies": {
     "tsd": "^0.33.0",
-    "vyntra": "^0.6.0",
+    "vyntra": "^0.7.0",
     "@xufa/http": "workspace:*",
     "fastify": "^5.12.5"
   },

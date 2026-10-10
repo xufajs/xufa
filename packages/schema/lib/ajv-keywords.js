@@ -1,7 +1,7 @@
 // The keywords of ajv-keywords (https://github.com/ajv-validator/ajv-keywords), as definitions for the option "keywords"
 // of compileJsonSchema(): ajvKeywords() gives all of them, ajvKeywords(['range', 'typeof']) the ones named. The ones
 // that are other keywords written shorter are macros, and compile to the same code as those keywords.
-const { deepEqual } = require('./deep-equal');
+import { deepEqual } from './deep-equal.js';
 
 const isObject = (value) => value !== null && typeof value === 'object' && !Array.isArray(value);
 const hasOwn = (obj, key) => Object.prototype.hasOwnProperty.call(obj, key);
@@ -288,6 +288,4 @@ function ajvKeywords(names = Object.keys(DEFINITIONS)) {
   });
 }
 
-module.exports = {
-  ajvKeywords,
-};
+export { ajvKeywords };

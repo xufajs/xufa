@@ -1,6 +1,6 @@
 // Type tests of what xufa has that fastify has not, or has otherwise (not ported: kept by tools/port-types).
 import { expect } from 'tstyche';
-import xufa, { plugin, errorCodes, type XufaInstance, type XufaPluginAsync, type PluginMetadata } from '../..';
+import xufa, { plugin, errorCodes, type XufaInstance, type XufaPluginAsync, type PluginMetadata, type HealthReport, type MaintenanceState } from '../..';
 import type { Serializer, ErrorObject } from '../../types/compilers';
 
 // xufa.plugin(), fastify-plugin of xufa.
@@ -46,3 +46,27 @@ xufa().register(xufa.health, {
 expect(xufa().register).type.not.toBeCallableWith(xufa.health, { checks: { database: 42 } });
 xufa().register(xufa.maintenance, { file: false, store: { get: async () => ({ message: 'soon', retryAfter: 60 }) } });
 expect(xufa().register).type.not.toBeCallableWith(xufa.maintenance, { store: { get: 1 } });
+
+// app.health and app.maintenance: what those plugins decorate the app with.
+const app = xufa();
+expect(app.health.check()).type.toBe<Promise<HealthReport>>();
+expect(app.health.report).type.toBe<HealthReport | null>();
+expect(app.health.status).type.toBe<'up' | 'degraded' | 'down'>();
+expect(app.maintenance.state()).type.toBe<Promise<MaintenanceState | null>>();
+expect(app.health).type.not.toHaveProperty('run');
+
+// formBody: the bodies of HTML forms.
+xufa().register(xufa.formBody, { fileSize: 1024, multipart: true });
+expect(xufa().register).type.not.toBeCallableWith(xufa.formBody, { files: 'many' });
+
+// staticFiles: static files, and app.staticUrl().
+xufa().register(xufa.staticFiles, { root: ['static'], prefix: '/assets/' });
+expect(xufa().staticUrl('css/site.css')).type.toBe<string>();
+expect(xufa().register).type.not.toBeCallableWith(xufa.staticFiles, { prefix: '/static/' });
+
+// Routes by name, and reverse().
+const named = xufa();
+named.get('/books/:id', { name: 'book' }, async () => 'ok');
+expect(named.reverse('book', { id: 7 }, { query: { page: 2 } })).type.toBe<string>();
+expect(named.routeNames().book.methods).type.toBe<string[]>();
+expect(named.get).type.not.toBeCallableWith('/x', { name: 7 }, async () => 'x');

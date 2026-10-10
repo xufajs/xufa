@@ -1,4 +1,4 @@
-const validator = require('..');
+import * as validator from '../index.js';
 
 const { inferJsonSchema, inferSchemaCode, compileJsonSchema } = validator;
 

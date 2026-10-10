@@ -1,9 +1,6 @@
-'use strict'
-
-
-const validator = require('is-my-json-valid')
-const build = require('..')
-const Ajv = require('ajv')
+import validator from 'is-my-json-valid';
+import build from '../index.js';
+import Ajv from 'ajv';
 
 test('error on invalid largeArrayMechanism', () => {
   expect.assertions(1)

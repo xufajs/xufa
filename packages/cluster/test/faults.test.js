@@ -1,6 +1,6 @@
 // The faults of the bus (bus.faults), in one process: events lost (fail, down, drop), late (delay) or held until
 // released (hang); requests failed (a BusError), without a reply (drop: their timeout), late or held; by event.
-const { bus, BusError } = require('..');
+import { bus, BusError } from '../index.js';
 
 const tick = () => new Promise((resolve) => setImmediate(resolve));
 const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));

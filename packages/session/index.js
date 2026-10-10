@@ -1,15 +1,13 @@
-'use strict';
-
 // @xufa/session: sessions of browsers for @xufa/http: signed cookies, stores in memory or in a database of
 // @xufa/orm, flash messages and CSRF tokens.
-const { sessionPlugin, SessionError } = require('./lib/plugin');
-const { Session } = require('./lib/session');
-const { memoryStore, ormStore } = require('./lib/stores');
-const { parseCookies, serializeCookie, sign, unsign } = require('./lib/cookie');
+import { sessionPlugin, SessionError } from './lib/plugin.js';
+import { Session } from './lib/session.js';
+import { memoryStore, ormStore } from './lib/stores.js';
+import { parseCookies, serializeCookie, sign, unsign } from './lib/cookie.js';
 
-module.exports = {
+export {
   sessionPlugin,
-  plugin: sessionPlugin,
+  sessionPlugin as plugin,
   Session,
   SessionError,
   memoryStore,

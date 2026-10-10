@@ -1,13 +1,13 @@
-const { Schema } = require('./schema');
-const { compileType } = require('./compile');
-const { RefIndex, isLegacy, documentsOf } = require('./json-schema-refs');
-const { mergePatch, applyPatch } = require('./merge-patch');
-const { UnevaluatedType } = require('./unevaluated');
-const { KeywordType, KEYWORD_TYPE_TESTS } = require('./types/keyword');
-const { CoerceType, COERCIBLE, coerceSpecOf } = require('./coerce');
-const { FORMATS, FORMAT_COMPARES, isRfc1123Hostname } = require('./formats');
+import { Schema } from './schema.js';
+import { compileType } from './compile.js';
+import { RefIndex, isLegacy, documentsOf } from './json-schema-refs.js';
+import { mergePatch, applyPatch } from './merge-patch.js';
+import { UnevaluatedType } from './unevaluated.js';
+import { KeywordType, KEYWORD_TYPE_TESTS } from './types/keyword.js';
+import { CoerceType, COERCIBLE, coerceSpecOf } from './coerce.js';
+import { FORMATS, FORMAT_COMPARES, isRfc1123Hostname } from './formats.js';
 
-const {
+import {
   AllOfType,
   AnyOfType,
   AnyType,
@@ -23,7 +23,7 @@ const {
   StringType,
   ValuesType,
   WhenType,
-} = require('./types');
+} from './types/index.js';
 
 const DRAFTS = ['draft-04', 'draft-06', 'draft-07', '2019-09', '2020-12'];
 
@@ -1528,10 +1528,4 @@ async function compileJsonSchemaAsync(json, options = {}) {
   return compileJsonSchema(json, { ...options, schemas });
 }
 
-module.exports = {
-  fromJsonSchema,
-  compileJsonSchema,
-  loadJsonSchemas,
-  compileJsonSchemaAsync,
-  builtInFormats,
-};
+export { fromJsonSchema, compileJsonSchema, loadJsonSchemas, compileJsonSchemaAsync, builtInFormats };

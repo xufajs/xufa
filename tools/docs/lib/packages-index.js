@@ -61,6 +61,30 @@ const GROUPS = [
         'Sessions of browsers: signed cookies, stores in memory or in the database, flash messages and CSRF tokens.',
       ],
       [
+        'forms.html',
+        '@xufa/forms',
+        'django.forms, WTForms',
+        'Forms that clean what a body gives, with their errors by field and their HTML; forms of models checked by the model.',
+      ],
+      [
+        'views.html',
+        '@xufa/views',
+        'django.views.generic',
+        'Views of classes: lists in pages, details, and forms that create, update and delete objects of models.',
+      ],
+      [
+        'mail.html',
+        '@xufa/mail',
+        'Laravel Mailables and Notifications, nodemailer templates',
+        'Emails as classes rendered with templates in a layout for email clients, sent now or from the queue, and notifications by mail, database or your own channels.',
+      ],
+      [
+        'i18n.html',
+        '@xufa/i18n',
+        'i18next, Django translations',
+        'Messages in the languages of an app: plurals, fallbacks, the locale of each request in its async context, and the messages of the ORM translated.',
+      ],
+      [
         'sequelize.html',
         '@xufa/sequelize',
         'Sequelize',
@@ -285,4 +309,4 @@ function buildHomeTable(page) {
 ${rows}                ${page.slice(b)}`;
 }
 
-module.exports = { buildPackagesIndex, buildHomeTable, GROUPS };
+export { buildPackagesIndex, buildHomeTable, GROUPS };

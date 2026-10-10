@@ -1,0 +1,263 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>@xufa/i18n: Reference · xufa</title>
+    <meta
+      name="description"
+      content="The reference of @xufa/i18n: every function, class, interface and type it declares, made from its TypeScript declarations."
+    />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%23d9502b'/%3E%3Ctext x='16' y='22.5' font-family='monospace' font-size='18' font-weight='700' fill='white' text-anchor='middle'%3Ex%3C/text%3E%3C/svg%3E"
+    />
+    <link rel="stylesheet" href="../style.css?v=0.1.0" />
+    <script src="../main.js?v=0.1.0"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js" defer></script>
+  </head>
+  <body>
+    <header class="header">
+      <div class="header-inner">
+        <a class="logo" href="../index.html"><span class="logo-mark">x</span>xufa</a>
+        <nav class="nav">
+          <a href="../guide.html">Guide</a>
+          <a href="../playground.html">Playground</a>
+          <a href="../http/index.html">HTTP</a>
+          <a href="../orm/index.html">ORM</a>
+          <a class="hide-small" href="../auth/index.html">Auth</a>
+          <a class="hide-small" href="../sequelize/index.html">Sequelize</a>
+          <a class="hide-small" href="../packages.html" aria-current="page">Packages</a>
+          <a class="hide-small" href="../benchmarks.html">Benchmarks</a>
+          <a href="https://github.com/xufajs/xufa">GitHub</a>
+          <button class="theme-toggle" type="button" aria-label="Switch between light and dark theme">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+              <path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z" />
+            </svg>
+          </button>
+        </nav>
+      </div>
+    </header>
+
+    <div class="docs">
+      <button class="menu-toggle" type="button" aria-expanded="false">☰ Contents</button>
+      <aside class="sidebar">
+        <h4>Reference</h4>
+        <ul>
+          <li><a href="#functions">Functions (3)</a></li>
+          <li><a href="#classes">Classes (2)</a></li>
+          <li><a href="#constants">Constants (1)</a></li>
+          <li><a href="#interfaces">Interfaces (5)</a></li>
+        </ul>
+        <h4>Packages</h4>
+        <ul>
+          <li><a href="../websocket/index.html">@xufa/websocket</a></li>
+          <li><a href="../admin/index.html">@xufa/admin</a></li>
+          <li><a href="../session/index.html">@xufa/session</a></li>
+          <li><a href="../forms/index.html">@xufa/forms</a></li>
+          <li><a href="../views/index.html">@xufa/views</a></li>
+          <li><a href="../mail/index.html">@xufa/mail</a></li>
+          <li><a href="index.html" aria-current="page">@xufa/i18n</a></li>
+          <li><a href="../openapi/index.html">@xufa/openapi</a></li>
+          <li><a href="../client/index.html">@xufa/client</a></li>
+          <li><a href="../schema/index.html">@xufa/schema</a></li>
+          <li><a href="../pg/index.html">@xufa/pg</a></li>
+          <li><a href="../mongo/index.html">@xufa/mongo</a></li>
+          <li><a href="../expression/index.html">@xufa/expression</a></li>
+          <li><a href="../template/index.html">@xufa/template</a></li>
+          <li><a href="../cluster/index.html">@xufa/cluster</a></li>
+          <li><a href="../scheduler/index.html">@xufa/scheduler</a></li>
+          <li><a href="../queue/index.html">@xufa/queue</a></li>
+          <li><a href="../config/index.html">@xufa/config</a></li>
+          <li><a href="../discovery/index.html">@xufa/discovery</a></li>
+          <li><a href="../netcache/index.html">@xufa/netcache</a></li>
+          <li><a href="../faults/index.html">@xufa/faults</a></li>
+          <li><a href="../marshal/index.html">@xufa/marshal</a></li>
+          <li><a href="../yaml/index.html">@xufa/yaml</a></li>
+          <li><a href="../jwt/index.html">@xufa/jwt</a></li>
+          <li><a href="../logger/index.html">@xufa/logger</a></li>
+          <li><a href="../router/index.html">@xufa/router</a></li>
+          <li><a href="../serializer/index.html">@xufa/serializer</a></li>
+          <li><a href="../inject/index.html">@xufa/inject</a></li>
+          <li><a href="../boot/index.html">@xufa/boot</a></li>
+          <li><a href="../errors/index.html">@xufa/errors</a></li>
+          <li><a href="../packages.html">All the packages</a></li>
+        </ul>
+      </aside>
+
+      <article class="content">
+        <nav class="package-tabs" aria-label="@xufa/i18n">
+          <a href="index.html">Overview</a>
+          <a href="reference.html" aria-current="page">Reference</a>
+        </nav>
+        <h1>Reference</h1>
+        <p class="intro">
+          Messages in the languages of an app: catalogs, plurals by the rules of each language, fallbacks, the locale of each request (Accept-Language, cookie, query) in its async context, and the messages users read of @xufa/orm, @xufa/auth and @xufa/admin translated, with no dependencies. Every declaration of its TypeScript declarations
+          (<code>packages/i18n/index.d.ts</code> or <code>index.d.cts</code>), as they are written, with their comments: made from them each time
+          the docs are built. How to use them is in <a href="index.html">the overview</a>.
+        </p>
+
+        <h2 id="functions">Functions</h2>
+        <p class="ref-index"><a href="#ref-plugin"><code>plugin</code></a>, <a href="#ref-acceptedLanguages"><code>acceptedLanguages</code></a>, <a href="#ref-normalize"><code>normalize</code></a></p>
+
+        <h3 id="ref-plugin"><code>plugin</code></h3>
+        <pre><code class="language-ts">export declare function plugin(app: any, options: I18nPluginOptions, done: (err?: Error) =&gt; void): void;</code></pre>
+        <p>The plugin of</p>
+
+        <h3 id="ref-acceptedLanguages"><code>acceptedLanguages</code></h3>
+        <pre><code class="language-ts">export declare function acceptedLanguages(header: string | undefined): string[];</code></pre>
+        <p>The languages of an Accept-Language header, by their q.</p>
+
+        <h3 id="ref-normalize"><code>normalize</code></h3>
+        <pre><code class="language-ts">export declare function normalize(locale: string): string | null;</code></pre>
+        <p>A locale as BCP 47 writes it (es_ar gives es-AR), or null.</p>
+
+        <h2 id="classes">Classes</h2>
+        <p class="ref-index"><a href="#ref-I18n"><code>I18n</code></a>, <a href="#ref-I18nError"><code>I18nError</code></a></p>
+
+        <h3 id="ref-I18n"><code>I18n</code></h3>
+        <pre><code class="language-ts">export declare class I18n { ... }</code></pre>
+        <p>Messages in the languages of an app.</p>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>new (options?: I18nOptions)</code></td><td></td><td></td></tr>
+                <tr><td><code>readonly fallback</code></td><td><code>string</code></td><td></td></tr>
+                <tr><td><code>readonly locales</code></td><td><code>string[]</code></td><td><p>The locales with a catalog.</p></td></tr>
+                <tr><td><code>readonly locale</code></td><td><code>string</code></td><td><p>The locale of this async context (a request), or the fallback.</p></td></tr>
+                <tr><td><code>add(locale: string, catalog: Catalog)</code></td><td><code>this</code></td><td><p>Adds messages to the catalog of a locale.</p></td></tr>
+                <tr><td><code>t(key: string, params?: Record&lt;string, unknown&gt;, locale?: string)</code></td><td><code>string</code></td><td><p>The message of a key with its parameters ({name}; count for plurals), in a locale (this context's by default).</p></td></tr>
+                <tr><td><code>has(key: string, locale?: string)</code></td><td><code>boolean</code></td><td><p>Whether a key has a message in a locale (or in those it falls back to).</p></td></tr>
+                <tr><td><code>run&lt;T&gt;(locale: string, fn: () =&gt; T)</code></td><td><code>T</code></td><td><p>Runs fn in a locale: everything it calls speaks it.</p></td></tr>
+                <tr><td><code>enter(locale: string)</code></td><td><code>void</code></td><td><p>The locale for the rest of this async context.</p></td></tr>
+                <tr><td><code>chain(locale: string)</code></td><td><code>string[]</code></td><td><p>The locales a locale looks in: es-AR, es, the fallback.</p></td></tr>
+                <tr><td><code>match(wanted: string[])</code></td><td><code>string | null</code></td><td><p>The best locale with a catalog for those wanted (in order), or null.</p></td></tr>
+                <tr><td><code>number(value: number | bigint, options?: Intl.NumberFormatOptions)</code></td><td><code>string</code></td><td><p>Numbers, dates and lists in the locale of this context.</p></td></tr>
+                <tr><td><code>date(value: Date | string | number, options?: Intl.DateTimeFormatOptions)</code></td><td><code>string</code></td><td></td></tr>
+                <tr><td><code>list(values: string[], options?: Intl.ListFormatOptions)</code></td><td><code>string</code></td><td></td></tr>
+                <tr><td><code>translateOrm(orm: {
+      setTranslator(fn: ((key: string, params: Record&lt;string, unknown&gt;, english: string) =&gt; string) | null): void;
+    }, options?: { messages?: boolean })</code></td><td><code>this</code></td><td><p>The validation messages of</p></td></tr>
+                <tr><td><code>translateAuth(auth: {
+      setTranslator(fn: ((key: string, params: Record&lt;string, unknown&gt;, english: string) =&gt; string) | null): void;
+      AUTH_MESSAGES: Readonly&lt;Record&lt;string, string&gt;&gt;;
+    }, options?: { messages?: boolean })</code></td><td><code>this</code></td><td><p>The messages users read of</p></td></tr>
+                <tr><td><code>translateAdmin(admin: {
+      setTranslator(fn: ((key: string, params: Record&lt;string, unknown&gt;, english: string) =&gt; string) | null): void;
+      ADMIN_MESSAGES: Readonly&lt;Record&lt;string, string&gt;&gt;;
+    }, options?: { messages?: boolean })</code></td><td><code>this</code></td><td><p>The messages of the API of</p></td></tr>
+                <tr><td><code>translateForms(forms: { setTranslator(fn: ((key: string, params: Record&lt;string, unknown&gt;, english: string) =&gt; string) | null): void; FORMS_MESSAGES: Readonly&lt;Record&lt;string, string&gt;&gt; }, options?: { messages?: boolean })</code></td><td><code>this</code></td><td><p>The messages of the forms of</p></td></tr>
+                <tr><td><code>install(module: {
+      setTranslator(fn: ((key: string, params: Record&lt;string, unknown&gt;, english: string) =&gt; string) | null): void;
+    }, namespace: string, bundled: Record&lt;string, Record&lt;string, unknown&gt;&gt; | null)</code></td><td><code>this</code></td><td><p>Installs the translator of a module and xufa's catalogs of it (by locale) under a namespace.</p></td></tr>
+                <tr><td><code>readonly filter</code></td><td><code>(key: string, params?: Record&lt;string, unknown&gt;) =&gt; string</code></td><td><p>A filter of</p></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-I18nError"><code>I18nError</code></h3>
+        <pre><code class="language-ts">export declare class I18nError extends Error { ... }</code></pre>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>code</code></td><td><code>'XUFA_I18N_ERR'</code></td><td></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h2 id="constants">Constants</h2>
+        <p class="ref-index"><a href="#ref-ormMessages"><code>ormMessages</code></a></p>
+
+        <h3 id="ref-ormMessages"><code>ormMessages</code></h3>
+        <pre><code class="language-ts">export declare const ormMessages: Record&lt;string, Record&lt;string, string&gt;&gt;;</code></pre>
+        <p>The translations of the validation messages of</p>
+
+        <h2 id="interfaces">Interfaces</h2>
+        <p class="ref-index"><a href="#ref-PluralMessage"><code>PluralMessage</code></a>, <a href="#ref-Catalog"><code>Catalog</code></a>, <a href="#ref-I18nOptions"><code>I18nOptions</code></a>, <a href="#ref-I18nPluginOptions"><code>I18nPluginOptions</code></a>, <a href="#ref-XufaRequest"><code>XufaRequest</code></a></p>
+
+        <h3 id="ref-PluralMessage"><code>PluralMessage</code></h3>
+        <pre><code class="language-ts">export interface PluralMessage { ... }</code></pre>
+        <p>A message in the plural: its forms by the rules of each language (Intl.PluralRules), other always.</p>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>zero?</code></td><td><code>string</code></td><td></td></tr>
+                <tr><td><code>one?</code></td><td><code>string</code></td><td></td></tr>
+                <tr><td><code>two?</code></td><td><code>string</code></td><td></td></tr>
+                <tr><td><code>few?</code></td><td><code>string</code></td><td></td></tr>
+                <tr><td><code>many?</code></td><td><code>string</code></td><td></td></tr>
+                <tr><td><code>other</code></td><td><code>string</code></td><td></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-Catalog"><code>Catalog</code></h3>
+        <pre><code class="language-ts">export interface Catalog { ... }</code></pre>
+        <p>A catalog: messages by key, nested or with dots ('cart.items').</p>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>[key: string]</code></td><td><code>string | <a href="#ref-PluralMessage">PluralMessage</a> | <a href="#ref-Catalog">Catalog</a></code></td><td></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-I18nOptions"><code>I18nOptions</code></h3>
+        <pre><code class="language-ts">export interface I18nOptions { ... }</code></pre>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>locales?</code></td><td><code>Record&lt;string, <a href="#ref-Catalog">Catalog</a>&gt;</code></td><td><p>Catalogs by locale: { en: {...}, es: {...}, 'es-AR': {...} }.</p></td></tr>
+                <tr><td><code>fallback?</code></td><td><code>string</code></td><td><p>The language every locale falls back to ('en').</p></td></tr>
+                <tr><td><code>missing?</code></td><td><code>(key: string, locale: string, params: Record&lt;string, unknown&gt;) =&gt; string</code></td><td><p>What a key without a message gives (the key).</p></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-I18nPluginOptions"><code>I18nPluginOptions</code></h3>
+        <pre><code class="language-ts">export interface I18nPluginOptions { ... }</code></pre>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>i18n</code></td><td><code><a href="#ref-I18n">I18n</a></code></td><td></td></tr>
+                <tr><td><code>detect?</code></td><td><code>Array&lt;'query' | 'cookie' | 'user' | 'header' | ((request: any) =&gt; string | string[] | null | undefined)&gt;</code></td><td><p>How the locale of a request is found, in order: 'query', 'cookie', 'user', 'header', or functions (the first that matches).</p></td></tr>
+                <tr><td><code>query?</code></td><td><code>string</code></td><td><p>The query parameter and the cookie ('lang').</p></td></tr>
+                <tr><td><code>cookie?</code></td><td><code>string</code></td><td></td></tr>
+                <tr><td><code>user?</code></td><td><code>(request: any) =&gt; string | null | undefined</code></td><td><p>The locale of the user of a request (request.user.locale).</p></td></tr>
+                <tr><td><code>contentLanguage?</code></td><td><code>boolean</code></td><td><p>Content-Language in the answers (true).</p></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-XufaRequest"><code>XufaRequest</code></h3>
+        <pre><code class="language-ts">interface XufaRequest { ... }</code></pre>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>locale</code></td><td><code>string | null</code></td><td></td></tr>
+                <tr><td><code>t(key: string, params?: Record&lt;string, unknown&gt;)</code></td><td><code>string</code></td><td></td></tr>
+              </tbody>
+            </table>
+          </div>
+      </article>
+    </div>
+
+    <footer class="footer">
+      <div class="container">
+        <span>xufa is MIT licensed. &copy; Jes&uacute;s Seijas</span>
+        <span>
+          <a href="../guide.html">Guide</a> &middot; <a href="../playground.html">Playground</a> &middot; <a href="../http/index.html">HTTP</a> &middot; <a href="../orm/index.html">ORM</a> &middot; <a href="../auth/index.html">Auth</a> &middot;
+          <a href="../sequelize/index.html">Sequelize</a> &middot; <a href="../packages.html">Packages</a> &middot;
+          <a href="../benchmarks.html">Benchmarks</a> &middot; <a href="https://github.com/xufajs/xufa">GitHub</a>
+        </span>
+      </div>
+    </footer>
+  </body>
+</html>

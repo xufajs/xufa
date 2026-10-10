@@ -1,7 +1,4 @@
-'use strict'
-
-
-const FindMyWay = require('../')
+import FindMyWay from '../index.js';
 
 test('case insensitive static routes of level 1', () => {
   expect.assertions(1)

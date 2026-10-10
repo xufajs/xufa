@@ -1,10 +1,11 @@
-const { Database } = require('..');
-const { defineSuite } = require('./suite');
+import { Database } from '../index.js';
+import { defineSuite } from './suite.js';
+import * as indexModule from '../index.js';
 
 defineSuite('memory', () => new Database({ backend: 'memory' }));
 
 describe('Database.fromUrl', () => {
-  const { Database: Db } = require('..'); // eslint-disable-line global-require
+  const { Database: Db } = indexModule;
 
   it('the backend and options of a URL, as DATABASE_URL', async () => {
     expect(Db.optionsFromUrl('postgres://u:p@h:5432/app')).toEqual({ backend: 'postgres', url: 'postgres://u:p@h:5432/app' });
@@ -15,5 +16,14 @@ describe('Database.fromUrl', () => {
     expect(() => Db.optionsFromUrl('mysql://user:secret@h/db')).toThrow(/mysql:\/\/\*\*\*@h\/db/);
     const db = Db.fromUrl('memory:');
     expect(db.backend.name).toBe('memory');
+  });
+});
+
+describe('db.orm', () => {
+  it('is the module of the ORM of the database, for packages that make models with it', () => {
+    const db = new Database({ backend: 'memory' });
+    expect(db.orm).toBe(indexModule);
+    expect(db.orm.Model).toBe(indexModule.Model);
+    expect(typeof db.orm.fields.string).toBe('function');
   });
 });

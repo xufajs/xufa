@@ -1,7 +1,13 @@
 // DataTypes: the types of attributes of Sequelize, as values that say which field of @xufa/orm stores them. Each one
 // can be used as it is (DataTypes.STRING) or called with its options (DataTypes.STRING(100), DataTypes.DECIMAL(10, 2),
 // DataTypes.ENUM('a', 'b')); the modifiers of a database (UNSIGNED, ZEROFILL, BINARY) are accepted and ignored.
-const crypto = require('node:crypto');
+import crypto from 'node:crypto';
+import { createRequire } from 'node:module';
+import * as errorsModule from './errors.js';
+import * as rangeModule from './range.js';
+import * as ormModule from '@xufa/orm';
+
+const require = createRequire(import.meta.url);
 
 const { randomUUID } = crypto;
 
@@ -34,7 +40,7 @@ class DataType {
   // As the DataTypes of Sequelize: whether a value is of the type (or a ValidationError), the value made of its type,
   // and its text.
   validate(value) {
-    const { ValidationError } = require('./errors'); // eslint-disable-line global-require
+    const { ValidationError } = errorsModule;
     const fail = () => {
       throw new ValidationError(`${JSON.stringify(value)} is not a valid ${this.key.toLowerCase()}`);
     };
@@ -98,9 +104,9 @@ class DataType {
   }
 
   stringify(value, options) {
-    if (this.kind === 'range') return require('./range').rangeLiteral(value, this.options.subtype, options); // eslint-disable-line global-require
+    if (this.kind === 'range') return rangeModule.rangeLiteral(value, this.options.subtype, options);
     if (value === Infinity || value === -Infinity) return String(value);
-    if (this.kind === 'hstore') return require('@xufa/orm').toHstore(value); // eslint-disable-line global-require
+    if (this.kind === 'hstore') return ormModule.toHstore(value);
     if (this.kind === 'geometry') return JSON.stringify(value);
     if (this.kind === 'datetime') {
       const date = value instanceof Date ? value : new Date(value);
@@ -114,7 +120,7 @@ class DataType {
 
   // As Sequelize: the value as a bound parameter (options.bindParam takes its text; ranges unquoted).
   bindParam(value, options) {
-    if (this.kind === 'range') return options.bindParam(require('./range').stringifyRange(value)); // eslint-disable-line global-require
+    if (this.kind === 'range') return options.bindParam(rangeModule.stringifyRange(value));
     return options.bindParam(this.stringify(value, options));
   }
 
@@ -256,7 +262,7 @@ DataTypes.DECIMAL.parse = (value) => value;
 DataTypes.DATE.parse = (value) => new Date(value);
 DataTypes.DATEONLY.parse = (value) => value;
 DataTypes.RANGE.parse = (value, options = {}) =>
-  require('./range').parseRange(value, typeof options === 'function' ? options : options.parser || 'INTEGER'); // eslint-disable-line global-require
+  rangeModule.parseRange(value, typeof options === 'function' ? options : options.parser || 'INTEGER');
 // Whether a type is an ARRAY of a type: DataTypes.ARRAY.is(type, DataTypes.ENUM).
 DataTypes.ARRAY.is = (type, itemType) => type instanceof DataTypes.ARRAY && type.options.type instanceof itemType;
 // The parse functions there are by default: the others are given (DataTypes.DATE.parse = ...), as Sequelize takes
@@ -401,13 +407,4 @@ function defaultValueOf(value) {
   return value;
 }
 
-module.exports = {
-  DataTypes,
-  DataType,
-  normalizeType,
-  defaultValueOf,
-  uuidv7,
-  customParserOf,
-  customStringifyOf,
-  checkParsers,
-};
+export { DataTypes, DataType, normalizeType, defaultValueOf, uuidv7, customParserOf, customStringifyOf, checkParsers };

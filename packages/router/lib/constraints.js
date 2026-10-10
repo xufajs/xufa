@@ -1,5 +1,5 @@
 // Route constraints (version, host and custom strategies), and the handlers stored on a node of the tree.
-const strategies = require('./strategies');
+import * as strategies from './strategies.js';
 
 class Constrainer {
   constructor(customStrategies) {
@@ -231,4 +231,4 @@ class HandlerStorage {
   }
 }
 
-module.exports = { Constrainer, HandlerStorage, NullObject, compileParamsFactory };
+export { Constrainer, HandlerStorage, NullObject, compileParamsFactory };

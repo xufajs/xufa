@@ -64,12 +64,17 @@
           <li><a href="#pipeline-steps">Steps</a></li>
           <li><a href="#pipeline-blocks">Blocks</a></li>
           <li><a href="#pipeline-runs">Runs</a></li>
+          <li><a href="#tasks">Jobs or pipelines</a></li>
         </ul>
         <h4>Packages</h4>
         <ul>
           <li><a href="../websocket/index.html">@xufa/websocket</a></li>
           <li><a href="../admin/index.html">@xufa/admin</a></li>
           <li><a href="../session/index.html">@xufa/session</a></li>
+          <li><a href="../forms/index.html">@xufa/forms</a></li>
+          <li><a href="../views/index.html">@xufa/views</a></li>
+          <li><a href="../mail/index.html">@xufa/mail</a></li>
+          <li><a href="../i18n/index.html">@xufa/i18n</a></li>
           <li><a href="../openapi/index.html">@xufa/openapi</a></li>
           <li><a href="../client/index.html">@xufa/client</a></li>
           <li><a href="../schema/index.html">@xufa/schema</a></li>
@@ -112,8 +117,8 @@
         </p>
 
         <h2 id="start">Quick start</h2>
-        <pre data-run><code class="language-js">const { Database } = require('@xufa/orm');
-const { Queue } = require('@xufa/queue');
+        <pre data-run><code class="language-js">import { Database } from '@xufa/orm';
+import { Queue } from '@xufa/queue';
 
 const db = new Database({ backend: 'memory' }); // or postgres, sqlite, mongodb...
 const queue = new Queue(db); // its model (table xufa_jobs) is registered in db
@@ -198,9 +203,9 @@ await queue.retry(failed.map((job) =&gt; job.pk));</code></pre>
           only, and they run with <code>job.node</code>. The pool hands the nodes out among every worker of the process's
           cluster, in order.
         </p>
-        <pre data-run><code class="language-js">const { Database } = require('@xufa/orm');
-const { Queue } = require('@xufa/queue');
-const { createPool } = require('@xufa/cluster');
+        <pre data-run><code class="language-js">import { Database } from '@xufa/orm';
+import { Queue } from '@xufa/queue';
+import { createPool } from '@xufa/cluster';
 
 const db = new Database({ backend: 'memory' });
 const queue = new Queue(db);
@@ -243,7 +248,7 @@ b.docx on converter-1
 });</code></pre>
 
         <h2 id="plugin">The plugin</h2>
-        <pre><code class="language-js">const { queuePlugin } = require('@xufa/queue');
+        <pre><code class="language-js">import { queuePlugin } from '@xufa/queue';
 
 app.register(queuePlugin, { queue, work: { concurrency: 4 } }); // leave out work in processes that only enqueue
 app.post('/signup', async (request, reply) =&gt; {
@@ -284,8 +289,8 @@ app.post('/signup', async (request, reply) =&gt; {
           each step runs a <em>block</em> (a kind of work your code registers) with its config, after other steps (fan
           out and join), when a condition holds, and the outputs of some steps make the result of the run.
         </p>
-        <pre data-run><code class="language-js">const { Database } = require('@xufa/orm');
-const { Queue, Pipelines } = require('@xufa/queue');
+        <pre data-run><code class="language-js">import { Database } from '@xufa/orm';
+import { Queue, Pipelines } from '@xufa/queue';
 
 const db = new Database({ backend: 'memory' });
 const queue = new Queue(db);
@@ -389,6 +394,7 @@ console.log(Object.fromEntries(Object.entries(steps).map(([id, step]) =&gt; [id,
         <h2 id="pipeline-runs">Runs</h2>
         <ul>
           <li><code>start(name, input, { key })</code> starts a run (a running run with the same <code>key</code> is given instead); <code>trigger(event, input)</code> starts one of every pipeline with that <code>trigger</code>.</li>
+          <li><code>start()</code> takes the options of the jobs of its steps, as <code>enqueue()</code>: <code>priority</code> and <code>queue</code> (for every step without its own), and <code>delay</code> (<code>'1h'</code>) or <code>at</code> (a date): when its first steps run. The run keeps them (<code>run.priority</code>, <code>run.queue</code>, <code>run.runAt</code>); its steps after them run as soon as they can.</li>
           <li><code>get(runId)</code> gives the run and its steps by id; <code>pipelines.runs</code> is the queryset of the runs (<code>pipelines.runs.filter({ status: 'failed' })</code>).</li>
           <li>A run is <code>running</code>, <code>done</code>, <code>failed</code> or <code>cancelled</code>; a step <code>waiting</code>, <code>queued</code>, <code>running</code>, <code>retrying</code>, <code>paused</code>, <code>done</code>, <code>skipped</code>, <code>failed</code> or <code>cancelled</code>.</li>
           <li><code>concurrency: n</code> in a pipeline: at most <code>n</code> steps of each run queued or running at once, among every worker (a counter of the run, <code>inFlight</code>, taken and given back with updates only one process can make); paused steps do not count. Other runs have their own.</li>
@@ -401,6 +407,59 @@ console.log(Object.fromEntries(Object.entries(steps).map(([id, step]) =&gt; [id,
           step whose job runs twice (taken back after its worker died) runs once. A process that stops between a step
           and the next leaves its run to the jobs taken back, or to <code>pipelines.recover()</code>.
         </p>
+
+        <h2 id="tasks">Jobs or pipelines</h2>
+        <p>
+          Pipelines run on the queue: each step is a job (<code>xufa:block:&lt;block&gt;</code>), on the same workers,
+          with the same retries and pools. What a pipeline adds is the run: kept in the database with every step, its
+          outputs, retried from where it failed, paused and resumed, and shown in <a href="../admin/index.html#work">the admin</a>.
+          That costs a few writes more than a job (the run and its step besides the job).
+        </p>
+        <ul>
+          <li><strong>A job</strong> (<code>queue.define()</code>, <code>queue.enqueue()</code>) for work that is many and needs no history: emails, webhooks, caches.</li>
+          <li><strong>A task</strong>, a pipeline of one step, for one piece of work whose runs you want to see and retry: <code>pipelines.task(name, run, options)</code> defines its block and its pipeline by one name.</li>
+          <li><strong>A pipeline</strong> for work in steps: in order and in parallel, with conditions, waits and sub-pipelines.</li>
+        </ul>
+        <pre data-run><code class="language-js">import { Database } from '@xufa/orm';
+import { Queue, Pipelines } from '@xufa/queue';
+
+const db = new Database({ backend: 'memory' });
+const queue = new Queue(db);
+const pipelines = new Pipelines(queue);
+await db.sync();
+
+pipelines.task('monthly-report', ({ month }) =&gt; ({ file: `report-${month}.csv` }), { attempts: 3 });
+
+const now = await pipelines.start('monthly-report', { month: 10 });
+const later = await pipelines.start('monthly-report', { month: 11 }, { delay: '1h', priority: 5 });
+await queue.runDue();
+
+console.log((await pipelines.get(now.pk)).run.result);
+console.log(later.status, later.priority, Math.round((later.runAt - Date.now()) / 60000), 'minutes to go');</code></pre>
+        <pre data-output><code class="language-plaintext">{ file: 'report-10.csv' }
+running 5 60 minutes to go</code></pre>
+
+        <h3 id="recurring">Recurring tasks</h3>
+        <p>
+          A task (or any pipeline) on a schedule of <a href="../scheduler/index.html">@xufa/scheduler</a>: each time is a run,
+          kept, retried and shown in <a href="../admin/index.html#work">the Work of the admin</a> as any other.
+        </p>
+        <pre><code class="language-js">import { Scheduler, ormLock, ormHistory } from '@xufa/scheduler';
+
+const scheduler = new Scheduler({ lock: ormLock(db), history: ormHistory(db) });
+pipelines.task('monthly-report', ({ month }) =&gt; makeReport(month), { attempts: 3 });
+pipelines.schedule(scheduler, 'monthly-report', {
+  cron: '0 6 1 * *',
+  timezone: 'Europe/Madrid',
+  catchUp: true, // a month missed while the app was down runs once when it starts
+  input: ({ scheduledAt }) =&gt; ({ month: scheduledAt.getMonth() }),
+});
+scheduler.start();</code></pre>
+        <ul>
+          <li><code>pipelines.schedule(scheduler, pipeline, spec)</code> adds a job to the scheduler (its <code>every</code>, <code>cron</code>, <code>timezone</code>, <code>at</code>, <code>in</code>, <code>catchUp</code>, <code>retries</code>...) whose run starts a run of the pipeline: its <code>input</code> (a value, or <code>input({ scheduledAt, name })</code> for each time), <code>priority</code> and <code>queue</code>.</li>
+          <li>The runs say who started them: <code>trigger</code> is <code>schedule:&lt;name&gt;</code>, and <code>key</code> <code>schedule:&lt;name&gt;:&lt;time due&gt;</code>: a time already started is not started again (a retry, or a second machine).</li>
+          <li>The scheduler starts the run and is done: the work is the queue's, in its workers, with the attempts of the task. With <code>ormLock(db)</code>, one machine starts each time; with <code>ormHistory(db)</code> and <code>catchUp</code>, a time missed is started once.</li>
+        </ul>
       </article>
     </div>
 

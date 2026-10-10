@@ -125,4 +125,4 @@ class Writer {
   }
 }
 
-module.exports = { Writer };
+export { Writer };

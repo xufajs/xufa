@@ -17,22 +17,39 @@
 //     databases: { default: { backend: 'postgres', url }, events: { backend: 'mongodb', url: mongoUrl } },
 //     routes: { Event: 'events' },
 //   }),
-const { Database } = require('./database');
-const { Databases } = require('./databases');
-const { ModelError } = require('./errors');
-const { current, currentDatabase } = require('./context');
+import { Database } from './database.js';
+import { Databases } from './databases.js';
+import { ModelError } from './errors.js';
+import { current, currentDatabase, tenantModels } from './context.js';
+import * as faultsModule from './faults.js';
 
 class Tenants {
   // `routes`: the databases of the models in tenants with several (as those of Databases), for every tenant.
   constructor({ models = [], config, setup, max = 100, routes = {} } = {}) {
     if (typeof config !== 'function') throw new TypeError('Tenants needs config(tenantId)');
     this.models = models;
+    // (Out of a tenant, they are no database's: lib/model.js says so.)
+    for (const model of models) tenantModels.add(model);
     this.routes = routes;
     this.config = config;
     this.setup = setup;
     this.max = max;
     // Databases (and those being opened) by tenant, the least used first.
     this.databases = new Map();
+    // Functions called with each database opened (and set up), before it is given (rollbackEach of the tests).
+    this.listeners = new Set();
+  }
+
+  // Calls fn(db, tenantId) with each database opened from now on, once it is set up; gives the function that stops it.
+  onOpen(fn) {
+    this.listeners.add(fn);
+    return () => this.listeners.delete(fn);
+  }
+
+  // The databases open now (those that failed to open left out).
+  async opened() {
+    const settled = await Promise.allSettled(this.databases.values());
+    return settled.filter((one) => one.status === 'fulfilled').map((one) => one.value);
   }
 
   // The database of a tenant, opened (and set up) the first time.
@@ -55,6 +72,7 @@ class Tenants {
       if (this.faultsOf) this.installFaults(db, id);
       await db.connect();
       if (this.setup) await this.setup(db, id);
+      for (const fn of this.listeners) await fn(db, id);
       return db;
     })();
     this.databases.set(id, opening);
@@ -84,7 +102,7 @@ class Tenants {
   // tenants ({ tenants: ['acme'] }).
   get faults() {
     if (!this.faultsOf) {
-      const { databaseFaults } = require('./faults'); // eslint-disable-line global-require
+      const { databaseFaults } = faultsModule;
       this.faultsOf = databaseFaults();
       for (const [id, opening] of this.databases) {
         opening.then((db) => this.installFaults(db, id)).catch(() => {});
@@ -95,7 +113,7 @@ class Tenants {
 
   installFaults(db, id) {
     const databases = db instanceof Databases ? [...db.databases.values()] : [db];
-    const { install } = require('./faults'); // eslint-disable-line global-require
+    const { install } = faultsModule;
     for (const one of databases) install(this.faultsOf, one.backend, id);
   }
 
@@ -108,10 +126,11 @@ class Tenants {
     }
   }
 
-  // Runs fn in a tenant: the queries of the models use its database.
+  // Runs fn in a tenant: the queries of the models use its database. What it gives is awaited in the tenant: a
+  // QuerySet given back (run(id, () => Book.objects.all())) runs when awaited, which would be out of it.
   async run(tenantId, fn) {
     const db = await this.database(tenantId);
-    return current.run({ db }, fn);
+    return current.run({ db }, async () => await fn()); // eslint-disable-line no-return-await
   }
 
   // Enters a tenant for the rest of the async context (a request): it is set at once, and its database when it is
@@ -132,4 +151,4 @@ class Tenants {
   }
 }
 
-module.exports = { Tenants, currentDatabase, current };
+export { Tenants, currentDatabase, current };

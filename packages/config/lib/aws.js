@@ -1,11 +1,9 @@
-'use strict';
-
 // The calls of the sources of AWS (Parameter Store of Systems Manager, Secrets Manager): JSON over POST, signed with
 // Signature Version 4 (https://docs.aws.amazon.com/IAM/latest/UserGuide/reference_sigv-create-signed-request.html).
 // The credentials are those given, or those of the environment: AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY and
 // AWS_SESSION_TOKEN; the region, AWS_REGION or AWS_DEFAULT_REGION. `endpoint` is another server of the same API
 // (LocalStack, a VPC endpoint).
-const crypto = require('node:crypto');
+import crypto from 'node:crypto';
 
 const ALGORITHM = 'AWS4-HMAC-SHA256';
 
@@ -87,4 +85,4 @@ async function call({ options, env, signal, service, host, target, payload, what
   return JSON.parse(text);
 }
 
-module.exports = { sign, call };
+export { sign, call };

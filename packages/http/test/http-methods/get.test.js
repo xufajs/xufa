@@ -2,7 +2,7 @@
 
 
 const { Client, fetch } = require('undici')
-const fastify = require('@xufa/http')()
+const fastify = require('../..')()
 
 const schema = {
   schema: {

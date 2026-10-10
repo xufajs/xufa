@@ -1,5 +1,5 @@
 // Validation rules: expressions (or functions) on fields (validate) and on models (options.rules).
-const { Database, Model, fields, ValidationError, ModelError } = require('..');
+import { Database, Model, fields, ValidationError, ModelError } from '../index.js';
 
 async function database(...models) {
   const db = new Database({ backend: 'memory' });

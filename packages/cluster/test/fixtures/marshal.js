@@ -1,7 +1,7 @@
 // A cluster of 2 workers with start({ marshal }): instances of registered classes, and errors of the handlers,
 // arrive as themselves. The workers report what they got to the primary, which prints it (JSON lines).
-const { Registry } = require('@xufa/marshal');
-const xufa = require('../..');
+import { Registry } from '@xufa/marshal';
+import * as xufa from '../../index.js';
 
 class Point {
   constructor(x, y) {

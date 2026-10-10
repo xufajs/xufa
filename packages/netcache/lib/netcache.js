@@ -11,14 +11,16 @@
 //
 //   const cache = await new NetCache({ secret, service: 'shop' }).start();
 //   const db = new Database({ backend: 'postgres', url, cache });   // the models of option cache, in every machine
-const crypto = require('node:crypto');
-const net = require('node:net');
-const v8 = require('node:v8');
-const { EventEmitter } = require('node:events');
-const { Discovery } = require('@xufa/discovery');
-const { Clock } = require('./clock');
-const { Store } = require('./store');
-const { Wire, baseKey } = require('./wire');
+import crypto from 'node:crypto';
+import net from 'node:net';
+import v8 from 'node:v8';
+import { EventEmitter } from 'node:events';
+import { Discovery } from '@xufa/discovery';
+import { Clock } from './clock.js';
+import { Store } from './store.js';
+import { Wire, baseKey } from './wire.js';
+import * as marshalModule from '@xufa/marshal';
+import * as faultsModule from '@xufa/faults';
 
 const SNAPSHOT_BATCH = 500;
 
@@ -72,7 +74,7 @@ class NetCache extends EventEmitter {
     this.encode = v8.serialize;
     let readMarshal = null;
     if (marshal) {
-      const { stringify, parse, registry } = require('@xufa/marshal'); // eslint-disable-line global-require
+      const { stringify, parse, registry } = marshalModule;
       const options = { registry: marshal === true ? registry : marshal };
       this.encode = (value) => Buffer.from(stringify(value, options));
       readMarshal = (bytes) => parse(bytes.toString(), options);
@@ -80,7 +82,7 @@ class NetCache extends EventEmitter {
     const decode = (bytes) => {
       if (bytes[0] !== 0x5b) return v8.deserialize(bytes);
       if (!readMarshal) {
-        const { parse } = require('@xufa/marshal'); // eslint-disable-line global-require
+        const { parse } = marshalModule;
         readMarshal = (written) => parse(written.toString());
       }
       return readMarshal(bytes);
@@ -99,7 +101,7 @@ class NetCache extends EventEmitter {
   // Its faults (@xufa/faults): get, set, delete and clear made to fail, wait or hang, for tests of resilience.
   get faults() {
     if (!this.faultsOf) {
-      const { cacheFaults } = require('@xufa/faults'); // eslint-disable-line global-require
+      const { cacheFaults } = faultsModule;
       Object.defineProperty(this, 'faultsOf', { value: cacheFaults(this, 'netcache'), enumerable: false });
     }
     return this.faultsOf;
@@ -454,4 +456,4 @@ class NetCache extends EventEmitter {
   }
 }
 
-module.exports = { NetCache, NetCacheError };
+export { NetCache, NetCacheError };

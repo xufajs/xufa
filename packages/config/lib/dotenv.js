@@ -1,10 +1,8 @@
-'use strict';
-
 // .env files: KEY=value lines. `export ` before a key is allowed; values in double quotes have escapes (\n, \t, \",
 // \\) and can be several lines; in single quotes or backticks, they are as written; unquoted, a # after a space starts
 // a comment, and spaces around are left out. Lines empty or starting with # are nothing. A line of something else is
 // an error (with its number).
-const { ConfigError } = require('./errors');
+import { ConfigError } from './errors.js';
 
 const KEY = /^\s*(?:export\s+)?([A-Za-z_][A-Za-z0-9_.-]*)\s*=\s*/;
 const ESCAPES = { n: '\n', r: '\r', t: '\t', '"': '"', '\\': '\\', $: '$' };
@@ -55,4 +53,4 @@ function findClose(body, quote) {
   return -1;
 }
 
-module.exports = { parseDotenv };
+export { parseDotenv };

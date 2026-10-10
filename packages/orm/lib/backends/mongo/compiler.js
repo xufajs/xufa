@@ -4,8 +4,8 @@
 //
 // It keeps the semantics of the SQL backends: lookups compare values of their type only, NOT of a condition on a null
 // is true ($nor), nulls sort first, json fields are compared as wholes, and missing fields are nulls.
-const { collectJoins, eachLeaf, eachExists, hasExists, lastOf, likeToRegex } = require('../../query');
-const { QueryError } = require('../../errors');
+import { collectJoins, eachLeaf, eachExists, hasExists, lastOf, likeToRegex } from '../../query.js';
+import { QueryError } from '../../errors.js';
 
 const COMPARISONS = { exact: '$eq', gt: '$gt', gte: '$gte', lt: '$lt', lte: '$lte' };
 const ARITHMETIC = { '+': '$add', '-': '$subtract', '*': '$multiply', '/': '$divide' };
@@ -266,10 +266,22 @@ class MongoCompiler {
     if (query.where) stages.push({ $match: this.filter(query.where) });
     if (withOrder && query.orderBy && query.orderBy.length) {
       const sort = {};
-      query.orderBy.forEach(({ fields, desc, jsonPath }) => {
+      // Orders by a part or a start of a date (values() of Extract or Trunc): computed into fields of their own first,
+      // gone after the sort.
+      const computed = {};
+      query.orderBy.forEach((item, i) => {
+        const { fields, desc, jsonPath } = item;
+        if (item.part || item.trunc) {
+          computed[`__xufa_o${i}`] = this.valueOf(item);
+          sort[`__xufa_o${i}`] = desc ? -1 : 1;
+          return;
+        }
         sort[jsonPath ? `${path(fields)}.${jsonPath.join('.')}` : path(fields)] = desc ? -1 : 1;
       });
+      const names = Object.keys(computed);
+      if (names.length) stages.push({ $addFields: computed });
       stages.push({ $sort: sort });
+      if (names.length) stages.push({ $unset: names });
     }
     if (withSlice && query.offset) stages.push({ $skip: query.offset });
     if (withSlice && query.limit !== null && query.limit !== undefined) stages.push({ $limit: query.limit });
@@ -409,6 +421,8 @@ class MongoCompiler {
         key[columnOf(name)] = 1;
       });
       const options = { name: index.name };
+      // Lower(): the texts of the index compared without case (a collation of strength 2).
+      if (index.lower && index.lower.length) options.collation = { locale: 'en', strength: 2 };
       // TTL indexes: MongoDB deletes the documents that expired (its monitor runs every minute).
       if (index.expireAfter !== undefined) options.expireAfterSeconds = index.expireAfter;
       if (index.unique) {
@@ -424,4 +438,4 @@ class MongoCompiler {
   }
 }
 
-module.exports = { MongoCompiler, column, path, escapeRegex };
+export { MongoCompiler, column, path, escapeRegex };

@@ -1,7 +1,4 @@
-'use strict'
-
-
-const FindMyWay = require('..')
+import FindMyWay from '../index.js';
 const noop = () => { }
 
 test('A route could support multiple versions (find) / 1', () => {

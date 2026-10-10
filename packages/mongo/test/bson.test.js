@@ -1,4 +1,5 @@
-const { serialize, deserialize, ObjectId, Binary, Timestamp, Int32, Double, MinKey, MaxKey } = require('..');
+import { serialize, deserialize, ObjectId, Binary, Timestamp, Int32, Double, MinKey, MaxKey } from '../index.js';
+import * as indexModule from '../index.js';
 
 describe('bson', () => {
   it('round-trips the types of JavaScript', () => {
@@ -226,7 +227,7 @@ describe('bson', () => {
   });
 
   it('reads the id of a cursor from the bytes of a reply', () => {
-    const { cursorIdOf } = require('..');
+    const { cursorIdOf } = indexModule;
     const reply = (cursor) => serialize({ cursor, ok: 1 });
     expect(cursorIdOf(reply({ nextBatch: [{ a: 'x', b: [1, 2] }], id: 2n ** 60n, ns: 'db.c' }), 0)).toBe(2n ** 60n);
     expect(cursorIdOf(reply({ id: 0n, ns: 'db.c', firstBatch: [] }), 0)).toBe(0n);
@@ -294,7 +295,7 @@ describe('bson', () => {
 });
 
 describe('Decimal128', () => {
-  const { Decimal128 } = require('..');
+  const { Decimal128 } = indexModule;
   // [text, bytes (hex), the text of the standard]: the same as the official bson gives.
   const VECTORS = [
     ['0', '00000000000000000000000000004030', '0'],

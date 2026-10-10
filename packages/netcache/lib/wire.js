@@ -3,9 +3,9 @@
 // service and both nonces (HKDF), and every frame after is sealed with AES-256-GCM under a counter of its direction:
 // a frame cannot be read, changed, dropped, reordered or replayed (from this connection or a recorded one), and the
 // first sealed frame of each side ("auth") proves it knows the secret. Bodies are v8 serializations.
-const crypto = require('node:crypto');
-const v8 = require('node:v8');
-const { EventEmitter } = require('node:events');
+import crypto from 'node:crypto';
+import v8 from 'node:v8';
+import { EventEmitter } from 'node:events';
 
 const HANDSHAKE_TIMEOUT = 5000;
 const MAX_HI = 4096;
@@ -136,4 +136,4 @@ class Wire extends EventEmitter {
   }
 }
 
-module.exports = { Wire, baseKey };
+export { Wire, baseKey };

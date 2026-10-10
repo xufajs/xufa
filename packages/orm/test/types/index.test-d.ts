@@ -1,10 +1,15 @@
 import { expectType, expectError, expectAssignable, expectNotAssignable } from 'tsd';
 import {
+  Lower,
+  Paginator,
+  Page,
   Database,
   maintenance,
   MaintenanceState,
   Extract,
   Trunc,
+  Raw,
+  RawSql,
   Databases,
   Tenants,
   Model,
@@ -17,6 +22,8 @@ import {
   Field,
   Fields,
   QuerySet,
+  rollbackEach,
+  ScopedQuerySet,
   RelatedSet,
   Q,
   JsonPath,
@@ -156,7 +163,9 @@ expectType<string>(secret.ssn);
 expectType<string | null>(secret.email);
 expectType<{ languages: string[] }>(secret.profile);
 expectError(fields.encrypted(fields.string(), { primaryKey: true }));
-expectType<Keyring | null>(setEncryptionKeys({ current: 'k2', keys: { k2: generateEncryptionKey(), k1: Buffer.alloc(32) } }));
+expectType<Keyring | null>(
+  setEncryptionKeys({ current: 'k2', keys: { k2: generateEncryptionKey(), k1: Buffer.alloc(32) } })
+);
 expectType<Promise<number>>(reencrypt(Secret, { batchSize: 100 }));
 
 // TTL indexes.
@@ -186,6 +195,9 @@ expectType<(app: any) => Promise<void>>(
   })
 );
 expectError(resource(Author, { actions: ['destroy'] }));
+resource(Author, { permissions: true, auth: { list: false } });
+resource(Author, { permissions: 'authors' });
+expectError(resource(Author, { permissions: 3 }));
 expectType<string[]>(new UniqueError('x').fields);
 
 // Paths inside json fields as lists of keys and indexes.
@@ -203,7 +215,10 @@ expectAssignable<Field<string, true>>(fields.bigint({ mode: 'string', null: true
 const tenants = new Tenants({
   models: [],
   routes: { Event: 'events' },
-  config: (id) => ({ databases: { default: { backend: 'sqlite' }, events: { backend: 'memory' } }, routes: id === 'a' ? {} : { Event: 'default' } }),
+  config: (id) => ({
+    databases: { default: { backend: 'sqlite' }, events: { backend: 'memory' } },
+    routes: id === 'a' ? {} : { Event: 'default' },
+  }),
 });
 expectType<Promise<number>>(tenants.run('acme', async () => 1));
 expectType<Databases>(new Databases({ default: { backend: 'memory' } }, { routes: { Event: 'events' } }));
@@ -291,12 +306,15 @@ expectError(plugin({}, { database: new Database(), cancel: 'yes' }));
 // Results kept in caches.
 expectType<QuerySet<Tag>>(Tag.query().filter({ name: 'a' }).cached({ ttl: 60000 }));
 expectError(Tag.query().cached({ ttl: '1m' }));
-const rates = keep(async (currency: string, day: Date) => ({ currency, rate: 1 }), { ttl: 1000, key: (currency) => currency });
+const rates = keep(async (currency: string, day: Date) => ({ currency, rate: 1 }), {
+  ttl: 1000,
+  key: (currency) => currency,
+});
 expectType<Promise<{ currency: string; rate: number }>>(rates('EUR', new Date()));
 expectType<Promise<void>>(rates.invalidate('EUR', new Date()));
 expectType<Promise<void>>(rates.clear());
 expectError(rates(1, new Date()));
-keep(async () => 1, { cache: new MemoryCache(), name: "one" });
+keep(async () => 1, { cache: new MemoryCache(), name: 'one' });
 
 // Blob backends.
 import { BlobValue as BlobValueType } from '../..';
@@ -314,8 +332,20 @@ expectType<Promise<string>>(upload.content.url({ expiresIn: '10m' }));
 new Database({ backend: 'disk', dir: 'files', url: (table, key) => `/files/${table}/${key}` });
 new Database({ backend: 'memory-blob' });
 expectError(fields.blobInfo('owner'));
-new Database({ backend: 's3', bucket: 'uploads', region: 'eu-west-1', partSize: 16 * 1024 * 1024, publicUrl: 'https://cdn.example.com' });
-new Database({ backend: 's3', bucket: 'b', endpoint: 'http://localhost:9000', credentials: { accessKeyId: 'k', secretAccessKey: 's' }, createBucket: true });
+new Database({
+  backend: 's3',
+  bucket: 'uploads',
+  region: 'eu-west-1',
+  partSize: 16 * 1024 * 1024,
+  publicUrl: 'https://cdn.example.com',
+});
+new Database({
+  backend: 's3',
+  bucket: 'b',
+  endpoint: 'http://localhost:9000',
+  credentials: { accessKeyId: 'k', secretAccessKey: 's' },
+  createBucket: true,
+});
 
 // Faults.
 import { Faults as FaultsType, FaultRule, FaultError as FaultErrorType } from '../..';
@@ -334,7 +364,11 @@ expectType<503>({} as FaultErrorType['statusCode']);
 import { MemoryCache as MemoryCacheType } from '../..';
 const faultyCache = new MemoryCacheType();
 faultyCache.faults.fail({ operations: 'read', keys: 'db1:user:', rate: 0.1 });
-new Database({ backend: 'memory', cache: faultyCache, onCacheError: (err, { operation }) => expectType<'get' | 'set'>(operation) });
+new Database({
+  backend: 'memory',
+  cache: faultyCache,
+  onCacheError: (err, { operation }) => expectType<'get' | 'set'>(operation),
+});
 
 // Model.schema(): typed from the fields, as JSON.
 import { s, type Infer, type SchemaTypeProvider } from '@xufa/schema';
@@ -415,9 +449,13 @@ class Post extends Owned {
   static fields = fields.extend(Owned, { title: fields.string({ maxLength: 80 }) });
 }
 const postSchema = Post.schema();
-expectType<{ title: string; id?: number | string; createdAt?: string; updatedAt?: string; ownerId?: number | string | null }>(
-  {} as Infer<typeof postSchema>
-);
+expectType<{
+  title: string;
+  id?: number | string;
+  createdAt?: string;
+  updatedAt?: string;
+  ownerId?: number | string | null;
+}>({} as Infer<typeof postSchema>);
 expectType<Date>(({} as Article).createdAt);
 expectType<string>(({} as Article).title);
 expectNotAssignable<keyof typeof articleFields>('updatedAt');
@@ -501,7 +539,10 @@ class KeptAll extends Model {
 }
 expectAssignable<ModelOptions>(KeptAll.options);
 // The audit log.
-const audited = new Database({ backend: 'memory', audit: { redact: ['password'], retain: '365d', exclude: ['Session'] } });
+const audited = new Database({
+  backend: 'memory',
+  audit: { redact: ['password'], retain: '365d', exclude: ['Session'] },
+});
 expectType<number | null>(new Database({ backend: 'memory', audit: true }).audit!.retain);
 if (audited.audit) {
   const log = audited.audit;
@@ -527,7 +568,11 @@ expectError(auditResource({}));
   class Pet extends Model {
     static fields = { name: fields.string(), color: fields.string() };
   }
-  const Pets = factory(Pet, { name: (n: number) => `Pet ${n}`, color: sequence(['red', 'green']) }, { states: { red: { color: 'red' } } });
+  const Pets = factory(
+    Pet,
+    { name: (n: number) => `Pet ${n}`, color: sequence(['red', 'green']) },
+    { states: { red: { color: 'red' } } }
+  );
   expectType<Promise<Pet>>(Pets.state('red').create());
   expectType<Promise<Pet[]>>(Pets.createMany(2));
   expectType<Promise<Pet>>(Pets.make());
@@ -552,9 +597,17 @@ expectError(auditResource({}));
   const genres = Post.objects.values<{ genre: string }>('genre').distinct();
   expectType<QuerySet<{ genre: string }>>(genres);
   Post.objects.orderBy('author', '-at').distinct('author');
-  const both = Post.objects.filter({ at__month: 12, at__week_day__in: [1, 7] }).union(Post.objects.filter({ pk: 1 }), { all: true });
-  both.orderBy('-at').slice(0, 10).then((posts) => posts.length);
-  Post.objects.filter({ at__year: 2026 }).intersection(Post.objects.filter({ pk: 1 })).difference(Post.objects.filter({ pk: 2 }));
+  const both = Post.objects
+    .filter({ at__month: 12, at__week_day__in: [1, 7] })
+    .union(Post.objects.filter({ pk: 1 }), { all: true });
+  both
+    .orderBy('-at')
+    .slice(0, 10)
+    .then((posts) => posts.length);
+  Post.objects
+    .filter({ at__year: 2026 })
+    .intersection(Post.objects.filter({ pk: 1 }))
+    .difference(Post.objects.filter({ pk: 2 }));
 }
 
 // Extract and Trunc in values() and the groups of annotate().
@@ -572,5 +625,138 @@ expectError(auditResource({}));
 
 {
   const db = new Database({ backend: 'memory' });
-  db.health({ slow: 100 }).check().then((result) => expectType<number | undefined>(result.latency));
+  db.health({ slow: 100 })
+    .check()
+    .then((result) => expectType<number | undefined>(result.latency));
+}
+
+// Raw: fragments of SQL in conditions, orders, values, extra(), update() and aggregates.
+{
+  class Order extends Model {}
+  const raw = Raw(`length(${Raw.TABLE}.title) > ?`, [10]);
+  expectType<string>(raw.sql);
+  expectType<unknown[]>(raw.params);
+  expectType<RawSql>(new Raw('random()'));
+  Order.objects
+    .filter(raw, { paid: true })
+    .exclude(Raw('total < ?', [5]))
+    .orderBy(Raw('random()'), '-total');
+  Order.objects.filter(or(Raw('a = 1'), { b: 2 }));
+  Order.objects.values('id', { total: Raw('price * quantity') });
+  Order.objects.extra({ items: Raw('(SELECT COUNT(*) FROM line WHERE line.order_id = order.id)') });
+  Order.objects.update({ total: Raw('price * ?', [2]) });
+  Order.objects.aggregate({ paid: Raw('SUM(CASE WHEN paid THEN 1 ELSE 0 END)'), orders: Count() }).then((result) => {
+    expectType<unknown>(result.paid);
+    expectType<number>(result.orders);
+  });
+  expectError(Raw(42));
+  expectError(Order.objects.extra({ items: 'SELECT 1' }));
+}
+
+// Plain values() ordered by their Extract and Trunc keys.
+{
+  class Visit extends Model {}
+  const months = Visit.objects
+    .values<{ title: string; month: number }>('title', { month: Extract('at', 'month') })
+    .orderBy('-month', 'title');
+  expectType<QuerySet<{ title: string; month: number }>>(months);
+  Visit.objects
+    .valuesList<number>({ day: Trunc('at', 'day') }, { flat: true })
+    .orderBy('day')
+    .limit(10);
+}
+
+// Scopes: Book.query().published() typed, chained with the methods of querysets and with each other.
+{
+  const shelfFields = { title: fields.string(), published: fields.boolean(), pages: fields.integer() };
+  class Shelf extends Model {
+    static fields = shelfFields;
+
+    static scopes = {
+      published: (qs: QuerySet<Shelf>) => qs.filter({ published: true }),
+      longerThan: (qs: QuerySet<Shelf>, pages: number) => qs.filter({ pages__gt: pages }),
+    };
+  }
+  interface Shelf extends Fields<typeof shelfFields> {}
+  const books = Shelf.query().published().orderBy('title').longerThan(100).limit(5);
+  expectType<ScopedQuerySet<Shelf, typeof Shelf.scopes>>(books);
+  books.then((rows) => expectType<Shelf[]>(rows));
+  Shelf.query()
+    .filter({ title__startswith: 'A' })
+    .published()
+    .first()
+    .then((one) => expectType<Shelf | null>(one));
+  expectError(Shelf.query().longerThan('many'));
+  expectError(Shelf.query().unpublished());
+  // values() leaves the objects: no scopes after it.
+  expectError(Shelf.query().values('title').published());
+  // A model without scopes: a QuerySet.
+  class Plain extends Model {}
+  expectAssignable<QuerySet<Plain>>(Plain.query().filter({}).limit(1));
+}
+
+// Transactions: the options of SQLite and MongoDB.
+{
+  const txdb = new Database({ backend: 'memory' });
+  txdb.transaction(async () => 1, { retry: false, timeout: 5000 }).then((n) => expectType<number>(n));
+  txdb.transaction(() => 'x', { mode: 'immediate' });
+  expectError(txdb.transaction(() => 1, { mode: 'later' }));
+}
+
+// Tests in transactions.
+{
+  const testDb = new Database({ backend: 'sqlite', filename: ':memory:' });
+  testDb.beginTest().then(() => testDb.rollbackTest());
+  expectType<boolean>(testDb.canRollbackTests);
+  expectType<Promise<void>>(testDb.flush());
+  const hooks = { beforeEach: (fn: () => Promise<void>) => fn, afterEach: (fn: () => Promise<void>) => fn };
+  rollbackEach(testDb, hooks);
+  rollbackEach(() => testDb, { ...hooks, mode: 'flush' });
+  expectError(rollbackEach(testDb, { mode: 'never' }));
+}
+
+// Paginator.
+{
+  class Paged extends Model {
+    static fields = { title: fields.string() };
+  }
+  const paginator = new Paginator(Paged.query().orderBy('title'), 10, { orphans: 2 });
+  paginator.page('2').then((page) => {
+    expectType<Paged[]>(page.objectList);
+    expectType<boolean>(page.hasNext);
+    for (const item of page) expectType<Paged>(item);
+  });
+  expectType<Promise<(number | '…')[]>>(paginator.elidedPageRange(5));
+  expectType<Promise<Page<number>>>(new Paginator([1, 2, 3], 2).getPage(9));
+  expectError(new Paginator(Paged.objects.all(), '10'));
+}
+
+// Choices with labels, labels and help of fields.
+{
+  class Copy extends Model {
+    static fields = {
+      status: fields.string({ choices: [['a', 'Available'], ['o', 'On loan']], label: 'Availability', help: 'Can it be borrowed?' }),
+      format: fields.string({ choices: { hb: 'Hardback' }, blank: false }),
+    };
+  }
+  expectType<string | null | undefined>(new Copy().display('status'));
+  expectError(fields.string({ label: 7 }));
+}
+
+// Constraints and Lower().
+{
+  class Genre extends Model {
+    static fields = { name: fields.string() };
+
+    static options = {
+      constraints: [
+        { unique: [Lower('name')], name: 'genre_name_ci', message: 'Genre already exists' },
+        { check: 'name.length > 0', message: 'A name' },
+      ],
+      indexes: [[Lower('name')]],
+    };
+  }
+  expectType<'lower'>(Lower('name').kind);
+  expectError(Lower(7));
+  expectType<typeof Genre>(Genre);
 }

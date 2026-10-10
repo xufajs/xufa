@@ -8,15 +8,18 @@
 //
 // node tools/port-ws/port.js <ws> [<fastify-websocket>]
 //   (checkouts of github.com/websockets/ws and github.com/fastify/fastify-websocket)
-const fs = require('node:fs');
-const path = require('node:path');
+import fs from 'node:fs';
+import path from 'node:path';
+import { createRequire } from 'node:module';
+
+const require = createRequire(import.meta.url);
 
 const [ws, fastifyWebsocket] = process.argv.slice(2);
 if (!ws) {
   console.error('Usage: node tools/port-ws/port.js <ws> [<fastify-websocket>]');
   process.exit(1);
 }
-const PACKAGE = path.join(__dirname, '../../packages/websocket');
+const PACKAGE = path.join(import.meta.dirname, '../../packages/websocket');
 const TESTS = path.join(PACKAGE, 'test/ws');
 
 function port(text) {
@@ -56,7 +59,7 @@ for (const name of fs.readdirSync(path.join(ws, 'test'))) {
 console.log(`ws: ${files} files, ${skips} skips as done.skip()`);
 
 if (fastifyWebsocket) {
-  const { convert } = require('../node-test-to-vyntra/convert'); // eslint-disable-line global-require
+  const { convert } = require('../node-test-to-vyntra/convert.js'); // eslint-disable-line global-require
   const to = path.join(PACKAGE, 'test/fastify');
   fs.rmSync(to, { recursive: true, force: true });
   fs.mkdirSync(to, { recursive: true });

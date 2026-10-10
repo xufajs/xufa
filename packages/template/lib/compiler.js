@@ -1,10 +1,10 @@
 // A template as a function: its parts as a tree of blocks (if, each, with, partials), each a closure that gives its
 // text. Expressions are those of @xufa/expression, with the filters of the engine; the names of a block (the item
 // of an each, the name of a with) are in a context made over the one around it.
-const { ExpressionError, FORBIDDEN } = require('@xufa/expression');
-const { scan } = require('./scanner');
-const { TemplateError } = require('./errors');
-const { SafeString, escapeHtml } = require('./filters');
+import { ExpressionError, FORBIDDEN } from '@xufa/expression';
+import { scan } from './scanner.js';
+import { TemplateError } from './errors.js';
+import { SafeString, escapeHtml } from './filters.js';
 
 const NAME = /^[A-Za-z_$][\w$]*$/;
 // A path: a name and members of it by name or index (user.name, items[0].price, user?.address.city).
@@ -12,6 +12,14 @@ const PATH = /^[A-Za-z_$][\w$]*(?:\s*\??\.\s*[A-Za-z_$][\w$]*|\s*\[\s*\d+\s*\])*
 const SIMPLE_PATH = /^[A-Za-z_$][\w$]*(?:\.[A-Za-z_$][\w$]*)*$/;
 const PATH_PART = /[A-Za-z_$][\w$]*|\[\s*(\d+)\s*\]/g;
 const NOT_PATHS = new Set(['true', 'false', 'null', 'undefined']);
+// The blocks of the templates that extend the one rendered, by name: [their contents, the nearest first] (in the
+// context, so the partials it renders see them too).
+const BLOCKS = Symbol('xufa.template.blocks');
+// {{extends 'name'}}: the template this one extends (Django's {% extends %}); {{extends layout}}: the name an
+// expression gives when it renders (Django's {% extends variable %}).
+const EXTENDS = /^extends\s+(['"])([\w./-]+)\1\s*$/;
+const EXTENDS_VALUE = /^extends\s+(?!['"])(\S.*)$/;
+const BLOCK_NAME = /^[\w-]+$/;
 // Renders of a list of nodes before it is made one function (see render()).
 const INLINE_AFTER = 16;
 const { hasOwnProperty } = Object.prototype;
@@ -192,9 +200,13 @@ class TemplateCompiler {
     const root = { type: 'root', nodes: [] };
     const stack = [root];
     const top = () => stack[stack.length - 1];
+    this.parent = null;
+    this.blocks = new Map();
+    let tags = 0;
     parts.forEach((part) => {
       const block = top();
       const target = block.otherwise || block.current || block.nodes;
+      if (part.kind !== 'comment' && !(part.kind === 'text' && !part.text.trim())) tags += 1;
       switch (part.kind) {
         case 'text':
           target.push({ type: 'text', text: part.text });
@@ -204,6 +216,18 @@ class TemplateCompiler {
         case 'output':
         case 'raw':
           if (!part.body) throw this.error('Empty tag', part.position);
+          if (part.kind === 'output' && (EXTENDS.test(part.body) || EXTENDS_VALUE.test(part.body))) {
+            // As Django's: the first tag (the texts out of the blocks of a template that extends another are not
+            // written).
+            if (tags !== 1) throw this.error("{{extends 'name'}} is the first tag of a template", part.position);
+            const literal = EXTENDS.exec(part.body);
+            if (literal) [, , this.parent] = literal;
+            else {
+              const [, source] = EXTENDS_VALUE.exec(part.body);
+              this.parent = { value: this.expression(source, part.start + part.body.indexOf(source)), source };
+            }
+            break;
+          }
           target.push({
             type: 'output',
             value: this.expression(part.body, part.start),
@@ -220,7 +244,10 @@ class TemplateCompiler {
         case '/': {
           const name = part.body.slice(1).trim();
           if (block.type === 'root') throw this.error(`{{/${name}}} closes no block`, part.position);
-          if (name !== block.type) throw this.error(`{{/${name}}} closes {{#${block.type}}}`, part.position);
+          // {{/block}}, or {{/block name}} (Django's {% endblock name %}).
+          const closes =
+            block.type === 'block' ? name === 'block' || name === `block ${block.name}` : name === block.type;
+          if (!closes) throw this.error(`{{/${name}}} closes {{#${block.type}}}`, part.position);
           stack.pop();
           break;
         }
@@ -248,6 +275,14 @@ class TemplateCompiler {
     const restOffset = offset + (rest.length - rest.trimStart().length);
     const expression = rest.trim();
     if (!expression) throw this.error(`{{#${keyword}}} needs an expression`, part.position);
+    if (keyword === 'block') {
+      if (!BLOCK_NAME.test(expression)) throw this.error(`${expression} cannot be the name of a block`, part.position);
+      if (this.blocks.has(expression)) throw this.error(`Two blocks named ${expression}`, part.position);
+      const node = { type: 'block', name: expression, position: part.position, nodes: [], otherwise: null };
+      this.blocks.set(expression, node);
+      target.push(node);
+      return node;
+    }
     if (keyword === 'if') {
       const node = { type: 'if', position: part.position, branches: [], otherwise: null };
       node.branches.push({ test: this.expression(expression, restOffset), nodes: [] });
@@ -277,7 +312,7 @@ class TemplateCompiler {
       target.push(node);
       return node;
     }
-    throw this.error(`Unknown block {{#${keyword}}} (if, each, with)`, part.position);
+    throw this.error(`Unknown block {{#${keyword}}} (if, each, with, block)`, part.position);
   }
 
   otherwise(part, block) {
@@ -298,6 +333,12 @@ class TemplateCompiler {
       return;
     }
     throw this.error('{{else}} out of {{#if}} or {{#each}}', part.position);
+  }
+
+  // The closure of the contents of a block (made once).
+  contentOf(node) {
+    if (!node.content) node.content = this.render(node.nodes);
+    return node.content;
   }
 
   partial(part) {
@@ -402,6 +443,25 @@ class TemplateCompiler {
         const { value, item } = node;
         return (context, depth) => body(child(context, { [item]: value(context) }), depth);
       }
+      case 'block': {
+        // The contents of the nearest template that has the block (those that extend this one go first), with
+        // block.super: those of the one it extends.
+        const own = this.contentOf(node);
+        const { name } = node;
+        return (context, depth) => {
+          const given = context[BLOCKS] && context[BLOCKS][name];
+          const chain = given ? (given.includes(own) ? given : [...given, own]) : [own];
+          const at = (index) => {
+            const block = {
+              get super() {
+                return new SafeString(index + 1 < chain.length ? at(index + 1) : '');
+              },
+            };
+            return chain[index](child(context, { block }), depth);
+          };
+          return at(0);
+        };
+      }
       case 'partial': {
         const { engine } = this;
         const { name, value, position } = node;
@@ -436,7 +496,7 @@ class TemplateCompiler {
     // How many times the template was rendered (whole, or as a partial).
     const hot = { renders: 0 };
     this.hot = hot;
-    const inner = this.render(nodes);
+    const inner = this.parent ? this.extending() : this.render(nodes);
     const text = (context, depth) => {
       hot.renders += 1;
       return inner(context, depth);
@@ -448,11 +508,40 @@ class TemplateCompiler {
     // render.stream(context, { chunkSize }): the text in chunks, made as they are read (made the first time it is used).
     let streamer = null;
     render.stream = (context, options = {}) => {
-      if (!streamer) streamer = this.streamNodes(nodes);
+      // A template that extends another is given whole.
+      if (!streamer) streamer = this.parent ? streamWhole(inner) : this.streamNodes(nodes);
       hot.renders += 1;
       return chunksOf(streamer, context === null || context === undefined ? {} : context, options.chunkSize || CHUNK);
     };
     return render;
+  }
+
+  // A template that extends another: the one it extends (found as partials are, by its name), rendered with the blocks
+  // of this one after those of the templates that extend this one (the nearest first).
+  extending() {
+    const { engine, parent } = this;
+    const compiler = this;
+    const own = [...this.blocks.values()].map((node) => [node.name, this.contentOf(node)]);
+    return (context, depth) => {
+      const name = typeof parent === 'string' ? parent : parent.value(context);
+      if (typeof name !== 'string' || name === '') {
+        throw compiler.error(
+          `{{extends ${parent.source}}} gives no name of a template (${typeof name})`,
+          0,
+          'XUFA_TEMPLATE_ERR_PARTIAL'
+        );
+      }
+      if (depth >= engine.maxDepth) {
+        throw compiler.error(`Templates deeper than ${engine.maxDepth} (${name})`, 0, 'XUFA_TEMPLATE_ERR_PARTIAL');
+      }
+      const base = engine.partialOf(name, compiler.escape);
+      if (!base) throw compiler.error(`Unknown template ${name} to extend`, 0, 'XUFA_TEMPLATE_ERR_PARTIAL');
+      const blocks = { ...context[BLOCKS] };
+      for (const [name, content] of own) blocks[name] = blocks[name] ? [...blocks[name], content] : [content];
+      const scope = Object.create(context);
+      scope[BLOCKS] = blocks;
+      return base.text(scope, depth + 1);
+    };
   }
 
   // A list of nodes as a generator: the text of each node is added to state.text, and given (yield) when it is
@@ -560,10 +649,20 @@ function hasEach(nodes) {
 // The size of the chunks of streams (characters).
 const CHUNK = 65536;
 
+function streamWhole(text) {
+  return function* streamText(context, depth, state) {
+    state.text += text(context, depth);
+    while (state.text.length >= state.chunkSize) {
+      yield state.text.slice(0, state.chunkSize);
+      state.text = state.text.slice(state.chunkSize);
+    }
+  };
+}
+
 function* chunksOf(streamer, context, chunkSize) {
   const state = { text: '', chunkSize };
   yield* streamer(context, 0, state);
   if (state.text) yield state.text;
 }
 
-module.exports = { TemplateCompiler, stringify };
+export { TemplateCompiler, stringify };

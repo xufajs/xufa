@@ -27,10 +27,20 @@ export type RuleSpec<S> = ValidationRule<S> | { rule: ValidationRule<S>; message
 export interface FieldOptions<T> {
   null?: boolean;
   default?: T | (() => T);
-  unique?: boolean;
+  /** Unique; 'ci': whatever the case of the text (a unique index of its lower case, as UniqueConstraint(Lower())). */
+  unique?: boolean | 'ci';
+  /** Its own messages (Django's error_messages): { unique } for a value another object has. */
+  messages?: { unique?: string };
   index?: boolean;
   primaryKey?: boolean;
-  choices?: readonly T[];
+  /** The values it may take: a list, a list of [value, label] (Django's choices), or an object of labels by value. */
+  choices?: readonly T[] | readonly (readonly [T, string])[] | Record<string, string>;
+  /** What forms and the admin call it (Django's verbose_name). */
+  label?: string;
+  /** A text that helps to fill it in forms and the admin (Django's help_text). */
+  help?: string;
+  /** Whether a form may leave it empty: by default as null; blank: false refuses an empty text too. */
+  blank?: boolean;
   column?: string;
   /** Rules of the value: functions, expressions on `value` ('value >= 0'), or { rule, message }. */
   validate?: RuleSpec<T> | Array<RuleSpec<T>>;
@@ -402,6 +412,13 @@ export interface ModelClass<M extends Model = Model> {
  */
 export interface ModelOptions {
   table?: string;
+  /** Its names for people (Django's verbose_name, verbose_name_plural): 'book instance', and with an s. */
+  label?: string;
+  labelPlural?: string;
+  /** Its text (Django's __str__): '{lastName}, {firstName}' ({relation.field} of loaded relations), or a function. */
+  display?: string | ((object: any) => string);
+  /** Its own permissions (Django's Meta.permissions) by action: { markReturned: 'Set book as returned' }. */
+  permissions?: Record<string, string>;
   /** The schema of the table (PostgreSQL; SQLite names the table 'schema.table'). */
   schema?: string;
   /**
@@ -421,7 +438,24 @@ export interface ModelOptions {
    * that long after the date: native in MongoDB, deleted by db.expire() / db.startExpiry() in every backend.
    */
   indexes?: Array<
-    string[] | { fields: string[]; unique?: boolean; name?: string; condition?: string; expireAfter?: number | string }
+    | IndexField[]
+    | {
+        fields: IndexField[];
+        unique?: boolean;
+        name?: string;
+        condition?: string;
+        expireAfter?: number | string;
+        /** Columns kept in the index besides its keys (PostgreSQL's INCLUDE): 'pk' or names of fields. */
+        include?: string[];
+      }
+  >;
+  /**
+   * Constraints, as Django's Meta.constraints: unique ones of fields together, or of their lower case (Lower('name'):
+   * unique whatever the case), with the message of a UniqueError; and checks, rules of the object checked before saving.
+   */
+  constraints?: Array<
+    | { unique: IndexField[]; name?: string; message?: string; condition?: string }
+    | { check: ValidationRule<any>; name?: string; message?: string; field?: string }
   >;
   abstract?: boolean;
   fillfactor?: number;
@@ -454,9 +488,71 @@ export interface ModelCacheOptions {
   indexes?: string[];
 }
 
+/** A field of a spec: its type alone, or the type with its options (relations: to; array and encrypted: of). */
+export type FieldSpec =
+  | string
+  | {
+      type: string;
+      /** The model of a relation: one of the spec, 'self', or one resolve() finds. */
+      to?: string;
+      through?: string;
+      /** The field array and encrypted hold. */
+      of?: FieldSpec;
+      /** (specOf) Options that are code, left out. */
+      code?: string[];
+      [option: string]: unknown;
+    };
+/** A model of a spec: its options (table, ordering, display...) and its fields. */
+export interface ModelSpec {
+  fields?: Record<string, FieldSpec>;
+  code?: string[];
+  [option: string]: unknown;
+}
+export declare class SpecError extends TypeError {}
+/** The types a spec takes. */
+export declare const SPEC_TYPES: string[];
+/**
+ * Models as data (an app's models.yaml): the classes of a spec ({ Book: { fields, ...options } }), in its order.
+ * resolve(name): a model the spec has not (another app's); where: its name in errors.
+ */
+export declare function modelsFromSpec(
+  spec: Record<string, ModelSpec>,
+  options?: { Model?: ModelClass<any>; resolve?: (name: string) => ModelClass<any> | undefined; where?: string }
+): ModelClass<Model>[];
+/** The spec of any model (one of code too): what modelsFromSpec() takes. */
+export declare function specOf(model: ModelClass<any>): ModelSpec;
+
+/**
+ * Each test in a transaction rolled back at its end (or the models emptied, when the database cannot roll back): the
+ * hooks of node:test (rollbackEach(db, { beforeEach, afterEach })), or the globals of vyntra, jest and mocha. A
+ * function gives the databases when the tests run (made in a before()). A Tenants: the databases of its tenants open
+ * when a test starts, and those the test opens.
+ */
+export type TestDatabases = Database | Databases | Tenants | null | undefined;
+export declare function rollbackEach(
+  target: TestDatabases | TestDatabases[] | (() => TestDatabases | TestDatabases[]),
+  options?: {
+    beforeEach?: (fn: () => Promise<void>) => unknown;
+    afterEach?: (fn: () => Promise<void>) => unknown;
+    mode?: 'auto' | 'rollback' | 'flush';
+  }
+): void;
+
+/** The options of a transaction: those of SQLite (mode) and MongoDB (retry, timeout). */
+export interface TransactionOptions {
+  mode?: 'deferred' | 'immediate' | 'exclusive';
+  retry?: boolean;
+  timeout?: number;
+}
+
 /** What the ORM knows of a model (Model.meta): its name, table, fields, primary key and relations. */
 export interface Meta {
   readonly name: string;
+  /** Its names for people: options.label, else 'book instance' of BookInstance; labelPlural: with an s. */
+  readonly label: string;
+  readonly labelPlural: string;
+  /** Book.add, .change, .delete, .view and those of options.permissions. */
+  readonly permissions: { name: string; label: string }[];
   readonly table: string;
   readonly fields: Field<unknown, boolean>[];
   readonly pk: Field<unknown, boolean>;
@@ -477,7 +573,11 @@ export declare class Model {
   static readonly db: Database;
   /** A QuerySet of the objects of the model (typed by Model.query()). */
   static readonly objects: QuerySet<any>;
-  static query<M extends Model>(this: ModelClass<M>): QuerySet<M>;
+  /**
+   * A QuerySet of the objects of the model, typed, with the methods of its scopes (static scopes = { published: (qs:
+   * QuerySet<Book>) => qs.filter({ published: true }) }): Book.query().published().orderBy('title').
+   */
+  static query<M extends Model, S = {}>(this: ModelClass<M> & { readonly scopes?: S }): ScopedQuerySet<M, S>;
   static create<M extends Model>(this: ModelClass<M>, data: Record<string, unknown>): Promise<M>;
   static on<M extends Model>(
     this: ModelClass<M>,
@@ -506,6 +606,8 @@ export declare class Model {
   /** Whether the object was deleted softly. */
   readonly isDeleted: boolean;
   refresh(): Promise<this>;
+  /** The label of the value of a field of choices (Django's get_status_display()), or the value as text. */
+  display(name: string): string | null | undefined;
   load(name: string): Promise<unknown>;
   toJSON(): Record<string, unknown>;
 }
@@ -514,7 +616,24 @@ export declare class Model {
  * The conditions of filter(), exclude() and get(): { field__lookup: value }, Q (and, or, not) or a condition inside
  * json fields.
  */
-export type Conditions = Record<string, unknown> | Q | JsonPath;
+/**
+ * A fragment of SQL (SQL databases): in conditions (filter(Raw(`length(${Raw.TABLE}.title) > ?`, [10]))), orders
+ * (orderBy(Raw('random()'))), values ({ total: Raw('price * quantity') }), extra(), the values of update() and
+ * aggregates (Raw('SUM(CASE WHEN paid THEN 1 ELSE 0 END)')). Its ? are its parameters (outside quotes).
+ */
+export interface RawSql {
+  readonly sql: string;
+  readonly params: unknown[];
+}
+/** A fragment of SQL with its parameters: Raw(sql, params), with or without new. */
+export declare const Raw: {
+  (sql: string, params?: unknown[]): RawSql;
+  new (sql: string, params?: unknown[]): RawSql;
+  /** In the SQL of a fragment, the table of the model in the query (its alias when it has one). */
+  readonly TABLE: string;
+};
+
+export type Conditions = Record<string, unknown> | Q | JsonPath | RawSql;
 
 /**
  * A condition on a value inside a json field, its path a list of keys (any text: also 'in' or 'a__b') and indexes
@@ -587,7 +706,7 @@ export declare const Trunc: {
   new (field: string, unit: DateUnit): TruncExpression;
 };
 /** An item of values(): a name of a field (author__name), or values of dates by key. */
-export type ValuesItem = string | Record<string, ExtractExpression | TruncExpression>;
+export type ValuesItem = string | Record<string, ExtractExpression | TruncExpression | RawSql>;
 
 /** An aggregate of a field: Count, Sum, Avg, Min or Max. */
 export interface Aggregate<T = number | null> {
@@ -610,32 +729,39 @@ export declare function Min<T = unknown>(name: string): Aggregate<T | null>;
 export declare function Max<T = unknown>(name: string): Aggregate<T | null>;
 
 /** The values of aggregate(): one for each aggregate, by its name. */
-type AggregateResult<A> = { [K in keyof A]: A[K] extends Aggregate<infer T> ? T : never };
+/** The results of aggregates: of Count, Sum..., as they are; of Raw, as the driver gives them (unknown). */
+type AggregateResult<A> = {
+  [K in keyof A]: A[K] extends Aggregate<infer T> ? T : A[K] extends RawSql ? unknown : never;
+};
 
 /**
  * A query of the objects of a model: lazy (await runs it), chained (filter, exclude, orderBy, selectRelated...), and
  * with its writes (create, update, delete...), as Django's QuerySets.
  */
-export declare class QuerySet<T> implements PromiseLike<T[]>, AsyncIterable<T> {
+export declare class QuerySet<T> implements PromiseLike<T[]>, AsyncIterable<T>, Iterable<T> {
   readonly model: ModelClass;
-  all(): QuerySet<T>;
-  filter(...conditions: Conditions[]): QuerySet<T>;
-  exclude(...conditions: Conditions[]): QuerySet<T>;
-  orderBy(...names: string[]): QuerySet<T>;
-  limit(count: number): QuerySet<T>;
-  offset(count: number): QuerySet<T>;
-  slice(start: number, end?: number): QuerySet<T>;
-  only(...names: string[]): QuerySet<T>;
+  all(): this;
+  filter(...conditions: Conditions[]): this;
+  exclude(...conditions: Conditions[]): this;
+  /**
+   * Names of fields ('-pages': descending; 'author__name'), keys of values() made of Extract, Trunc or Raw ('-month'),
+   * or fragments of SQL (Raw, SQL databases).
+   */
+  orderBy(...names: (string | RawSql)[]): this;
+  limit(count: number): this;
+  offset(count: number): this;
+  slice(start: number, end?: number): this;
+  only(...names: string[]): this;
   values<R = Record<string, unknown>>(...names: ValuesItem[]): QuerySet<R>;
   valuesList<R = unknown>(...args: [...ValuesItem[], { flat: true }]): QuerySet<R>;
   valuesList<R extends unknown[] = unknown[]>(...names: ValuesItem[]): QuerySet<R>;
-  selectRelated(...names: string[]): QuerySet<T>;
-  prefetchRelated(...names: string[]): QuerySet<T>;
+  selectRelated(...names: string[]): this;
+  prefetchRelated(...names: string[]): this;
   /** Aggregates of Count, Sum... or Raw('SUM(CASE WHEN ... END)') (SQL databases). */
-  annotate<A extends Record<string, Aggregate<unknown>>>(
+  annotate<A extends Record<string, Aggregate<unknown> | RawSql>>(
     aggregates: A
   ): QuerySet<Record<string, unknown> & AggregateResult<A>>;
-  using(db: Database): QuerySet<T>;
+  using(db: Database): this;
   /** The objects without the fields named (not read), as Django's defer(). */
   defer(...names: string[]): this;
   /**
@@ -662,33 +788,37 @@ export declare class QuerySet<T> implements PromiseLike<T[]>, AsyncIterable<T> {
    * Locks the rows selected until the end of the transaction (PostgreSQL).
    * Its reads stop when the signal is aborted: they throw its reason, and PostgreSQL cancels the one that runs.
    */
-  signal(signal: AbortSignal | null): QuerySet<T>;
+  signal(signal: AbortSignal | null): this;
   /**
    * Its results kept in the cache of the database until a model it reads is written (every one needs the option
    * cache); ttl in ms (the ttl of the option cache of the model by default).
    */
-  cached(options?: { ttl?: number }): QuerySet<T>;
+  cached(options?: { ttl?: number }): this;
   selectForUpdate(options?: {
     skipLocked?: boolean;
     noWait?: boolean;
     mode?: 'update' | 'share' | 'noKeyUpdate' | 'keyShare';
     of?: 'self';
-  }): QuerySet<T>;
+  }): this;
   /** The first `count` objects (after `offset`) of every group of values of the fields, in the order of the query. */
-  limitPer(names: string | string[], count: number, offset?: number): QuerySet<T>;
+  limitPer(names: string | string[], count: number, offset?: number): this;
   then<R1 = T[], R2 = never>(
     onfulfilled?: ((value: T[]) => R1 | PromiseLike<R1>) | null,
     onrejected?: ((reason: unknown) => R2 | PromiseLike<R2>) | null
   ): Promise<R1 | R2>;
   catch<R = never>(onrejected?: ((reason: unknown) => R | PromiseLike<R>) | null): Promise<T[] | R>;
   [Symbol.asyncIterator](): AsyncIterator<T>;
+  /** Its objects once loaded (awaited, or a relation of prefetchRelated); not loaded: a QueryError. */
+  [Symbol.iterator](): Iterator<T>;
   fetch(): Promise<T[]>;
   get(...conditions: Conditions[]): Promise<T>;
   first(): Promise<T | null>;
   last(): Promise<T | null>;
   count(): Promise<number>;
   exists(): Promise<boolean>;
-  aggregate<A extends Record<string, Aggregate<unknown>>>(aggregates: A): Promise<AggregateResult<A>>;
+  aggregate<A extends Record<string, Aggregate<unknown> | RawSql>>(aggregates: A): Promise<AggregateResult<A>>;
+  /** Values of fragments of SQL selected with the objects, as Django's extra() (SQL databases): object.books. */
+  extra(values: Record<string, RawSql>): this;
   create(data?: Record<string, unknown>): Promise<T>;
   getOrCreate(conditions: Record<string, unknown>, defaults?: Record<string, unknown>): Promise<[T, boolean]>;
   updateOrCreate(conditions: Record<string, unknown>, defaults?: Record<string, unknown>): Promise<[T, boolean]>;
@@ -703,6 +833,17 @@ export declare class QuerySet<T> implements PromiseLike<T[]>, AsyncIterable<T> {
   /** Takes back the objects deleted softly that the query matches. */
   restore(): Promise<number>;
 }
+
+/**
+ * The methods of the scopes of a model: each takes the arguments of its scope after the queryset, and gives the
+ * queryset with them still (so they chain with the others: Book.query().published().filter({ ... }).by('Ada')).
+ */
+export type ScopeMethods<T, S> = {
+  [K in keyof S]: S[K] extends (qs: any, ...args: infer A) => unknown ? (...args: A) => ScopedQuerySet<T, S> : never;
+};
+
+/** A QuerySet with the methods of the scopes of its model (Model.query()); a QuerySet for models without scopes. */
+export type ScopedQuerySet<T, S> = keyof S extends never ? QuerySet<T> : QuerySet<T> & ScopeMethods<T, S>;
 
 /** The QuerySet of a many-to-many relation of an object, with the methods that link and unlink objects. */
 export declare class RelatedSet<T> extends QuerySet<T> {
@@ -832,8 +973,13 @@ export interface DatabaseOptions {
     | 'azure-blob'
     | 'smtp'
     | 'memory-mail'
+    | 'console-mail'
     | Backend
     | (new (options: Record<string, unknown>) => Backend);
+  /** sqlite: the file of the database (':memory:' by default). */
+  filename?: string;
+  /** sqlite: how long a write waits, without blocking, for the lock of another process (5000 ms; 0: it fails at once). */
+  busyTimeout?: number;
   /** fs: the folder of the files; disk: the folder of the objects (a folder for each model). */
   dir?: string;
   /** disk: the URL of an object where the folder is served (BlobValue.url()). smtp: smtp:// or smtps://. */
@@ -846,8 +992,11 @@ export interface DatabaseOptions {
   secure?: boolean;
   /** smtp: the credentials (PLAIN or LOGIN), or a user and an OAuth 2 access token (XOAUTH2). */
   auth?: { user: string; pass: string } | { user: string; accessToken: string };
-  /** smtp, memory-mail: the sender of the messages whose model has no `from`. */
+  /** smtp, memory-mail, console-mail: the sender of the messages whose model has no `from`. */
   from?: string;
+  /** console-mail: where each message is written (process.stdout), and what follows it (a line of dashes). */
+  write?: (text: string) => unknown;
+  separator?: string;
   /** smtp: the name of this machine in EHLO (its hostname). */
   clientName?: string;
   /** smtp: options of tls.connect (ca, rejectUnauthorized, servername...). */
@@ -1079,6 +1228,8 @@ export declare class FaultError extends Error {
  * faults.
  */
 export declare class Database {
+  /** The module of the ORM of this database (Model, fields, Paginator...): what packages that take a database make their models with. */
+  readonly orm: typeof import('./index.js');
   /** The options of a database from a URL (postgres://, mongodb://, sqlite:path, memory:, fs:folder, smtp://), with options over them. */
   static optionsFromUrl(url: string, options?: DatabaseOptions): DatabaseOptions;
   /** A database from a URL, as DATABASE_URL. */
@@ -1105,14 +1256,52 @@ export declare class Database {
   health(options?: { slow?: number | string; critical?: boolean; timeout?: number | string }): DatabaseHealthCheck;
   sync(): Promise<void>;
   drop(): Promise<void>;
-  transaction<R>(fn: () => R | Promise<R>): Promise<R>;
-  makeMigrations(options: { dir: string; name?: string }): Promise<{
+  /**
+   * Runs fn in a transaction (savepoints inside others). SQLite: mode ('deferred', 'immediate', 'exclusive'). MongoDB:
+   * on a transient error (a write conflict...) the transaction runs again, and its commit when its result is unknown,
+   * for timeout ms (120 s); retry: false runs it once.
+   */
+  transaction<R>(fn: () => R | Promise<R>, options?: TransactionOptions): Promise<R>;
+  /**
+   * Tests: a transaction that every query of the database is part of (from the test, and from the requests it makes),
+   * rolled back by rollbackTest(), as Django's TestCase. Transactions inside are savepoints.
+   */
+  beginTest(): Promise<void>;
+  rollbackTest(): Promise<void>;
+  /** Whether beginTest() can (MongoDB alone, mail and storage cannot: flush() them). */
+  readonly canRollbackTests: boolean;
+  /** Deletes every object of its models (those deleted softly too), and its caches. */
+  flush(): Promise<void>;
+  /**
+   * models: those of an app (only their tables, in its folder); before: operations first (renameTable,
+   * renameColumn), applied before the rest is found; write: false finds it without writing it (text: its file).
+   */
+  makeMigrations(options: {
+    dir: string;
+    name?: string;
+    models?: ModelClass<any>[];
+    before?: MigrationOperation[];
+    write?: boolean;
+    /** Migrations kept elsewhere (those of models in the database), after those of the folder. */
+    extra?: Array<{ name: string; operations: MigrationOperation[] }>;
+  }): Promise<{
     name: string;
     file: string;
     operations: MigrationOperation[];
+    text?: string;
   } | null>;
-  migrate(options: { dir: string; to?: string }): Promise<string[]>;
-  showMigrations(options: { dir: string }): Promise<Array<{ name: string; applied: boolean }>>;
+  /** label: of an app (its migrations are recorded as label.name). */
+  migrate(options: {
+    dir: string;
+    to?: string;
+    label?: string;
+    extra?: Array<{ name: string; operations: MigrationOperation[] }>;
+  }): Promise<string[]>;
+  showMigrations(options: {
+    dir: string;
+    label?: string;
+    extra?: Array<{ name: string; operations: MigrationOperation[] }>;
+  }): Promise<Array<{ name: string; applied: boolean }>>;
   /** Deletes the objects of TTL indexes that expired: the number deleted, by model. */
   expire(options?: { now?: Date }): Promise<Record<string, number>>;
   /** MongoDB: converts the decimals written as strings to Decimal128, in the server; the number of values by model. */
@@ -1212,6 +1401,10 @@ export declare class Tenants {
   database(tenantId: string): Promise<Database | Databases>;
   run<R>(tenantId: string, fn: () => R | Promise<R>): Promise<R>;
   enter(tenantId: string): Promise<Database | Databases>;
+  /** Calls fn with each database opened from now on, once set up (before it is given); returns what stops it. */
+  onOpen(fn: (db: Database | Databases, tenantId: string) => unknown): () => boolean;
+  /** The databases open now. */
+  opened(): Promise<Array<Database | Databases>>;
   close(): Promise<void>;
 }
 
@@ -1226,7 +1419,7 @@ export declare class Backend {
   connect(): Promise<void>;
   close(): Promise<void>;
   ping(): Promise<boolean>;
-  transaction<R>(fn: () => R | Promise<R>): Promise<R>;
+  transaction<R>(fn: () => R | Promise<R>, options?: TransactionOptions): Promise<R>;
   raw?(sql: string, params?: unknown[]): Promise<Record<string, unknown>[]>;
 }
 
@@ -1263,8 +1456,14 @@ export declare const ModelError: ErrorClass;
  * another...).
  */
 export declare const QueryError: ErrorClass;
-/** A delete refused: objects with a foreign key of onDelete: 'protect' point to the objects deleted. */
-export declare const ProtectedError: ErrorClass;
+/** What a delete would leave pointing to nothing (a foreign key with onDelete 'protect'): 409. */
+export interface ProtectedErrorInstance extends OrmError {
+  /** What keeps the objects (Django's protected_objects): a QuerySet of them. */
+  protectedObjects: QuerySet<any>;
+  /** Model.field of the foreign key that keeps them. */
+  relation: string;
+}
+export declare const ProtectedError: ErrorClass<ProtectedErrorInstance>;
 /** An error of the database or its driver. */
 export declare const BackendError: ErrorClass;
 /** What a backend does not do (fragments of SQL in MongoDB...). */
@@ -1349,7 +1548,8 @@ export interface PluginOptions {
   audit?: { actor?: (request: any) => unknown; context?: (request: any) => Record<string, unknown> | undefined };
   connect?: boolean;
   close?: boolean;
-  migrate?: { dir: string; to?: string };
+  /** The migrations applied when it starts: { dir }, or a function of the database (apps.migrate(db)). */
+  migrate?: { dir: string; to?: string; label?: string } | ((database: Database) => unknown);
   sync?: boolean;
   errorHandler?: boolean;
   /** Deletes the objects of TTL indexes that expired while the app runs (true: every minute). */
@@ -1408,6 +1608,11 @@ export interface ResourceOptions<T extends Model = Model> {
   lookup?: string;
   /** The rule of @xufa/auth of every action (config.auth of its routes), or one by action. */
   auth?: unknown | Partial<Record<ResourceAction, unknown>>;
+  /**
+   * The permissions of the actions, for the rbac of @xufa/auth: true (the name of the model) or a name gives
+   * <name>.view (list, get), <name>.add (create), <name>.change (update) and <name>.delete (delete), over auth.
+   */
+  permissions?: true | string;
   hooks?: {
     beforeCreate?(
       values: Record<string, unknown>,
@@ -1543,3 +1748,116 @@ export declare class CombinedQuerySet<T> implements PromiseLike<T[]>, AsyncItera
   ): PromiseLike<R1 | R2>;
   [Symbol.asyncIterator](): AsyncIterator<T>;
 }
+
+/**
+ * The validation messages of the ORM, in English by key (required, maxLength, unique...); setTranslator(fn) makes them
+ * speak the language of each request (@xufa/i18n's translateOrm() does): fn(`orm.${key}`, params, english).
+ */
+export declare const MESSAGES: Readonly<Record<string, string>>;
+export declare function setTranslator(
+  fn: ((key: string, params: Record<string, unknown>, english: string) => string) | null
+): void;
+/** A validation message by its key, with its parameters, translated when there is a translator. */
+export declare function validationMessage(key: string, params?: Record<string, unknown>): string;
+
+// Pages of a QuerySet or a list (Django's Paginator).
+
+/** A page number that is not one, or a page that is not there: 404. */
+export declare class InvalidPage extends Error {
+  statusCode: 404;
+  code: 'XUFA_ORM_ERR_INVALID_PAGE';
+}
+/** A page number that is not an integer. */
+export declare class PageNotAnInteger extends InvalidPage {}
+/** A page number below 1, or past the last page. */
+export declare class EmptyPage extends InvalidPage {}
+
+export interface PaginatorOptions {
+  /** A last page with this many objects or fewer joins the one before it (0). */
+  orphans?: number;
+  /** With no objects, one empty page (true); else page(1) is EmptyPage. */
+  allowEmptyFirstPage?: boolean;
+}
+
+/** A page of a Paginator: its objects, number and neighbors. */
+export declare class Page<T> implements Iterable<T> {
+  readonly objectList: T[];
+  readonly number: number;
+  readonly numPages: number;
+  readonly count: number;
+  readonly paginator: Paginator<T>;
+  readonly length: number;
+  readonly hasNext: boolean;
+  readonly hasPrevious: boolean;
+  readonly hasOtherPages: boolean;
+  /** EmptyPage when there is none. */
+  readonly nextPageNumber: number;
+  readonly previousPageNumber: number;
+  /** The index (from 1) of its first and last objects among all (0 on an empty page). */
+  readonly startIndex: number;
+  readonly endIndex: number;
+  [Symbol.iterator](): Iterator<T>;
+  toJSON(): {
+    number: number;
+    numPages: number;
+    count: number;
+    hasNext: boolean;
+    hasPrevious: boolean;
+    startIndex: number;
+    endIndex: number;
+  };
+}
+
+/**
+ * The pages of a QuerySet (ordered) or a list: page(n) (PageNotAnInteger, EmptyPage), getPage(n) (the first or the last
+ * page instead), numPages(), elidedPageRange(n) for a pager (1 2 … 9 10 11 … 49 50).
+ */
+export declare class Paginator<T> {
+  constructor(objects: QuerySet<T> | T[], perPage: number, options?: PaginatorOptions);
+  readonly perPage: number;
+  count(): Promise<number>;
+  numPages(): Promise<number>;
+  pageRange(): Promise<number[]>;
+  page(number?: number | string | null): Promise<Page<T>>;
+  getPage(number?: number | string | null): Promise<Page<T>>;
+  elidedPageRange(
+    number?: number | string,
+    options?: { onEachSide?: number; onEnds?: number }
+  ): Promise<(number | '…')[]>;
+}
+
+/**
+ * Pages by keys (cursor pagination, as Django REST framework's CursorPagination): the objects after (or before) those
+ * of the page shown, by the order of the QuerySet with its primary key last, not an OFFSET; no page numbers nor count.
+ */
+export declare class KeysetPage<T> implements Iterable<T> {
+  readonly paginator: KeysetPaginator<T>;
+  readonly objectList: T[];
+  readonly hasNext: boolean;
+  readonly hasPrevious: boolean;
+  readonly hasOtherPages: boolean;
+  /** The cursor of the next page (null without one). */
+  readonly nextCursor: string | null;
+  /** The cursor of the page before (null without one). */
+  readonly previousCursor: string | null;
+  readonly length: number;
+  [Symbol.iterator](): Iterator<T>;
+}
+
+export declare class KeysetPaginator<T> {
+  /** queryset: ordered by fields of its model (its model's ordering by default). */
+  constructor(queryset: QuerySet<T>, perPage: number);
+  readonly perPage: number;
+  /** The first page (no cursor), or the one a cursor leads to: InvalidPage (404) for one that is not of these pages. */
+  page(cursor?: string | null): Promise<KeysetPage<T>>;
+}
+
+/** The lower case of a text field, in a constraint or an index (Django's Lower()). */
+export interface LowerField {
+  readonly kind: 'lower';
+  readonly field: string;
+}
+/** A field of an index or a unique constraint: its name, or Lower(name). */
+export type IndexField = string | LowerField;
+/** The lower case of a text field: unique without case in constraints, found without case in indexes. */
+export declare function Lower(field: string): LowerField;

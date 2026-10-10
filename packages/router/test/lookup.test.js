@@ -1,7 +1,4 @@
-'use strict'
-
-
-const FindMyWay = require('..')
+import FindMyWay from '../index.js';
 
 test('lookup calls route handler with no context', () => {
   expect.assertions(1)

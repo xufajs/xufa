@@ -79,6 +79,10 @@
           <li><a href="../websocket/index.html">@xufa/websocket</a></li>
           <li><a href="../admin/index.html">@xufa/admin</a></li>
           <li><a href="../session/index.html">@xufa/session</a></li>
+          <li><a href="../forms/index.html">@xufa/forms</a></li>
+          <li><a href="../views/index.html">@xufa/views</a></li>
+          <li><a href="../mail/index.html">@xufa/mail</a></li>
+          <li><a href="../i18n/index.html">@xufa/i18n</a></li>
           <li><a href="../openapi/index.html">@xufa/openapi</a></li>
           <li><a href="../client/index.html">@xufa/client</a></li>
           <li><a href="index.html" aria-current="page">@xufa/schema</a></li>
@@ -132,7 +136,7 @@
           one carries the type of its values. It is the way to write schemas in xufa; the
           <a href="#schema-dsl">builder of types</a> below is the other, for code that only validates.
         </p>
-        <pre><code class="language-js">const { s } = require('@xufa/schema'); // or require('xufa/schema')
+        <pre><code class="language-js">import { s } from '@xufa/schema'; // or from 'xufa/schema'
 
 const Book = s.object(
   {
@@ -221,7 +225,7 @@ app.post('/books', { schema: { body: NewBook } }, async (request) =&gt; {
             <button role="tab" id="tab-gs-json" aria-controls="panel-gs-json" aria-selected="false">JSON Schema</button>
           </div>
           <div class="tab-panel" id="panel-gs-dsl" role="tabpanel" aria-labelledby="tab-gs-dsl">
-            <pre data-run><code class="language-js">const { ClosedSchema, String, Integer, ArrayOf } = require('@xufa/schema');
+            <pre data-run><code class="language-js">import { ClosedSchema, String, Integer, ArrayOf } from '@xufa/schema';
 
 const person = new ClosedSchema({
   id: String(),
@@ -318,14 +322,14 @@ app.post('/orders', (req, res) => {
           generation, and it needs nothing else: not even @xufa/schema, as the few helpers it calls are written into it.
         </p>
         <pre><code class="language-js">// build-validators.js, run when building
-const fs = require('fs');
-const { standaloneCode, standaloneModule, standaloneJsonSchema } = require('@xufa/schema');
+import fs from 'fs';
+import { standaloneCode, standaloneModule, standaloneJsonSchema } from '@xufa/schema';
 
 fs.writeFileSync('validate-person.js', standaloneCode(person)); // module.exports = the validation function
 fs.writeFileSync('validators.mjs', standaloneModule({ isPerson: person, isOrder: order }, { errors: false, format: 'esm' }));
 fs.writeFileSync('validate-address.js', standaloneJsonSchema(addressSchema, { schemas: [countrySchema] }));</code></pre>
         <pre><code class="language-js">// In the application
-const validatePerson = require('./validate-person.js');
+import validatePerson from './validate-person.js';
 import { isPerson } from './validators.mjs';</code></pre>
         <p>
           The options are those of <code>compile()</code> (<code>allErrors</code>, <code>errors</code>) and
@@ -356,7 +360,7 @@ import { isPerson } from './validators.mjs';</code></pre>
           A <code>Schema</code> takes an object whose keys are the expected properties. Plain objects inside it become
           nested schemas.
         </p>
-        <pre data-run><code class="language-js">const { Schema, String, Float, Enum, ArrayOf, Integer } = require('@xufa/schema');
+        <pre data-run><code class="language-js">import { Schema, String, Float, Enum, ArrayOf, Integer } from '@xufa/schema';
 
 const order = new Schema(
   {
@@ -439,7 +443,7 @@ const order = new Schema(
 
         <h3 id="recursive">Recursive schemas</h3>
         <p>Create the <code>Ref</code> first and point it at the schema once the schema exists:</p>
-        <pre data-run><code class="language-js">const { Schema, Integer, ArrayOf, Ref } = require('@xufa/schema');
+        <pre data-run><code class="language-js">import { Schema, Integer, ArrayOf, Ref } from '@xufa/schema';
 
 const child = Ref();
 const node = new Schema({ value: Integer(), children: ArrayOf({ type: child, isMandatory: false }) });
@@ -949,7 +953,7 @@ if (isPerson(body)) {
           </li>
           <li>A value only ever seen as <code>null</code>, and the elements of arrays only seen empty, accept anything.</li>
         </ul>
-        <pre data-run><code class="language-js">const { inferJsonSchema, inferSchemaCode } = require('@xufa/schema');
+        <pre data-run><code class="language-js">import { inferJsonSchema, inferSchemaCode } from '@xufa/schema';
 
 const samples = [
   { id: 1, name: 'Ann', email: 'ann@example.com', address: { city: 'Madrid' } },
@@ -963,8 +967,8 @@ inferJsonSchema(samples);
 //     phone: { type: 'string' } },
 //   required: ['id', 'name', 'email', 'address'] }
 
-console.log(inferSchemaCode(samples));</code></pre>
-        <pre data-output><code class="language-js">const { Integer, Schema, String } = require('@xufa/schema');
+console.log(inferSchemaCode(samples, { module: 'esm' })); // 'commonjs' (the default): a require()</code></pre>
+        <pre data-output><code class="language-js">import { Integer, Schema, String } from '@xufa/schema';
 
 const schema = new Schema({
   id: Integer(),
@@ -992,7 +996,7 @@ const schema = new Schema({
           schema. <code>validate()</code> returns <code>undefined</code> when the value is valid and an error message
           otherwise.
         </p>
-        <pre data-run><code class="language-js">const { Schema, ValidateType } = require('@xufa/schema');
+        <pre data-run><code class="language-js">import { Schema, ValidateType } from '@xufa/schema';
 
 class Even extends ValidateType {
   validate(value, fieldName = 'Value') {

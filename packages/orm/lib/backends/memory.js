@@ -1,9 +1,9 @@
 // MemoryBackend: the objects in memory, for tests and prototypes. It runs the descriptions of queries in JavaScript
 // with the semantics of the other backends: null is not equal, greater or less than anything (and NOT of it is true),
 // nulls sort first, unique fields are enforced, and transactions roll back.
-const { Backend } = require('./base');
-const { lastOf, likeToRegex, datePartOf, truncOf } = require('../query');
-const { BackendError } = require('../errors');
+import { Backend } from './base.js';
+import { lastOf, likeToRegex, datePartOf, truncOf } from '../query.js';
+import { BackendError } from '../errors.js';
 
 function normalize(value) {
   if (value instanceof Date) return value.getTime();
@@ -282,9 +282,16 @@ class MemoryBackend extends Backend {
   sorter(orderBy) {
     return (a, b) => {
       for (let i = 0; i < orderBy.length; i += 1) {
-        const { fields, desc, jsonPath } = orderBy[i];
-        const order = jsonPath ? compare : compareOf(lastOf(fields));
-        const result = order(this.valueAt(a, fields, jsonPath), this.valueAt(b, fields, jsonPath));
+        const item = orderBy[i];
+        const { fields, desc, jsonPath } = item;
+        let result;
+        if (item.part || item.trunc) {
+          // A part (a number) or a start (a date) of a date: values() of Extract or Trunc.
+          result = compare(this.valueOfItem(a, item), this.valueOfItem(b, item));
+        } else {
+          const order = jsonPath ? compare : compareOf(lastOf(fields));
+          result = order(this.valueAt(a, fields, jsonPath), this.valueAt(b, fields, jsonPath));
+        }
         if (result !== 0) return desc ? -result : result;
       }
       return 0;
@@ -438,6 +445,29 @@ class MemoryBackend extends Backend {
         }
       });
     });
+    // Unique indexes (unique constraints): their fields together, those of Lower() without case. A row with a null in
+    // them is not compared (as SQL); indexes of a condition of SQL are not checked here.
+    for (const index of meta.indexes) {
+      if (!index.unique || index.condition) continue;
+      const fields = index.fields.map((name) => meta.field(name));
+      const lower = new Set(index.lower || []);
+      const valueOf = (source, field) => {
+        const value = source[field.attname];
+        return lower.has(field.name) && typeof value === 'string' ? value.toLowerCase() : value;
+      };
+      if (fields.some((field) => row[field.attname] === null || row[field.attname] === undefined)) continue;
+      table.rows.forEach((other, key) => {
+        if (key === pk) return;
+        if (fields.every((field) => equals(valueOf(other, field), valueOf(row, field)))) {
+          const err = new BackendError(
+            `Duplicate value of ${meta.table}.${fields.map((field) => field.column).join(', ')}`
+          );
+          err.unique = fields.map((field) => field.column);
+          err.index = index;
+          throw err;
+        }
+      });
+    }
   }
 
   async insert(meta, rows, options = {}) {
@@ -627,4 +657,4 @@ class MemoryBackend extends Backend {
   }
 }
 
-module.exports = { MemoryBackend };
+export { MemoryBackend };

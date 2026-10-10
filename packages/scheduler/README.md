@@ -7,7 +7,7 @@ times missed when a process starts again); and, with a lock in a database, each 
 among those of several machines.
 
 ```js
-const { Scheduler, ormLock } = require('@xufa/scheduler'); // or require('xufa/scheduler')
+import { Scheduler, ormLock } from '@xufa/scheduler'; // or from 'xufa/scheduler'
 
 const scheduler = new Scheduler({ logger, timezone: 'Europe/Madrid' });
 
@@ -82,6 +82,13 @@ Events: `'run'`, `'retry'` (with `attempt`, `error` and `delay`), `'done'` (with
 `'failure'` (with `error`), `'skip'` (with `why`: `'running'` or `'locked'`) and `'catchUp'`. `onError(error, job)` is called for every failure, and the logger (as `@xufa/logger` or
 pino) logs them.
 
+## Health
+
+`scheduler.health({ late, failures, maxRun, jobs })` is a check of `xufa.health`
+(`checks: { scheduler: scheduler.health() }`): degraded when a job of `every` or `cron` missed a run (due more than
+`late`, 1 minute, ago with no run since: of any machine, with a shared history), failed its last `failures` runs, or
+runs for longer than `maxRun`; each job's next run, last run, status and failures in a row are in its details.
+
 ## History
 
 With a `history`, the scheduler records every run: `{ name, scheduledAt, startedAt, duration, status, attempts, error,
@@ -101,13 +108,19 @@ await scheduler.history('daily report', { limit: 10 });
 A history of your own is `{ record(entry), last(name), list(name, { limit }) }`. A history that fails is logged, and
 stops no job.
 
+## Runs of pipelines
+
+For work that should be kept, retried and seen, a job can start a run of a pipeline of [@xufa/queue](../queue):
+`pipelines.schedule(scheduler, 'nightly-export', { cron: '0 2 * * *' })`. The scheduler only starts it; the
+workers of the queue do it. [@xufa/admin](../admin) (option `scheduler`) shows the jobs in Work, with Run now.
+
 ## In a cluster, and on several machines
 
 A scheduler runs its jobs in its process. In a cluster of [@xufa/cluster](../cluster), make it in the `primary` (or in
 one worker), not in every worker:
 
 ```js
-const config = require('./config'); // loadConfig() of @xufa/config: jobs: { purgeEvery: { type: 'duration', default: '1h' } }
+import config from './config.js'; // loadConfig() of @xufa/config: jobs: { purgeEvery: { type: 'duration', default: '1h' } }
 
 start({
   primary: async ({ onShutdown }) => {

@@ -1,7 +1,4 @@
-'use strict'
-
-
-const build = require('..')
+import build from '../index.js';
 
 test('missing values', () => {
   expect.assertions(3)

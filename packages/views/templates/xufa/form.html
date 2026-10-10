@@ -1,0 +1,14 @@
+{{!-- The built-in form of a CreateView or UpdateView (<model>_form.html when the app has none). --}}
+{{extends baseTemplate}}
+
+{{#block content}}
+<h1>{{ title }}</h1>
+
+<form action="" method="post">
+  {{#if csrfToken}}<input type="hidden" name="_csrf" value="{{ csrfToken }}" />{{/if}}
+  <table>
+    {{{ form.asTable() }}}
+  </table>
+  <input type="submit" value="Submit" />
+</form>
+{{/block content}}

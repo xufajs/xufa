@@ -3,7 +3,7 @@
 const split = require('split2')
 
 const querystring = require('node:querystring')
-const Fastify = require('@xufa/http')
+const Fastify = require('..')
 const {
   XUFA_ERR_BAD_URL,
   XUFA_ERR_MAX_PARAM_LENGTH,

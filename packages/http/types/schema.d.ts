@@ -1,7 +1,7 @@
 // Ported from fastify (types/schema.d.ts, MIT License) by tools/port-types/port.js: do not edit, change the tool.
 import { ValidatorFactory } from './compilers';
 import { SerializerFactory } from './compilers';
-import { XufaInstance, SafePromiseLike } from '../index';
+import { XufaInstance, SafePromiseLike } from '../index.cjs';
 /**
  * Schemas in Xufa follow the JSON-Schema standard. For this reason
  * we have opted to not ship strict schema based types. Instead we provide

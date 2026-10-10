@@ -1,0 +1,71 @@
+{
+  "name": "@xufa/mail",
+  "version": "0.1.0",
+  "description": "Emails as classes (as Laravel's Mailables) rendered with templates in a layout for email clients, sent through the mail backends of @xufa/orm at once or from jobs of @xufa/queue, and notifications by mail, database or channels of your own, with no dependencies",
+  "main": "./index.js",
+  "types": "./index.d.ts",
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./index.d.ts",
+      "default": "./index.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "index.js",
+    "index.d.ts",
+    "lib",
+    "LICENSE"
+  ],
+  "scripts": {
+    "test": "vyntra",
+    "test:types": "tsd"
+  },
+  "keywords": [
+    "mail",
+    "email",
+    "mailable",
+    "notifications",
+    "smtp",
+    "templates"
+  ],
+  "author": "Jesús Seijas <jseijas@gmail.com>",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/xufajs/xufa.git",
+    "directory": "packages/mail"
+  },
+  "homepage": "https://github.com/xufajs/xufa/tree/main/packages/mail#readme",
+  "bugs": {
+    "url": "https://github.com/xufajs/xufa/issues"
+  },
+  "engines": {
+    "node": "^22.22.3 || ^24.15.0 || >=25.7.0"
+  },
+  "dependencies": {
+    "@xufa/template": "workspace:*"
+  },
+  "devDependencies": {
+    "@xufa/orm": "workspace:*",
+    "@xufa/queue": "workspace:*",
+    "tsd": "^0.33.0",
+    "vyntra": "^0.7.0"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "tsd": {
+    "directory": "test/types"
+  },
+  "peerDependencies": {
+    "@xufa/orm": "workspace:*",
+    "@xufa/queue": "workspace:*"
+  },
+  "peerDependenciesMeta": {
+    "@xufa/queue": {
+      "optional": true
+    }
+  }
+}

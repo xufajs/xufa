@@ -1,7 +1,4 @@
-'use strict'
-
-
-const FindMyWay = require('..')
+import FindMyWay from '../index.js';
 
 test('routes differing only by a static part between parameters are distinct', () => {
   expect.assertions(2)

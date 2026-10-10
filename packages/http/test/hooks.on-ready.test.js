@@ -1,7 +1,7 @@
 'use strict'
 
 
-const Fastify = require('@xufa/http')
+const Fastify = require('..')
 const immediate = require('node:util').promisify(setImmediate)
 
 test('onReady should be called in order', (done) => {

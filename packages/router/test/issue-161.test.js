@@ -1,7 +1,4 @@
-'use strict'
-
-
-const FindMyWay = require('../')
+import FindMyWay from '../index.js';
 
 test('Falling back for node\'s parametric brother without ignoreTrailingSlash', () => {
   expect.assertions(4)

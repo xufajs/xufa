@@ -48,13 +48,17 @@
           <li><a href="#classes">Classes (3)</a></li>
           <li><a href="#constants">Constants (1)</a></li>
           <li><a href="#interfaces">Interfaces (5)</a></li>
-          <li><a href="#types">Types (4)</a></li>
+          <li><a href="#types">Types (6)</a></li>
         </ul>
         <h4>Packages</h4>
         <ul>
           <li><a href="../websocket/index.html">@xufa/websocket</a></li>
           <li><a href="../admin/index.html">@xufa/admin</a></li>
           <li><a href="../session/index.html">@xufa/session</a></li>
+          <li><a href="../forms/index.html">@xufa/forms</a></li>
+          <li><a href="../views/index.html">@xufa/views</a></li>
+          <li><a href="../mail/index.html">@xufa/mail</a></li>
+          <li><a href="../i18n/index.html">@xufa/i18n</a></li>
           <li><a href="../openapi/index.html">@xufa/openapi</a></li>
           <li><a href="../client/index.html">@xufa/client</a></li>
           <li><a href="../schema/index.html">@xufa/schema</a></li>
@@ -91,7 +95,7 @@
         <h1>Reference</h1>
         <p class="intro">
           Templates of text and HTML with safe expressions, blocks, filters and partials, compiled once, with no dependencies. Every declaration of its TypeScript declarations
-          (<code>packages/template/index.d.ts</code>), as they are written, with their comments: made from them each time
+          (<code>packages/template/index.d.ts</code> or <code>index.d.cts</code>), as they are written, with their comments: made from them each time
           the docs are built. How to use them is in <a href="index.html">the overview</a>.
         </p>
 
@@ -228,7 +232,7 @@
             <table class="ref-members">
               <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
               <tbody>
-                <tr><td><code>root?</code></td><td><code>string</code></td><td><p>The folder of the views ('views').</p></td></tr>
+                <tr><td><code>root?</code></td><td><code>string | string[]</code></td><td><p>The folder of the views ('views'), or several (the app's, then its apps'): a name is the file of the first that has it.</p></td></tr>
                 <tr><td><code>extension?</code></td><td><code>string</code></td><td><p>Added to names without one ('.html').</p></td></tr>
                 <tr><td><code>layout?</code></td><td><code>string | null</code></td><td><p>The view a view is rendered in, as body (none by default).</p></td></tr>
                 <tr><td><code>defaultContext?</code></td><td><code>Record&lt;string, unknown&gt;</code></td><td><p>The context of every view, under reply.locals and the data given.</p></td></tr>
@@ -237,6 +241,8 @@
                 <tr><td><code>stream?</code></td><td><code>boolean</code></td><td><p>Every view sent in chunks made as the client reads them (false).</p></td></tr>
                 <tr><td><code>chunkSize?</code></td><td><code>number</code></td><td><p>The size of those chunks, in characters (65536).</p></td></tr>
                 <tr><td><code>engine?</code></td><td><code><a href="#ref-TemplateEngine">TemplateEngine</a></code></td><td><p>An engine of your own (the options of the engine are then those it has).</p></td></tr>
+                <tr><td><code>context?</code></td><td><code><a href="#ref-ViewContextFunction">ViewContextFunction</a> | <a href="#ref-ViewContextFunction">ViewContextFunction</a>[]</code></td><td><p>The context of each view of a request (Django's context processors): functions of the request and the reply, run for every reply.view(); app.viewContext(fn) adds more.</p></td></tr>
+                <tr><td><code>builtins?</code></td><td><code>boolean</code></td><td><p>request, url() of the named routes, staticUrl(), csrfToken and messages in every view of a request (true).</p></td></tr>
               </tbody>
             </table>
           </div>
@@ -254,7 +260,7 @@
           </div>
 
         <h2 id="types">Types</h2>
-        <p class="ref-index"><a href="#ref-TemplateContext"><code>TemplateContext</code></a>, <a href="#ref-TemplateErrorCode"><code>TemplateErrorCode</code></a>, <a href="#ref-ReplyView"><code>ReplyView</code></a>, <a href="#ref-RenderView"><code>RenderView</code></a></p>
+        <p class="ref-index"><a href="#ref-TemplateContext"><code>TemplateContext</code></a>, <a href="#ref-TemplateErrorCode"><code>TemplateErrorCode</code></a>, <a href="#ref-ViewContextFunction"><code>ViewContextFunction</code></a>, <a href="#ref-ReplyView"><code>ReplyView</code></a>, <a href="#ref-RenderView"><code>RenderView</code></a>, <a href="#ref-HasView"><code>HasView</code></a></p>
 
         <h3 id="ref-TemplateContext"><code>TemplateContext</code></h3>
         <pre><code class="language-ts">export type TemplateContext = Record&lt;string, unknown&gt; | object | null | undefined;</code></pre>
@@ -263,6 +269,13 @@
         <pre><code class="language-ts">export type TemplateErrorCode =
   'XUFA_TEMPLATE_ERR_SYNTAX' | 'XUFA_TEMPLATE_ERR_RUNTIME' | 'XUFA_TEMPLATE_ERR_PARTIAL' | 'XUFA_EXPR_ERR_FORBIDDEN';</code></pre>
 
+        <h3 id="ref-ViewContextFunction"><code>ViewContextFunction</code></h3>
+        <pre><code class="language-ts">export type ViewContextFunction = (
+  request: any,
+  reply: any
+) =&gt; Record&lt;string, unknown&gt; | Promise&lt;Record&lt;string, unknown&gt;&gt;;</code></pre>
+        <p>A function of the context of the views of requests.</p>
+
         <h3 id="ref-ReplyView"><code>ReplyView</code></h3>
         <pre><code class="language-ts">export type ReplyView&lt;Reply = any&gt; = (name: string, data?: Record&lt;string, unknown&gt;, options?: ViewOptions) =&gt; Reply;</code></pre>
         <p>reply.view: renders a view and sends it (text/html unless the reply has a content type).</p>
@@ -270,6 +283,10 @@
         <h3 id="ref-RenderView"><code>RenderView</code></h3>
         <pre><code class="language-ts">export type RenderView = (name: string, data?: Record&lt;string, unknown&gt;, options?: ViewOptions) =&gt; Promise&lt;string&gt;;</code></pre>
         <p>reply.viewAsync and app.view: the text of a view.</p>
+
+        <h3 id="ref-HasView"><code>HasView</code></h3>
+        <pre><code class="language-ts">export type HasView = (name: string) =&gt; boolean;</code></pre>
+        <p>app.hasView: whether a view is a file of one of the roots.</p>
       </article>
     </div>
 

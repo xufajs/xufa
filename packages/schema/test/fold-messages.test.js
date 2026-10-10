@@ -1,8 +1,8 @@
 // The option foldMessages: the parts of messages known when compiling are written as one literal in the generated
 // code ("lines.sku must be a string"), instead of joined when an error is made. The same errors, in every mode, from
 // JSON Schemas, from the builder of types and as standalone code; only the code is different.
-const vm = require('node:vm');
-const { compileJsonSchema, standaloneJsonSchema, Schema, String, Integer, ArrayOf } = require('..');
+import vm from 'node:vm';
+import { compileJsonSchema, standaloneJsonSchema, Schema, String, Integer, ArrayOf } from '../index.js';
 
 const order = {
   type: 'object',

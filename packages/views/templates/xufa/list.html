@@ -1,0 +1,14 @@
+{{!-- The built-in list of a ListView (<model>_list.html when the app has none): each object, linked to its page. --}}
+{{extends baseTemplate}}
+
+{{#block content}}
+<h1>{{ title }}</h1>
+
+<ul>
+  {{#each objectList as object}}
+  <li>{{#if object.absoluteUrl}}<a href="{{ object.absoluteUrl }}">{{ object }}</a>{{else}}{{ object }}{{/if}}</li>
+  {{else}}
+  <li>There are no {{ modelLabelPlural }}.</li>
+  {{/each}}
+</ul>
+{{/block content}}

@@ -1,6 +1,6 @@
 // The two outputs of the generated code (see Builder#lit() in index.js): strings joined with +, and bytes written to
 // the buffer of lib/writer.js. These tests are of @xufa/serializer, not ported from fast-json-stringify.
-const build = require('..');
+import build from '../index.js';
 
 const itemSchema = {
   type: 'object',

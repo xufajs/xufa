@@ -24,11 +24,11 @@
         </div>
 
         <h2 id="install">Install</h2>
-        <pre><code class="language-sh">npm install @xufa/orm   # or: npm install xufa, and require('xufa/orm')</code></pre>
+        <pre><code class="language-sh">npm install @xufa/orm   # or: npm install xufa, and import from 'xufa/orm'</code></pre>
         <p>It needs Node.js 22.22.3 or later (24.15 or later on the 24 line); SQLite is <code>node:sqlite</code>.</p>
 
         <h2 id="first">A first model</h2>
-        <pre data-run="first"><code class="language-js">const { Database, Model, fields, Count, Sum } = require('@xufa/orm');
+        <pre data-run="first"><code class="language-js">import { Database, Model, fields, Count, Sum } from '@xufa/orm';
 
 class Author extends Model {
   static fields = { name: fields.string({ maxLength: 100 }) };

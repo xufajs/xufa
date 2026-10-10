@@ -1,21 +1,22 @@
 // Routes: registration (shorthands, prefixes, HEAD routes, hooks and schemas of each route) and the entry of every
 // request once routed.
-const createRouter = require('@xufa/router');
-const Context = require('./context');
-const handleRequest = require('./handle-request');
-const {
+import createRouter from '@xufa/router';
+import Context from './context.js';
+import handleRequest from './handle-request.js';
+import {
   onRequestAbortHookRunner,
   lifecycleHooks,
   preParsingHookRunner,
   onTimeoutHookRunner,
   onRequestHookRunner,
-} = require('./hooks');
-const { normalizeSchema } = require('./schemas');
-const { parseHeadOnSendHandlers } = require('./head-route');
-const { defaultInitOptions } = require('./config');
-const { onClientGone } = require('./request');
-const { compileSchemasForValidation, compileSchemasForSerialization } = require('./validation');
-const {
+} from './hooks.js';
+import { normalizeSchema } from './schemas.js';
+import { parseHeadOnSendHandlers } from './head-route.js';
+import { defaultInitOptions } from './config.js';
+import { onClientGone } from './request.js';
+import { compileSchemasForValidation, compileSchemasForSerialization } from './validation.js';
+import { convertersOf } from './converters.js';
+import {
   XUFA_ERR_SCH_VALIDATION_BUILD,
   XUFA_ERR_SCH_SERIALIZATION_BUILD,
   XUFA_ERR_DUPLICATED_ROUTE,
@@ -33,8 +34,9 @@ const {
   XUFA_ERR_ROUTE_HANDLER_TIMEOUT_OPTION_NOT_INT,
   XUFA_ERR_HANDLER_TIMEOUT,
   XUFA_ERR_HOOK_INVALID_ASYNC_HANDLER,
-} = require('./errors');
-const {
+} from './errors.js';
+import { RouteNames } from './route-names.js';
+import {
   kRoutePrefix,
   kSupportedHTTPMethods,
   kLogLevel,
@@ -57,9 +59,9 @@ const {
   kLogController,
   kGenReqId,
   kRequestQuerystring,
-} = require('./symbols');
-const { buildErrorHandler } = require('./error-handler');
-const { createChildLogger, defaultChildLoggerFactory, LogController } = require('./logger');
+} from './symbols.js';
+import { buildErrorHandler } from './error-handler.js';
+import { createChildLogger, defaultChildLoggerFactory, LogController } from './logger.js';
 
 const ROUTER_KEYS = [
   'allowUnsafeRegex',
@@ -88,6 +90,8 @@ function checkAsyncHook(hook, fn) {
 
 function buildRouting(options) {
   const router = createRouter(options);
+  // The routes by name (option name), and their addresses back (reverse()).
+  const names = new RouteNames();
   let avvio;
   let fourOhFour;
   let logger;
@@ -179,6 +183,8 @@ function buildRouting(options) {
       return router.constrainer.asyncStrategiesInUse.size > 0;
     },
     findRoute,
+    reverse: (name, params, query) => names.reverse(name, params, query),
+    routeNames: () => names.list(),
     router,
   };
 
@@ -217,6 +223,13 @@ function buildRouting(options) {
   function route({ options: routeOptions, isXufa }) {
     throwIfAlreadyStarted('Cannot add route!');
     const opts = { ...routeOptions };
+    // Django's path converters (<int:pk>): the pattern of the router, and the values converted before the hooks.
+    const typed = convertersOf(opts.url || opts.path || '');
+    if (typed) {
+      if (opts.url) opts.url = typed.url;
+      if (opts.path) opts.path = typed.url;
+      if (typed.convert) opts.onRequest = [typed.convert, ...[].concat(opts.onRequest || [])];
+    }
     const path = opts.url || opts.path || '';
     if (!opts.handler) throw new XUFA_ERR_ROUTE_MISSING_HANDLER(opts.method, path);
     if (opts.errorHandler !== undefined && typeof opts.errorHandler !== 'function') {
@@ -257,6 +270,9 @@ function buildRouting(options) {
       if (opts.attachValidation == null) opts.attachValidation = false;
       if (prefixing === false) {
         for (const hook of this[kHooks].onRoute) hook.call(this, opts);
+        if (opts.name !== undefined) {
+          for (const method of [].concat(opts.method)) names.add(opts.name, opts.url, method);
+        }
       }
       for (const hook of lifecycleHooks) {
         if (!(hook in opts)) continue;
@@ -552,4 +568,4 @@ function buildRouterOptions(options, defaults) {
 
 function noop() {}
 
-module.exports = { buildRouting, validateBodyLimitOption, buildRouterOptions, checkAsyncHook };
+export { buildRouting, validateBodyLimitOption, buildRouterOptions, checkAsyncHook };

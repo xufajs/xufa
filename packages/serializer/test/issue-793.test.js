@@ -1,8 +1,4 @@
-'use strict'
-
-
-
-const build = require('..')
+import build from '../index.js';
 
 test('serialize string with newlines - issue #793', () => {
   expect.assertions(2)

@@ -1,7 +1,4 @@
-'use strict'
-
-
-const boot = require('..')
+import boot from '../index.js';
 
 test('not taking done does not throw error.', (testDone) => {
   expect.assertions(2)

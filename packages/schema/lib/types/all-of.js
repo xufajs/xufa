@@ -1,4 +1,4 @@
-const { ValidateType, toTypes } = require('./validate-type');
+import { ValidateType, toTypes } from './validate-type.js';
 
 // Value must satisfy every type; reports the errors of the first type that fails.
 class AllOfType extends ValidateType {
@@ -56,9 +56,4 @@ function oallOf(types, isMandatory = false, isNullable = false) {
   return new AllOfType({ types, isMandatory, isNullable });
 }
 
-module.exports = {
-  AllOfType,
-  AllOf,
-  allOf,
-  oallOf,
-};
+export { AllOfType, AllOf, allOf, oallOf };

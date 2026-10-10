@@ -1,5 +1,8 @@
-const { Client, Pool, DatabaseError } = require('..');
-const { url, available } = require('./server');
+import { Client, Pool, DatabaseError } from '../index.js';
+import { url, available } from './server.js';
+import { createRequire } from 'node:module';
+
+const require = createRequire(import.meta.url);
 
 describe.skipIf(!available)('Client', () => {
   let client;

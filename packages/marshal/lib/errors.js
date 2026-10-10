@@ -20,4 +20,4 @@ function guard(fn) {
   };
 }
 
-module.exports = { MarshalError, guard };
+export { MarshalError, guard };

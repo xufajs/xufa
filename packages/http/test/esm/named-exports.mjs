@@ -1,5 +1,5 @@
 
-import { xufa as fastify } from '@xufa/http'
+import { xufa as fastify } from '../../index.js'
 
 // This test is executed in index.test.js
 test('named exports support', async () => {

@@ -1,7 +1,4 @@
-'use strict'
-
-
-const FindMyWay = require('../')
+import FindMyWay from '../index.js';
 
 test('Wildcard mixed with dynamic and common prefix / 1', () => {
   expect.assertions(5)

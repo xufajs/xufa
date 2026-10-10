@@ -1,7 +1,4 @@
-'use strict'
-
-
-const build = require('..')
+import build from '../index.js';
 
 test('should throw a TypeError with the path to the key of the invalid value', () => {
   expect.assertions(1)

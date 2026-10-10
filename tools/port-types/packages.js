@@ -1,5 +1,5 @@
-const fs = require('node:fs');
-const path = require('node:path');
+import fs from 'node:fs';
+import path from 'node:path';
 
 // What tools/port-types/port.js ports: for every package of xufa, the upstream package it replaces, its files of
 // declarations and type tests, and the renames (applied in order, to every file of the package).
@@ -242,7 +242,15 @@ function dropStatements(code, drop) {
 
 // Type tests of what xufa has not: ajv's plugins and instance (it validates with @xufa/schema), standalone compilers.
 const XUFA_TEST_PATCHES = {
-  'fastify.tst.ts': (code) => dropStatements(code, (s) => /\bajv: \{[\s\S]*\b(plugins|onCreate)\b/.test(s)),
+  'fastify.tst.ts': (code) =>
+    dropStatements(code, (s) => /\bajv: \{[\s\S]*\b(plugins|onCreate)\b/.test(s)).replace(
+      'expect(xufa({ return503OnClosing: true })).type.toBeAssignableTo<XufaInstance>()\n',
+      'expect(xufa({ return503OnClosing: true })).type.toBeAssignableTo<XufaInstance>()\n' +
+        // The options xufa adds (fastHead, validation and ajv.validatorOptions of @xufa/schema).
+        'expect(xufa({ fastHead: false })).type.toBeAssignableTo<XufaInstance>()\n' +
+        'expect(xufa({ validation: { foldMessages: true } })).type.toBeAssignableTo<XufaInstance>()\n' +
+        'expect(xufa({ ajv: { validatorOptions: { foldMessages: true } } })).type.toBeAssignableTo<XufaInstance>()\n'
+    ),
   'schema.tst.ts': (code) =>
     dropStatements(code, (s) => /Standalone(Validator|Serializer)|ajv-compiler\/issues\/95/.test(s)),
 };
@@ -259,6 +267,22 @@ function xufaFiles(source) {
           .replace(
             "import * as http from 'node:http'\n",
             "import * as http from 'node:http'\nimport pluginFunction = require('./types/plugin-function')\n"
+          )
+          // The options of xufa: its own heads of responses, and the options of the validators of @xufa/schema.
+          .replace(
+            '    return503OnClosing?: boolean,\n    ajv?: Parameters<BuildCompilerFromPool>[1],\n',
+            '    return503OnClosing?: boolean,\n' +
+              '    /**\n' +
+              '     * xufa writes the head of common HTTP/1.1 responses itself instead of res.writeHead() (faster; on by default).\n' +
+              '     * false leaves every head to Node.\n' +
+              '     */\n' +
+              '    fastHead?: boolean,\n' +
+              '    ajv?: Parameters<BuildCompilerFromPool>[1],\n' +
+              '    /**\n' +
+              '     * Options of @xufa/schema for the validators of the routes (the same as ajv.validatorOptions), as\n' +
+              '     * { foldMessages: true }.\n' +
+              '     */\n' +
+              '    validation?: Record<string, unknown>,\n'
           )
           .replace(
             '  export const errorCodes: XufaErrorCodes\n',
@@ -293,13 +317,68 @@ function xufaFiles(source) {
               '   * The maintenance mode: while xufa down has it on, requests get a 503 (the health routes, routes with\n' +
               '   * config.maintenance: false, the addresses allowed and the secret path go through). app.maintenance.state().\n' +
               '   */\n' +
-              '  export const maintenance: XufaPluginCallback<{ file?: string | false; store?: MaintenanceStore | MaintenanceStore[]; refresh?: number; except?: string[]; render?: (state: MaintenanceState, request: XufaRequest) => string }>\n'
+              '  export const maintenance: XufaPluginCallback<{ file?: string | false; store?: MaintenanceStore | MaintenanceStore[]; refresh?: number; except?: string[]; render?: (state: MaintenanceState, request: XufaRequest) => string }>\n' +
+              '  /** A file of a multipart form in request.body: its name, type, size and bytes. */\n' +
+              '  export interface FormFile { filename: string; contentType: string; size: number; data: Buffer }\n' +
+              '  /**\n' +
+              '   * The bodies of HTML forms: application/x-www-form-urlencoded and multipart/form-data become request.body (a\n' +
+              '   * field given again, or named with [], is a list; files are FormFile). Past a limit: 413, or 400.\n' +
+              '   */\n' +
+              '  export const formBody: XufaPluginCallback<{ bodyLimit?: number; multipart?: boolean; files?: number; fileSize?: number; fields?: number; fieldSize?: number; parts?: number }>\n' +
+              '  /**\n' +
+              '   * Static files: the files of folders under a prefix (/static/), with ETags (304), precompressed .br and .gz\n' +
+              '   * files, and app.staticUrl(path): the address with the version of the file, cached for a year.\n' +
+              '   */\n' +
+              '  export const staticFiles: XufaPluginCallback<{ root: string | string[]; prefix?: string; maxAge?: number; immutable?: number; dotfiles?: boolean; precompressed?: boolean; types?: Record<string, string> }>\n' +
+              '  /**\n' +
+              "   * Error pages (Django's handler404, handler500 and their templates): for requests of browsers, the views of\n" +
+              '   * @xufa/template by status (404, 403, 400, 500: { error, statusCode, message, permission }); the others go on\n' +
+              '   * to the error handlers under it (JSON). notFound: routes that are not there too.\n' +
+              '   */\n' +
+              '  /** A response of a TestClient: what it rendered (views of @xufa/template and their context), and the redirects it followed. */\n' +
+              '  export interface TestResponse extends LightMyRequestResponse {\n' +
+              '    templates: string[];\n' +
+              '    context: Record<string, any> | null;\n' +
+              '    contexts: Record<string, any>[];\n' +
+              '    readonly textContent: string;\n' +
+              '    redirectChain?: [string, number][];\n' +
+              '  }\n' +
+              '  type TestOptions = { headers?: Record<string, string>; follow?: boolean; json?: boolean };\n' +
+              '  /**\n' +
+              "   * A client of an app for tests (Django's test Client): its cookies, the CSRF token of its session on writes,\n" +
+              '   * login(credentials) and forceLogin(user) with the accounts of @xufa/auth, redirects followed, and the views\n' +
+              '   * a response rendered with their context.\n' +
+              '   */\n' +
+              '  export class TestClient {\n' +
+              '    constructor(app: XufaInstance<any, any, any, any, any>, options?: { headers?: Record<string, string>; enforceCsrfChecks?: boolean });\n' +
+              '    cookies: Map<string, string>;\n' +
+              '    readonly cookieHeader: string;\n' +
+              '    request(options: InjectOptions): Promise<TestResponse>;\n' +
+              '    get(url: string, query?: Record<string, unknown> | null, options?: TestOptions): Promise<TestResponse>;\n' +
+              '    head(url: string, query?: Record<string, unknown> | null, options?: TestOptions): Promise<TestResponse>;\n' +
+              '    post(url: string, data?: unknown, options?: TestOptions): Promise<TestResponse>;\n' +
+              '    put(url: string, data?: unknown, options?: TestOptions): Promise<TestResponse>;\n' +
+              '    patch(url: string, data?: unknown, options?: TestOptions): Promise<TestResponse>;\n' +
+              '    delete(url: string, data?: unknown, options?: TestOptions): Promise<TestResponse>;\n' +
+              '    follow(response: TestResponse): Promise<TestResponse>;\n' +
+              '    login(credentials: Record<string, unknown>): Promise<boolean>;\n' +
+              '    forceLogin(user: unknown): Promise<void>;\n' +
+              '    logout(): void;\n' +
+              '  }\n' +
+              '  /** The text a reader sees of HTML: no tags, scripts or styles, entities read, in one line. */\n' +
+              '  export function textOf(html: string): string;\n' +
+              '  export const errorPages: XufaPluginCallback<{ views?: Partial<Record<400 | 401 | 403 | 404 | 405 | 409 | 410 | 429 | 500 | 503, string>> | string; notFound?: boolean; html?: (request: XufaRequest) => boolean; context?: (error: any, request: XufaRequest) => Record<string, unknown> }>\n'
           ),
     },
   ];
   for (const name of fs.readdirSync(path.join(source, 'types'))) {
     if (name.endsWith('.d.ts'))
-      files.push({ from: `types/${name}`, to: `types/${name}`, renames: compilerImports('./') });
+      files.push({
+        from: `types/${name}`,
+        to: `types/${name}`,
+        renames: compilerImports('./'),
+        patch: name === 'instance.d.ts' ? patchInstance : name === 'route.d.ts' ? patchRoute : undefined,
+      });
   }
   for (const name of fs.readdirSync(path.join(source, 'test', 'types'))) {
     if (name === 'tsconfig.json') continue;
@@ -311,6 +390,53 @@ function xufaFiles(source) {
     });
   }
   return files;
+}
+
+// What the plugins of @xufa/http decorate the app with: app.health (xufa.health) and app.maintenance
+// (xufa.maintenance).
+function patchInstance(code) {
+  const imports = "import { XufaRouterOptions } from '../index'\n";
+  const listening = '  listeningOrigin: string;\n';
+  if (!code.includes(imports) || !code.includes(listening))
+    throw new Error('The instance of fastify changed: patchInstance');
+  return code
+    .replace(imports, "import { XufaRouterOptions, HealthReport, MaintenanceState } from '../index'\n")
+    .replace(
+      listening,
+      listening +
+        '  /**\n' +
+        '   * The health of the app, with xufa.health registered: check() runs its checks now, report is that of the last run\n' +
+        '   * (null before the first), status the one now (down while the app closes).\n' +
+        '   */\n' +
+        "  health: { check(): Promise<HealthReport>; readonly report: HealthReport | null; readonly status: HealthReport['status'] };\n" +
+        '  /** The maintenance mode, with xufa.maintenance registered: state() reads it again (null when the app is up). */\n' +
+        '  maintenance: { state(): Promise<MaintenanceState | null> };\n' +
+        "  /** The address of a static file with its version (xufa.staticFiles): staticUrl('css/site.css'). */\n" +
+        '  staticUrl(path: string): string;\n' +
+        '  /**\n' +
+        '   * The address of a route by its name (option name), with its parameters by name or in order, and a query:\n' +
+        "   * reverse('book', { id: 7 }, { query: { page: 2 } }) is '/books/7?page=2' (Django's reverse()).\n" +
+        '   */\n' +
+        '  reverse(name: string, params?: Record<string, unknown> | unknown[] | null, options?: { query?: Record<string, unknown> }): string;\n' +
+        '  /** The routes by name, with their addresses and methods. */\n' +
+        '  routeNames(): Record<string, { url: string; methods: string[] }>;\n' +
+        '  /**\n' +
+        '   * An error handler over those of this context, without taking it (setErrorHandler is still free, and goes\n' +
+        '   * first): one that throws the error, or sends it, passes it to the one under it.\n' +
+        '   */\n' +
+        '  addErrorHandler(handler: (this: XufaInstance, error: any, request: XufaRequest, reply: XufaReply) => any): XufaInstance<RawServer, RawRequest, RawReply, Logger, TypeProvider>;\n'
+    );
+}
+
+// The options of a route: its name (reverse()).
+function patchRoute(code) {
+  const anchor = '  attachValidation?: boolean;\n';
+  if (!code.includes(anchor)) throw new Error('The routes of fastify changed: patchRoute');
+  return code.replace(
+    anchor,
+    "  /** The name of the route: app.reverse(name, params) gives its address (Django's path(name=)). */\n  name?: string;\n" +
+      anchor
+  );
 }
 
 // xufa.plugin() is fastify-plugin. The metadata keys of fastify are accepted too: decorators.fastify is checked as
@@ -682,7 +808,7 @@ function tree(source, from, to, extension, options = {}) {
   return files.sort((a, b) => a.from.localeCompare(b.from));
 }
 
-module.exports = [
+const __default = [
   {
     target: 'http',
     upstream: 'fastify-plugin',
@@ -930,3 +1056,4 @@ module.exports = [
     files: [{ from: 'dist/index.d.ts', to: 'types/openapi-types.d.ts' }],
   },
 ];
+export default __default;

@@ -1,19 +1,18 @@
 /* eslint no-unused-vars: ["error", { "varsIgnorePattern": "^Duplex" }] */
 
-'use strict';
-
-const { Socket } = require('node:net');
-const { Duplex } = require('node:stream');
-const { randomFillSync } = require('node:crypto');
+import { Socket } from 'node:net';
+import { Duplex } from 'node:stream';
+import { randomFillSync } from 'node:crypto';
+import __node_util1 from 'node:util';
 const {
   types: { isUint8Array },
-} = require('node:util');
+} = __node_util1;
 
-const PerMessageDeflate = require('./permessage-deflate');
-const { EMPTY_BUFFER, kWebSocket, NOOP } = require('./constants');
-const { isBlob, isValidStatusCode } = require('./validation');
-const { mask: applyMask, toBuffer, unmask } = require('./buffer-util');
-const framePool = require('./frame-pool');
+import PerMessageDeflate from './permessage-deflate.js';
+import { EMPTY_BUFFER, kWebSocket, NOOP } from './constants.js';
+import { isBlob, isValidStatusCode } from './validation.js';
+import { mask as applyMask, toBuffer, unmask } from './buffer-util.js';
+import * as framePool from './frame-pool.js';
 
 const kByteLength = Symbol('kByteLength');
 const kPooled = Symbol('kPooled');
@@ -599,7 +598,7 @@ class Sender {
   }
 }
 
-module.exports = Sender;
+export default Sender;
 
 /**
  * Calls queued callbacks with an error.
@@ -632,3 +631,6 @@ function onError(sender, err, cb) {
   callCallbacks(sender, err, cb);
   sender.onerror(err);
 }
+
+// What require() gives (the tests of ws are CommonJS).
+export { Sender as 'module.exports' };

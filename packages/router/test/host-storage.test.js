@@ -1,6 +1,4 @@
-const acceptHostStrategy = require('../lib/strategies').host
-
-
+import { host as acceptHostStrategy } from '../lib/strategies.js';
 
 test('can get hosts by exact matches', async () => {
   const storage = acceptHostStrategy.storage()

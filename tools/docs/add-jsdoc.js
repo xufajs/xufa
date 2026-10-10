@@ -2,12 +2,13 @@
 // file of comments (tools/docs/jsdoc/<package>.json). Declarations with a doc comment already are left as they are.
 //
 //   node tools/docs/add-jsdoc.js pg
-const fs = require('node:fs');
-const path = require('node:path');
+import fs from 'node:fs';
+import path from 'node:path';
+import { declarationsOf } from './lib/declarations.js';
 
 const name = process.argv[2];
-const file = path.join(__dirname, '../../packages', name, 'index.d.ts');
-const comments = JSON.parse(fs.readFileSync(path.join(__dirname, 'jsdoc', `${name}.json`), 'utf8'));
+const file = declarationsOf(path.join(import.meta.dirname, '../../packages', name));
+const comments = JSON.parse(fs.readFileSync(path.join(import.meta.dirname, 'jsdoc', `${name}.json`), 'utf8'));
 const lines = fs.readFileSync(file, 'utf8').split('\n');
 const added = [];
 for (const [declaration, comment] of Object.entries(comments)) {

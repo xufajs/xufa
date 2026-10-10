@@ -7,7 +7,7 @@
   "packages": false,
   "groups": [
     ["Start", [["getting-started", "Getting started"], ["first-app", "Your first app"], ["configuration", "Configuration"]]],
-    ["Data", [["orm", "Adding the ORM"], ["routes", "Models and routes"], ["errors", "Validation and errors"], ["auth", "Users and logins"], ["migrations", "Migrations"]]],
+    ["Data", [["orm", "Adding the ORM"], ["routes", "Models and routes"], ["errors", "Validation and errors"], ["auth", "Users and logins"], ["migrations", "Migrations"], ["apps", "Apps"]]],
     ["Going further", [["databases", "Several databases"], ["tenants", "A database per tenant"], ["cache", "Caching objects"], ["cluster", "Running in a cluster"], ["jobs", "Jobs"], ["command-line", "The command line"], ["testing", "Testing"], ["typescript", "TypeScript"], ["http.html", "HTTP reference"], ["orm.html", "ORM reference"]]]
   ]
 }-->
@@ -34,7 +34,7 @@
           routes, hooks, plugins, decorators and schemas are the same, and code written for fastify runs on it.
         </p>
         <pre><code class="language-js">// app.js
-const xufa = require('xufa');
+import xufa from 'xufa';
 
 function build() {
   const app = xufa({ logger: true });
@@ -54,16 +54,16 @@ function build() {
   return app;
 }
 
-module.exports = { build };
+export { build };
 
 if (require.main === module) build().listen({ port: 3000 });</code></pre>
         <p>
           Plugins written for fastify (with <code>fastify-plugin</code>) load as they are. For your own, use
           <code>xufa.plugin()</code>, which is fastify-plugin:
         </p>
-        <pre data-run><code class="language-js">const { plugin } = require('xufa');
+        <pre data-run><code class="language-js">import { plugin } from 'xufa';
 
-module.exports = plugin(
+export default plugin(
   async (app, options) =&gt; {
     app.decorate('mailer', createMailer(options));
   },
@@ -80,9 +80,9 @@ module.exports = plugin(
           it in a module of its own, and require it where it is needed:
         </p>
         <pre><code class="language-js">// config.js
-const { loadConfig } = require('xufa/config');
+import { loadConfig } from 'xufa/config';
 
-module.exports = loadConfig({
+export default loadConfig({
   envPrefix: 'APP', // APP__SERVER__PORT=8080 sets server.port
   schema: {
     server: { port: { type: 'port', default: 3000, env: 'PORT' } },
@@ -118,7 +118,7 @@ JWT_KEY=a-key-for-development-only-32-bytes-or-more</code></pre>
           <a href="config.html">Configuration</a>.
         </p>
         <pre><code class="language-js">// app.js
-const config = require('./config');
+import config from './config.js';
 // ...
 if (require.main === module) build().listen({ port: config.server.port, host: '0.0.0.0' });</code></pre>
 
@@ -128,7 +128,7 @@ if (require.main === module) build().listen({ port: config.server.port, host: '0
           <code>postgres</code>, <code>mongodb</code>, and <code>memory</code> for tests.
         </p>
         <pre data-run><code class="language-js">// models.js
-const { Model, fields } = require('xufa/orm');
+import { Model, fields } from 'xufa/orm';
 
 class Author extends Model {
   static fields = {
@@ -148,16 +148,17 @@ class Book extends Model {
   };
 }
 
-module.exports = { Author, Book };</code></pre>
+export { Author, Book };</code></pre>
         <p>
           The ORM's plugin connects the database when the app starts, gives it as <code>app.db</code>, and closes it
           with the app. <code>sync: true</code> creates the tables that do not exist, which is enough to start;
           <a href="#migrations">migrations</a> are for what comes after.
         </p>
-        <pre><code class="language-js">const xufa = require('xufa');
-const orm = require('xufa/orm');
-const config = require('./config');
-const { Author, Book } = require('./models');
+        <pre><code class="language-js">import xufa from 'xufa';
+import * as orm from 'xufa/orm';
+import config from './config.js';
+import { Author, Book } from './models.js';
+import books from './routes/books.js';
 
 function build({ database } = {}) {
   const app = xufa({ logger: true });
@@ -165,7 +166,7 @@ function build({ database } = {}) {
   const db = database || new orm.Database({ ...config.database });
   db.register(Author, Book);
   app.register(orm.plugin, { database: db, sync: true });
-  app.register(require('./routes/books'), { prefix: '/books' });
+  app.register(books, { prefix: '/books' });
   return app;
 }</code></pre>
 
@@ -177,10 +178,10 @@ function build({ database } = {}) {
           <a href="schema.html">@xufa/schema</a> makes them), for the schemas of routes.
         </p>
         <pre><code class="language-js">// routes/books.js
-const { s } = require('xufa/schema');
-const { Book } = require('../models');
+import { s } from 'xufa/schema';
+import { Book } from '../models.js';
 
-module.exports = async function books(app) {
+export default async function books(app) {
   const body = s.omit(Book.schema({ input: true }), ['id', 'createdAt']);
 
   app.get('/', async (request) =&gt; {
@@ -254,7 +255,7 @@ module.exports = async function books(app) {
           (<a href="schema.html"><code>@xufa/schema</code></a>): plain JSON Schemas, made by code, from which the bodies
           of creates and updates are made too.
         </p>
-        <pre><code class="language-js">const { s } = require('xufa/schema');
+        <pre><code class="language-js">import { s } from 'xufa/schema';
 
 const Review = s.object(
   { stars: s.integer({ minimum: 1, maximum: 5 }), text: s.optional(s.string({ maxLength: 2000 })), bookId: s.integer() },
@@ -270,7 +271,7 @@ app.patch('/reviews/:id', { schema: { body: s.partial(s.omit(Review, ['bookId'])
           logins locked after five tries; you give it how to find a user:
         </p>
         <pre><code class="language-js">// models.js
-const auth = require('xufa/auth');
+import * as auth from 'xufa/auth';
 
 class User extends Model {
   static fields = {
@@ -318,9 +319,9 @@ curl -X DELETE localhost:3000/books/1 -H 'authorization: Bearer eyJ...'</code></
           files not applied yet, each in a transaction where the database has them.
         </p>
         <pre><code class="language-js">// scripts/make-migrations.js
-const { Database } = require('xufa/orm');
-const config = require('../config');
-const { Author, Book } = require('../models');
+import { Database } from 'xufa/orm';
+import config from '../config.js';
+import { Author, Book } from '../models.js';
 
 async function main() {
   const db = new Database({ ...config.database }).register(Author, Book);
@@ -337,13 +338,171 @@ app.register(orm.plugin, { database: db, migrate: { dir: 'migrations' } });</cod
           <code>{ op: 'run', fn: async (db) =&gt; {} }</code>.
         </p>
 
+        <h2 id="project">A project in one file</h2>
+        <p>
+          Django's <code>settings.py</code> and the project's <code>urls.py</code> are names and values, and so is a
+          project of xufa: <code>xufa.yaml</code> at its root (or <code>xufa.yml</code>, <code>xufa.json</code>,
+          <code>xufa.js</code> when a value must be a function). xufa puts the app together from it: sessions, bodies of
+          forms, templates, static files, emails, accounts and their pages, roles, the admin, error pages, redirects.
+          The project keeps only its apps.
+        </p>
+        <pre><code class="language-yaml"># xufa.yaml
+name: LocalLibrary
+apps: [accounts, catalog]           # INSTALLED_APPS: folders
+database: { url: sqlite:data/locallibrary.db, audit: { redact: [password] } }
+siteUrl: http://127.0.0.1:8000
+mail: { from: LocalLibrary &lt;library@example.com&gt; }
+auth: { user: accounts.User, loginBy: username, pages: /accounts }
+rbac:
+  groups: accounts.Group            # roles edited in the admin
+  roles: { librarian: ['*.view', Book.*, Author.*] }
+admin: { title: LocalLibrary administration }
+views: { baseTemplate: base_generic, paginateBy: 10 }
+redirects: { /: index }</code></pre>
+        <p>
+          The environment goes over the file, as Django's settings read it: <code>DATABASE_URL</code>,
+          <code>SECRET_KEY</code>, <code>DEBUG</code>, <code>PORT</code>, <code>HOST</code>, <code>SITE_URL</code>,
+          <code>EMAIL_URL</code>, and <code>APP__&lt;KEY&gt;__&lt;KEY&gt;</code> for any other key. <code>xufa start</code>
+          serves it, and every command (<code>migrate</code>, <code>makemigrations</code>, <code>seed</code>,
+          <code>shell</code>, <code>test</code>, <code>routes</code>, <code>createsuperuser</code>) finds it. In code,
+          <code>await loadProject(dir)</code> gives the project, <code>project.build()</code> its app, and
+          <code>reverse(name, ...params)</code> of <code>xufa/project</code> the address of a named route.
+        </p>
+        <p>
+          An app is a folder: <code>models.js</code> and <code>models.yaml</code> (models as data: <a
+          href="orm-guide.html#spec">a spec</a> of the ORM, whose relations name models of the app, or of others as
+          <code>accounts.User</code>; in development, edited on the <a href="admin.html#designer">data model page</a> of
+          the admin too; with <code>designer: database</code>, kept in the database as versions instead, in production
+          too), <code>urls.yaml</code> (its routes, of the views
+          <code>views.js</code> exports), <code>admin.yaml</code> (its models in the <a href="admin.html">admin</a>, by
+          name, with their options), <code>templates/</code>, <code>static/</code> and <code>migrations/</code>. Its
+          <code>urls.yaml</code> is its <code>urls.py</code>:
+        </p>
+        <pre><code class="language-yaml"># catalog/urls.yaml
+prefix: /catalog
+routes:
+  - { path: /, name: index, view: index }               # a function of views.js
+  - { path: mybooks/, name: my-borrowed, view: LoanedBooksByUser }   # a view of a class
+  - { path: book/&lt;uuid:pk&gt;/renew/, name: renew-book, view: renewBook, methods: [GET, POST], permission: BookInstance.markReturned }
+  - { path: about/, name: about, template: about }      # a TemplateView
+  - crud: Book                                          # books, book-detail, book-create, book-update, book-delete
+    fields: [title, author, summary, isbn, genre, language]
+    list: { selectRelated: author }
+    detail: { selectRelated: [author, language], prefetchRelated: [genre, bookInstanceSet] }
+    delete: { blockedText: "You can't delete this book until all copies have been deleted:" }</code></pre>
+        <p>
+          <code>crud</code> gives the five pages of a model with the names of the Django tutorial, <code>Book.add</code>,
+          <code>.change</code> and <code>.delete</code> for the forms, and templates of the app
+          (<code>catalog/book_list.html</code>...) or, when it has none, the built-in ones of
+          <a href="views.html#builtin">@xufa/views</a>, which extend <code>views.baseTemplate</code>. A model whose
+          <code>&lt;model&gt;-detail</code> route exists gets <code>absoluteUrl</code> without writing it. The
+          <a href="https://github.com/xufajs/xufa/tree/main/examples/locallibrary">LocalLibrary example</a> is a whole
+          project in this form.
+        </p>
+        <p id="project-work">
+          Jobs in the background, pipelines and tenants are keys of the file too, and the admin shows them (Jobs,
+          Pipeline runs, and the tenant to choose):
+        </p>
+        <pre><code class="language-yaml">queue: { work: { concurrency: 2 } }   # @xufa/queue in the database; work: false leaves it to xufa work
+pipelines: true
+tenants:
+  apps: [catalog]                       # a database for each tenant, with the models of these apps
+  database: { url: 'sqlite:data/tenants/{id}.db' }
+  list: [central, north]                # or { model: accounts.Branch, field: slug, label: name }
+  labels: { central: Central library }
+  resolve: subdomain                    # the tenant of a request (north.example.com), or user.&lt;field&gt;</code></pre>
+        <pre><code class="language-js">// The apps of tenants (catalog) have their tables in each tenant's database only, migrated when it is first opened:
+// not in the project's (xufa migrate leaves them out). Outside a tenant, their models are an error, never another
+// tenant's data.
+
+// catalog/jobs.js: the jobs of the app, by name (app.queue.enqueue('remind', { loan: 7 }))
+export async function remind({ loan }) {
+  // ...
+}
+export const report = { attempts: 5, timeout: '2m', run: async ({ month }) =&gt; ({ month }) };
+
+// catalog/blocks.js: the blocks of its pipelines
+export const fetchCover = async (book) =&gt; ({ ...book, cover: `${book.isbn}.jpg` });</code></pre>
+        <pre><code class="language-yaml"># catalog/pipelines.yaml: its pipelines, as data
+- name: new-book
+  steps:
+    - { id: cover, block: fetchCover }
+    - { id: approve, block: wait, after: cover }</code></pre>
+        <p>
+          The queue is that of the project's database (<code>db.queue</code>, <code>app.queue</code>; its tables are
+          in the migrations of the project), its workers run in <code>xufa start</code> unless
+          <code>work: false</code> (then <code>xufa work</code> runs them), and <code>db.pipelines</code> runs the
+          pipelines on it. Each tenant's database is made the first time it is used, with the migrations of its apps;
+          the other models (the users, the sessions, the jobs) stay in the project's. Without <code>resolve</code>,
+          only the admin chooses a tenant; <code>project.tenants().run(id, fn)</code> runs code in one (a seed gets the
+          project too: <code>export default async (db, models, { project }) =&gt; {}</code>). The
+          <a href="https://github.com/xufajs/xufa/tree/main/examples/helpdesk">Helpdesk example</a> has organizations as
+          tenants, by subdomain.
+        </p>
+
+        <h2 id="apps">Apps</h2>
+        <p>
+          Without a project file, the same is code. A project grows as Django's, in apps (<code>INSTALLED_APPS</code>):
+          each a folder with its models, its routes,
+          its templates (<code>templates/</code>), its static files (<code>static/</code>), its models in the admin and
+          its migrations (<code>migrations/</code>). Its tables are named by it, as Django's <code>db_table</code>:
+          <code>catalog_book</code>, <code>catalog_bookinstance</code> (unless a model gives its own
+          <code>table</code>).
+        </p>
+        <pre><code class="language-js">// catalog/app.js (Django's apps.py)
+import { defineApp } from 'xufa/apps';
+import * as models from './models.js';
+import views from './views.js';
+import admin from './admin.js';
+
+export default defineApp({
+  name: 'catalog',
+  dir: import.meta.dirname,
+  models, // a list or a module of models (or a function that gives them)
+  routes: views, // a plugin of routes (urls.py), under prefix
+  admin: admin.models, // its entries in the admin (admin.py)
+  ready: (app) =&gt; {}, // AppConfig.ready
+});</code></pre>
+        <pre><code class="language-js">// app.js: the project
+import { Apps } from 'xufa/apps';
+import accounts from './accounts/app.js';
+import catalog from './catalog/app.js';
+
+const APPS = new Apps([accounts, catalog], { migrations: 'migrations' });
+
+function database() {
+  const db = APPS.register(Database.fromUrl(process.env.DATABASE_URL)); // the models of the apps
+  db.sessions = ormStore(db); // models of no app: the migrations of the project
+  return db;
+}
+
+function build() {
+  const app = xufa();
+  app.register(orm.plugin, { database: database(), migrate: (db) =&gt; APPS.migrate(db) });
+  app.register(template.plugin, { root: ['templates', ...APPS.templates] }); // the project's first
+  app.register(xufa.staticFiles, { root: APPS.static, prefix: '/static/' });
+  app.register(APPS.plugin); // the routes of the apps, and their ready()
+  app.register(admin, { prefix: '/admin', models: APPS.admin });
+  return app;
+}
+
+export { build, database, APPS };</code></pre>
+        <p>
+          With <code>APPS</code> in <code>app.js</code>, <code>xufa makemigrations</code> writes a migration in the folder
+          of each app that changed (<code>xufa makemigrations catalog --name add_isbn</code>: of one), <code>xufa
+          migrate</code> applies them app after app (those of the project first: the tables of no app, as the sessions,
+          as Django's contrib apps), and <code>xufa showmigrations</code> lists them by app. They are recorded by app
+          (<code>catalog.0001_initial</code>), so apps can have the same numbers. List the apps that others point to
+          first.
+        </p>
+
         <h2 id="databases">Several databases</h2>
         <p>
           <code>Databases</code> holds several databases by name, and routes each model to one of them: the
           <code>database</code> option of the model, or the <code>routes</code> given, or the default database.
         </p>
-        <pre><code class="language-js">const { Databases } = require('xufa/orm');
-const config = require('./config'); // with events: { url: { type: 'url', env: 'EVENTS_URL', sensitive: true } } in its schema
+        <pre><code class="language-js">import { Databases } from 'xufa/orm';
+import config from './config.js'; // with events: { url: { type: 'url', env: 'EVENTS_URL', sensitive: true } } in its schema
 
 const dbs = new Databases(
   {
@@ -366,7 +525,7 @@ await dbs.migrate({ dir: 'migrations' }); // migrations/default and migrations/e
           <code>config(tenantId)</code>. Code run in a tenant uses its database: inside it, <code>Book.objects</code> is
           the books of that tenant. The databases of the last <code>max</code> tenants used stay open.
         </p>
-        <pre><code class="language-js">const { Tenants } = require('xufa/orm');
+        <pre><code class="language-js">import { Tenants } from 'xufa/orm';
 
 const tenants = new Tenants({
   models: [Author, Book],
@@ -432,10 +591,10 @@ await User.objects.get({ email: 'ada@example.com' }); // the cache</code></pre>
           workers, forks again those that die, and stops them all gracefully on <code>SIGINT</code> and
           <code>SIGTERM</code>. Its bus carries messages between the processes.
         </p>
-        <pre><code class="language-js">const { start, bus } = require('@xufa/cluster');
-const { Database, LocalCache } = require('xufa/orm');
-const config = require('./config'); // read in each process: the primary and every worker
-const { build } = require('./app');
+        <pre><code class="language-js">import { start, bus } from '@xufa/cluster';
+import { Database, LocalCache } from 'xufa/orm';
+import config from './config.js'; // read in each process: the primary and every worker
+import { build } from './app.js';
 
 start({
   primary: async ({ bus }) =&gt; {
@@ -464,12 +623,12 @@ start({
           retries. In a cluster, run them in the primary, not in every worker; on several machines, a lock in the
           database makes one of them run each time, and its history catches up the times missed while it was down.
         </p>
-        <pre><code class="language-js">const { start } = require('@xufa/cluster');
-const { Database } = require('xufa/orm');
-const { Scheduler, ormLock, ormHistory } = require('xufa/scheduler');
-const config = require('./config');
-const { Author, Book } = require('./models');
-const { purgeOldUploads, sendReport } = require('./jobs');
+        <pre><code class="language-js">import { start } from '@xufa/cluster';
+import { Database } from 'xufa/orm';
+import { Scheduler, ormLock, ormHistory } from 'xufa/scheduler';
+import config from './config.js';
+import { Author, Book } from './models.js';
+import { purgeOldUploads, sendReport } from './jobs.js';
 
 start({
   primary: async ({ onShutdown }) =&gt; {
@@ -497,10 +656,20 @@ start({
         <h2 id="command-line">The command line</h2>
         <p>
           <code>xufa</code> is also a command, as Rails' <code>rails</code>, Laravel's <code>artisan</code> and Django's
-          <code>manage.py</code>: it makes an app with the layout every app of xufa shares, writes models and routes,
-          makes and applies migrations, and opens a REPL with the models.
+          <code>manage.py</code>: it makes a project and its apps, makes and applies migrations, loads seeds, and opens
+          a REPL with the models.
         </p>
-        <pre><code class="language-sh">npx xufa new shop                     # app.js, server.js, models/, routes/, jobs/, migrations/, test/
+        <pre><code class="language-sh">npx xufa new shop                     # xufa.yaml, templates/base.html, home/ (its first app), seeds/, test/
+cd shop &amp;&amp; npm install
+npx xufa startapp catalog             # catalog/: models.js, urls.yaml, views.js, admin.yaml, templates/catalog/
+npx xufa makemigrations &amp;&amp; npx xufa migrate
+npm run dev                           # http://127.0.0.1:8000/, restarted on changes</code></pre>
+        <p>
+          <code>xufa new shop --api</code> makes an app of an API instead, without a project file:
+          <code>app.js</code>, <code>server.js</code>, a model in each file of <code>models/</code>, a plugin of routes in
+          each file of <code>routes/</code>, and jobs; <code>xufa generate</code> writes its models and resources.
+        </p>
+        <pre><code class="language-sh">npx xufa new shop --api               # app.js, server.js, models/, routes/, jobs/, migrations/, test/
 cd shop &amp;&amp; npm install
 npx xufa generate model Author name:string email:email:unique
 npx xufa generate resource Book title:string pages:integer:null author:references
@@ -510,17 +679,23 @@ npm run dev                           # http://127.0.0.1:3000/books, restarted o
           <table>
             <thead><tr><th>Command</th><th>What it does</th></tr></thead>
             <tbody>
-              <tr><td><code>xufa new &lt;folder&gt;</code></td><td>A new app: <code>app.js</code> (<code>build()</code>, <code>database()</code>, <code>jobs()</code>), <code>server.js</code>, a model in each file of <code>models/</code>, a plugin in each file of <code>routes/</code> at the path of its name, jobs of the queue in <code>jobs/</code>, a test</td></tr>
+              <tr><td><code>xufa new &lt;folder&gt;</code></td><td>A new <a href="#project">project</a> (Django's <code>startproject</code>): <code>xufa.yaml</code>, <code>templates/base.html</code>, its first app (<code>home</code>, or <code>--app name</code>) with a home page, <code>seeds/</code> and a test of <code>useTestApp()</code></td></tr>
+              <tr><td><code>xufa startapp &lt;name&gt;</code></td><td>A new app of the project (Django's <code>startapp</code>): <code>models.js</code>, <code>urls.yaml</code>, <code>views.js</code>, <code>admin.yaml</code>, <code>templates/&lt;name&gt;/</code>, <code>migrations/</code>; added to <code>apps</code> of <code>xufa.yaml</code></td></tr>
+              <tr><td><code>xufa new &lt;folder&gt; --api</code></td><td>A new app of an API: <code>app.js</code> (<code>build()</code>, <code>database()</code>, <code>jobs()</code>), <code>server.js</code>, a model in each file of <code>models/</code>, a plugin in each file of <code>routes/</code> at the path of its name, jobs of the queue in <code>jobs/</code>, a test</td></tr>
               <tr><td><code>xufa generate model &lt;Name&gt; field:type...</code></td><td>A model (<code>models/&lt;name&gt;.js</code>) and its migration. Types: string, text, integer, bigint, float, decimal, boolean, date, datetime, json, uuid, email, references; modifiers <code>:null</code>, <code>:unique</code>, <code>:index</code>; <code>createdAt</code> and <code>updatedAt</code> unless <code>--no-timestamps</code></td></tr>
               <tr><td><code>xufa generate resource &lt;Name&gt; ...</code></td><td>The model, and its routes: <code>routes/&lt;names&gt;.js</code> with <code>orm.resource()</code> (list with filters, search, ordering and pages; get, create, update, delete)</td></tr>
-              <tr><td><code>xufa makemigrations</code>, <code>migrate</code>, <code>showmigrations</code></td><td>The migrations of the models, as Django's</td></tr>
+              <tr><td><code>xufa makemigrations</code>, <code>migrate</code>, <code>showmigrations</code></td><td>The migrations of the models, as Django's (with <code>designer: database</code>, those kept there too; <code>makemigrations</code> leaves out the apps whose models are there)</td></tr>
+              <tr><td><code>xufa eject</code></td><td>The models kept in the database (<code>designer: database</code>) as files again: each app's <code>models.yaml</code> and its migrations, with their names (applied already); then a version with none, so every server starts again with the files</td></tr>
               <tr><td><code>xufa routes</code></td><td>The routes of the app</td></tr>
-              <tr><td><code>xufa seed [name...]</code></td><td>Runs the seeds of <code>seeds/</code> (functions of the database and its models, each in a transaction): data for development, made with <a href="orm-guide.html#factories">factories</a></td></tr>
+              <tr><td><code>xufa seed [name...]</code></td><td>Runs the seeds of <code>seeds/</code>, each in a transaction: <a href="#testing">fixtures</a> of YAML or JSON (objects by model), or functions of the database and its models (made with <a href="orm-guide.html#factories">factories</a>): data for development</td></tr>
+              <tr><td><code>xufa start</code></td><td>Serves the project of <code>xufa.yaml</code> (<code>PORT</code>, <code>HOST</code>), applying its migrations</td></tr>
+              <tr><td><code>xufa createsuperuser</code></td><td>A superuser of the model of users (<a href="auth/guide.html#users">AbstractUser of @xufa/auth</a>): <code>--username</code>, <code>--email</code>, the password asked twice; <code>--noinput</code> with <code>XUFA_SUPERUSER_PASSWORD</code></td></tr>
               <tr><td><code>xufa shell</code></td><td>A REPL with <code>app</code>, <code>db</code>, <code>queue</code> and the models (<code>await Book.objects.count()</code>)</td></tr>
-              <tr><td><code>xufa dev</code></td><td>The server, restarted when a file changes (<code>node --watch</code>)</td></tr>
+              <tr><td><code>xufa dev</code></td><td>The server, started again when a file of the project changes (its code, and its YAML: <code>xufa.yaml</code>, <code>models.yaml</code>...; not <code>node_modules</code> nor <code>data/</code>); an app of <code>server.js</code> under <code>node --watch</code></td></tr>
               <tr><td><code>xufa work</code></td><td>Workers of the queue (<code>--concurrency 4 --queues mail,reports</code>)</td></tr>
               <tr><td><code>xufa down</code></td><td>The <a href="http-guide.html#maintenance">maintenance mode</a> on: a 503 for every request but <code>/health</code> (<code>--message</code>, <code>--retry 60</code>, <code>--allow ip,ip</code>, <code>--secret [path]</code>: a path that lets a browser through). This machine (<code>.xufa/down.json</code>), or every one with <code>--everywhere</code> (in the database)</td></tr>
               <tr><td><code>xufa up</code></td><td>The maintenance mode off (<code>--everywhere</code>: in the database too)</td></tr>
+              <tr><td><code>xufa test [files...]</code></td><td>The tests of the app with <code>NODE_ENV=test</code>: by vyntra when the app has it (<code>--runner node</code> or <code>vyntra</code> to choose), else <code>node --test</code>. Each test in a transaction rolled back: <a href="orm-guide.html#testing">rollbackEach</a></td></tr>
               <tr><td><code>xufa health</code></td><td>The checks of <a href="http-guide.html#health">GET /health</a>, run once: their status, time and errors (exit code 1 when the app is down)</td></tr>
             </tbody>
           </table>
@@ -539,9 +714,9 @@ npm run dev                           # http://127.0.0.1:3000/books, restarted o
           <code>app.inject()</code> sends fake requests without a socket. With the <code>memory</code> backend, or SQLite in
           memory, each test gets a fresh database in no time.
         </p>
-        <pre><code class="language-js">const { Database } = require('xufa/orm');
-const { build } = require('./app');
-const { Author } = require('./models');
+        <pre><code class="language-js">import { Database } from 'xufa/orm';
+import { build } from './app.js';
+import { Author } from './models.js';
 
 describe('books', () =&gt; {
   let app;
@@ -572,6 +747,44 @@ describe('books', () =&gt; {
   });
 });</code></pre>
         <p>
+          In a <a href="#project">project</a>, <code>useTestApp()</code> of <code>xufa/testing</code> is Django's
+          <code>TestCase</code>: it builds the app of <code>xufa.yaml</code> once for the file (SQLite in memory,
+          migrated, light password hashes, the emails kept), rolls back each test, and loads the fixtures it is given
+          before each one. Each <a href="#tenants">tenant</a> gets a database in memory too (<code>tenantsUrl</code>),
+          made the first time a test uses it and rolled back after each test as that of the project. It works with the hooks of the runner, globals or those of <code>node:test</code>.
+        </p>
+        <pre><code class="language-js">import { test } from 'node:test';
+import assert from 'node:assert/strict';
+import { useTestApp } from 'xufa/testing';
+
+const app = useTestApp({ fixtures: ['library'] }); // fixtures/library.yaml (or seeds/)
+
+test('a reader sees what they borrowed', async () =&gt; {
+  await app.createUser('rita', 'a-password'); // by auth.loginBy
+  const client = app.client(); // Django's self.client
+  await client.login({ username: 'rita', password: 'a-password' });
+  const res = await client.get(app.reverse('my-borrowed'));
+  assert.equal(res.statusCode, 200);
+  assert.equal(app.mails.length, 0); // Django's mail.outbox
+});</code></pre>
+        <p>
+          Fixtures are data files (Django's <code>loaddata</code>): objects by model, in order. <code>$key</code> names
+          an object, relations point to it by that name, dates take <code>today</code> and days from it, and users get
+          their passwords hashed. <code>xufa seed</code> runs them from <code>seeds/</code> too, next to seeds of JS;
+          <code>$unless</code> runs a file only once.
+        </p>
+        <pre><code class="language-yaml"># seeds/library.yaml
+$unless: { User: { username: admin } }
+User:
+  - { username: admin, password: xufa-library, isStaff: true, isSuperuser: true }
+  - { $key: rita, username: rita, password: xufa-library }
+Author:
+  - { $key: leguin, firstName: Ursula, lastName: Le Guin, dateOfBirth: 1929-10-21 }
+Book:
+  - { $key: earthsea, title: A Wizard of Earthsea, author: $leguin, isbn: '9780547773742', genre: [$fantasy] }
+BookInstance:
+  - { book: $earthsea, status: o, borrower: $rita, dueBack: +14d }</code></pre>
+        <p>
           xufa's own tests run with <a href="https://www.npmjs.com/package/vyntra">vyntra</a>, but any runner with the
           API of Jest or Vitest works.
         </p>
@@ -595,7 +808,7 @@ it('retries a write that failed once', async () =&gt; {
           The rest fails the same way, with the rules of <a href="faults.html">@xufa/faults</a>: <code>cache.faults</code>
           (the app answers without its cache), <code>client.faults</code> of the APIs it calls (failed connections,
           <code>respond({ status: 503 })</code>, hangs ended by the timeout) and <code>bus.faults</code> of the cluster
-          (messages lost or late). <code>require('xufa/faults/register')</code> in the setup files of the runner clears
+          (messages lost or late). <code>xufa/faults/register</code> in the setup files of the runner clears
           every fault after each test, so one that fails before its <code>up()</code> leaves none to the next;
           <code>xufa/faults/register-strict</code> also fails a test that ends with faults still set.
         </p>

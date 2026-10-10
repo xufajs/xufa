@@ -3,12 +3,11 @@
 
 const stream = require('node:stream')
 const Fastify = require('..')
-const fp = require('@xufa/http').plugin
+const fp = require('..').plugin
 const fs = require('node:fs')
 const split = require('split2')
 const symbols = require('../lib/symbols')
 const payload = { hello: 'world' }
-const proxyquire = require('proxyquire')
 const { connect } = require('node:net')
 const { sleep, waitForCb } = require('./helper')
 const { fetch } = require('undici')
@@ -1248,13 +1247,8 @@ test('clear payload', (testDone) => {
 
 test('onSend hook throws', async () => {
   expect.assertions(10)
-  const Fastify = proxyquire('../lib/xufa', {
-    './schemas': {
-      getSchemaSerializer: (param1, param2, param3) => {
-        expect(param3).toBe('application/json; charset=utf-8')
-      }
-    }
-  })
+  // Upstream replaced getSchemaSerializer of './schemas' for fastify.js only (proxyquire), which does not call it: the
+  // replacement never ran, and the test counts its own assertions only.
   const fastify = Fastify()
   onTestFinished(() => { fastify.close() })
   fastify.addHook('onSend', function (request, reply, payload, done) {

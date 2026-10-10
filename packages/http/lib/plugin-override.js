@@ -1,6 +1,6 @@
 // Encapsulation: each plugin runs with an instance of its own, made from the one registering it, unless it is
 // marked to skip it (plugin() / fastify-plugin). Everything encapsulated is copied here.
-const {
+import {
   kBoot,
   kChildren,
   kRoutePrefix,
@@ -14,13 +14,13 @@ const {
   kFourOhFour,
   kPluginNameChain,
   kErrorHandlerAlreadySet,
-} = require('./symbols');
-const Reply = require('./reply');
-const Request = require('./request');
-const SchemaController = require('./schema-controller');
-const ContentTypeParser = require('./content-type-parser');
-const { buildHooks } = require('./hooks');
-const pluginUtils = require('./plugin-utils');
+} from './symbols.js';
+import Reply from './reply.js';
+import Request from './request.js';
+import SchemaController from './schema-controller.js';
+import ContentTypeParser from './content-type-parser.js';
+import { buildHooks } from './hooks.js';
+import * as pluginUtils from './plugin-utils.js';
 
 function buildRoutePrefix(instancePrefix, pluginPrefix) {
   if (!pluginPrefix) return instancePrefix;
@@ -31,7 +31,7 @@ function buildRoutePrefix(instancePrefix, pluginPrefix) {
   return instancePrefix + prefix;
 }
 
-module.exports = function override(old, fn, opts) {
+const __default = function override(old, fn, opts) {
   const skip = pluginUtils.registerPlugin.call(old, fn);
   const fnName = pluginUtils.getPluginName(fn) || pluginUtils.getFuncPreview(fn);
   if (skip) {
@@ -63,5 +63,11 @@ module.exports = function override(old, fn, opts) {
   for (const hook of instance[kHooks].onRegister) hook.call(old, instance, opts);
   return instance;
 };
+export default __default;
 
-module.exports.buildRoutePrefix = buildRoutePrefix;
+__default.buildRoutePrefix = buildRoutePrefix;
+
+export { buildRoutePrefix };
+
+// What require() gives (the tests of fastify are CommonJS).
+export { __default as 'module.exports' };

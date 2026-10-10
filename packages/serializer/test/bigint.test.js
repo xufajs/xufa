@@ -1,8 +1,4 @@
-'use strict'
-
-
-
-const build = require('..')
+import build from '../index.js';
 
 test('render a bigint as JSON', () => {
   expect.assertions(1)

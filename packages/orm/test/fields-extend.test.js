@@ -1,6 +1,6 @@
 // fields.extend(Parent, own): the fields of a parent with those of a child, as the ORM merges them (so TypeScript knows
 // them): the same model as with the child's own fields only, null removing one, and Model.schema() with them all.
-const { Database, Model, fields } = require('..');
+import { Database, Model, fields } from '../index.js';
 
 class Timestamped extends Model {
   static options = { abstract: true };

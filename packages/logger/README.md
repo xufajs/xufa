@@ -4,7 +4,9 @@ A fast JSON logger with the API of [pino](https://getpino.io), and no dependenci
 [xufa](../xufa), and works on its own.
 
 ```js
-const logger = require('@xufa/logger')({ level: 'debug', redact: ['req.headers.authorization'] });
+import pino from '@xufa/logger';
+
+const logger = pino({ level: 'debug', redact: ['req.headers.authorization'] });
 
 logger.info('hello %s', 'world'); // {"level":30,"time":...,"pid":...,"hostname":...,"msg":"hello world"}
 logger.child({ requestId: 'r1' }).warn({ user: 7 }, 'slow request');
@@ -23,7 +25,7 @@ The options, methods and output of pino: `level`, `customLevels`, `useOnlyCustom
 buffered (`{ sync: false, minLength }`), as sonic-boom does for pino:
 
 ```js
-const pino = require('@xufa/logger');
+import pino from '@xufa/logger';
 const logger = pino(pino.destination({ dest: './app.log', sync: false, mkdir: true }));
 process.on('SIGHUP', () => logger[pino.symbols.streamSym].reopen()); // log rotation
 ```

@@ -1,7 +1,4 @@
-'use strict'
-
-
-const build = require('..')
+import build from '../index.js';
 
 test('required property containing single quote, contains property', () => {
   expect.assertions(1)

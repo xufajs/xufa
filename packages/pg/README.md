@@ -5,7 +5,7 @@ applications use: `Client`, `Pool`, `query(text, values)`. The PostgreSQL backen
 it.
 
 ```js
-const { Pool } = require('@xufa/pg');
+import { Pool } from '@xufa/pg';
 
 const pool = new Pool({ connectionString: 'postgres://user:password@localhost:5432/app', max: 10 });
 

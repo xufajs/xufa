@@ -1,12 +1,10 @@
-'use strict';
+import { Blob } from 'node:buffer';
+import { Writable } from 'node:stream';
 
-const { Blob } = require('node:buffer');
-const { Writable } = require('node:stream');
-
-const PerMessageDeflate = require('./permessage-deflate');
-const { BINARY_TYPES, EMPTY_BUFFER, kStatusCode, kWebSocket } = require('./constants');
-const { concat, toArrayBuffer, unmask } = require('./buffer-util');
-const { isValidStatusCode, isValidUTF8 } = require('./validation');
+import PerMessageDeflate from './permessage-deflate.js';
+import { BINARY_TYPES, EMPTY_BUFFER, kStatusCode, kWebSocket } from './constants.js';
+import { concat, toArrayBuffer, unmask } from './buffer-util.js';
+import { isValidStatusCode, isValidUTF8 } from './validation.js';
 
 const FastBuffer = Buffer[Symbol.species];
 
@@ -642,4 +640,7 @@ class Receiver extends Writable {
   }
 }
 
-module.exports = Receiver;
+export default Receiver;
+
+// What require() gives (the tests of ws are CommonJS).
+export { Receiver as 'module.exports' };

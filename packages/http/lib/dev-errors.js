@@ -5,9 +5,9 @@
 // unless enabled: true; never turn it on where others can reach the app: it shows the code and the request.
 //
 //   app.register(devErrors);                          // or app.register(devErrors, { enabled: true, context: 7 })
-const fs = require('node:fs');
-const path = require('node:path');
-const { STATUS_CODES } = require('node:http');
+import fs from 'node:fs';
+import path from 'node:path';
+import { STATUS_CODES } from 'node:http';
 
 const ESCAPES = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' };
 const escape = (value) => String(value).replace(/[&<>"']/g, (c) => ESCAPES[c]);
@@ -19,7 +19,7 @@ const HIDDEN = /^(authorization|cookie|set-cookie|proxy-authorization|x-api-key|
 // loads: the playground of the docs runs this package in a browser, without folders).
 let own = null;
 function ownFolder() {
-  if (own === null) own = typeof __dirname === 'string' ? path.join(__dirname, path.sep) : '\0';
+  if (own === null) own = typeof import.meta.dirname === 'string' ? path.join(import.meta.dirname, path.sep) : '\0';
   return own;
 }
 
@@ -260,4 +260,4 @@ devErrors[Symbol.for('skip-override')] = true;
 devErrors[Symbol.for('fastify.display-name')] = 'devErrors';
 devErrors[Symbol.for('plugin-meta')] = { name: 'devErrors' };
 
-module.exports = { devErrors, framesOf, errorPage };
+export { devErrors, framesOf, errorPage };

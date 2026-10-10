@@ -1,7 +1,7 @@
 'use strict'
 
 
-const Fastify = require('@xufa/http')
+const Fastify = require('..')
 const fs = require('node:fs')
 const { Readable } = require('node:stream')
 const { fetch: undiciFetch } = require('undici')

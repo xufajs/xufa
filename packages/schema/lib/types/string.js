@@ -1,6 +1,6 @@
-const { hasFewerCodePoints, hasMoreCodePoints } = require('./code-point-length');
-const { ValidateType } = require('./validate-type');
-const { FORMATS, matchesFormat } = require('../formats');
+import { hasFewerCodePoints, hasMoreCodePoints } from './code-point-length.js';
+import { ValidateType } from './validate-type.js';
+import { FORMATS, matchesFormat } from '../formats.js';
 
 // The limits of a format: how a comparison fails them (a comparison that is undefined never does), the text of their
 // error, and their comparison in ajv's params.
@@ -119,10 +119,4 @@ function ostr(min, max, isMandatory = false, isNullable = false) {
   return new StringType({ min, max, isMandatory, isNullable });
 }
 
-module.exports = {
-  FORMAT_LIMITS,
-  StringType,
-  String,
-  str,
-  ostr,
-};
+export { FORMAT_LIMITS, StringType, String, str, ostr };

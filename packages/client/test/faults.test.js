@@ -1,8 +1,8 @@
 // The faults of a client (client.faults): calls that the network refuses (retried as such), replies of a status
 // (respond: a 503 and its Retry-After), delays and hangs (its timeout ends them), by method and path; shared by the
 // clients made from it.
-const http = require('node:http');
-const { createClient, RequestError, HTTPError, TimeoutError } = require('..');
+import http from 'node:http';
+import { createClient, RequestError, HTTPError, TimeoutError } from '../index.js';
 
 describe('client.faults', () => {
   let server;

@@ -1,7 +1,4 @@
-'use strict'
-
-
-const build = require('..')
+import build from '../index.js';
 
 test('Finite numbers', () => {
   const values = [-5, 0, -0, 1.33, 99, 100.0,

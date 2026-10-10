@@ -1,8 +1,8 @@
 // Faults: operations of databases made to fail, wait or hang (db.faults, dbs.faults, tenants.faults): which
 // operations they match (operations, models, tenants, rate, after, times), their errors, hangs released, a database
 // down and up, and what an app answers then (503).
-const xufa = require('@xufa/http');
-const { Database, Databases, Tenants, Model, fields, FaultError, plugin } = require('..');
+import xufa from '@xufa/http';
+import { Database, Databases, Tenants, Model, fields, FaultError, plugin } from '../index.js';
 
 function models() {
   class Order extends Model {

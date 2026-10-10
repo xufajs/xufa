@@ -1,17 +1,6 @@
-const {
-  AllOf,
-  AnyOf,
-  ArrayOf,
-  Float,
-  Integer,
-  Schema,
-  String,
-  compileJsonSchema,
-  fromJsonSchema,
-  hasErrors,
-} = require('..');
+import { AllOf, AnyOf, ArrayOf, Float, Integer, Schema, String, compileJsonSchema, fromJsonSchema, hasErrors } from '../index.js';
 
-const { CheckType, samples, types } = require('./fixtures/types');
+import { CheckType, samples, types } from './fixtures/types.js';
 
 describe('isValid', () => {
   // Compared with errors(), which never takes the isValid() fast path of the type itself.

@@ -14,7 +14,7 @@ documented by [@xufa/openapi](../openapi). No dependencies.
 &middot; [schema from JSON](https://xufajs.github.io/xufa/schema/infer.html) &middot; [migrating from ajv](https://xufajs.github.io/xufa/schema/ajv.html).
 
 ```js
-const { s, compileJsonSchema } = require('@xufa/schema'); // or require('xufa/schema')
+import { s, compileJsonSchema } from '@xufa/schema'; // or from 'xufa/schema'
 
 const Book = s.object({ title: s.string({ minLength: 1 }), pages: s.optional(s.integer({ minimum: 1 })) });
 const validate = compileJsonSchema(Book); // once, when the program starts
@@ -51,7 +51,7 @@ it (the validator below, the routes of @xufa/http and fastify, @xufa/serializer,
 carries the type of its values.
 
 ```js
-const { s } = require('@xufa/schema'); // or require('xufa/schema')
+import { s } from '@xufa/schema'; // or from 'xufa/schema'
 
 const Book = s.object(
   {
@@ -171,7 +171,7 @@ npm install @xufa/schema
 With the schema DSL:
 
 ```js
-const { ClosedSchema, String, Integer, ArrayOf } = require('@xufa/schema');
+import { ClosedSchema, String, Integer, ArrayOf } from '@xufa/schema';
 
 const person = new ClosedSchema({
   id: String(),
@@ -261,8 +261,8 @@ Policy (without `'unsafe-eval'`) and in runtimes that forbid code generation, an
 
 ```js
 // build-validators.js, run when building
-const fs = require('fs');
-const { standaloneCode, standaloneModule, standaloneJsonSchema } = require('@xufa/schema');
+import fs from 'fs';
+import { standaloneCode, standaloneModule, standaloneJsonSchema } from '@xufa/schema';
 
 fs.writeFileSync('validate-person.js', standaloneCode(person)); // module.exports = the validation function
 fs.writeFileSync(
@@ -274,7 +274,7 @@ fs.writeFileSync('validate-address.js', standaloneJsonSchema(addressSchema, { sc
 
 ```js
 // In the application
-const validatePerson = require('./validate-person.js');
+import validatePerson from './validate-person.js';
 import { isPerson } from './validators.mjs';
 ```
 
@@ -290,7 +290,7 @@ as their `validate()` runs when validating, and throw.
 A `Schema` takes an object whose keys are the expected properties. Plain objects inside it become nested schemas.
 
 ```js
-const { Schema, String, Float, Enum, ArrayOf, Integer } = require('@xufa/schema');
+import { Schema, String, Float, Enum, ArrayOf, Integer } from '@xufa/schema';
 
 const order = new Schema(
   {
@@ -342,7 +342,7 @@ present.
 Create the `Ref` first and point it at the schema once the schema exists:
 
 ```js
-const { Schema, Integer, ArrayOf, Ref } = require('@xufa/schema');
+import { Schema, Integer, ArrayOf, Ref } from '@xufa/schema';
 
 const child = Ref();
 const node = new Schema({ value: Integer(), children: ArrayOf({ type: child, isMandatory: false }) });
@@ -776,15 +776,15 @@ The values a JSON Schema accepts are `unknown` to TypeScript; give their type to
 [Schema from JSON](https://xufajs.github.io/xufa/schema/infer.html).
 
 ```js
-const { inferJsonSchema, inferSchemaCode } = require('@xufa/schema');
+import { inferJsonSchema, inferSchemaCode } from '@xufa/schema';
 
 const samples = [
   { id: 1, name: 'Ann', email: 'ann@example.com', address: { city: 'Madrid' } },
   { id: 2, name: 'Bob', email: 'bob@example.com', address: null, phone: '+34 600 000 000' },
 ];
 
-console.log(inferSchemaCode(samples));
-// const { Integer, Schema, String } = require('@xufa/schema');
+console.log(inferSchemaCode(samples, { module: 'esm' })); // 'commonjs' (the default): a require()
+// import { Integer, Schema, String } from '@xufa/schema';
 //
 // const schema = new Schema({
 //   id: Integer(),
@@ -811,7 +811,7 @@ compiled: the generated code calls them for their part of the schema. `validate(
 is valid and an error message otherwise.
 
 ```js
-const { Schema, ValidateType } = require('@xufa/schema');
+import { Schema, ValidateType } from '@xufa/schema';
 
 class Even extends ValidateType {
   validate(value, fieldName = 'Value') {

@@ -1,7 +1,7 @@
 // Several hosts: failover in order, target_session_attrs (from the parameters servers report, or by asking older
 // ones) and load_balance_hosts, against fake servers that are primaries or standbys.
-const net = require('node:net');
-const { Client, Pool, parseConfig } = require('..');
+import net from 'node:net';
+import { Client, Pool, parseConfig } from '../index.js';
 
 const message = (type, body) => {
   const header = Buffer.alloc(5);

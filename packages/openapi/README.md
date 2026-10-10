@@ -3,15 +3,16 @@
 OpenAPI documents of the routes of an app of [@xufa/http](../http) (and fastify), and an explorer to read and try
 them, with no dependencies but [@xufa/yaml](../yaml). The code is the one of
 [@fastify/swagger](https://github.com/fastify/fastify-swagger) 9.9.1 (MIT, `LICENSE.fastify-swagger`) with its test
-suite: `require('@fastify/swagger')` can be replaced by `require('@xufa/openapi')`, and its documentation applies.
+suite: `@fastify/swagger` can be replaced by `@xufa/openapi` (in imports or requires), and its documentation applies.
 
 ```js
-const xufa = require('xufa');
-const openapi = require('@xufa/openapi');
+import xufa from 'xufa';
+import openapi from '@xufa/openapi';
+import openapiUi from '@xufa/openapi/ui';
 
 const app = xufa();
 await app.register(openapi, { openapi: { info: { title: 'Books', version: '1.0.0' } } });
-await app.register(require('@xufa/openapi/ui'), { routePrefix: '/docs' });
+await app.register(openapiUi, { routePrefix: '/docs' });
 
 app.get('/books/:id', { schema: { params: { type: 'object', properties: { id: { type: 'integer' } } } } }, handler);
 
@@ -65,7 +66,7 @@ is written.
 
 ```js
 await app.register(openapi, { mode: 'static', specification: { path: './openapi.yaml' } }); // served as it is
-await app.register(require('@xufa/openapi/ui'));
+await app.register(openapiUi);
 await app.register(openapi.operations, {
   path: './openapi.yaml', // or document: { openapi: '3.1.0', ... }
   handlers: {

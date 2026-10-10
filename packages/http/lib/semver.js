@@ -169,4 +169,4 @@ function gt(a, b) {
   return va !== null && vb !== null && compare(va, vb) > 0;
 }
 
-module.exports = { satisfies, parse, compare, coerce, gt };
+export { satisfies, parse, compare, coerce, gt };

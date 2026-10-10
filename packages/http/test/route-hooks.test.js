@@ -2,7 +2,7 @@
 
 const { Readable } = require('node:stream')
 
-const Fastify = require('@xufa/http')
+const Fastify = require('..')
 
 function endRouteHook (doneOrPayload, done, doneValue) {
   if (typeof doneOrPayload === 'function') {

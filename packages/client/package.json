@@ -4,7 +4,7 @@
   "description": "A client of HTTP APIs on the fetch of Node.js, with no dependencies: base URLs, JSON, timeouts, retries with backoff, errors by status, hooks, logs, and the cancellation of the request that calls",
   "main": "./index.js",
   "types": "./index.d.ts",
-  "type": "commonjs",
+  "type": "module",
   "exports": {
     ".": {
       "types": "./index.d.ts",
@@ -48,7 +48,7 @@
     "@xufa/http": "workspace:*",
     "@xufa/logger": "workspace:*",
     "tsd": "^0.33.0",
-    "vyntra": "^0.6.0"
+    "vyntra": "^0.7.0"
   },
   "publishConfig": {
     "access": "public"

@@ -1,9 +1,9 @@
 // Cron expressions: what they parse to, their errors, and next() against a search minute by minute (and second by
 // second) of the wall clock, for random expressions, in UTC, the local zone and a zone that changes its clock. And
 // the changes of the clock: times that do not exist are skipped, and an hour that repeats is found twice.
-const { Cron, parse } = require('../lib/cron');
-const { zoneOf } = require('../lib/zone');
-const { nextRuns, toMs, SchedulerError } = require('..');
+import { Cron, parse } from '../lib/cron.js';
+import { zoneOf } from '../lib/zone.js';
+import { nextRuns, toMs, SchedulerError } from '../index.js';
 
 const iso = (ms) => new Date(ms).toISOString();
 

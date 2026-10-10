@@ -1,7 +1,4 @@
-'use strict'
-
-
-const FindMyWay = require('../')
+import FindMyWay from '../index.js';
 
 test('maxParamLength default value is 500', () => {
   expect.assertions(1)

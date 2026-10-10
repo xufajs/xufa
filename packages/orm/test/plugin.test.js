@@ -1,5 +1,5 @@
-const xufa = require('@xufa/http');
-const { Database, Model, fields, plugin, NotFoundError } = require('..');
+import xufa from '@xufa/http';
+import { Database, Model, fields, plugin, NotFoundError } from '../index.js';
 
 function makeApp() {
   class Author extends Model {

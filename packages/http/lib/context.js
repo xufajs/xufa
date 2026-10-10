@@ -1,5 +1,5 @@
 // The context of a route: its handler, options, compiled hooks and schemas, and the instance it belongs to.
-const {
+import {
   kFourOhFourContext,
   kReplySerializerDefault,
   kSchemaErrorFormatter,
@@ -20,8 +20,8 @@ const {
   kSchemaBody,
   kSchemaResponse,
   kOptions,
-} = require('./symbols');
-const { fastHeadWorks } = require('./fast-head');
+} from './symbols.js';
+import { fastHeadWorks } from './fast-head.js';
 
 function Context({
   schema,
@@ -106,5 +106,10 @@ function defaultSchemaErrorFormatter(errors, dataVar) {
   return error;
 }
 
-module.exports = Context;
-module.exports.defaultSchemaErrorFormatter = defaultSchemaErrorFormatter;
+export default Context;
+Context.defaultSchemaErrorFormatter = defaultSchemaErrorFormatter;
+
+export { defaultSchemaErrorFormatter };
+
+// What require() gives (the tests of fastify are CommonJS).
+export { Context as 'module.exports' };

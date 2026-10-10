@@ -1,6 +1,7 @@
-'use strict';
+import { EMPTY_BUFFER } from './constants.js';
+import { createRequire } from 'node:module';
 
-const { EMPTY_BUFFER } = require('./constants');
+const require = createRequire(import.meta.url);
 
 const FastBuffer = Buffer[Symbol.species];
 
@@ -140,16 +141,10 @@ function toBuffer(data) {
   return buf;
 }
 
-module.exports = {
-  concat,
-  mask: _mask,
-  toArrayBuffer,
-  toBuffer,
-  unmask: _unmask,
-  // The masking of JavaScript, whether bufferutil is used or not (for the tests), and whether it is.
-  js: { mask: _mask, unmask: _unmask },
-  native: false,
-};
+export const js = { mask: _mask, unmask: _unmask };
+let mask = _mask;
+let unmask = _unmask;
+let native = false;
 
 // bufferutil is not a dependency: it is used when the application has installed it, as ws does, unless
 // WS_NO_BUFFER_UTIL is set. Below the sizes of ws, the call to the add-on costs more than the loop.
@@ -157,18 +152,20 @@ if (!process.env.WS_NO_BUFFER_UTIL) {
   try {
     const bufferUtil = require('bufferutil');
 
-    module.exports.mask = function (source, mask, output, offset, length) {
-      if (length < 48) _mask(source, mask, output, offset, length);
-      else bufferUtil.mask(source, mask, output, offset, length);
+    mask = function (source, key, output, offset, length) {
+      if (length < 48) _mask(source, key, output, offset, length);
+      else bufferUtil.mask(source, key, output, offset, length);
     };
 
-    module.exports.unmask = function (buffer, mask) {
-      if (buffer.length < 32) _unmask(buffer, mask);
-      else bufferUtil.unmask(buffer, mask);
+    unmask = function (buffer, key) {
+      if (buffer.length < 32) _unmask(buffer, key);
+      else bufferUtil.unmask(buffer, key);
     };
 
-    module.exports.native = true;
+    native = true;
   } catch {
     // Not installed: the masking of JavaScript.
   }
 }
+
+export { concat, mask, toArrayBuffer, toBuffer, unmask, native };

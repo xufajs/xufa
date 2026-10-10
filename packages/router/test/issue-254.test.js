@@ -1,7 +1,4 @@
-'use strict'
-
-
-const FindMyWay = require('..')
+import FindMyWay from '../index.js';
 
 test('Constraints should not be overrided when multiple router is created', () => {
   expect.assertions(1)

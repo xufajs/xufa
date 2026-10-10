@@ -1,7 +1,7 @@
 'use strict'
 
 
-const Fastify = require('@xufa/http')
+const Fastify = require('..')
 const jsonParser = require('fast-json-body')
 
 test('Should have typeof body object with no custom parser defined, null body and content type = \'text/plain\'', async () => {

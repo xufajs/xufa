@@ -1,7 +1,4 @@
-'use strict'
-
-
-const boot = require('..')
+import boot from '../index.js';
 const app = {}
 
 boot(app)

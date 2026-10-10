@@ -15,9 +15,9 @@ The authentication of [xufa](../xufa), with no dependencies (everything is `node
   and the routes of logging in, refreshing and logging out.
 
 ```js
-const xufa = require('xufa');
-const { Database, Model, fields, plugin: orm } = require('xufa/orm');
-const auth = require('xufa/auth'); // or require('@xufa/auth')
+import xufa from 'xufa';
+import { Database, Model, fields, plugin as orm } from 'xufa/orm';
+import * as auth from 'xufa/auth'; // or from '@xufa/auth'
 
 class User extends Model {
   static fields = {
@@ -113,7 +113,7 @@ A `KeyVault` keeps the keys of each tenant in a store, the private keys encrypte
 the tenant and the key (a copy of the store is no key, and keys cannot be moved between tenants):
 
 ```js
-const { KeyVault, vaultModelStore, vaultFields } = require('@xufa/auth');
+import { KeyVault, vaultModelStore, vaultFields } from '@xufa/auth';
 
 class TenantKeys extends Model {
   static fields = vaultFields(fields);
@@ -139,6 +139,7 @@ tenants, which is unwise when tenants come from what clients send. A `KeySet` ta
 // Enrolling: the app scans the QR code of the URI, and the user types a code to confirm it.
 const secret = auth.generateSecret();
 const uri = auth.totpUri({ secret, issuer: 'Acme', label: 'ada@example.com' });
+const svg = auth.qrSvg(uri); // the QR code to show: <svg ...>
 const step = auth.verifyTotp(code, secret); // null, or the time step to keep with the user
 ```
 
@@ -147,7 +148,9 @@ clock difference) and returns the step of the code; a code of the step `after` o
 step of each login (`login.onTotp`, `login.lastTotpStep`) makes each code work once. `totp()` and `hotp()` give codes
 (RFC 6238 and RFC 4226: SHA1, SHA256 or SHA512, 6 to 10 digits, any period); `base32Encode()` and `base32Decode()`
 convert secrets. `generateRecoveryCodes(n)` gives codes to log in without the app (keep `hashRecoveryCode(code)` of
-each, and compare the hash of the one given).
+each, and compare the hash of the one given). `qrSvg(text, { level, border, size, dark, light })` draws a QR code
+(no dependencies: byte mode, versions 1 to 40, levels L, M, Q, H); `qrCode(text)` gives its matrix
+(`{ version, size, modules }`), and a text too long throws `QrError`.
 
 The secrets of TOTP are as sensitive as passwords that never change: keep them encrypted, in a field
 `fields.encrypted(fields.string())` of [@xufa/orm](../orm#encrypted-fields) (as in the example).
@@ -269,6 +272,96 @@ app.register(orm.plugin, {
 `app.auth.canUseTenant(request, id)` throws a 401 without a user, and says whether it may use the tenant;
 `auth.tenantsOf(user)` gives the tenants of claims.
 
+## Users
+
+`AbstractUser(Model, fields)` is Django's AbstractUser on the Model and fields of @xufa/orm (given: @xufa/auth does not
+depend on it): `username`, `email`, `password` (its hash), names, `isStaff`, `isSuperuser`, `isActive`,
+`dateJoined`, `lastLogin`, `role` and `permissions`; `setPassword`, `checkPassword`, `hasPerm`,
+`User.createUser()` and `User.createSuperuser()`. `class User extends AbstractUser(Model, fields) {}`. The accounts
+(`model: User`, `loginBy: 'username'`) and the admin (`login: { model: User }`) take it as it is.
+
+## Accounts of a site
+
+For sites with sessions, `auth.accounts` gives the routes of the accounts, as Laravel Breeze: `POST /account/signup`,
+`/login`, `/logout` (`{ everywhere }`), `/password/forgot`, `/password/reset`, `/password/change`, `/email/verify`,
+`/email/resend`, `/sessions/:handle/end`, `GET /me`, `GET /sessions` (the browsers of the user) and `GET /security`;
+with `users.setTotp`, `/totp/start` (a QR code), `/totp/confirm`, `/totp/disable`, and with `recoveryCodes` and
+`users.setRecoveryCodes`, `/recovery-codes` (a recovery code logs in once in place of a code of the app); `app.accounts.required` for the routes that need a user. It needs
+[@xufa/session](../session), and a Mailer of [@xufa/mail](../mail) for the links; the app keeps the users
+(`users: { findByEmail, findById, create, setPassword, markVerified }`). Links are signed tokens: a reset link works
+once and dies when the password changes; a reset or a change ends the other sessions of the user, and an account that
+is not `active(user)` (locked) cannot log in and loses its sessions (`app.accounts.endSessions(user)`: at once).
+For pages: `app.accounts.loginRequired` (to `loginUrl` with `?next=`; 401 for clients that ask for JSON) and
+`permissionRequired(...permissions)` (403), on the roles of `rbac` and the permissions of each user
+(`user.permissions`); `can(user, permission)`, `perms(request)`; and `user` and `perms` in every template.
+
+`auth.pages` (after the accounts) are the HTML pages of Django's `django.contrib.auth.urls` at its addresses and with
+its names: `login/`, `logout/` (POST), `password_change/` (+ `done/`), `password_reset/` (+ `done/`), `reset/:token/`
+and `reset/done/`, with forms of [@xufa/forms](../forms); the app's templates (`views: 'registration'`) or pages of its
+own. Their flows are methods for pages of your own: `authenticate`, `logOut`, `changePassword`, `requestReset`,
+`checkResetToken`, `resetPassword`.
+
+## Credentials
+
+The logins of `auth.accounts`, of the login route of the plugin and of [@xufa/admin](../admin) are one, for logins
+of your own too:
+
+```js
+const credentials = new auth.Credentials({
+  findUser: (email) => User.objects.filter({ email }).first(),
+  totp: (user) => user.totpSecret,
+  setPassword: (user, hash) => User.objects.filter({ pk: user.pk }).update({ password: hash }),
+});
+const user = await credentials.login({ identifier: email, password, code, ip: request.ip }); // or a CredentialError
+```
+
+`login()` answers the same (and takes as long) for a user that is not there, a wrong password and a user that
+`allow(user)` refuses; `active(user)` refuses with 403 (locked) once the password is right; then the code of an
+authenticator app or a recovery code; lockouts by identifier (5) and by address (20); rehashes. The account of a
+user: `changePassword()`, `setPassword()` (the policy of passwords), `startTotp()` (a QR code, the secret kept in
+the session until `confirmTotp()`), `disableTotp()`, `renewRecoveryCodes()` and `state()`, each asking for the
+password again. A `CredentialError` has a `reason`, `statusCode`, `errors` by field, `needsCode`, `recovery` and
+`retryAfter`; `messages` words them your way. Every message users read (and the emails of the links) is a key of
+`AUTH_MESSAGES`: `i18n.translateAuth(auth)` of [@xufa/i18n](../i18n) speaks the language of each request.
+
+## Roles and permissions
+
+`Rbac` gives roles their permissions and users their roles by tenant: an editor in one tenant, a viewer in another,
+and a role in every tenant (`'*'`) or a superuser for the people who run the service. Permissions are names
+(`'Book.change'`); roles list them with patterns (`'Book.*'`, `'*.view'`, `'*'`; a `*` never crosses a dot) and may
+inherit other roles:
+
+```js
+const rbac = new auth.Rbac({
+  roles: {
+    viewer: ['*.view'],
+    editor: { inherits: 'viewer', permissions: ['Book.add', 'Book.change'] },
+    owner: ['*'],
+  },
+  grants: (user) => Membership.objects.filter({ user: user.sub }).values('tenant', 'role'), // [{ role, tenant }]
+  superuser: (user) => user.isSuperuser,
+});
+await rbac.can(user, 'Book.change', { tenant: 'acme' });
+
+app.register(auth.plugin, { keys, login, rbac });
+app.delete('/books/:id', { config: { auth: { can: 'Book.delete' } } }, handler); // in the tenant of the request
+app.get('/books/:id', async (request) => ({ editable: await request.can('Book.change') }));
+```
+
+Without `grants`, a user's grants are `user.grants` (`[{ role, tenant }]` or `{ acme: 'editor' }`), or its `roles` in
+its `tenants` (every tenant without them). `access(user)` is what a user may as plain data (`{ superuser, grants }`),
+for a session or a token, asked with `allows(access, permission, tenant)`. With `rbac`, the tenants of a user are
+those of its grants. The resources of @xufa/orm take `permissions: true` (`Book.view`, `.add`, `.change`,
+`.delete`), and @xufa/admin takes the same `rbac`.
+
+Rules of objects, as Django's `get_queryset` and `has_change_permission(obj)`: a role's `where` (`{ 'Book.change':
+(user) => ({ ownerId: user.id }) }`) limits a permission to some objects; `scopeOf()` gives them (null: all, false:
+none, or conditions), and the resources of the ORM and the admin follow them.
+
+Groups, as Django's: `AbstractGroup(Model, fields)` (a name, permissions, inherits) is a model of roles in the database
+(`new Rbac({ roles, model: Group })`: its rows are roles next to those in code, edited in the admin, seen at once after
+a save), and `AbstractUser(Model, fields, { groups: () => Group })` puts users in them (`user.groups`).
+
 ## Strategies
 
 Each request is tried with the strategies of `strategies`, in order, until one identifies its user: `request.user`,
@@ -277,7 +370,7 @@ Each request is tried with the strategies of `strategies`, in order, until one i
 user answers 401 with the `WWW-Authenticate` challenges of the strategies.
 
 ```js
-const { ApiKey } = require('./models'); // static fields = auth.apiKeyFields(fields)
+import { ApiKey } from './models.js'; // static fields = auth.apiKeyFields(fields)
 
 app.register(auth.plugin, {
   keys: process.env.JWT_KEY,
@@ -324,8 +417,8 @@ has that they read). Tested with passport-local, passport-http, passport-http-be
 passport-jwt and passport-oauth2.
 
 ```js
-const { Strategy: BearerStrategy } = require('passport-http-bearer');
-const { Strategy: GitHubStrategy } = require('passport-github2');
+import { Strategy as BearerStrategy } from 'passport-http-bearer';
+import { Strategy as GitHubStrategy } from 'passport-github2';
 
 // Credentials in every request: one more strategy.
 app.register(auth.plugin, {

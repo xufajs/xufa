@@ -1,7 +1,7 @@
-const { hasDuplicates } = require('./has-duplicates');
-const { assignDefaults } = require('../defaults');
-const { readCoerced } = require('../coerce');
-const { ValidateType, isPlainObject, toType, toTypes } = require('./validate-type');
+import { hasDuplicates } from './has-duplicates.js';
+import { assignDefaults } from '../defaults.js';
+import { readCoerced } from '../coerce.js';
+import { ValidateType, isPlainObject, toType, toTypes } from './validate-type.js';
 
 class ArrayOfType extends ValidateType {
   constructor(options = {}) {
@@ -196,9 +196,4 @@ function oarrOf(type, min, max, isMandatory = false, isNullable = false) {
   return new ArrayOfType({ type, min, max, isMandatory, isNullable });
 }
 
-module.exports = {
-  ArrayOfType,
-  ArrayOf,
-  arrOf,
-  oarrOf,
-};
+export { ArrayOfType, ArrayOf, arrOf, oarrOf };

@@ -1,15 +1,16 @@
 // Connecting: the options of connection strings and of the environment, and what happens before the login (TLS,
 // timeouts), against fake servers that speak only what each test needs.
-const fs = require('node:fs');
-const net = require('node:net');
-const os = require('node:os');
-const path = require('node:path');
-const tls = require('node:tls');
-const { Client, parseConfig, escapeIdentifier, escapeLiteral } = require('..');
-const { paramToText } = require('../lib/types');
+import fs from 'node:fs';
+import net from 'node:net';
+import os from 'node:os';
+import path from 'node:path';
+import tls from 'node:tls';
+import { Client, parseConfig, escapeIdentifier, escapeLiteral } from '../index.js';
+import { paramToText } from '../lib/types.js';
+import * as indexModule from '../index.js';
 
-const KEY = fs.readFileSync(path.join(__dirname, 'fixtures', 'ip-key.pem'));
-const CERT = fs.readFileSync(path.join(__dirname, 'fixtures', 'ip-cert.pem'));
+const KEY = fs.readFileSync(path.join(import.meta.dirname, 'fixtures', 'ip-key.pem'));
+const CERT = fs.readFileSync(path.join(import.meta.dirname, 'fixtures', 'ip-cert.pem'));
 
 // A server on a free port: `onSocket(socket)` talks to each client.
 async function fakeServer(onSocket) {
@@ -294,7 +295,7 @@ describe('connecting', () => {
 
   it('connects to unix sockets by their directory', () => {
     const client = new Client({ host: '/var/run/postgresql', port: 5433, user: 'u' });
-    const { Connection } = require('..');
+    const { Connection } = indexModule;
     const connection = new Connection(client.options);
     expect(connection.address).toEqual({ path: '/var/run/postgresql/.s.PGSQL.5433', name: '/var/run/postgresql' });
   });

@@ -12,13 +12,13 @@
 // Decoding is safe for input from outside: no constructor or global is looked up by a name of the input (only the
 // registered classes and a fixed list of built-ins), constructors are not called (instances are made from their
 // prototype), "__proto__" is a field like any other, and depth and size have limits.
-const { MarshalError, guard } = require('./errors');
-const { types } = require('node:util');
+import { MarshalError, guard } from './errors.js';
+import { types } from 'node:util';
 
 // An error: native (Error.isError, or util.types before Node 24), or of a class that extends Error.
 const isNative = typeof Error.isError === 'function' ? Error.isError : types.isNativeError;
 const isError = (value) => isNative(value) || value instanceof Error;
-const { registry: defaultRegistry } = require('./registry');
+import { registry as defaultRegistry } from './registry.js';
 
 const UNDEFINED = -1;
 const HOLE = -2;
@@ -472,9 +472,9 @@ function parse(text, options) {
   return unmarshal(nodes, options);
 }
 
-module.exports = {
-  marshal: guard(marshal),
-  unmarshal: guard(unmarshal),
-  stringify: guard(stringify),
-  parse: guard(parse),
-};
+const __marshal = guard(marshal);
+const __unmarshal = guard(unmarshal);
+const __stringify = guard(stringify);
+const __parse = guard(parse);
+
+export { __marshal as marshal, __unmarshal as unmarshal, __stringify as stringify, __parse as parse };

@@ -1,9 +1,9 @@
 // A server of the API of S3 for the tests (path style): buckets, objects with metadata, listings in pages of `page`
 // keys, copies, multipart uploads, batch deletes and URLs signed in their query. Every request has to be signed
 // (SigV4: the signature of the request as it arrives, and the hash of its body); what it did is in `log`.
-const http = require('node:http');
-const crypto = require('node:crypto');
-const { signature, sha256, UNSIGNED } = require('../lib/backends/blob/sigv4');
+import http from 'node:http';
+import crypto from 'node:crypto';
+import { signature, sha256, UNSIGNED } from '../lib/backends/blob/sigv4.js';
 
 const xml = (body) => `<?xml version="1.0" encoding="UTF-8"?>${body}`;
 const escape = (text) => text.replace(/[&<>]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' })[c]);
@@ -174,4 +174,4 @@ function fakeS3({ accessKeyId = 'AKIDTEST', secretAccessKey = 'secret/key', regi
   };
 }
 
-module.exports = { fakeS3 };
+export { fakeS3 };

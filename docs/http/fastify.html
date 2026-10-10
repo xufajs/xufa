@@ -87,8 +87,8 @@
             <p>Install it, and change the module the app is made with:</p>
             <pre><code class="language-sh">npm install @xufa/http
 npm uninstall fastify</code></pre>
-            <pre data-run><code class="language-js">// const fastify = require('fastify');
-const fastify = require('@xufa/http'); // the name you call it does not matter
+            <pre data-run><code class="language-js">// import fastify from 'fastify';
+import fastify from '@xufa/http'; // the name you call it does not matter
 const app = fastify({ logger: true });</code></pre>
           </li>
           <li>
@@ -190,9 +190,11 @@ const app = fastify({ logger: true });</code></pre>
           A route that needs what is not supported can still use ajv: <code>setValidatorCompiler()</code> takes any
           compiler, for the app, a plugin or one route.
         </p>
-        <pre><code class="language-js">const Ajv = require('ajv');
+        <pre><code class="language-js">import Ajv from 'ajv';
+import ajvErrors from 'ajv-errors';
+
 const ajv = new Ajv({ allErrors: true });
-require('ajv-errors')(ajv);
+ajvErrors(ajv);
 
 app.register(async (legacy) =&gt; {
   legacy.setValidatorCompiler(({ schema }) =&gt; ajv.compile(schema));
@@ -212,14 +214,14 @@ app.register(async (legacy) =&gt; {
           your own as <code>loggerInstance</code>: pino itself works, with its transports.
         </p>
         <pre><code class="language-js">// Transports, as with fastify: pino is the logger.
-const pino = require('pino');
+import pino from 'pino';
 const app = xufa({ loggerInstance: pino({ transport: { target: 'pino-pretty' } }) });</code></pre>
 
         <h2 id="plugins">Plugins</h2>
         <p><code>xufa.plugin()</code> is fastify-plugin:</p>
-        <pre data-run><code class="language-js">const { plugin } = require('@xufa/http');
+        <pre data-run><code class="language-js">import { plugin } from '@xufa/http';
 
-module.exports = plugin(
+export default plugin(
   async (app, options) =&gt; {
     app.decorate('db', await connect(options.url));
   },

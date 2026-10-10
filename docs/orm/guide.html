@@ -58,6 +58,7 @@
           <li><a href="#rules">Validation rules</a></li>
           <li><a href="#relations">Relations</a></li>
           <li><a href="#keys">Primary keys</a></li>
+          <li><a href="#spec">Models as data</a></li>
           <li><a href="#objects">Objects</a></li>
         </ul>
         <h4>Queries</h4>
@@ -69,6 +70,7 @@
           <li><a href="#writing">Writing in bulk</a></li>
           <li><a href="#scopes">Scopes and soft deletes</a></li>
           <li><a href="#factories">Factories</a></li>
+          <li><a href="#testing">Tests</a></li>
           <li><a href="#transactions">Transactions and locks</a></li>
         </ul>
         <h4>Schema and more</h4>
@@ -125,7 +127,7 @@
             </tbody>
           </table>
         </div>
-        <pre data-run><code class="language-js">const { Database } = require('@xufa/orm');
+        <pre data-run><code class="language-js">import { Database } from '@xufa/orm';
 
 new Database({ backend: 'sqlite', filename: 'app.db' }); // ':memory:' for a database in memory
 new Database({ backend: 'postgres', url: 'postgres://user:password@localhost:5432/app', max: 10 });
@@ -167,7 +169,7 @@ new Database({ backend: 'fs', dir: 'data' }); // data/&lt;table&gt;.json; layout
 });</code></pre>
 
         <h2 id="tour">A quick tour</h2>
-        <pre data-run><code class="language-js">const { Database, Model, fields, or, F, Count, Sum } = require('@xufa/orm');
+        <pre data-run><code class="language-js">import { Database, Model, fields, or, F, Count, Sum } from '@xufa/orm';
 
 class Author extends Model {
   static fields = {
@@ -219,8 +221,12 @@ console.log(await Book.objects.values('author__name').annotate({ books: Count(),
             <tbody>
               <tr><td><code>table</code></td><td>The name of the table (the snake case of the class name by default). Dots are part of the name.</td></tr>
               <tr><td><code>schema</code></td><td>The schema of the table in PostgreSQL. SQLite names the table <code>schema.table</code>, MongoDB the collection.</td></tr>
-              <tr><td><code>ordering</code></td><td>The default order of its QuerySets: <code>['-createdAt', 'name']</code>.</td></tr>
-              <tr><td><code>indexes</code></td><td><code>[['a', 'b'], { fields: ['c'], unique: true }]</code>. In SQL, <code>condition</code> makes a partial index: <code>{ fields: ['c'], unique: true, condition: '"deleted" IS NULL' }</code>.</td></tr>
+              <tr><td><code>ordering</code></td><td>The default order of its QuerySets: <code>['-createdAt', 'name']</code>. A query whose primary key is equal to a value (one row at most) and <code>get()</code> ask for no order, as Django's <code>get()</code>, unless they are sliced.</td></tr>
+              <tr><td><code>indexes</code></td><td><code>[['a', 'b'], { fields: ['c'], unique: true }]</code>. In SQL, <code>condition</code> makes a partial index: <code>{ fields: ['c'], unique: true, condition: '"deleted" IS NULL' }</code>. <code>Lower('email')</code> indexes a text without case. <code>include: ['pk']</code> (PostgreSQL's <code>INCLUDE</code>) keeps more columns in the index, so a query of them reads the index alone; a column that can be NULL is indexed with its NULLs first, as the ORM orders.</td></tr>
+              <tr><td><code>constraints</code></td><td>As Django's <code>Meta.constraints</code>: unique ones (<code>{ unique: ['author', 'title'], message }</code>, or <code>[Lower('name')]</code>: unique whatever the case) and checks (<code>{ check: 'pages &gt; 0', message, field }</code>) (see <a href="#constraints">Constraints</a>).</td></tr>
+              <tr><td><code>label</code>, <code>labelPlural</code></td><td>Its names for people (Django's <code>verbose_name</code>): <code>meta.label</code> is <code>'book instance'</code> of <code>BookInstance</code> by default, with an s in the plural. The titles of the views of @xufa/views and the messages of forms use them.</td></tr>
+              <tr><td><code>display</code></td><td>Its text (Django's <code>__str__</code>): <code>'{lastName}, {firstName}'</code>, with <code>{book.title}</code> of loaded relations, or a function of the object. Without it, <code>'Book object (1)'</code>.</td></tr>
+              <tr><td><code>permissions</code></td><td>Its own permissions (Django's <code>Meta.permissions</code>): <code>{ markReturned: 'Set book as returned' }</code>. <code>meta.permissions</code> lists them after <code>Book.add</code>, <code>.change</code>, <code>.delete</code> and <code>.view</code>.</td></tr>
               <tr><td><code>abstract</code></td><td>A parent whose fields its children get; it has no table. <code>fields.extend(Parent, { ... })</code> writes them for TypeScript.</td></tr>
               <tr><td><code>primaryKey</code></td><td>The fields of a composite primary key, or <code>false</code> for a model without one (see <a href="#keys">Primary keys</a>).</td></tr>
               <tr><td><code>fillfactor</code></td><td>PostgreSQL, 10 to 100: room left in the pages of the table for the new versions of updated rows. Updates of tables updated often get about twice as fast when they change no indexed column.</td></tr>
@@ -229,6 +235,38 @@ console.log(await Book.objects.values('author__name').annotate({ books: Count(),
             </tbody>
           </table>
         </div>
+
+        <h3 id="constraints">Constraints</h3>
+        <p>
+          Constraints are those of Django's <code>Meta.constraints</code>. A unique constraint is a unique index of its
+          fields together, and <code>Lower(name)</code> makes it unique whatever the case of the text (as
+          <code>UniqueConstraint(Lower('name'))</code>). An object that breaks it is a <code>UniqueError</code> (409) with
+          the <code>message</code> of the constraint and its <code>fields</code>, on every backend. A check is a rule of
+          the object, checked before it is saved (a <code>ValidationError</code> with the message under its
+          <code>field</code>).
+        </p>
+<!--run-before: import { Database, Model, fields } from '@xufa/orm'; const db = new Database({ backend: 'sqlite', filename: ':memory:' }); await db.connect(); -->
+        <pre data-run="constraints"><code class="language-js">import { Lower, UniqueError } from '@xufa/orm';
+
+class Genre extends Model {
+  static fields = { name: fields.string({ maxLength: 200 }) };
+  static options = {
+    constraints: [{ unique: [Lower('name')], name: 'genre_name_ci', message: 'Genre already exists (case insensitive match)' }],
+  };
+}
+db.register(Genre);
+await db.sync();
+
+await Genre.objects.create({ name: 'Fantasy' });
+const err = await Genre.objects.create({ name: 'FANTASY' }).catch((e) =&gt; e);
+console.log(err instanceof UniqueError, err.statusCode, err.fields, err.message);</code></pre>
+        <pre data-output><code class="language-plaintext">true 409 [ 'name' ] Genre already exists (case insensitive match)</code></pre>
+        <p>
+          SQL databases index <code>LOWER(name)</code>; MongoDB makes the index with a collation without case (every
+          text of that index is compared without case); the memory and files backends check it. Unique constraints of
+          several fields are checked by the memory and files backends too; rows with a null in them are not compared, as
+          in SQL. Migrations make and drop their indexes.
+        </p>
 
         <h2 id="fields">Fields</h2>
         <div class="table-wrap">
@@ -262,6 +300,28 @@ console.log(await Book.objects.values('author__name').annotate({ books: Count(),
           field can also say its column exactly: <code>sqlType</code> (<code>'VARCHAR(255)'</code>) and
           <code>dbDefault</code> (a <code>DEFAULT</code> of the column).
         </p>
+        <p>
+          <code>choices</code> are values, or values with labels as Django's: a list of <code>[value, label]</code> or an
+          object of labels by value. The values are kept and checked; <code>object.display(name)</code> gives the label
+          (Django's <code>get_status_display()</code>), and the admin and forms show the labels. <code>label</code> and
+          <code>help</code> (Django's <code>verbose_name</code> and <code>help_text</code>) are what forms, the admin and
+          the schemas of the API show of the field; <code>blank: false</code> refuses an empty text (by default a form may
+          leave empty a field with <code>null</code>). <code>unique: 'ci'</code> makes a text unique whatever its case
+          (a unique index of <code>Lower(name)</code>), and <code>messages: { unique }</code> is the message of a value
+          another object has (Django's <code>error_messages</code>).
+        </p>
+        <pre><code class="language-js">class BookInstance extends Model {
+  static fields = {
+    status: fields.string({
+      maxLength: 1,
+      choices: [['d', 'Maintenance'], ['o', 'On loan'], ['a', 'Available'], ['r', 'Reserved']],
+      default: 'd',
+      help: 'Book availability',
+    }),
+    dueBack: fields.date({ null: true, label: 'Due back' }),
+  };
+}
+copy.display('status'); // 'On loan'</code></pre>
         <p>
           <code>datetime</code> and <code>date</code> take PostgreSQL's infinite dates as <code>Infinity</code> and
           <code>-Infinity</code> (or those words as text), after and before every other date. SQLite keeps them as the
@@ -311,7 +371,7 @@ await Place.objects.filter({ tags: ['cafe', 'quiet'] }).count(); // arrays and m
           An index of one datetime field with <code>expireAfter</code> (seconds, or text as <code>'30d'</code>) is a TTL
           index, as MongoDB's: its objects expire that long after the date of the field (<code>0</code>: at the date).
         </p>
-<!--run-before: const { Database, Model, fields } = require('@xufa/orm'); -->
+<!--run-before: import { Database, Model, fields } from '@xufa/orm'; -->
         <pre data-run="ttl"><code class="language-js">class LogEntry extends Model {
   static fields = { message: fields.text(), createdAt: fields.datetime({ autoNowAdd: true }) };
 
@@ -351,7 +411,7 @@ console.log(await Session.objects.valuesList('token', { flat: true }));</code></
           (<code>$xenc$1$&lt;key id&gt;$&lt;iv&gt;$&lt;ciphertext&gt;</code>) in a <code>TEXT</code> column (and in the
           files of the fs backend). The memory backend keeps the values as they are.
         </p>
-<!--run-before: const { Database, Model, fields, setEncryptionKeys, generateEncryptionKey } = require('@xufa/orm');
+<!--run-before: import { Database, Model, fields, setEncryptionKeys, generateEncryptionKey } from '@xufa/orm';
 process.env.ENCRYPTION_KEY = generateEncryptionKey(); -->
         <pre data-run="encrypted"><code class="language-js">setEncryptionKeys({ keys: { k1: process.env.ENCRYPTION_KEY } }); // or XUFA_ENCRYPTION_KEYS='k1:&lt;base64&gt;'
 
@@ -393,7 +453,7 @@ XUFA_ORM_ERR_QUERY</code></pre>
           (<code>decimal</code>, <code>string</code>...) gives the type of the value, which is coerced and validated as
           any other.
         </p>
-<!--run-before: const { Database, Model, fields } = require('@xufa/orm'); -->
+<!--run-before: import { Database, Model, fields } from '@xufa/orm'; -->
         <pre data-run="computed"><code class="language-js">class Line extends Model {
   static fields = {
     product: fields.string(),
@@ -446,7 +506,7 @@ console.log(big.map((l) =&gt; [l.total, l.label, l.big, l.code]));</code></pre>
           <a href="../expression/index.html">@xufa/expression</a>, functions, or either with its message. A rule gives true when
           the value is valid, false when it is not (its message, or a default one), or a string: the message.
         </p>
-<!--run-before: const { Database, Model, fields } = require('@xufa/orm'); -->
+<!--run-before: import { Database, Model, fields } from '@xufa/orm'; -->
         <pre data-run="rules"><code class="language-js">class Event extends Model {
   static fields = {
     name: fields.string({ validate: { rule: 'value.trim().length >= 3', message: 'At least 3 characters.' } }),
@@ -495,7 +555,11 @@ for (const data of [
           (<code>selectRelated</code>, <code>prefetchRelated</code>, <code>await book.load('author')</code>, or
           assigned), the object in <code>author</code>. The model it points to gets the reverse relation,
           <code>relatedName</code> (<code>&lt;model&gt;Set</code> by default): <code>author.books</code> is a QuerySet,
-          and <code>author.books.create()</code> sets the key.
+          and <code>author.books.create()</code> sets the key. <code>prefetchRelated('books', 'books__publisher')</code>
+          follows paths, and a loaded QuerySet is read without waiting (<code>[...author.books]</code>, or
+          <code>{{#each author.books as book}}</code> in a template); one that is not loaded says how to load it. A delete
+          refused by <code>protect</code> throws a <code>ProtectedError</code> with <code>protectedObjects</code> (a
+          QuerySet of what keeps it, Django's <code>protected_objects</code>) and <code>relation</code>.
         </p>
         <div class="table-wrap">
           <table>
@@ -516,6 +580,37 @@ for (const data of [
           QuerySet of the tags of a book, with <code>add()</code>, <code>remove()</code>, <code>set()</code> and
           <code>clear()</code>; <code>tag.books</code> (its <code>relatedName</code>) is the other way. Both can be in
           conditions (<code>Book.objects.filter({ tags__name: 'x' })</code>) and in <code>prefetchRelated</code>.
+        </p>
+
+        <h2 id="spec">Models as data</h2>
+        <p>
+          A model can be data instead of a class: <code>modelsFromSpec(spec)</code> makes the classes of
+          <code>{ Name: { fields, ...options } }</code>, each field its type and the options of that type, and
+          <code>specOf(Model)</code> gives the spec of any model, of code too (options that are functions are left
+          out, named in <code>code</code>). Relations name their model: one of the spec, <code>'self'</code>, or another
+          that <code>resolve(name)</code> finds; <code>array</code> and <code>encrypted</code> take the field they hold as
+          <code>of</code>. Rules and computed fields are <a href="#rules">expressions</a>, so a spec is data throughout:
+          in a <a href="../guide.html#project">project</a>, an app's <code>models.yaml</code> is one.
+        </p>
+        <pre><code class="language-js">import { modelsFromSpec, specOf } from '@xufa/orm';
+
+const [Author, Book] = modelsFromSpec({
+  Author: { ordering: ['lastName'], fields: { lastName: { type: 'string', maxLength: 100 } } },
+  Book: {
+    permissions: { lend: 'Can lend a book' },
+    fields: {
+      title: { type: 'string', maxLength: 200 },
+      isbn: { type: 'string', maxLength: 13, validate: [{ rule: 'value.length == 13', message: 'Thirteen digits' }] },
+      author: { type: 'foreignKey', to: 'Author', null: true, onDelete: 'setNull' },
+      tags: { type: 'array', of: { type: 'string', maxLength: 20 }, default: [] },
+    },
+  },
+});
+db.register(Author, Book);
+specOf(Book).fields.author; // { type: 'foreignKey', to: 'Author', null: true, onDelete: 'setNull' }</code></pre>
+        <p>
+          They are models as any other: migrations, the admin, forms and views take them. What they cannot have is code:
+          methods, hooks, defaults that are functions, and the types TypeScript infers from a class.
         </p>
 
         <h2 id="keys">Primary keys</h2>
@@ -599,7 +694,7 @@ for (const data of [
           </table>
         </div>
 <!--run-setup:
-const { Database, Databases, Tenants, Model, fields } = require('@xufa/orm');
+import { Database, Databases, Tenants, Model, fields } from '@xufa/orm';
 class Author extends Model {
   static fields = { name: fields.string(), country: fields.string({ null: true }) };
 }
@@ -633,7 +728,7 @@ await Account.objects.create({ owner: 'Ada', balance: 500 });
           With these books: <em>Notes on the Engine</em> (Ada, 120 pages, 8 chapters), <em>Letters</em> (Ada, 600 pages,
           40 chapters), <em>Compilers</em> (Grace, 450 pages, 50 chapters) and <em>Draft</em> (Grace, no pages yet):
         </p>
-        <pre data-run="conditions"><code class="language-js">const { Q, and, or, not, F, Raw } = require('@xufa/orm');
+        <pre data-run="conditions"><code class="language-js">import { Q, and, or, not, F, Raw } from '@xufa/orm';
 const titles = async (query) =&gt; (await query).map((book) =&gt; book.title);
 
 console.log(await titles(Book.objects.filter(or({ pages__gte: 500 }, { author__name: 'Ada' }))));
@@ -692,8 +787,54 @@ console.log((await Book.objects.filter({ pages__gt: 300 }).intersection(byGrace)
           every query, then combined, ordered and sliced.
         </p>
 
+        <h3 id="pagination">Pages</h3>
+        <p>
+          A <code>Paginator</code> gives the pages of a QuerySet (ordered) or a list, as Django's: the objects of a page,
+          how many there are, the pages before and after, and the numbers of a pager.
+        </p>
+        <pre data-run="pagination"><code class="language-js">import { Paginator, InvalidPage } from '@xufa/orm';
+
+const paginator = new Paginator(Book.objects.orderBy('title'), 2);
+const page = await paginator.page('2'); // a number, or its text (?page=2)
+console.log(page.objectList.map((book) =&gt; book.title), page.number, await paginator.numPages());
+console.log(page.hasPrevious, page.hasNext, page.startIndex, page.endIndex);
+
+const wrong = await paginator.page(9).catch((err) =&gt; err);
+console.log(wrong instanceof InvalidPage, wrong.statusCode, (await paginator.getPage(9)).number);</code></pre>
+        <pre data-output><code class="language-plaintext">[ 'Letters', 'Notes on the Engine' ] 2 2
+true false 3 4
+true 404 2</code></pre>
+        <p>
+          <code>page(n)</code> throws <code>PageNotAnInteger</code> or <code>EmptyPage</code> (both
+          <code>InvalidPage</code>, with status 404: a route that lets it go answers 404); <code>getPage(n)</code> gives
+          the first page for a number that is not one and the last past the end. <code>orphans</code> joins a short last
+          page to the one before it; <code>elidedPageRange(n, { onEachSide, onEnds })</code> gives the numbers of a pager
+          (<code>[1, 2, '…', 9, 10, 11, '…', 49, 50]</code>). The objects are counted once, with one query.
+        </p>
+        <p>
+          A page far away costs more: <code>OFFSET 1990</code> makes the database read and leave 1,990 rows. A
+          <code>KeysetPaginator</code> pages by keys instead (cursor pagination, as Django REST framework's
+          <code>CursorPagination</code>): a page is the objects after those of the page shown, by the order of the
+          QuerySet with its primary key last, so with an index of that order every page costs what the first does, and
+          objects added meanwhile do not shift the pages. It has no numbers nor count: cursors to the next and previous
+          pages.
+        </p>
+        <p>
+          Numbered pages far into a list are helped too, in PostgreSQL: a query with an <code>OFFSET</code> of 100 or more
+          asks for the keys of its page first (<code>WHERE id IN (SELECT id ... ORDER BY ... LIMIT 10 OFFSET 1990)</code>)
+          and then for those rows with their relations, instead of reading, joining and leaving every row before the page.
+          With an index of the order that includes the key (<code>{ fields: ['title', 'author'], include: ['pk'] }</code>),
+          the rows before the page are skipped in the index alone.
+        </p>
+        <pre><code class="language-js">import { KeysetPaginator } from '@xufa/orm';
+
+const paginator = new KeysetPaginator(Book.objects.orderBy('title'), 10);
+const page = await paginator.page(request.query.cursor); // the first page without one; InvalidPage (404) for a wrong one
+page.objectList; // the books of the page
+page.nextCursor; // ?cursor= of the next page (null at the end); previousCursor goes back</code></pre>
+
         <h2 id="aggregates">Aggregates</h2>
-        <pre data-run="aggregates"><code class="language-js">const { Count, Sum, Avg, Min, Max, Raw } = require('@xufa/orm');
+        <pre data-run="aggregates"><code class="language-js">import { Count, Sum, Avg, Min, Max, Raw } from '@xufa/orm';
 
 console.log(await Book.objects.aggregate({ books: Count(), pages: Avg('pages') }));
 console.log(await Book.objects.values('author__name').annotate({ books: Count(), longest: Max('pages') }));
@@ -729,7 +870,7 @@ console.log(await Book.objects.aggregate({ long: Raw('SUM(CASE WHEN pages &gt; 3
           the starts of dates, as Django's <code>ExtractMonth</code> and <code>TruncMonth</code>: grouped by
           <code>annotate()</code>, they make reports by year, month, week or hour, on every backend.
         </p>
-<!--run-before: const { Extract, Trunc, Count, Sum } = require('@xufa/orm');
+<!--run-before: import { Extract, Trunc, Count, Sum } from '@xufa/orm';
 class Sale extends Model {
   static fields = { amount: fields.integer(), at: fields.datetime(), day: fields.date() };
 }
@@ -757,7 +898,7 @@ console.log(await Sale.objects.filter({ amount: 10 }).values('amount', { hour: E
 [ { amount: 10, hour: 10, month: 2026-01-01T00:00:00.000Z } ]</code></pre>
         <ul>
           <li><code>Extract</code>: <code>year</code>, <code>quarter</code>, <code>month</code>, <code>week</code> (ISO), <code>day</code>, <code>week_day</code> (1 is Sunday), <code>iso_week_day</code> (1 is Monday); of datetimes <code>hour</code>, <code>minute</code>, <code>second</code>. <code>Trunc</code>: <code>year</code>, <code>quarter</code>, <code>month</code>, <code>week</code> (Monday), <code>day</code>; of datetimes <code>hour</code>, <code>minute</code>, <code>second</code>. All in UTC; no date gives <code>null</code>.</li>
-          <li>Groups are ordered by their keys (<code>orderBy('month')</code>, <code>'-total'</code>) and sliced; <code>distinct()</code> of them gives each value once. To filter by them, use the conditions of parts of dates (<code>at__month: 1</code>).</li>
+          <li>Groups are ordered by their keys (<code>orderBy('month')</code>, <code>'-total'</code>) and sliced; so are plain <code>values()</code>, by the expression of the key (<code>values('title', { month: Extract('at', 'month') }).orderBy('-month', 'title')</code>; no date first going up, last going down); <code>distinct()</code> of them gives each value once. To filter by them, use the conditions of parts of dates (<code>at__month: 1</code>).</li>
           <li>SQLite takes them with <code>strftime</code>, PostgreSQL with <code>EXTRACT</code> and <code>date_trunc</code> (<code>AT TIME ZONE 'UTC'</code>), MongoDB with <code>$month</code>... and <code>$dateTrunc</code> (MongoDB 5.0 or later), memory and files in JavaScript.</li>
         </ul>
 
@@ -813,6 +954,25 @@ console.log(await Post.objects.count());</code></pre>
 3</code></pre>
         <ul>
           <li>Scopes take arguments after the queryset, and give a queryset; those of a parent model are the child's too. A scope cannot have the name of a method of querysets.</li>
+          <li>In TypeScript, <code>Model.query()</code> has them typed, with their arguments, chained with the methods of querysets (those that give objects; after <code>values()</code> there are none):</li>
+        </ul>
+        <pre data-run><code class="language-ts">import { Model, fields, type Fields, type QuerySet } from '@xufa/orm';
+
+const postFields = { title: fields.string(), status: fields.string(), views: fields.integer() };
+class Post extends Model {
+  static fields = postFields;
+
+  static scopes = {
+    published: (qs: QuerySet&lt;Post&gt;) =&gt; qs.filter({ status: 'published' }),
+    popular: (qs: QuerySet&lt;Post&gt;, min = 100) =&gt; qs.filter({ views__gte: min }),
+  };
+}
+interface Post extends Fields&lt;typeof postFields&gt; {}
+
+export async function front(): Promise&lt;Post[]&gt; {
+  return Post.query().published().orderBy('-views').popular(50).limit(10); // Post.query().popular('many'): an error
+}</code></pre>
+        <ul>
           <li><code>withDeleted()</code> gives the objects deleted too, <code>onlyDeleted()</code> those alone; <code>restore()</code> (of an object or a queryset) takes them back, and <code>forceDelete()</code> deletes for good. <code>object.isDeleted</code> tells.</li>
           <li><code>delete()</code> of a queryset sets the date of the objects not deleted yet. A soft delete does not cascade (the related objects stay); a delete for good takes the related objects with it, those deleted softly too. Hooks get <code>{ soft }</code>.</li>
         </ul>
@@ -822,7 +982,7 @@ console.log(await Post.objects.count());</code></pre>
           Factories make objects for tests and seeds, as Laravel's model factories: the values of each field, made again
           for every object.
         </p>
-        <pre data-run><code class="language-js">const { factory, sequence } = require('@xufa/orm');
+        <pre data-run><code class="language-js">import { factory, sequence } from '@xufa/orm';
 
 class Team extends Model {
   static fields = { name: fields.string() };
@@ -851,6 +1011,34 @@ console.log(members.map((member) =&gt; `${member.name} ${member.color}`));</code
           <li><code>create()</code> saves, <code>make()</code> does not; <code>createMany(count)</code> and <code>makeMany(count)</code> make several (<code>bulkCreate</code>). States (<code>state('admin')</code>) and the values given replace those of the factory; <code>using(db)</code> makes them in another database.</li>
         </ul>
 
+        <h2 id="testing">Tests</h2>
+        <p>
+          As Django's <code>TestCase</code>: each test runs in a transaction rolled back at its end, so it starts with the
+          data made once before the tests, and leaves nothing. Every query of the database is part of it, from the test
+          and from the requests it makes to the app (<code>app.inject()</code>); transactions inside it are savepoints.
+        </p>
+        <pre><code class="language-js">import { test, before, after, beforeEach, afterEach } from 'node:test';
+import { rollbackEach } from '@xufa/orm';
+
+let app;
+before(async () =&gt; {
+  app = await build({ databaseUrl: 'sqlite::memory:', migrate: true });
+  await factory(Author, { name: (n) =&gt; `Author ${n}` }).createMany(3); // for every test
+});
+after(() =&gt; app.close());
+rollbackEach(() =&gt; app.db, { beforeEach, afterEach }); // with vyntra, jest or mocha: rollbackEach(db)
+
+test('POST /books makes a book', async () =&gt; {
+  await app.inject({ method: 'POST', url: '/books', payload: { title: 'Notes' } });
+  assert.equal(await Book.objects.count(), 1); // and 0 again in the next test
+});</code></pre>
+        <ul>
+          <li>Memory, files, SQLite (in memory, and in a file: a connection of its own for the tests) and PostgreSQL (a connection of the pool) roll back; MongoDB rolls back on a replica set, without savepoints.</li>
+          <li>Databases that cannot (MongoDB alone, mail, storage) are emptied after each test instead: <code>db.flush()</code> deletes every object of their models. <code>mode: 'flush'</code> or <code>'rollback'</code> choose; <code>'auto'</code> rolls back when it can.</li>
+          <li>By hand: <code>db.beginTest()</code> and <code>db.rollbackTest()</code>. A <code>Databases</code> or a list of databases rolls each one back.</li>
+          <li><a href="#tenants">Tenants</a> too (<code>rollbackEach([db, tenants])</code>): the databases of the tenants open when a test starts, and those it opens (<code>tenants.onOpen()</code>), once set up. <code>xufa test</code> runs the tests of an app with <code>NODE_ENV=test</code>.</li>
+        </ul>
+
         <h2 id="transactions">Transactions and locks</h2>
         <pre data-run="transactions"><code class="language-js">await db.transaction(async () =&gt; {
   const account = await Account.objects.selectForUpdate().get({ pk: 1 }); // FOR UPDATE (PostgreSQL)
@@ -877,13 +1065,20 @@ Not enough money 400</code></pre>
         <p>
           The queries inside the function run in the transaction, wherever they are in your code. Nested transactions are
           savepoints. <code>selectForUpdate({ skipLocked, noWait, mode: 'share' })</code> locks the rows read. MongoDB has
-          transactions on replica sets and sharded clusters, without savepoints.
+          transactions on replica sets and sharded clusters, without savepoints; a transaction that conflicts with another
+          (a write conflict) runs again, as the official drivers do, for 120 s (<code>db.transaction(fn, { retry: false
+          })</code>: once; <code>{ timeout }</code>), so its function should only write through the ORM.
         </p>
         <p>
           In a SQLite file each transaction has a connection of its own, so the queries outside it read what is
           committed without waiting. SQLite has one writer: the transactions of a process run one after another, and a
-          write outside them that meets their locks waits for them to commit. Locks of another process fail at once
-          (<code>SQLITE_BUSY</code>).
+          write outside them that meets their locks waits for them to commit. A write outside transactions that meets
+          the lock of another process (several workers on one file) is tried again a little later, without blocking the
+          process, for up to <code>busyTimeout</code> (5000 ms, as Python's sqlite3 and so Django; <code>0</code>: it
+          fails at once, <code>SQLITE_BUSY</code>), and so are the <code>BEGIN</code> and <code>COMMIT</code> of
+          transactions. A statement inside a transaction that meets such a lock fails at once: waiting there can lock two
+          processes up. A transaction that writes takes the lock at its start, where it waits, with
+          <code>{ mode: 'immediate' }</code>.
         </p>
 
         <h2 id="migrations">Migrations</h2>
@@ -899,7 +1094,7 @@ Not enough money 400</code></pre>
           lists them.
         </p>
         <pre data-run><code class="language-js">// migrations/0003_rename.js: written by hand
-module.exports = {
+export default {
   operations: [
     { op: 'renameColumn', table: 'book', from: 'name', to: 'title' },
     { op: 'sql', sql: 'CREATE INDEX book_title_trgm ON book USING gin (title gin_trgm_ops)' },
@@ -991,8 +1186,11 @@ new Database({ backend: 'azure-blob', container: 'uploads', connectionString: 'U
         <h2 id="mail">Email</h2>
         <p>
           Email is a backend too: a model whose objects are messages, in a database of <code>smtp</code> (a server of
-          mail) or <code>memory-mail</code> (kept in memory, for tests, as Django's locmem backend). Creating an object
-          sends it; <code>fields.mailInfo()</code> are what the sending gave.
+          mail), <code>memory-mail</code> (kept in memory, for tests, as Django's locmem backend) or
+          <code>console-mail</code> (written to the console as it would be sent, and kept, for development, as Django's
+          console backend; <code>write(text)</code> writes it elsewhere). Creating an object sends it;
+          <code>fields.mailInfo()</code> are what the sending gave. Their URLs, as an <code>EMAIL_URL</code>:
+          <code>smtp://</code>, <code>smtps://</code>, <code>console:</code> and <code>memory-mail:</code>.
         </p>
         <pre data-run><code class="language-js">class Email extends Model {
   static fields = {
@@ -1030,7 +1228,7 @@ console.log(await Email.objects.filter({ subject__startswith: 'Your' }).count())
           <li><strong>Send the models that do not go to <code>default</code></strong>, by name in <code>routes</code>, or in the model itself with the option <code>database</code>. Only the exceptions are written down.</li>
           <li><strong>Register the models</strong> in the <code>Databases</code>: each one is put in its database, and <code>Book.objects</code> queries it from then on.</li>
         </ol>
-        <pre><code class="language-js">const { Databases, Model, fields } = require('@xufa/orm');
+        <pre><code class="language-js">import { Databases, Model, fields } from '@xufa/orm';
 
 class Session extends Model {
   static fields = { token: fields.string() };
@@ -1102,12 +1300,14 @@ console.log(Note.db.name, Note.db.backend.name, Visit.db.name, Visit.db.backend.
           With <code>Tenants</code>, each tenant (a customer, an organization) has its own data: <code>config(id)</code>
           says where, and code run in a tenant uses its databases. The databases of a tenant are opened (and set up) the
           first time it is used, and those of the last <code>max</code> tenants used are kept open. With the HTTP plugin,
-          each request runs in its tenant (see <a href="#http">With @xufa/http</a>).
+          each request runs in its tenant (see <a href="#http">With @xufa/http</a>). The models of a
+          <code>Tenants</code> are queried in a tenant only: outside one, their queries throw (<code>it is a model of
+          tenants</code>) instead of reaching a tenant's database opened before.
         </p>
 
         <h3 id="tenant-database">One database per tenant</h3>
         <p><code>config</code> gives the options of one database: every model of the tenant is in it.</p>
-        <pre><code class="language-js">const { Tenants } = require('@xufa/orm');
+        <pre><code class="language-js">import { Tenants } from '@xufa/orm';
 
 const tenants = new Tenants({
   models: [Author, Book],
@@ -1269,7 +1469,7 @@ update ada [
             </tbody>
           </table>
         </div>
-        <pre><code class="language-js">const { bus } = require('@xufa/cluster');
+        <pre><code class="language-js">import { bus } from '@xufa/cluster';
 const db = new Database({ backend: 'postgres', url, cache: new LocalCache({ bus, max: 50000 }) });</code></pre>
         <p>
           A cache that fails to read or to write is a miss: the database answers, and <code>onCacheError(err, { operation })</code>
@@ -1299,7 +1499,7 @@ const db = new Database({ backend: 'postgres', url, cache: new LocalCache({ bus,
         <pre><code class="language-js">const rates = orm.cached(async (currency) =&gt; fetchRates(currency), { ttl: 600000 });</code></pre>
 
         <h2 id="http">With @xufa/http</h2>
-        <pre><code class="language-js">const orm = require('@xufa/orm');
+        <pre><code class="language-js">import * as orm from '@xufa/orm';
 
 app.register(orm.plugin, { database: db, migrate: { dir: 'migrations' } });
 // or { database: db, sync: true }, or { tenants: { tenants, resolve, authorize } }: below</code></pre>
@@ -1347,7 +1547,7 @@ await orm.withSignal(signal, async () =&gt; report());</code></pre>
           sees it: the store of <a href="../http/guide.html#maintenance">xufa.maintenance</a>, which
           <code>xufa down --everywhere</code> sets.
         </p>
-        <pre><code class="language-js">const { maintenance } = require('@xufa/orm');
+        <pre><code class="language-js">import { maintenance } from '@xufa/orm';
 
 app.register(xufa.health, { checks: { database: db.health({ slow: '200ms' }) } });
 app.register(xufa.maintenance, { store: maintenance(db) });
@@ -1393,7 +1593,7 @@ app.register(orm.resource(Author, { actions: ['list', 'get'] }), { prefix: '/aut
           <li><code>writable</code> or <code>readOnly</code>: what bodies set (all but the primary key and the fields the ORM sets). Other fields of the model in a body are ignored; keys that are no field are a 400.</li>
           <li><code>strict: true</code>: those other fields are refused too, every key refused in one <code>ValidationError</code> (400 with <code>errors</code> by key: <code>{ id: ['This field is read-only.'] }</code>). In a PUT or PATCH, a read-only key with the value the object has is taken (a body can be the object as it was read). With @xufa/openapi, the object answered is one schema in <code>components/schemas</code> (named by the model, or by <code>openapi: { component }</code>), and the documented bodies list the read-only fields as <code>readOnly</code>, with what the resource does with them (ignored, or refused with <code>strict</code>).</li>
           <li><code>filters</code>, <code>ordering</code> and <code>search</code>: the query parameters lists take (others are a 400); <code>pageSize</code> (50), <code>maxPageSize</code> (500), <code>pagination: false</code>, <code>lookup</code> (the field of <code>/:id</code>).</li>
-          <li><code>auth</code>: the rule of <a href="../auth/index.html">@xufa/auth</a> for every action, or one by action. <code>hooks</code>: <code>beforeCreate</code>, <code>afterCreate</code>, <code>beforeUpdate</code>, <code>afterUpdate</code>, <code>beforeDelete</code>.</li>
+          <li><code>auth</code>: the rule of <a href="../auth/index.html">@xufa/auth</a> for every action, or one by action. <code>permissions</code>: <code>true</code> (the name of the model) or a name, the permissions of the <a href="../auth/guide.html#rbac">roles of @xufa/auth</a> each action needs in the tenant of the request: <code>Book.view</code> (list, get), <code>Book.add</code>, <code>Book.change</code> and <code>Book.delete</code>, over <code>auth</code>. <code>hooks</code>: <code>beforeCreate</code>, <code>afterCreate</code>, <code>beforeUpdate</code>, <code>afterUpdate</code>, <code>beforeDelete</code>.</li>
           <li>Errors are answered with their status: 400 (with the messages of each field), 404, and 409 for duplicates and protected objects.</li>
           <li><code>openapi</code>: with <a href="../openapi/index.html">@xufa/openapi</a>, the routes are documented (operations, parameters, bodies and objects from <code>Model.schema()</code>, responses, security): <code>{ tag }</code> names their tag, <code>false</code> leaves them out. Only documented: what they accept and answer does not change.</li>
         </ul>
@@ -1429,7 +1629,7 @@ db.faults.clear(); // no more faults</code></pre>
           <code>Model.schema()</code> gives the JSON Schema of the objects of a model as <a href="../schema/index.html">@xufa/schema</a>
           makes them: its functions take it, and in TypeScript it carries the type of the objects (as JSON).
         </p>
-        <pre><code class="language-js">const { s } = require('@xufa/schema');
+        <pre><code class="language-js">import { s } from '@xufa/schema';
 
 const BookOut = Book.schema(); // the objects: replies
 const NewBook = s.omit(Book.schema({ input: true, additionalProperties: false }), ['id', 'createdAt']);

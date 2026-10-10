@@ -5,6 +5,12 @@ class MongoError extends Error {
   constructor(message, options) {
     super(message, options);
     this.name = 'MongoError';
+    // Labels of the server (TransientTransactionError...), or of the driver for errors of the network.
+    this.errorLabels = [];
+  }
+
+  hasErrorLabel(label) {
+    return this.errorLabels.includes(label);
   }
 }
 
@@ -28,10 +34,6 @@ class MongoServerError extends MongoError {
     this.reply = reply;
     if (writeError) this.writeErrors = reply.writeErrors;
   }
-
-  hasErrorLabel(label) {
-    return this.errorLabels.includes(label);
-  }
 }
 
-module.exports = { MongoError, MongoNetworkError, MongoServerError };
+export { MongoError, MongoNetworkError, MongoServerError };

@@ -6,7 +6,7 @@ expressions; a schema converts, fills in defaults and checks (every error at onc
 shown; and it is frozen, with `get('a.b')` failing for keys that are not there. No dependencies outside xufa.
 
 ```js
-const { loadConfig } = require('@xufa/config'); // or require('xufa/config')
+import { loadConfig } from '@xufa/config'; // or from 'xufa/config'
 
 const config = loadConfig({
   envPrefix: 'APP',
@@ -51,7 +51,8 @@ The variables are those of the process (the `environment` option), with what `.e
 libraries that read it.
 
 `KEY=value` lines: `export ` before a key, values in double quotes with escapes (`\n`, `\"`) and on several lines, in
-single quotes as written, unquoted with a comment after ` #`. `parseDotenv(text)` reads one.
+single quotes as written, unquoted with a comment after ` #`. `parseDotenv(text)` reads one, and
+`readConfigFile(file)` one file of JSON, YAML or JS as the layers read them.
 
 ## Remote sources
 
@@ -60,7 +61,7 @@ merged in their order after the files and before the variables of the environmen
 server says.
 
 ```js
-const { loadRemoteConfig, sources } = require('@xufa/config');
+import { loadRemoteConfig, sources } from '@xufa/config';
 
 const config = await loadRemoteConfig({
   schema,

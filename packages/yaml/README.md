@@ -1,10 +1,10 @@
 # @xufa/yaml
 
 YAML 1.2 for Node.js with no dependencies: the code of [js-yaml](https://github.com/nodeca/js-yaml) 4.1.0 (MIT,
-`LICENSE.js-yaml`) and its test suite. `require('js-yaml')` can be replaced by `require('@xufa/yaml')`.
+`LICENSE.js-yaml`) and its test suite. `js-yaml` can be replaced by `@xufa/yaml` (in imports or requires).
 
 ```js
-const yaml = require('@xufa/yaml');
+import yaml from '@xufa/yaml';
 
 const doc = yaml.load(fs.readFileSync('openapi.yaml', 'utf8')); // one document (safe: no code is run)
 const docs = yaml.loadAll(text); // every document of a stream

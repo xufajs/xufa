@@ -1,8 +1,11 @@
 // Masking 8 bytes at a time (lib/buffer-util.js) gives what masking byte by byte gives: every size around the
 // threshold and the words, every alignment of the buffer and of the offset of the output, and in place. The same for
 // bufferutil when it is installed (a devDependency here), and for what is exported (one or the other).
-const crypto = require('node:crypto');
-const bufferUtil = require('../../lib/buffer-util');
+import crypto from 'node:crypto';
+import * as bufferUtil from '../../lib/buffer-util.js';
+import { createRequire } from 'node:module';
+
+const require = createRequire(import.meta.url);
 
 const reference = (source, key) => Buffer.from(source.map((byte, i) => byte ^ key[i & 3]));
 const SIZES = [0, 1, 7, 8, 9, 63, 383, 384, 385, 391, 392, 1000, 4096, 65537];

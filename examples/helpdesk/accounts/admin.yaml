@@ -1,0 +1,5 @@
+User:
+  list: [username, email, isStaff]
+Organization:
+  list: [name, slug]
+  search: [name, slug]

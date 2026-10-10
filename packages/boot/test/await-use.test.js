@@ -1,8 +1,5 @@
-'use strict'
-
-
-const { setTimeout: sleep } = require('node:timers/promises')
-const boot = require('..')
+import { setTimeout as sleep } from 'node:timers/promises';
+import boot from '../index.js';
 
 test('await use - nested plugins with same tick callbacks', async () => {
   const app = {}

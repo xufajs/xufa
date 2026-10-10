@@ -1,0 +1,32 @@
+{{extends 'base_generic'}}
+
+{{#block content}}
+<h1>Author: {{ author }}</h1>
+<p>{{ author.dateOfBirth }} - {{ author.dateOfDeath }}</p>
+
+<div style="margin-left: 20px; margin-top: 20px">
+  <h4>Books</h4>
+
+  <dl>
+    {{#each books as book}}
+    <dt><a href="{{ url('book-detail', book.pk) }}">{{ book }}</a> ({{ book.copies }})</dt>
+    <dd>{{ book.summary }}</dd>
+    {{else}}
+    <p>This author has no books.</p>
+    {{/each}}
+  </dl>
+</div>
+{{/block content}}
+
+{{#block sidebar}}
+{{ block.super }} {{#if perms.has('Author.change') || perms.has('Author.delete')}}
+<hr />
+<ul class="sidebar-nav">
+  {{#if perms.has('Author.change')}}
+  <li><a href="{{ url('author-update', author.pk) }}">Update author</a></li>
+  {{/if}} {{#if !books.length && perms.has('Author.delete')}}
+  <li><a href="{{ url('author-delete', author.pk) }}">Delete author</a></li>
+  {{/if}}
+</ul>
+{{/if}}
+{{/block sidebar}}

@@ -6,11 +6,11 @@
 // node tools/bench-linux/run.js [--distro Ubuntu] <script of bench/> [its options]
 //   node tools/bench-linux/run.js inproc --rounds 5 --duration 2 --out results/inproc-linux-3
 //   node tools/bench-linux/run.js run --duration 6 --warmup 2 --out results/full-linux-3
-const { spawnSync } = require('node:child_process');
-const fs = require('node:fs');
-const path = require('node:path');
+import { spawnSync } from 'node:child_process';
+import fs from 'node:fs';
+import path from 'node:path';
 
-const ROOT = path.join(__dirname, '../..');
+const ROOT = path.join(import.meta.dirname, '../..');
 
 // A path of Windows as WSL mounts it: C:\work\xufa is /mnt/c/work/xufa.
 function linuxPath(windowsPath) {
@@ -44,7 +44,7 @@ function main() {
     throw new Error('Usage: node tools/bench-linux/run.js [--distro Ubuntu] <script of bench/> [its options]');
   }
   const version = process.version;
-  const setup = `bash ${quote(`${linuxPath(__dirname)}/setup.sh`)} ${quote(linuxPath(ROOT))} ${quote(version)}`;
+  const setup = `bash ${quote(`${linuxPath(import.meta.dirname)}/setup.sh`)} ${quote(linuxPath(ROOT))} ${quote(version)}`;
   if (wsl(distro, setup) !== 0) throw new Error('Making the copy of the repository in WSL failed');
 
   const run = [
@@ -69,7 +69,7 @@ function main() {
   }
 }
 
-if (require.main === module) {
+if (process.argv[1] === import.meta.filename) {
   try {
     main();
   } catch (err) {
@@ -79,4 +79,5 @@ if (require.main === module) {
 }
 
 // For test.js: the same copy of the repository, to run the tests there.
-module.exports = { ROOT, linuxPath, quote, wsl };
+
+export { ROOT, linuxPath, quote, wsl };

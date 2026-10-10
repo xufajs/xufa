@@ -3,13 +3,13 @@
 // fails, workers (concurrency, several workers on one database: each job once), jobs of stopped workers taken back,
 // pools of nodes of @xufa/cluster, and the plugin of @xufa/http. On the memory backend and SQLite (and PostgreSQL
 // with XUFA_PG_URL, MongoDB with XUFA_MONGO_URL: a replica set, for the test of transactions).
-const os = require('node:os');
-const path = require('node:path');
-const fs = require('node:fs');
-const { Database } = require('@xufa/orm');
-const xufa = require('@xufa/http');
-const { Bus, Pool, PoolClient } = require('@xufa/cluster');
-const { Queue, queuePlugin, backoffDelay } = require('..');
+import os from 'node:os';
+import path from 'node:path';
+import fs from 'node:fs';
+import { Database } from '@xufa/orm';
+import xufa from '@xufa/http';
+import { Bus, Pool, PoolClient } from '@xufa/cluster';
+import { Queue, queuePlugin, backoffDelay } from '../index.js';
 
 const dirs = [];
 afterAll(() => dirs.forEach((dir) => fs.rmSync(dir, { recursive: true, force: true })));

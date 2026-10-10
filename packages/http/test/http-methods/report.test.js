@@ -1,7 +1,7 @@
 'use strict'
 
 
-const fastify = require('@xufa/http')()
+const fastify = require('../..')()
 fastify.addHttpMethod('REPORT', { hasBody: true })
 
 const bodySample = `<?xml version="1.0" encoding="UTF-8"?>

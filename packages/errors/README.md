@@ -5,7 +5,7 @@ Classes of errors with a code, a status code and a message formatted with the ar
 made with it.
 
 ```js
-const createError = require('@xufa/errors');
+import createError from '@xufa/errors';
 
 const NotFound = createError('APP_NOT_FOUND', 'User %s not found', 404);
 

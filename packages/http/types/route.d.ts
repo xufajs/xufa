@@ -69,6 +69,8 @@ export interface RouteShorthandOptions<
   Logger extends XufaBaseLogger = XufaBaseLogger,
 > {
   schema?: SchemaCompiler; // originally XufaSchema
+  /** The name of the route: app.reverse(name, params) gives its address (Django's path(name=)). */
+  name?: string;
   attachValidation?: boolean;
   exposeHeadRoute?: boolean;
 

@@ -1,7 +1,4 @@
-'use strict'
-
-
-const FindMyWay = require('../')
+import FindMyWay from '../index.js';
 
 function initializeRoutes (router, handler, quantity) {
   for (const x of Array(quantity).keys()) {

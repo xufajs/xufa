@@ -1,21 +1,5 @@
-const {
-  AllOf,
-  AnyOf,
-  ArrayOf,
-  Integer,
-  Schema,
-  String,
-  StringType,
-  Values,
-  compileErrors,
-  compileFirstError,
-  compileIsValid,
-  compileJsonSchema,
-  compileType,
-  fromJsonSchema,
-  toErrors,
-} = require('..');
-const { CheckType, samples, types } = require('./fixtures/types');
+import { AllOf, AnyOf, ArrayOf, Integer, Schema, String, StringType, Values, compileErrors, compileFirstError, compileIsValid, compileJsonSchema, compileType, fromJsonSchema, toErrors } from '../index.js';
+import { CheckType, samples, types } from './fixtures/types.js';
 
 // Results of the compiled function and of the interpreted type for every sample, to compare with toEqual.
 function resultsForSamples(create, interpreted, compiled) {

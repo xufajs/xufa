@@ -1,7 +1,4 @@
-'use strict'
-
-
-const build = require('..')
+import build from '../index.js';
 
 test('object with multiple types field', () => {
   expect.assertions(2)

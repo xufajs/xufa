@@ -1,0 +1,4 @@
+Ticket:
+  list: [title, status, createdAt]
+  filters: [status]
+  search: [title]

@@ -1,8 +1,8 @@
 'use strict'
 
 
-const Fastify = require('@xufa/http')
-const fp = require('@xufa/http').plugin
+const Fastify = require('..')
+const fp = require('..').plugin
 const split = require('split2')
 const helper = require('./helper')
 const { kState } = require('../lib/symbols')

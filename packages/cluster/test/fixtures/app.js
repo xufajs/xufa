@@ -1,5 +1,5 @@
 // A cluster of 2 workers for the tests: each asks the primary, broadcasts, and the primary reports (JSON lines).
-const xufa = require('../..');
+import * as xufa from '../../index.js';
 
 const report = (data) => process.stdout.write(`${JSON.stringify(data)}\n`);
 

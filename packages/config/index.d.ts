@@ -83,6 +83,13 @@ export interface LoadOptions {
   /** The folder of the files of the configuration ('config', from cwd). */
   dir?: string;
   cwd?: string;
+  /**
+   * One file of the app, read over the defaults and below config/: 'xufa' finds xufa.json, .yaml, .yml, .js or .cjs
+   * in cwd (one only); a name with its extension is that file.
+   */
+  file?: string;
+  /** Paths whose texts are not templates of the configuration, nor below them (templates of emails: 'auth.mails'). */
+  verbatim?: string[];
   /** The environment: its file (config/production.json...). NODE_ENV, or 'development'. */
   env?: string;
   /** The variables (process.env). */
@@ -238,6 +245,8 @@ export function watchConfig<T = Record<string, any>>(
 ): Promise<ConfigWatcher<Config<T>>>;
 
 export function parseDotenv(text: string, file?: string): Record<string, string>;
+/** One file of JSON, YAML or JS (a JS function is called with context), as the layers read them. */
+export function readConfigFile<T = any>(file: string, context?: unknown): T;
 
 export class ConfigError extends Error {
   code: 'XUFA_CONFIG_ERR';

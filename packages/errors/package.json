@@ -3,18 +3,18 @@
   "version": "0.1.0",
   "description": "Error classes with a code, a status code and formatted messages, with no dependencies",
   "main": "./index.js",
-  "types": "./index.d.ts",
-  "type": "commonjs",
+  "types": "./index.d.cts",
+  "type": "module",
   "exports": {
     ".": {
-      "types": "./index.d.ts",
+      "types": "./index.d.cts",
       "default": "./index.js"
     },
     "./package.json": "./package.json"
   },
   "files": [
     "index.js",
-    "index.d.ts"
+    "index.d.cts"
   ],
   "scripts": {
     "test": "vyntra",
@@ -41,7 +41,7 @@
     "node": "^22.22.3 || ^24.15.0 || >=25.7.0"
   },
   "devDependencies": {
-    "vyntra": "^0.6.0"
+    "vyntra": "^0.7.0"
   },
   "publishConfig": {
     "access": "public"

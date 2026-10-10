@@ -2,11 +2,11 @@
 // machines (here, pools on buses of their own) share the slots of the same nodes through a database (ormSlots), on
 // the memory backend and SQLite (PostgreSQL with XUFA_PG_URL, MongoDB with XUFA_MONGO_URL); the slots of a machine
 // that died come back after their ttl.
-const os = require('node:os');
-const path = require('node:path');
-const fs = require('node:fs');
-const { Database } = require('@xufa/orm');
-const { Bus, Pool, PoolClient, ormSlots } = require('..');
+import os from 'node:os';
+import path from 'node:path';
+import fs from 'node:fs';
+import { Database } from '@xufa/orm';
+import { Bus, Pool, PoolClient, ormSlots } from '../index.js';
 
 const sleep = (wait) => new Promise((resolve) => setTimeout(resolve, wait));
 const busy = (retryAfter) => Object.assign(new Error('Too Many Requests'), { statusCode: 429, retryAfter });

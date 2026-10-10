@@ -1,13 +1,16 @@
 // Checks of a plugin being registered: its metadata (name, version range, decorators and plugins it needs).
-const semver = require('./semver');
-const { kTestInternals } = require('./symbols');
-const { exist, existReply, existRequest } = require('./decorate');
-const {
+import * as semver from './semver.js';
+import { kTestInternals } from './symbols.js';
+import { exist, existReply, existRequest } from './decorate.js';
+import {
   XUFA_ERR_PLUGIN_VERSION_MISMATCH,
   XUFA_ERR_PLUGIN_NOT_PRESENT_IN_INSTANCE,
   XUFA_ERR_PLUGIN_INVALID_ASYNC_HANDLER,
   XUFA_ERR_PLUGIN_DEPENDENCY_NOT_REGISTERED,
-} = require('./errors');
+} from './errors.js';
+import { createRequire } from 'node:module';
+
+const require = createRequire(import.meta.url);
 
 const kRegisteredPlugins = Symbol.for('registered-plugin');
 const PRERELEASE = /-(?:rc|pre|alpha).+$/u;
@@ -121,5 +124,15 @@ function registerPlugin(fn) {
   return shouldSkipOverride(fn);
 }
 
-module.exports = { getPluginName, getFuncPreview, kRegisteredPlugins, getDisplayName, registerPlugin };
-module.exports[kTestInternals] = { shouldSkipOverride, getMeta, checkDecorators, checkDependencies };
+export { getPluginName, getFuncPreview, kRegisteredPlugins, getDisplayName, registerPlugin };
+
+// What require() gives (the tests of fastify are CommonJS): the functions, and the internals by a symbol.
+const commonjs = {
+  getPluginName,
+  getFuncPreview,
+  kRegisteredPlugins,
+  getDisplayName,
+  registerPlugin,
+  [kTestInternals]: { shouldSkipOverride, getMeta, checkDecorators, checkDependencies },
+};
+export { commonjs as 'module.exports' };

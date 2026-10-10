@@ -1,11 +1,11 @@
 // Migrations on every backend: a schema in three versions, migrated with the data kept.
-const fs = require('node:fs');
-const os = require('node:os');
-const path = require('node:path');
-const { Database, Model, fields, ModelError } = require('..');
-const { MemoryBackend } = require('../lib/backends/memory');
-const pg = require('../../pg/test/server');
-const mongo = require('../../mongo/test/server');
+import fs from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
+import { Database, Model, fields, ModelError } from '../index.js';
+import { MemoryBackend } from '../lib/backends/memory.js';
+import * as pg from '../../pg/test/server.js';
+import * as mongo from '../../mongo/test/server.js';
 
 function version(number) {
   class Author extends Model {

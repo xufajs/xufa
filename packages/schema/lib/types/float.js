@@ -1,4 +1,4 @@
-const { ValidateType } = require('./validate-type');
+import { ValidateType } from './validate-type.js';
 
 class FloatType extends ValidateType {
   constructor(options = {}) {
@@ -85,11 +85,4 @@ function ofloat(min, max, isMandatory = false, isNullable = false) {
   return new FloatType({ min, max, isMandatory, isNullable });
 }
 
-module.exports = {
-  FloatType,
-  Float,
-  float,
-  ofloat,
-  num: float,
-  onum: ofloat,
-};
+export { FloatType, Float, float, ofloat, float as num, ofloat as onum };

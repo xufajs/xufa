@@ -1,0 +1,13 @@
+{{extends 'base'}}
+
+{{#block title}}{{ organization.name }} · Helpdesk{{/block}}
+
+{{#block content}}
+<h1>{{ organization.name }}</h1>
+<p>{{ open }} open of {{ tickets.length }} tickets, in the database of {{ organization.slug }}.</p>
+<ul>
+  {{#each tickets as ticket}}
+  <li class="{{ ticket.status }}">{{ ticket.title }}</li>
+  {{/each}}
+</ul>
+{{/block content}}

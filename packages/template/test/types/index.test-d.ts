@@ -51,3 +51,7 @@ expectType<Generator<string, void, undefined>>(page.stream({ title: 'x' }, { chu
 const streaming: TemplatePluginOptions = { stream: true, chunkSize: 4096 };
 expectType<boolean | undefined>(streaming.stream);
 expectType<Promise<string>>(view('big', {}, { stream: true }));
+
+const withContext: TemplatePluginOptions = { context: [async (request) => ({ user: request.user })], builtins: false };
+expectType<boolean | undefined>(withContext.builtins);
+expectError<TemplatePluginOptions>({ context: 'nope' });

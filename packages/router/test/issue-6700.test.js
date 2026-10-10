@@ -1,7 +1,4 @@
-'use strict'
-
-
-const FindMyWay = require('../')
+import FindMyWay from '../index.js';
 
 test('regex param route should not match an empty trailing segment', () => {
   expect.assertions(1)

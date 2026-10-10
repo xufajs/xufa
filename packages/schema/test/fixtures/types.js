@@ -1,25 +1,4 @@
-const {
-  AllOf,
-  Any,
-  AnyOf,
-  ArrayOf,
-  Boolean,
-  ClosedSchema,
-  Conditional,
-  Enum,
-  Float,
-  Integer,
-  Never,
-  Not,
-  Obj,
-  OneOf,
-  Ref,
-  Schema,
-  String,
-  Values,
-  ValidateType,
-  When,
-} = require('../..');
+import { AllOf, Any, AnyOf, ArrayOf, Boolean, ClosedSchema, Conditional, Enum, Float, Integer, Never, Not, Obj, OneOf, Ref, Schema, String, Values, ValidateType, When } from '../../index.js';
 
 // Custom type that only overrides validate(); returns one message or an array of messages.
 class CheckType extends ValidateType {
@@ -191,8 +170,4 @@ const types = {
   'Custom type in Schema': () => new Schema({ id: new CheckType((value) => value === 'x', 'must be x', true) }),
 };
 
-module.exports = {
-  CheckType,
-  samples,
-  types,
-};
+export { CheckType, samples, types };

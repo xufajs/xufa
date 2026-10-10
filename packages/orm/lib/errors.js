@@ -1,6 +1,7 @@
 // The errors of the ORM. ValidationError carries the messages of every field that failed in `errors`, with the
 // status code 400, so that an HTTP handler can answer with them as they are.
-const createError = require('@xufa/errors');
+import createError from '@xufa/errors';
+import * as schemaModule from './schema.js';
 
 const ValidationErrorBase = createError('XUFA_ORM_ERR_VALIDATION', 'Validation failed for %s: %s', 400);
 
@@ -58,21 +59,119 @@ function duplicateColumns(err) {
   return err.cause && err.cause !== err ? duplicateColumns(err.cause) : null;
 }
 
-// A UniqueError for the error of a write of a model, or null.
+// The name of the index of a duplicate (SQLite: "index 'name'"; PostgreSQL: its constraint), in the error or its causes.
+function indexNameOfError(err, columns) {
+  for (let cause = err; cause && typeof cause === 'object'; cause = cause.cause === cause ? null : cause.cause) {
+    if (typeof cause.constraint === 'string') return cause.constraint;
+  }
+  const named = (columns || []).map((column) => /^index '(.+)'$/.exec(column)).find(Boolean);
+  if (named) return named[1];
+  // MongoDB: "E11000 duplicate key error collection: db.table index: name ...".
+  for (let cause = err; cause && typeof cause === 'object'; cause = cause.cause === cause ? null : cause.cause) {
+    const mongo = /\bindex: (\S+)/.exec(String(cause.message || ''));
+    if (mongo) return mongo[1];
+  }
+  return null;
+}
+
+// The error of a duplicate: its index of the model (the unique constraint it breaks: its fields and message), or null.
+function brokenIndex(meta, err, columns) {
+  for (let cause = err; cause && typeof cause === 'object'; cause = cause.cause === cause ? null : cause.cause) {
+    if (cause.index && cause.index.fields) return cause.index;
+  }
+  const { indexNameOf } = schemaModule;
+  const name = indexNameOfError(err, columns);
+  if (name) {
+    const found = meta.indexes.find((index) => index.unique && indexNameOf(meta, index) === name);
+    if (found) return found;
+  }
+  // SQLite names the columns of an index of several fields: the unique index of those columns.
+  const plain = (columns || []).filter((column) => /^\w+$/.test(column));
+  if (plain.length > 1) {
+    const found = meta.indexes.find(
+      (index) =>
+        index.unique &&
+        index.fields.length === plain.length &&
+        index.fields.every((name) => {
+          const field = meta.field(name);
+          return plain.includes(field ? field.column : name);
+        })
+    );
+    if (found) return found;
+  }
+  // PostgreSQL names the columns of an expression: lower((name)::text).
+  const lowered = (columns || []).map((column) => /^lower\(\(?"?(\w+)"?\)?(?:::\w+)?\)$/i.exec(column)).filter(Boolean);
+  if (lowered.length) {
+    const lower = lowered.map((match) => match[1]);
+    return (
+      meta.indexes.find(
+        (index) =>
+          index.unique &&
+          index.lower &&
+          index.lower.every((name) => {
+            const field = meta.field(name);
+            return lower.includes(field ? field.column : name);
+          })
+      ) || null
+    );
+  }
+  return null;
+}
+
+// A UniqueError for the error of a write of a model, or null: its fields, and the message of its constraint.
 function uniqueErrorOf(meta, err) {
   if (err instanceof errors.UniqueError) return err;
   const columns = duplicateColumns(err);
   if (!columns) return null;
-  const names = columns.map((column) => {
-    if (column === '_id' && meta.pk && !meta.pk.composite) return meta.pk.name;
-    const field = meta.fields.find((item) => item.column === column);
-    return field ? field.name : column;
-  });
-  const unique = new errors.UniqueError(`There is already a ${meta.name} with this ${names.join(', ') || 'key'}`);
+  const index = brokenIndex(meta, err, columns);
+  const names = index
+    ? [...index.fields]
+    : columns.map((column) => {
+        if (column === '_id' && meta.pk && !meta.pk.composite) return meta.pk.name;
+        const field = meta.fields.find((item) => item.column === column);
+        return field ? field.name : column;
+      });
+  const unique = new errors.UniqueError(
+    (index && index.message) || `There is already a ${meta.name} with this ${names.join(', ') || 'key'}`
+  );
   unique.model = meta.name;
   unique.fields = names;
+  if (index) unique.constraint = index.name || null;
+  if (index && index.message) unique.constraintMessage = index.message;
   unique.cause = err;
   return unique;
 }
 
-module.exports = { ...errors, uniqueErrorOf };
+const {
+  FieldError,
+  LookupError,
+  NotFoundError,
+  MultipleObjectsError,
+  NotRegisteredError,
+  ModelError,
+  QueryError,
+  ProtectedError,
+  BackendError,
+  UnsupportedError,
+  UniqueError,
+  EncryptionError,
+  MailError,
+} = errors;
+
+export {
+  ValidationError,
+  FieldError,
+  LookupError,
+  NotFoundError,
+  MultipleObjectsError,
+  NotRegisteredError,
+  ModelError,
+  QueryError,
+  ProtectedError,
+  BackendError,
+  UnsupportedError,
+  UniqueError,
+  EncryptionError,
+  MailError,
+  uniqueErrorOf,
+};

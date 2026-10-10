@@ -1,5 +1,3 @@
-'use strict';
-
 // The error of a configuration: all that is wrong at once (errors: [{ path, message }]), not the first only.
 class ConfigError extends Error {
   constructor(message, errors = []) {
@@ -14,4 +12,4 @@ class ConfigError extends Error {
   }
 }
 
-module.exports = { ConfigError };
+export { ConfigError };

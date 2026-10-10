@@ -64,6 +64,10 @@
           <li><a href="../websocket/index.html">@xufa/websocket</a></li>
           <li><a href="../admin/index.html">@xufa/admin</a></li>
           <li><a href="../session/index.html">@xufa/session</a></li>
+          <li><a href="../forms/index.html">@xufa/forms</a></li>
+          <li><a href="../views/index.html">@xufa/views</a></li>
+          <li><a href="../mail/index.html">@xufa/mail</a></li>
+          <li><a href="../i18n/index.html">@xufa/i18n</a></li>
           <li><a href="../openapi/index.html">@xufa/openapi</a></li>
           <li><a href="../client/index.html">@xufa/client</a></li>
           <li><a href="../schema/index.html">@xufa/schema</a></li>
@@ -107,7 +111,7 @@
         <h2 id="start">Quick start</h2>
         <pre><code class="language-sh">npm install @xufa/config</code></pre>
 <!--run-before: process.env.PORT = '8080'; process.env.DATABASE_URL = 'postgres://app:secret@db/app'; -->
-        <pre data-run="config"><code class="language-js">const { loadConfig } = require('@xufa/config'); // or require('xufa/config')
+        <pre data-run="config"><code class="language-js">import { loadConfig } from '@xufa/config'; // or from 'xufa/config'
 
 // With PORT=8080 and DATABASE_URL=postgres://app:secret@db/app in the environment:
 const config = loadConfig({
@@ -150,7 +154,8 @@ The configuration (development) has errors:
           <code>.env.local</code> and <code>.env.{env}.local</code> have that they do not (the later first).
           <code>dotenv: false</code> reads none, <code>dotenv: ['secrets.env']</code> those; <code>populate: true</code>
           sets in <code>process.env</code> what it does not have. Values in double quotes have escapes and can be several
-          lines; <code>parseDotenv(text)</code> reads one.
+          lines; <code>parseDotenv(text)</code> reads one. <code>readConfigFile(file)</code> reads one file of JSON,
+          YAML or JS as the layers do (the <code>urls.yaml</code> of a project's apps).
         </p>
 
         <h2 id="templates">Templates</h2>
@@ -172,7 +177,7 @@ The configuration (development) has errors:
           read at once (it is async) and merged in their order, after the files and before the variables of the
           environment (a variable still overrides what a server says).
         </p>
-        <pre><code class="language-js">const { loadRemoteConfig, sources } = require('@xufa/config');
+        <pre><code class="language-js">import { loadRemoteConfig, sources } from '@xufa/config';
 
 const config = await loadRemoteConfig({
   schema,

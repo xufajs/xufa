@@ -1,0 +1,15 @@
+{{extends 'base_generic'}}
+
+{{#block content}}
+<h1>Renew: {{ bookInstance.book?.title }}</h1>
+<p>Borrower: {{ bookInstance.borrower }}</p>
+<p{{#if bookInstance.isOverdue}} class="text-danger"{{/if}}>Due date: {{ bookInstance.dueBack }}</p>
+
+<form action="" method="post">
+    <input type="hidden" name="_csrf" value="{{ csrfToken }}">
+    <table>
+    {{{ form.asTable() }}}
+    </table>
+    <input type="submit" value="Submit">
+</form>
+{{/block content}}

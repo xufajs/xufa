@@ -1,7 +1,8 @@
 // The rules of faults: operations and groups, filters (names, prefixes, regular expressions, classes), match, rate,
 // after, times, hits; what they do (fail, delay, hang, down, kinds of their own); waits cut short by signals; pick()
 // for operations that cannot wait; wrap(); and the faults of caches.
-const { Faults, FaultError, wrap, cacheFaults } = require('..');
+import { Faults, FaultError, wrap, cacheFaults } from '../index.js';
+import * as indexModule from '../index.js';
 
 const failure = (promise) => promise.then(() => null, (err) => err);
 const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
@@ -154,7 +155,7 @@ describe('wrap and the faults of caches', () => {
 
 describe('every fault: activeFaults, clearFaults, useFaults', () => {
   it('the faults with rules are active; clearFaults() clears them all (and what they hold)', async () => {
-    const { activeFaults, clearFaults } = require('..');
+    const { activeFaults, clearFaults } = indexModule;
     clearFaults();
     const a = make();
     const b = make();
@@ -173,7 +174,7 @@ describe('every fault: activeFaults, clearFaults, useFaults', () => {
   });
 
   it('a faults leaves the active ones when its rules are gone: removed, of their times, up(), clear()', async () => {
-    const { activeFaults } = require('..');
+    const { activeFaults } = indexModule;
     const faults = make();
     const rule = faults.fail();
     rule.remove();
@@ -193,7 +194,7 @@ describe('every fault: activeFaults, clearFaults, useFaults', () => {
   });
 
   it('useFaults(): clearFaults() after each test, with the hooks of the runner', () => {
-    const { useFaults, activeFaults } = require('..');
+    const { useFaults, activeFaults } = indexModule;
     const hooks = [];
     useFaults({ afterEach: (fn) => hooks.push(fn) });
     make().fail();
@@ -204,7 +205,7 @@ describe('every fault: activeFaults, clearFaults, useFaults', () => {
   });
 
   it('strict: a test that ends with faults still set fails (named, cleared all the same); a clean one does not', () => {
-    const { useFaults, activeFaults } = require('..');
+    const { useFaults, activeFaults } = indexModule;
     const hooks = [];
     useFaults({ afterEach: (fn) => hooks.push(fn) }, { strict: true });
     useFaults({ strict: true, hooks: { afterEach: (fn) => hooks.push(fn) } });

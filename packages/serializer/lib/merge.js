@@ -1,7 +1,7 @@
 // Merging of JSON schemas (for allOf, and the branches of anyOf / oneOf with the keywords around them): each keyword
 // is combined by its meaning (types intersected, required united, bounds narrowed...). A keyword with values that can
 // not be combined is dropped.
-const { deepEqual } = require('./deep-equal');
+import { deepEqual } from './deep-equal.js';
 
 class MergeError extends Error {
   constructor(keyword, values) {
@@ -246,4 +246,4 @@ function mergeAll(schemas, options = {}) {
   return merged;
 }
 
-module.exports = { mergeSchemas: mergeAll, MergeError };
+export { mergeAll as mergeSchemas, MergeError };

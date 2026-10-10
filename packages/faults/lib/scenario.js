@@ -1,5 +1,3 @@
-'use strict';
-
 // Scenarios: faults that come and go on a timeline, as an outage does (a database that gets slow, then a cache that
 // goes down, then a payment provider that answers 503 now and then), for game days in staging and for tests.
 //
@@ -200,4 +198,4 @@ function scenario(options) {
   return new Scenario(options);
 }
 
-module.exports = { Scenario, scenario, msOf, KINDS };
+export { Scenario, scenario, msOf, KINDS };

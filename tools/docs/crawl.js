@@ -5,11 +5,14 @@
 // an error of a script. Chrome or Edge as installed (CHROME gives another), driven by playwright-core.
 //
 // node tools/docs/crawl.js          (pnpm docs:crawl)
-const fs = require('node:fs');
-const path = require('node:path');
-const { pathToFileURL, fileURLToPath } = require('node:url');
+import fs from 'node:fs';
+import path from 'node:path';
+import { pathToFileURL, fileURLToPath } from 'node:url';
+import { createRequire } from 'node:module';
 
-const DOCS = path.join(__dirname, '../../docs');
+const require = createRequire(import.meta.url);
+
+const DOCS = path.join(import.meta.dirname, '../../docs');
 
 function browserPath() {
   const candidates = [
@@ -84,7 +87,7 @@ async function crawl() {
   return { pages: ids.size, anchors: anchors.length, problems: [...new Set(problems)] };
 }
 
-if (require.main === module) {
+if (process.argv[1] === import.meta.filename) {
   crawl().then(
     (result) => {
       if (result.skipped) return;
@@ -101,4 +104,4 @@ if (require.main === module) {
   );
 }
 
-module.exports = { crawl, browserPath };
+export { crawl, browserPath };

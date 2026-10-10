@@ -4,9 +4,9 @@
 // "dependentSchemas") passes on what its subschemas evaluated, but only from the ones the value satisfies. "allOf"
 // passes on what all of them evaluate: when one fails, the allOf fails, so what it evaluated never counts.
 // When what the other keywords evaluate does not depend on the value, staticEvaluated() gives it to the compiler.
-const { Schema } = require('./schema');
-const { ClosedSchema } = require('./closed-schema');
-const {
+import { Schema } from './schema.js';
+import { ClosedSchema } from './closed-schema.js';
+import {
   AllOfType,
   AnyOfType,
   ArrayOfType,
@@ -17,8 +17,8 @@ const {
   ValidateType,
   WhenType,
   isJsonType,
-} = require('./types');
-const { NO_TYPE, EVERY_TYPE } = require('./types/one-of');
+} from './types/index.js';
+import { NO_TYPE, EVERY_TYPE } from './types/one-of.js';
 
 // What a type evaluated: true for everything, or a Set of keys (or of element indexes).
 const ALL = true;
@@ -293,9 +293,4 @@ function staticEvaluatedBy(kind, type) {
   return withKeySet(staticOf(kind, type, []));
 }
 
-module.exports = {
-  JSON_TYPES,
-  UnevaluatedType,
-  staticEvaluatedBy,
-  staticEvaluatedByAll,
-};
+export { JSON_TYPES, UnevaluatedType, staticEvaluatedBy, staticEvaluatedByAll };

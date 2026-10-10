@@ -1,8 +1,8 @@
 // Scenarios: rules that come and go on a timeline. Steps start `at` and end after `for` (or at the end); the end and
 // stop() remove every rule made (and let go what they hold); steps are checked before anything starts; events and
 // status say what happened. And over HTTP: scenarios defined or of the body, listed, started, stopped.
-const xufa = require('@xufa/http');
-const { Faults, scenario, cacheFaults, plugin } = require('..');
+import xufa from '@xufa/http';
+import { Faults, scenario, cacheFaults, plugin } from '../index.js';
 
 const tick = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 

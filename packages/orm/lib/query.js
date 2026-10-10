@@ -9,8 +9,8 @@
 //   exists: { op: 'exists', through: [ForeignKey, ...], relation: ForeignKey, where }  objects of another model whose
 //          foreign key `relation` points to the object (reached by the foreign keys `through`) and that match `where`
 //          (conditions across reverse relations: Author.objects.filter({ books__title: 'X' }))
-const { ForeignKey } = require('./fields');
-const { FieldError, LookupError, QueryError } = require('./errors');
+import { ForeignKey } from './fields.js';
+import { FieldError, LookupError, QueryError } from './errors.js';
 
 const SEPARATOR = '__';
 const COMPARISONS = ['exact', 'in', 'isnull', 'gt', 'gte', 'lt', 'lte', 'range'];
@@ -150,7 +150,32 @@ function fieldAt(meta, parts, i) {
   return { field: meta.field(parts[i]), next: i + 1 };
 }
 
+// The paths of each model resolved before (they are the same while the model is: every query of a page resolved its
+// fields again). Frozen: shared by every query. At most MAX_PATHS a model, as paths can come of requests (filters).
+const resolvedPaths = new WeakMap();
+const MAX_PATHS = 1000;
+
 function resolvePath(model, path, allowRest = true, reverse = false) {
+  if (typeof path !== 'string') return resolvePathOf(model, path, allowRest, reverse);
+  let known = resolvedPaths.get(model);
+  if (!known) {
+    known = new Map();
+    resolvedPaths.set(model, known);
+  }
+  const key = `${allowRest ? 1 : 0}${reverse ? 1 : 0}${path}`;
+  let resolved = known.get(key);
+  if (resolved === undefined) {
+    resolved = resolvePathOf(model, path, allowRest, reverse);
+    Object.freeze(resolved.fields);
+    if (resolved.jsonPath) Object.freeze(resolved.jsonPath);
+    Object.freeze(resolved);
+    if (known.size >= MAX_PATHS) known.clear();
+    known.set(key, resolved);
+  }
+  return resolved;
+}
+
+function resolvePathOf(model, path, allowRest, reverse) {
   const parts = path.split(SEPARATOR);
   const fields = [];
   let current = model;
@@ -208,8 +233,29 @@ function resolvePath(model, path, allowRest = true, reverse = false) {
 }
 
 // When a key of conditions follows a reverse relation (books__title, author__books__pages__gt), the foreign keys to
-// the model that has it (through), the relation (the foreign key of the other model) and the rest of the key.
+// the model that has it (through), the relation (the foreign key of the other model) and the rest of the key. Kept by
+// model and key (every condition of every query asked), frozen; at most MAX_PATHS keys a model.
+const reverses = new WeakMap();
 function findReverse(model, key) {
+  let known = reverses.get(model);
+  if (!known) {
+    known = new Map();
+    reverses.set(model, known);
+  }
+  let found = known.get(key);
+  if (found === undefined) {
+    found = findReverseOf(model, key);
+    if (found) {
+      Object.freeze(found.through);
+      Object.freeze(found);
+    }
+    if (known.size >= MAX_PATHS) known.clear();
+    known.set(key, found);
+  }
+  return found;
+}
+
+function findReverseOf(model, key) {
   const parts = key.split(SEPARATOR);
   const through = [];
   let current = model;
@@ -772,14 +818,19 @@ function eachF(value, fn) {
 
 // The chains of foreign keys a query follows (for its conditions, order, values, aggregates and selectRelated), each
 // once and after its prefixes, so a backend can join them in order.
+// The joins of a query (each chain of foreign keys its paths follow, after its prefixes); most queries have none: their
+// paths are fields of the model, and nothing is made for them.
+const NO_JOINS = Object.freeze([]);
 function collectJoins(query, extra = []) {
+  if (!mayJoin(query, extra)) return NO_JOINS;
   const joins = new Map();
+  // The key of each chain made as it grows (pathKey of fields.slice(0, i)), the chain sliced only when it is new.
   const add = (fields, includeLast) => {
     const end = includeLast ? fields.length : fields.length - 1;
+    let key = '';
     for (let i = 1; i <= end; i += 1) {
-      const chain = fields.slice(0, i);
-      const key = pathKey(chain);
-      if (!joins.has(key)) joins.set(key, chain);
+      key = i === 1 ? fields[0].name : `${key}${SEPARATOR}${fields[i - 1].name}`;
+      if (!joins.has(key)) joins.set(key, fields.slice(0, i));
     }
   };
   eachLeaf(query.where, (leaf) => {
@@ -793,6 +844,28 @@ function collectJoins(query, extra = []) {
   (query.related || []).forEach((chain) => add(chain, true));
   extra.forEach((fields) => add(fields, false));
   return [...joins.values()];
+}
+
+// Whether a query may join: a path of more than one field, the relations of selectRelated, or a reverse relation.
+function mayJoin(query, extra) {
+  if ((query.related && query.related.length) || extra.length) return true;
+  const long = (fields) => Boolean(fields) && fields.length > 1;
+  if ((query.orderBy || []).some((item) => long(item.fields))) return true;
+  if ((query.values || []).some((item) => long(item.fields))) return true;
+  let found = false;
+  eachLeaf(query.where, (leaf) => {
+    if (found) return;
+    if (long(leaf.fields)) found = true;
+    else
+      eachF(leaf.value, (ref) => {
+        if (long(ref.fields)) found = true;
+      });
+  });
+  if (found) return true;
+  eachExists(query.where, (node) => {
+    if (node.through && node.through.length) found = true;
+  });
+  return found;
 }
 
 // The parts of a LIKE pattern: { text } (literal text) and { any: true } (%) or { one: true } (_).
@@ -826,7 +899,7 @@ function likeToRegex(pattern) {
   return `^${source}$`;
 }
 
-module.exports = {
+export {
   LOOKUPS,
   datePartOf,
   truncOf,

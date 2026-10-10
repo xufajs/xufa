@@ -1,5 +1,5 @@
-const { Client, Pool, DatabaseError, copy } = require('..');
-const { url, available } = require('./server');
+import { Client, Pool, DatabaseError, copy } from '../index.js';
+import { url, available } from './server.js';
 
 describe('copy encoding', () => {
   it('escapes values in the text format', () => {

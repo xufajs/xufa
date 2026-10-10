@@ -5,7 +5,7 @@
 // Nothing of the source is code there: strings and keys are JSON literals, numbers are written by String(), operators
 // come from a fixed list, and the parameters of arrow functions have names made here (a0, a1...). The tree was
 // compiled to closures first, so its names and keys are checked already.
-const { ExpressionError } = require('./errors');
+import { ExpressionError } from './errors.js';
 
 // The context of a run that is not an object: {} for null and undefined, the object of a primitive for the others.
 function contextOf(context) {
@@ -313,4 +313,4 @@ function generate(tree, compiler, options, SHORT) {
   }
 }
 
-module.exports = { generate };
+export { generate };

@@ -1,7 +1,4 @@
-'use strict'
-
-
-const FindMyWay = require('../')
+import FindMyWay from '../index.js';
 
 test('Multi-parametric tricky path', () => {
   expect.assertions(6)

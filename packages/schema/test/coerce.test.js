@@ -1,4 +1,4 @@
-const { compileJsonSchema, standaloneJsonSchema, fromJsonSchema, toErrors } = require('..');
+import { compileJsonSchema, standaloneJsonSchema, fromJsonSchema, toErrors } from '../index.js';
 
 // Validates a copy of `data` in every mode (and with the interpreter and standalone code): they give the same verdict
 // and, on valid data, the same data. Returns the errors and the data.

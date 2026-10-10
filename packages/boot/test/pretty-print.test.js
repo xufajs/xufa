@@ -1,7 +1,4 @@
-'use strict'
-
-
-const boot = require('..')
+import boot from '../index.js';
 
 test('pretty print', (done) => {
   expect.assertions(19)

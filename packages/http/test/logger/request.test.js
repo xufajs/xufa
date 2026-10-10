@@ -5,7 +5,7 @@ const stream = require('node:stream')
 
 const split = require('split2')
 
-const Fastify = require('@xufa/http')
+const Fastify = require('../..')
 const helper = require('../helper')
 const { on } = stream
 const { request } = require('./logger-test-utils')

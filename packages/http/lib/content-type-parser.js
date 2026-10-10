@@ -1,9 +1,9 @@
 // Parsers of request bodies by content type: JSON and plain text by default, others added with
 // addContentTypeParser (strings, regular expressions, or '*' for any).
-const { AsyncResource } = require('node:async_hooks');
-const secureJson = require('./secure-json');
-const ContentType = require('./content-type');
-const {
+import { AsyncResource } from 'node:async_hooks';
+import secureJson from './secure-json.js';
+import ContentType from './content-type.js';
+import {
   kDefaultJsonParse,
   kContentTypeParser,
   kBodyLimit,
@@ -12,8 +12,8 @@ const {
   kTestInternals,
   kReplyIsError,
   kRouteContext,
-} = require('./symbols');
-const {
+} from './symbols.js';
+import {
   XUFA_ERR_CTP_INVALID_TYPE,
   XUFA_ERR_CTP_EMPTY_TYPE,
   XUFA_ERR_CTP_ALREADY_PRESENT,
@@ -25,8 +25,8 @@ const {
   XUFA_ERR_CTP_EMPTY_JSON_BODY,
   XUFA_ERR_CTP_INSTANCE_ALREADY_STARTED,
   XUFA_ERR_CTP_INVALID_JSON_BODY,
-} = require('./errors');
-const { XUFASEC001 } = require('./warnings');
+} from './errors.js';
+import { XUFASEC001 } from './warnings.js';
 
 const { LruMap } = ContentType;
 
@@ -341,13 +341,20 @@ function validateRegExp(regex) {
   if (regex.source[0] !== '^' && !regex.source.includes(';?')) XUFASEC001(regex.source);
 }
 
-module.exports = ContentTypeParser;
-module.exports.helpers = {
+export default ContentTypeParser;
+ContentTypeParser.helpers = {
   buildContentTypeParser,
   addContentTypeParser,
   hasContentTypeParser,
   removeContentTypeParser,
   removeAllContentTypeParsers,
 };
-module.exports.defaultParsers = { getDefaultJsonParser, defaultTextParser: defaultPlainTextParser };
-module.exports[kTestInternals] = { rawBody };
+const __helpers = ContentTypeParser.helpers;
+ContentTypeParser.defaultParsers = { getDefaultJsonParser, defaultTextParser: defaultPlainTextParser };
+const __defaultParsers = ContentTypeParser.defaultParsers;
+ContentTypeParser[kTestInternals] = { rawBody };
+
+export { __helpers as helpers, __defaultParsers as defaultParsers };
+
+// What require() gives (the tests of fastify are CommonJS).
+export { ContentTypeParser as 'module.exports' };

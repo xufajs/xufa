@@ -1,0 +1,116 @@
+# Data to try the site (npm run seed): three users (password: xufa-library), genres, languages, authors, books and
+# their copies; some on loan to the reader, one of them overdue. Once: not again when admin is there.
+#
+#   admin       a superuser (the admin, and everything in the site)
+#   librarian   staff, with the role librarian (the catalog, and renewing copies)
+#   reader      a member who borrows books (in the group Library Members)
+$unless: { User: { username: admin } }
+
+Group:
+  - { $key: members, name: Library Members, permissions: ['*.view'] }
+
+User:
+  - { username: admin, email: admin@example.com, password: xufa-library, isStaff: true, isSuperuser: true }
+  - { username: librarian, email: librarian@example.com, password: xufa-library, isStaff: true, role: librarian }
+  - {
+      $key: reader,
+      username: reader,
+      email: reader@example.com,
+      password: xufa-library,
+      firstName: Rita,
+      groups: [$members],
+    }
+
+Genre:
+  - { $key: fantasy, name: Fantasy }
+  - { $key: scifi, name: Science Fiction }
+  - { $key: poetry, name: Poetry }
+  - { $key: history, name: History }
+
+Language:
+  - { $key: english, name: English }
+  - { $key: french, name: French }
+  - { $key: spanish, name: Spanish }
+
+Author:
+  - { $key: leguin, firstName: Ursula, lastName: Le Guin, dateOfBirth: 1929-10-21, dateOfDeath: 2018-01-22 }
+  - { $key: verne, firstName: Jules, lastName: Verne, dateOfBirth: 1828-02-08, dateOfDeath: 1905-03-24 }
+  - { $key: mistral, firstName: Gabriela, lastName: Mistral, dateOfBirth: 1889-04-07, dateOfDeath: 1957-01-10 }
+  - { $key: beard, firstName: Mary, lastName: Beard, dateOfBirth: 1955-01-01 }
+
+Book:
+  - $key: earthsea
+    title: A Wizard of Earthsea
+    author: $leguin
+    summary: A young wizard learns the true names of things.
+    isbn: '9780547773742'
+    genre: [$fantasy]
+    language: $english
+  - $key: lefthand
+    title: The Left Hand of Darkness
+    author: $leguin
+    summary: An envoy on a planet whose people have no fixed sex.
+    isbn: '9780441478125'
+    genre: [$scifi]
+    language: $english
+  - $key: dispossessed
+    title: The Dispossessed
+    author: $leguin
+    summary: A physicist between two worlds.
+    isbn: '9780061054884'
+    genre: [$scifi]
+    language: $english
+  - $key: vingt
+    title: Vingt mille lieues sous les mers
+    author: $verne
+    summary: Captain Nemo and the Nautilus.
+    isbn: '9782253006329'
+    genre: [$scifi]
+    language: $french
+  - $key: lune
+    title: De la Terre à la Lune
+    author: $verne
+    summary: A cannon shoots three men to the Moon.
+    isbn: '9782253012580'
+    genre: [$scifi]
+    language: $french
+  - $key: desolacion
+    title: Desolación
+    author: $mistral
+    summary: Poems of the first Latin American Nobel laureate in literature.
+    isbn: '9788437604428'
+    genre: [$poetry]
+    language: $spanish
+  - $key: spqr
+    title: SPQR
+    author: $beard
+    summary: A history of ancient Rome.
+    isbn: '9781631492228'
+    genre: [$history]
+    language: $english
+  - $key: power
+    title: Women & Power
+    author: $beard
+    summary: A manifesto.
+    isbn: '9781631494758'
+    genre: [$history]
+    language: $english
+
+# Two copies of each book; the copy of SPQR on loan is overdue.
+BookInstance:
+  - { book: $earthsea, imprint: 'Penguin, 2001', status: a }
+  - { book: $earthsea, imprint: 'Penguin, 2001', status: a }
+  - { book: $lefthand, imprint: 'Gallimard, 2002', status: o, borrower: $reader, dueBack: +14d }
+  - { book: $lefthand, imprint: 'Gallimard, 2002', status: a }
+  - { book: $dispossessed, imprint: 'Cátedra, 2003', status: a }
+  - { book: $dispossessed, imprint: 'Cátedra, 2003', status: a }
+  - { book: $vingt, imprint: 'Norton, 2004', status: r, dueBack: +7d }
+  - { book: $vingt, imprint: 'Norton, 2004', status: a }
+  - { book: $lune, imprint: 'Penguin, 2005', status: d }
+  - { book: $lune, imprint: 'Penguin, 2005', status: a }
+  - { book: $desolacion, imprint: 'Gallimard, 2006', status: a }
+  - { book: $desolacion, imprint: 'Gallimard, 2006', status: a }
+  - { book: $spqr, imprint: 'Cátedra, 2007', status: o, borrower: $reader, dueBack: -3d }
+  - { book: $spqr, imprint: 'Cátedra, 2007', status: a }
+  - { book: $power, imprint: 'Norton, 2008', status: a }
+  - { book: $power, imprint: 'Norton, 2008', status: a }

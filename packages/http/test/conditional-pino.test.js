@@ -1,56 +1,31 @@
 'use strict'
 
+// Whether an instance loads @xufa/logger, in a process of its own: the modules of the library are ES modules, which
+// the test files of a run share, so one that made a logger before would have loaded it already.
+const { execFileSync } = require('node:child_process')
+const path = require('node:path')
 
+function loadsLogger (options) {
+  const script = `
+    const fastify = require(${JSON.stringify(path.join(__dirname, '..'))})
+    fastify(${options})
+    process.stdout.write(String(require.cache[require.resolve('@xufa/logger')] !== undefined))
+  `
+  return execFileSync(process.execPath, ['-e', script], { cwd: path.join(__dirname, '..'), encoding: 'utf8' }) === 'true'
+}
 
-test("pino is not require'd if logger is not passed", async () => {
-  expect.assertions(1)
-
-  const fastify = require('..')
-
-  fastify()
-
-  expect(require.cache[require.resolve('@xufa/logger')]).toBe(undefined)
-
-  // The assertions of resolved promises run before the test ends.
-  await new Promise((resolve) => setImmediate(resolve))
+test("pino is not require'd if logger is not passed", () => {
+  expect(loadsLogger('')).toBe(false)
 })
 
-test("pino is require'd if logger is passed", async () => {
-  expect.assertions(1)
-
-  const fastify = require('..')
-
-  fastify({
-    logger: true
-  })
-
-  expect(require.cache[require.resolve('@xufa/logger')]).not.toBe(undefined)
-
-  // The assertions of resolved promises run before the test ends.
-  await new Promise((resolve) => setImmediate(resolve))
+test("pino is require'd if logger is passed", () => {
+  expect(loadsLogger('{ logger: true }')).toBe(true)
 })
 
-test("pino is require'd if loggerInstance is passed", async () => {
-  expect.assertions(1)
-
-  const fastify = require('..')
-
-  const loggerInstance = {
-    fatal: (msg) => { },
-    error: (msg) => { },
-    warn: (msg) => { },
-    info: (msg) => { },
-    debug: (msg) => { },
-    trace: (msg) => { },
-    child: () => loggerInstance
-  }
-
-  fastify({
-    loggerInstance
-  })
-
-  expect(require.cache[require.resolve('@xufa/logger')]).not.toBe(undefined)
-
-  // The assertions of resolved promises run before the test ends.
-  await new Promise((resolve) => setImmediate(resolve))
+test("pino is require'd if loggerInstance is passed", () => {
+  const loggerInstance = `{
+    fatal: () => {}, error: () => {}, warn: () => {}, info: () => {}, debug: () => {}, trace: () => {},
+    child () { return this }
+  }`
+  expect(loadsLogger(`{ loggerInstance: ${loggerInstance} }`)).toBe(true)
 })

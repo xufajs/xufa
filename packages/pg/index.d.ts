@@ -43,6 +43,8 @@ export interface ClientConfig {
   idle_in_transaction_session_timeout?: number;
   /** Parsers by type oid, of the text of the values (those types are read as text). */
   types?: Map<number, (value: string) => unknown> | Record<number, (value: string) => unknown>;
+  /** 'text': date columns as their text ('2026-10-09'), not Dates at local midnight (what @xufa/orm asks for). */
+  dates?: 'text';
   /** false: statements are not prepared. */
   prepare?: boolean;
   /** false: only the text format (no binary parameters and results). */
@@ -57,6 +59,12 @@ export interface ClientConfig {
  */
 export interface PoolConfig extends ClientConfig {
   max?: number;
+  /**
+   * How many reads a connection takes before another is opened (8; 1: a connection for each query at once, up to max).
+   * Reads (SELECT, WITH, VALUES, TABLE, SHOW) are pipelined on the connections open, never behind a write; writes take
+   * a connection of their own, as their commits wait for the disk.
+   */
+  pipeline?: number;
   idleTimeoutMillis?: number;
   /**
    * How long a query or connect() waits for a connection, free or being opened (0: no limit); past it, an error of

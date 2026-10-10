@@ -44,16 +44,21 @@
       <aside class="sidebar">
         <h4>Reference</h4>
         <ul>
-          <li><a href="#functions">Functions (3)</a></li>
+          <li><a href="#functions">Functions (5)</a></li>
           <li><a href="#classes">Classes (1)</a></li>
-          <li><a href="#interfaces">Interfaces (5)</a></li>
-          <li><a href="#types">Types (2)</a></li>
+          <li><a href="#constants">Constants (1)</a></li>
+          <li><a href="#interfaces">Interfaces (12)</a></li>
+          <li><a href="#types">Types (3)</a></li>
         </ul>
         <h4>Packages</h4>
         <ul>
           <li><a href="../websocket/index.html">@xufa/websocket</a></li>
           <li><a href="index.html" aria-current="page">@xufa/admin</a></li>
           <li><a href="../session/index.html">@xufa/session</a></li>
+          <li><a href="../forms/index.html">@xufa/forms</a></li>
+          <li><a href="../views/index.html">@xufa/views</a></li>
+          <li><a href="../mail/index.html">@xufa/mail</a></li>
+          <li><a href="../i18n/index.html">@xufa/i18n</a></li>
           <li><a href="../openapi/index.html">@xufa/openapi</a></li>
           <li><a href="../client/index.html">@xufa/client</a></li>
           <li><a href="../schema/index.html">@xufa/schema</a></li>
@@ -88,13 +93,13 @@
         </nav>
         <h1>Reference</h1>
         <p class="intro">
-          The admin of the models of @xufa/orm, as Django's, with no dependencies: lists with search, filters, order and pages, forms from the fields with their validation, for any backend, as a plugin of @xufa/http. Every declaration of its TypeScript declarations
-          (<code>packages/admin/index.d.ts</code>), as they are written, with their comments: made from them each time
+          The admin of the models of @xufa/orm, as Django's, with no dependencies to install: a React page (built in) with lists, search, filters, order and pages, forms from the fields with their validation, jobs and pipeline runs, roles and tenants, as a plugin of @xufa/http. Every declaration of its TypeScript declarations
+          (<code>packages/admin/index.d.ts</code> or <code>index.d.cts</code>), as they are written, with their comments: made from them each time
           the docs are built. How to use them is in <a href="index.html">the overview</a>.
         </p>
 
         <h2 id="functions">Functions</h2>
-        <p class="ref-index"><a href="#ref-admin"><code>admin</code></a>, <a href="#ref-describeModel"><code>describeModel</code></a>, <a href="#ref-labelOf"><code>labelOf</code></a></p>
+        <p class="ref-index"><a href="#ref-admin"><code>admin</code></a>, <a href="#ref-describeModel"><code>describeModel</code></a>, <a href="#ref-labelOf"><code>labelOf</code></a>, <a href="#ref-adminMessage"><code>adminMessage</code></a>, <a href="#ref-setTranslator"><code>setTranslator</code></a></p>
 
         <h3 id="ref-admin"><code>admin</code></h3>
         <pre><code class="language-ts">export declare function admin(app: any, options: AdminOptions): Promise&lt;void&gt;;</code></pre>
@@ -107,6 +112,16 @@
         <h3 id="ref-labelOf"><code>labelOf</code></h3>
         <pre><code class="language-ts">export declare function labelOf(model: ModelClass&lt;any&gt;, object: unknown): string;</code></pre>
         <p>The label of an object: its toString() (as Django's __str__), or its first string field.</p>
+
+        <h3 id="ref-adminMessage"><code>adminMessage</code></h3>
+        <pre><code class="language-ts">export declare function adminMessage(key: string, params?: Record&lt;string, unknown&gt;): string;</code></pre>
+        <p>The message of a key with its parameters, translated (admin.&lt;key&gt;) when a translator is set.</p>
+
+        <h3 id="ref-setTranslator"><code>setTranslator</code></h3>
+        <pre><code class="language-ts">export declare function setTranslator(
+  fn: ((key: string, params: Record&lt;string, unknown&gt;, english: string) =&gt; string) | null
+): void;</code></pre>
+        <p>The translator of the messages (as i18n.translateAdmin(admin) of</p>
 
         <h2 id="classes">Classes</h2>
         <p class="ref-index"><a href="#ref-AdminError"><code>AdminError</code></a></p>
@@ -123,8 +138,15 @@
             </table>
           </div>
 
+        <h2 id="constants">Constants</h2>
+        <p class="ref-index"><a href="#ref-ADMIN_MESSAGES"><code>ADMIN_MESSAGES</code></a></p>
+
+        <h3 id="ref-ADMIN_MESSAGES"><code>ADMIN_MESSAGES</code></h3>
+        <pre><code class="language-ts">export declare const ADMIN_MESSAGES: Readonly&lt;Record&lt;string, string&gt;&gt;;</code></pre>
+        <p>The messages of the API that users read, by key, in English (those of logins are of</p>
+
         <h2 id="interfaces">Interfaces</h2>
-        <p class="ref-index"><a href="#ref-AdminModelOptions"><code>AdminModelOptions</code></a>, <a href="#ref-AdminBaseOptions"><code>AdminBaseOptions</code></a>, <a href="#ref-AdminField"><code>AdminField</code></a>, <a href="#ref-AdminModel"><code>AdminModel</code></a>, <a href="#ref-AdminLogin"><code>AdminLogin</code></a></p>
+        <p class="ref-index"><a href="#ref-AdminModelOptions"><code>AdminModelOptions</code></a>, <a href="#ref-AdminInline"><code>AdminInline</code></a>, <a href="#ref-AdminColumn"><code>AdminColumn</code></a>, <a href="#ref-AdminActionContext"><code>AdminActionContext</code></a>, <a href="#ref-AdminAction"><code>AdminAction</code></a>, <a href="#ref-AdminActionInfo"><code>AdminActionInfo</code></a>, <a href="#ref-AdminRelated"><code>AdminRelated</code></a>, <a href="#ref-AdminBaseOptions"><code>AdminBaseOptions</code></a>, <a href="#ref-AdminRbac"><code>AdminRbac</code></a>, <a href="#ref-AdminField"><code>AdminField</code></a>, <a href="#ref-AdminModel"><code>AdminModel</code></a>, <a href="#ref-AdminLogin"><code>AdminLogin</code></a></p>
 
         <h3 id="ref-AdminModelOptions"><code>AdminModelOptions</code></h3>
         <pre><code class="language-ts">export interface AdminModelOptions { ... }</code></pre>
@@ -133,13 +155,110 @@
             <table class="ref-members">
               <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
               <tbody>
-                <tr><td><code>label?</code></td><td><code>string</code></td><td><p>The name shown (the name of the model).</p></td></tr>
-                <tr><td><code>list?</code></td><td><code>string[]</code></td><td><p>The columns of its list (the first six fields that are not text nor json).</p></td></tr>
+                <tr><td><code>label?</code></td><td><code>string</code></td><td><p>Its name as a collection (the sidebar, its list): its meta.labelPlural with a capital ('Book instances').</p></td></tr>
+                <tr><td><code>singular?</code></td><td><code>string</code></td><td><p>Its name for one object ('Add book instance'): its meta.label.</p></td></tr>
+                <tr><td><code>list?</code></td><td><code>Array&lt;string | <a href="#ref-AdminColumn">AdminColumn</a>&gt;</code></td><td><p>The columns of its list (the first six fields that are not text nor json), as Django's list_display: fields, paths across foreign keys ('book__title', ordered by it), methods or getters of the model ('displayGenre', async too; its header: the label of the function), many-to-many fields, or columns of their own.</p></td></tr>
+                <tr><td><code>editable?</code></td><td><code>string[]</code></td><td><p>Fields of its list changed in its rows, booleans and choices, each saved as it changes (Django's list_editable).</p></td></tr>
+                <tr><td><code>fields?</code></td><td><code>Array&lt;string | string[]&gt;</code></td><td><p>The fields of its form and their order (Django's fields): names, or lists of names on one line.</p></td></tr>
+                <tr><td><code>fieldsets?</code></td><td><code>Array&lt; [string | null, { fields: Array&lt;string | string[]&gt;; description?: string; collapse?: boolean; classes?: string[] }] &gt;</code></td><td><p>The fields of its form in groups (Django's fieldsets): [title or null, { fields, description, collapse }].</p></td></tr>
                 <tr><td><code>search?</code></td><td><code>string[]</code></td><td><p>The fields its search looks in (its string fields).</p></td></tr>
                 <tr><td><code>filters?</code></td><td><code>string[]</code></td><td><p>The fields it filters by (booleans, choices and foreign keys).</p></td></tr>
                 <tr><td><code>readOnly?</code></td><td><code>string[]</code></td><td><p>Fields shown but not changed in its forms (besides keys, automatic dates and given fields).</p></td></tr>
                 <tr><td><code>ordering?</code></td><td><code>string[]</code></td><td><p>Its default order (that of the model).</p></td></tr>
                 <tr><td><code>readOnlyModel?</code></td><td><code>boolean</code></td><td><p>Only read: no creates, updates nor deletes.</p></td></tr>
+                <tr><td><code>inlines?</code></td><td><code>Array&lt;string | <a href="#ref-AdminInline">AdminInline</a>&gt; | false</code></td><td><p>Its related lists (the objects of other models of the admin that point to it), by relation name (bookSet): all by default, none with false. { relation, fields, extra } edits them in rows (Django's TabularInline).</p></td></tr>
+                <tr><td><code>actions?</code></td><td><code>Record&lt;string, <a href="#ref-AdminActionRun">AdminActionRun</a> | <a href="#ref-AdminAction">AdminAction</a>&gt;</code></td><td><p>Its actions on the objects selected in its list (as Django's), by name: run, or { run, label, permission, confirm, danger }.</p></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-AdminInline"><code>AdminInline</code></h3>
+        <pre><code class="language-ts">export interface AdminInline { ... }</code></pre>
+        <p>A related list edited in rows (Django's TabularInline): its fields (those that can be), and the empty rows to add (1).</p>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>relation</code></td><td><code>string</code></td><td></td></tr>
+                <tr><td><code>fields?</code></td><td><code>string[]</code></td><td></td></tr>
+                <tr><td><code>extra?</code></td><td><code>number</code></td><td></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-AdminColumn"><code>AdminColumn</code></h3>
+        <pre><code class="language-ts">export interface AdminColumn { ... }</code></pre>
+        <p>A column of a list of its own: its value of each object (async too).</p>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>name</code></td><td><code>string</code></td><td></td></tr>
+                <tr><td><code>label?</code></td><td><code>string</code></td><td></td></tr>
+                <tr><td><code>value?</code></td><td><code>(object: any) =&gt; unknown</code></td><td></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-AdminActionContext"><code>AdminActionContext</code></h3>
+        <pre><code class="language-ts">export interface AdminActionContext { ... }</code></pre>
+        <p>What an action gets besides the objects selected.</p>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>request</code></td><td><code>unknown</code></td><td></td></tr>
+                <tr><td><code>user</code></td><td><code>unknown</code></td><td><p>The user of the admin (its login, else request.user).</p></td></tr>
+                <tr><td><code>tenant</code></td><td><code>string | null</code></td><td><p>The tenant chosen (with tenants).</p></td></tr>
+                <tr><td><code>pks</code></td><td><code>Array&lt;string | number&gt;</code></td><td><p>The keys selected (some may be gone: the QuerySet has those that are there).</p></td></tr>
+                <tr><td><code>model</code></td><td><code>ModelClass&lt;any&gt;</code></td><td></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-AdminAction"><code>AdminAction</code></h3>
+        <pre><code class="language-ts">export interface AdminAction { ... }</code></pre>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>run</code></td><td><code><a href="#ref-AdminActionRun">AdminActionRun</a></code></td><td></td></tr>
+                <tr><td><code>label?</code></td><td><code>string</code></td><td><p>Its button (its name in words: markPublished is Mark published).</p></td></tr>
+                <tr><td><code>permission?</code></td><td><code>string</code></td><td><p>The permission it needs (&lt;Model&gt;.change).</p></td></tr>
+                <tr><td><code>confirm?</code></td><td><code>boolean | string</code></td><td><p>Asked before it runs: true, or the question.</p></td></tr>
+                <tr><td><code>danger?</code></td><td><code>boolean</code></td><td><p>Its button and question in red.</p></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-AdminActionInfo"><code>AdminActionInfo</code></h3>
+        <pre><code class="language-ts">export interface AdminActionInfo { ... }</code></pre>
+        <p>An action as the page knows it.</p>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>name</code></td><td><code>string</code></td><td></td></tr>
+                <tr><td><code>label</code></td><td><code>string</code></td><td></td></tr>
+                <tr><td><code>permission</code></td><td><code>string</code></td><td></td></tr>
+                <tr><td><code>confirm</code></td><td><code>boolean | string | null</code></td><td></td></tr>
+                <tr><td><code>danger</code></td><td><code>boolean</code></td><td></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-AdminRelated"><code>AdminRelated</code></h3>
+        <pre><code class="language-ts">export interface AdminRelated { ... }</code></pre>
+        <p>A related list of a model: the objects of another model that point to it through one of its foreign keys.</p>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>name</code></td><td><code>string</code></td><td><p>The name of the relation (the relatedName of the foreign key, else bookSet).</p></td></tr>
+                <tr><td><code>model</code></td><td><code>string</code></td><td></td></tr>
+                <tr><td><code>label</code></td><td><code>string</code></td><td></td></tr>
+                <tr><td><code>field</code></td><td><code>string</code></td><td><p>The foreign key of the other model.</p></td></tr>
+                <tr><td><code>attname</code></td><td><code>string</code></td><td></td></tr>
               </tbody>
             </table>
           </div>
@@ -156,7 +275,28 @@
                 <tr><td><code>title?</code></td><td><code>string</code></td><td><p>The title of the page ('Admin').</p></td></tr>
                 <tr><td><code>pageSize?</code></td><td><code>number</code></td><td><p>Objects in a page of a list (25).</p></td></tr>
                 <tr><td><code>pipelines?</code></td><td><code>{ get(runId: unknown): Promise&lt;unknown&gt;; retry(runId: unknown): Promise&lt;boolean&gt;; cancel(runId: unknown): Promise&lt;boolean&gt;; resume(runId: unknown, stepId: string, output?: unknown): Promise&lt;unknown&gt;; }</code></td><td><p>The runs of these pipelines of</p></td></tr>
+                <tr><td><code>queue?</code></td><td><code>{ jobs: unknown; counts(): Promise&lt;Record&lt;string, number&gt;&gt;; retry(ids?: unknown[]): Promise&lt;number&gt; }</code></td><td><p>The jobs of this queue of</p></td></tr>
+                <tr><td><code>scheduler?</code></td><td><code>{ jobs(): unknown[]; runNow(name: string): Promise&lt;unknown&gt; }</code></td><td><p>The schedules of a Scheduler of</p></td></tr>
                 <tr><td><code>health?</code></td><td><code>boolean</code></td><td><p>The report of xufa.health of the app on the first page (true: when the app has it).</p></td></tr>
+                <tr><td><code>rbac?</code></td><td><code>| <a href="#ref-AdminRbac">AdminRbac</a> | { roles: Record&lt;string, string[] | { permissions?: string[]; inherits?: string | string[] }&gt;; [option: string]: unknown; }</code></td><td><p>Roles and permissions (an Rbac of</p></td></tr>
+                <tr><td><code>tenants?</code></td><td><code>{ tenants: { enter(id: string): Promise&lt;unknown&gt; }; list(request: any): Array&lt;string | number&gt; | Promise&lt;Array&lt;string | number&gt;&gt;; /** The name shown of a tenant (its id). */ label?(id: string, request: any): string | Promise&lt;string&gt;; }</code></td><td><p>The tenants of the models (the Tenants of</p></td></tr>
+                <tr><td><code>language?</code></td><td><code>string | null</code></td><td><p>The language of the page for every request (null: request.locale of</p></td></tr>
+                <tr><td><code>uiMessages?</code></td><td><code>Record&lt;string, Record&lt;string, string&gt;&gt;</code></td><td><p>Texts of the page by language and by their English: they go over those of the admin, or add a language ({ ca: { Save: 'Desa' } }).</p></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-AdminRbac"><code>AdminRbac</code></h3>
+        <pre><code class="language-ts">export interface AdminRbac { ... }</code></pre>
+        <p>What the admin asks of an Rbac of</p>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>access(user: any)</code></td><td><code>Promise&lt;{ superuser: boolean; grants: Array&lt;{ role: string; tenant: string }&gt; }&gt;</code></td><td></td></tr>
+                <tr><td><code>allows(access: any, permission: string | string[], tenant?: string | null)</code></td><td><code>boolean</code></td><td></td></tr>
+                <tr><td><code>tenantsIn(access: any)</code></td><td><code>string[]</code></td><td></td></tr>
+                <tr><td><code>inTenant(access: any, tenant: string)</code></td><td><code>boolean</code></td><td></td></tr>
               </tbody>
             </table>
           </div>
@@ -202,6 +342,9 @@
                 <tr><td><code>ordering</code></td><td><code>string[]</code></td><td></td></tr>
                 <tr><td><code>softDelete</code></td><td><code>string | null</code></td><td></td></tr>
                 <tr><td><code>readOnlyModel</code></td><td><code>boolean</code></td><td></td></tr>
+                <tr><td><code>related</code></td><td><code><a href="#ref-AdminRelated">AdminRelated</a>[]</code></td><td><p>Its related lists (in /api/models: of the models the user may view).</p></td></tr>
+                <tr><td><code>actions</code></td><td><code><a href="#ref-AdminActionInfo">AdminActionInfo</a>[]</code></td><td><p>Its actions (in /api/models: those the user may run).</p></td></tr>
+                <tr><td><code>can?</code></td><td><code>{ add: boolean; change: boolean; delete: boolean }</code></td><td><p>What the user may do with it (in /api/models: with rbac, by its permissions).</p></td></tr>
               </tbody>
             </table>
           </div>
@@ -213,9 +356,12 @@
             <table class="ref-members">
               <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
               <tbody>
-                <tr><td><code>findUser(username: string, request: any)</code></td><td><code>User | null | undefined | Promise&lt;User | null | undefined&gt;</code></td><td><p>The user of a username (an email...), or null.</p></td></tr>
+                <tr><td><code>model?</code></td><td><code>any</code></td><td><p>A model of users (AbstractUser of</p></td></tr>
+                <tr><td><code>findUser?(username: string, request: any)</code></td><td><code>User | null | undefined | Promise&lt;User | null | undefined&gt;</code></td><td><p>The user of a username (an email...), or null.</p></td></tr>
+                <tr><td><code>onLogin?</code></td><td><code>(user: User, request: any) =&gt; unknown</code></td><td><p>After each login (a model sets its lastLogin).</p></td></tr>
                 <tr><td><code>password?</code></td><td><code>(user: User) =&gt; string | null | undefined</code></td><td><p>Its hash of</p></td></tr>
                 <tr><td><code>allow?</code></td><td><code>(user: User) =&gt; boolean | Promise&lt;boolean&gt;</code></td><td><p>Who may use the admin (everyone found). Others get the answer of a wrong password.</p></td></tr>
+                <tr><td><code>reload?</code></td><td><code>(id: any, request: any) =&gt; User | null | undefined | Promise&lt;User | null | undefined&gt;</code></td><td><p>The user of an id again, in every request (its id as kept at the login: user.pk). One that is not there (null), or that allow() refuses now, is logged out at once. Without it, the user logged in stays so until it logs out or its session ends.</p></td></tr>
                 <tr><td><code>name?</code></td><td><code>(user: User, username: string) =&gt; string | Promise&lt;string&gt;</code></td><td><p>The name shown in the page (the username).</p></td></tr>
                 <tr><td><code>totp?</code></td><td><code>(user: User) =&gt; string | null | undefined | Promise&lt;string | null | undefined&gt;</code></td><td><p>The secret of the authenticator app of the user: its code is asked for after the password.</p></td></tr>
                 <tr><td><code>lastTotpStep?</code></td><td><code>(user: User) =&gt; number | null | undefined | Promise&lt;number | null | undefined&gt;</code></td><td></td></tr>
@@ -225,12 +371,24 @@
                 <tr><td><code>ipLockout?</code></td><td><code>false | { maxAttempts?: number; window?: number | string; lockFor?: number | string; store?: unknown } | object</code></td><td><p>Failures by address: 20 in 15 minutes.</p></td></tr>
                 <tr><td><code>passwordOptions?</code></td><td><code>{ ln?: number; r?: number; p?: number }</code></td><td></td></tr>
                 <tr><td><code>totpOptions?</code></td><td><code>{ window?: number; digits?: number; period?: number; algorithm?: string }</code></td><td></td></tr>
+                <tr><td><code>setPassword?</code></td><td><code>(user: User, hash: string, request: any) =&gt; unknown</code></td><td><p>The account page (with reload): a new password (its hash, made with passwordOptions) to keep. The current one is asked for; the other sessions of the user end.</p></td></tr>
+                <tr><td><code>minPasswordLength?</code></td><td><code>number</code></td><td><p>The shortest new password (10).</p></td></tr>
+                <tr><td><code>setTotp?</code></td><td><code>(user: User, secret: string | null, request: any) =&gt; unknown</code></td><td><p>The account page: the secret of an authenticator app the user set up (its first code checked), or null to remove it.</p></td></tr>
+                <tr><td><code>recoveryCodes?</code></td><td><code>(user: User) =&gt; string[] | null | undefined | Promise&lt;string[] | null | undefined&gt;</code></td><td><p>The hashes of the recovery codes of the user (each logs in once in place of a code of the app).</p></td></tr>
+                <tr><td><code>setRecoveryCodes?</code></td><td><code>(user: User, hashes: string[], request: any) =&gt; unknown</code></td><td><p>The hashes to keep (fewer after one is used, new ones, or [] when the app is removed). With recoveryCodes.</p></td></tr>
               </tbody>
             </table>
           </div>
 
         <h2 id="types">Types</h2>
-        <p class="ref-index"><a href="#ref-AdminAuthorize"><code>AdminAuthorize</code></a>, <a href="#ref-AdminOptions"><code>AdminOptions</code></a></p>
+        <p class="ref-index"><a href="#ref-AdminActionRun"><code>AdminActionRun</code></a>, <a href="#ref-AdminAuthorize"><code>AdminAuthorize</code></a>, <a href="#ref-AdminOptions"><code>AdminOptions</code></a></p>
+
+        <h3 id="ref-AdminActionRun"><code>AdminActionRun</code></h3>
+        <pre><code class="language-ts">export type AdminActionRun = (
+  objects: any,
+  context: AdminActionContext
+) =&gt; string | number | { message: string } | void | Promise&lt;string | number | { message: string } | void&gt;;</code></pre>
+        <p>Runs an action on a QuerySet of the objects selected: a message, a number of objects changed, or nothing.</p>
 
         <h3 id="ref-AdminAuthorize"><code>AdminAuthorize</code></h3>
         <pre><code class="language-ts">export type AdminAuthorize = ((request: any, reply: any) =&gt; boolean | Promise&lt;boolean&gt;) | 'development';</code></pre>

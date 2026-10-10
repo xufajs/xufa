@@ -1,7 +1,7 @@
-const fs = require('node:fs');
-const os = require('node:os');
-const path = require('node:path');
-const createLogger = require('..');
+import fs from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
+import createLogger from '../index.js';
 
 function sink() {
   const lines = [];

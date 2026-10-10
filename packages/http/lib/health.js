@@ -1,5 +1,3 @@
-'use strict';
-
 // The health of an app, for load balancers, Kubernetes and people: GET /health/live (the process answers: liveness),
 // GET /health/ready (the app can serve: its critical checks pass, and it is not closing: readiness) and GET /health
 // (every check, with its status, time, error and details). Checks are functions: a database (db.ping()), a queue, a
@@ -231,4 +229,4 @@ function health(app, options, done) {
 health[Symbol.for('skip-override')] = true;
 health[Symbol.for('fastify.display-name')] = 'xufa.health';
 
-module.exports = { health, Health };
+export { health, Health };

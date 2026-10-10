@@ -1,0 +1,30 @@
+{{extends 'base_generic'}}
+
+{{#block content}}
+<h1>Language: {{ language.name }}</h1>
+
+<div style="margin-left: 20px; margin-top: 20px">
+  <h4>Books in language</h4>
+
+  <ul>
+    {{#each language.bookSet as book}}
+    <li><a href="{{ book.absoluteUrl }}">{{ book.title }}</a></li>
+    {{else}}
+    <li>There are no books in this language.</li>
+    {{/each}}
+  </ul>
+</div>
+{{/block content}}
+
+{{#block sidebar}}
+{{ block.super }} {{#if perms.has('Language.change') || perms.has('Language.delete')}}
+<hr />
+<ul class="sidebar-nav">
+  {{#if perms.has('Language.change')}}
+  <li><a href="{{ url('language-update', language.pk) }}">Update Language</a></li>
+  {{/if}} {{#if !(language.bookSet | length) && perms.has('Language.delete')}}
+  <li><a href="{{ url('language-delete', language.pk) }}">Delete Language</a></li>
+  {{/if}}
+</ul>
+{{/if}}
+{{/block sidebar}}

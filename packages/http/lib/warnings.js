@@ -1,6 +1,6 @@
 // Process warnings, each emitted once unless unlimited (what process-warning does for fastify), and spyWarning()
 // to watch them in tests.
-const { format } = require('node:util');
+import { format } from 'node:util';
 
 const kWarningFn = Symbol('xufa.warning.fn');
 const kWarningSpyData = Symbol('xufa.warning.spyData');
@@ -105,12 +105,4 @@ const XUFASEC002 = createWarning({
   unlimited: true,
 });
 
-module.exports = {
-  createWarning,
-  createDeprecation,
-  spyWarning,
-  XUFAWRN001,
-  XUFAWRN003,
-  XUFASEC001,
-  XUFASEC002,
-};
+export { createWarning, createDeprecation, spyWarning, XUFAWRN001, XUFAWRN003, XUFASEC001, XUFASEC002 };

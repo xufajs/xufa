@@ -1,8 +1,5 @@
-'use strict'
-
-
-const clone = require('rfdc/default')
-const build = require('..')
+import clone from 'rfdc/default';
+import build from '../index.js';
 
 test('oneOf with $ref should not change the input schema', () => {
   expect.assertions(2)

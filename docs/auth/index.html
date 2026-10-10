@@ -76,14 +76,14 @@
         </div>
 
         <h2 id="install">Install</h2>
-        <pre><code class="language-sh">npm install @xufa/auth   # or: npm install xufa, and require('xufa/auth')</code></pre>
+        <pre><code class="language-sh">npm install @xufa/auth   # or: npm install xufa, and import from 'xufa/auth'</code></pre>
 
         <h2 id="first">An app with logins</h2>
         <p>Users in a database of <a href="../orm/index.html">@xufa/orm</a> (SQLite in memory here), the routes of login, and two routes for users and for admins:</p>
 <!--run-before: process.env.JWT_KEY = 'a-secret-of-32-bytes-or-more-for-hs256!'; -->
-        <pre data-run="first"><code class="language-js">const xufa = require('@xufa/http');
-const { Database, Model, fields, plugin: orm } = require('@xufa/orm');
-const auth = require('@xufa/auth');
+        <pre data-run="first"><code class="language-js">import xufa from '@xufa/http';
+import { Database, Model, fields, plugin as orm } from '@xufa/orm';
+import * as auth from '@xufa/auth';
 
 class User extends Model {
   static fields = {
@@ -161,6 +161,8 @@ await app.close();</code></pre>
             <thead><tr><th>Part</th><th>In the Guide</th></tr></thead>
             <tbody>
               <tr><td>The plugin: users, routes, roles and tenants</td><td><a href="guide.html#plugin">The plugin</a>, <a href="guide.html#login">Login routes</a>, <a href="guide.html#tenants">Tenants</a></td></tr>
+              <tr><td>Roles and permissions by tenant (<code>Rbac</code>), superusers</td><td><a href="guide.html#rbac">Roles and permissions</a></td></tr>
+              <tr><td>Accounts of a site with sessions: sign up, log in, reset and change passwords, verify emails</td><td><a href="guide.html#accounts">Accounts of a site</a></td></tr>
               <tr><td>Passwords (<code>hashPassword</code>, <code>verifyPassword</code>, <code>needsRehash</code>)</td><td><a href="guide.html#passwords">Passwords</a></td></tr>
               <tr><td>JSON Web Tokens with key sets that rotate (<a href="../jwt/index.html">@xufa/jwt</a> signs them)</td><td><a href="guide.html#jwt">JSON Web Tokens</a>, <a href="guide.html#vault">Keys per tenant</a></td></tr>
               <tr><td>One-time codes of authenticator apps, recovery codes</td><td><a href="guide.html#totp">One-time codes</a></td></tr>

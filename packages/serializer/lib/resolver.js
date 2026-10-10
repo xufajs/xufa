@@ -1,7 +1,7 @@
 // Resolution of $ref: schemas are registered by their $id (or a key), with the $id and anchors they hold inside.
 // A reference is resolved against the base URI of the schema holding it.
 
-const { deepEqual } = require('./deep-equal');
+import { deepEqual } from './deep-equal.js';
 
 const SCHEME = /^[a-z][a-z0-9+.-]*:/i;
 
@@ -136,4 +136,4 @@ class RefResolver {
   }
 }
 
-module.exports = { RefResolver, resolveURI };
+export { RefResolver, resolveURI };

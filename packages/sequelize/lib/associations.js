@@ -1,10 +1,10 @@
 // The associations of Sequelize: belongsTo, hasOne, hasMany and belongsToMany, with their foreign keys (added to the
 // attributes of the model that has them, named as Sequelize names them: AuthorId, or author_id when underscored) and
 // the accessors of the instances (getAuthor, setAuthor, getBooks, addBook, countBooks...).
-const { Op } = require('./operators');
-const { normalizeType } = require('./data-types');
-const { AssociationError } = require('./errors');
-const { pluralize, singularize, upperFirst, camelize, underscore, isPlainObject } = require('./utils');
+import { Op } from './operators.js';
+import { normalizeType } from './data-types.js';
+import { AssociationError } from './errors.js';
+import { pluralize, singularize, upperFirst, camelize, underscore, isPlainObject } from './utils.js';
 
 const ON_DELETE = { CASCADE: 'cascade', 'SET NULL': 'setNull', RESTRICT: 'restrict', 'NO ACTION': 'noAction' };
 
@@ -860,4 +860,4 @@ class BelongsToMany extends Association {
   }
 }
 
-module.exports = { Association, BelongsTo, HasMany, HasOne, BelongsToMany };
+export { Association, BelongsTo, HasMany, HasOne, BelongsToMany };

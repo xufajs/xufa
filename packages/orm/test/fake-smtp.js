@@ -3,8 +3,8 @@
 // undoubled), RSET, NOOP and QUIT. The messages received are in `messages` ({ from, to, raw, secure, user,
 // connection }), the commands in `log`; dropAfter closes each connection after that many messages (a server that
 // closes idle connections).
-const net = require('node:net');
-const tls = require('node:tls');
+import net from 'node:net';
+import tls from 'node:tls';
 
 function fakeSmtp({
   tlsOptions = null,
@@ -215,4 +215,4 @@ function fakeSmtp({
   return fake;
 }
 
-module.exports = { fakeSmtp };
+export { fakeSmtp };

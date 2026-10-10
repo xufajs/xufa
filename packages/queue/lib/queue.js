@@ -1,5 +1,3 @@
-'use strict';
-
 // Queue: jobs to run in the background, kept as objects of a model of @xufa/orm (any backend: SQLite, PostgreSQL,
 // MongoDB, memory, files), as the queues of Laravel and Rails' Active Job. A job enqueued in a transaction is there
 // only when the transaction commits, with the data it was enqueued for (an outbox: no message lost or sent too early).
@@ -17,11 +15,12 @@
 // A kind of job with a pool (createPool or usePool of @xufa/cluster: nodes that take a few works at once each) waits
 // for a free node before it is claimed: it stays pending while it waits, its timeout counts its run only, and it runs
 // with job.node (its signal is aborted too when the pool takes the node back).
-const os = require('node:os');
-const { randomBytes } = require('node:crypto');
-const { EventEmitter } = require('node:events');
-const { QueueError } = require('./errors');
-const { ms } = require('./duration');
+import os from 'node:os';
+import { randomBytes } from 'node:crypto';
+import { EventEmitter } from 'node:events';
+import { QueueError } from './errors.js';
+import { ms } from './duration.js';
+import * as ormModule from '@xufa/orm';
 
 const STATUSES = ['pending', 'running', 'done', 'failed'];
 
@@ -71,7 +70,7 @@ class Queue extends EventEmitter {
     super();
     let orm;
     try {
-      orm = require('@xufa/orm'); // eslint-disable-line global-require
+      orm = ormModule;
     } catch (err) {
       throw new QueueError(`Queue needs @xufa/orm (${err.message})`);
     }
@@ -505,4 +504,4 @@ class Worker {
   }
 }
 
-module.exports = { Queue, Worker, backoffDelay };
+export { Queue, Worker, backoffDelay };

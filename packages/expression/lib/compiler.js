@@ -2,8 +2,8 @@
 // the parameters of its arrow functions and the globals of its engine: no property can be named __proto__,
 // constructor or prototype (nor the old accessors of Object.prototype), there is no assignment, and objects are made
 // with their keys as their own properties (a key __proto__ is refused).
-const { ExpressionError } = require('./errors');
-const { generate } = require('./codegen');
+import { ExpressionError } from './errors.js';
+import { generate } from './codegen.js';
 
 // The context of a run that is not an object (objects are taken as they are, without a call).
 function contextOf(context) {
@@ -487,4 +487,4 @@ function compileTree(tree, source, options) {
   };
 }
 
-module.exports = { compileTree, FORBIDDEN };
+export { compileTree, FORBIDDEN };

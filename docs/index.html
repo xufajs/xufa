@@ -73,7 +73,7 @@
                 <button role="tab" id="tab-seq" aria-controls="panel-seq" aria-selected="false">Sequelize</button>
               </div>
               <div class="tab-panel" id="panel-http" role="tabpanel" aria-labelledby="tab-http">
-                <pre><code class="language-js">const xufa = require('xufa');
+                <pre><code class="language-js">import xufa from 'xufa';
 
 const app = xufa({ logger: true });
 
@@ -96,7 +96,7 @@ app.get(
 await app.listen({ port: 3000 });</code></pre>
               </div>
               <div class="tab-panel" id="panel-orm" role="tabpanel" aria-labelledby="tab-orm" hidden>
-                <pre><code class="language-js">const { Database, Model, fields, Count } = require('xufa/orm');
+                <pre><code class="language-js">import { Database, Model, fields, Count } from 'xufa/orm';
 
 class Author extends Model {
   static fields = { name: fields.string({ maxLength: 100 }) };
@@ -121,8 +121,8 @@ const long = await Book.objects
 await Author.objects.values('name').annotate({ books: Count('books') });</code></pre>
               </div>
               <div class="tab-panel" id="panel-seq" role="tabpanel" aria-labelledby="tab-seq" hidden>
-                <pre data-run><code class="language-js">// require('sequelize'), changed: the rest of the code as it was.
-const { Sequelize, DataTypes, Op } = require('@xufa/sequelize');
+                <pre data-run><code class="language-js">// 'sequelize', changed: the rest of the code as it was.
+import { Sequelize, DataTypes, Op } from '@xufa/sequelize';
 
 const sequelize = new Sequelize(process.env.DATABASE_URL);
 const Author = sequelize.define('Author', { name: DataTypes.STRING });
@@ -226,6 +226,10 @@ const books = await Book.findAll({
                 <tr><td><a href="auth/index.html"><code>@xufa/auth</code></a></td><td>jsonwebtoken, otplib</td><td>Passwords, JWT, refresh tokens, TOTP and lockout, as a plugin of @xufa/http.</td></tr>
                 <tr><td><a href="admin/index.html"><code>@xufa/admin</code></a></td><td>the Django admin</td><td>The admin of the models: lists with search, filters and pages, forms with their validation, for every backend.</td></tr>
                 <tr><td><a href="session/index.html"><code>@xufa/session</code></a></td><td>@fastify/session, express-session</td><td>Sessions of browsers: signed cookies, stores in memory or in the database, flash messages and CSRF tokens.</td></tr>
+                <tr><td><a href="forms/index.html"><code>@xufa/forms</code></a></td><td>django.forms, WTForms</td><td>Forms that clean what a body gives, with their errors by field and their HTML; forms of models checked by the model.</td></tr>
+                <tr><td><a href="views/index.html"><code>@xufa/views</code></a></td><td>django.views.generic</td><td>Views of classes: lists in pages, details, and forms that create, update and delete objects of models.</td></tr>
+                <tr><td><a href="mail/index.html"><code>@xufa/mail</code></a></td><td>Laravel Mailables and Notifications, nodemailer templates</td><td>Emails as classes rendered with templates in a layout for email clients, sent now or from the queue, and notifications by mail, database or your own channels.</td></tr>
+                <tr><td><a href="i18n/index.html"><code>@xufa/i18n</code></a></td><td>i18next, Django translations</td><td>Messages in the languages of an app: plurals, fallbacks, the locale of each request in its async context, and the messages of the ORM translated.</td></tr>
                 <tr><td><a href="sequelize/index.html"><code>@xufa/sequelize</code></a></td><td>Sequelize</td><td>The API of Sequelize 6 over the xufa ORM: existing code runs as it is.</td></tr>
                 <tr class="group"><th colspan="3"><a href="packages.html#drivers">Drivers</a></th></tr>
                 <tr><td><a href="pg/index.html"><code>@xufa/pg</code></a></td><td>pg</td><td>A PostgreSQL driver: Client, Pool, transactions, TLS, COPY and LISTEN/NOTIFY.</td></tr>

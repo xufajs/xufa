@@ -1,6 +1,6 @@
 // Lockouts and refresh tokens, with their stores of the process and of @xufa/orm.
-const { Database, Model, fields, MemoryCache } = require('@xufa/orm');
-const { Lockout, Locked, RefreshTokens, Unauthorized, modelStore, refreshTokenFields, normalizeIdentifier, skeleton } = require('..');
+import { Database, Model, fields, MemoryCache } from '@xufa/orm';
+import { Lockout, Locked, RefreshTokens, Unauthorized, modelStore, refreshTokenFields, normalizeIdentifier, skeleton } from '../index.js';
 
 const sleep = (ms) =>
   new Promise((resolve) => {

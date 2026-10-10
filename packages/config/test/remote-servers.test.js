@@ -3,11 +3,11 @@
 // `vault server -dev -dev-root-token-id=<token>`). Without them, these tests are skipped.
 //
 //   XUFA_CONSUL_URL=http://127.0.0.1:8500 XUFA_VAULT_URL=http://127.0.0.1:8200 XUFA_VAULT_TOKEN=root npx vyntra test/remote-servers.test.js
-const crypto = require('node:crypto');
-const fs = require('node:fs');
-const os = require('node:os');
-const path = require('node:path');
-const { loadRemoteConfig, watchConfig, sources } = require('..');
+import crypto from 'node:crypto';
+import fs from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
+import { loadRemoteConfig, watchConfig, sources } from '../index.js';
 
 const CONSUL = process.env.XUFA_CONSUL_URL;
 const VAULT = process.env.XUFA_VAULT_URL;
@@ -30,8 +30,7 @@ async function call(url, options = {}) {
 
 describe.skipIf(!CONSUL)('Consul', () => {
   const put = (key, value) => call(`${CONSUL}/v1/kv/${run}/${key}`, { method: 'PUT', body: value });
-  const load = (remote) =>
-    loadRemoteConfig({ cwd, dotenv: false, environment: { CONSUL_HTTP_ADDR: CONSUL }, remote });
+  const load = (remote) => loadRemoteConfig({ cwd, dotenv: false, environment: { CONSUL_HTTP_ADDR: CONSUL }, remote });
 
   beforeAll(async () => {
     await put('shop/db/host', 'db.internal');
@@ -58,7 +57,10 @@ describe.skipIf(!CONSUL)('Consul', () => {
 
   it('a prefix with no keys (a mistake: Consul answers 404), and a key that is not there, are errors', async () => {
     const empty = await load([sources.consul({ prefix: `${run}/nothing`, retries: 0 })]).catch((e) => e);
-    expect([empty.errors[0].path, empty.errors[0].message]).toEqual([`consul ${run}/nothing`, `no keys under ${run}/nothing/`]);
+    expect([empty.errors[0].path, empty.errors[0].message]).toEqual([
+      `consul ${run}/nothing`,
+      `no keys under ${run}/nothing/`,
+    ]);
     const err = await load([sources.consul({ key: `${run}/missing.json`, retries: 0 })]).catch((e) => e);
     expect(err.errors[0].message).toMatch(/404/);
   });
@@ -66,7 +68,12 @@ describe.skipIf(!CONSUL)('Consul', () => {
   it('watchConfig: a key changed in Consul is a new configuration', async () => {
     const changes = [];
     const watcher = await watchConfig(
-      { cwd, dotenv: false, environment: { CONSUL_HTTP_ADDR: CONSUL }, remote: [sources.consul({ prefix: `${run}/shop` })] },
+      {
+        cwd,
+        dotenv: false,
+        environment: { CONSUL_HTTP_ADDR: CONSUL },
+        remote: [sources.consul({ prefix: `${run}/shop` })],
+      },
       { interval: '1h', onChange: (next, previous, paths) => changes.push(paths) }
     );
     await put('shop/db/host', 'db2.internal');
@@ -78,7 +85,12 @@ describe.skipIf(!CONSUL)('Consul', () => {
   it('watchConfig follows Consul with blocking queries: a change is read at once, not at the next interval', async () => {
     const changes = [];
     const watcher = await watchConfig(
-      { cwd, dotenv: false, environment: { CONSUL_HTTP_ADDR: CONSUL }, remote: [sources.consul({ prefix: `${run}/shop` })] },
+      {
+        cwd,
+        dotenv: false,
+        environment: { CONSUL_HTTP_ADDR: CONSUL },
+        remote: [sources.consul({ prefix: `${run}/shop` })],
+      },
       { interval: '1h', onChange: (next, previous, paths) => changes.push([[...paths].sort(), next.name]) }
     );
     await new Promise((resolve) => setTimeout(resolve, 300)); // the first query, for the index

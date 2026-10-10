@@ -1,5 +1,5 @@
 // printf-like messages: %s %d %i %f %j %o %O %%, as pino formats them.
-const { safeStringify } = require('./stringify');
+import { safeStringify } from './stringify.js';
 
 function asJson(value) {
   if (typeof value === 'string') return `'${value}'`;
@@ -59,4 +59,4 @@ function format(message, args, start) {
   return last === 0 ? message : out + message.slice(last);
 }
 
-module.exports = { format };
+export { format };

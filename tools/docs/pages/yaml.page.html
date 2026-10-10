@@ -16,7 +16,7 @@
 
         <h2 id="start">Quick start</h2>
         <pre><code class="language-sh">npm install @xufa/yaml</code></pre>
-        <pre data-run="yaml"><code class="language-js">const yaml = require('@xufa/yaml');
+        <pre data-run="yaml"><code class="language-js">import yaml from '@xufa/yaml';
 
 const doc = yaml.load(`
 openapi: 3.1.0
@@ -59,7 +59,7 @@ yaml.load('at: !point [1, 2]', { schema }); // { at: { x: 1, y: 2 } }</code></pr
 
         <h2 id="from-js-yaml">Coming from js-yaml</h2>
         <p>
-          <code>require('js-yaml')</code> can be replaced by <code>require('@xufa/yaml')</code>: it is js-yaml 4.1.0, and its
+          <code>js-yaml</code> can be replaced by <code>@xufa/yaml</code> (in imports or requires): it is js-yaml 4.1.0, and its
           documentation applies.
         </p>
 

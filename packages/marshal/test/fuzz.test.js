@@ -1,6 +1,6 @@
 // Random values: parse(stringify(v)) and clone(v) are what structuredClone gives (for the values both can hold).
-const { isDeepStrictEqual } = require('node:util');
-const { stringify, parse, clone } = require('..');
+import { isDeepStrictEqual } from 'node:util';
+import { stringify, parse, clone } from '../index.js';
 
 // A small seeded generator, so a failure can be run again.
 function random(seed) {

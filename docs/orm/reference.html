@@ -44,11 +44,11 @@
       <aside class="sidebar">
         <h4>Reference</h4>
         <ul>
-          <li><a href="#functions">Functions (23)</a></li>
-          <li><a href="#classes">Classes (23)</a></li>
-          <li><a href="#constants">Constants (17)</a></li>
-          <li><a href="#interfaces">Interfaces (41)</a></li>
-          <li><a href="#types">Types (34)</a></li>
+          <li><a href="#functions">Functions (29)</a></li>
+          <li><a href="#classes">Classes (31)</a></li>
+          <li><a href="#constants">Constants (20)</a></li>
+          <li><a href="#interfaces">Interfaces (47)</a></li>
+          <li><a href="#types">Types (39)</a></li>
         </ul>
       </aside>
 
@@ -63,18 +63,39 @@
         <h1>Reference</h1>
         <p class="intro">
           The ORM of xufa: Django-like models and querysets over SQL and NoSQL databases, with no dependencies. Every declaration of its TypeScript declarations
-          (<code>packages/orm/index.d.ts</code>), as they are written, with their comments: made from them each time
+          (<code>packages/orm/index.d.ts</code> or <code>index.d.cts</code>), as they are written, with their comments: made from them each time
           the docs are built. How to use them is in <a href="index.html">the overview</a>.
         </p>
 
         <h2 id="functions">Functions</h2>
-        <p class="ref-index"><a href="#ref-modelOptions"><code>modelOptions</code></a>, <a href="#ref-jsonPath"><code>jsonPath</code></a>, <a href="#ref-and"><code>and</code></a>, <a href="#ref-or"><code>or</code></a>, <a href="#ref-not"><code>not</code></a>, <a href="#ref-F"><code>F</code></a>, <a href="#ref-Count"><code>Count</code></a>, <a href="#ref-Sum"><code>Sum</code></a>, <a href="#ref-Avg"><code>Avg</code></a>, <a href="#ref-Min"><code>Min</code></a>, <a href="#ref-Max"><code>Max</code></a>, <a href="#ref-cached"><code>cached</code></a>, <a href="#ref-withSignal"><code>withSignal</code></a>, <a href="#ref-setEncryptionKeys"><code>setEncryptionKeys</code></a>, <a href="#ref-generateEncryptionKey"><code>generateEncryptionKey</code></a>, <a href="#ref-isEncrypted"><code>isEncrypted</code></a>, <a href="#ref-reencrypt"><code>reencrypt</code></a>, <a href="#ref-resource"><code>resource</code></a>, <a href="#ref-auditResource"><code>auditResource</code></a>, <a href="#ref-plugin"><code>plugin</code></a>, <a href="#ref-factory"><code>factory</code></a>, <a href="#ref-sequence"><code>sequence</code></a>, <a href="#ref-maintenance"><code>maintenance</code></a></p>
+        <p class="ref-index"><a href="#ref-modelOptions"><code>modelOptions</code></a>, <a href="#ref-modelsFromSpec"><code>modelsFromSpec</code></a>, <a href="#ref-specOf"><code>specOf</code></a>, <a href="#ref-rollbackEach"><code>rollbackEach</code></a>, <a href="#ref-jsonPath"><code>jsonPath</code></a>, <a href="#ref-and"><code>and</code></a>, <a href="#ref-or"><code>or</code></a>, <a href="#ref-not"><code>not</code></a>, <a href="#ref-F"><code>F</code></a>, <a href="#ref-Count"><code>Count</code></a>, <a href="#ref-Sum"><code>Sum</code></a>, <a href="#ref-Avg"><code>Avg</code></a>, <a href="#ref-Min"><code>Min</code></a>, <a href="#ref-Max"><code>Max</code></a>, <a href="#ref-cached"><code>cached</code></a>, <a href="#ref-withSignal"><code>withSignal</code></a>, <a href="#ref-setEncryptionKeys"><code>setEncryptionKeys</code></a>, <a href="#ref-generateEncryptionKey"><code>generateEncryptionKey</code></a>, <a href="#ref-isEncrypted"><code>isEncrypted</code></a>, <a href="#ref-reencrypt"><code>reencrypt</code></a>, <a href="#ref-resource"><code>resource</code></a>, <a href="#ref-auditResource"><code>auditResource</code></a>, <a href="#ref-plugin"><code>plugin</code></a>, <a href="#ref-factory"><code>factory</code></a>, <a href="#ref-sequence"><code>sequence</code></a>, <a href="#ref-maintenance"><code>maintenance</code></a>, <a href="#ref-setTranslator"><code>setTranslator</code></a>, <a href="#ref-validationMessage"><code>validationMessage</code></a>, <a href="#ref-Lower"><code>Lower</code></a></p>
 
         <h3 id="ref-modelOptions"><code>modelOptions</code></h3>
         <pre><code class="language-ts">export declare function modelOptions&lt;const O extends ModelOptions&gt;(
   options: O &amp; { [K in Exclude&lt;keyof O, keyof ModelOptions&gt;]: never }
 ): O;</code></pre>
         <p>The options of a model, as they are: <code>static options = modelOptions({ primaryKey: ['a', 'b'] })</code>. TypeScript then keeps their values without <code>as const</code> (primaryKey: false, the fields of a composite key: Model.schema() has no automatic id for them) and checks their names.</p>
+
+        <h3 id="ref-modelsFromSpec"><code>modelsFromSpec</code></h3>
+        <pre><code class="language-ts">export declare function modelsFromSpec(
+  spec: Record&lt;string, ModelSpec&gt;,
+  options?: { Model?: ModelClass&lt;any&gt;; resolve?: (name: string) =&gt; ModelClass&lt;any&gt; | undefined; where?: string }
+): ModelClass&lt;Model&gt;[];</code></pre>
+        <p>Models as data (an app's models.yaml): the classes of a spec ({ Book: { fields, ...options } }), in its order. resolve(name): a model the spec has not (another app's); where: its name in errors.</p>
+
+        <h3 id="ref-specOf"><code>specOf</code></h3>
+        <pre><code class="language-ts">export declare function specOf(model: ModelClass&lt;any&gt;): ModelSpec;</code></pre>
+        <p>The spec of any model (one of code too): what modelsFromSpec() takes.</p>
+
+        <h3 id="ref-rollbackEach"><code>rollbackEach</code></h3>
+        <pre><code class="language-ts">export declare function rollbackEach(
+  target: TestDatabases | TestDatabases[] | (() =&gt; TestDatabases | TestDatabases[]),
+  options?: {
+    beforeEach?: (fn: () =&gt; Promise&lt;void&gt;) =&gt; unknown;
+    afterEach?: (fn: () =&gt; Promise&lt;void&gt;) =&gt; unknown;
+    mode?: 'auto' | 'rollback' | 'flush';
+  }
+): void;</code></pre>
 
         <h3 id="ref-jsonPath"><code>jsonPath</code></h3>
         <pre><code class="language-ts">export declare function jsonPath(
@@ -200,8 +221,21 @@
 };</code></pre>
         <p>The maintenance mode kept in the database, so every machine of the app sees it (xufa down --everywhere): the store of the plugin xufa.maintenance of</p>
 
+        <h3 id="ref-setTranslator"><code>setTranslator</code></h3>
+        <pre><code class="language-ts">export declare function setTranslator(
+  fn: ((key: string, params: Record&lt;string, unknown&gt;, english: string) =&gt; string) | null
+): void;</code></pre>
+
+        <h3 id="ref-validationMessage"><code>validationMessage</code></h3>
+        <pre><code class="language-ts">export declare function validationMessage(key: string, params?: Record&lt;string, unknown&gt;): string;</code></pre>
+        <p>A validation message by its key, with its parameters, translated when there is a translator.</p>
+
+        <h3 id="ref-Lower"><code>Lower</code></h3>
+        <pre><code class="language-ts">export declare function Lower(field: string): LowerField;</code></pre>
+        <p>The lower case of a text field: unique without case in constraints, found without case in indexes.</p>
+
         <h2 id="classes">Classes</h2>
-        <p class="ref-index"><a href="#ref-Field"><code>Field</code></a>, <a href="#ref-ForeignKey"><code>ForeignKey</code></a>, <a href="#ref-ManyToManyField"><code>ManyToManyField</code></a>, <a href="#ref-Model"><code>Model</code></a>, <a href="#ref-JsonPath"><code>JsonPath</code></a>, <a href="#ref-Q"><code>Q</code></a>, <a href="#ref-QuerySet"><code>QuerySet</code></a>, <a href="#ref-RelatedSet"><code>RelatedSet</code></a>, <a href="#ref-BlobValue"><code>BlobValue</code></a>, <a href="#ref-AuditEntry"><code>AuditEntry</code></a>, <a href="#ref-Audit"><code>Audit</code></a>, <a href="#ref-MemoryCache"><code>MemoryCache</code></a>, <a href="#ref-SharedCache"><code>SharedCache</code></a>, <a href="#ref-LocalCache"><code>LocalCache</code></a>, <a href="#ref-Faults"><code>Faults</code></a>, <a href="#ref-FaultError"><code>FaultError</code></a>, <a href="#ref-Database"><code>Database</code></a>, <a href="#ref-Databases"><code>Databases</code></a>, <a href="#ref-Tenants"><code>Tenants</code></a>, <a href="#ref-Backend"><code>Backend</code></a>, <a href="#ref-Keyring"><code>Keyring</code></a>, <a href="#ref-Factory"><code>Factory</code></a>, <a href="#ref-CombinedQuerySet"><code>CombinedQuerySet</code></a></p>
+        <p class="ref-index"><a href="#ref-Field"><code>Field</code></a>, <a href="#ref-ForeignKey"><code>ForeignKey</code></a>, <a href="#ref-ManyToManyField"><code>ManyToManyField</code></a>, <a href="#ref-SpecError"><code>SpecError</code></a>, <a href="#ref-Model"><code>Model</code></a>, <a href="#ref-JsonPath"><code>JsonPath</code></a>, <a href="#ref-Q"><code>Q</code></a>, <a href="#ref-QuerySet"><code>QuerySet</code></a>, <a href="#ref-RelatedSet"><code>RelatedSet</code></a>, <a href="#ref-BlobValue"><code>BlobValue</code></a>, <a href="#ref-AuditEntry"><code>AuditEntry</code></a>, <a href="#ref-Audit"><code>Audit</code></a>, <a href="#ref-MemoryCache"><code>MemoryCache</code></a>, <a href="#ref-SharedCache"><code>SharedCache</code></a>, <a href="#ref-LocalCache"><code>LocalCache</code></a>, <a href="#ref-Faults"><code>Faults</code></a>, <a href="#ref-FaultError"><code>FaultError</code></a>, <a href="#ref-Database"><code>Database</code></a>, <a href="#ref-Databases"><code>Databases</code></a>, <a href="#ref-Tenants"><code>Tenants</code></a>, <a href="#ref-Backend"><code>Backend</code></a>, <a href="#ref-Keyring"><code>Keyring</code></a>, <a href="#ref-Factory"><code>Factory</code></a>, <a href="#ref-CombinedQuerySet"><code>CombinedQuerySet</code></a>, <a href="#ref-InvalidPage"><code>InvalidPage</code></a>, <a href="#ref-PageNotAnInteger"><code>PageNotAnInteger</code></a>, <a href="#ref-EmptyPage"><code>EmptyPage</code></a>, <a href="#ref-Page"><code>Page</code></a>, <a href="#ref-Paginator"><code>Paginator</code></a>, <a href="#ref-KeysetPage"><code>KeysetPage</code></a>, <a href="#ref-KeysetPaginator"><code>KeysetPaginator</code></a></p>
 
         <h3 id="ref-Field"><code>Field</code></h3>
         <pre><code class="language-ts">export declare class Field&lt;T = unknown, N extends boolean = false, O = { ... }</code></pre>
@@ -251,6 +285,9 @@
             </table>
           </div>
 
+        <h3 id="ref-SpecError"><code>SpecError</code></h3>
+        <pre><code class="language-ts">export declare class SpecError extends TypeError { ... }</code></pre>
+
         <h3 id="ref-Model"><code>Model</code></h3>
         <pre><code class="language-ts">export declare class Model { ... }</code></pre>
         <p>A model: a class with static fields (and options), whose objects are rows of its table (or documents of its collection). Book.objects gives its QuerySets.</p>
@@ -262,7 +299,7 @@
                 <tr><td><code>static readonly meta</code></td><td><code><a href="#ref-Meta">Meta</a></code></td><td></td></tr>
                 <tr><td><code>static readonly db</code></td><td><code><a href="#ref-Database">Database</a></code></td><td></td></tr>
                 <tr><td><code>static readonly objects</code></td><td><code><a href="#ref-QuerySet">QuerySet</a>&lt;any&gt;</code></td><td><p>A QuerySet of the objects of the model (typed by Model.query()).</p></td></tr>
-                <tr><td><code>static query&lt;M extends Model&gt;(this: ModelClass&lt;M&gt;)</code></td><td><code><a href="#ref-QuerySet">QuerySet</a>&lt;M&gt;</code></td><td></td></tr>
+                <tr><td><code>static query&lt;M extends Model, S = {}&gt;(this: ModelClass&lt;M&gt; &amp; { readonly scopes?: S })</code></td><td><code><a href="#ref-ScopedQuerySet">ScopedQuerySet</a>&lt;M, S&gt;</code></td><td><p>A QuerySet of the objects of the model, typed, with the methods of its scopes (static scopes = { published: (qs: QuerySet&lt;Book&gt;) =&gt; qs.filter({ published: true }) }): Book.query().published().orderBy('title').</p></td></tr>
                 <tr><td><code>static create&lt;M extends Model&gt;(this: ModelClass&lt;M&gt;, data: Record&lt;string, unknown&gt;)</code></td><td><code>Promise&lt;M&gt;</code></td><td></td></tr>
                 <tr><td><code>static on&lt;M extends Model&gt;(this: ModelClass&lt;M&gt;, event: HookName, hook: (instance: M, info: { created?: boolean }) =&gt; void | Promise&lt;void&gt;)</code></td><td><code><a href="#ref-ModelClass">ModelClass</a>&lt;M&gt;</code></td><td></td></tr>
                 <tr><td><code>static jsonSchema(options?: { exclude?: string[]; partial?: boolean })</code></td><td><code>Record&lt;string, unknown&gt;</code></td><td></td></tr>
@@ -275,6 +312,7 @@
                 <tr><td><code>restore()</code></td><td><code>Promise&lt;this&gt;</code></td><td><p>Takes back an object deleted softly.</p></td></tr>
                 <tr><td><code>readonly isDeleted</code></td><td><code>boolean</code></td><td><p>Whether the object was deleted softly.</p></td></tr>
                 <tr><td><code>refresh()</code></td><td><code>Promise&lt;this&gt;</code></td><td></td></tr>
+                <tr><td><code>display(name: string)</code></td><td><code>string | null | undefined</code></td><td><p>The label of the value of a field of choices (Django's get_status_display()), or the value as text.</p></td></tr>
                 <tr><td><code>load(name: string)</code></td><td><code>Promise&lt;unknown&gt;</code></td><td></td></tr>
                 <tr><td><code>toJSON()</code></td><td><code>Record&lt;string, unknown&gt;</code></td><td></td></tr>
               </tbody>
@@ -313,28 +351,28 @@
           </div>
 
         <h3 id="ref-QuerySet"><code>QuerySet</code></h3>
-        <pre><code class="language-ts">export declare class QuerySet&lt;T&gt; implements PromiseLike&lt;T[]&gt;, AsyncIterable&lt;T&gt; { ... }</code></pre>
+        <pre><code class="language-ts">export declare class QuerySet&lt;T&gt; implements PromiseLike&lt;T[]&gt;, AsyncIterable&lt;T&gt;, Iterable&lt;T&gt; { ... }</code></pre>
         <p>A query of the objects of a model: lazy (await runs it), chained (filter, exclude, orderBy, selectRelated...), and with its writes (create, update, delete...), as Django's QuerySets.</p>
         <div class="table-wrap">
             <table class="ref-members">
               <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
               <tbody>
                 <tr><td><code>readonly model</code></td><td><code><a href="#ref-ModelClass">ModelClass</a></code></td><td></td></tr>
-                <tr><td><code>all()</code></td><td><code><a href="#ref-QuerySet">QuerySet</a>&lt;T&gt;</code></td><td></td></tr>
-                <tr><td><code>filter(...conditions: Conditions[])</code></td><td><code><a href="#ref-QuerySet">QuerySet</a>&lt;T&gt;</code></td><td></td></tr>
-                <tr><td><code>exclude(...conditions: Conditions[])</code></td><td><code><a href="#ref-QuerySet">QuerySet</a>&lt;T&gt;</code></td><td></td></tr>
-                <tr><td><code>orderBy(...names: string[])</code></td><td><code><a href="#ref-QuerySet">QuerySet</a>&lt;T&gt;</code></td><td></td></tr>
-                <tr><td><code>limit(count: number)</code></td><td><code><a href="#ref-QuerySet">QuerySet</a>&lt;T&gt;</code></td><td></td></tr>
-                <tr><td><code>offset(count: number)</code></td><td><code><a href="#ref-QuerySet">QuerySet</a>&lt;T&gt;</code></td><td></td></tr>
-                <tr><td><code>slice(start: number, end?: number)</code></td><td><code><a href="#ref-QuerySet">QuerySet</a>&lt;T&gt;</code></td><td></td></tr>
-                <tr><td><code>only(...names: string[])</code></td><td><code><a href="#ref-QuerySet">QuerySet</a>&lt;T&gt;</code></td><td></td></tr>
+                <tr><td><code>all()</code></td><td><code>this</code></td><td></td></tr>
+                <tr><td><code>filter(...conditions: Conditions[])</code></td><td><code>this</code></td><td></td></tr>
+                <tr><td><code>exclude(...conditions: Conditions[])</code></td><td><code>this</code></td><td></td></tr>
+                <tr><td><code>orderBy(...names: (string | RawSql)[])</code></td><td><code>this</code></td><td><p>Names of fields ('-pages': descending; 'author__name'), keys of values() made of Extract, Trunc or Raw ('-month'), or fragments of SQL (Raw, SQL databases).</p></td></tr>
+                <tr><td><code>limit(count: number)</code></td><td><code>this</code></td><td></td></tr>
+                <tr><td><code>offset(count: number)</code></td><td><code>this</code></td><td></td></tr>
+                <tr><td><code>slice(start: number, end?: number)</code></td><td><code>this</code></td><td></td></tr>
+                <tr><td><code>only(...names: string[])</code></td><td><code>this</code></td><td></td></tr>
                 <tr><td><code>values&lt;R = Record&lt;string, unknown&gt;&gt;(...names: ValuesItem[])</code></td><td><code><a href="#ref-QuerySet">QuerySet</a>&lt;R&gt;</code></td><td></td></tr>
                 <tr><td><code>valuesList&lt;R = unknown&gt;(...args: [...ValuesItem[], { flat: true }])</code></td><td><code><a href="#ref-QuerySet">QuerySet</a>&lt;R&gt;</code></td><td></td></tr>
                 <tr><td><code>valuesList&lt;R extends unknown[] = unknown[]&gt;(...names: ValuesItem[])</code></td><td><code><a href="#ref-QuerySet">QuerySet</a>&lt;R&gt;</code></td><td></td></tr>
-                <tr><td><code>selectRelated(...names: string[])</code></td><td><code><a href="#ref-QuerySet">QuerySet</a>&lt;T&gt;</code></td><td></td></tr>
-                <tr><td><code>prefetchRelated(...names: string[])</code></td><td><code><a href="#ref-QuerySet">QuerySet</a>&lt;T&gt;</code></td><td></td></tr>
-                <tr><td><code>annotate&lt;A extends Record&lt;string, Aggregate&lt;unknown&gt;&gt;&gt;(aggregates: A)</code></td><td><code><a href="#ref-QuerySet">QuerySet</a>&lt;Record&lt;string, unknown&gt; &amp; <a href="#ref-AggregateResult">AggregateResult</a>&lt;A&gt;&gt;</code></td><td><p>Aggregates of Count, Sum... or Raw('SUM(CASE WHEN ... END)') (SQL databases).</p></td></tr>
-                <tr><td><code>using(db: Database)</code></td><td><code><a href="#ref-QuerySet">QuerySet</a>&lt;T&gt;</code></td><td></td></tr>
+                <tr><td><code>selectRelated(...names: string[])</code></td><td><code>this</code></td><td></td></tr>
+                <tr><td><code>prefetchRelated(...names: string[])</code></td><td><code>this</code></td><td></td></tr>
+                <tr><td><code>annotate&lt;A extends Record&lt;string, Aggregate&lt;unknown&gt; | RawSql&gt;&gt;(aggregates: A)</code></td><td><code><a href="#ref-QuerySet">QuerySet</a>&lt;Record&lt;string, unknown&gt; &amp; <a href="#ref-AggregateResult">AggregateResult</a>&lt;A&gt;&gt;</code></td><td><p>Aggregates of Count, Sum... or Raw('SUM(CASE WHEN ... END)') (SQL databases).</p></td></tr>
+                <tr><td><code>using(db: Database)</code></td><td><code>this</code></td><td></td></tr>
                 <tr><td><code>defer(...names: string[])</code></td><td><code>this</code></td><td><p>The objects without the fields named (not read), as Django's defer().</p></td></tr>
                 <tr><td><code>distinct(...names: string[])</code></td><td><code>this</code></td><td><p>Without names: the rows of values() and valuesList() with the same values once (objects are distinct already). With names: the first object of each group of their values (DISTINCT ON of PostgreSQL), as limitPer(names, 1).</p></td></tr>
                 <tr><td><code>union(...others: (QuerySet&lt;T&gt; | CombinedQuerySet&lt;T&gt; | { all?: boolean })[])</code></td><td><code><a href="#ref-QuerySet">QuerySet</a>&lt;T&gt; | <a href="#ref-CombinedQuerySet">CombinedQuerySet</a>&lt;T&gt;</code></td><td><p>The objects (or values) of this query and of others, each once ({ all: true }: as many times as they come). Of one model without slices: one query, its conditions ORed (a QuerySet); otherwise each runs and they are merged.</p></td></tr>
@@ -343,25 +381,27 @@
                 <tr><td><code>inBulk(keys?: unknown[], options?: { field?: string })</code></td><td><code>Promise&lt;Map&lt;unknown, T&gt;&gt;</code></td><td><p>The objects of these keys (or values of a unique field: { field: 'code' }) by key; every object without keys.</p></td></tr>
                 <tr><td><code>withDeleted()</code></td><td><code>this</code></td><td><p>Soft deletes: the objects deleted too.</p></td></tr>
                 <tr><td><code>onlyDeleted()</code></td><td><code>this</code></td><td><p>Soft deletes: the objects deleted alone.</p></td></tr>
-                <tr><td><code>signal(signal: AbortSignal | null)</code></td><td><code><a href="#ref-QuerySet">QuerySet</a>&lt;T&gt;</code></td><td><p>Locks the rows selected until the end of the transaction (PostgreSQL). Its reads stop when the signal is aborted: they throw its reason, and PostgreSQL cancels the one that runs.</p></td></tr>
-                <tr><td><code>cached(options?: { ttl?: number })</code></td><td><code><a href="#ref-QuerySet">QuerySet</a>&lt;T&gt;</code></td><td><p>Its results kept in the cache of the database until a model it reads is written (every one needs the option cache); ttl in ms (the ttl of the option cache of the model by default).</p></td></tr>
+                <tr><td><code>signal(signal: AbortSignal | null)</code></td><td><code>this</code></td><td><p>Locks the rows selected until the end of the transaction (PostgreSQL). Its reads stop when the signal is aborted: they throw its reason, and PostgreSQL cancels the one that runs.</p></td></tr>
+                <tr><td><code>cached(options?: { ttl?: number })</code></td><td><code>this</code></td><td><p>Its results kept in the cache of the database until a model it reads is written (every one needs the option cache); ttl in ms (the ttl of the option cache of the model by default).</p></td></tr>
                 <tr><td><code>selectForUpdate(options?: {
     skipLocked?: boolean;
     noWait?: boolean;
     mode?: 'update' | 'share' | 'noKeyUpdate' | 'keyShare';
     of?: 'self';
-  })</code></td><td><code><a href="#ref-QuerySet">QuerySet</a>&lt;T&gt;</code></td><td></td></tr>
-                <tr><td><code>limitPer(names: string | string[], count: number, offset?: number)</code></td><td><code><a href="#ref-QuerySet">QuerySet</a>&lt;T&gt;</code></td><td><p>The first <code>count</code> objects (after <code>offset</code>) of every group of values of the fields, in the order of the query.</p></td></tr>
+  })</code></td><td><code>this</code></td><td></td></tr>
+                <tr><td><code>limitPer(names: string | string[], count: number, offset?: number)</code></td><td><code>this</code></td><td><p>The first <code>count</code> objects (after <code>offset</code>) of every group of values of the fields, in the order of the query.</p></td></tr>
                 <tr><td><code>then&lt;R1 = T[], R2 = never&gt;(onfulfilled?: ((value: T[]) =&gt; R1 | PromiseLike&lt;R1&gt;) | null, onrejected?: ((reason: unknown) =&gt; R2 | PromiseLike&lt;R2&gt;) | null)</code></td><td><code>Promise&lt;R1 | R2&gt;</code></td><td></td></tr>
                 <tr><td><code>catch&lt;R = never&gt;(onrejected?: ((reason: unknown) =&gt; R | PromiseLike&lt;R&gt;) | null)</code></td><td><code>Promise&lt;T[] | R&gt;</code></td><td></td></tr>
                 <tr><td><code>[Symbol.asyncIterator]()</code></td><td><code>AsyncIterator&lt;T&gt;</code></td><td></td></tr>
+                <tr><td><code>[Symbol.iterator]()</code></td><td><code>Iterator&lt;T&gt;</code></td><td><p>Its objects once loaded (awaited, or a relation of prefetchRelated); not loaded: a QueryError.</p></td></tr>
                 <tr><td><code>fetch()</code></td><td><code>Promise&lt;T[]&gt;</code></td><td></td></tr>
                 <tr><td><code>get(...conditions: Conditions[])</code></td><td><code>Promise&lt;T&gt;</code></td><td></td></tr>
                 <tr><td><code>first()</code></td><td><code>Promise&lt;T | null&gt;</code></td><td></td></tr>
                 <tr><td><code>last()</code></td><td><code>Promise&lt;T | null&gt;</code></td><td></td></tr>
                 <tr><td><code>count()</code></td><td><code>Promise&lt;number&gt;</code></td><td></td></tr>
                 <tr><td><code>exists()</code></td><td><code>Promise&lt;boolean&gt;</code></td><td></td></tr>
-                <tr><td><code>aggregate&lt;A extends Record&lt;string, Aggregate&lt;unknown&gt;&gt;&gt;(aggregates: A)</code></td><td><code>Promise&lt;<a href="#ref-AggregateResult">AggregateResult</a>&lt;A&gt;&gt;</code></td><td></td></tr>
+                <tr><td><code>aggregate&lt;A extends Record&lt;string, Aggregate&lt;unknown&gt; | RawSql&gt;&gt;(aggregates: A)</code></td><td><code>Promise&lt;<a href="#ref-AggregateResult">AggregateResult</a>&lt;A&gt;&gt;</code></td><td></td></tr>
+                <tr><td><code>extra(values: Record&lt;string, RawSql&gt;)</code></td><td><code>this</code></td><td><p>Values of fragments of SQL selected with the objects, as Django's extra() (SQL databases): object.books.</p></td></tr>
                 <tr><td><code>create(data?: Record&lt;string, unknown&gt;)</code></td><td><code>Promise&lt;T&gt;</code></td><td></td></tr>
                 <tr><td><code>getOrCreate(conditions: Record&lt;string, unknown&gt;, defaults?: Record&lt;string, unknown&gt;)</code></td><td><code>Promise&lt;[T, boolean]&gt;</code></td><td></td></tr>
                 <tr><td><code>updateOrCreate(conditions: Record&lt;string, unknown&gt;, defaults?: Record&lt;string, unknown&gt;)</code></td><td><code>Promise&lt;[T, boolean]&gt;</code></td><td></td></tr>
@@ -555,6 +595,7 @@
             <table class="ref-members">
               <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
               <tbody>
+                <tr><td><code>readonly orm</code></td><td><code>typeof import('./index.js')</code></td><td><p>The module of the ORM of this database (Model, fields, Paginator...): what packages that take a database make their models with.</p></td></tr>
                 <tr><td><code>static optionsFromUrl(url: string, options?: DatabaseOptions)</code></td><td><code><a href="#ref-DatabaseOptions">DatabaseOptions</a></code></td><td><p>The options of a database from a URL (postgres://, mongodb://, sqlite:path, memory:, fs:folder, smtp://), with options over them.</p></td></tr>
                 <tr><td><code>static fromUrl(url: string, options?: DatabaseOptions)</code></td><td><code><a href="#ref-Database">Database</a></code></td><td><p>A database from a URL, as DATABASE_URL.</p></td></tr>
                 <tr><td><code>new (options?: DatabaseOptions)</code></td><td></td><td></td></tr>
@@ -573,10 +614,31 @@
                 <tr><td><code>health(options?: { slow?: number | string; critical?: boolean; timeout?: number | string })</code></td><td><code><a href="#ref-DatabaseHealthCheck">DatabaseHealthCheck</a></code></td><td><p>A check of xufa.health: up with the latency of a ping (degraded above slow), down when it does not answer. Critical.</p></td></tr>
                 <tr><td><code>sync()</code></td><td><code>Promise&lt;void&gt;</code></td><td></td></tr>
                 <tr><td><code>drop()</code></td><td><code>Promise&lt;void&gt;</code></td><td></td></tr>
-                <tr><td><code>transaction&lt;R&gt;(fn: () =&gt; R | Promise&lt;R&gt;)</code></td><td><code>Promise&lt;R&gt;</code></td><td></td></tr>
-                <tr><td><code>makeMigrations(options: { dir: string; name?: string })</code></td><td><code>Promise&lt;{ name: string; file: string; operations: <a href="#ref-MigrationOperation">MigrationOperation</a>[]; } | null&gt;</code></td><td></td></tr>
-                <tr><td><code>migrate(options: { dir: string; to?: string })</code></td><td><code>Promise&lt;string[]&gt;</code></td><td></td></tr>
-                <tr><td><code>showMigrations(options: { dir: string })</code></td><td><code>Promise&lt;Array&lt;{ name: string; applied: boolean }&gt;&gt;</code></td><td></td></tr>
+                <tr><td><code>transaction&lt;R&gt;(fn: () =&gt; R | Promise&lt;R&gt;, options?: TransactionOptions)</code></td><td><code>Promise&lt;R&gt;</code></td><td><p>Runs fn in a transaction (savepoints inside others). SQLite: mode ('deferred', 'immediate', 'exclusive'). MongoDB: on a transient error (a write conflict...) the transaction runs again, and its commit when its result is unknown, for timeout ms (120 s); retry: false runs it once.</p></td></tr>
+                <tr><td><code>beginTest()</code></td><td><code>Promise&lt;void&gt;</code></td><td><p>Tests: a transaction that every query of the database is part of (from the test, and from the requests it makes), rolled back by rollbackTest(), as Django's TestCase. Transactions inside are savepoints.</p></td></tr>
+                <tr><td><code>rollbackTest()</code></td><td><code>Promise&lt;void&gt;</code></td><td></td></tr>
+                <tr><td><code>readonly canRollbackTests</code></td><td><code>boolean</code></td><td><p>Whether beginTest() can (MongoDB alone, mail and storage cannot: flush() them).</p></td></tr>
+                <tr><td><code>flush()</code></td><td><code>Promise&lt;void&gt;</code></td><td><p>Deletes every object of its models (those deleted softly too), and its caches.</p></td></tr>
+                <tr><td><code>makeMigrations(options: {
+    dir: string;
+    name?: string;
+    models?: ModelClass&lt;any&gt;[];
+    before?: MigrationOperation[];
+    write?: boolean;
+    /** Migrations kept elsewhere (those of models in the database), after those of the folder. */
+    extra?: Array&lt;{ name: string; operations: MigrationOperation[] }&gt;;
+  })</code></td><td><code>Promise&lt;{ name: string; file: string; operations: <a href="#ref-MigrationOperation">MigrationOperation</a>[]; text?: string; } | null&gt;</code></td><td><p>models: those of an app (only their tables, in its folder); before: operations first (renameTable, renameColumn), applied before the rest is found; write: false finds it without writing it (text: its file).</p></td></tr>
+                <tr><td><code>migrate(options: {
+    dir: string;
+    to?: string;
+    label?: string;
+    extra?: Array&lt;{ name: string; operations: MigrationOperation[] }&gt;;
+  })</code></td><td><code>Promise&lt;string[]&gt;</code></td><td><p>label: of an app (its migrations are recorded as label.name).</p></td></tr>
+                <tr><td><code>showMigrations(options: {
+    dir: string;
+    label?: string;
+    extra?: Array&lt;{ name: string; operations: MigrationOperation[] }&gt;;
+  })</code></td><td><code>Promise&lt;Array&lt;{ name: string; applied: boolean }&gt;&gt;</code></td><td></td></tr>
                 <tr><td><code>expire(options?: { now?: Date })</code></td><td><code>Promise&lt;Record&lt;string, number&gt;&gt;</code></td><td><p>Deletes the objects of TTL indexes that expired: the number deleted, by model.</p></td></tr>
                 <tr><td><code>migrateDecimals()</code></td><td><code>Promise&lt;Record&lt;string, number&gt;&gt;</code></td><td><p>MongoDB: converts the decimals written as strings to Decimal128, in the server; the number of values by model.</p></td></tr>
                 <tr><td><code>startExpiry(options?: { interval?: number | string; onError?: (err: Error) =&gt; void })</code></td><td><code>this</code></td><td><p>Calls expire() every interval (seconds or text: '1m') until stopExpiry() or close().</p></td></tr>
@@ -630,6 +692,8 @@
                 <tr><td><code>database(tenantId: string)</code></td><td><code>Promise&lt;<a href="#ref-Database">Database</a> | <a href="#ref-Databases">Databases</a>&gt;</code></td><td></td></tr>
                 <tr><td><code>run&lt;R&gt;(tenantId: string, fn: () =&gt; R | Promise&lt;R&gt;)</code></td><td><code>Promise&lt;R&gt;</code></td><td></td></tr>
                 <tr><td><code>enter(tenantId: string)</code></td><td><code>Promise&lt;<a href="#ref-Database">Database</a> | <a href="#ref-Databases">Databases</a>&gt;</code></td><td></td></tr>
+                <tr><td><code>onOpen(fn: (db: Database | Databases, tenantId: string) =&gt; unknown)</code></td><td><code>() =&gt; boolean</code></td><td><p>Calls fn with each database opened from now on, once set up (before it is given); returns what stops it.</p></td></tr>
+                <tr><td><code>opened()</code></td><td><code>Promise&lt;Array&lt;<a href="#ref-Database">Database</a> | <a href="#ref-Databases">Databases</a>&gt;&gt;</code></td><td><p>The databases open now.</p></td></tr>
                 <tr><td><code>close()</code></td><td><code>Promise&lt;void&gt;</code></td><td></td></tr>
               </tbody>
             </table>
@@ -648,7 +712,7 @@
                 <tr><td><code>connect()</code></td><td><code>Promise&lt;void&gt;</code></td><td></td></tr>
                 <tr><td><code>close()</code></td><td><code>Promise&lt;void&gt;</code></td><td></td></tr>
                 <tr><td><code>ping()</code></td><td><code>Promise&lt;boolean&gt;</code></td><td></td></tr>
-                <tr><td><code>transaction&lt;R&gt;(fn: () =&gt; R | Promise&lt;R&gt;)</code></td><td><code>Promise&lt;R&gt;</code></td><td></td></tr>
+                <tr><td><code>transaction&lt;R&gt;(fn: () =&gt; R | Promise&lt;R&gt;, options?: TransactionOptions)</code></td><td><code>Promise&lt;R&gt;</code></td><td></td></tr>
                 <tr><td><code>raw?(sql: string, params?: unknown[])</code></td><td><code>Promise&lt;Record&lt;string, unknown&gt;[]&gt;</code></td><td></td></tr>
               </tbody>
             </table>
@@ -711,8 +775,107 @@
             </table>
           </div>
 
+        <h3 id="ref-InvalidPage"><code>InvalidPage</code></h3>
+        <pre><code class="language-ts">export declare class InvalidPage extends Error { ... }</code></pre>
+        <p>A page number that is not one, or a page that is not there: 404.</p>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>statusCode</code></td><td><code>404</code></td><td></td></tr>
+                <tr><td><code>code</code></td><td><code>'XUFA_ORM_ERR_INVALID_PAGE'</code></td><td></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-PageNotAnInteger"><code>PageNotAnInteger</code></h3>
+        <pre><code class="language-ts">export declare class PageNotAnInteger extends InvalidPage { ... }</code></pre>
+        <p>A page number that is not an integer.</p>
+
+        <h3 id="ref-EmptyPage"><code>EmptyPage</code></h3>
+        <pre><code class="language-ts">export declare class EmptyPage extends InvalidPage { ... }</code></pre>
+        <p>A page number below 1, or past the last page.</p>
+
+        <h3 id="ref-Page"><code>Page</code></h3>
+        <pre><code class="language-ts">export declare class Page&lt;T&gt; implements Iterable&lt;T&gt; { ... }</code></pre>
+        <p>A page of a Paginator: its objects, number and neighbors.</p>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>readonly objectList</code></td><td><code>T[]</code></td><td></td></tr>
+                <tr><td><code>readonly number</code></td><td><code>number</code></td><td></td></tr>
+                <tr><td><code>readonly numPages</code></td><td><code>number</code></td><td></td></tr>
+                <tr><td><code>readonly count</code></td><td><code>number</code></td><td></td></tr>
+                <tr><td><code>readonly paginator</code></td><td><code><a href="#ref-Paginator">Paginator</a>&lt;T&gt;</code></td><td></td></tr>
+                <tr><td><code>readonly length</code></td><td><code>number</code></td><td></td></tr>
+                <tr><td><code>readonly hasNext</code></td><td><code>boolean</code></td><td></td></tr>
+                <tr><td><code>readonly hasPrevious</code></td><td><code>boolean</code></td><td></td></tr>
+                <tr><td><code>readonly hasOtherPages</code></td><td><code>boolean</code></td><td></td></tr>
+                <tr><td><code>readonly nextPageNumber</code></td><td><code>number</code></td><td><p>EmptyPage when there is none.</p></td></tr>
+                <tr><td><code>readonly previousPageNumber</code></td><td><code>number</code></td><td></td></tr>
+                <tr><td><code>readonly startIndex</code></td><td><code>number</code></td><td><p>The index (from 1) of its first and last objects among all (0 on an empty page).</p></td></tr>
+                <tr><td><code>readonly endIndex</code></td><td><code>number</code></td><td></td></tr>
+                <tr><td><code>[Symbol.iterator]()</code></td><td><code>Iterator&lt;T&gt;</code></td><td></td></tr>
+                <tr><td><code>toJSON()</code></td><td><code>{ number: number; numPages: number; count: number; hasNext: boolean; hasPrevious: boolean; startIndex: number; endIndex: number; }</code></td><td></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-Paginator"><code>Paginator</code></h3>
+        <pre><code class="language-ts">export declare class Paginator&lt;T&gt; { ... }</code></pre>
+        <p>The pages of a QuerySet (ordered) or a list: page(n) (PageNotAnInteger, EmptyPage), getPage(n) (the first or the last page instead), numPages(), elidedPageRange(n) for a pager (1 2 … 9 10 11 … 49 50).</p>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>new (objects: QuerySet&lt;T&gt; | T[], perPage: number, options?: PaginatorOptions)</code></td><td></td><td></td></tr>
+                <tr><td><code>readonly perPage</code></td><td><code>number</code></td><td></td></tr>
+                <tr><td><code>count()</code></td><td><code>Promise&lt;number&gt;</code></td><td></td></tr>
+                <tr><td><code>numPages()</code></td><td><code>Promise&lt;number&gt;</code></td><td></td></tr>
+                <tr><td><code>pageRange()</code></td><td><code>Promise&lt;number[]&gt;</code></td><td></td></tr>
+                <tr><td><code>page(number?: number | string | null)</code></td><td><code>Promise&lt;<a href="#ref-Page">Page</a>&lt;T&gt;&gt;</code></td><td></td></tr>
+                <tr><td><code>getPage(number?: number | string | null)</code></td><td><code>Promise&lt;<a href="#ref-Page">Page</a>&lt;T&gt;&gt;</code></td><td></td></tr>
+                <tr><td><code>elidedPageRange(number?: number | string, options?: { onEachSide?: number; onEnds?: number })</code></td><td><code>Promise&lt;(number | '…')[]&gt;</code></td><td></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-KeysetPage"><code>KeysetPage</code></h3>
+        <pre><code class="language-ts">export declare class KeysetPage&lt;T&gt; implements Iterable&lt;T&gt; { ... }</code></pre>
+        <p>Pages by keys (cursor pagination, as Django REST framework's CursorPagination): the objects after (or before) those of the page shown, by the order of the QuerySet with its primary key last, not an OFFSET; no page numbers nor count.</p>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>readonly paginator</code></td><td><code><a href="#ref-KeysetPaginator">KeysetPaginator</a>&lt;T&gt;</code></td><td></td></tr>
+                <tr><td><code>readonly objectList</code></td><td><code>T[]</code></td><td></td></tr>
+                <tr><td><code>readonly hasNext</code></td><td><code>boolean</code></td><td></td></tr>
+                <tr><td><code>readonly hasPrevious</code></td><td><code>boolean</code></td><td></td></tr>
+                <tr><td><code>readonly hasOtherPages</code></td><td><code>boolean</code></td><td></td></tr>
+                <tr><td><code>readonly nextCursor</code></td><td><code>string | null</code></td><td><p>The cursor of the next page (null without one).</p></td></tr>
+                <tr><td><code>readonly previousCursor</code></td><td><code>string | null</code></td><td><p>The cursor of the page before (null without one).</p></td></tr>
+                <tr><td><code>readonly length</code></td><td><code>number</code></td><td></td></tr>
+                <tr><td><code>[Symbol.iterator]()</code></td><td><code>Iterator&lt;T&gt;</code></td><td></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-KeysetPaginator"><code>KeysetPaginator</code></h3>
+        <pre><code class="language-ts">export declare class KeysetPaginator&lt;T&gt; { ... }</code></pre>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>new (queryset: QuerySet&lt;T&gt;, perPage: number)</code></td><td></td><td><p>queryset: ordered by fields of its model (its model's ordering by default).</p></td></tr>
+                <tr><td><code>readonly perPage</code></td><td><code>number</code></td><td></td></tr>
+                <tr><td><code>page(cursor?: string | null)</code></td><td><code>Promise&lt;<a href="#ref-KeysetPage">KeysetPage</a>&lt;T&gt;&gt;</code></td><td><p>The first page (no cursor), or the one a cursor leads to: InvalidPage (404) for one that is not of these pages.</p></td></tr>
+              </tbody>
+            </table>
+          </div>
+
         <h2 id="constants">Constants</h2>
-        <p class="ref-index"><a href="#ref-fields"><code>fields</code></a>, <a href="#ref-Extract"><code>Extract</code></a>, <a href="#ref-Trunc"><code>Trunc</code></a>, <a href="#ref-ValidationError"><code>ValidationError</code></a>, <a href="#ref-FieldError"><code>FieldError</code></a>, <a href="#ref-LookupError"><code>LookupError</code></a>, <a href="#ref-NotFoundError"><code>NotFoundError</code></a>, <a href="#ref-MultipleObjectsError"><code>MultipleObjectsError</code></a>, <a href="#ref-NotRegisteredError"><code>NotRegisteredError</code></a>, <a href="#ref-ModelError"><code>ModelError</code></a>, <a href="#ref-QueryError"><code>QueryError</code></a>, <a href="#ref-ProtectedError"><code>ProtectedError</code></a>, <a href="#ref-BackendError"><code>BackendError</code></a>, <a href="#ref-UnsupportedError"><code>UnsupportedError</code></a>, <a href="#ref-UniqueError"><code>UniqueError</code></a>, <a href="#ref-EncryptionError"><code>EncryptionError</code></a>, <a href="#ref-MailError"><code>MailError</code></a></p>
+        <p class="ref-index"><a href="#ref-fields"><code>fields</code></a>, <a href="#ref-SPEC_TYPES"><code>SPEC_TYPES</code></a>, <a href="#ref-Raw"><code>Raw</code></a>, <a href="#ref-Extract"><code>Extract</code></a>, <a href="#ref-Trunc"><code>Trunc</code></a>, <a href="#ref-ValidationError"><code>ValidationError</code></a>, <a href="#ref-FieldError"><code>FieldError</code></a>, <a href="#ref-LookupError"><code>LookupError</code></a>, <a href="#ref-NotFoundError"><code>NotFoundError</code></a>, <a href="#ref-MultipleObjectsError"><code>MultipleObjectsError</code></a>, <a href="#ref-NotRegisteredError"><code>NotRegisteredError</code></a>, <a href="#ref-ModelError"><code>ModelError</code></a>, <a href="#ref-QueryError"><code>QueryError</code></a>, <a href="#ref-ProtectedError"><code>ProtectedError</code></a>, <a href="#ref-BackendError"><code>BackendError</code></a>, <a href="#ref-UnsupportedError"><code>UnsupportedError</code></a>, <a href="#ref-UniqueError"><code>UniqueError</code></a>, <a href="#ref-EncryptionError"><code>EncryptionError</code></a>, <a href="#ref-MailError"><code>MailError</code></a>, <a href="#ref-MESSAGES"><code>MESSAGES</code></a></p>
 
         <h3 id="ref-fields"><code>fields</code></h3>
         <pre><code class="language-ts">export declare const fields: {
@@ -804,6 +967,19 @@
 };</code></pre>
         <p>The fields of models: string, text, integer, bigint, float, decimal, boolean, date, datetime, json, uuid, bytes, array, hstore, geometry, geography, encrypted, blob, blobInfo and mailInfo, and the relations foreignKey and manyToMany.</p>
 
+        <h3 id="ref-SPEC_TYPES"><code>SPEC_TYPES</code></h3>
+        <pre><code class="language-ts">export declare const SPEC_TYPES: string[];</code></pre>
+        <p>The types a spec takes.</p>
+
+        <h3 id="ref-Raw"><code>Raw</code></h3>
+        <pre><code class="language-ts">export declare const Raw: {
+  (sql: string, params?: unknown[]): RawSql;
+  new (sql: string, params?: unknown[]): RawSql;
+  /** In the SQL of a fragment, the table of the model in the query (its alias when it has one). */
+  readonly TABLE: string;
+};</code></pre>
+        <p>A fragment of SQL with its parameters: Raw(sql, params), with or without new.</p>
+
         <h3 id="ref-Extract"><code>Extract</code></h3>
         <pre><code class="language-ts">export declare const Extract: {
   (field: string, part: DatePart): ExtractExpression;
@@ -851,8 +1027,7 @@
         <p>A query that cannot be made (a reverse relation where it cannot be followed, an option that does not go with another...).</p>
 
         <h3 id="ref-ProtectedError"><code>ProtectedError</code></h3>
-        <pre><code class="language-ts">export declare const ProtectedError: ErrorClass;</code></pre>
-        <p>A delete refused: objects with a foreign key of onDelete: 'protect' point to the objects deleted.</p>
+        <pre><code class="language-ts">export declare const ProtectedError: ErrorClass&lt;ProtectedErrorInstance&gt;;</code></pre>
 
         <h3 id="ref-BackendError"><code>BackendError</code></h3>
         <pre><code class="language-ts">export declare const BackendError: ErrorClass;</code></pre>
@@ -874,8 +1049,12 @@
         <pre><code class="language-ts">export declare const MailError: ErrorClass&lt;MailErrorInstance&gt;;</code></pre>
         <p>A message that could not be sent (400: the message; 502: the server), with the answer of the server.</p>
 
+        <h3 id="ref-MESSAGES"><code>MESSAGES</code></h3>
+        <pre><code class="language-ts">export declare const MESSAGES: Readonly&lt;Record&lt;string, string&gt;&gt;;</code></pre>
+        <p>The validation messages of the ORM, in English by key (required, maxLength, unique...); setTranslator(fn) makes them speak the language of each request (@xufa/i18n's translateOrm() does): fn(<code>orm.${key}</code>, params, english).</p>
+
         <h2 id="interfaces">Interfaces</h2>
-        <p class="ref-index"><a href="#ref-FieldOptions"><code>FieldOptions</code></a>, <a href="#ref-StringOptions"><code>StringOptions</code></a>, <a href="#ref-NumberOptions"><code>NumberOptions</code></a>, <a href="#ref-GeoJsonGeometry"><code>GeoJsonGeometry</code></a>, <a href="#ref-GeometryOptions"><code>GeometryOptions</code></a>, <a href="#ref-DateTimeOptions"><code>DateTimeOptions</code></a>, <a href="#ref-DecimalOptions"><code>DecimalOptions</code></a>, <a href="#ref-ForeignKeyOptions"><code>ForeignKeyOptions</code></a>, <a href="#ref-EncryptedOptions"><code>EncryptedOptions</code></a>, <a href="#ref-ManyToManyOptions"><code>ManyToManyOptions</code></a>, <a href="#ref-ModelClass"><code>ModelClass</code></a>, <a href="#ref-ModelOptions"><code>ModelOptions</code></a>, <a href="#ref-ModelCacheOptions"><code>ModelCacheOptions</code></a>, <a href="#ref-Meta"><code>Meta</code></a>, <a href="#ref-FExpression"><code>FExpression</code></a>, <a href="#ref-ExtractExpression"><code>ExtractExpression</code></a>, <a href="#ref-TruncExpression"><code>TruncExpression</code></a>, <a href="#ref-Aggregate"><code>Aggregate</code></a>, <a href="#ref-MigrationOperation"><code>MigrationOperation</code></a>, <a href="#ref-AuditOptions"><code>AuditOptions</code></a>, <a href="#ref-AuditChange"><code>AuditChange</code></a>, <a href="#ref-AuditContext"><code>AuditContext</code></a>, <a href="#ref-DatabaseOptions"><code>DatabaseOptions</code></a>, <a href="#ref-Cache"><code>Cache</code></a>, <a href="#ref-MemoryCacheOptions"><code>MemoryCacheOptions</code></a>, <a href="#ref-CacheBus"><code>CacheBus</code></a>, <a href="#ref-SharedCacheOptions"><code>SharedCacheOptions</code></a>, <a href="#ref-LocalCacheOptions"><code>LocalCacheOptions</code></a>, <a href="#ref-FaultOptions"><code>FaultOptions</code></a>, <a href="#ref-FailOptions"><code>FailOptions</code></a>, <a href="#ref-FaultRule"><code>FaultRule</code></a>, <a href="#ref-CachedOptions"><code>CachedOptions</code></a>, <a href="#ref-OrmError"><code>OrmError</code></a>, <a href="#ref-ValidationErrorInstance"><code>ValidationErrorInstance</code></a>, <a href="#ref-UniqueErrorInstance"><code>UniqueErrorInstance</code></a>, <a href="#ref-MailRejection"><code>MailRejection</code></a>, <a href="#ref-MailErrorInstance"><code>MailErrorInstance</code></a>, <a href="#ref-PluginOptions"><code>PluginOptions</code></a>, <a href="#ref-ResourceOptions"><code>ResourceOptions</code></a>, <a href="#ref-DatabaseHealthCheck"><code>DatabaseHealthCheck</code></a>, <a href="#ref-MaintenanceState"><code>MaintenanceState</code></a></p>
+        <p class="ref-index"><a href="#ref-FieldOptions"><code>FieldOptions</code></a>, <a href="#ref-StringOptions"><code>StringOptions</code></a>, <a href="#ref-NumberOptions"><code>NumberOptions</code></a>, <a href="#ref-GeoJsonGeometry"><code>GeoJsonGeometry</code></a>, <a href="#ref-GeometryOptions"><code>GeometryOptions</code></a>, <a href="#ref-DateTimeOptions"><code>DateTimeOptions</code></a>, <a href="#ref-DecimalOptions"><code>DecimalOptions</code></a>, <a href="#ref-ForeignKeyOptions"><code>ForeignKeyOptions</code></a>, <a href="#ref-EncryptedOptions"><code>EncryptedOptions</code></a>, <a href="#ref-ManyToManyOptions"><code>ManyToManyOptions</code></a>, <a href="#ref-ModelClass"><code>ModelClass</code></a>, <a href="#ref-ModelOptions"><code>ModelOptions</code></a>, <a href="#ref-ModelCacheOptions"><code>ModelCacheOptions</code></a>, <a href="#ref-ModelSpec"><code>ModelSpec</code></a>, <a href="#ref-TransactionOptions"><code>TransactionOptions</code></a>, <a href="#ref-Meta"><code>Meta</code></a>, <a href="#ref-RawSql"><code>RawSql</code></a>, <a href="#ref-FExpression"><code>FExpression</code></a>, <a href="#ref-ExtractExpression"><code>ExtractExpression</code></a>, <a href="#ref-TruncExpression"><code>TruncExpression</code></a>, <a href="#ref-Aggregate"><code>Aggregate</code></a>, <a href="#ref-MigrationOperation"><code>MigrationOperation</code></a>, <a href="#ref-AuditOptions"><code>AuditOptions</code></a>, <a href="#ref-AuditChange"><code>AuditChange</code></a>, <a href="#ref-AuditContext"><code>AuditContext</code></a>, <a href="#ref-DatabaseOptions"><code>DatabaseOptions</code></a>, <a href="#ref-Cache"><code>Cache</code></a>, <a href="#ref-MemoryCacheOptions"><code>MemoryCacheOptions</code></a>, <a href="#ref-CacheBus"><code>CacheBus</code></a>, <a href="#ref-SharedCacheOptions"><code>SharedCacheOptions</code></a>, <a href="#ref-LocalCacheOptions"><code>LocalCacheOptions</code></a>, <a href="#ref-FaultOptions"><code>FaultOptions</code></a>, <a href="#ref-FailOptions"><code>FailOptions</code></a>, <a href="#ref-FaultRule"><code>FaultRule</code></a>, <a href="#ref-CachedOptions"><code>CachedOptions</code></a>, <a href="#ref-OrmError"><code>OrmError</code></a>, <a href="#ref-ValidationErrorInstance"><code>ValidationErrorInstance</code></a>, <a href="#ref-ProtectedErrorInstance"><code>ProtectedErrorInstance</code></a>, <a href="#ref-UniqueErrorInstance"><code>UniqueErrorInstance</code></a>, <a href="#ref-MailRejection"><code>MailRejection</code></a>, <a href="#ref-MailErrorInstance"><code>MailErrorInstance</code></a>, <a href="#ref-PluginOptions"><code>PluginOptions</code></a>, <a href="#ref-ResourceOptions"><code>ResourceOptions</code></a>, <a href="#ref-DatabaseHealthCheck"><code>DatabaseHealthCheck</code></a>, <a href="#ref-MaintenanceState"><code>MaintenanceState</code></a>, <a href="#ref-PaginatorOptions"><code>PaginatorOptions</code></a>, <a href="#ref-LowerField"><code>LowerField</code></a></p>
 
         <h3 id="ref-FieldOptions"><code>FieldOptions</code></h3>
         <pre><code class="language-ts">export interface FieldOptions&lt;T&gt; { ... }</code></pre>
@@ -886,10 +1065,14 @@
               <tbody>
                 <tr><td><code>null?</code></td><td><code>boolean</code></td><td></td></tr>
                 <tr><td><code>default?</code></td><td><code>T | (() =&gt; T)</code></td><td></td></tr>
-                <tr><td><code>unique?</code></td><td><code>boolean</code></td><td></td></tr>
+                <tr><td><code>unique?</code></td><td><code>boolean | 'ci'</code></td><td><p>Unique; 'ci': whatever the case of the text (a unique index of its lower case, as UniqueConstraint(Lower())).</p></td></tr>
+                <tr><td><code>messages?</code></td><td><code>{ unique?: string }</code></td><td><p>Its own messages (Django's error_messages): { unique } for a value another object has.</p></td></tr>
                 <tr><td><code>index?</code></td><td><code>boolean</code></td><td></td></tr>
                 <tr><td><code>primaryKey?</code></td><td><code>boolean</code></td><td></td></tr>
-                <tr><td><code>choices?</code></td><td><code>readonly T[]</code></td><td></td></tr>
+                <tr><td><code>choices?</code></td><td><code>readonly T[] | readonly (readonly [T, string])[] | Record&lt;string, string&gt;</code></td><td><p>The values it may take: a list, a list of [value, label] (Django's choices), or an object of labels by value.</p></td></tr>
+                <tr><td><code>label?</code></td><td><code>string</code></td><td><p>What forms and the admin call it (Django's verbose_name).</p></td></tr>
+                <tr><td><code>help?</code></td><td><code>string</code></td><td><p>A text that helps to fill it in forms and the admin (Django's help_text).</p></td></tr>
+                <tr><td><code>blank?</code></td><td><code>boolean</code></td><td><p>Whether a form may leave it empty: by default as null; blank: false refuses an empty text too.</p></td></tr>
                 <tr><td><code>column?</code></td><td><code>string</code></td><td></td></tr>
                 <tr><td><code>validate?</code></td><td><code><a href="#ref-RuleSpec">RuleSpec</a>&lt;T&gt; | Array&lt;<a href="#ref-RuleSpec">RuleSpec</a>&lt;T&gt;&gt;</code></td><td><p>Rules of the value: functions, expressions on <code>value</code> ('value &gt;= 0'), or { rule, message }.</p></td></tr>
                 <tr><td><code>computed?</code></td><td><code>string | ((object: any) =&gt; unknown)</code></td><td><p>A computed field: an expression of</p></td></tr>
@@ -1046,11 +1229,16 @@
               <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
               <tbody>
                 <tr><td><code>table?</code></td><td><code>string</code></td><td></td></tr>
+                <tr><td><code>label?</code></td><td><code>string</code></td><td><p>Its names for people (Django's verbose_name, verbose_name_plural): 'book instance', and with an s.</p></td></tr>
+                <tr><td><code>labelPlural?</code></td><td><code>string</code></td><td></td></tr>
+                <tr><td><code>display?</code></td><td><code>string | ((object: any) =&gt; string)</code></td><td><p>Its text (Django's __str__): '{lastName}, {firstName}' ({relation.field} of loaded relations), or a function.</p></td></tr>
+                <tr><td><code>permissions?</code></td><td><code>Record&lt;string, string&gt;</code></td><td><p>Its own permissions (Django's Meta.permissions) by action: { markReturned: 'Set book as returned' }.</p></td></tr>
                 <tr><td><code>schema?</code></td><td><code>string</code></td><td><p>The schema of the table (PostgreSQL; SQLite names the table 'schema.table').</p></td></tr>
                 <tr><td><code>primaryKey?</code></td><td><code>readonly string[] | false</code></td><td><p>The fields of a composite primary key (its value is the array of theirs: filter({ pk: [1, 'a'] })), or false for a model without one (its objects are only inserted; querysets update and delete its rows).</p></td></tr>
                 <tr><td><code>ordering?</code></td><td><code>string | string[]</code></td><td></td></tr>
                 <tr><td><code>rules?</code></td><td><code>Array&lt;<a href="#ref-RuleSpec">RuleSpec</a>&lt;any&gt; | { rule: <a href="#ref-ValidationRule">ValidationRule</a>&lt;any&gt;; message?: string; field?: string }&gt;</code></td><td><p>Rules of the objects, checked by validate() (save, create, bulkCreate) once their fields are valid: expressions on their fields ('end &gt; start'), functions of the object, or { rule, message, field } (field: whose errors get the message; __all__ otherwise).</p></td></tr>
-                <tr><td><code>indexes?</code></td><td><code>Array&lt; string[] | { <a href="#ref-fields">fields</a>: string[]; unique?: boolean; name?: string; condition?: string; expireAfter?: number | string } &gt;</code></td><td><p>expireAfter (seconds, or text as '30d'; 0: at the date): a TTL index of one datetime field. Its objects expire that long after the date: native in MongoDB, deleted by db.expire() / db.startExpiry() in every backend.</p></td></tr>
+                <tr><td><code>indexes?</code></td><td><code>Array&lt; | <a href="#ref-IndexField">IndexField</a>[] | { <a href="#ref-fields">fields</a>: <a href="#ref-IndexField">IndexField</a>[]; unique?: boolean; name?: string; condition?: string; expireAfter?: number | string; /** Columns kept in the index besides its keys (PostgreSQL's INCLUDE): 'pk' <a href="#ref-or">or</a> names of <a href="#ref-fields">fields</a>. */ include?: string[]; } &gt;</code></td><td><p>expireAfter (seconds, or text as '30d'; 0: at the date): a TTL index of one datetime field. Its objects expire that long after the date: native in MongoDB, deleted by db.expire() / db.startExpiry() in every backend.</p></td></tr>
+                <tr><td><code>constraints?</code></td><td><code>Array&lt; | { unique: <a href="#ref-IndexField">IndexField</a>[]; name?: string; message?: string; condition?: string } | { check: <a href="#ref-ValidationRule">ValidationRule</a>&lt;any&gt;; name?: string; message?: string; field?: string } &gt;</code></td><td><p>Constraints, as Django's Meta.constraints: unique ones of fields together, or of their lower case (Lower('name'): unique whatever the case), with the message of a UniqueError; and checks, rules of the object checked before saving.</p></td></tr>
                 <tr><td><code>abstract?</code></td><td><code>boolean</code></td><td></td></tr>
                 <tr><td><code>fillfactor?</code></td><td><code>number</code></td><td></td></tr>
                 <tr><td><code>strict?</code></td><td><code>boolean</code></td><td><p>SQLite: a STRICT table (its columns hold values of their types only).</p></td></tr>
@@ -1075,6 +1263,34 @@
             </table>
           </div>
 
+        <h3 id="ref-ModelSpec"><code>ModelSpec</code></h3>
+        <pre><code class="language-ts">export interface ModelSpec { ... }</code></pre>
+        <p>A model of a spec: its options (table, ordering, display...) and its fields.</p>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>fields?</code></td><td><code>Record&lt;string, <a href="#ref-FieldSpec">FieldSpec</a>&gt;</code></td><td></td></tr>
+                <tr><td><code>code?</code></td><td><code>string[]</code></td><td></td></tr>
+                <tr><td><code>[option: string]</code></td><td><code>unknown</code></td><td></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-TransactionOptions"><code>TransactionOptions</code></h3>
+        <pre><code class="language-ts">export interface TransactionOptions { ... }</code></pre>
+        <p>The options of a transaction: those of SQLite (mode) and MongoDB (retry, timeout).</p>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>mode?</code></td><td><code>'deferred' | 'immediate' | 'exclusive'</code></td><td></td></tr>
+                <tr><td><code>retry?</code></td><td><code>boolean</code></td><td></td></tr>
+                <tr><td><code>timeout?</code></td><td><code>number</code></td><td></td></tr>
+              </tbody>
+            </table>
+          </div>
+
         <h3 id="ref-Meta"><code>Meta</code></h3>
         <pre><code class="language-ts">export interface Meta { ... }</code></pre>
         <p>What the ORM knows of a model (Model.meta): its name, table, fields, primary key and relations.</p>
@@ -1083,11 +1299,27 @@
               <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
               <tbody>
                 <tr><td><code>readonly name</code></td><td><code>string</code></td><td></td></tr>
+                <tr><td><code>readonly label</code></td><td><code>string</code></td><td><p>Its names for people: options.label, else 'book instance' of BookInstance; labelPlural: with an s.</p></td></tr>
+                <tr><td><code>readonly labelPlural</code></td><td><code>string</code></td><td></td></tr>
+                <tr><td><code>readonly permissions</code></td><td><code>{ name: string; label: string }[]</code></td><td><p>Book.add, .change, .delete, .view and those of options.permissions.</p></td></tr>
                 <tr><td><code>readonly table</code></td><td><code>string</code></td><td></td></tr>
                 <tr><td><code>readonly fields</code></td><td><code><a href="#ref-Field">Field</a>&lt;unknown, boolean&gt;[]</code></td><td></td></tr>
                 <tr><td><code>readonly pk</code></td><td><code><a href="#ref-Field">Field</a>&lt;unknown, boolean&gt;</code></td><td></td></tr>
                 <tr><td><code>readonly db</code></td><td><code><a href="#ref-Database">Database</a> | undefined</code></td><td></td></tr>
                 <tr><td><code>field(name: string)</code></td><td><code><a href="#ref-Field">Field</a>&lt;unknown, boolean&gt; | undefined</code></td><td></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-RawSql"><code>RawSql</code></h3>
+        <pre><code class="language-ts">export interface RawSql { ... }</code></pre>
+        <p>A fragment of SQL (SQL databases): in conditions (filter(Raw(<code>length(${Raw.TABLE}.title) &gt; ?</code>, [10]))), orders (orderBy(Raw('random()'))), values ({ total: Raw('price * quantity') }), extra(), the values of update() and aggregates (Raw('SUM(CASE WHEN paid THEN 1 ELSE 0 END)')). Its ? are its parameters (outside quotes).</p>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>readonly sql</code></td><td><code>string</code></td><td></td></tr>
+                <tr><td><code>readonly params</code></td><td><code>unknown[]</code></td><td></td></tr>
               </tbody>
             </table>
           </div>
@@ -1211,14 +1443,18 @@
               <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
               <tbody>
                 <tr><td><code>audit?</code></td><td><code>boolean | <a href="#ref-AuditOptions">AuditOptions</a></code></td><td><p>The audit log of the changes of its objects (db.audit): true, or its options.</p></td></tr>
-                <tr><td><code>backend?</code></td><td><code>| 'memory' | 'fs' | 'sqlite' | 'postgres' | 'mongodb' | 'disk' | 'memory-blob' | 's3' | 'azure-blob' | 'smtp' | 'memory-mail' | <a href="#ref-Backend">Backend</a> | (new (options: Record&lt;string, unknown&gt;) =&gt; <a href="#ref-Backend">Backend</a>)</code></td><td></td></tr>
+                <tr><td><code>backend?</code></td><td><code>| 'memory' | 'fs' | 'sqlite' | 'postgres' | 'mongodb' | 'disk' | 'memory-blob' | 's3' | 'azure-blob' | 'smtp' | 'memory-mail' | 'console-mail' | <a href="#ref-Backend">Backend</a> | (new (options: Record&lt;string, unknown&gt;) =&gt; <a href="#ref-Backend">Backend</a>)</code></td><td></td></tr>
+                <tr><td><code>filename?</code></td><td><code>string</code></td><td><p>sqlite: the file of the database (':memory:' by default).</p></td></tr>
+                <tr><td><code>busyTimeout?</code></td><td><code>number</code></td><td><p>sqlite: how long a write waits, without blocking, for the lock of another process (5000 ms; 0: it fails at once).</p></td></tr>
                 <tr><td><code>dir?</code></td><td><code>string</code></td><td><p>fs: the folder of the files; disk: the folder of the objects (a folder for each model).</p></td></tr>
                 <tr><td><code>url?</code></td><td><code>string | ((table: string, key: string) =&gt; string)</code></td><td><p>disk: the URL of an object where the folder is served (BlobValue.url()). smtp: smtp:// or smtps://.</p></td></tr>
                 <tr><td><code>host?</code></td><td><code>string</code></td><td><p>smtp: the server (localhost); or the url smtp://user:password@host:port (smtps:// for TLS from the start).</p></td></tr>
                 <tr><td><code>port?</code></td><td><code>number</code></td><td><p>smtp: its port (587; 465 is TLS from the start).</p></td></tr>
                 <tr><td><code>secure?</code></td><td><code>boolean</code></td><td><p>smtp: TLS from the start (true for port 465); otherwise STARTTLS is used when the server offers it.</p></td></tr>
                 <tr><td><code>auth?</code></td><td><code>{ user: string; pass: string } | { user: string; accessToken: string }</code></td><td><p>smtp: the credentials (PLAIN or LOGIN), or a user and an OAuth 2 access token (XOAUTH2).</p></td></tr>
-                <tr><td><code>from?</code></td><td><code>string</code></td><td><p>smtp, memory-mail: the sender of the messages whose model has no <code>from</code>.</p></td></tr>
+                <tr><td><code>from?</code></td><td><code>string</code></td><td><p>smtp, memory-mail, console-mail: the sender of the messages whose model has no <code>from</code>.</p></td></tr>
+                <tr><td><code>write?</code></td><td><code>(text: string) =&gt; unknown</code></td><td><p>console-mail: where each message is written (process.stdout), and what follows it (a line of dashes).</p></td></tr>
+                <tr><td><code>separator?</code></td><td><code>string</code></td><td></td></tr>
                 <tr><td><code>clientName?</code></td><td><code>string</code></td><td><p>smtp: the name of this machine in EHLO (its hostname).</p></td></tr>
                 <tr><td><code>tls?</code></td><td><code>import('node:tls').ConnectionOptions</code></td><td><p>smtp: options of tls.connect (ca, rejectUnauthorized, servername...).</p></td></tr>
                 <tr><td><code>requireTLS?</code></td><td><code>boolean</code></td><td><p>smtp: refuse a server that offers no STARTTLS.</p></td></tr>
@@ -1415,6 +1651,19 @@
             </table>
           </div>
 
+        <h3 id="ref-ProtectedErrorInstance"><code>ProtectedErrorInstance</code></h3>
+        <pre><code class="language-ts">export interface ProtectedErrorInstance extends OrmError { ... }</code></pre>
+        <p>What a delete would leave pointing to nothing (a foreign key with onDelete 'protect'): 409.</p>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>protectedObjects</code></td><td><code><a href="#ref-QuerySet">QuerySet</a>&lt;any&gt;</code></td><td><p>What keeps the objects (Django's protected_objects): a QuerySet of them.</p></td></tr>
+                <tr><td><code>relation</code></td><td><code>string</code></td><td><p>Model.field of the foreign key that keeps them.</p></td></tr>
+              </tbody>
+            </table>
+          </div>
+
         <h3 id="ref-UniqueErrorInstance"><code>UniqueErrorInstance</code></h3>
         <pre><code class="language-ts">export interface UniqueErrorInstance extends OrmError { ... }</code></pre>
         <p>A write that would duplicate a unique field or key: 409, with the names of the fields and the model.</p>
@@ -1470,7 +1719,7 @@
                 <tr><td><code>audit?</code></td><td><code>{ actor?: (request: any) =&gt; unknown; context?: (request: any) =&gt; Record&lt;string, unknown&gt; | undefined }</code></td><td><p>The actor (the user) and context (ip, request id...) of the entries of the audit log of each request.</p></td></tr>
                 <tr><td><code>connect?</code></td><td><code>boolean</code></td><td></td></tr>
                 <tr><td><code>close?</code></td><td><code>boolean</code></td><td></td></tr>
-                <tr><td><code>migrate?</code></td><td><code>{ dir: string; to?: string }</code></td><td></td></tr>
+                <tr><td><code>migrate?</code></td><td><code>{ dir: string; to?: string; label?: string } | ((database: <a href="#ref-Database">Database</a>) =&gt; unknown)</code></td><td><p>The migrations applied when it starts: { dir }, or a function of the database (apps.migrate(db)).</p></td></tr>
                 <tr><td><code>sync?</code></td><td><code>boolean</code></td><td></td></tr>
                 <tr><td><code>errorHandler?</code></td><td><code>boolean</code></td><td></td></tr>
                 <tr><td><code>expire?</code></td><td><code>boolean | { interval?: number | string; onError?: (err: Error) =&gt; void }</code></td><td><p>Deletes the objects of TTL indexes that expired while the app runs (true: every minute).</p></td></tr>
@@ -1502,6 +1751,7 @@
                 <tr><td><code>pagination?</code></td><td><code>boolean</code></td><td></td></tr>
                 <tr><td><code>lookup?</code></td><td><code>string</code></td><td><p>The field of /:id ('pk' by default).</p></td></tr>
                 <tr><td><code>auth?</code></td><td><code>unknown | Partial&lt;Record&lt;<a href="#ref-ResourceAction">ResourceAction</a>, unknown&gt;&gt;</code></td><td><p>The rule of</p></td></tr>
+                <tr><td><code>permissions?</code></td><td><code>true | string</code></td><td><p>The permissions of the actions, for the rbac of</p></td></tr>
                 <tr><td><code>hooks?</code></td><td><code>{ beforeCreate?( values: Record&lt;string, unknown&gt;, request: any ): Record&lt;string, unknown&gt; | void | Promise&lt;Record&lt;string, unknown&gt; | void&gt;; afterCreate?(object: T, request: any): void | Promise&lt;void&gt;; beforeUpdate?( object: T, values: Record&lt;string, unknown&gt;, request: any ): Record&lt;string, unknown&gt; | void | Promise&lt;Record&lt;string, unknown&gt; | void&gt;; afterUpdate?(object: T, request: any): void | Promise&lt;void&gt;; beforeDelete?(object: T, request: any): void | Promise&lt;void&gt;; }</code></td><td></td></tr>
                 <tr><td><code>serialize?(object: T, request: any)</code></td><td><code>unknown</code></td><td><p>How an object is answered (its toJSON() by default).</p></td></tr>
               </tbody>
@@ -1539,8 +1789,33 @@
             </table>
           </div>
 
+        <h3 id="ref-PaginatorOptions"><code>PaginatorOptions</code></h3>
+        <pre><code class="language-ts">export interface PaginatorOptions { ... }</code></pre>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>orphans?</code></td><td><code>number</code></td><td><p>A last page with this many objects or fewer joins the one before it (0).</p></td></tr>
+                <tr><td><code>allowEmptyFirstPage?</code></td><td><code>boolean</code></td><td><p>With no objects, one empty page (true); else page(1) is EmptyPage.</p></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-LowerField"><code>LowerField</code></h3>
+        <pre><code class="language-ts">export interface LowerField { ... }</code></pre>
+        <p>The lower case of a text field, in a constraint or an index (Django's Lower()).</p>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>readonly kind</code></td><td><code>'lower'</code></td><td></td></tr>
+                <tr><td><code>readonly field</code></td><td><code>string</code></td><td></td></tr>
+              </tbody>
+            </table>
+          </div>
+
         <h2 id="types">Types</h2>
-        <p class="ref-index"><a href="#ref-ValidationRule"><code>ValidationRule</code></a>, <a href="#ref-RuleSpec"><code>RuleSpec</code></a>, <a href="#ref-OnDelete"><code>OnDelete</code></a>, <a href="#ref-DbOnDelete"><code>DbOnDelete</code></a>, <a href="#ref-Nullable"><code>Nullable</code></a>, <a href="#ref-ModelRef"><code>ModelRef</code></a>, <a href="#ref-ExtendedFields"><code>ExtendedFields</code></a>, <a href="#ref-ValueOf"><code>ValueOf</code></a>, <a href="#ref-Fields"><code>Fields</code></a>, <a href="#ref-JsonValueOf"><code>JsonValueOf</code></a>, <a href="#ref-ChoiceOf"><code>ChoiceOf</code></a>, <a href="#ref-NotRequired"><code>NotRequired</code></a>, <a href="#ref-PropertyOf"><code>PropertyOf</code></a>, <a href="#ref-SchemaPropertyOf"><code>SchemaPropertyOf</code></a>, <a href="#ref-InSchema"><code>InSchema</code></a>, <a href="#ref-PrimaryKeyOf"><code>PrimaryKeyOf</code></a>, <a href="#ref-SimplifyProps"><code>SimplifyProps</code></a>, <a href="#ref-AutoIdOf"><code>AutoIdOf</code></a>, <a href="#ref-ModelSchemaProperties"><code>ModelSchemaProperties</code></a>, <a href="#ref-HookName"><code>HookName</code></a>, <a href="#ref-Conditions"><code>Conditions</code></a>, <a href="#ref-DatePart"><code>DatePart</code></a>, <a href="#ref-DateUnit"><code>DateUnit</code></a>, <a href="#ref-ValuesItem"><code>ValuesItem</code></a>, <a href="#ref-AggregateResult"><code>AggregateResult</code></a>, <a href="#ref-BlobBody"><code>BlobBody</code></a>, <a href="#ref-FaultOperation"><code>FaultOperation</code></a>, <a href="#ref-TenantConfig"><code>TenantConfig</code></a>, <a href="#ref-CachedFunction"><code>CachedFunction</code></a>, <a href="#ref-ErrorClass"><code>ErrorClass</code></a>, <a href="#ref-EncryptionKey"><code>EncryptionKey</code></a>, <a href="#ref-ResourceAction"><code>ResourceAction</code></a>, <a href="#ref-FactoryValue"><code>FactoryValue</code></a>, <a href="#ref-FactoryDefinition"><code>FactoryDefinition</code></a></p>
+        <p class="ref-index"><a href="#ref-ValidationRule"><code>ValidationRule</code></a>, <a href="#ref-RuleSpec"><code>RuleSpec</code></a>, <a href="#ref-OnDelete"><code>OnDelete</code></a>, <a href="#ref-DbOnDelete"><code>DbOnDelete</code></a>, <a href="#ref-Nullable"><code>Nullable</code></a>, <a href="#ref-ModelRef"><code>ModelRef</code></a>, <a href="#ref-ExtendedFields"><code>ExtendedFields</code></a>, <a href="#ref-ValueOf"><code>ValueOf</code></a>, <a href="#ref-Fields"><code>Fields</code></a>, <a href="#ref-JsonValueOf"><code>JsonValueOf</code></a>, <a href="#ref-ChoiceOf"><code>ChoiceOf</code></a>, <a href="#ref-NotRequired"><code>NotRequired</code></a>, <a href="#ref-PropertyOf"><code>PropertyOf</code></a>, <a href="#ref-SchemaPropertyOf"><code>SchemaPropertyOf</code></a>, <a href="#ref-InSchema"><code>InSchema</code></a>, <a href="#ref-PrimaryKeyOf"><code>PrimaryKeyOf</code></a>, <a href="#ref-SimplifyProps"><code>SimplifyProps</code></a>, <a href="#ref-AutoIdOf"><code>AutoIdOf</code></a>, <a href="#ref-ModelSchemaProperties"><code>ModelSchemaProperties</code></a>, <a href="#ref-FieldSpec"><code>FieldSpec</code></a>, <a href="#ref-TestDatabases"><code>TestDatabases</code></a>, <a href="#ref-HookName"><code>HookName</code></a>, <a href="#ref-Conditions"><code>Conditions</code></a>, <a href="#ref-DatePart"><code>DatePart</code></a>, <a href="#ref-DateUnit"><code>DateUnit</code></a>, <a href="#ref-ValuesItem"><code>ValuesItem</code></a>, <a href="#ref-AggregateResult"><code>AggregateResult</code></a>, <a href="#ref-ScopeMethods"><code>ScopeMethods</code></a>, <a href="#ref-ScopedQuerySet"><code>ScopedQuerySet</code></a>, <a href="#ref-BlobBody"><code>BlobBody</code></a>, <a href="#ref-FaultOperation"><code>FaultOperation</code></a>, <a href="#ref-TenantConfig"><code>TenantConfig</code></a>, <a href="#ref-CachedFunction"><code>CachedFunction</code></a>, <a href="#ref-ErrorClass"><code>ErrorClass</code></a>, <a href="#ref-EncryptionKey"><code>EncryptionKey</code></a>, <a href="#ref-ResourceAction"><code>ResourceAction</code></a>, <a href="#ref-FactoryValue"><code>FactoryValue</code></a>, <a href="#ref-FactoryDefinition"><code>FactoryDefinition</code></a>, <a href="#ref-IndexField"><code>IndexField</code></a></p>
 
         <h3 id="ref-ValidationRule"><code>ValidationRule</code></h3>
         <pre><code class="language-ts">export type ValidationRule&lt;S&gt; = string | ((subject: S) =&gt; string | boolean | void);</code></pre>
@@ -1676,13 +1951,32 @@
 &gt;;</code></pre>
         <p>The properties of the JSON Schema of a model (Model.schema()), typed from its fields: those of input (I) without computed fields and automatic keys.</p>
 
+        <h3 id="ref-FieldSpec"><code>FieldSpec</code></h3>
+        <pre><code class="language-ts">export type FieldSpec =
+  | string
+  | {
+      type: string;
+      /** The model of a relation: one of the spec, 'self', or one resolve() finds. */
+      to?: string;
+      through?: string;
+      /** The field array and encrypted hold. */
+      of?: FieldSpec;
+      /** (specOf) Options that are code, left out. */
+      code?: string[];
+      [option: string]: unknown;
+    };</code></pre>
+        <p>A field of a spec: its type alone, or the type with its options (relations: to; array and encrypted: of).</p>
+
+        <h3 id="ref-TestDatabases"><code>TestDatabases</code></h3>
+        <pre><code class="language-ts">export type TestDatabases = Database | Databases | Tenants | null | undefined;</code></pre>
+        <p>Each test in a transaction rolled back at its end (or the models emptied, when the database cannot roll back): the hooks of node:test (rollbackEach(db, { beforeEach, afterEach })), or the globals of vyntra, jest and mocha. A function gives the databases when the tests run (made in a before()). A Tenants: the databases of its tenants open when a test starts, and those the test opens.</p>
+
         <h3 id="ref-HookName"><code>HookName</code></h3>
         <pre><code class="language-ts">export type HookName = 'beforeSave' | 'afterSave' | 'beforeDelete' | 'afterDelete';</code></pre>
         <p>The hooks of a model (Model.on(name, fn)), as Django's signals pre_save, post_save, pre_delete and post_delete.</p>
 
         <h3 id="ref-Conditions"><code>Conditions</code></h3>
-        <pre><code class="language-ts">export type Conditions = Record&lt;string, unknown&gt; | Q | JsonPath;</code></pre>
-        <p>The conditions of filter(), exclude() and get(): { field__lookup: value }, Q (and, or, not) or a condition inside json fields.</p>
+        <pre><code class="language-ts">export type Conditions = Record&lt;string, unknown&gt; | Q | JsonPath | RawSql;</code></pre>
 
         <h3 id="ref-DatePart"><code>DatePart</code></h3>
         <pre><code class="language-ts">export type DatePart =
@@ -1694,12 +1988,24 @@
         <p>The units of Trunc: the start of them, in UTC (week: Monday).</p>
 
         <h3 id="ref-ValuesItem"><code>ValuesItem</code></h3>
-        <pre><code class="language-ts">export type ValuesItem = string | Record&lt;string, ExtractExpression | TruncExpression&gt;;</code></pre>
+        <pre><code class="language-ts">export type ValuesItem = string | Record&lt;string, ExtractExpression | TruncExpression | RawSql&gt;;</code></pre>
         <p>An item of values(): a name of a field (author__name), or values of dates by key.</p>
 
         <h3 id="ref-AggregateResult"><code>AggregateResult</code></h3>
-        <pre><code class="language-ts">type AggregateResult&lt;A&gt; = { [K in keyof A]: A[K] extends Aggregate&lt;infer T&gt; ? T : never };</code></pre>
-        <p>The values of aggregate(): one for each aggregate, by its name.</p>
+        <pre><code class="language-ts">type AggregateResult&lt;A&gt; = {
+  [K in keyof A]: A[K] extends Aggregate&lt;infer T&gt; ? T : A[K] extends RawSql ? unknown : never;
+};</code></pre>
+        <p>The results of aggregates: of Count, Sum..., as they are; of Raw, as the driver gives them (unknown).</p>
+
+        <h3 id="ref-ScopeMethods"><code>ScopeMethods</code></h3>
+        <pre><code class="language-ts">export type ScopeMethods&lt;T, S&gt; = {
+  [K in keyof S]: S[K] extends (qs: any, ...args: infer A) =&gt; unknown ? (...args: A) =&gt; ScopedQuerySet&lt;T, S&gt; : never;
+};</code></pre>
+        <p>The methods of the scopes of a model: each takes the arguments of its scope after the queryset, and gives the queryset with them still (so they chain with the others: Book.query().published().filter({ ... }).by('Ada')).</p>
+
+        <h3 id="ref-ScopedQuerySet"><code>ScopedQuerySet</code></h3>
+        <pre><code class="language-ts">export type ScopedQuerySet&lt;T, S&gt; = keyof S extends never ? QuerySet&lt;T&gt; : QuerySet&lt;T&gt; &amp; ScopeMethods&lt;T, S&gt;;</code></pre>
+        <p>A QuerySet with the methods of the scopes of its model (Model.query()); a QuerySet for models without scopes.</p>
 
         <h3 id="ref-BlobBody"><code>BlobBody</code></h3>
         <pre><code class="language-ts">export type BlobBody = Buffer | Uint8Array | string | NodeJS.ReadableStream | AsyncIterable&lt;Buffer | string&gt; | Blob;</code></pre>
@@ -1746,6 +2052,10 @@
         <h3 id="ref-FactoryDefinition"><code>FactoryDefinition</code></h3>
         <pre><code class="language-ts">export type FactoryDefinition = Record&lt;string, FactoryValue&gt;;</code></pre>
         <p>The values of the fields of a factory (or of a state of it).</p>
+
+        <h3 id="ref-IndexField"><code>IndexField</code></h3>
+        <pre><code class="language-ts">export type IndexField = string | LowerField;</code></pre>
+        <p>A field of an index or a unique constraint: its name, or Lower(name).</p>
       </article>
     </div>
 

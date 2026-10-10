@@ -1,7 +1,4 @@
-'use strict'
-
-
-const boot = require('..')
+import boot from '../index.js';
 
 test('proper support for after with a passed async function in wrapped mode', (testCompleted) => {
   const app = {}

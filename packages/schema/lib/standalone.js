@@ -1,16 +1,17 @@
 // Standalone code: compiled validators written out as JavaScript source, to save to a file when building and load like
 // any module. Loading it generates no code (no new Function), so it runs under a strict Content Security Policy and
 // where code generation is disabled, and it needs nothing else: the helpers it calls are written into it.
-const { generateSource } = require('./compile');
-const { fromJsonSchema } = require('./json-schema');
-const { deepEqual } = require('./deep-equal');
-const { codePointLength } = require('./types/code-point-length');
-const { hasDuplicates } = require('./types/has-duplicates');
-const { isPlainObject, toType } = require('./types/validate-type');
-const { HELPER_SOURCES } = require('./standalone-helpers');
-const { FORMAT_FUNCTIONS } = require('./formats');
-const { errorObject, pathName } = require('./error-objects');
-const { version } = require('../package.json');
+import { generateSource } from './compile.js';
+import { fromJsonSchema } from './json-schema.js';
+import { deepEqual } from './deep-equal.js';
+import { codePointLength } from './types/code-point-length.js';
+import { hasDuplicates } from './types/has-duplicates.js';
+import { isPlainObject, toType } from './types/validate-type.js';
+import { HELPER_SOURCES } from './standalone-helpers.js';
+import { FORMAT_FUNCTIONS } from './formats.js';
+import { errorObject, pathName } from './error-objects.js';
+import __package_json1 from '../package.json' with { type: 'json' };
+const { version } = __package_json1;
 
 // Library functions the generated code calls, by the name their source (standalone-helpers.js) defines: the helpers
 // of the checks, and the functions of the formats.
@@ -174,8 +175,4 @@ function standaloneJsonSchema(json, options = {}) {
   return standaloneCode(fromJsonSchema(json, options), options);
 }
 
-module.exports = {
-  standaloneCode,
-  standaloneModule,
-  standaloneJsonSchema,
-};
+export { standaloneCode, standaloneModule, standaloneJsonSchema };

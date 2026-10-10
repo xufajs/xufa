@@ -1,7 +1,7 @@
 // Factories of objects (lib/factory.js): values made again for each object (numbers, values made before, sequences),
 // states, values given, objects of other factories for foreign keys, make() without saving, createMany() with
 // bulkCreate, and another database.
-const { Database, Model, fields, factory, sequence } = require('..');
+import { Database, Model, fields, factory, sequence } from '../index.js';
 
 function models() {
   class Team extends Model {

@@ -1,7 +1,6 @@
-'use strict'
 
 
-const boot = require('..')
+import boot from '../index.js';
 
 test('catched error by Promise.reject', async () => {
   const app = boot()

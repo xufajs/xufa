@@ -5,13 +5,37 @@
 //
 //   node tools/docs/examples/types.js          # the examples marked
 //   node tools/docs/examples/types.js --all    # every TypeScript block: which compile as they are
-const fs = require('node:fs');
-const os = require('node:os');
-const path = require('node:path');
-const ts = require('typescript');
+import fs from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
+import ts from 'typescript';
+import { declarationsOf } from '../lib/declarations.js';
 
-const ROOT = path.join(__dirname, '../../..');
-const PAGES = path.join(__dirname, '../pages');
+const ROOT = path.join(import.meta.dirname, '../../..');
+
+// The declarations of each package, each subpath of xufa ('xufa/orm') and each package of a folder of its own
+// ('@xufa/router/...'), as exact paths: a list of candidates for a wildcard makes TypeScript take the module of a
+// package (index.js) over its .d.cts (the CommonJS declarations of packages of ES modules).
+function packagePaths() {
+  const PACKAGES = path.join(ROOT, 'packages');
+  const paths = {};
+  for (const name of fs.readdirSync(PACKAGES)) {
+    const dir = path.join(PACKAGES, name);
+    const file = declarationsOf(dir) ?? declarationsOf(path.join(dir, 'types'));
+    if (file) paths[`@xufa/${name}`] = [file];
+    if (fs.existsSync(dir)) paths[`@xufa/${name}/*`] = [`${dir}/*`];
+  }
+  const xufa = path.join(PACKAGES, 'xufa');
+  paths.xufa = [declarationsOf(xufa)];
+  for (const entry of fs.readdirSync(xufa)) {
+    const match = /^(.+)\.d\.c?ts$/.exec(entry);
+    if (match && match[1] !== 'index') paths[`xufa/${match[1]}`] = [path.join(xufa, entry)];
+  }
+  // xufa/openapi/ui
+  if (paths['xufa/openapi-ui']) paths['xufa/openapi/ui'] = paths['xufa/openapi-ui'];
+  return paths;
+}
+const PAGES = path.join(import.meta.dirname, '../pages');
 
 const unescape = (html) =>
   html
@@ -66,12 +90,7 @@ function main() {
     skipLibCheck: true,
     types: ['node'],
     typeRoots: [path.join(ROOT, 'node_modules/@types')],
-    paths: {
-      xufa: [`${ROOT}/packages/xufa/index.d.ts`],
-      'xufa/*': [`${ROOT}/packages/xufa/*.d.ts`],
-      '@xufa/sequelize': [`${ROOT}/packages/sequelize/types/index.d.ts`],
-      '@xufa/*': [`${ROOT}/packages/*/index.d.ts`, `${ROOT}/packages/*/types/index.d.ts`, `${ROOT}/packages/*`],
-    },
+    paths: packagePaths(),
   };
   // A program for each example (the declare module of one, augmenting @xufa/http, is not seen by the others), with the
   // declarations parsed once: the host keeps the source files it read.

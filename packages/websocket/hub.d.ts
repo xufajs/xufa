@@ -1,5 +1,5 @@
 // Type definitions for @xufa/websocket/hub.
-import type { WebSocket } from './index';
+import type { WebSocket } from './index.cjs';
 
 /** The bus of @xufa/cluster (what the hub uses of it). */
 interface BusLike {

@@ -1,10 +1,8 @@
-'use strict';
-
 // The faults of an app turned on and off over HTTP, for staging: a plugin of @xufa/http (and fastify) with routes
 // under /_faults, protected (a token, an authorize function or a rule of @xufa/auth: one is required), off in
 // production unless allowed, rules that expire (maxDuration), every change logged.
 //
-//   app.register(require('@xufa/faults').plugin, {
+//   app.register(faultsPlugin, {                        // import { plugin as faultsPlugin } from '@xufa/faults'
 //     targets: { db, cache: db.cache, payments, bus },   // faults, or what has them (db.faults, client.faults...)
 //     token: process.env.FAULTS_TOKEN,                     // Authorization: Bearer <token>
 //   });
@@ -25,10 +23,10 @@
 // The options of a rule are those of the faults (operations, rate, after, times, ms, jitter, message, the filters of
 // the target, and those of respond), with `for`: how long it stays (a duration: 30000, '30s', '10m'), never more than
 // maxDuration. Filters are names, lists of them, or { regex: '...' }; functions (match, error) cannot be sent.
-const crypto = require('node:crypto');
-const { Scenario } = require('./scenario');
-const fs = require('node:fs');
-const nodePath = require('node:path');
+import crypto from 'node:crypto';
+import { Scenario } from './scenario.js';
+import fs from 'node:fs';
+import nodePath from 'node:path';
 
 const KINDS = ['fail', 'delay', 'hang', 'down', 'respond', 'drop'];
 const COMMON = ['operations', 'rate', 'after', 'times', 'ms', 'jitter', 'message', 'for'];
@@ -41,7 +39,7 @@ const ERROR = Symbol('faults plugin error');
 let uiFiles = null;
 function uiFile(name) {
   if (!uiFiles) {
-    const dir = nodePath.join(__dirname, 'ui');
+    const dir = nodePath.join(import.meta.dirname, 'ui');
     uiFiles = {
       html: fs.readFileSync(nodePath.join(dir, 'index.html'), 'utf8'),
       js: fs.readFileSync(nodePath.join(dir, 'ui.js'), 'utf8'),
@@ -447,4 +445,4 @@ async function faultsPlugin(app, options = {}) {
 
 faultsPlugin[Symbol.for('fastify.display-name')] = '@xufa/faults plugin';
 
-module.exports = { faultsPlugin, durationOf };
+export { faultsPlugin, durationOf };

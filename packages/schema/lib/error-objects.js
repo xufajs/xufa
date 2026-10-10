@@ -39,7 +39,4 @@ function errorObject(path, keyword, params, message) {
   return error;
 }
 
-module.exports = {
-  pathName,
-  errorObject,
-};
+export { pathName, errorObject };

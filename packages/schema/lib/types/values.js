@@ -1,5 +1,5 @@
-const { deepEqual } = require('../deep-equal');
-const { ValidateType } = require('./validate-type');
+import { deepEqual } from '../deep-equal.js';
+import { ValidateType } from './validate-type.js';
 
 function formatValue(value) {
   return typeof value === 'string' ? value : JSON.stringify(value);
@@ -39,8 +39,4 @@ function Const(value, options = {}) {
   return new ValuesType({ ...options, values: [value] });
 }
 
-module.exports = {
-  ValuesType,
-  Values,
-  Const,
-};
+export { ValuesType, Values, Const };

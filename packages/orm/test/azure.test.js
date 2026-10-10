@@ -3,10 +3,10 @@
 // checks every signature): blocks of streams and uploads that fail, metadata set without the body, keys of every
 // character, SAS and public URLs, drops, errors. With XUFA_AZURE_CONNECTION_STRING (an account, or
 // UseDevelopmentStorage=true for Azurite), the same against that store.
-const { Readable } = require('node:stream');
-const { Database, Model, fields } = require('..');
-const { AzureBackend, AzureError, sharedKey, blobSas, parseConnectionString, DEVELOPMENT } = require('../lib/backends/blob/azure');
-const { fakeAzure } = require('./fake-azure');
+import { Readable } from 'node:stream';
+import { Database, Model, fields } from '../index.js';
+import { AzureBackend, AzureError, sharedKey, blobSas, parseConnectionString, DEVELOPMENT } from '../lib/backends/blob/azure.js';
+import { fakeAzure } from './fake-azure.js';
 
 describe('Shared Key and SAS: requests Azurite accepted', () => {
   const base = 'http://127.0.0.1:10000/devstoreaccount1';

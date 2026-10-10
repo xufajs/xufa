@@ -1,6 +1,6 @@
 // Which algorithms each kind of asymmetric key takes, and the curves and RSA-PSS parameters they need (as
 // jsonwebtoken's validateAsymmetricKey, with Ed25519 and Ed448 for EdDSA).
-const { createPrivateKey, createPublicKey, createSecretKey } = require('node:crypto');
+import { createPrivateKey, createPublicKey, createSecretKey } from 'node:crypto';
 
 const ALGORITHMS_OF_KEYS = {
   ec: ['ES256', 'ES384', 'ES512', 'ES256K'],
@@ -84,4 +84,4 @@ function keyObjectOf(material, kind) {
   return key;
 }
 
-module.exports = { validateAsymmetricKey, keyObjectOf, ALGORITHMS_OF_KEYS };
+export { validateAsymmetricKey, keyObjectOf, ALGORITHMS_OF_KEYS };

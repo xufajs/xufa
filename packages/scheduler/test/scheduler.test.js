@@ -1,7 +1,7 @@
 // The scheduler on a clock of its own (the time moves when the test says): when jobs run (every aligned or not,
 // cron, at, in, immediate), overlaps (skip, wait, allow), timeouts, failures that stop no other job, stop(), runNow(),
 // long waits, and the events and state of the jobs.
-const { Scheduler, SchedulerError, TimeoutError } = require('..');
+import { Scheduler, SchedulerError, TimeoutError } from '../index.js';
 
 const flush = () => new Promise((resolve) => setImmediate(resolve));
 

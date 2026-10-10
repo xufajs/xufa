@@ -4,14 +4,17 @@
 //   db.register(Author, Book);
 //   await db.connect();
 //   await db.sync(); // creates the tables (or collections and indexes) that do not exist
-const { Model, defineReverseAccessor, defineManyToManyAccessor } = require('./model');
-const fields = require('./fields');
-const { lowerFirst, snakeCase } = require('./meta');
-const { BackendError, ModelError } = require('./errors');
-const { seconds } = require('./duration');
-const migrations = require('./migrations');
-const modelCache = require('./model-cache');
-const { followWrites, inTransaction } = require('./query-cache');
+import { Model, defineReverseAccessor, defineManyToManyAccessor } from './model.js';
+import fields from './fields.js';
+import { lowerFirst, snakeCase } from './meta.js';
+import { BackendError, ModelError } from './errors.js';
+import { Backend } from './backends/base.js';
+import { seconds } from './duration.js';
+import * as migrations from './migrations.js';
+import * as modelCache from './model-cache.js';
+import { followWrites, inTransaction } from './query-cache.js';
+import * as auditModule from './audit.js';
+import * as faultsModule from './faults.js';
 
 const backends = new Map();
 let nextName = 0;
@@ -23,6 +26,22 @@ function healthMs(value, what) {
   const match = /^(\d+(?:\.\d+)?)\s*(ms|s|m|h)$/.exec(String(value).trim());
   if (!match) throw new TypeError(`health(): ${what} '${value}' is not a duration (as '5m')`);
   return Number(match[1]) * { ms: 1, s: 1000, m: 60000, h: 3600000 }[match[2]];
+}
+
+// The order to empty models in: those whose foreign keys point to others before them (a cycle: as they come).
+function flushOrder(metas) {
+  const left = new Set(metas);
+  const out = [];
+  const pointsTo = (meta) =>
+    meta.fields.filter((field) => field.target && field.target.meta !== meta).map((field) => field.target.meta);
+  while (left.size) {
+    // A model no model left points to goes now.
+    const free = [...left].find((meta) => ![...left].some((other) => other !== meta && pointsTo(other).includes(meta)));
+    const next = free || left.values().next().value;
+    out.push(next);
+    left.delete(next);
+  }
+  return out;
 }
 
 class Database {
@@ -53,14 +72,15 @@ class Database {
     if (audit) {
       if (this.backend.blobs || this.backend.mail)
         throw new BackendError(`The audit log needs a database, not a blob or mail backend (${this.backend.name})`);
-      const { Audit, AuditEntry } = require('./audit'); // eslint-disable-line global-require
+      const { Audit, AuditEntry } = auditModule;
       this.audit = new Audit(this, audit);
       this.register(AuditEntry);
     }
   }
 
   // The options of a database from a URL, as DATABASE_URL: postgres://..., mongodb:// (and mongodb+srv://),
-  // sqlite:path (sqlite::memory:), memory:, fs:folder, smtp:// and smtps://, with the options given over them.
+  // sqlite:path (sqlite::memory:), memory:, fs:folder; and of emails (as EMAIL_URL): smtp:// and smtps://, console:
+  // (written to the console) and memory-mail: (kept in memory); with the options given over them.
   static optionsFromUrl(url, options = {}) {
     const text = String(url || '').trim();
     const scheme = /^([a-z][a-z0-9+.-]*):/i.exec(text);
@@ -73,8 +93,10 @@ class Database {
     if (kind === 'memory') return { backend: 'memory', ...options };
     if (kind === 'fs') return { backend: 'fs', dir: rest, ...options };
     if (kind === 'smtp' || kind === 'smtps') return { backend: 'smtp', url: text, ...options };
+    if (kind === 'console') return { backend: 'console-mail', ...options };
+    if (kind === 'memory-mail') return { backend: 'memory-mail', ...options };
     throw new BackendError(
-      `Not a URL of a database: ${text.replace(/\/\/[^@/]*@/, '//***@')} (postgres://, mongodb://, sqlite:, memory:, fs:)`
+      `Not a URL of a database: ${text.replace(/\/\/[^@/]*@/, '//***@')} (postgres://, mongodb://, sqlite:, memory:, fs:, smtp://, console:, memory-mail:)`
     );
   }
 
@@ -106,7 +128,7 @@ class Database {
       } else if (mail) {
         throw new ModelError(
           model.name,
-          `fields.mailInfo() is of mail backends (smtp, memory-mail), not of ${this.backend.name}`
+          `fields.mailInfo() is of mail backends (smtp, memory-mail, console-mail), not of ${this.backend.name}`
         );
       }
       if (!meta.db) meta.db = this;
@@ -200,7 +222,7 @@ class Database {
   // The faults of this database (lib/faults.js): operations made to fail, wait or hang, for tests of resilience.
   get faults() {
     if (!this.faultsOf) {
-      const { databaseFaults, install } = require('./faults'); // eslint-disable-line global-require
+      const { databaseFaults, install } = faultsModule;
       this.faultsOf = databaseFaults();
       install(this.faultsOf, this.backend);
     }
@@ -347,6 +369,47 @@ class Database {
   transaction(fn, options) {
     return inTransaction(this, () => this.backend.transaction(fn, options));
   }
+
+  // Tests: beginTest() opens a transaction that every query of the database is part of (from wherever it comes: the
+  // test, the requests it makes...) and rollbackTest() rolls it back, as Django's TestCase; transactions inside are
+  // savepoints. Backends without transactions (MongoDB alone, mail, storage) cannot: flush() empties their models.
+  get canRollbackTests() {
+    const { backend } = this;
+    return (
+      typeof backend.begin === 'function' &&
+      backend.begin !== Backend.prototype.begin &&
+      !(backend.name === 'mongodb' && backend.supportsTransactions === false)
+    );
+  }
+
+  async beginTest() {
+    await this.backend.pin();
+  }
+
+  async rollbackTest() {
+    const pinned = this.backend.pinned;
+    await this.backend.unpin();
+    // What was cached while it was open is not there any more.
+    if (pinned) await this.forgetCaches();
+  }
+
+  // Deletes every object of the models of the database (those that point to others first), and its caches.
+  async flush() {
+    const byMeta = new Map([...this.models.values()].map((model) => [model.meta, model]));
+    for (const meta of flushOrder([...byMeta.keys()])) {
+      if (meta.managed === false || meta.proxy) continue;
+      const model = byMeta.get(meta);
+      // Every row: those deleted softly too, without cascades nor hooks (each model is emptied in its turn).
+      let qs = model.objects.using(this);
+      if (meta.softDelete) qs = qs.withDeleted();
+      await this.backend.delete({ ...qs.toQuery(), orderBy: [] });
+    }
+    await this.forgetCaches();
+  }
+
+  forgetCaches() {
+    return this.changedOutside([...this.models.values()].map((model) => model.meta.key));
+  }
 }
 
-module.exports = { Database };
+export { Database };

@@ -29,4 +29,4 @@ function parseHeadOnSendHandlers(onSend) {
   return Array.isArray(onSend) ? [...onSend, headRouteOnSendHandler] : [onSend, headRouteOnSendHandler];
 }
 
-module.exports = { parseHeadOnSendHandlers };
+export { parseHeadOnSendHandlers };

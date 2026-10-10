@@ -1,8 +1,8 @@
 // MemoryBlobBackend ('memory-blob'): a store of objects in memory, for tests and prototypes of the models of blob
 // backends (lib/backends/blob/base.js). Its containers are made when an object is written to them.
-const crypto = require('node:crypto');
-const { BlobBackend, exists } = require('./base');
-const { bufferOf } = require('../../blob');
+import crypto from 'node:crypto';
+import { BlobBackend, exists } from './base.js';
+import { bufferOf } from '../../blob.js';
 
 class MemoryBlobBackend extends BlobBackend {
   constructor(options = {}) {
@@ -85,4 +85,4 @@ class MemoryBlobBackend extends BlobBackend {
   }
 }
 
-module.exports = { MemoryBlobBackend };
+export { MemoryBlobBackend };

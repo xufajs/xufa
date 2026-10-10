@@ -1,7 +1,4 @@
-'use strict'
-
-
-const boot = require('..')
+import boot from '../index.js';
 
 // asyncDispose doesn't exist in Node.js < 20
 test.skipIf(!('asyncDispose' in Symbol))('Symbol.asyncDispose should close avvio', async () => {

@@ -14,9 +14,9 @@
 // The request a strategy sees is the one of xufa (headers, query, body, url, originalUrl, params, session when a
 // plugin gives one) with what Express has that strategies read: connection and socket (the callback URL of OAuth),
 // and res.
-const crypto = require('node:crypto');
-const { parseCookies, serializeCookie } = require('./cookies');
-const { Unauthorized } = require('./errors');
+import crypto from 'node:crypto';
+import { parseCookies, serializeCookie } from './cookies.js';
+import { Unauthorized } from './errors.js';
 
 const kReply = Symbol('xufa.auth.reply');
 
@@ -234,4 +234,4 @@ function oauthState(options = {}) {
   };
 }
 
-module.exports = { passport, oauthState, passportRequest, run };
+export { passport, oauthState, passportRequest, run };

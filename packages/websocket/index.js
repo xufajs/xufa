@@ -2,14 +2,14 @@
 // dependencies. The code is the one of ws 8.22.0 (MIT, LICENSE.ws), for Node.js 22 and later: utf-8-validate is left
 // out (buffer.isUtf8 is native); bufferutil is used when the application has installed it, as ws does.
 
-const createWebSocketStream = require('./lib/stream');
-const extension = require('./lib/extension');
-const PerMessageDeflate = require('./lib/permessage-deflate');
-const Receiver = require('./lib/receiver');
-const Sender = require('./lib/sender');
-const subprotocol = require('./lib/subprotocol');
-const WebSocket = require('./lib/websocket');
-const WebSocketServer = require('./lib/websocket-server');
+import createWebSocketStream from './lib/stream.js';
+import * as extension from './lib/extension.js';
+import PerMessageDeflate from './lib/permessage-deflate.js';
+import Receiver from './lib/receiver.js';
+import Sender from './lib/sender.js';
+import * as subprotocol from './lib/subprotocol.js';
+import WebSocket from './lib/websocket.js';
+import WebSocketServer from './lib/websocket-server.js';
 
 WebSocket.createWebSocketStream = createWebSocketStream;
 WebSocket.extension = extension;
@@ -21,4 +21,17 @@ WebSocket.subprotocol = subprotocol;
 WebSocket.WebSocket = WebSocket;
 WebSocket.WebSocketServer = WebSocketServer;
 
-module.exports = WebSocket;
+export {
+  createWebSocketStream,
+  extension,
+  PerMessageDeflate,
+  Receiver,
+  Sender,
+  subprotocol,
+  WebSocket,
+  WebSocketServer,
+};
+
+export default WebSocket;
+
+export { WebSocket as 'module.exports' };

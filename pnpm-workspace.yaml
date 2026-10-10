@@ -1,5 +1,6 @@
 packages:
   - packages/*
+  - examples/*
   - bench
   - tools/*
   - '!tools/sequelize-compat'

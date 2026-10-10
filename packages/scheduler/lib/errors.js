@@ -1,5 +1,3 @@
-'use strict';
-
 // The errors of the scheduler: a wrong schedule or job (SchedulerError), and a run that went over its timeout
 // (TimeoutError, the reason its signal is aborted with).
 class SchedulerError extends Error {
@@ -18,4 +16,4 @@ class TimeoutError extends Error {
   }
 }
 
-module.exports = { SchedulerError, TimeoutError };
+export { SchedulerError, TimeoutError };

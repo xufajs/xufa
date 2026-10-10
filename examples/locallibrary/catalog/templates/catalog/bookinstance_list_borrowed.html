@@ -1,0 +1,21 @@
+{{!-- The copies on loan: those of the user (bookinstance_list_borrowed_user.html), or every one for the librarians
+(bookinstance_list_borrowed_all.html), with their borrowers and Renew. --}}
+{{extends 'base_generic'}}
+
+{{#block content}}
+<h1>{{ all ? 'All Borrowed Books' : 'Borrowed books' }}</h1>
+
+{{#if bookInstanceList.length}}
+<ul>
+  {{#each bookInstanceList as bookinst}}
+  <li class="{{ bookinst.isOverdue ? 'text-danger' : '' }}">
+    <a href="{{ url('book-detail', bookinst.book.pk) }}">{{ bookinst.book.title }}</a> ({{ bookinst.dueBack }}) {{#if
+    all}}{{#if user?.isStaff}}- {{ bookinst.borrower }}{{/if}} {{#if perms.has('BookInstance.markReturned')}}-
+    <a href="{{ url('renew-book-librarian', bookinst.pk) }}">Renew</a>{{/if}}{{/if}}
+  </li>
+  {{/each}}
+</ul>
+{{else}}
+<p>There are no books borrowed.</p>
+{{/if}}
+{{/block content}}

@@ -64,6 +64,10 @@
           <li><a href="../websocket/index.html">@xufa/websocket</a></li>
           <li><a href="../admin/index.html">@xufa/admin</a></li>
           <li><a href="../session/index.html">@xufa/session</a></li>
+          <li><a href="../forms/index.html">@xufa/forms</a></li>
+          <li><a href="../views/index.html">@xufa/views</a></li>
+          <li><a href="../mail/index.html">@xufa/mail</a></li>
+          <li><a href="../i18n/index.html">@xufa/i18n</a></li>
           <li><a href="../openapi/index.html">@xufa/openapi</a></li>
           <li><a href="../client/index.html">@xufa/client</a></li>
           <li><a href="../schema/index.html">@xufa/schema</a></li>
@@ -105,7 +109,7 @@
 
         <h2 id="start">Quick start</h2>
         <pre><code class="language-sh">npm install @xufa/errors</code></pre>
-        <pre data-run><code class="language-js">const createError = require('@xufa/errors');
+        <pre data-run><code class="language-js">import createError from '@xufa/errors';
 
 const NotFound = createError('APP_NOT_FOUND', 'User %s not found', 404);
 
@@ -165,7 +169,7 @@ err.toString(); // 'XufaError [APP_INVALID]: Invalid body: "..."'</code></pre>
         <h2 id="xufa-errors">The errors of xufa</h2>
         <p>
           Every error of xufa has its <code>code</code>: <code>XUFA_ERR_*</code> in <a href="../http/index.html">@xufa/http</a>
-          (<code>require('@xufa/http').errorCodes</code>), <code>BOOT_ERR_*</code> in <a href="../boot/index.html">@xufa/boot</a>,
+          (<code>import { errorCodes } from '@xufa/http'</code>), <code>BOOT_ERR_*</code> in <a href="../boot/index.html">@xufa/boot</a>,
           <code>XUFA_ORM_ERR_*</code> in the <a href="../orm/index.html">ORM</a>, <code>XUFA_AUTH_*</code> in
           <a href="../auth/index.html">auth</a>, <code>XUFA_EXPR_ERR_*</code> and <code>XUFA_TEMPLATE_ERR_*</code> in
           <a href="../expression/index.html">expressions</a> and <a href="../template/index.html">templates</a>.
@@ -173,7 +177,7 @@ err.toString(); // 'XufaError [APP_INVALID]: Invalid body: "..."'</code></pre>
 
         <h2 id="from-fastify">Coming from @fastify/error</h2>
         <ul>
-          <li>The API is @fastify/error's; <code>require('@fastify/error')</code> can be replaced by <code>require('@xufa/errors')</code>.</li>
+          <li>The API is @fastify/error's; <code>@fastify/error</code> can be replaced by <code>@xufa/errors</code> (in imports or requires).</li>
           <li>The class of every error is <code>XufaError</code> (<code>FastifyError</code> there), and so is their name.</li>
           <li>Added: <code>createError.captureStackTrace</code>, the default of the last argument.</li>
         </ul>

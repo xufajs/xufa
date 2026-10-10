@@ -1,30 +1,28 @@
-'use strict';
-
 // @xufa/schema: schemas of data. Written as code with s (plain JSON Schemas, with their TypeScript types), as JSON
 // Schema (draft-04 to 2020-12), or with the builder of types (new Schema({ name: String() })); compiled into
 // functions that check values (the validator of the routes of @xufa/http), written as standalone code, or inferred
 // from samples. No dependencies.
 //
-//   const { s, compileJsonSchema } = require('@xufa/schema');
+//   import { s, compileJsonSchema } from '@xufa/schema';
 //   const Book = s.object({ title: s.string({ minLength: 1 }), pages: s.optional(s.integer({ minimum: 1 })) });
 //   const validate = compileJsonSchema(Book);
 //   validate({ pages: 0 }); // ['title is mandatory', 'pages must be at least 1']
-const { ClosedSchema } = require('./lib/closed-schema');
-const { compileErrors, compileFirstError, compileIsValid, compileType } = require('./lib/compile');
-const {
+import { ClosedSchema } from './lib/closed-schema.js';
+import { compileErrors, compileFirstError, compileIsValid, compileType } from './lib/compile.js';
+import {
   fromJsonSchema,
   compileJsonSchema,
   compileJsonSchemaAsync,
   loadJsonSchemas,
   builtInFormats,
-} = require('./lib/json-schema');
-const { Schema } = require('./lib/schema');
-const { standaloneCode, standaloneModule, standaloneJsonSchema } = require('./lib/standalone');
-const { ajvKeywords } = require('./lib/ajv-keywords');
-const { inferJsonSchema, inferSchemaCode } = require('./lib/infer');
+} from './lib/json-schema.js';
+import { Schema } from './lib/schema.js';
+import { standaloneCode, standaloneModule, standaloneJsonSchema } from './lib/standalone.js';
+import { ajvKeywords } from './lib/ajv-keywords.js';
+import { inferJsonSchema, inferSchemaCode } from './lib/infer.js';
 // The builder: JSON Schemas written as code (s.object(), s.string()...), with their types.
-const { s, isOptional, OPTIONAL } = require('./lib/builder');
-const {
+import { s, isOptional, OPTIONAL } from './lib/builder.js';
+import {
   AllOfType,
   AllOf,
   allOf,
@@ -93,9 +91,9 @@ const {
   When,
   isJsonType,
   KeywordType,
-} = require('./lib/types');
+} from './lib/types/index.js';
 
-module.exports = {
+export {
   s,
   isOptional,
   OPTIONAL,

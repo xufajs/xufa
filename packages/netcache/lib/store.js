@@ -3,8 +3,8 @@
 // applied only when it is newer than what the key has: its value, the tombstone of a delete, or a clear of a prefix
 // of it. Tombstones and clears are kept `tombstoneTtl` ms, so that a write older than them that arrives late (from
 // another node) does not bring back what was deleted.
-const v8 = require('node:v8');
-const { compare } = require('./clock');
+import v8 from 'node:v8';
+import { compare } from './clock.js';
 
 class Store {
   // `decode(bytes)`: the value of what was written (v8.deserialize by default).
@@ -98,4 +98,4 @@ class Store {
   }
 }
 
-module.exports = { Store };
+export { Store };

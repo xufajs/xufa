@@ -1,5 +1,3 @@
-'use strict';
-
 const kDone = Symbol('kDone');
 const kRun = Symbol('kRun');
 
@@ -52,4 +50,7 @@ class Limiter {
   }
 }
 
-module.exports = Limiter;
+export default Limiter;
+
+// What require() gives (the tests of ws are CommonJS).
+export { Limiter as 'module.exports' };

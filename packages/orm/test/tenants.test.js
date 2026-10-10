@@ -1,5 +1,5 @@
-const xufa = require('@xufa/http');
-const { Tenants, Model, fields, plugin } = require('..');
+import xufa from '@xufa/http';
+import { Tenants, Model, fields, plugin } from '../index.js';
 
 function makeModels() {
   class Tag extends Model {
@@ -68,7 +68,10 @@ describe('tenants', () => {
       static fields = { name: fields.string() };
     }
     class Visit extends Model {
-      static fields = { path: fields.string(), post: fields.foreignKey(() => Post, { null: true, dbConstraint: false }) };
+      static fields = {
+        path: fields.string(),
+        post: fields.foreignKey(() => Post, { null: true, dbConstraint: false }),
+      };
     }
     class Token extends Model {
       static fields = { value: fields.string() };
@@ -127,6 +130,31 @@ describe('tenants', () => {
     }
   });
 
+  it('a model of tenants out of one: an error, never the database of a tenant opened before', async () => {
+    const { Tag, Note } = makeModels();
+    const tenants = new Tenants({ models: [Tag, Note], config: () => ({ backend: 'memory' }), setup: (db) => db.sync() });
+    await tenants.run('acme', () => Note.objects.create({ text: 'acme note' }));
+    expect(() => Note.objects.all().db).toThrow('it is a model of tenants: its queries run in a tenant');
+    await expect(Note.objects.count()).rejects.toThrow('a model of tenants');
+    await tenants.close();
+  });
+
+  it('a QuerySet given back by run() is read in the tenant (awaited there)', async () => {
+    const { Tag, Note } = makeModels();
+    const tenants = new Tenants({
+      models: [Tag, Note],
+      config: () => ({ backend: 'memory' }),
+      setup: (db) => db.sync(),
+    });
+    await tenants.run('acme', () => Note.objects.create({ text: 'acme note' }));
+    await tenants.database('globex');
+    // (Awaited out of the tenant, it read the database the model was registered in first: acme's.)
+    expect(await tenants.run('globex', () => Note.objects.all())).toEqual([]);
+    expect(await tenants.run('globex', () => Note.objects.valuesList('text', { flat: true }))).toEqual([]);
+    expect(await tenants.run('acme', () => Note.objects.valuesList('text', { flat: true }))).toEqual(['acme note']);
+    await tenants.close();
+  });
+
   it('keeps the databases of the last tenants used', async () => {
     const { Tag, Note } = makeModels();
     const tenants = new Tenants({ models: [Tag, Note], config: () => ({ backend: 'memory' }), max: 2 });
@@ -169,6 +197,28 @@ describe('tenants', () => {
     expect(tenants.databases.size).toBe(0);
   });
 
+  it('routes with config { tenant: false } choose their tenant themselves (the admin does)', async () => {
+    const { Tag, Note } = makeModels();
+    const tenants = new Tenants({
+      models: [Tag, Note],
+      config: () => ({ backend: 'memory' }),
+      setup: (db) => db.sync(),
+    });
+    const app = xufa();
+    app.register(plugin, { tenants: { tenants, resolve: (request) => request.headers['x-tenant'], authorize: false } });
+    app.get('/own/:tenant', { config: { tenant: false } }, (request) =>
+      tenants.run(request.params.tenant, async () => ({ tenant: request.tenant, notes: await Note.objects.count() }))
+    );
+    await app.ready();
+    await tenants.run('one', () => Note.objects.create({ text: 'first' }));
+    expect((await app.inject('/own/one')).json()).toEqual({ tenant: null, notes: 1 });
+    expect((await app.inject({ url: '/own/two', headers: { 'x-tenant': 'one' } })).json()).toEqual({
+      tenant: null,
+      notes: 0,
+    });
+    await app.close();
+  });
+
   it('authorize: checked before the tenant is entered (403, or the error it throws); a warning without it', async () => {
     const { Tag, Note } = makeModels();
     const looked = [];
@@ -197,15 +247,24 @@ describe('tenants', () => {
       },
     });
     app.post('/notes', async (request) => Note.objects.create(request.body));
-    app.get('/notes', async (request) => ({ tenant: request.tenant, notes: await Note.objects.valuesList('text', { flat: true }) }));
+    app.get('/notes', async (request) => ({
+      tenant: request.tenant,
+      notes: await Note.objects.valuesList('text', { flat: true }),
+    }));
     await app.ready();
     expect(warnings).toEqual([]);
     const as = (user, tenant) => ({ 'x-user': user, 'x-tenant': tenant });
     await app.inject({ method: 'POST', url: '/notes', headers: as('one,two', 'one'), payload: { text: 'first' } });
     await app.inject({ method: 'POST', url: '/notes', headers: as('two', 'two'), payload: { text: 'second' } });
     // The queries of the handler run in the tenant entered after the check.
-    expect((await app.inject({ url: '/notes', headers: as('one', 'one') })).json()).toEqual({ tenant: 'one', notes: ['first'] });
-    expect((await app.inject({ url: '/notes', headers: as('one,two', 'two') })).json()).toEqual({ tenant: 'two', notes: ['second'] });
+    expect((await app.inject({ url: '/notes', headers: as('one', 'one') })).json()).toEqual({
+      tenant: 'one',
+      notes: ['first'],
+    });
+    expect((await app.inject({ url: '/notes', headers: as('one,two', 'two') })).json()).toEqual({
+      tenant: 'two',
+      notes: ['second'],
+    });
     const denied = await app.inject({ url: '/notes', headers: as('one', 'three') });
     expect([denied.statusCode, denied.json().message]).toEqual([403, 'You cannot use this tenant']);
     const anonymous = await app.inject({ url: '/notes', headers: { 'x-tenant': 'one' } });
@@ -215,17 +274,29 @@ describe('tenants', () => {
     await app.close();
 
     const open = xufa({ logger: { level: 'warn', stream: { write: (line) => warnings.push(JSON.parse(line).msg) } } });
-    open.register(plugin, { tenants: { tenants: new Tenants({ models: [], config: () => ({ backend: 'memory' }) }), resolve: () => 'x' } });
+    open.register(plugin, {
+      tenants: { tenants: new Tenants({ models: [], config: () => ({ backend: 'memory' }) }), resolve: () => 'x' },
+    });
     await open.ready();
     expect(warnings).toEqual([expect.stringMatching(/without tenants.authorize: any request may use any tenant/)]);
     await open.close();
-    const fromUser = xufa({ logger: { level: 'warn', stream: { write: (line) => warnings.push(JSON.parse(line).msg) } } });
-    fromUser.register(plugin, { tenants: { tenants: new Tenants({ models: [], config: () => ({ backend: 'memory' }) }), resolve: () => 'x', authorize: false } });
+    const fromUser = xufa({
+      logger: { level: 'warn', stream: { write: (line) => warnings.push(JSON.parse(line).msg) } },
+    });
+    fromUser.register(plugin, {
+      tenants: {
+        tenants: new Tenants({ models: [], config: () => ({ backend: 'memory' }) }),
+        resolve: () => 'x',
+        authorize: false,
+      },
+    });
     await fromUser.ready();
     expect(warnings).toHaveLength(1);
     await fromUser.close();
     const wrong = xufa();
-    wrong.register(plugin, { tenants: { tenants: new Tenants({ models: [], config: () => null }), resolve: () => 'x', authorize: 'auth' } });
+    wrong.register(plugin, {
+      tenants: { tenants: new Tenants({ models: [], config: () => null }), resolve: () => 'x', authorize: 'auth' },
+    });
     await expect(wrong.ready()).rejects.toThrow('tenants.authorize is a function (request, id, reply), or false');
   });
 });

@@ -1,11 +1,11 @@
 # @xufa/sequelize
 
 The API of [Sequelize](https://sequelize.org) 6 over [@xufa/orm](../orm): code written for Sequelize runs with
-`require('@xufa/sequelize')` instead of `require('sequelize')`, with no dependencies (PostgreSQL through
+`@xufa/sequelize` instead of `sequelize` in its imports (or requires), with no dependencies (PostgreSQL through
 [@xufa/pg](../pg), SQLite through `node:sqlite`).
 
 ```js
-const { Sequelize, DataTypes, Op } = require('@xufa/sequelize');
+import { Sequelize, DataTypes, Op } from '@xufa/sequelize';
 
 const sequelize = new Sequelize('postgres://user:pass@localhost:5432/db', { logging: false });
 const Author = sequelize.define('Author', { name: { type: DataTypes.STRING, allowNull: false } });

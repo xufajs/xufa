@@ -20,7 +20,7 @@ function toNumber(value) {
   return value === null || value === undefined ? null : Number(value);
 }
 
-const { likeParts } = require('../../query');
+import { likeParts } from '../../query.js';
 
 // The starts of units in SQLite: the date, and the time of datetimes (to the hour, minute or second).
 const SQLITE_TRUNCS = {
@@ -165,8 +165,8 @@ function toDate(value) {
 
 // The functions that make the values of the types of fields from those of the driver (as decode()), for the
 // decoders compiled for the rows of queries; the types not listed are the values themselves.
-const { toEwkt, fromEwkb } = require('../../geo');
-const { toHstore, parseHstore } = require('../../hstore');
+import { toEwkt, fromEwkb } from '../../geo.js';
+import { toHstore, parseHstore } from '../../hstore.js';
 
 const sqliteDecoders = {
   geometry: (value) => (value === null ? null : JSON.parse(value)),
@@ -462,4 +462,4 @@ const postgres = {
   },
 };
 
-module.exports = { sqlite, postgres, quote };
+export { sqlite, postgres, quote };

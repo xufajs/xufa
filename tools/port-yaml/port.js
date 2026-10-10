@@ -4,15 +4,15 @@
 // library and the tests are not otherwise changed.
 //
 // node tools/port-yaml/port.js <js-yaml>  (a checkout of github.com/nodeca/js-yaml at the tag 4.1.0)
-const fs = require('node:fs');
-const path = require('node:path');
+import fs from 'node:fs';
+import path from 'node:path';
 
 const [jsYaml] = process.argv.slice(2);
 if (!jsYaml) {
   console.error('Usage: node tools/port-yaml/port.js <js-yaml>');
   process.exit(1);
 }
-const PACKAGE = path.join(__dirname, '../../packages/yaml');
+const PACKAGE = path.join(import.meta.dirname, '../../packages/yaml');
 const version = JSON.parse(fs.readFileSync(path.join(jsYaml, 'package.json'), 'utf8')).version;
 if (version !== '4.1.0') console.warn(`js-yaml ${version}: the port is of 4.1.0`);
 

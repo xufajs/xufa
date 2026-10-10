@@ -1,11 +1,8 @@
-'use strict'
-
 /* eslint no-prototype-builtins: off */
 
+import { setTimeout as sleep } from 'node:timers/promises';
 
-const { setTimeout: sleep } = require('node:timers/promises')
-
-const boot = require('..')
+import boot from '../index.js';
 
 test('one level', async () => {
   expect.assertions(14)

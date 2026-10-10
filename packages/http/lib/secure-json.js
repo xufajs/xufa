@@ -66,7 +66,12 @@ function safeParse(text, reviver) {
 }
 
 // Callable, as secure-json-parse is.
-module.exports = parse;
-module.exports.parse = parse;
-module.exports.safeParse = safeParse;
-module.exports.filter = filter;
+export default parse;
+parse.parse = parse;
+parse.safeParse = safeParse;
+parse.filter = filter;
+
+export { parse, safeParse, filter };
+
+// What require() gives (the tests of fastify are CommonJS).
+export { parse as 'module.exports' };

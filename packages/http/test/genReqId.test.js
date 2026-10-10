@@ -2,7 +2,7 @@
 
 const { Readable } = require('node:stream')
 
-const fp = require('@xufa/http').plugin
+const fp = require('..').plugin
 const Fastify = require('..')
 
 test('Should accept a custom genReqId function', (done) => {

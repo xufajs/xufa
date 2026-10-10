@@ -44,4 +44,4 @@ function fakeClock(start = 0) {
   };
 }
 
-module.exports = { fakeClock, settle };
+export { fakeClock, settle };

@@ -1,8 +1,4 @@
-'use strict'
-
-
-
-const Request = require('../lib/request')
+import Request from '../lib/request.js';
 
 test('aborted property should be false', async () => {
   const mockReq = {

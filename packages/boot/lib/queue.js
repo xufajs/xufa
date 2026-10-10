@@ -113,4 +113,4 @@ function createQueue(context, worker, concurrency = 1) {
   return queue;
 }
 
-module.exports = { createQueue };
+export { createQueue };

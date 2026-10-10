@@ -3,7 +3,7 @@ import { XufaPluginOptions, XufaPluginCallback, XufaPluginAsync } from './plugin
 import { LogLevel } from './logger';
 import { XufaInstance } from './instance';
 import { RawServerBase } from './utils';
-import { XufaBaseLogger, XufaTypeProvider, RawServerDefault } from '../index';
+import { XufaBaseLogger, XufaTypeProvider, RawServerDefault } from '../index.cjs';
 
 export interface RegisterOptions {
   prefix?: string;

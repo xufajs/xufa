@@ -1,0 +1,23 @@
+{
+  "name": "@xufa-examples/helpdesk",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Tickets of organizations: a database for each (tenants), chosen by subdomain on the site and in the admin",
+  "type": "module",
+  "scripts": {
+    "start": "xufa start",
+    "dev": "xufa dev",
+    "test": "xufa test",
+    "migrate": "xufa migrate",
+    "makemigrations": "xufa makemigrations",
+    "seed": "xufa seed",
+    "routes": "xufa routes",
+    "shell": "xufa shell"
+  },
+  "dependencies": {
+    "xufa": "workspace:*"
+  },
+  "engines": {
+    "node": "^22.22.3 || ^24.15.0 || >=25.7.0"
+  }
+}

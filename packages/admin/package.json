@@ -1,10 +1,10 @@
 {
   "name": "@xufa/admin",
   "version": "0.1.0",
-  "description": "The admin of the models of @xufa/orm, as Django's, with no dependencies: lists with search, filters, order and pages, forms from the fields with their validation, for any backend, as a plugin of @xufa/http",
+  "description": "The admin of the models of @xufa/orm, as Django's, with no dependencies to install: a React page (built in) with lists, search, filters, order and pages, forms from the fields with their validation, jobs and pipeline runs, roles and tenants, as a plugin of @xufa/http",
   "main": "./index.js",
   "types": "./index.d.ts",
-  "type": "commonjs",
+  "type": "module",
   "exports": {
     ".": {
       "types": "./index.d.ts",
@@ -19,6 +19,8 @@
     "LICENSE"
   ],
   "scripts": {
+    "build": "node client/build.js",
+    "build:check": "node client/build.js --check",
     "test": "vyntra",
     "test:types": "tsd"
   },
@@ -47,9 +49,14 @@
     "@xufa/auth": "workspace:*",
     "@xufa/http": "workspace:*",
     "@xufa/queue": "workspace:*",
+    "@xufa/scheduler": "workspace:*",
     "@xufa/session": "workspace:*",
+    "@xyflow/react": "^12.12.0",
+    "esbuild": "^0.28.2",
+    "react": "^19.3.0",
+    "react-dom": "^19.3.0",
     "tsd": "^0.33.0",
-    "vyntra": "^0.6.0"
+    "vyntra": "^0.7.0"
   },
   "publishConfig": {
     "access": "public"

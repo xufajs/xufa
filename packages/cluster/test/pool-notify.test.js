@@ -1,11 +1,11 @@
 // Pools of several machines told when a slot comes back (notify): a ticket waiting on one machine is served as soon as
 // another gives the slot back, not at its next look (pollEvery, 10 s here). With { publish, subscribe }, a NetCache of
 // @xufa/netcache (TCP) and a Discovery of @xufa/discovery (UDP), on 127.0.0.1.
-const { EventEmitter } = require('node:events');
-const { Database } = require('@xufa/orm');
-const { NetCache } = require('@xufa/netcache');
-const { Discovery } = require('@xufa/discovery');
-const { Bus, Pool, PoolClient, ormSlots } = require('..');
+import { EventEmitter } from 'node:events';
+import { Database } from '@xufa/orm';
+import { NetCache } from '@xufa/netcache';
+import { Discovery } from '@xufa/discovery';
+import { Bus, Pool, PoolClient, ormSlots } from '../index.js';
 
 const SECRET = 'a secret of sixteen bytes or more';
 const sleep = (wait) => new Promise((resolve) => setTimeout(resolve, wait));

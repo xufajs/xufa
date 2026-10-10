@@ -1,9 +1,9 @@
 // Two workers, each with a WebSocket server of its own port and a client of it in the room 'room'. Each worker sends
 // { from: id } to the room; each client must get both messages. The workers report to the primary (JSON lines).
-const http = require('node:http');
-const { start, stop, bus } = require('@xufa/cluster');
-const { WebSocket, WebSocketServer } = require('../../..');
-const { Hub } = require('../../../lib/hub');
+import http from 'node:http';
+import { start, stop, bus } from '@xufa/cluster';
+import { WebSocket, WebSocketServer } from '../../../index.js';
+import { Hub } from '../../../lib/hub.js';
 
 const WORKERS = 2;
 const report = (data) => process.stdout.write(`${JSON.stringify(data)}\n`);

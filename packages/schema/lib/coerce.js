@@ -1,7 +1,8 @@
 // The option coerceTypes: a value that is not of the JSON type its schema's "type" asks for is converted to one of those
 // types when it can be, with ajv's rules, before it is checked. The converted value replaces the original one in the
 // object or array it is in; a value that is in neither (the value validated) is converted for the validation only.
-const { ValidateType } = require('./types/validate-type');
+import { ValidateType } from './types/validate-type.js';
+import * as indexModule from './types/index.js';
 
 // The types a value can be converted to, in the order "type" lists them; "array" too with coerceTypes: 'array'.
 const COERCIBLE = ['string', 'number', 'integer', 'boolean', 'null'];
@@ -76,8 +77,7 @@ function coerceSpecOf(type, seen = []) {
     return type.coerceSpec;
   }
   // Required when first used (the types require this module), then kept: this runs for every key of every object.
-  // eslint-disable-next-line global-require
-  if (TYPES === undefined) TYPES = require('./types');
+  if (TYPES === undefined) TYPES = indexModule;
   const { RefType, AllOfType } = TYPES;
   if (type.constructor === RefType && !seen.includes(type)) {
     return coerceSpecOf(type.getTarget(), [...seen, type]);
@@ -132,11 +132,4 @@ class CoerceType extends ValidateType {
   }
 }
 
-module.exports = {
-  CoerceType,
-  COERCIBLE,
-  TYPE_TESTS,
-  coerce,
-  coerceSpecOf,
-  readCoerced,
-};
+export { CoerceType, COERCIBLE, TYPE_TESTS, coerce, coerceSpecOf, readCoerced };

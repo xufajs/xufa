@@ -7,13 +7,16 @@
 //   Buffer, which browsers do not have: the bundle has a small one of its own, over Uint8Array.)
 //
 // The modules are CommonJS: each one is wrapped in a function and required on first use; `@xufa/<name>` is the main
-// module of that package. The few modules of Node.js they require are small stand-ins (SHIMS): what they use of them
+// module of that package. Those of packages of ES modules are made CommonJS first (esbuild, the bundler of the page
+// of @xufa/admin), their import.meta.url their id: createRequire() of node:module resolves in the bundle, and a
+// require() of an ES module gives its 'module.exports' export when it has one, as in Node.js. The few modules of Node.js they require are small stand-ins (SHIMS): what they use of them
 // in a browser (util.types, http.METHODS), and functions that throw for the rest (reading files, in the plugin of
 // templates).
-const fs = require('node:fs');
-const path = require('node:path');
+import fs from 'node:fs';
+import path from 'node:path';
+import { createRequire } from 'node:module';
 
-const PACKAGES = path.join(__dirname, '../../../packages');
+const PACKAGES = path.join(import.meta.dirname, '../../../packages');
 
 const SHIMS = {
   'node:util': `
@@ -39,7 +42,18 @@ module.exports = {
     'UNSUBSCRIBE'],
   STATUS_CODES: {},
 };`,
+  // Channels nobody listens to (@xufa/template publishes its renders for test clients).
+  'node:diagnostics_channel': `
+var channel = function () { return { hasSubscribers: false, publish: function () {}, subscribe: function () {}, unsubscribe: function () {} }; };
+module.exports = { channel: channel, subscribe: function () {}, unsubscribe: function () {}, hasSubscribers: function () { return false; } };`,
 };
+// createRequire() of an ES module made CommonJS (its import.meta.url is its id): a require() in the bundle.
+SHIMS['node:module'] = `
+module.exports = {
+  createRequire: function (from) {
+    return function (request) { return required(resolve(from, request)); };
+  },
+};`;
 // Modules of Node.js that are only used on a server: any use throws.
 for (const name of ['node:fs', 'node:fs/promises', 'node:path', 'node:crypto', 'node:stream']) {
   SHIMS[name] = `
@@ -65,10 +79,19 @@ function filesOf(dir) {
     });
 }
 
+// An ES module as CommonJS, for the bundle.
+let esbuild = null;
+function commonjsOf(id, text) {
+  esbuild ??= createRequire(path.join(PACKAGES, 'admin', 'package.json'))('esbuild');
+  const source = text.replace(/\bimport\.meta\.url\b/g, JSON.stringify(id));
+  return esbuild.transformSync(source, { format: 'cjs', loader: 'js', target: 'es2020', sourcefile: id }).code;
+}
+
 // The modules of a package: { id: source }, ids as '@xufa/<name>/<path>'.
 function modulesOf(name, modules) {
   const dir = path.join(PACKAGES, name);
   const pkg = JSON.parse(fs.readFileSync(path.join(dir, 'package.json'), 'utf8'));
+  const esm = pkg.type === 'module';
   const prefix = `@xufa/${name}`;
   const roots = ['index.js', 'lib', 'src'].filter((entry) => fs.existsSync(path.join(dir, entry)));
   for (const root of roots) {
@@ -76,11 +99,12 @@ function modulesOf(name, modules) {
     for (const file of files) {
       const id = `${prefix}/${path.relative(dir, file).split(path.sep).join('/')}`;
       const text = fs.readFileSync(file, 'utf8').replace(/\r\n/g, '\n');
-      modules[id] = file.endsWith('.json') ? `module.exports = ${text.trim()};` : text;
+      if (file.endsWith('.json')) modules[id] = `module.exports = ${text.trim()};`;
+      else modules[id] = esm ? commonjsOf(id, text) : text;
     }
   }
   modules[`${prefix}/package.json`] = `module.exports = ${JSON.stringify({ name: pkg.name, version: pkg.version })};`;
-  return `${prefix}/${pkg.main.replace(/^\.\//, '')}`;
+  return `${prefix}/${(pkg.main || 'index.js').replace(/^\.\//, '')}`;
 }
 
 // shims: modules of Node.js of this bundle ({ id: source }, over SHIMS); prelude: code before the modules, in their scope.
@@ -166,8 +190,15 @@ ${body}
     }
     return cache[id].exports;
   }
+  // What require() gives: of an ES module, its 'module.exports' export when it has one.
+  function required(id) {
+    var value = load(id);
+    return value && value.__esModule && Object.prototype.hasOwnProperty.call(value, 'module.exports')
+      ? value['module.exports']
+      : value;
+  }
   function main(name) {
-    return load(mains[name]);
+    return required(mains[name]);
   }
 ${exportsCode}
 })(typeof globalThis !== 'undefined' ? globalThis : this);
@@ -200,8 +231,9 @@ function xufaBundle() {
 // the global `xufaHttp` (@xufa/http, with schema). The modules of Node.js it uses are stand-ins (lib/browser/): events,
 // streams, the request and response of @xufa/inject, and no server (app.inject() calls the routes without one).
 const HTTP_PACKAGES = ['http', 'boot', 'errors', 'inject', 'logger', 'router', 'schema', 'serializer'];
-const BROWSER = path.join(__dirname, 'browser');
-const browserModule = (name) => fs.readFileSync(path.join(BROWSER, `${name}.js`), 'utf8').replace(/\r\n/g, '\n');
+const BROWSER = path.join(import.meta.dirname, 'browser');
+// (CommonJS, .cjs: they are modules of the bundle, as they are written.)
+const browserModule = (name) => fs.readFileSync(path.join(BROWSER, `${name}.cjs`), 'utf8').replace(/\r\n/g, '\n');
 
 const HTTP_SHIMS = {
   'node:events': browserModule('events'),
@@ -288,4 +320,4 @@ function httpBundle() {
   );
 }
 
-module.exports = { schemaBundle, xufaBundle, httpBundle, PLAYGROUND };
+export { schemaBundle, xufaBundle, httpBundle, PLAYGROUND };

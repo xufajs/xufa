@@ -1,7 +1,4 @@
-'use strict'
-
-
-const build = require('..')
+import build from '../index.js';
 
 test('can stringify recursive directory tree (issue #181)', () => {
   expect.assertions(1)

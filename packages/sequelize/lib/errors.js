@@ -251,10 +251,11 @@ ValidationErrorItem.TypeStringMap = {
   'validation error': 'FUNCTION',
 };
 
-module.exports = {
-  Error: BaseError,
-  ValidationErrorItemOrigin: ValidationErrorItem.Origins,
-  ValidationErrorItemType: ValidationErrorItem.TypeStringMap,
+export const ValidationErrorItemOrigin = ValidationErrorItem.Origins;
+export const ValidationErrorItemType = ValidationErrorItem.TypeStringMap;
+
+export {
+  BaseError as Error,
   BaseError,
   ValidationError,
   ValidationErrorItem,

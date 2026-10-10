@@ -1,5 +1,3 @@
-'use strict';
-
 // Remote sources of a configuration, read by loadRemoteConfig(options) (async: they take time) as layers after the
 // files and before the variables of the environment (so a variable still overrides what a server says):
 //
@@ -25,12 +23,15 @@
 // watchConfig(options, { interval, onChange, onError }) reads it again every interval: a new configuration (they are
 // frozen) when something changed, given to onChange with the one before and the paths that changed; a reading that
 // fails keeps the one there was (onError is told).
-const fs = require('node:fs');
-const path = require('node:path');
-const { ConfigError } = require('./errors');
-const { readLocal, complete, merge } = require('./load');
-const { coerce, isPlain } = require('./schema');
-const { call } = require('./aws');
+import fs from 'node:fs';
+import path from 'node:path';
+import { ConfigError } from './errors.js';
+import { readLocal, complete, merge } from './load.js';
+import { coerce, isPlain } from './schema.js';
+import { call } from './aws.js';
+import { createRequire } from 'node:module';
+
+const require = createRequire(import.meta.url);
 
 const DEFAULTS = { timeout: 5000, retries: 2 };
 
@@ -539,4 +540,4 @@ async function watchConfig(options = {}, { interval = '30s', onChange, onError, 
   };
 }
 
-module.exports = { loadRemoteConfig, watchConfig, sources, parseDocument };
+export { loadRemoteConfig, watchConfig, sources, parseDocument };

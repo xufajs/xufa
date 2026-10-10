@@ -8,9 +8,9 @@
 // The failures are kept in a store with get, set(key, value, ttl in ms) and delete: a MemoryCache of its own by
 // default (one process), or a cache of @xufa/orm given as `store` (SharedCache counts the failures of every worker
 // of a cluster in its primary). Counting is not atomic across processes: concurrent failures may count once.
-const { seconds } = require('./duration');
-const { Locked } = require('./errors');
-const { normalizeIdentifier } = require('./identifier');
+import { seconds } from './duration.js';
+import { Locked } from './errors.js';
+import { normalizeIdentifier } from './identifier.js';
 
 // A store in the process: values that expire after their ttl.
 class MemoryStore {
@@ -115,4 +115,4 @@ class Lockout {
   }
 }
 
-module.exports = { Lockout, MemoryStore };
+export { Lockout, MemoryStore };

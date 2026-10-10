@@ -22,4 +22,4 @@ function reportCacheError(owner, err, operation) {
   });
 }
 
-module.exports = { reportCacheError };
+export { reportCacheError };

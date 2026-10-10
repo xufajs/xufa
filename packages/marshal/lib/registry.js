@@ -3,7 +3,7 @@
 // `decode(data)` makes the instance again, as options of register() or as static methods of the class under the
 // symbols ENCODE and DECODE. Without them, the own enumerable fields of the instance are written, and an instance is
 // made again from the prototype of the class with those fields, without calling its constructor.
-const { MarshalError } = require('./errors');
+import { MarshalError } from './errors.js';
 
 const ENCODE = Symbol.for('xufa.marshal.encode');
 const DECODE = Symbol.for('xufa.marshal.decode');
@@ -63,4 +63,4 @@ class Registry {
 // The registry used when none is given.
 const registry = new Registry();
 
-module.exports = { Registry, registry, ENCODE, DECODE };
+export { Registry, registry, ENCODE, DECODE };

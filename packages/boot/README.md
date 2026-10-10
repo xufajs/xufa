@@ -5,7 +5,7 @@ the API of [avvio](https://github.com/fastify/avvio), and no dependencies. It lo
 and works on its own.
 
 ```js
-const boot = require('@xufa/boot');
+import boot from '@xufa/boot';
 
 const server = { name: 'app' };
 const app = boot(server); // server gets use(), after(), ready(), close() and onClose() too

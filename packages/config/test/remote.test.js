@@ -2,12 +2,12 @@
 // the secrets of Vault (a token, AppRole, KV 1 and 2), folders of secrets; their place among the layers (after the
 // files, before the variables), `at`, sensitive keys redacted, texts that are not templates, failures (all at once,
 // optional, retries, timeouts, the last good ones of cacheFile); and watchConfig() reading them again.
-const crypto = require('node:crypto');
-const fs = require('node:fs');
-const http = require('node:http');
-const os = require('node:os');
-const path = require('node:path');
-const { loadConfig, loadRemoteConfig, watchConfig, sources, ConfigError } = require('..');
+import crypto from 'node:crypto';
+import fs from 'node:fs';
+import http from 'node:http';
+import os from 'node:os';
+import path from 'node:path';
+import { loadConfig, loadRemoteConfig, watchConfig, sources, ConfigError } from '../index.js';
 
 const tick = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
@@ -19,7 +19,13 @@ function reset() {
       '/config/shop.json': { type: 'application/json', body: JSON.stringify({ server: { port: 8080 }, name: 'shop' }) },
       '/config/shop.yaml': { type: 'application/yaml', body: 'flags:\n  beta: true\n' },
     },
-    kv: { 'apps/shop/db/host': 'db.internal', 'apps/shop/db/pool': '{"max": 20}', 'apps/shop/greeting': 'hi {{ config.name }}', 'apps/shop/': null, 'apps/doc.yaml': 'level: debug\n' },
+    kv: {
+      'apps/shop/db/host': 'db.internal',
+      'apps/shop/db/pool': '{"max": 20}',
+      'apps/shop/greeting': 'hi {{ config.name }}',
+      'apps/shop/': null,
+      'apps/doc.yaml': 'level: debug\n',
+    },
     secrets: { 'shop/production': { db: { password: 'p{{a}}ss' }, apiKey: 'k-1' } },
     tokens: new Set(['root-token']),
     requests: [],
@@ -37,7 +43,8 @@ const server = http.createServer(async (req, res) => {
     res.writeHead(503).end('down');
     return;
   }
-  const json = (status, body) => res.writeHead(status, { 'content-type': 'application/json' }).end(JSON.stringify(body));
+  const json = (status, body) =>
+    res.writeHead(status, { 'content-type': 'application/json' }).end(JSON.stringify(body));
   const doc = state.documents[url.pathname];
   if (doc) {
     const etag = `"${crypto.createHash('sha1').update(doc.body).digest('hex')}"`;
@@ -86,7 +93,12 @@ beforeEach(() => {
 });
 afterEach(() => fs.rmSync(cwd, { recursive: true, force: true }));
 
-const environment = () => ({ CONSUL_HTTP_ADDR: base, CONSUL_HTTP_TOKEN: 'consul-token', VAULT_ADDR: base, VAULT_TOKEN: 'root-token' });
+const environment = () => ({
+  CONSUL_HTTP_ADDR: base,
+  CONSUL_HTTP_TOKEN: 'consul-token',
+  VAULT_ADDR: base,
+  VAULT_TOKEN: 'root-token',
+});
 const load = (options) => loadRemoteConfig({ cwd, dotenv: false, environment: environment(), ...options });
 const quiet = { onSourceError: () => {} };
 
@@ -121,7 +133,12 @@ describe('remote sources', () => {
     fs.writeFileSync(path.join(cwd, 'config/default.json'), JSON.stringify({ server: { port: 1, host: 'localhost' } }));
     const config = await load({
       environment: { ...environment(), PORT: '9090' },
-      schema: { server: { port: { type: 'port', env: 'PORT' }, host: { type: 'string' } }, db: { pool: { max: { type: 'integer' } }, host: { type: 'string' } }, greeting: { type: 'string' }, name: { type: 'string' } },
+      schema: {
+        server: { port: { type: 'port', env: 'PORT' }, host: { type: 'string' } },
+        db: { pool: { max: { type: 'integer' } }, host: { type: 'string' } },
+        greeting: { type: 'string' },
+        name: { type: 'string' },
+      },
       remote: [sources.http({ url: `${base}/config/shop.json` }), sources.consul({ prefix: 'apps/shop' })],
     });
     expect([config.server.port, config.server.host, config.db.pool.max]).toEqual([9090, 'localhost', 20]);
@@ -161,12 +178,19 @@ describe('remote sources', () => {
       ],
     }).catch((e) => e);
     expect(err).toBeInstanceOf(ConfigError);
-    expect(err.errors.map((e) => e.path)).toEqual([`http ${base}/config/missing.json`, 'consul apps/none', 'vault secret/shop/production']);
+    expect(err.errors.map((e) => e.path)).toEqual([
+      `http ${base}/config/missing.json`,
+      'consul apps/none',
+      'vault secret/shop/production',
+    ]);
     expect(err.errors[2].message).toMatch(/403/);
     const warnings = [];
     const optional = await load({
       onSourceError: (e, source) => warnings.push(source.name),
-      remote: [sources.http({ url: `${base}/config/shop.json` }), sources.http({ url: `${base}/nope.json`, optional: true, retries: 0, name: 'flags' })],
+      remote: [
+        sources.http({ url: `${base}/config/shop.json` }),
+        sources.http({ url: `${base}/nope.json`, optional: true, retries: 0, name: 'flags' }),
+      ],
     });
     expect([optional.name, warnings]).toEqual(['shop', ['flags']]);
     // Retried: down for the first attempt only.
@@ -174,7 +198,9 @@ describe('remote sources', () => {
     setTimeout(() => (state.down = false), 100);
     expect((await load({ remote: [sources.http({ url: `${base}/config/shop.json`, retries: 2 })] })).name).toBe('shop');
     state.slow = 300;
-    const slow = await load({ remote: [sources.http({ url: `${base}/config/shop.json`, timeout: 50, retries: 0 })] }).catch((e) => e);
+    const slow = await load({
+      remote: [sources.http({ url: `${base}/config/shop.json`, timeout: 50, retries: 0 })],
+    }).catch((e) => e);
     expect(slow.errors[0].message).toBe('no answer in 50 ms');
   });
 
@@ -188,7 +214,9 @@ describe('remote sources', () => {
     expect(Object.keys(cached)).toEqual([`http ${base}/config/shop.json`]);
     state.down = true;
     const warnings = [];
-    const err = await load({ remote, cacheFile: 'cache.json', onSourceError: (e) => warnings.push(e.message) }).catch((e) => e);
+    const err = await load({ remote, cacheFile: 'cache.json', onSourceError: (e) => warnings.push(e.message) }).catch(
+      (e) => e
+    );
     expect(err.errors.map((e) => e.path)).toEqual(['vault secret/shop/production']); // no cache of secrets
     expect(warnings[0]).toMatch(/503.*is used/);
     const config = await load({ remote: [remote[0]], cacheFile: 'cache.json', ...quiet });
@@ -216,8 +244,17 @@ describe('watchConfig', () => {
     const changes = [];
     const errors = [];
     const watcher = await watchConfig(
-      { cwd, dotenv: false, environment: environment(), remote: [sources.http({ url: `${base}/config/shop.json`, retries: 0 })] },
-      { interval: '1h', onChange: (next, previous, paths) => changes.push([previous.server.port, next.server.port, paths]), onError: (e) => errors.push(e) }
+      {
+        cwd,
+        dotenv: false,
+        environment: environment(),
+        remote: [sources.http({ url: `${base}/config/shop.json`, retries: 0 })],
+      },
+      {
+        interval: '1h',
+        onChange: (next, previous, paths) => changes.push([previous.server.port, next.server.port, paths]),
+        onError: (e) => errors.push(e),
+      }
     );
     expect(watcher.current.server.port).toBe(8080);
     await watcher.refresh();

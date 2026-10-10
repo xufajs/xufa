@@ -1,4 +1,4 @@
-const { ValidateType } = require('./validate-type');
+import { ValidateType } from './validate-type.js';
 
 // No value is valid, like the JSON Schema false: only undefined (when not mandatory) and null (when nullable) pass.
 class NeverType extends ValidateType {
@@ -29,8 +29,4 @@ function never(isMandatory = false, isNullable = false) {
   return new NeverType({ isMandatory, isNullable });
 }
 
-module.exports = {
-  NeverType,
-  Never,
-  never,
-};
+export { NeverType, Never, never };

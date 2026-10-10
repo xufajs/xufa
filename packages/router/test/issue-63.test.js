@@ -1,7 +1,4 @@
-'use strict'
-
-
-const factory = require('../')
+import factory from '../index.js';
 
 const noop = function () {}
 

@@ -1,7 +1,7 @@
 'use strict'
 
 
-const Fastify = require('@xufa/http')
+const Fastify = require('..')
 
 test('Should register a host constrained route', async () => {
   expect.assertions(4)

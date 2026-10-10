@@ -1,6 +1,6 @@
-const { Sequelize, DataTypes, Op } = require('..');
-const { defineSuite } = require('./suite');
-const { url, available } = require('../../pg/test/server');
+import { Sequelize, DataTypes, Op } from '../index.js';
+import { defineSuite } from './suite.js';
+import { url, available } from '../../pg/test/server.js';
 
 describe.skipIf(!available)('postgres', () => {
   defineSuite('postgres', (options) => new Sequelize(url, { logging: false, pool: { max: 5 }, ...options }));

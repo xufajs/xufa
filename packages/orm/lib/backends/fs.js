@@ -24,13 +24,13 @@
 //
 // Only the objects that changed are serialized again (their JSON is kept while they are the same), and in the layout
 // files the files of a table are written several at a time.
-const fs = require('node:fs');
-const fsp = require('node:fs/promises');
-const path = require('node:path');
-const os = require('node:os');
-const crypto = require('node:crypto');
-const { MemoryBackend } = require('./memory');
-const { BackendError } = require('../errors');
+import fs from 'node:fs';
+import fsp from 'node:fs/promises';
+import path from 'node:path';
+import os from 'node:os';
+import crypto from 'node:crypto';
+import { MemoryBackend } from './memory.js';
+import { BackendError } from '../errors.js';
 
 const TAG = '$xufa';
 const RESERVED = /^(con|prn|aux|nul|com\d|lpt\d)(\.|$)/i;
@@ -822,4 +822,4 @@ function alive(pid) {
   }
 }
 
-module.exports = { FsBackend, encodeValue, decodeValue };
+export { FsBackend, encodeValue, decodeValue };

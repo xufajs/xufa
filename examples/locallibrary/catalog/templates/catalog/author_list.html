@@ -1,0 +1,17 @@
+{{extends 'base_generic'}}
+
+{{#block content}}
+<h1>Author List</h1>
+
+{{#if authorList.length}}
+<ul>
+  {{#each authorList as author}}
+  <li>
+    <a href="{{ author.absoluteUrl }}"> {{ author }} ({{ author.dateOfBirth }} - {{ author.dateOfDeath }}) </a>
+  </li>
+  {{/each}}
+</ul>
+{{else}}
+<p>There are no authors available.</p>
+{{/if}}
+{{/block content}}

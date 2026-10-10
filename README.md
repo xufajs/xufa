@@ -11,7 +11,7 @@ PostgreSQL and MongoDB), and [`@xufa/sequelize`](packages/sequelize) runs code w
 refresh tokens.
 
 ```js
-const xufa = require('xufa'); // for now, @xufa/http
+import xufa from 'xufa'; // for now, @xufa/http
 
 const app = xufa({ logger: true });
 
@@ -28,6 +28,10 @@ app.get(
 
 app.listen({ port: 3000 });
 ```
+
+The packages are ES modules. Apps in CommonJS `require()` them as well (`require()` of ES modules, which the
+supported versions of Node.js have): `const xufa = require('xufa')` gives the same function, and their TypeScript
+declarations describe both.
 
 Code written for fastify runs on `@xufa/http`: routes, hooks, plugins and encapsulation, decorators, schemas, the
 content type parsers, `inject()`, the logger options, the errors and the TypeScript types. fastify's own test suite is
@@ -103,6 +107,13 @@ with no dependencies outside xufa, and every library fastify depends on is repla
 Validation uses [`@xufa/schema`](packages/schema) instead of ajv, a dependency of
 `@xufa/http` (loaded when a route first has a schema).
 
+## Examples
+
+- [`examples/locallibrary`](examples/locallibrary): the LocalLibrary of the MDN Django tutorial, ported to xufa
+  (models, pages and forms, logins, permissions, password resets by email, the admin, migrations, seeds and tests),
+  next to the Django project it comes from ([`examples/django-locallibrary`](examples/django-locallibrary)). Its
+  README lists what the port missed in xufa.
+
 ## Differences of `@xufa/http` from fastify
 
 - **Validation is @xufa/schema.** The ajv options it shares are read from `ajv.customOptions` (`coerceTypes`,
@@ -140,7 +151,8 @@ The tests of the databases run against local servers, and are skipped when they 
 - PostgreSQL: `XUFA_PG_URL` (default `postgres://xufa:xufa@127.0.0.1:5432/xufa_test`, `off` to skip). The tests of
   geometries and hstore also need the extensions `postgis` and `hstore` in that database (they skip without them).
 - MongoDB: `XUFA_MONGO_URL` (default `mongodb://127.0.0.1:27017/xufa_test`), and `XUFA_MONGO_RS_URL` for a replica
-  set (transactions).
+  set (transactions): `npm run mongo:rs` starts the one of the tests (`rs3`, three members on 27031 to 27033, data in
+  `.mongo-rs/`), with the `mongod` installed; `npm run mongo:rs stop` ends it.
 - SQLite is `node:sqlite`, always there.
 
 ### Tests

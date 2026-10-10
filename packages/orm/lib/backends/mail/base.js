@@ -19,9 +19,9 @@
 // cid, encoding }]) and headers ({ name: value }); a model has the ones it needs. Other fields are refused: a server of
 // mail does not keep the messages (memory-mail keeps them, for tests). The primary key is the automatic one (smtp
 // gives none: there is nothing to find the message by), or a string with a default, which is then the Message-ID.
-const { Backend } = require('../base');
-const { buildMessage } = require('./mime');
-const { ModelError } = require('../../errors');
+import { Backend } from '../base.js';
+import { buildMessage } from './mime.js';
+import { ModelError } from '../../errors.js';
 
 const MESSAGE_FIELDS = ['from', 'to', 'cc', 'bcc', 'replyTo', 'subject', 'text', 'html', 'attachments', 'headers'];
 
@@ -147,4 +147,4 @@ class MailBackend extends Backend {
   }
 }
 
-module.exports = { MailBackend, mailShape, messageOf, giveInfo, MESSAGE_FIELDS };
+export { MailBackend, mailShape, messageOf, giveInfo, MESSAGE_FIELDS };

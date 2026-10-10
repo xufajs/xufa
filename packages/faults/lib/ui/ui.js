@@ -1,5 +1,3 @@
-'use strict';
-
 /* global document, window, sessionStorage, localStorage, Node */
 
 // The page of the faults plugin: the targets and their rules (refreshed every 2 seconds), a form for new rules, the

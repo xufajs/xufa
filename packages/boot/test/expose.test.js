@@ -1,9 +1,6 @@
-'use strict'
-
-
-const boot = require('..')
-const { BOOT_ERR_EXPOSE_ALREADY_DEFINED, BOOT_ERR_ATTRIBUTE_ALREADY_DEFINED } = require('../lib/errors')
-const { kBoot } = require('..')
+import boot from '../index.js';
+import { BOOT_ERR_EXPOSE_ALREADY_DEFINED, BOOT_ERR_ATTRIBUTE_ALREADY_DEFINED } from '../lib/errors.js';
+import { kBoot } from '../index.js';
 
 for (const key of ['use', 'after', 'ready', 'onClose', 'close']) {
   test('throws if ' + key + ' is by default already there', () => {

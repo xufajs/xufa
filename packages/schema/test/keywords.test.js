@@ -1,4 +1,4 @@
-const { compileJsonSchema, standaloneJsonSchema, fromJsonSchema, ajvKeywords, KeywordType } = require('..');
+import { compileJsonSchema, standaloneJsonSchema, fromJsonSchema, ajvKeywords, KeywordType } from '../index.js';
 
 // Every mode gives the same verdict, and the first error is the first of all errors.
 function check(schema, value, options = {}) {

@@ -8,7 +8,7 @@ import {
   XufaTypeProvider,
   XufaTypeProviderDefault,
   XufaBaseLogger,
-} from '../index';
+} from '../index.cjs';
 
 type PluginFunction = typeof plugin;
 

@@ -1,4 +1,4 @@
-const { ClosedSchema, String, Integer } = require('..');
+import { ClosedSchema, String, Integer } from '../index.js';
 
 const personDefinition = {
   id: String(),

@@ -1,11 +1,11 @@
 // Messages of email (RFC 5322 and MIME) for the mail backends: addresses read and written, headers (non-ASCII text
 // as encoded words, folded at 78 characters, CR and LF refused), bodies in quoted-printable or base64 (7-bit: no
 // server needs 8BITMIME), text and HTML as alternatives, inline images (cid:) and attachments (names in RFC 2231).
-const crypto = require('node:crypto');
-const { domainToASCII } = require('node:url');
-const { contentTypeOf } = require('../../blob');
+import crypto from 'node:crypto';
+import { domainToASCII } from 'node:url';
+import { contentTypeOf } from '../../blob.js';
 
-const { MailError } = require('../../errors');
+import { MailError } from '../../errors.js';
 
 // A message that cannot be made (an address, a header): 400.
 const invalid = (message) => Object.assign(new MailError(message), { statusCode: 400 });
@@ -259,11 +259,4 @@ function buildMessage(message) {
   return { raw, messageId, envelope: { from: from[0].address, to: recipients }, utf8 };
 }
 
-module.exports = {
-  buildMessage,
-  parseAddresses,
-  formatAddress,
-  encodedWords,
-  quotedPrintable,
-  header,
-};
+export { buildMessage, parseAddresses, formatAddress, encodedWords, quotedPrintable, header };

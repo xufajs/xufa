@@ -120,4 +120,4 @@ class ConnectionManager {
   }
 }
 
-module.exports = { ConnectionManager, poolNumbers };
+export { ConnectionManager, poolNumbers };

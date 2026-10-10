@@ -1,7 +1,7 @@
 // The serializer of errors written by the fallback error handler: { statusCode, code, error, message }.
-const build = require('@xufa/serializer');
+import build from '@xufa/serializer';
 
-module.exports = build({
+const __default = build({
   type: 'object',
   properties: {
     statusCode: { type: 'number' },
@@ -10,3 +10,7 @@ module.exports = build({
     message: { type: 'string' },
   },
 });
+export default __default;
+
+// What require() gives (the tests of fastify are CommonJS).
+export { __default as 'module.exports' };

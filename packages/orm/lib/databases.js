@@ -7,9 +7,10 @@
 //   dbs.register(Author, Book, Event);
 //   await dbs.connect();
 //   await dbs.migrate({ dir: 'migrations' }); // migrations/default, migrations/events
-const path = require('node:path');
-const { Database } = require('./database');
-const { ModelError } = require('./errors');
+import path from 'node:path';
+import { Database } from './database.js';
+import { ModelError } from './errors.js';
+import * as faultsModule from './faults.js';
 
 class Databases {
   // `config`: options of Database by name (or Databases). `routes`: names of databases by model name ('*': all).
@@ -77,7 +78,7 @@ class Databases {
   // The faults of every database of these (lib/faults.js).
   get faults() {
     if (!this.faultsOf) {
-      const { databaseFaults, install } = require('./faults'); // eslint-disable-line global-require
+      const { databaseFaults, install } = faultsModule;
       this.faultsOf = databaseFaults();
       for (const db of this.databases.values()) install(this.faultsOf, db.backend);
     }
@@ -119,4 +120,4 @@ class Databases {
   }
 }
 
-module.exports = { Databases };
+export { Databases };

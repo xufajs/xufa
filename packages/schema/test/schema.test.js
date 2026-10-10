@@ -1,4 +1,4 @@
-const { Schema, String, Integer } = require('..');
+import { Schema, String, Integer } from '../index.js';
 
 const personDefinition = {
   id: String(),

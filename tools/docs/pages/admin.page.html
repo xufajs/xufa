@@ -4,21 +4,21 @@
   "title": "@xufa/admin",
   "description": "@xufa/admin: the admin of the models of @xufa/orm, as Django's: lists with search, filters, order and pages, and forms from the fields with their validation, for every backend, as a plugin of @xufa/http.",
   "groups": [
-    ["Using it", [["start", "Quick start"], ["lists", "Lists"], ["forms", "Forms"], ["runs", "Pipeline runs and health"], ["security", "Who may use it"], ["api", "Its API"]]]
+    ["Using it", [["start", "Quick start"], ["page", "The page"], ["lists", "Lists"], ["columns", "Columns"], ["forms", "Forms"], ["fieldsets", "Fields and fieldsets"], ["history", "History"], ["runs", "Pipeline runs and health"], ["jobs", "Jobs of the queue"], ["work", "Work"], ["sessions", "Sessions"], ["schema", "Data model"], ["security", "Who may use it"], ["rbac", "Roles and tenants"], ["languages", "Languages"], ["api", "Its API"]]]
   ]
 }-->
         <h1>@xufa/admin</h1>
         <p class="intro">
           The admin of the models of <a href="orm.html">@xufa/orm</a>, as Django's: a page with the list of each model
           (search, filters, order, pages) and its forms (from its fields, with the errors of its validation), for every
-          backend of the ORM, as a plugin of <a href="http.html">@xufa/http</a>. No dependencies, and no build: the page is
-          one document with its script.
+          backend of the ORM, as a plugin of <a href="http.html">@xufa/http</a>. The page is made with React and comes
+          built in the package: installing the admin installs nothing else, and the app builds nothing.
         </p>
 
         <h2 id="start">Quick start</h2>
-        <pre data-run><code class="language-js">const xufa = require('@xufa/http');
-const { Database, Model, fields } = require('@xufa/orm');
-const { admin } = require('@xufa/admin');
+        <pre data-run><code class="language-js">import xufa from '@xufa/http';
+import { Database, Model, fields } from '@xufa/orm';
+import { admin } from '@xufa/admin';
 
 class Author extends Model {
   static fields = { name: fields.string(), country: fields.string({ null: true, choices: ['ES', 'UK', 'US'] }) };
@@ -43,6 +43,44 @@ app.register(admin, {
 const page = await app.inject('/admin/');
 console.log(page.statusCode, page.headers['content-type']); // open /admin/ in a browser</code></pre>
         <pre data-output><code class="language-plaintext">200 text/html; charset=utf-8</code></pre>
+        <p>
+          In a <a href="guide.html#project">project</a>, each app's <code>admin.yaml</code> (Django's
+          <code>admin.py</code>) lists its models by name, in order, with these options; the admin takes those of every
+          app, and <code>admin:</code> of <code>xufa.yaml</code> its own options:
+        </p>
+        <pre><code class="language-yaml"># catalog/admin.yaml
+Genre:
+Author:
+  list: [lastName, firstName, dateOfBirth, dateOfDeath]
+  fields: [firstName, lastName, [dateOfBirth, dateOfDeath]]
+  inlines: [{ relation: bookSet, fields: [title, summary, isbn] }]
+BookInstance:
+  list: [book, status, borrower, dueBack]
+  filters: [status, dueBack]
+  fieldsets:
+    - [null, { fields: [book, imprint, id] }]
+    - [Availability, { fields: [status, dueBack, borrower] }]</code></pre>
+
+        <h2 id="page">The page</h2>
+        <p>
+          A sidebar with the models (and their counts), the jobs and the pipeline runs; a header with where you are, the
+          tenant chosen and your account; and a dashboard with every model, the jobs and runs by status, what waits in the queue
+          (the jobs due now and how long the oldest has waited, in amber after 5 minutes; those scheduled later), and the
+          health of the app. It works on phones (the sidebar becomes a drawer), in a light and a dark theme (or that of the system),
+          and from the keyboard.
+        </p>
+        <ul>
+          <li><strong>Addresses keep what you see:</strong> the search, filters, order and page of a list are in the address (<code>#/Book?search=ada&amp;f.published=true&amp;order=-pages&amp;page=2</code>), so going back, reloading and sharing a link keep them.</li>
+          <li><strong>Forms as Django's:</strong> Save, Save and keep editing (<kbd>Ctrl</kbd>+<kbd>S</kbd>), Save and add another; the errors of the server under each field; required fields checked before sending; foreign keys chosen in a combobox that searches; a question before leaving a form with changes.</li>
+          <li><strong>Lists:</strong> search (<kbd>/</kbd> goes to it), filters, columns that order, rows per page, objects selected and deleted at once or given to the actions of their model.</li>
+          <li><strong>Jobs and runs</strong> read again while they are live; dialogs ask before deleting, cancelling or retrying everything; toasts say what happened.</li>
+        </ul>
+        <p>
+          Its files are served under <code>assets/</code> with their hash in their address (cached for good), compressed
+          with brotli or gzip, and need no build of the app. To change the page itself, its sources are in
+          <code>packages/admin/client/src</code> (React), and <code>npm run build</code> makes
+          <code>lib/client/dist</code> again (a test says when it is not the build of the sources).
+        </p>
 
         <h2 id="lists">Lists</h2>
         <p>
@@ -62,19 +100,144 @@ console.log(page.statusCode, page.headers['content-type']); // open /admin/ in a
             <tbody>
               <tr><td><code>label</code></td><td>The name shown</td></tr>
               <tr><td><code>list</code>, <code>search</code>, <code>filters</code></td><td>Its columns, the fields its search looks in, the fields it filters by</td></tr>
+              <tr><td><code>editable</code></td><td>Booleans and choices of its list changed in its rows, each saved as it changes (Django's <code>list_editable</code>)</td></tr>
+              <tr><td><code>fields</code>, <code>fieldsets</code></td><td>The fields of its form, their order and groups (<a href="#fieldsets">Fields and fieldsets</a>)</td></tr>
               <tr><td><code>readOnly</code></td><td>Fields shown in its forms but not changed (besides keys, automatic dates and fields given by the backend)</td></tr>
               <tr><td><code>readOnlyModel</code></td><td>Only shown: no creates, updates nor deletes</td></tr>
+              <tr><td><code>actions</code></td><td>Its actions on the objects selected in its list, by name (<a href="#actions">Actions</a>)</td></tr>
+              <tr><td><code>inlines</code></td><td>Its related lists, by relation name (<code>['bookSet']</code>); all by default, none with <code>false</code></td></tr>
             </tbody>
           </table>
         </div>
 
+        <p>
+          A search is of words: each must be in one of the fields of <code>search</code> (<code>ada notes</code> finds the
+          notes of Ada), and <code>"quoted words"</code> are one. Its fields can be paths across relations, as in the
+          conditions of the ORM: <code>author__name</code> (the name of the author of a book), or back,
+          <code>bookSet__title</code> (an author by the titles of its books: each author once). <code>^name</code> searches
+          the start of a field and <code>=code</code> the whole of it (as Django's); all ignore case. A search that is not
+          a path of the model is an error when the app starts.
+        </p>
+        <pre><code class="language-js">models: [[Book, { search: ['title', '=isbn', 'author__name'] }], [Author, { search: ['^name', 'bookSet__title'] }]],</code></pre>
+
+        <h3 id="actions">Actions</h3>
+        <p>
+          The objects selected in a list can be deleted at once, and given to the actions of their model (Django's admin
+          actions): each a button of the bar of the selection. Its <code>run(objects, context)</code> gets a QuerySet of
+          them (those still there; with <code>softDelete</code>, those not deleted) and <code>{ request, user, tenant,
+          pks, model }</code>; it answers the message shown, the number of objects it changed, or nothing (then the
+          message counts those selected). An action needs <code>&lt;Model&gt;.change</code> unless its
+          <code>permission</code> says another, and a user sees only those it may run. <code>confirm</code> asks before it
+          runs (<code>true</code>, or the question), <code>danger</code> makes it red. An <code>AdminError</code> thrown is
+          shown as its message.
+        </p>
+        <pre><code class="language-js">import { admin, AdminError } from '@xufa/admin';
+
+app.register(admin, {
+  models: [
+    [Book, {
+      actions: {
+        // Its button: "Mark published"; the message: "Mark published: 3 objects".
+        markPublished: (books) => books.update({ published: true }),
+        archive: {
+          label: 'Send to the archive',
+          confirm: 'Archive the books selected?',
+          permission: 'Book.delete',
+          run: async (books, { user }) => {
+            if (await books.filter({ published: false }).exists()) throw new AdminError('Drafts are not archived');
+            const count = await books.update({ archivedBy: user.email });
+            return `${count} sent to the archive`;
+          },
+        },
+      },
+    }],
+  ],
+  authorize,
+});</code></pre>
+
+        <p>
+          <code>editable: ['published', 'status']</code> (Django's <code>list_editable</code>) makes those columns a
+          switch or a select in each row, for those who may change the model: each change is saved at once (the
+          validation of the model, its error shown, the value back). <em>Columns</em>, above the list, hides and shows
+          its columns (but the first), kept by the browser for each model.
+        </p>
+
+        <h3 id="columns">Columns</h3>
+        <p>
+          As Django's <code>list_display</code>, a column of <code>list</code> is a field, or: a path across foreign keys
+          (<code>'author__name'</code>, its relations loaded with the page, ordered by it), a method or a getter of the
+          model (<code>'displayGenre'</code>; async too; its header is the <code>label</code> of the function, as
+          Django's <code>short_description</code>), a many-to-many field (its objects), or a column of its own,
+          <code>{ name, label, value(object) }</code>. Columns that are not fields nor paths are not ordered by.
+        </p>
+        <pre><code class="language-js">class Book extends Model {
+  async displayGenre() {
+    return (await this.genre.all()).slice(0, 3).map((genre) =&gt; genre.name).join(', ');
+  }
+}
+Book.prototype.displayGenre.label = 'Genre';
+
+models: [[Book, { list: ['title', 'author', 'displayGenre', 'author__country', { name: 'size', value: (book) =&gt; book.pages }] }]],</code></pre>
+
         <h2 id="forms">Forms</h2>
         <p>
           A form has an input for each field: text, numbers, checkboxes, dates and times, the choices of a field, a select
-          of the objects of a foreign key, JSON. The required ones are marked; keys, automatic dates and
+          of the objects of a foreign key, the objects of a many-to-many (chips, and a select that adds others; required
+          unless it may be <code>blank</code>), JSON. The required ones are marked; keys, automatic dates and
           <code>readOnly</code> fields are shown, not changed. Saving runs the validation of the model (its fields, its
           rules, its unique values), and its errors are shown by field. A delete is that of the model: with
           <a href="orm-guide.html#scopes"><code>softDelete</code></a>, the object is kept with its date.
+        </p>
+        <p id="related">
+          Below the form of an object are its related lists: the objects of the other models of the admin that point to
+          it (the books of an author), in pages, each a link to its page. <em>Add Book</em> there opens a new book with
+          its author given, and <em>In their list</em> the list of books filtered by it (when <code>author</code> is one of
+          its filters). The other way, a foreign key is a link to its object, in the form and in lists. The option
+          <code>inlines</code> of a model chooses its related lists by the names of their relations; a user sees only
+          those of the models it may view.
+        </p>
+        <pre><code class="language-js">models: [Book, [Author, { inlines: ['bookSet'] }], [Tag, { inlines: false }]],</code></pre>
+        <p id="tabular-inlines">
+          An inline <code>{ relation, fields, extra }</code> is Django's <code>TabularInline</code>: the objects of the
+          relation edited in rows in the page of their object (<code>fields</code>: those of the rows, all that can be
+          by default; <code>extra</code>: the empty rows to add another, 1), with a box to delete each.
+          <em>Save</em> of the card sends them at once: every row is checked first (by the model; the errors are shown in
+          their rows, and nothing is saved), then they are created, changed and deleted in a transaction. Each kind of
+          change needs its permission on their model. In the page of a new object, its inlines have their empty rows too:
+          <em>Save</em> creates the object and its rows together, in one transaction (an error of a row, and nothing is
+          kept).
+        </p>
+        <pre><code class="language-js">models: [[Author, { inlines: [{ relation: 'bookSet', fields: ['title', 'isbn', 'language'], extra: 2 }] }], Book],</code></pre>
+
+        <h3 id="fieldsets">Fields and fieldsets</h3>
+        <p>
+          As Django's <code>fields</code> and <code>fieldsets</code>: <code>fields</code> gives the fields of the form in
+          their order, a list of names on one line; <code>fieldsets</code> groups them, each with a title (or none), a
+          description, and <code>collapse</code> (closed until opened). Only the fields they name are in the form, and
+          are changed by it; the read-only ones they name are shown in their place.
+        </p>
+        <pre><code class="language-js">models: [
+  [Author, { fields: ['firstName', 'lastName', ['dateOfBirth', 'dateOfDeath']] }],
+  [
+    BookInstance,
+    {
+      fieldsets: [
+        [null, { fields: ['book', 'imprint', 'id'] }],
+        ['Availability', { fields: ['status', 'dueBack', 'borrower'], description: 'On loan or on the shelf' }],
+      ],
+    },
+  ],
+],</code></pre>
+
+        <h2 id="history">History</h2>
+        <p>
+          With the <a href="orm-guide.html#audit">audit log</a> of the database (<code>new Database({ ..., audit: true
+          })</code>), the admin has Django's history: the page of an object has its <em>History</em> (each change, newest
+          first: when, who, and the fields that changed, from what to what; redacted fields say only that they changed),
+          and the dashboard the <em>Recent actions</em> of the models the user may view, each a link to its object. The
+          writes of the admin (creates, changes, deletes, actions, inlines) are recorded with who made them (the user of
+          its login, or <code>request.user</code>) and <code>via: 'admin'</code> (and its tenant); the others, as the app
+          records them.
         </p>
 
         <h2 id="runs">Pipeline runs and health</h2>
@@ -82,9 +245,104 @@ console.log(page.statusCode, page.headers['content-type']); // open /admin/ in a
 app.register(admin, { prefix: '/admin', models: [Book], pipelines, authorize });</code></pre>
         <ul>
           <li><strong>Health:</strong> with <a href="http-guide.html#health">xufa.health</a> registered, the first page shows its report: the status of the app and each check with its time and its error or details (<code>health: false</code> leaves it out).</li>
-          <li><strong>Runs:</strong> with <code>pipelines</code> (a <code>Pipelines</code> of <a href="queue.html#pipelines">@xufa/queue</a>), the page lists their runs (by status and pipeline, newest first) and shows each run: the graph of its steps in columns by depth, colored by status (a skipped one dashed), with arrows; the step chosen with its block, attempts, times, the end of its wait (<code>pausedUntil</code>), its output and its error; the input and the result of the run. A run that runs is read again every 3 seconds.</li>
-          <li><strong>Pipelines in pipelines:</strong> a step of the block <code>pipeline</code> links to the run it started, and that run to the run and step that started it.</li>
+          <li><strong>Runs:</strong> with <code>pipelines</code> (a <code>Pipelines</code> of <a href="queue.html#pipelines">@xufa/queue</a>), the page lists their runs (by status and pipeline, newest first) and shows each run: the graph of its steps in columns by depth, colored by status (a skipped one dashed), with arrows: each column in the order that crosses the fewest of them, and arrows that skip columns drawn around the steps between, a graph that pans and zooms (<a href="https://reactflow.dev">React Flow</a>, in the bundle), with a minimap when it is large, whose steps may be moved by hand while it is shown (a button puts them back); the step chosen with its block, attempts, times, the end of its wait (<code>pausedUntil</code>), its output and its error; the input and the result of the run. A run that runs is read again every 3 seconds.</li>
+          <li><strong>Pipelines in pipelines:</strong> a step of the block <code>pipeline</code> links to the run it started, and shows how far that run is (its steps ended of all, as a bar colored by its status); that run links to the run and step that started it.</li>
           <li><strong>Actions:</strong> <em>Retry</em> (a failed or cancelled run goes on from where it stopped), <em>Cancel</em> (a running one), and <em>Resume</em> of a paused step with its output, as JSON.</li>
+          <li><strong>Start a run:</strong> a button of Work and of the runs (for <code>_runs.change</code>) opens a form: the pipeline (with the graph of its steps: a click shows the definition of one), its input as JSON, now or later (in some time, <code>10m</code> or <code>1h30m</code>, or at a date), its priority (higher first) and a key (a run of that key still running is opened instead of a new one).</li>
+        </ul>
+
+        <h2 id="jobs">Jobs of the queue</h2>
+        <pre><code class="language-js">app.register(admin, { prefix: '/admin', models: [Book], queue, login });</code></pre>
+        <ul>
+          <li>With <code>queue</code> (a <code>Queue</code> of <a href="queue.html">@xufa/queue</a>), the page lists its jobs, newest first: by status (with the counts of each), name and queue, with their attempts, when they run (or finished) and the first line of their last error. The jobs of the steps of pipelines are hidden (their runs show them; a choice shows them), and such a job links to its run: it is tried again with its run, which goes on from its failed steps.</li>
+          <li>A job shows its queue, priority, attempts, key, times, the worker that runs it, its payload, its result (kept with <code>keepDone</code>) and the whole error of its last run.</li>
+          <li><em>Retry</em> a failed job, or <em>Retry all failed</em> (those of the name filtered, not those of pipelines): <code>queue.retry()</code>, the workers of the process told at once. <em>Delete</em> a job that does not run: a pending one is cancelled so.</li>
+        </ul>
+
+        <h2 id="work">Work</h2>
+        <p>
+          With <code>queue</code> and <code>pipelines</code>, <strong>Work</strong> in the sidebar lists the jobs of the
+          app and the runs of the pipelines together, newest first, by status (<code>GET api/_work</code>), with a switch
+          to the jobs and the runs, each with its own filters. The jobs of the steps of pipelines are left out: their runs
+          show them. Runs that start later (<code>start()</code> with <code>delay</code> or <code>at</code>) are
+          <em>scheduled</em> until then. With <code>rbac</code>, each kind is for those with <code>_jobs.view</code> or
+          <code>_runs.view</code>.
+        </p>
+        <p>
+          With <code>scheduler</code> (a <code>Scheduler</code> of <a href="scheduler.html">@xufa/scheduler</a>),
+          <strong>Schedules</strong> in Work lists its jobs: their schedule, when they run next, and their last run. Those
+          that start runs of pipelines (<a href="queue.html#recurring"><code>pipelines.schedule()</code></a>) show the
+          last run of the pipeline and link to all of them (the runs filtered by <code>?trigger=schedule:&lt;name&gt;</code>);
+          a run says the schedule that started it. <em>Run now</em> starts a run (or runs the job) at once. They are for
+          those with <code>_runs.view</code>, and Run now with <code>_runs.change</code>.
+        </p>
+        <pre><code class="language-js">app.register(admin, { prefix: '/admin', models, pipelines, queue, scheduler, login });</code></pre>
+
+        <h2 id="sessions">Sessions</h2>
+        <p>
+          With its login and <a href="session.html#devices">@xufa/session</a>, the menu of the account opens
+          <em>Your sessions</em>: each browser logged in as you, with its device, address, login and last request, this
+          one marked; any other is ended with a button (this one, by logging out). With the permission
+          <code>_sessions.view</code>, the page shows those of another user by its id, and with
+          <code>_sessions.change</code> ends them, one or all (a stolen laptop, an employee who leaves).
+        </p>
+
+        <h2 id="schema">Data model</h2>
+        <p>
+          The page Data model draws the models as a diagram of entities and relations: a box for each model (its name,
+          app and table, and its fields: keys, types, which may be empty and which are unique) and a line for each
+          relation, from its field to the model it points to (<code>n:1</code>, <code>1:1</code> for a unique foreign key,
+          <code>n:m</code> dashed). It has the models of the admin and those they point to (users of
+          <code>@xufa/auth</code>, say), but not the tables the ORM makes for many-to-many relations, drawn as the
+          relation itself. With tenants, the models of the database of the project and those of each tenant's database
+          are in two areas.
+        </p>
+        <ul>
+          <li>Models are laid out by their relations: those others point to on the left. They can be moved (kept in the browser) and put back; a search dims those that do not match by name, app or field.</li>
+          <li>A click on a model shows its details: table, app, database, its options (ordering, display, permissions...), and every field with all its options; and a link to its list when the admin lists it.</li>
+          <li>It is for <code>_schema.view</code> (superusers, without <code>rbac</code>: every user of the admin); <code>schema: false</code> hides it. <code>appOf(model)</code> names the app of each model (in a project of xufa, its app).</li>
+          <li>Each model is drawn from <code>specOf()</code> of <a href="orm-guide.html#spec">@xufa/orm</a>: the same data <code>models.yaml</code> holds, for models of code and of data alike.</li>
+        </ul>
+        <h3 id="designer">Editing the models</h3>
+        <p>
+          With a designer (the option <code>designer</code>; a project of xufa gives its own in development), Edit makes
+          the models of the apps' <code>models.yaml</code> editable, for <code>_schema.change</code>; models of code
+          (<code>models.js</code>) keep a lock, and relations can point to them.
+        </p>
+        <ul>
+          <li>A model's panel edits its name, ordering and text (<code>display</code>), and its fields: name, type, the model a relation points to and what its deletion does, the longest text, default, label, help, and whether it may be empty, is unique or indexed. Options written by hand (rules, choices...) are kept as they are.</li>
+          <li>New model adds one to an app; a line drawn from a model to another adds a foreign key to it.</li>
+          <li>The changes are a draft, kept in the browser while the files are as they were. Renamed models and fields are remembered, so their migration renames tables and columns instead of dropping them and their data.</li>
+          <li>Review the changes shows the migration of each app (made by the server, in a process of its own: the running app is not touched) and what it drops or may fail on; Publish writes <code>models.yaml</code> and the migration in each app. <code>xufa dev</code> starts the server again on that change, and <code>xufa start</code> applies the migration; the page waits for it.</li>
+          <li>
+            With <code>designer: database</code> in <code>xufa.yaml</code> (in production too), Publish keeps a new
+            version of the models in the project's database instead of files (table <code>xufa_schema</code>: the
+            models of every app and their migrations so far) and migrates it; tenants' databases are migrated when they
+            are opened. Each server looks for a newer version every <code>poll</code> (5s) and starts again with it:
+            <code>xufa start</code> runs its server under a process that starts it again, and workers of
+            <code>@xufa/cluster</code> are made again. A draft of an older version than the last is refused (409).
+            <code>xufa eject</code> turns the last version back into files (<code>models.yaml</code> and migrations),
+            to review them in git or to leave the database for files.
+          </li>
+          <li>The designer: <code>{ store, apps(), editable(model), pending(), preview(draft), publish(draft) }</code>; its routes are <code>POST api/_schema/preview</code> and <code>POST api/_schema/publish</code> (a draft that cannot be is 400).</li>
+        </ul>
+
+        <h2 id="account">Your account</h2>
+        <p>
+          With its login and <code>reload</code>, the menu of the account opens <em>Your account</em>. Each change asks
+          for the password (its failures locked out as those of the login):
+        </p>
+        <pre><code class="language-js">login: {
+  findUser, reload, totp: (user) =&gt; user.totpSecret,
+  setPassword: (user, hash) =&gt; User.objects.filter({ pk: user.pk }).update({ password: hash }),
+  setTotp: (user, secret) =&gt; User.objects.filter({ pk: user.pk }).update({ totpSecret: secret }), // null: removed
+  recoveryCodes: (user) =&gt; user.recoveryCodes, // hashes
+  setRecoveryCodes: (user, hashes) =&gt; User.objects.filter({ pk: user.pk }).update({ recoveryCodes: hashes }),
+},</code></pre>
+        <ul>
+          <li><strong>Password:</strong> with <code>setPassword</code>, a new one (<code>minPasswordLength</code>, 10 by default), hashed with <code>passwordOptions</code>; the other sessions of the user end, this one goes on.</li>
+          <li><strong>Authenticator app:</strong> with <code>setTotp</code>, a QR code to scan (<code>qrSvg</code> of <a href="auth.html">@xufa/auth</a>, the key written too), kept in the session for 10 minutes until the first code of the app turns it on; or the app removed.</li>
+          <li><strong>Recovery codes:</strong> with <code>recoveryCodes</code> and <code>setRecoveryCodes</code>, ten codes (<code>xxxx-xxxx</code>) shown once when the app is set up, to copy or save; each logs in once in place of a code (<em>Lost the app?</em> in the login page). The page says how many are left, and makes new ones.</li>
         </ul>
 
         <h2 id="security">Who may use it</h2>
@@ -100,17 +358,27 @@ app.register(admin, {
   login: {
     findUser: (email) =&gt; User.objects.filter({ email: email.toLowerCase() }).first(),
     allow: (user) =&gt; user.role === 'staff', // who may use the admin
+    reload: (id) =&gt; User.objects.filter({ pk: id }).first(), // the user again in every request (optional)
     totp: (user) =&gt; user.totpSecret, // a code of an authenticator app after the password (optional)
     lastTotpStep: (user) =&gt; user.totpStep,
     onTotp: (user, step) =&gt; User.objects.filter({ pk: user.pk }).update({ totpStep: step }),
     rehash: (user, hash) =&gt; User.objects.filter({ pk: user.pk }).update({ password: hash }),
   },
 });</code></pre>
+        <p>
+          With a model of users (<a href="../auth/guide.html#users">AbstractUser of @xufa/auth</a>),
+          <code>login: { model: User }</code> is all: users log in by username, the active staff (and superusers) may,
+          passwords are changed in the account page, authenticator apps and recovery codes when the model has
+          <code>totpSecret</code> and <code>recoveryCodes</code>, and <code>lastLogin</code> is set. Options given go over
+          those.
+        </p>
         <ul>
+          <li>The login and the account page are the <a href="auth-guide.html#credentials">Credentials</a> of @xufa/auth, as its accounts: the same checks, lockouts and codes.</li>
+          <li>Their messages, and the errors of the API the page shows, speak the language of each request with <a href="i18n.html#auth-admin"><code>i18n.translateAuth(auth).translateAdmin(admin)</code></a>.</li>
           <li>Passwords are the hashes of <code>auth.hashPassword()</code> (<code>user.password</code>, or <code>password(user)</code>), checked in constant time; a user that is not there takes the same time, and wrong users, wrong passwords and users that <code>allow</code> refuses get the same answer.</li>
           <li>Failures lock out: 5 by user in 15 minutes (<code>lockout</code>), 20 by address (<code>ipLockout</code>, so an office behind one address is not locked for a few typing errors); a <code>Lockout</code> of @xufa/auth with a shared store counts them for every worker. Locked attempts get 429 with <code>Retry-After</code>.</li>
           <li>With <code>totp</code>, the page asks for the code only once the password was right; each code works once (<code>lastTotpStep</code>, <code>onTotp</code>).</li>
-          <li>The user logged in is kept in the session, whose id changes at the login; logging out ends it. Without a user, the page goes to the login page and the API answers 401. The page sends the CSRF token of the session with its writes, so sessions with <code>csrf: true</code> work.</li>
+          <li>The user logged in is kept in the session, whose id changes at the login; logging out ends it. The menu of the account logs out of the other sessions of the user, or of every one (<code>POST logout</code> with <code>{ others: true }</code> or <code>{ everywhere: true }</code>: every browser, process and machine with the store of the sessions; see <a href="session.html#everywhere">@xufa/session</a>). With <code>reload(id, request)</code>, every request loads the user again and asks <code>allow</code>: one deleted or not allowed any more is logged out at once (allowed again, it logs in again); without it, a user logged in stays so until it logs out or its session ends. Without a user, the page goes to the login page and the API answers 401. The page sends the CSRF token of the session with its writes, so sessions with <code>csrf: true</code> work.</li>
           <li><code>authorize</code>, given too, is asked after the login, with <code>request.adminUser</code> (<code>{ id, name }</code>).</li>
         </ul>
         <p>
@@ -121,8 +389,71 @@ app.register(admin, {
           another site cannot send it (browsers ask the server first), so they need no CSRF token.
         </p>
 
+        <h2 id="rbac">Roles and tenants</h2>
+        <p>
+          With <code>rbac</code> (an <a href="auth-guide.html#rbac"><code>Rbac</code> of @xufa/auth</a>, or its options),
+          each user sees the models it may view and only the buttons of what it may do: <code>&lt;Model&gt;.view</code>,
+          <code>.add</code>, <code>.change</code> and <code>.delete</code>. With <code>tenants</code> (the
+          <code>Tenants</code> of <a href="orm-guide.html">the ORM</a>), the page has a tenant to choose among those of
+          the user, its models are those of that tenant, and the permissions those of the user in it:
+        </p>
+        <pre><code class="language-js">app.register(admin, {
+  prefix: '/admin',
+  models: [Book, Author],
+  login: { findUser, reload }, // the session keeps what the user may; reload makes it again in every request
+  rbac: {
+    roles: {
+      viewer: ['*.view'],
+      editor: { inherits: 'viewer', permissions: ['Book.add', 'Book.change'] },
+      owner: ['*'],
+      operator: ['_jobs.*', '_runs.*', '_health.view'],
+    },
+    grants: (user) =&gt; Membership.objects.filter({ user: user.pk }).values('tenant', 'role'),
+    superuser: (user) =&gt; user.isSuperuser,
+  },
+  tenants: {
+    tenants, // new Tenants({ models: [Book, Author], config })
+    list: () =&gt; Organization.objects.valuesList('slug', { flat: true }), // for superusers and grants in every tenant
+    label: (id) =&gt; id.toUpperCase(),
+  },
+  queue,
+});</code></pre>
+        <ul>
+          <li>A user with an editor grant in <code>acme</code> and a viewer grant in <code>globex</code> chooses between the two: it adds and changes books in <code>acme</code>, and only sees them in <code>globex</code>. A grant in every tenant (<code>tenant: '*'</code>) or a superuser chooses among all of <code>list()</code>.</li>
+          <li>The page sends the tenant chosen as <code>x-xufa-tenant</code>; a tenant that is not the user's is answered with 403 before its database is opened. The admin enters the tenant itself: the plugin of the ORM leaves its routes alone (they have <code>config: { tenant: false }</code>), so the app's own routes can resolve their tenants as they like.</li>
+          <li>The jobs, the pipeline runs and the health are not of one tenant: they need <code>_jobs.view</code>, <code>_runs.view</code> and <code>_health.view</code> in every tenant (and <code>.change</code> to retry, cancel or resume, <code>_jobs.delete</code> to delete).</li>
+          <li>The permissions of users and groups (<code>AbstractUser</code>, <code>AbstractGroup</code>) are picked in their forms, as Django's: chips of those given, and a list to find others in, by the label of each model (<code>Can add book</code>, <code>Meta.permissions</code> too), with every one of a model (<code>Book.*</code>), all (<code>*</code>, <code>*.view</code>) and those of the jobs, runs, health and sessions the admin has. A pattern not in the list is added as typed. The roles a group inherits are picked the same way, from those in code and the groups. Any JSON field with the option <code>widget: 'permissions'</code> or <code>'roles'</code> gets them.</li>
+          <li>With <code>login</code>, users without any grant cannot log in (unless <code>allow</code> says otherwise), and the session keeps their access from the login; with <code>reload</code> (as <code>login: { model }</code> has), it is made again at each request, so a role or a group given or taken away (<a href="auth-guide.html#groups">groups</a>) counts at the next one. Without <code>login</code>, the access is that of <code>request.user</code> (of @xufa/auth).</li>
+        </ul>
+
+        <h2 id="languages">Languages</h2>
+        <p>
+          The page speaks the language of each request: Spanish, French, German, Portuguese and Italian come with the
+          admin, English otherwise. It is the option <code>language</code> when given, else <code>request.locale</code>
+          (of <a href="i18n.html">@xufa/i18n</a>, <code>pt-BR</code> gives <code>pt</code>), else the first language of the
+          <code>Accept-Language</code> of the browser the admin has. Dates and numbers follow it too. With
+          <code>uiMessages</code>, the app changes texts of the page (by their English) or adds languages:
+        </p>
+        <pre><code class="language-js">app.register(admin, {
+  models: [Book, Author],
+  authorize: (request) =&gt; request.user?.isStaff === true,
+  language: null, // 'es': Spanish for everyone
+  uiMessages: {
+    es: { Save: 'Grabar' }, // over the Spanish of the admin
+    ca: { Save: 'Desa', Models: 'Models' }, // a language of its own: its texts, English for the rest
+  },
+});</code></pre>
+        <p>
+          The texts of the page are those of its <code>t()</code> calls (<code>node packages/admin/client/texts.js</code>
+          prints them), with parameters such as <code>{count}</code> kept as they are in each language. The names of
+          models and fields are those the app gives them (their labels), not translated by the admin.
+        </p>
+
         <h2 id="api">Its API</h2>
-        <p>The page uses an API of its own, under the prefix (it can be used by scripts too, with the header for writes):</p>
+        <p>
+          The page uses an API of its own, under the prefix (it can be used by scripts too, with the header for writes). A
+          key that cannot be one (<code>/Book/nope</code> for an integer key) is not found, and never reaches the database.
+        </p>
         <div class="table-wrap">
           <table>
             <thead><tr><th>Route</th><th>What it does</th></tr></thead>
@@ -132,10 +463,25 @@ app.register(admin, {
               <tr><td><code>GET api/:model/:pk</code></td><td>An object: its values, label and the labels of its foreign keys</td></tr>
               <tr><td><code>POST api/:model</code>, <code>PATCH api/:model/:pk</code></td><td>Creates and updates (400 with <code>errors</code> by field; 409 for unique values)</td></tr>
               <tr><td><code>DELETE api/:model/:pk</code></td><td>Deletes (409 when protected)</td></tr>
-              <tr><td><code>GET api/:model/choices</code></td><td>Keys and labels of the objects of a model (for selects of foreign keys), <code>?search=</code></td></tr>
+              <tr><td><code>GET api/:model/choices</code></td><td>Keys and labels of the objects of a model (for selects of foreign keys), <code>?search=</code>, <code>?pk=</code></td></tr>
+              <tr><td><code>GET api/:model/:pk/related/:relation</code></td><td>A related list of an object (<code>bookSet</code>): <code>?page=</code>, <code>?size=</code></td></tr>
+              <tr><td><code>GET api/_account</code></td><td>What the user may change: <code>{ name, password, totp: { can, enabled }, recovery: { left } }</code></td></tr>
+              <tr><td><code>POST api/_account/password</code></td><td><code>{ current, password }</code>: a new password (400 with <code>errors</code>), the other sessions ended; a new CSRF token</td></tr>
+              <tr><td><code>POST api/_account/totp/start</code>, <code>/totp/confirm</code>, <code>/totp/disable</code></td><td>An authenticator app: <code>{ password }</code> gives <code>{ secret, uri, svg }</code>; <code>{ code }</code> turns it on and gives <code>{ recoveryCodes }</code>; <code>{ password }</code> removes it</td></tr>
+              <tr><td><code>POST api/_account/recovery</code></td><td><code>{ password }</code>: new recovery codes (the old ones no longer work)</td></tr>
+              <tr><td><code>GET api/_account/sessions</code>, <code>POST api/_account/sessions/:handle/end</code></td><td>The sessions of the user logged in, and one ended (not the one in use: 400)</td></tr>
+              <tr><td><code>GET api/_sessions/:user</code>, <code>POST api/_sessions/:user/:handle/end</code>, <code>POST api/_sessions/:user/end</code></td><td>The sessions of another user, one or all ended (<code>_sessions.view</code>, <code>_sessions.change</code>)</td></tr>
+              <tr><td><code>GET api/_schema</code></td><td>The data model: <code>{ tenants, models }</code>, each model <code>{ name, label, app, place, table, pk, listed, spec }</code> (<code>_schema.view</code>)</td></tr>
+              <tr><td><code>GET api/_permissions</code></td><td>What the pickers of permissions and roles offer: <code>{ permissions: [{ name, kind, model, label }], roles }</code></td></tr>
+              <tr><td><code>POST api/:model/actions/:action</code></td><td>Runs an action on <code>{ pks }</code> (1000 at most): <code>{ message, count }</code></td></tr>
               <tr><td><code>GET api/_runs</code></td><td>The runs of the pipelines: <code>?status=</code>, <code>?pipeline=</code>, <code>?page=</code>; the counts by status and the names of the pipelines</td></tr>
               <tr><td><code>GET api/_runs/:id</code></td><td>A run: its input, result, error, the graph of its definition and its steps</td></tr>
+              <tr><td><code>GET api/_runs/schedules</code>, <code>POST api/_runs/schedules/:name/run</code></td><td>The jobs of the scheduler (<code>schedule</code>, <code>next</code>, their runs; <code>pipeline</code>, <code>trigger</code>, <code>lastPipelineRun</code>, <code>pipelineRuns</code>), and Run now: <code>{ run }</code> for those of pipelines, 202 for others</td></tr>
+              <tr><td><code>GET api/_runs/pipelines</code></td><td>The pipelines to start: <code>{ name, trigger, steps, graph }</code> (the graph as a run's)</td></tr>
+              <tr><td><code>POST api/_runs</code></td><td>Starts a run: <code>{ pipeline, input, delay | at, priority, key }</code>; 201 with the run, or 200 with <code>existing: true</code> (the running run of the key); 400 with <code>errors</code> by field</td></tr>
               <tr><td><code>POST api/_runs/:id/retry</code>, <code>/cancel</code>, <code>/steps/:step/resume</code></td><td>The actions (resume takes <code>{ output }</code>); 409 when the run or step is not in a state for them</td></tr>
+              <tr><td><code>GET api/_jobs</code>, <code>GET api/_jobs/:id</code></td><td>The jobs of the queue (<code>?status=</code>, <code>?name=</code>, <code>?queue=</code>, <code>?page=</code>, <code>?pipelines=1</code> with those of pipelines; the counts by status, and <code>retryable</code>: the failed ones Retry all takes; <code>due</code>: <code>{ now, later, oldest, wait, late, workers }</code>, what waits in the queue), and a job with its payload, result and error</td></tr>
+              <tr><td><code>POST api/_jobs/:id/retry</code>, <code>POST api/_jobs/retry</code>, <code>DELETE api/_jobs/:id</code></td><td>Retry a failed job (409 otherwise), every failed one (<code>?name=</code>: of a name; gives <code>{ retried }</code>), and delete one that does not run (409 when it runs)</td></tr>
               <tr><td><code>GET api/_health</code></td><td>The report of <code>xufa.health</code>, its checks run now (404 without it)</td></tr>
             </tbody>
           </table>

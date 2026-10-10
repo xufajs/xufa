@@ -3,9 +3,9 @@
 //
 //   query(sql, params)    the rows (objects by column name)
 //   execute(sql, params)  the number of rows changed
-const { Backend } = require('../base');
-const { SqlCompiler } = require('./compiler');
-const { currentSignal } = require('../../context');
+import { Backend } from '../base.js';
+import { SqlCompiler } from './compiler.js';
+import { currentSignal } from '../../context.js';
 
 // SQL that reads (raw() stops it with the signal of the code running).
 const READ = /^\s*(select|with|values|show|explain|table)\b/i;
@@ -232,4 +232,4 @@ class SqlBackend extends Backend {
   }
 }
 
-module.exports = { SqlBackend };
+export { SqlBackend };

@@ -1,8 +1,7 @@
-'use strict';
-
 // loadConfig(options): the configuration of an app, from layers, each over the one before:
 //
 //   1. defaults (an object of the options)
+//   1b. file: one file of the app ('xufa' finds xufa.{json,yaml,yml,js,cjs} in cwd; or a path with its extension)
 //   2. config/default.{json,yaml,yml,js,cjs}
 //   3. config/{env}.*                 (env: options.env, or NODE_ENV, or 'development')
 //   4. config/local.*, then config/local-{env}.*   (of the machine: kept out of git)
@@ -15,13 +14,16 @@
 // ({{ env.X }}, {{ config.a.b }}) are resolved, and the schema (when given) converts, fills in defaults and checks:
 // every error at once, in a ConfigError. The configuration is frozen, with get(path), has(path), redacted(), and the
 // files it was read from (sources).
-const fs = require('node:fs');
-const path = require('node:path');
-const util = require('node:util');
-const { ConfigError } = require('./errors');
-const { parseDotenv } = require('./dotenv');
-const { resolveTemplates } = require('./templates');
-const { leaves, coerce, check, isPlain } = require('./schema');
+import fs from 'node:fs';
+import path from 'node:path';
+import util from 'node:util';
+import { ConfigError } from './errors.js';
+import { parseDotenv } from './dotenv.js';
+import { resolveTemplates } from './templates.js';
+import { leaves, coerce, check, isPlain } from './schema.js';
+import { createRequire } from 'node:module';
+
+const require = createRequire(import.meta.url);
 
 const EXTENSIONS = ['.json', '.yaml', '.yml', '.js', '.cjs'];
 const RESERVED = ['get', 'has', 'redacted', 'toJSON', 'sources'];
@@ -163,6 +165,24 @@ function readLocal(options) {
   const dirGiven = options.dir !== undefined;
   const dir = path.resolve(cwd, options.dir || 'config');
   let tree = merge({}, options.defaults || {});
+  if (options.file) {
+    const given = path.resolve(cwd, options.file);
+    const found = EXTENSIONS.includes(path.extname(given))
+      ? [given].filter((file) => fs.existsSync(file))
+      : EXTENSIONS.map((ext) => given + ext).filter((file) => fs.existsSync(file));
+    if (found.length > 1) {
+      throw new ConfigError(
+        `Several files of ${options.file}: ${found.map((f) => path.basename(f)).join(', ')} (one only)`
+      );
+    }
+    if (!found.length) throw new ConfigError(`The file of the configuration ${given}(.json, .yaml...) does not exist`);
+    const content = readFile(found[0], { env, name });
+    if (content !== undefined && content !== null && !isPlain(content)) {
+      throw new ConfigError(`${found[0]}: a configuration is an object`);
+    }
+    tree = merge(tree, content || {});
+    sources.push(found[0]);
+  }
   if (fs.existsSync(dir)) {
     for (const base of ['default', name, 'local', `local-${name}`]) {
       const found = EXTENSIONS.map((ext) => path.join(dir, `${base}${ext}`)).filter((file) => fs.existsSync(file));
@@ -207,7 +227,7 @@ function complete(state, options) {
   }
   tree = merge(tree, options.overrides || {});
 
-  tree = resolveTemplates(tree, env, literal);
+  tree = resolveTemplates(tree, env, literal, [].concat(options.verbatim || []));
 
   // The schema: converts, fills in defaults, checks.
   const errors = [];
@@ -314,4 +334,4 @@ function finish(tree, { sensitive, sources }) {
   return Object.freeze(root);
 }
 
-module.exports = { loadConfig, readLocal, complete, merge, getAt, setAt, deepFreeze };
+export { loadConfig, readLocal, readFile, complete, merge, getAt, setAt, deepFreeze };

@@ -1,5 +1,5 @@
 // Nodes of the radix tree: static prefixes, parameters (plain or with a regular expression) and wildcards.
-const { HandlerStorage } = require('./constraints');
+import { HandlerStorage } from './constraints.js';
 
 const matchFirst = () => true;
 
@@ -191,4 +191,4 @@ class WildcardNode extends Node {
   }
 }
 
-module.exports = { StaticNode, ParametricNode, WildcardNode, NODE_TYPES };
+export { StaticNode, ParametricNode, WildcardNode, NODE_TYPES };

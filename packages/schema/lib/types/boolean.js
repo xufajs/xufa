@@ -1,4 +1,4 @@
-const { ValidateType } = require('./validate-type');
+import { ValidateType } from './validate-type.js';
 
 class BooleanType extends ValidateType {
   validate(value, fieldName = 'Value') {
@@ -35,9 +35,4 @@ function obool(isMandatory = false, isNullable = false) {
   return new BooleanType({ isMandatory, isNullable });
 }
 
-module.exports = {
-  BooleanType,
-  Boolean,
-  bool,
-  obool,
-};
+export { BooleanType, Boolean, bool, obool };

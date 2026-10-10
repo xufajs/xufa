@@ -82,6 +82,10 @@
           <li><a href="../websocket/index.html">@xufa/websocket</a></li>
           <li><a href="../admin/index.html">@xufa/admin</a></li>
           <li><a href="../session/index.html">@xufa/session</a></li>
+          <li><a href="../forms/index.html">@xufa/forms</a></li>
+          <li><a href="../views/index.html">@xufa/views</a></li>
+          <li><a href="../mail/index.html">@xufa/mail</a></li>
+          <li><a href="../i18n/index.html">@xufa/i18n</a></li>
           <li><a href="../openapi/index.html">@xufa/openapi</a></li>
           <li><a href="../client/index.html">@xufa/client</a></li>
           <li><a href="../schema/index.html">@xufa/schema</a></li>
@@ -125,7 +129,7 @@
 
         <h2 id="start">Quick start</h2>
         <pre><code class="language-sh">npm install @xufa/pg</code></pre>
-        <pre><code class="language-js">const { Pool } = require('@xufa/pg');
+        <pre><code class="language-js">import { Pool } from '@xufa/pg';
 
 const pool = new Pool({ connectionString: 'postgres://user:password@localhost:5432/app', max: 10 });
 
@@ -134,13 +138,13 @@ console.log(rows); // [{ id: 1, name: 'Ada' }]
 
 await pool.end();</code></pre>
         <p>
-          Code written for pg runs as it is: <code>require('pg')</code> can be replaced by
-          <code>require('@xufa/pg')</code>. The differences are few and listed in <a href="#from-pg">Coming from pg</a>.
+          Code written for pg runs as it is: <code>pg</code> can be replaced by
+          <code>@xufa/pg</code> in its imports (or requires). The differences are few and listed in <a href="#from-pg">Coming from pg</a>.
         </p>
 
         <h2 id="client">Client</h2>
         <p>One connection, opened by <code>connect()</code>.</p>
-        <pre><code class="language-js">const { Client } = require('@xufa/pg');
+        <pre><code class="language-js">import { Client } from '@xufa/pg';
 
 const client = new Client('postgres://user:password@localhost:5432/app');
 await client.connect();
@@ -392,7 +396,7 @@ await client.query('LISTEN orders');
           the client and the result or the error), and <code>pg:pool:release</code> and <code>pg:pool:remove</code>.
           Nothing is made when no one subscribes.
         </p>
-        <pre data-run><code class="language-js">const dc = require('node:diagnostics_channel');
+        <pre data-run><code class="language-js">import dc from 'node:diagnostics_channel';
 dc.tracingChannel('pg:query').subscribe({
   start: (ctx) =&gt; (ctx.started = performance.now()),
   asyncEnd: (ctx) =&gt; metrics.observe(ctx.query.text, performance.now() - ctx.started),

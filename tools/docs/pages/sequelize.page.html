@@ -13,8 +13,8 @@
         <h1>Sequelize</h1>
         <p class="intro">
           <code>@xufa/sequelize</code> is the API of <a href="https://sequelize.org">Sequelize</a> 6 over xufa's
-          <a href="orm.html">ORM</a>. Code written for Sequelize runs with <code>require('@xufa/sequelize')</code> instead of
-          <code>require('sequelize')</code>: faster, and with no dependencies.
+          <a href="orm.html">ORM</a>. Code written for Sequelize runs with <code>@xufa/sequelize</code> instead of
+          <code>sequelize</code> in its imports (or requires): faster, and with no dependencies.
         </p>
 
         <div class="stats">
@@ -28,7 +28,7 @@
 npm uninstall sequelize pg pg-hstore sqlite3</code></pre>
 
         <h2 id="same-code">The same code</h2>
-        <pre data-run="same-code"><code class="language-js">const { Sequelize, DataTypes, Op } = require('@xufa/sequelize'); // was: require('sequelize')
+        <pre data-run="same-code"><code class="language-js">import { Sequelize, DataTypes, Op } from '@xufa/sequelize'; // was: from 'sequelize'
 
 const sequelize = new Sequelize('sqlite::memory:', { logging: false }); // or 'postgres://...'
 

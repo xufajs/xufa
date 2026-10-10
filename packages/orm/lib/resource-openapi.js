@@ -10,7 +10,7 @@
 // ignored, or with strict refused unless an update gives the value the object has) and its responses (the object as it
 // is answered, its read-only fields marked too; the page of a list, and the errors).
 
-const { modelSchema } = require('./model-schema');
+import { modelSchema } from './model-schema.js';
 
 const ERROR = {
   type: 'object',
@@ -181,4 +181,4 @@ function resourceDocs(model, settings) {
   return docs;
 }
 
-module.exports = { resourceDocs };
+export { resourceDocs };

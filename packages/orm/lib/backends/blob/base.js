@@ -28,11 +28,11 @@
 //   storeDelete(table, key)                                  whether there was one
 //   storeCreate(table), storeDrop(table), storeUrl(table, key, options) (optional: a URL to read it)
 // info: { size, etag, updatedAt }.
-const { Backend } = require('../base');
-const { MemoryBackend } = require('../memory');
-const { encodeValue, decodeValue } = require('../fs');
-const { BlobValue, bodyOf, contentTypeOf } = require('../../blob');
-const { BackendError, ModelError } = require('../../errors');
+import { Backend } from '../base.js';
+import { MemoryBackend } from '../memory.js';
+import { encodeValue, decodeValue } from '../fs.js';
+import { BlobValue, bodyOf, contentTypeOf } from '../../blob.js';
+import { BackendError, ModelError } from '../../errors.js';
 
 // The code of the error of a store when a create finds the object there (storePut with create).
 const EXISTS = 'XUFA_BLOB_EXISTS';
@@ -342,4 +342,4 @@ class BlobBackend extends Backend {
   }
 }
 
-module.exports = { BlobBackend, EXISTS, exists };
+export { BlobBackend, EXISTS, exists };

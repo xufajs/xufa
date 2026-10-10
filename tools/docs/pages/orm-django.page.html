@@ -15,7 +15,8 @@
         <p class="intro">
           @xufa/orm follows Django's ORM: models with fields, a manager (<code>objects</code>), lazy QuerySets that chain,
           lookups with <code>__</code>, <code>Q</code> and <code>F</code>, migrations made from the models. In JavaScript the
-          names are camelCase and every query is awaited. This page is the map from one to the other.
+          names are camelCase and every query is awaited. This page is the map from one to the other; the same app on
+          both, measured, is in <a href="django-benchmarks.html">xufa and Django</a>.
         </p>
 
         <h2 id="same-queries">The same queries</h2>
@@ -36,7 +37,7 @@ counts = Author.objects.values("name").annotate(books=Count("books"))
 Book.objects.filter(pk=1).update(pages=F("pages") + 1)
 book, created = Book.objects.get_or_create(title="Notes", defaults={"pages": 10, "author": ada})</code></pre>
         <pre data-run="same-queries"><code class="language-js">// @xufa/orm
-const { Database, Model, fields, F, Count } = require('@xufa/orm');
+import { Database, Model, fields, F, Count } from '@xufa/orm';
 
 class Author extends Model {
   static fields = { name: fields.string({ maxLength: 100 }) };

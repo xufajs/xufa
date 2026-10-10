@@ -2,8 +2,8 @@
 
 
 const { S } = require('fluent-json-schema')
-const Fastify = require('@xufa/http')
-const sjson = require('@xufa/http/lib/secure-json')
+const Fastify = require('..')
+const sjson = require('../lib/secure-json')
 
 const BadRequestSchema = S.object()
   .prop('statusCode', S.number())

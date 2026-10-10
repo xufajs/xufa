@@ -2,14 +2,14 @@
 // own. They read the context they are given, the parameters of their arrow functions and a few globals that compute
 // (Math, JSON, Number...); they cannot assign, reach prototypes or constructors, nor anything else of the process.
 //
-//   const { compile, evaluate } = require('@xufa/expression');
+//   import { compile, evaluate } from '@xufa/expression';
 //   const total = compile('items.filter(i => i.price > min).map(i => i.price * i.quantity)');
 //   total({ items, min: 10 });
 //   evaluate('user.name?.toUpperCase() ?? "anonymous"', { user });
-const { parse } = require('./lib/parser');
-const { compileTree, FORBIDDEN } = require('./lib/compiler');
-const { GLOBALS } = require('./lib/globals');
-const { ExpressionError, locate } = require('./lib/errors');
+import { parse } from './lib/parser.js';
+import { compileTree, FORBIDDEN } from './lib/compiler.js';
+import { GLOBALS } from './lib/globals.js';
+import { ExpressionError, locate } from './lib/errors.js';
 
 class Engine {
   // `globals`: names over the default ones (`builtins: false` leaves those out); `filters`: functions by name, which
@@ -65,13 +65,8 @@ class Engine {
 
 const engine = new Engine();
 
-module.exports = {
-  Engine,
-  ExpressionError,
-  locate,
-  GLOBALS,
-  FORBIDDEN,
-  parse: (source, options) => parse(source, options),
-  compile: (source) => engine.compile(source),
-  evaluate: (source, context) => engine.evaluate(source, context),
-};
+const __parse = (source, options) => parse(source, options);
+export const compile = (source) => engine.compile(source);
+export const evaluate = (source, context) => engine.evaluate(source, context);
+
+export { Engine, ExpressionError, locate, GLOBALS, FORBIDDEN, __parse as parse };

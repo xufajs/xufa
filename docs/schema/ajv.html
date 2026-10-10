@@ -81,6 +81,10 @@
           <li><a href="../websocket/index.html">@xufa/websocket</a></li>
           <li><a href="../admin/index.html">@xufa/admin</a></li>
           <li><a href="../session/index.html">@xufa/session</a></li>
+          <li><a href="../forms/index.html">@xufa/forms</a></li>
+          <li><a href="../views/index.html">@xufa/views</a></li>
+          <li><a href="../mail/index.html">@xufa/mail</a></li>
+          <li><a href="../i18n/index.html">@xufa/i18n</a></li>
           <li><a href="../openapi/index.html">@xufa/openapi</a></li>
           <li><a href="../client/index.html">@xufa/client</a></li>
           <li><a href="index.html" aria-current="page">@xufa/schema</a></li>
@@ -176,7 +180,7 @@ npm uninstall ajv ajv-formats ajv-keywords ajv-draft-04   # once nothing uses th
               <tr><th>ajv import</th><th>@xufa/schema</th></tr>
             </thead>
             <tbody>
-              <tr><td><code>import Ajv from 'ajv'</code> (draft-07)</td><td rowspan="4"><code>import { compileJsonSchema } from '@xufa/schema'</code>, or <code>const { compileJsonSchema } = require('@xufa/schema')</code>. One function for every draft.</td></tr>
+              <tr><td><code>import Ajv from 'ajv'</code> (draft-07)</td><td rowspan="4"><code>import { compileJsonSchema } from '@xufa/schema'</code>. One function for every draft.</td></tr>
               <tr><td><code>import Ajv2019 from 'ajv/dist/2019'</code></td></tr>
               <tr><td><code>import Ajv2020 from 'ajv/dist/2020'</code></td></tr>
               <tr><td><code>import Ajv from 'ajv-draft-04'</code></td></tr>
@@ -228,8 +232,8 @@ npm uninstall ajv ajv-formats ajv-keywords ajv-draft-04   # once nothing uses th
             <button role="tab" id="tab-schiva" aria-controls="panel-schiva" aria-selected="false">@xufa/schema</button>
           </div>
           <div class="tab-panel" id="panel-ajv" role="tabpanel" aria-labelledby="tab-ajv">
-            <pre><code class="language-js">const Ajv2020 = require('ajv/dist/2020');
-const addFormats = require('ajv-formats');
+            <pre><code class="language-js">import Ajv2020 from 'ajv/dist/2020';
+import addFormats from 'ajv-formats';
 
 const ajv = new Ajv2020({ allErrors: true });
 addFormats(ajv);
@@ -245,7 +249,7 @@ app.post('/orders', (req, res) =&gt; {
 });</code></pre>
           </div>
           <div class="tab-panel" id="panel-schiva" role="tabpanel" aria-labelledby="tab-schiva" hidden>
-            <pre><code class="language-js">const { compileJsonSchema } = require('@xufa/schema');
+            <pre><code class="language-js">import { compileJsonSchema } from '@xufa/schema';
 
 const validate = compileJsonSchema(orderSchema, {
   draft: '2020-12', // or "$schema" in the schema
@@ -270,7 +274,7 @@ app.post('/orders', (req, res) =&gt; {
           functions, and it finds schemas by <code>$id</code>. A few lines of your own do the same:
         </p>
         <pre><code class="language-js">// validation.js: shared by the whole application
-const { compileJsonSchema } = require('@xufa/schema');
+import { compileJsonSchema } from '@xufa/schema';
 
 const options = { draft: '2020-12', formats: true, schemas: [addressSchema, productSchema] };
 
@@ -286,7 +290,7 @@ function compile(schema) {
 // Like ajv.getSchema(id): a schema that only references the one with that "$id".
 const getSchema = (id) =&gt; compileJsonSchema({ $ref: id }, options);
 
-module.exports = { compile, getSchema };</code></pre>
+export { compile, getSchema };</code></pre>
         <p>
           The cache matters if your code called <code>ajv.compile()</code> or <code>ajv.validate()</code> on each
           request and relied on ajv's cache: <code>compileJsonSchema()</code> compiles every time it is called. Compile
@@ -315,7 +319,7 @@ module.exports = { compile, getSchema };</code></pre>
               <tr><td><code>ajv.addKeyword('x-internal')</code> (an annotation)</td><td>the option <code>keywords: ['x-internal']</code></td></tr>
               <tr><td><code>ajv.addKeyword()</code> with <code>validate</code>, <code>compile</code> or <code>macro</code></td><td>a definition in the option <code>keywords</code>, with the same three kinds (see <a href="guide.html#keywords">Keywords of your own</a>)</td></tr>
               <tr><td><code>ajv.addVocabulary([...])</code></td><td><code>keywords: [...]</code></td></tr>
-              <tr><td>ajv-keywords (<code>require('ajv-keywords')(ajv)</code>)</td><td><code>keywords: ajvKeywords()</code>, with the same results, except <code>transform</code>, <code>dynamicDefaults</code> and <code>select</code></td></tr>
+              <tr><td>ajv-keywords (<code>ajvKeywords(ajv)</code>)</td><td><code>keywords: ajvKeywords()</code>, with the same results, except <code>transform</code>, <code>dynamicDefaults</code> and <code>select</code></td></tr>
               <tr><td><code>standaloneCode(ajv, validate)</code></td><td><code>standaloneJsonSchema(schema, options)</code> (see <a href="#standalone">Standalone code</a>)</td></tr>
             </tbody>
           </table>
@@ -326,7 +330,7 @@ module.exports = { compile, getSchema };</code></pre>
           against the meta-schema: <code>{ "minimum": "1" }</code> compiles. To check schemas as ajv did, for example
           in a test, use the meta-schema that ajv ships:
         </p>
-        <pre><code class="language-js">const metaSchema = require('ajv/dist/refs/json-schema-draft-07.json');
+        <pre><code class="language-js">import metaSchema from 'ajv/dist/refs/json-schema-draft-07.json';
 const validateSchema = compileJsonSchema({ $ref: 'http://json-schema.org/draft-07/schema#' }, { schemas: [metaSchema] });
 validateSchema({ type: 5 }); // ['type must be one of: array, boolean, ...', ...]</code></pre>
 
@@ -526,7 +530,7 @@ await compileJsonSchemaAsync(orderSchema, { loadSchema }); // loads them</code><
           <code>createAjvLike(options)</code>, and move the code to @xufa/schema's own API when convenient.
         </p>
         <pre data-run><code class="language-js">// ajv-like.js: ajv's compile(), validate.errors and error objects, on @xufa/schema.
-const { compileJsonSchema } = require('@xufa/schema');
+import { compileJsonSchema } from '@xufa/schema';
 
 // Errors that ajv reports at the object, with the key in params.
 const AT_OBJECT = {
@@ -576,7 +580,7 @@ function createAjvLike(options = {}) {
   };
 }
 
-module.exports = { createAjvLike };</code></pre>
+export { createAjvLike };</code></pre>
         <p>
           <code>instancePath</code>, <code>keyword</code> and <code>params</code> then match ajv's for the common
           keywords (<code>schemaPath</code> is empty); the messages are @xufa/schema's, and the remaining differences are
@@ -588,9 +592,9 @@ module.exports = { createAjvLike };</code></pre>
           Before switching, validate your test data (or a sample of production data) with both libraries and look at
           the values where they disagree. It takes a few lines, for example in a test:
         </p>
-        <pre><code class="language-js">const Ajv2020 = require('ajv/dist/2020');
-const addFormats = require('ajv-formats');
-const { compileJsonSchema } = require('@xufa/schema');
+        <pre><code class="language-js">import Ajv2020 from 'ajv/dist/2020';
+import addFormats from 'ajv-formats';
+import { compileJsonSchema } from '@xufa/schema';
 
 const ajv = new Ajv2020({ allErrors: true });
 addFormats(ajv);
@@ -619,8 +623,8 @@ console.log(compareOn(orderSchema, orderSamples));</code></pre>
           <code>removeAdditional: true</code> and <code>allErrors: false</code>. @xufa/schema has the same options, so a
           validator compiler keeps the behavior of your routes:
         </p>
-        <pre><code class="language-js">const Fastify = require('fastify');
-const { compileJsonSchema } = require('@xufa/schema');
+        <pre><code class="language-js">import Fastify from 'fastify';
+import { compileJsonSchema } from '@xufa/schema';
 
 // The schemas you gave to fastify.addSchema(), which a custom compiler does not see.
 const shared = [{ $id: 'address', type: 'object', required: ['city'], properties: { city: { type: 'string' } } }];
@@ -721,8 +725,8 @@ messagesOf(validate({ age: 3 })); // ['name es obligatorio', 'age debe ser como 
           the module needs nothing else, not even @xufa/schema:
         </p>
         <pre><code class="language-js">// build-validators.js, run when building (in place of ajv-cli compile)
-const fs = require('fs');
-const { standaloneJsonSchema } = require('@xufa/schema');
+import fs from 'fs';
+import { standaloneJsonSchema } from '@xufa/schema';
 
 fs.writeFileSync('validate-order.mjs', standaloneJsonSchema(orderSchema, { formats: true, format: 'esm' }));</code></pre>
         <p>See <a href="guide.html#standalone">Standalone code</a> for several validators in one module.</p>

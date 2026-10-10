@@ -9,7 +9,7 @@ npm install @xufa/marshal
 ```
 
 ```js
-const { stringify, parse, clone, registry } = require('@xufa/marshal');
+import { stringify, parse, clone, registry } from '@xufa/marshal';
 
 class Point {
   constructor(x, y) {
@@ -40,7 +40,7 @@ calling its constructor**. A class with state that is not in its fields (private
 written:
 
 ```js
-const { ENCODE, DECODE } = require('@xufa/marshal');
+import { ENCODE, DECODE } from '@xufa/marshal';
 
 class Money {
   #cents;

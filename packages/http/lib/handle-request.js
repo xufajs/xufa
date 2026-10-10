@@ -1,20 +1,20 @@
 // The lifecycle of a request after onRequest and preParsing: body parsing, preValidation, validation, preHandler and
 // the handler.
-const diagnostics = require('node:diagnostics_channel');
-const wrapThenable = require('./wrap-thenable');
-const { validate: validateSchema } = require('./validation');
-const { preValidationHookRunner, preHandlerHookRunner } = require('./hooks');
-const { XUFA_ERR_CTP_INVALID_MEDIA_TYPE, XUFA_ERR_ROUTE_MISSING_CONTENT_TYPE } = require('./errors');
-const { setErrorStatusCode } = require('./error-handler');
-const {
+import diagnostics from 'node:diagnostics_channel';
+import wrapThenable from './wrap-thenable.js';
+import { validate as validateSchema } from './validation.js';
+import { preValidationHookRunner, preHandlerHookRunner } from './hooks.js';
+import { XUFA_ERR_CTP_INVALID_MEDIA_TYPE, XUFA_ERR_ROUTE_MISSING_CONTENT_TYPE } from './errors.js';
+import { setErrorStatusCode } from './error-handler.js';
+import {
   kReplyIsError,
   kRouteContext,
   kFourOhFourContext,
   kSupportedHTTPMethods,
   kRequestContentType,
   kDiagnosticsStore,
-} = require('./symbols');
-const ContentType = require('./content-type');
+} from './symbols.js';
+import ContentType from './content-type.js';
 
 const channels = diagnostics.tracingChannel('xufa.request.handler');
 
@@ -194,6 +194,12 @@ function preHandlerCallbackInner(err, request, reply, store) {
   }
 }
 
-module.exports = handleRequest;
-module.exports.internals = { handler, preHandlerCallback };
-module.exports[Symbol.for('internals')] = module.exports.internals;
+export default handleRequest;
+handleRequest.internals = { handler, preHandlerCallback };
+const __internals = handleRequest.internals;
+handleRequest[Symbol.for('internals')] = handleRequest.internals;
+
+export { __internals as internals };
+
+// What require() gives (the tests of fastify are CommonJS).
+export { handleRequest as 'module.exports' };

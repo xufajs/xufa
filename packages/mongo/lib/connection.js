@@ -1,10 +1,10 @@
 // A connection to a MongoDB server: OP_MSG messages over a socket (TCP or TLS). Commands are sent as they come and
 // their replies matched by request id, so one connection carries many commands at the same time.
-const net = require('node:net');
-const zlib = require('node:zlib');
-const tls = require('node:tls');
-const { serialize, deserialize } = require('./bson');
-const { MongoError, MongoServerError, MongoNetworkError } = require('./errors');
+import net from 'node:net';
+import zlib from 'node:zlib';
+import tls from 'node:tls';
+import { serialize, deserialize } from './bson.js';
+import { MongoError, MongoServerError, MongoNetworkError } from './errors.js';
 
 const OP_MSG = 2013;
 const OP_COMPRESSED = 2012;
@@ -259,4 +259,4 @@ function decompress(message) {
   return result;
 }
 
-module.exports = { Connection, COMPRESSORS };
+export { Connection, COMPRESSORS };

@@ -1,8 +1,8 @@
 'use strict'
 
 
-const Fastify = require('@xufa/http')
-const fp = require('@xufa/http').plugin
+const Fastify = require('..')
+const fp = require('..').plugin
 const { XUFA_ERR_PLUGIN_INVALID_ASYNC_HANDLER } = require('../lib/errors')
 
 test('pluginTimeout', (testDone) => {

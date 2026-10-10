@@ -1,5 +1,5 @@
 // The errors of @xufa/auth: XufaErrors with a code and the status code of their answer.
-const createError = require('@xufa/errors');
+import createError from '@xufa/errors';
 
 const errors = {
   // A token (JWT) that cannot be used: malformed, signed by no known key, expired, not yet valid or with claims that
@@ -16,4 +16,5 @@ const errors = {
   Locked: createError('XUFA_AUTH_LOCKED', '%s', 429),
 };
 
-module.exports = errors;
+export default errors;
+export const { TokenError, Unauthorized, TotpRequired, Forbidden, Locked } = errors;

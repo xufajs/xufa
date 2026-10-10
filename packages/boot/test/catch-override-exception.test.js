@@ -1,7 +1,4 @@
-'use strict'
-
-
-const boot = require('..')
+import boot from '../index.js';
 
 test('catch exceptions in parent.override', (testDone) => {
   expect.assertions(2)

@@ -1,7 +1,4 @@
-'use strict'
-
-
-const boot = require('../..')
+import boot from '../../index.js';
 
 test('should print the time tree', (done) => {
   expect.assertions(2)

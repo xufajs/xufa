@@ -202,15 +202,4 @@ function bytesOf(text) {
   return new Uint8Array(Buffer.from(text, 'utf8'));
 }
 
-module.exports = {
-  begin,
-  end,
-  endBuffer,
-  abort,
-  writeBytes,
-  writeByte,
-  writeRaw,
-  writeNumberText,
-  writeString,
-  bytesOf,
-};
+export { begin, end, endBuffer, abort, writeBytes, writeByte, writeRaw, writeNumberText, writeString, bytesOf };

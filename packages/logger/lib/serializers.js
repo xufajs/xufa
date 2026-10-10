@@ -101,16 +101,10 @@ function res(response) {
 // A serializer of your own applied to what the standard one gives (unless it is the standard one).
 const wrap = (standard) => (custom) => (custom === standard ? custom : (value) => custom(standard(value)));
 
-module.exports = {
-  err,
-  errWithCause,
-  req,
-  res,
-  messageWithCauses,
-  stackWithCauses,
-  mapHttpRequest: (request) => ({ req: req(request) }),
-  mapHttpResponse: (response) => ({ res: res(response) }),
-  wrapErrorSerializer: wrap(err),
-  wrapRequestSerializer: wrap(req),
-  wrapResponseSerializer: wrap(res),
-};
+export const mapHttpRequest = (request) => ({ req: req(request) });
+export const mapHttpResponse = (response) => ({ res: res(response) });
+export const wrapErrorSerializer = wrap(err);
+export const wrapRequestSerializer = wrap(req);
+export const wrapResponseSerializer = wrap(res);
+
+export { err, errWithCause, req, res, messageWithCauses, stackWithCauses };

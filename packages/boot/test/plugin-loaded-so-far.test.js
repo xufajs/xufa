@@ -1,9 +1,6 @@
-'use strict'
-
-
-const fastq = require('../lib/queue').createQueue
-const boot = require('..')
-const { Plugin } = require('../lib/plugin')
+import { createQueue as fastq } from '../lib/queue.js';
+import boot from '../index.js';
+import { Plugin } from '../lib/plugin.js';
 
 test('loadedSoFar resolves a Promise, if plugin.loaded is set to true', async () => {
   const app = boot({})

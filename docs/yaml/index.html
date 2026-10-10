@@ -60,6 +60,10 @@
           <li><a href="../websocket/index.html">@xufa/websocket</a></li>
           <li><a href="../admin/index.html">@xufa/admin</a></li>
           <li><a href="../session/index.html">@xufa/session</a></li>
+          <li><a href="../forms/index.html">@xufa/forms</a></li>
+          <li><a href="../views/index.html">@xufa/views</a></li>
+          <li><a href="../mail/index.html">@xufa/mail</a></li>
+          <li><a href="../i18n/index.html">@xufa/i18n</a></li>
           <li><a href="../openapi/index.html">@xufa/openapi</a></li>
           <li><a href="../client/index.html">@xufa/client</a></li>
           <li><a href="../schema/index.html">@xufa/schema</a></li>
@@ -101,7 +105,7 @@
 
         <h2 id="start">Quick start</h2>
         <pre><code class="language-sh">npm install @xufa/yaml</code></pre>
-        <pre data-run="yaml"><code class="language-js">const yaml = require('@xufa/yaml');
+        <pre data-run="yaml"><code class="language-js">import yaml from '@xufa/yaml';
 
 const doc = yaml.load(`
 openapi: 3.1.0
@@ -144,7 +148,7 @@ yaml.load('at: !point [1, 2]', { schema }); // { at: { x: 1, y: 2 } }</code></pr
 
         <h2 id="from-js-yaml">Coming from js-yaml</h2>
         <p>
-          <code>require('js-yaml')</code> can be replaced by <code>require('@xufa/yaml')</code>: it is js-yaml 4.1.0, and its
+          <code>js-yaml</code> can be replaced by <code>@xufa/yaml</code> (in imports or requires): it is js-yaml 4.1.0, and its
           documentation applies.
         </p>
 

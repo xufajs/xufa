@@ -1,0 +1,11 @@
+{{extends 'base'}}
+
+{{#block content}}
+<h1>Helpdesk</h1>
+<p>Each organization has its tickets in a database of its own, at its subdomain:</p>
+<ul>
+  {{#each organizations as organization}}
+  <li><a href="{{ organization.url }}">{{ organization.name }}</a> ({{ organization.url }})</li>
+  {{/each}}
+</ul>
+{{/block content}}

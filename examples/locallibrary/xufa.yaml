@@ -1,0 +1,45 @@
+# The project (locallibrary/settings.py and urls.py). The environment overrides it: DATABASE_URL, SECRET_KEY, PORT,
+# HOST, SITE_URL, EMAIL_URL, DEBUG, or APP__<KEY>__<KEY> for any other.
+name: LocalLibrary
+apps: [accounts, catalog]
+
+database:
+  url: sqlite:data/locallibrary.db
+  audit: { redact: [password] } # the history of objects in the admin (Django's LogEntry)
+server: { port: 8000 }
+siteUrl: http://127.0.0.1:8000
+
+mail:
+  from: LocalLibrary <library@example.com>
+  layout: false
+
+auth:
+  user: accounts.User
+  loginBy: username
+  pages: /accounts # django.contrib.auth.urls, with templates/registration
+  messages: { invalid: "Your username and password didn't match. Please try again." }
+  mails:
+    reset:
+      subject: Password reset on LocalLibrary
+      text: |
+        Someone asked for password reset for email {{ email }}. Follow the link below:
+        {{ link }}
+
+# Roles of permissions; the groups of the database (edited in the admin) are roles too.
+rbac:
+  groups: accounts.Group
+  roles:
+    librarian: ['*.view', Author.*, Book.*, Genre.*, Language.*, BookInstance.*, BookInstance.markReturned, _jobs.view, _runs.*]
+
+# Jobs in the background (catalog/jobs.js: the report of overdue loans), kept with their results, and pipelines
+# (catalog/pipelines.yaml: new copies, approved by a librarian): the admin shows them (Work).
+queue: { keepDone: true }
+pipelines: true
+
+# Sessions: their writes (the visits of the home page) do not wait for the disk (PostgreSQL): a crash of the server
+# may lose its last fraction of a second of them.
+sessions: { asyncCommit: true }
+
+admin: { title: LocalLibrary administration }
+views: { baseTemplate: base_generic, paginateBy: 10 } # the generic views: their pages extend base_generic
+redirects: { /: index }

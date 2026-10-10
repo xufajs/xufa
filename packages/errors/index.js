@@ -2,7 +2,7 @@
 //
 //   const NotFound = createError('APP_NOT_FOUND', 'User %s not found', 404);
 //   throw new NotFound('ada'); // or NotFound('ada'); err.code, err.statusCode, err.message
-const { format } = require('node:util');
+import { format } from 'node:util';
 
 const genericSym = Symbol.for('xufa-error-generic');
 const GENERIC_CODE = 'XUFA_ERR';
@@ -55,7 +55,11 @@ createError.captureStackTrace = true;
 
 const XufaError = createError(genericSym, 'Xufa Error', 500, Error);
 
-module.exports = createError;
-module.exports.createError = createError;
-module.exports.XufaError = XufaError;
-module.exports.default = createError;
+export default createError;
+createError.createError = createError;
+createError.XufaError = XufaError;
+createError.default = createError;
+
+export { createError as 'module.exports' };
+
+export { createError as createError, XufaError };

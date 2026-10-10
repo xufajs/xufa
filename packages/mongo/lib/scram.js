@@ -1,7 +1,7 @@
 // SCRAM authentication (RFC 5802, RFC 7677) with SCRAM-SHA-256 and SCRAM-SHA-1, as MongoDB does it.
-const crypto = require('node:crypto');
-const { Binary } = require('./bson');
-const { MongoError } = require('./errors');
+import crypto from 'node:crypto';
+import { Binary } from './bson.js';
+import { MongoError } from './errors.js';
 
 function escapeName(name) {
   return name.replace(/=/g, '=3D').replace(/,/g, '=2C');
@@ -73,4 +73,4 @@ async function authenticate(connection, { username, password, source = 'admin', 
   }
 }
 
-module.exports = { authenticate };
+export { authenticate };

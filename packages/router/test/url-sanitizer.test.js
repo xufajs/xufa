@@ -1,7 +1,4 @@
-'use strict'
-
-
-const FindMyWay = require('..')
+import FindMyWay from '../index.js';
 
 test('sanitizeUrlPath should decode reserved characters inside params and strip querystring', () => {
   expect.assertions(1)

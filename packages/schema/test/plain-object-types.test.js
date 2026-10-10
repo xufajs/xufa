@@ -1,22 +1,4 @@
-const {
-  AllOf,
-  AnyOf,
-  ArrayOf,
-  ClosedSchema,
-  Conditional,
-  Integer,
-  Not,
-  Obj,
-  OneOf,
-  Ref,
-  Schema,
-  String,
-  When,
-  arrOf,
-  oarrOf,
-  obj,
-  oobj,
-} = require('..');
+import { AllOf, AnyOf, ArrayOf, ClosedSchema, Conditional, Integer, Not, Obj, OneOf, Ref, Schema, String, When, arrOf, oarrOf, obj, oobj } from '../index.js';
 
 // A plain object where a type is expected stands for new Schema(object), as it does for a key of a Schema.
 describe('Plain objects as types', () => {

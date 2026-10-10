@@ -1,0 +1,8 @@
+# The pipelines of the catalog (blocks.js does their work): started from the admin (Work, Start a run) or in code
+# (app.pipelines.start('new-copies', { book, count, imprint })).
+- name: new-copies
+  description: New copies of a book, in maintenance until a librarian approves them, then available.
+  steps:
+    - { id: copies, block: addCopies }
+    - { id: approval, block: wait, after: copies, waitTimeout: 7d } # Approve in the admin (the run, its step)
+    - { id: available, block: makeAvailable, after: approval, result: true }

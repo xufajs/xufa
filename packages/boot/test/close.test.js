@@ -1,8 +1,5 @@
-'use strict'
-
-
-const boot = require('..')
-const { BOOT_ERR_CALLBACK_NOT_FN } = require('../lib/errors')
+import boot from '../index.js';
+import { BOOT_ERR_CALLBACK_NOT_FN } from '../lib/errors.js';
 
 test('boot an app with a plugin', (done) => {
   expect.assertions(4)

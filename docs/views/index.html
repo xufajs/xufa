@@ -1,0 +1,378 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>@xufa/views · xufa</title>
+    <meta
+      name="description"
+      content="@xufa/views: views of classes as Django's generic views: ListView, DetailView, CreateView, UpdateView, DeleteView, FormView, TemplateView and RedirectView over models of @xufa/orm, forms of @xufa/forms and templates of @xufa/template."
+    />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%23d9502b'/%3E%3Ctext x='16' y='22.5' font-family='monospace' font-size='18' font-weight='700' fill='white' text-anchor='middle'%3Ex%3C/text%3E%3C/svg%3E"
+    />
+    <link rel="stylesheet" href="../style.css?v=0.1.0" />
+    <script src="../main.js?v=0.1.0"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js" defer></script>
+  </head>
+  <body>
+    <header class="header">
+      <div class="header-inner">
+        <a class="logo" href="../index.html"><span class="logo-mark">x</span>xufa</a>
+        <nav class="nav">
+          <a href="../guide.html">Guide</a>
+          <a href="../playground.html">Playground</a>
+          <a href="../http/index.html">HTTP</a>
+          <a href="../orm/index.html">ORM</a>
+          <a class="hide-small" href="../auth/index.html">Auth</a>
+          <a class="hide-small" href="../sequelize/index.html">Sequelize</a>
+          <a class="hide-small" href="../packages.html" aria-current="page">Packages</a>
+          <a class="hide-small" href="../benchmarks.html">Benchmarks</a>
+          <a href="https://github.com/xufajs/xufa">GitHub</a>
+          <button class="theme-toggle" type="button" aria-label="Switch between light and dark theme">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+              <path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z" />
+            </svg>
+          </button>
+        </nav>
+      </div>
+    </header>
+
+    <div class="docs">
+      <button class="menu-toggle" type="button" aria-expanded="false">☰ Contents</button>
+      <aside class="sidebar">
+        <h4>Views</h4>
+        <ul>
+          <li><a href="#start">Quick start</a></li>
+          <li><a href="#settings">Settings</a></li>
+          <li><a href="#routes">Routes</a></li>
+          <li><a href="#access">Who may come</a></li>
+        </ul>
+        <h4>Of models</h4>
+        <ul>
+          <li><a href="#list">ListView</a></li>
+          <li><a href="#detail">DetailView</a></li>
+          <li><a href="#edit">Create and update</a></li>
+          <li><a href="#delete">DeleteView</a></li>
+        </ul>
+        <h4>More</h4>
+        <ul>
+          <li><a href="#others">Others</a></li>
+          <li><a href="#override">Changing them</a></li>
+          <li><a href="#errors">404 and errors</a></li>
+        </ul>
+        <h4>Packages</h4>
+        <ul>
+          <li><a href="../websocket/index.html">@xufa/websocket</a></li>
+          <li><a href="../admin/index.html">@xufa/admin</a></li>
+          <li><a href="../session/index.html">@xufa/session</a></li>
+          <li><a href="../forms/index.html">@xufa/forms</a></li>
+          <li><a href="index.html" aria-current="page">@xufa/views</a></li>
+          <li><a href="../mail/index.html">@xufa/mail</a></li>
+          <li><a href="../i18n/index.html">@xufa/i18n</a></li>
+          <li><a href="../openapi/index.html">@xufa/openapi</a></li>
+          <li><a href="../client/index.html">@xufa/client</a></li>
+          <li><a href="../schema/index.html">@xufa/schema</a></li>
+          <li><a href="../pg/index.html">@xufa/pg</a></li>
+          <li><a href="../mongo/index.html">@xufa/mongo</a></li>
+          <li><a href="../expression/index.html">@xufa/expression</a></li>
+          <li><a href="../template/index.html">@xufa/template</a></li>
+          <li><a href="../cluster/index.html">@xufa/cluster</a></li>
+          <li><a href="../scheduler/index.html">@xufa/scheduler</a></li>
+          <li><a href="../queue/index.html">@xufa/queue</a></li>
+          <li><a href="../config/index.html">@xufa/config</a></li>
+          <li><a href="../discovery/index.html">@xufa/discovery</a></li>
+          <li><a href="../netcache/index.html">@xufa/netcache</a></li>
+          <li><a href="../faults/index.html">@xufa/faults</a></li>
+          <li><a href="../marshal/index.html">@xufa/marshal</a></li>
+          <li><a href="../yaml/index.html">@xufa/yaml</a></li>
+          <li><a href="../jwt/index.html">@xufa/jwt</a></li>
+          <li><a href="../logger/index.html">@xufa/logger</a></li>
+          <li><a href="../router/index.html">@xufa/router</a></li>
+          <li><a href="../serializer/index.html">@xufa/serializer</a></li>
+          <li><a href="../inject/index.html">@xufa/inject</a></li>
+          <li><a href="../boot/index.html">@xufa/boot</a></li>
+          <li><a href="../errors/index.html">@xufa/errors</a></li>
+          <li><a href="../packages.html">All the packages</a></li>
+        </ul>
+      </aside>
+
+      <article class="content">
+        <nav class="package-tabs" aria-label="@xufa/views">
+          <a href="index.html" aria-current="page">Overview</a>
+          <a href="reference.html">Reference</a>
+        </nav>
+        <h1>@xufa/views</h1>
+        <p class="intro">
+          Views of classes, as Django's generic views: a class says what a page is (its model, its fields, its template,
+          its pages) and its methods do the rest: the list of a model in pages, an object (404 when it is not there), the
+          forms that create and update it (a <a href="../forms/index.html#model-forms">ModelForm</a> of its fields, checked by the
+          model) and the question before it is deleted. Each request makes its own view; a method of the class changes
+          one step. Templates are those of <a href="../template/index.html">@xufa/template</a>.
+        </p>
+
+        <h2 id="start">Quick start</h2>
+<!--run-before: import fs from 'node:fs'; import os from 'node:os'; import path from 'node:path';
+const root = fs.mkdtempSync(path.join(os.tmpdir(), 'xufa-views-docs-')); fs.mkdirSync(path.join(root, 'catalog'));
+fs.writeFileSync(path.join(root, 'catalog/book_list.html'), '{{ bookList.map(String).join(", ") }} (page {{ page.number }} of {{ page.numPages }})');
+fs.writeFileSync(path.join(root, 'catalog/book_detail.html'), '{{ book.title }}');
+fs.writeFileSync(path.join(root, 'catalog/book_form.html'), '{{{ form.asP() }}}');
+import { Database, Model, fields } from '@xufa/orm';
+class Book extends Model { static fields = { title: fields.string({ maxLength: 200 }), isbn: fields.string({ maxLength: 13, unique: true, label: 'ISBN' }) }; static options = { ordering: ['title'] }; get absoluteUrl() { return `/catalog/book/${this.pk}`; } toString() { return this.title; } }
+const db = new Database({ backend: 'memory' }).register(Book); await db.sync();
+for (const [title, isbn] of [['Dune', '1'], ['Emma', '2'], ['Beloved', '3']]) await Book.objects.create({ title, isbn }); -->
+        <pre data-run="views"><code class="language-js">import xufa from '@xufa/http';
+import * as template from '@xufa/template';
+import { ListView, DetailView, CreateView } from '@xufa/views';
+
+class BookList extends ListView {
+  static model = Book;
+  static templateDir = 'catalog'; // catalog/book_list
+  static paginateBy = 2;
+}
+
+class BookDetail extends DetailView {
+  static model = Book; // catalog/book_detail, with book (and object)
+  static templateDir = 'catalog';
+}
+
+class BookCreate extends CreateView {
+  static model = Book; // catalog/book_form, with form
+  static templateDir = 'catalog';
+  static fields = ['title', 'isbn'];
+}
+
+const app = xufa();
+app.register(xufa.formBody);
+app.register(template.plugin, { root });
+app.route(BookList.asRoute('/catalog/books/', { name: 'books' }));
+app.route(BookDetail.asRoute('/catalog/book/:pk', { name: 'book-detail' }));
+app.route(BookCreate.asRoute('/catalog/book/create/', { name: 'book-create' }));
+
+console.log((await app.inject('/catalog/books/?page=2')).body);
+console.log((await app.inject('/catalog/book/2')).body, (await app.inject('/catalog/book/99')).statusCode);
+const made = await app.inject({ method: 'POST', url: '/catalog/book/create/', payload: { title: 'Walden', isbn: '4' } });
+console.log(made.statusCode, made.headers.location);
+const again = await app.inject({ method: 'POST', url: '/catalog/book/create/', payload: { title: 'Copy', isbn: '4' } });
+console.log(again.body.includes('Book with this ISBN already exists.'));</code></pre>
+        <pre data-output><code class="language-plaintext">Emma (page 2 of 2)
+Emma 404
+302 /catalog/book/4
+true</code></pre>
+
+        <h2 id="settings">Settings</h2>
+        <p>
+          The settings of a view are static fields of its class (Django's attributes of a class): those of the classes it
+          extends, the nearest first. A view is made for each request with them as its own values
+          (<code>this.model</code>, <code>this.paginateBy</code>; <code>pagination: 'keyset'</code> pages a ListView by keys,
+          <code>?cursor=</code>, with <code>page.nextCursor</code> and <code>page.previousCursor</code>: the
+          <a href="../orm/guide.html#querysets">KeysetPaginator</a> of the ORM), and <code>asView(options)</code> changes them for one
+          route: <code>BookList.asView({ paginateBy: 50 })</code>. A name that is not a setting of the class is an error
+          when the route is made, not when it is asked.
+        </p>
+
+        <h2 id="routes">Routes</h2>
+        <p>
+          <code>View.asView(options)</code> gives the handler of a route; <code>View.asRoute(url, routeOptions,
+          options)</code> the whole route for <code>app.route()</code>, with the methods the view answers
+          (<code>View.methods</code>: GET for lists and details, GET, POST and PUT for forms, GET, POST and DELETE for
+          deletes; HEAD comes with GET). A method the view does not answer is a 405 with <code>Allow</code>. As Django's,
+          a parameter can say what it is: <code>/catalog/book/&lt;int:pk&gt;</code>.
+        </p>
+
+        <h2 id="crud">The pages of a model</h2>
+        <p>
+          <code>crud(Model, options)</code> gives the five routes of a model, named as the Django tutorial names them,
+          for <code>app.route()</code> (or a <code>crud:</code> entry of an app's
+          <a href="../guide.html#project"><code>urls.yaml</code></a>):
+        </p>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Name</th><th>Path</th><th>View</th><th>Permission</th></tr></thead>
+            <tbody>
+              <tr><td><code>books</code></td><td><code>/books/</code></td><td><code>ListView</code></td><td></td></tr>
+              <tr><td><code>book-detail</code></td><td><code>/book/&lt;int:pk&gt;</code></td><td><code>DetailView</code></td><td></td></tr>
+              <tr><td><code>book-create</code></td><td><code>/book/create/</code></td><td><code>CreateView</code></td><td><code>Book.add</code></td></tr>
+              <tr><td><code>book-update</code></td><td><code>/book/&lt;int:pk&gt;/update/</code></td><td><code>UpdateView</code></td><td><code>Book.change</code></td></tr>
+              <tr><td><code>book-delete</code></td><td><code>/book/&lt;int:pk&gt;/delete/</code></td><td><code>DeleteView</code></td><td><code>Book.delete</code></td></tr>
+            </tbody>
+          </table>
+        </div>
+        <pre><code class="language-js">import { crud } from '@xufa/views';
+
+for (const route of crud(Book, {
+  prefix: '/catalog',
+  templateDir: 'catalog',
+  fields: ['title', 'author', 'summary', 'isbn', 'genre'],
+  list: { selectRelated: 'author' },
+  detail: { prefetchRelated: ['genre', 'bookInstanceSet'] },
+  delete: { blockedText: "You can't delete this book until all copies have been deleted:" },
+})) {
+  app.route(route);
+}</code></pre>
+        <p>
+          The key's converter comes from the model (<code>&lt;uuid:pk&gt;</code> for a uuid). Each page takes the
+          settings of its view, <code>view</code> (a class of its own), <code>selectRelated</code> and
+          <code>prefetchRelated</code> (its queryset) and <code>path</code>. <code>only</code> keeps some pages,
+          <code>permissions: false</code> drops the permissions (or <code>{ update: 'Book.edit' }</code> changes one),
+          <code>name</code> and <code>plural</code> change the names. The forms go to the page of the object, and the
+          delete to the list.
+        </p>
+
+        <h2 id="builtin">Built-in templates</h2>
+        <p>
+          A view of a model renders its template (<code>catalog/book_list.html</code>), or, when the app has none
+          (<code>app.hasView()</code> of @xufa/template), a built-in one: <code>xufa/list</code>,
+          <code>xufa/detail</code> (the fields of the object by their labels), <code>xufa/form</code> and
+          <code>xufa/confirm_delete</code>, of the folder <code>templates</code> this package exports. They extend the
+          app's base template (<code>{{extends baseTemplate}}</code>, filling its block <code>content</code>) and show
+          <code>title</code>: <code>Book List</code>, <code>Book: Dune</code>, <code>Create book</code>,
+          <code>Update book: Dune</code>, <code>Delete book</code>, made of the model's <code>label</code>
+          (<code>static options = { label: 'book copy' }</code>; <code>'book instance'</code> of BookInstance by
+          default). <code>static title</code> changes it (<code>'Delete Author: {lastName}'</code>). An app's template
+          of the same name, <code>xufa/form.html</code>, takes the place of the built-in one.
+        </p>
+        <pre><code class="language-js">import * as views from '@xufa/views';
+
+app.register(template.plugin, { root: ['templates', views.templates] }); // the app's first
+app.register(views.plugin, { baseTemplate: 'base_generic', paginateBy: 10 }); // app.viewDefaults</code></pre>
+        <p>
+          <code>views.plugin</code> gives the defaults of the views of the app: <code>baseTemplate</code>
+          (<code>'base'</code>) and <code>paginateBy</code> of the lists that give none. A project does both from its
+          <code>views:</code> key.
+        </p>
+
+        <h2 id="access">Who may come</h2>
+        <p>
+          <code>static loginRequired = true</code> and <code>static permissionRequired = 'Book.add'</code> (or a list) are
+          Django's <code>LoginRequiredMixin</code> and <code>PermissionRequiredMixin</code>, with the
+          <a href="../auth/index.html">accounts of @xufa/auth</a>: without a user, to the login page with <code>?next=</code> (401
+          for JSON clients); without the permission, a 403 the error handler of the app shows.
+        </p>
+
+        <h2 id="list">ListView</h2>
+        <p>
+          The objects of its QuerySet (<code>model</code>, or <code>queryset</code>; <code>ordering</code>) in its template
+          (<code>templateName</code>, or <code>&lt;templateDir&gt;/&lt;model&gt;_list</code>), as
+          <code>objectList</code> and <code>&lt;model&gt;List</code> (<code>bookInstanceList</code>; or
+          <code>contextObjectName</code>). With <code>paginateBy</code> (else the app's; <code>false</code>: none), in pages of the
+          <a href="../orm/guide.html#pagination">Paginator</a>: the page of <code>?page=</code> (or the parameter
+          <code>page</code> of the route; <code>last</code> is the last one), with <code>page</code>,
+          <code>paginator</code> and <code>isPaginated</code> in the context; a page that is not there is a 404.
+          <code>paginateOrphans</code>, and <code>allowEmpty: false</code> (an empty list is a 404).
+        </p>
+
+        <h2 id="detail">DetailView</h2>
+        <p>
+          The object of the route: its key (<code>:pk</code>, <code>pkUrlKwarg</code>), or its slug (<code>:slug</code>,
+          <code>slugField</code>), of the QuerySet, as <code>object</code> and <code>&lt;model&gt;</code>, in
+          <code>&lt;model&gt;_detail</code>. Not there (or a key the model cannot have) is a 404:
+          <code>getObjectOr404(Book, { pk })</code> and <code>getListOr404()</code> are Django's shortcuts for views of
+          functions.
+        </p>
+
+        <h2 id="edit">Create and update</h2>
+        <p>
+          <code>CreateView</code> and <code>UpdateView</code> show a form (<code>formClass</code>, or a ModelForm of
+          <code>fields</code>) in <code>&lt;model&gt;_form</code>: GET with the values of the object (or
+          <code>initial</code>), POST cleans it; with errors, the form again (status 200); valid, the object saved and to
+          <code>successUrl</code> (<code>'/catalog/book/{id}'</code> fills the fields of the object), or to the address of
+          the object (its <code>absoluteUrl</code> or <code>getAbsoluteUrl()</code>). <code>FormView</code> is the same
+          with a form of its own and no object.
+        </p>
+        <pre><code class="language-js">class AuthorCreate extends CreateView {
+  static model = Author;
+  static fields = ['firstName', 'lastName', 'dateOfBirth', 'dateOfDeath'];
+  static initial = { dateOfDeath: '2023-11-11' };
+  static permissionRequired = 'Author.add';
+}</code></pre>
+
+        <h2 id="delete">DeleteView</h2>
+        <p>
+          GET asks (<code>&lt;model&gt;_confirm_delete</code>, with the object and <code>question</code>), POST deletes it
+          and goes to <code>successUrl</code> (DELETE does it at once). The objects others keep pointing to it with
+          (<code>onDelete: 'protect'</code>) are <code>blockers</code> in the context, <code>[{ object, href, text,
+          relation }]</code>, with <code>blockedText</code>: the page lists them instead of the button. A POST they stop
+          (the <code>ProtectedError</code> of the ORM) comes back to the page, as Django's views that catch it.
+        </p>
+        <pre><code class="language-js">class AuthorDelete extends DeleteView {
+  static model = Author;
+  static permissionRequired = 'Author.delete';
+  static question = 'Are you sure you want to delete {firstName} {lastName}?';
+  static blockedText = "You can't delete this author until all their books have been deleted:";
+
+  getSuccessUrl() {
+    return this.reverse('authors');
+  }
+}</code></pre>
+
+        <h2 id="others">Others</h2>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>View</th><th>What it does</th><th>Settings</th></tr></thead>
+            <tbody>
+              <tr><td><code>View</code></td><td>A method for each method of HTTP (<code>get()</code>, <code>post()</code>...), with <code>this.request</code>, <code>this.reply</code>, <code>this.params</code>, <code>this.query</code></td><td><code>httpMethodNames</code>, <code>loginRequired</code>, <code>permissionRequired</code></td></tr>
+              <tr><td><code>TemplateView</code></td><td>Its template, with the parameters of the route as <code>params</code></td><td><code>templateName</code>, <code>extraContext</code></td></tr>
+              <tr><td><code>RedirectView</code></td><td>To an address (<code>{param}</code> of the route filled) or a named route with the parameters of this one; none: 410</td><td><code>url</code>, <code>patternName</code>, <code>permanent</code> (301), <code>queryString</code></td></tr>
+              <tr><td><code>FormView</code></td><td>A form: <code>formValid(form)</code> or <code>formInvalid(form)</code></td><td><code>formClass</code>, <code>initial</code>, <code>prefix</code>, <code>successUrl</code></td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h2 id="override">Changing them</h2>
+        <p>
+          Each step is a method, as Django's: <code>getQueryset()</code>, <code>getObject()</code>,
+          <code>getContextData(context)</code> (async: what the template gets more), <code>getTemplateNames()</code>,
+          <code>getForm()</code>, <code>getFormKwargs()</code>, <code>getInitial()</code>, <code>getSuccessUrl()</code>,
+          <code>formValid(form)</code>, <code>formInvalid(form)</code>, <code>renderToResponse(context)</code>. In them,
+          <code>this.reverse(name, params)</code> gives the address of a named route.
+        </p>
+        <pre><code class="language-js">class LoanedBooksByUser extends ListView {
+  static model = BookInstance;
+  static templateName = 'catalog/bookinstance_list_borrowed_user';
+  static paginateBy = 10;
+  static loginRequired = true;
+
+  getQueryset() {
+    // Not async (a QuerySet is thenable); after loginRequired, request.account is the user.
+    return BookInstance.objects.filter({ borrower: this.request.account.pk, status: 'o' }).orderBy('dueBack');
+  }
+}
+
+class AuthorDetail extends DetailView {
+  static model = Author;
+
+  async getContextData(context) {
+    const books = await this.object.bookSet.annotate({ copies: Count('bookInstanceSet') });
+    return super.getContextData({ ...context, books });
+  }
+}</code></pre>
+        <p>
+          Related objects a template only lists need no code: <code>static queryset =
+          Book.objects.prefetchRelated('genre', 'bookInstanceSet')</code>, and the template reads them from the object
+          (<code>{{#each book.bookInstanceSet as copy}}</code>, <code>{{ book.genre | join }}</code>).
+        </p>
+
+        <h2 id="errors">404 and errors</h2>
+        <p>
+          <code>Http404</code> (status 404) is what is not there; the error handler of the app shows its page.
+          <code>ImproperlyConfigured</code> is a view not set up for what it is asked (no <code>model</code>, no
+          <code>fields</code> for a ModelForm, no <code>successUrl</code> and no address of the object): a mistake of the
+          code, a 500.
+        </p>
+      </article>
+    </div>
+
+    <footer class="footer">
+      <div class="container">
+        <span>xufa is MIT licensed. &copy; Jes&uacute;s Seijas</span>
+        <span>
+          <a href="../guide.html">Guide</a> &middot; <a href="../playground.html">Playground</a> &middot; <a href="../http/index.html">HTTP</a> &middot; <a href="../orm/index.html">ORM</a> &middot; <a href="../auth/index.html">Auth</a> &middot;
+          <a href="../sequelize/index.html">Sequelize</a> &middot; <a href="../packages.html">Packages</a> &middot;
+          <a href="../benchmarks.html">Benchmarks</a> &middot; <a href="https://github.com/xufajs/xufa">GitHub</a>
+        </span>
+      </div>
+    </footer>
+  </body>
+</html>

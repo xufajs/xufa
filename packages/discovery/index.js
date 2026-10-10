@@ -1,4 +1,4 @@
 // @xufa/discovery: the nodes of a service found on the network by UDP, with no dependencies.
-const { Discovery, DiscoveryError, createDiscovery, MAX_PACKET } = require('./lib/discovery');
+import { Discovery, DiscoveryError, createDiscovery, MAX_PACKET } from './lib/discovery.js';
 
-module.exports = { Discovery, DiscoveryError, createDiscovery, MAX_PACKET };
+export { Discovery, DiscoveryError, createDiscovery, MAX_PACKET };

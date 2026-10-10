@@ -1,7 +1,4 @@
-'use strict'
-
-
-const FindMyWay = require('../')
+import FindMyWay from '../index.js';
 
 test('If the prefixLen is higher than the pathLen we should not save the wildcard child', () => {
   expect.assertions(3)

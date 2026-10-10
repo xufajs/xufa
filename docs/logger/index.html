@@ -74,6 +74,10 @@
           <li><a href="../websocket/index.html">@xufa/websocket</a></li>
           <li><a href="../admin/index.html">@xufa/admin</a></li>
           <li><a href="../session/index.html">@xufa/session</a></li>
+          <li><a href="../forms/index.html">@xufa/forms</a></li>
+          <li><a href="../views/index.html">@xufa/views</a></li>
+          <li><a href="../mail/index.html">@xufa/mail</a></li>
+          <li><a href="../i18n/index.html">@xufa/i18n</a></li>
           <li><a href="../openapi/index.html">@xufa/openapi</a></li>
           <li><a href="../client/index.html">@xufa/client</a></li>
           <li><a href="../schema/index.html">@xufa/schema</a></li>
@@ -115,7 +119,9 @@
 
         <h2 id="start">Quick start</h2>
         <pre><code class="language-sh">npm install @xufa/logger</code></pre>
-        <pre data-run><code class="language-js">const logger = require('@xufa/logger')({ level: 'debug', redact: ['req.headers.authorization'] });
+        <pre data-run><code class="language-js">import pino from '@xufa/logger';
+
+const logger = pino({ level: 'debug', redact: ['req.headers.authorization'] });
 
 logger.info('hello %s', 'world');
 logger.child({ requestId: 'r1' }).warn({ user: 7 }, 'slow request');
@@ -247,7 +253,7 @@ pino({ redact: { paths: ['token'], remove: true } }); // the key is not written 
 });</code></pre>
 
         <h2 id="destination">Destinations</h2>
-        <pre data-run><code class="language-js">const pino = require('@xufa/logger');
+        <pre data-run><code class="language-js">import pino from '@xufa/logger';
 
 const logger = pino(pino.destination({ dest: './app.log', sync: false, minLength: 4096, mkdir: true }));
 process.on('SIGHUP', () =&gt; logger[pino.symbols.streamSym].reopen()); // log rotation
@@ -342,7 +348,7 @@ process.on('exit', () =&gt; logger.flush());</code></pre>
 
         <h2 id="from-pino">Coming from pino</h2>
         <ul>
-          <li>The options, the methods and the output are pino's; <code>require('pino')</code> can be replaced by <code>require('@xufa/logger')</code>.</li>
+          <li>The options, the methods and the output are pino's; <code>import pino from 'pino'</code> can be replaced by <code>import pino from '@xufa/logger'</code>.</li>
           <li><strong>Transports</strong> (<code>transport</code>, <code>pino.transport()</code>) are not there: it throws. Logs go to a stream: give one, or pipe the output of the process (<code>node app.js | pino-pretty</code>, or to your collector).</li>
           <li>Not there either: the <code>level-change</code> event, <code>levelComparison</code>, <code>depthLimit</code> and <code>edgeLimit</code>, and pino's browser build.</li>
         </ul>

@@ -1,8 +1,12 @@
 // PostgresBackend: PostgreSQL with @xufa/pg. Options: `url` (postgres://...) and the options of its Pool (max...),
 // or a `pool` of your own. Queries run on the pool (pipelined); a transaction takes a connection of its own, which
 // the queries made in it (in its async context) use; transactions inside it are savepoints.
-const { SqlBackend } = require('./sql/backend');
-const { postgres } = require('./sql/dialects');
+import { SqlBackend } from './sql/backend.js';
+import { postgres } from './sql/dialects.js';
+import { createRequire } from 'node:module';
+
+// @xufa/pg is loaded by the first database of PostgreSQL (require() of an ES module): not by apps without one.
+const require = createRequire(import.meta.url);
 
 // Rows with Raw values (SQL of their own) are not copied.
 const hasRaw = (row) => Object.values(row).some((value) => value && value.kind === 'raw');
@@ -17,7 +21,10 @@ class PostgresBackend extends SqlBackend {
     // copyRows: inserts of that number of rows or more use COPY (500; false never).
     const { url, pool, copyRows, onError, ...rest } = options;
     this.ownPool = !pool;
-    this.pool = pool || new Pool({ connectionString: url || 'postgres://127.0.0.1:5432/postgres', ...rest });
+    // dates: 'text': date columns as their text, what date fields keep ('2026-10-09'), not a Date made to be
+    // turned back into it (six times the work for each value).
+    this.pool =
+      pool || new Pool({ connectionString: url || 'postgres://127.0.0.1:5432/postgres', dates: 'text', ...rest });
     // A connection of the pool closed by the server or the network while idle: the pool drops it and opens another
     // when one is needed. Its error goes to onError (an error event without a listener would end the process).
     if (this.ownPool) this.pool.on('error', (err) => (onError ? onError(err) : undefined));
@@ -108,6 +115,15 @@ class PostgresBackend extends SqlBackend {
     return fn();
   }
 
+  // The transaction of a test: a connection of its own, kept until it is rolled back.
+  async openPinned() {
+    return { client: await this.pool.connect(), depth: 0 };
+  }
+
+  async closePinned(store) {
+    store.client.release(store.client.connection.transactionStatus !== 'I' ? new Error('not idle') : undefined);
+  }
+
   async transaction(fn, options) {
     const store = this.context.getStore();
     if (store) return super.transaction(fn, options);
@@ -150,4 +166,4 @@ class PostgresBackend extends SqlBackend {
   }
 }
 
-module.exports = { PostgresBackend };
+export { PostgresBackend };

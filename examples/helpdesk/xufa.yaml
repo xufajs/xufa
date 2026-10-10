@@ -1,0 +1,20 @@
+# A helpdesk of several organizations: each one a tenant, with a database of its own for its tickets (the app
+# tickets); the users and the organizations are in the database of the project (the app accounts).
+name: Helpdesk
+apps: [accounts, tickets]
+
+database: { url: 'sqlite:data/helpdesk.db' }
+server: { port: 8001 }
+siteUrl: http://localhost:8001
+
+auth: { user: accounts.User, loginBy: username, pages: /accounts }
+admin: { title: Helpdesk administration }
+
+# The tenants: the organizations of the database (a new one in the admin is a new tenant), each with
+# data/tenants/<slug>.db, made and migrated the first time it is used. On the site, the subdomain says which one
+# (acme.localhost:8001); in the admin, the menu of the header.
+tenants:
+  apps: [tickets]
+  database: { url: 'sqlite:data/tenants/{id}.db' }
+  list: { model: accounts.Organization, field: slug, label: name }
+  resolve: subdomain

@@ -306,4 +306,4 @@ function escapeLiteral(value) {
   return ` E'${escaped.replace(/\\/g, '\\\\')}'`;
 }
 
-module.exports = { parsers, parserOf, paramToText, text, timestamp, arrayOf, escapeIdentifier, escapeLiteral };
+export { parsers, parserOf, paramToText, text, timestamp, arrayOf, escapeIdentifier, escapeLiteral };

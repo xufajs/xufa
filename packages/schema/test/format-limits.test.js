@@ -1,4 +1,4 @@
-const { compileJsonSchema, standaloneJsonSchema, fromJsonSchema } = require('..');
+import { compileJsonSchema, standaloneJsonSchema, fromJsonSchema } from '../index.js';
 
 // Every mode, the interpreter and standalone code give the same verdict; returns the errors.
 function check(schema, value, options = { formats: true }) {

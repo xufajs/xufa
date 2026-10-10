@@ -136,4 +136,4 @@ function validateSchema(value, name) {
   }
 }
 
-module.exports = { validateSchema };
+export { validateSchema };

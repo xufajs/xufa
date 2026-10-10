@@ -1,0 +1,495 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>@xufa/forms: Reference · xufa</title>
+    <meta
+      name="description"
+      content="The reference of @xufa/forms: every function, class, interface and type it declares, made from its TypeScript declarations."
+    />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%23d9502b'/%3E%3Ctext x='16' y='22.5' font-family='monospace' font-size='18' font-weight='700' fill='white' text-anchor='middle'%3Ex%3C/text%3E%3C/svg%3E"
+    />
+    <link rel="stylesheet" href="../style.css?v=0.1.0" />
+    <script src="../main.js?v=0.1.0"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js" defer></script>
+  </head>
+  <body>
+    <header class="header">
+      <div class="header-inner">
+        <a class="logo" href="../index.html"><span class="logo-mark">x</span>xufa</a>
+        <nav class="nav">
+          <a href="../guide.html">Guide</a>
+          <a href="../playground.html">Playground</a>
+          <a href="../http/index.html">HTTP</a>
+          <a href="../orm/index.html">ORM</a>
+          <a class="hide-small" href="../auth/index.html">Auth</a>
+          <a class="hide-small" href="../sequelize/index.html">Sequelize</a>
+          <a class="hide-small" href="../packages.html" aria-current="page">Packages</a>
+          <a class="hide-small" href="../benchmarks.html">Benchmarks</a>
+          <a href="https://github.com/xufajs/xufa">GitHub</a>
+          <button class="theme-toggle" type="button" aria-label="Switch between light and dark theme">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+              <path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z" />
+            </svg>
+          </button>
+        </nav>
+      </div>
+    </header>
+
+    <div class="docs">
+      <button class="menu-toggle" type="button" aria-expanded="false">☰ Contents</button>
+      <aside class="sidebar">
+        <h4>Reference</h4>
+        <ul>
+          <li><a href="#functions">Functions (9)</a></li>
+          <li><a href="#classes">Classes (18)</a></li>
+          <li><a href="#constants">Constants (2)</a></li>
+          <li><a href="#interfaces">Interfaces (6)</a></li>
+          <li><a href="#types">Types (2)</a></li>
+        </ul>
+        <h4>Packages</h4>
+        <ul>
+          <li><a href="../websocket/index.html">@xufa/websocket</a></li>
+          <li><a href="../admin/index.html">@xufa/admin</a></li>
+          <li><a href="../session/index.html">@xufa/session</a></li>
+          <li><a href="index.html" aria-current="page">@xufa/forms</a></li>
+          <li><a href="../views/index.html">@xufa/views</a></li>
+          <li><a href="../mail/index.html">@xufa/mail</a></li>
+          <li><a href="../i18n/index.html">@xufa/i18n</a></li>
+          <li><a href="../openapi/index.html">@xufa/openapi</a></li>
+          <li><a href="../client/index.html">@xufa/client</a></li>
+          <li><a href="../schema/index.html">@xufa/schema</a></li>
+          <li><a href="../pg/index.html">@xufa/pg</a></li>
+          <li><a href="../mongo/index.html">@xufa/mongo</a></li>
+          <li><a href="../expression/index.html">@xufa/expression</a></li>
+          <li><a href="../template/index.html">@xufa/template</a></li>
+          <li><a href="../cluster/index.html">@xufa/cluster</a></li>
+          <li><a href="../scheduler/index.html">@xufa/scheduler</a></li>
+          <li><a href="../queue/index.html">@xufa/queue</a></li>
+          <li><a href="../config/index.html">@xufa/config</a></li>
+          <li><a href="../discovery/index.html">@xufa/discovery</a></li>
+          <li><a href="../netcache/index.html">@xufa/netcache</a></li>
+          <li><a href="../faults/index.html">@xufa/faults</a></li>
+          <li><a href="../marshal/index.html">@xufa/marshal</a></li>
+          <li><a href="../yaml/index.html">@xufa/yaml</a></li>
+          <li><a href="../jwt/index.html">@xufa/jwt</a></li>
+          <li><a href="../logger/index.html">@xufa/logger</a></li>
+          <li><a href="../router/index.html">@xufa/router</a></li>
+          <li><a href="../serializer/index.html">@xufa/serializer</a></li>
+          <li><a href="../inject/index.html">@xufa/inject</a></li>
+          <li><a href="../boot/index.html">@xufa/boot</a></li>
+          <li><a href="../errors/index.html">@xufa/errors</a></li>
+          <li><a href="../packages.html">All the packages</a></li>
+        </ul>
+      </aside>
+
+      <article class="content">
+        <nav class="package-tabs" aria-label="@xufa/forms">
+          <a href="index.html">Overview</a>
+          <a href="reference.html" aria-current="page">Reference</a>
+        </nav>
+        <h1>Reference</h1>
+        <p class="intro">
+          Forms of a site, as django.forms: fields that clean what a body gives (texts, dates, choices, objects of a model, files), forms with their errors by field and their HTML, and forms of models of @xufa/orm (ModelForm) checked by the model, with no dependencies. Every declaration of its TypeScript declarations
+          (<code>packages/forms/index.d.ts</code> or <code>index.d.cts</code>), as they are written, with their comments: made from them each time
+          the docs are built. How to use them is in <a href="index.html">the overview</a>.
+        </p>
+
+        <h2 id="functions">Functions</h2>
+        <p class="ref-index"><a href="#ref-modelFormOf"><code>modelFormOf</code></a>, <a href="#ref-formFieldOf"><code>formFieldOf</code></a>, <a href="#ref-humanize"><code>humanize</code></a>, <a href="#ref-today"><code>today</code></a>, <a href="#ref-addDays"><code>addDays</code></a>, <a href="#ref-addMonths"><code>addMonths</code></a>, <a href="#ref-dateOf"><code>dateOf</code></a>, <a href="#ref-formsMessage"><code>formsMessage</code></a>, <a href="#ref-setTranslator"><code>setTranslator</code></a></p>
+
+        <h3 id="ref-modelFormOf"><code>modelFormOf</code></h3>
+        <pre><code class="language-ts">export declare function modelFormOf&lt;M = any&gt;(
+  model: any,
+  meta?: Omit&lt;ModelFormMeta, 'model'&gt;,
+  base?: typeof ModelForm
+): typeof ModelForm&lt;M&gt;;</code></pre>
+        <p>A ModelForm of a model and its meta (Django's modelform_factory); base: a ModelForm to extend.</p>
+
+        <h3 id="ref-formFieldOf"><code>formFieldOf</code></h3>
+        <pre><code class="language-ts">export declare function formFieldOf(
+  field: any,
+  overrides?: { label?: string; help?: string; widget?: string }
+): Field | null;</code></pre>
+        <p>The field of a form for a field of a model.</p>
+
+        <h3 id="ref-humanize"><code>humanize</code></h3>
+        <pre><code class="language-ts">export declare function humanize(name: string): string;</code></pre>
+        <p>dateOfBirth is 'Date of birth'.</p>
+
+        <h3 id="ref-today"><code>today</code></h3>
+        <pre><code class="language-ts">export declare function today(): string;</code></pre>
+        <p>Today as YYYY-MM-DD, in the time of the machine.</p>
+
+        <h3 id="ref-addDays"><code>addDays</code></h3>
+        <pre><code class="language-ts">export declare function addDays(days: number, from?: string): string;</code></pre>
+        <p>The day some days after one (today by default).</p>
+
+        <h3 id="ref-addMonths"><code>addMonths</code></h3>
+        <pre><code class="language-ts">export declare function addMonths(months: number, from?: string): string;</code></pre>
+        <p>The day some months after one (the last of the month when it has not that day).</p>
+
+        <h3 id="ref-dateOf"><code>dateOf</code></h3>
+        <pre><code class="language-ts">export declare function dateOf(spec: DaySpec): string;</code></pre>
+        <p>The day a DaySpec says.</p>
+
+        <h3 id="ref-formsMessage"><code>formsMessage</code></h3>
+        <pre><code class="language-ts">export declare function formsMessage(key: string, params?: Record&lt;string, unknown&gt;): string;</code></pre>
+
+        <h3 id="ref-setTranslator"><code>setTranslator</code></h3>
+        <pre><code class="language-ts">export declare function setTranslator(
+  fn: ((key: string, params: Record&lt;string, unknown&gt;, english: string) =&gt; string) | null
+): void;</code></pre>
+        <p>The translator of the messages (as i18n.translateForms(forms) sets), or null.</p>
+
+        <h2 id="classes">Classes</h2>
+        <p class="ref-index"><a href="#ref-ValidationError"><code>ValidationError</code></a>, <a href="#ref-Field"><code>Field</code></a>, <a href="#ref-StringField"><code>StringField</code></a>, <a href="#ref-TextField"><code>TextField</code></a>, <a href="#ref-EmailField"><code>EmailField</code></a>, <a href="#ref-UrlField"><code>UrlField</code></a>, <a href="#ref-NumberField"><code>NumberField</code></a>, <a href="#ref-BooleanField"><code>BooleanField</code></a>, <a href="#ref-DateField"><code>DateField</code></a>, <a href="#ref-ChoiceField"><code>ChoiceField</code></a>, <a href="#ref-MultipleChoiceField"><code>MultipleChoiceField</code></a>, <a href="#ref-ModelChoiceField"><code>ModelChoiceField</code></a>, <a href="#ref-ModelMultipleChoiceField"><code>ModelMultipleChoiceField</code></a>, <a href="#ref-FileField"><code>FileField</code></a>, <a href="#ref-JsonField"><code>JsonField</code></a>, <a href="#ref-BoundField"><code>BoundField</code></a>, <a href="#ref-Form"><code>Form</code></a>, <a href="#ref-ModelForm"><code>ModelForm</code></a></p>
+
+        <h3 id="ref-ValidationError"><code>ValidationError</code></h3>
+        <pre><code class="language-ts">export declare class ValidationError extends Error { ... }</code></pre>
+        <p>What is wrong with a value: its messages, and a code.</p>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>new (messages: string | string[], code?: string)</code></td><td></td><td></td></tr>
+                <tr><td><code>messages</code></td><td><code>string[]</code></td><td></td></tr>
+                <tr><td><code>code</code></td><td><code>string</code></td><td></td></tr>
+                <tr><td><code>field?</code></td><td><code>string</code></td><td><p>clean() of a form: the field the error is of (else the form's).</p></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-Field"><code>Field</code></h3>
+        <pre><code class="language-ts">export declare class Field&lt;T = unknown&gt; { ... }</code></pre>
+        <p>A field of a form: it cleans what a body gives, and writes its input.</p>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>new (options?: FieldOptions&lt;T&gt;)</code></td><td></td><td></td></tr>
+                <tr><td><code>required</code></td><td><code>boolean</code></td><td></td></tr>
+                <tr><td><code>label</code></td><td><code>string | null</code></td><td></td></tr>
+                <tr><td><code>help</code></td><td><code>string | null</code></td><td></td></tr>
+                <tr><td><code>initial</code></td><td><code>T | (() =&gt; T) | undefined</code></td><td></td></tr>
+                <tr><td><code>disabled</code></td><td><code>boolean</code></td><td></td></tr>
+                <tr><td><code>clean(raw: unknown)</code></td><td><code>T | null</code></td><td><p>The value of what a body gave, checked (a ValidationError otherwise).</p></td></tr>
+                <tr><td><code>render(name: string, value: unknown, attrs?: Record&lt;string, unknown&gt;)</code></td><td><code>string</code></td><td><p>Its input, in HTML.</p></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-StringField"><code>StringField</code></h3>
+        <pre><code class="language-ts">export declare class StringField extends Field&lt;string&gt; { ... }</code></pre>
+
+        <h3 id="ref-TextField"><code>TextField</code></h3>
+        <pre><code class="language-ts">export declare class TextField extends StringField { ... }</code></pre>
+
+        <h3 id="ref-EmailField"><code>EmailField</code></h3>
+        <pre><code class="language-ts">export declare class EmailField extends StringField { ... }</code></pre>
+
+        <h3 id="ref-UrlField"><code>UrlField</code></h3>
+        <pre><code class="language-ts">export declare class UrlField extends StringField { ... }</code></pre>
+
+        <h3 id="ref-NumberField"><code>NumberField</code></h3>
+        <pre><code class="language-ts">export declare class NumberField extends Field&lt;number | string&gt; { ... }</code></pre>
+
+        <h3 id="ref-BooleanField"><code>BooleanField</code></h3>
+        <pre><code class="language-ts">export declare class BooleanField extends Field&lt;boolean&gt; { ... }</code></pre>
+
+        <h3 id="ref-DateField"><code>DateField</code></h3>
+        <pre><code class="language-ts">export declare class DateField extends Field&lt;string | Date&gt; { ... }</code></pre>
+
+        <h3 id="ref-ChoiceField"><code>ChoiceField</code></h3>
+        <pre><code class="language-ts">export declare class ChoiceField&lt;T = unknown&gt; extends Field&lt;T&gt; { ... }</code></pre>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>choices</code></td><td><code>Array&lt;[T, string]&gt;</code></td><td></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-MultipleChoiceField"><code>MultipleChoiceField</code></h3>
+        <pre><code class="language-ts">export declare class MultipleChoiceField&lt;T = unknown&gt; extends Field&lt;T[]&gt; { ... }</code></pre>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>choices</code></td><td><code>Array&lt;[T, string]&gt;</code></td><td></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-ModelChoiceField"><code>ModelChoiceField</code></h3>
+        <pre><code class="language-ts">export declare class ModelChoiceField&lt;M = any&gt; extends Field&lt;M&gt; { ... }</code></pre>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>objects</code></td><td><code>M[] | null</code></td><td><p>Its objects, loaded by load() (form.prepare()).</p></td></tr>
+                <tr><td><code>load()</code></td><td><code>Promise&lt;void&gt;</code></td><td></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-ModelMultipleChoiceField"><code>ModelMultipleChoiceField</code></h3>
+        <pre><code class="language-ts">export declare class ModelMultipleChoiceField&lt;M = any&gt; extends Field&lt;M[]&gt; { ... }</code></pre>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>objects</code></td><td><code>M[] | null</code></td><td></td></tr>
+                <tr><td><code>load()</code></td><td><code>Promise&lt;void&gt;</code></td><td></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-FileField"><code>FileField</code></h3>
+        <pre><code class="language-ts">export declare class FileField extends Field&lt;FormFileValue&gt; { ... }</code></pre>
+
+        <h3 id="ref-JsonField"><code>JsonField</code></h3>
+        <pre><code class="language-ts">export declare class JsonField extends Field&lt;unknown&gt; { ... }</code></pre>
+
+        <h3 id="ref-BoundField"><code>BoundField</code></h3>
+        <pre><code class="language-ts">export declare class BoundField { ... }</code></pre>
+        <p>A field of a form as a template shows it.</p>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>readonly name</code></td><td><code>string</code></td><td></td></tr>
+                <tr><td><code>readonly field</code></td><td><code><a href="#ref-Field">Field</a></code></td><td></td></tr>
+                <tr><td><code>readonly htmlName</code></td><td><code>string</code></td><td></td></tr>
+                <tr><td><code>readonly id</code></td><td><code>string | null</code></td><td></td></tr>
+                <tr><td><code>readonly label</code></td><td><code>string</code></td><td></td></tr>
+                <tr><td><code>readonly help</code></td><td><code>string | null</code></td><td></td></tr>
+                <tr><td><code>readonly errors</code></td><td><code>string[]</code></td><td></td></tr>
+                <tr><td><code>readonly value</code></td><td><code>unknown</code></td><td></td></tr>
+                <tr><td><code>readonly isHidden</code></td><td><code>boolean</code></td><td></td></tr>
+                <tr><td><code>labelTag(suffix?: string)</code></td><td><code>string</code></td><td></td></tr>
+                <tr><td><code>widget(attrs?: Record&lt;string, unknown&gt;)</code></td><td><code>string</code></td><td></td></tr>
+                <tr><td><code>errorsHtml()</code></td><td><code>string</code></td><td></td></tr>
+                <tr><td><code>helpHtml()</code></td><td><code>string</code></td><td></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-Form"><code>Form</code></h3>
+        <pre><code class="language-ts">export declare class Form&lt;Data extends Record&lt;string, unknown&gt; = Record&lt;string, any&gt;&gt; { ... }</code></pre>
+        <p>A form: static fields, cleaned by isValid() (each field, its clean&lt;Name&gt;(), then clean()), errors by field (and __all__), cleanedData, and its HTML (asTable, asP, asUl, asDiv).</p>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>static fields</code></td><td><code>Record&lt;string, <a href="#ref-Field">Field</a> | null&gt;</code></td><td></td></tr>
+                <tr><td><code>new (options?: FormOptions)</code></td><td></td><td></td></tr>
+                <tr><td><code>fields</code></td><td><code>Record&lt;string, <a href="#ref-Field">Field</a>&gt;</code></td><td></td></tr>
+                <tr><td><code>readonly isBound</code></td><td><code>boolean</code></td><td></td></tr>
+                <tr><td><code>data</code></td><td><code>Record&lt;string, unknown&gt; | null</code></td><td></td></tr>
+                <tr><td><code>initial</code></td><td><code>Record&lt;string, unknown&gt;</code></td><td></td></tr>
+                <tr><td><code>prefix</code></td><td><code>string | null</code></td><td></td></tr>
+                <tr><td><code>errors</code></td><td><code>Record&lt;string, string[]&gt;</code></td><td><p>The messages of each field, and those of the form under __all__.</p></td></tr>
+                <tr><td><code>cleanedData</code></td><td><code>Data | null</code></td><td><p>The values cleaned (after isValid()).</p></td></tr>
+                <tr><td><code>isValid()</code></td><td><code>Promise&lt;boolean&gt;</code></td><td></td></tr>
+                <tr><td><code>fullClean()</code></td><td><code>Promise&lt;void&gt;</code></td><td></td></tr>
+                <tr><td><code>clean(cleanedData: Data)</code></td><td><code>Data | void | Promise&lt;Data | void&gt;</code></td><td><p>Checks of the whole form: give the values, or throw a ValidationError.</p></td></tr>
+                <tr><td><code>addError(name: string | null, error: string | string[] | ValidationError)</code></td><td><code>void</code></td><td></td></tr>
+                <tr><td><code>hasError(name: string | null)</code></td><td><code>boolean</code></td><td></td></tr>
+                <tr><td><code>nonFieldErrors()</code></td><td><code>string[]</code></td><td></td></tr>
+                <tr><td><code>prepare()</code></td><td><code>Promise&lt;this&gt;</code></td><td><p>Loads the objects of the choices of models (before it renders a form not sent).</p></td></tr>
+                <tr><td><code>field(name: string)</code></td><td><code><a href="#ref-BoundField">BoundField</a></code></td><td></td></tr>
+                <tr><td><code>readonly boundFields</code></td><td><code><a href="#ref-BoundField">BoundField</a>[]</code></td><td></td></tr>
+                <tr><td><code>readonly hiddenFields</code></td><td><code><a href="#ref-BoundField">BoundField</a>[]</code></td><td></td></tr>
+                <tr><td><code>readonly visibleFields</code></td><td><code><a href="#ref-BoundField">BoundField</a>[]</code></td><td></td></tr>
+                <tr><td><code>asTable()</code></td><td><code>string</code></td><td></td></tr>
+                <tr><td><code>asP()</code></td><td><code>string</code></td><td></td></tr>
+                <tr><td><code>asUl()</code></td><td><code>string</code></td><td></td></tr>
+                <tr><td><code>asDiv()</code></td><td><code>string</code></td><td></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-ModelForm"><code>ModelForm</code></h3>
+        <pre><code class="language-ts">export declare class ModelForm&lt;M = any, Data extends Record&lt;string, unknown&gt; = Record&lt;string, any&gt;&gt; extends Form&lt;Data&gt; { ... }</code></pre>
+        <p>A form of a model of</p>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>static meta</code></td><td><code><a href="#ref-ModelFormMeta">ModelFormMeta</a></code></td><td></td></tr>
+                <tr><td><code>new (options?: FormOptions &amp; { instance?: M | null })</code></td><td></td><td></td></tr>
+                <tr><td><code>instance</code></td><td><code>M | null</code></td><td></td></tr>
+                <tr><td><code>save(options?: { commit?: boolean })</code></td><td><code>Promise&lt;M&gt;</code></td><td><p>Saves the object (commit: false gives it unsaved; then saveLinks(object) for its many-to-many).</p></td></tr>
+                <tr><td><code>saveLinks(object: M)</code></td><td><code>Promise&lt;void&gt;</code></td><td></td></tr>
+                <tr><td><code>validateUnique(object: M)</code></td><td><code>Promise&lt;void&gt;</code></td><td></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h2 id="constants">Constants</h2>
+        <p class="ref-index"><a href="#ref-fields"><code>fields</code></a>, <a href="#ref-FORMS_MESSAGES"><code>FORMS_MESSAGES</code></a></p>
+
+        <h3 id="ref-fields"><code>fields</code></h3>
+        <pre><code class="language-ts">export declare const fields: {
+  string(options?: StringOptions): StringField;
+  text(options?: StringOptions): TextField;
+  email(options?: StringOptions): EmailField;
+  url(options?: StringOptions): UrlField;
+  password(options?: StringOptions &amp; { renderValue?: boolean }): StringField;
+  hidden(options?: StringOptions): StringField;
+  integer(options?: NumberOptions): NumberField;
+  number(options?: NumberOptions): NumberField;
+  decimal(options?: NumberOptions &amp; { maxDigits?: number; decimalPlaces?: number }): NumberField;
+  boolean(options?: FieldOptions&lt;boolean&gt;): BooleanField;
+  date(options?: FieldOptions&lt;string&gt; &amp; { min?: DaySpec; max?: DaySpec }): DateField;
+  datetime(options?: FieldOptions&lt;Date&gt; &amp; { min?: string | Date; max?: string | Date }): DateField;
+  choice&lt;T = unknown&gt;(options: FieldOptions&lt;T&gt; &amp; { choices: Choices; emptyLabel?: string | null }): ChoiceField&lt;T&gt;;
+  multipleChoice&lt;T = unknown&gt;(options: FieldOptions&lt;T[]&gt; &amp; { choices: Choices }): MultipleChoiceField&lt;T&gt;;
+  modelChoice&lt;M = any&gt;(
+    options: FieldOptions&lt;M&gt; &amp; {
+      queryset: PromiseLike&lt;M[]&gt; &amp; { filter(...args: any[]): any };
+      labelOf?: (object: M) =&gt; string;
+      emptyLabel?: string | null;
+    }
+  ): ModelChoiceField&lt;M&gt;;
+  modelMultipleChoice&lt;M = any&gt;(
+    options: FieldOptions&lt;M[]&gt; &amp; {
+      queryset: PromiseLike&lt;M[]&gt; &amp; { filter(...args: any[]): any };
+      labelOf?: (object: M) =&gt; string;
+    }
+  ): ModelMultipleChoiceField&lt;M&gt;;
+  file(options?: FieldOptions&lt;FormFileValue&gt; &amp; { maxSize?: number; accept?: string | string[] }): FileField;
+  json(options?: FieldOptions&lt;unknown&gt;): JsonField;
+};</code></pre>
+        <p>The kinds of fields.</p>
+
+        <h3 id="ref-FORMS_MESSAGES"><code>FORMS_MESSAGES</code></h3>
+        <pre><code class="language-ts">export declare const FORMS_MESSAGES: Readonly&lt;Record&lt;string, string&gt;&gt;;</code></pre>
+        <p>The messages users read, by key, in English.</p>
+
+        <h2 id="interfaces">Interfaces</h2>
+        <p class="ref-index"><a href="#ref-FormFileValue"><code>FormFileValue</code></a>, <a href="#ref-FieldOptions"><code>FieldOptions</code></a>, <a href="#ref-StringOptions"><code>StringOptions</code></a>, <a href="#ref-NumberOptions"><code>NumberOptions</code></a>, <a href="#ref-FormOptions"><code>FormOptions</code></a>, <a href="#ref-ModelFormMeta"><code>ModelFormMeta</code></a></p>
+
+        <h3 id="ref-FormFileValue"><code>FormFileValue</code></h3>
+        <pre><code class="language-ts">export interface FormFileValue { ... }</code></pre>
+        <p>A file of a multipart form (xufa.formBody).</p>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>filename</code></td><td><code>string</code></td><td></td></tr>
+                <tr><td><code>contentType</code></td><td><code>string</code></td><td></td></tr>
+                <tr><td><code>size</code></td><td><code>number</code></td><td></td></tr>
+                <tr><td><code>data</code></td><td><code>Buffer</code></td><td></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-FieldOptions"><code>FieldOptions</code></h3>
+        <pre><code class="language-ts">export interface FieldOptions&lt;T = unknown&gt; { ... }</code></pre>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>required?</code></td><td><code>boolean</code></td><td><p>A value is needed (true).</p></td></tr>
+                <tr><td><code>label?</code></td><td><code>string | null</code></td><td><p>Its label (made of its name: dateOfBirth is 'Date of birth').</p></td></tr>
+                <tr><td><code>help?</code></td><td><code>string | null</code></td><td><p>A text that helps to fill it (HTML, as Django's help_text).</p></td></tr>
+                <tr><td><code>initial?</code></td><td><code>T | (() =&gt; T)</code></td><td><p>The value shown at first (or a function giving it).</p></td></tr>
+                <tr><td><code>disabled?</code></td><td><code>boolean</code></td><td><p>Shown, not changed: its value is the initial one.</p></td></tr>
+                <tr><td><code>validators?</code></td><td><code>Array&lt;(value: T) =&gt; string | boolean | void | undefined&gt;</code></td><td><p>Functions of the value: a message (or false) when it is not valid, or a ValidationError thrown.</p></td></tr>
+                <tr><td><code>attrs?</code></td><td><code>Record&lt;string, string | number | boolean | null | undefined&gt;</code></td><td><p>More attributes of its input.</p></td></tr>
+                <tr><td><code>widget?</code></td><td><code>'radio' | 'checkbox' | null</code></td><td><p>Another input: 'radio' for a choice, 'checkbox' for choices.</p></td></tr>
+                <tr><td><code>messages?</code></td><td><code>Record&lt;string, string&gt;</code></td><td><p>Its own messages by the code of the error (Django's error_messages): { required, invalid, min, max... }.</p></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-StringOptions"><code>StringOptions</code></h3>
+        <pre><code class="language-ts">export interface StringOptions extends FieldOptions&lt;string&gt; { ... }</code></pre>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>maxLength?</code></td><td><code>number</code></td><td></td></tr>
+                <tr><td><code>minLength?</code></td><td><code>number</code></td><td></td></tr>
+                <tr><td><code>strip?</code></td><td><code>boolean</code></td><td><p>White space taken out of its ends (true).</p></td></tr>
+                <tr><td><code>type?</code></td><td><code>string</code></td><td><p>The type of its input: text, email, url, password, hidden, search, tel.</p></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-NumberOptions"><code>NumberOptions</code></h3>
+        <pre><code class="language-ts">export interface NumberOptions extends FieldOptions&lt;number&gt; { ... }</code></pre>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>min?</code></td><td><code>number</code></td><td></td></tr>
+                <tr><td><code>max?</code></td><td><code>number</code></td><td></td></tr>
+                <tr><td><code>step?</code></td><td><code>number | string</code></td><td></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-FormOptions"><code>FormOptions</code></h3>
+        <pre><code class="language-ts">export interface FormOptions { ... }</code></pre>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>data?</code></td><td><code>Record&lt;string, unknown&gt; | null</code></td><td><p>The values sent (request.body), null for a form not sent.</p></td></tr>
+                <tr><td><code>initial?</code></td><td><code>Record&lt;string, unknown&gt;</code></td><td><p>The values shown at first.</p></td></tr>
+                <tr><td><code>prefix?</code></td><td><code>string | null</code></td><td><p>Of the names of its inputs (several forms in a page): prefix-name.</p></td></tr>
+                <tr><td><code>autoId?</code></td><td><code>string | false</code></td><td><p>The id of each input ('id_%s'), or false for none.</p></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-ModelFormMeta"><code>ModelFormMeta</code></h3>
+        <pre><code class="language-ts">export interface ModelFormMeta { ... }</code></pre>
+        <p>The Meta of a ModelForm.</p>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>model</code></td><td><code>any</code></td><td><p>A model of</p></td></tr>
+                <tr><td><code>fields?</code></td><td><code>string[] | '__all__'</code></td><td><p>The names of its fields in the form, or '__all__'.</p></td></tr>
+                <tr><td><code>exclude?</code></td><td><code>string[]</code></td><td></td></tr>
+                <tr><td><code>labels?</code></td><td><code>Record&lt;string, string&gt;</code></td><td></td></tr>
+                <tr><td><code>help?</code></td><td><code>Record&lt;string, string&gt;</code></td><td></td></tr>
+                <tr><td><code>widgets?</code></td><td><code>Record&lt;string, 'radio' | 'checkbox'&gt;</code></td><td></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h2 id="types">Types</h2>
+        <p class="ref-index"><a href="#ref-Choices"><code>Choices</code></a>, <a href="#ref-DaySpec"><code>DaySpec</code></a></p>
+
+        <h3 id="ref-Choices"><code>Choices</code></h3>
+        <pre><code class="language-ts">export type Choices =
+  readonly unknown[] | readonly (readonly [unknown, string])[] | Record&lt;string, string&gt; | Map&lt;unknown, string&gt;;</code></pre>
+        <p>Choices: values, [value, label] pairs, an object of labels by value, or a Map.</p>
+
+        <h3 id="ref-DaySpec"><code>DaySpec</code></h3>
+        <pre><code class="language-ts">export type DaySpec = string | Date | (() =&gt; string | Date);</code></pre>
+        <p>A day: YYYY-MM-DD, 'today', one relative to today ('+4w', '-1d', '+3m', '+1y'), a Date, or a function of one.</p>
+      </article>
+    </div>
+
+    <footer class="footer">
+      <div class="container">
+        <span>xufa is MIT licensed. &copy; Jes&uacute;s Seijas</span>
+        <span>
+          <a href="../guide.html">Guide</a> &middot; <a href="../playground.html">Playground</a> &middot; <a href="../http/index.html">HTTP</a> &middot; <a href="../orm/index.html">ORM</a> &middot; <a href="../auth/index.html">Auth</a> &middot;
+          <a href="../sequelize/index.html">Sequelize</a> &middot; <a href="../packages.html">Packages</a> &middot;
+          <a href="../benchmarks.html">Benchmarks</a> &middot; <a href="https://github.com/xufajs/xufa">GitHub</a>
+        </span>
+      </div>
+    </footer>
+  </body>
+</html>

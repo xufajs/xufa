@@ -1,7 +1,7 @@
-const { Database, Model, fields, Sum } = require('..');
-const { MongoClient } = require('@xufa/mongo');
-const { defineSuite } = require('./suite');
-const { url, available } = require('../../mongo/test/server');
+import { Database, Model, fields, Sum } from '../index.js';
+import { MongoClient } from '@xufa/mongo';
+import { defineSuite } from './suite.js';
+import { url, available } from '../../mongo/test/server.js';
 
 describe.skipIf(!available)('mongodb', () => {
   defineSuite('mongodb', () => new Database({ backend: 'mongodb', url }));
@@ -88,5 +88,75 @@ describe.skipIf(!available)('mongodb', () => {
         await other.close();
       }
     });
+  });
+});
+
+// A replica set (XUFA_MONGO_RS_URL, or three members on 27031-27033: rs3): transactions are real there. The suite again,
+// and transactions that conflict. Skipped when it cannot be reached.
+import { spawnSync } from 'node:child_process';
+import { parseUrl } from '@xufa/mongo';
+
+const rsUrl =
+  process.env.XUFA_MONGO_RS_URL || 'mongodb://127.0.0.1:27031,127.0.0.1:27032,127.0.0.1:27033/xufa_test?replicaSet=rs3';
+function rsReachable() {
+  if (rsUrl === 'off') return false;
+  const [{ host, port }] = parseUrl(rsUrl).hosts;
+  const script = `require('node:net').connect(${port}, ${JSON.stringify(host)}).on('connect', () => process.exit(0)).on('error', () => process.exit(1));`;
+  return spawnSync(process.execPath, ['-e', script], { timeout: 3000 }).status === 0;
+}
+
+describe.skipIf(!rsReachable())('mongodb replica set', () => {
+  defineSuite('mongodb', () => new Database({ backend: 'mongodb', url: rsUrl }));
+
+  describe('mongodb transactions that conflict', () => {
+    class Counter extends Model {
+      static fields = { name: fields.string(), n: fields.integer({ default: 0 }) };
+
+      static options = { table: 'tx_counters' };
+    }
+    let db;
+
+    beforeAll(async () => {
+      db = new Database({ backend: 'mongodb', url: rsUrl }).register(Counter);
+      await db.connect();
+      await db.drop();
+      await db.sync();
+    }, 60000);
+
+    afterAll(async () => {
+      if (db) {
+        await db.drop();
+        await db.close();
+      }
+    });
+
+    // Each reads the counter, waits (so the others write it too), then writes it.
+    const increment = (runs, options) =>
+      db.transaction(async () => {
+        runs.push(1);
+        const counter = await Counter.objects.get({ name: 'hits' });
+        await new Promise((resolve) => setTimeout(resolve, 50));
+        await Counter.objects.filter({ pk: counter.pk }).update({ n: counter.n + 1 });
+      }, options);
+
+    it('the one in conflict runs again (a write conflict is transient): every increment counts', async () => {
+      expect(db.backend.supportsTransactions).toBe(true);
+      await Counter.objects.create({ name: 'hits' });
+      const runs = [];
+      await Promise.all([increment(runs), increment(runs), increment(runs)]);
+      expect((await Counter.objects.get({ name: 'hits' })).n).toBe(3);
+      expect(runs.length).toBeGreaterThan(3);
+    }, 30000);
+
+    it('retry: false runs once: the conflict is thrown, and its writes are rolled back', async () => {
+      await Counter.objects.filter({ name: 'hits' }).update({ n: 0 });
+      const runs = [];
+      const results = await Promise.allSettled([increment(runs, { retry: false }), increment(runs, { retry: false })]);
+      expect(runs.length).toBe(2);
+      const failed = results.filter((result) => result.status === 'rejected');
+      expect(failed.length).toBe(1);
+      expect(failed[0].reason.message).toMatch(/WriteConflict|Write conflict/i);
+      expect((await Counter.objects.get({ name: 'hits' })).n).toBe(1);
+    }, 30000);
   });
 });

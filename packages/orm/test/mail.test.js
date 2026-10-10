@@ -2,14 +2,14 @@
 // too, while they were written, against mailparser), memory-mail (messages kept and queried), and smtp against a
 // server of SMTP (test/fake-smtp.js; also tried against nodemailer's smtp-server): STARTTLS and TLS from the start,
 // AUTH PLAIN, LOGIN and XOAUTH2, recipients refused, connections kept and opened again, SMTPUTF8, dots, errors.
-const fs = require('node:fs');
-const path = require('node:path');
-const { Database, Model, fields, ModelError, UnsupportedError } = require('..');
-const { buildMessage, parseAddresses, quotedPrintable, header } = require('../lib/backends/mail/mime');
-const { parseUrl } = require('../lib/backends/mail/smtp');
-const { fakeSmtp } = require('./fake-smtp');
+import fs from 'node:fs';
+import path from 'node:path';
+import { Database, Model, fields, ModelError, UnsupportedError } from '../index.js';
+import { buildMessage, parseAddresses, quotedPrintable, header } from '../lib/backends/mail/mime.js';
+import { parseUrl } from '../lib/backends/mail/smtp.js';
+import { fakeSmtp } from './fake-smtp.js';
 
-const FIXTURES = path.join(__dirname, '../../client/test/fixtures');
+const FIXTURES = path.join(import.meta.dirname, '../../client/test/fixtures');
 const TLS = {
   key: fs.readFileSync(path.join(FIXTURES, 'key.pem')),
   cert: fs.readFileSync(path.join(FIXTURES, 'cert.pem')),
@@ -125,6 +125,25 @@ describe('messages', () => {
     expect(built.messageId).toBe('given@example.com');
     expect(() => buildMessage({ to: 'a@example.com' })).toThrow(/needs a sender/);
     expect(() => buildMessage({ from: 'a@example.com' })).toThrow(/needs a recipient/);
+  });
+});
+
+describe('console-mail', () => {
+  it('messages written as they are sent (Django console backend), kept and queried too; URLs of email', async () => {
+    const Email = makeEmail();
+    const written = [];
+    const db = new Database({ backend: 'console-mail', from: 'App <app@example.com>', write: (text) => written.push(text) }).register(Email);
+    await db.connect();
+    const sent = await Email.objects.create({ to: 'ada@example.com', subject: 'Your book is due', text: 'Return it soon.' });
+    expect(written).toHaveLength(1);
+    expect(written[0]).toMatch(/^From: App <app@example\.com>\r\n/m);
+    expect(written[0]).toMatch(/Subject: Your book is due/);
+    expect(written[0]).toMatch(/Return it soon\./);
+    expect(written[0].endsWith(`\n${'-'.repeat(79)}\n`)).toBe(true);
+    expect([sent.accepted, await Email.objects.filter({ subject__contains: 'due' }).count()]).toEqual([['ada@example.com'], 1]);
+    await db.close();
+    expect(Database.optionsFromUrl('console:')).toEqual({ backend: 'console-mail' });
+    expect(Database.optionsFromUrl('memory-mail:', { from: 'a@example.com' })).toEqual({ backend: 'memory-mail', from: 'a@example.com' });
   });
 });
 

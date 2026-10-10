@@ -9,7 +9,7 @@ const split = require('split2')
 
 const { streamSym } = require('@xufa/logger').symbols
 
-const Fastify = require('@xufa/http')
+const Fastify = require('../..')
 const helper = require('../helper')
 const { XUFA_ERR_LOG_INVALID_LOGGER } = require('../../lib/errors')
 const { once, on } = stream

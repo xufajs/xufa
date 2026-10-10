@@ -1,0 +1,12 @@
+# The users and groups in the admin (django.contrib.auth's UserAdmin and GroupAdmin): passwords are hashes, shown,
+# never changed here.
+User:
+  list: [username, email, isStaff, isSuperuser, role, groups]
+  readOnly: [password, dateJoined]
+  fieldsets:
+    - [null, { fields: [username, password] }]
+    - [Personal info, { fields: [[firstName, lastName], email] }]
+    - [Permissions, { fields: [isActive, isStaff, isSuperuser, role, groups, permissions] }]
+    - [Important dates, { fields: [lastLogin, dateJoined] }]
+Group:
+  list: [name, permissions]

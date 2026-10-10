@@ -5,7 +5,18 @@ const { networkInterfaces } = require('node:os')
 
 const Fastify = require('..')
 const undici = require('undici')
-const proxyquire = require('proxyquire')
+
+// The library with some of the modules it imports replaced (its modules are ES modules: proxyquire, which replaced
+// the requires of CommonJS, cannot reach them; vyntra's doMock and a fresh import can).
+async function xufaWith (mocks) {
+  vi.resetModules()
+  for (const [name, factory] of Object.entries(mocks)) vi.doMock(name, factory)
+  try {
+    return (await import('../lib/xufa.js')).default
+  } finally {
+    for (const name of Object.keys(mocks)) vi.doUnmock(name)
+  }
+}
 
 const isIPv6Missing = !Object.values(networkInterfaces()).flat().some(({ family }) => family === 'IPv6')
 
@@ -159,16 +170,11 @@ test('should close server when aborted during fastify.ready - promise', async ()
   })
 test('should close server when aborted during dns.lookup - promise', async () => {
     expect.assertions(2)
-    const Fastify = proxyquire('../lib/xufa', {
-      './server': proxyquire('../lib/server.js', {
-        'node:dns': {
-          lookup: function (host, option, callback) {
-            controller.abort()
-            dns.lookup(host, option, callback)
-          }
-        }
-      })
-    })
+    const lookup = function (host, option, callback) {
+      controller.abort()
+      dns.lookup(host, option, callback)
+    }
+    const Fastify = await xufaWith({ 'node:dns': () => ({ ...dns, lookup, default: { ...dns, lookup } }) })
     const resolver = {}
     resolver.promise = new Promise(function (resolve) {
       resolver.resolve = resolve

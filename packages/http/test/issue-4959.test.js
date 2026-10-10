@@ -2,7 +2,7 @@
 
 
 const http = require('node:http')
-const Fastify = require('@xufa/http')
+const Fastify = require('..')
 const { setTimeout } = require('node:timers')
 
 /*

@@ -1,8 +1,8 @@
 // request.signal is aborted when the client goes away before the response is written, and only then. Not when the
 // body has been read (the 'close' of the request, which fastify uses and which comes then, while the handler runs).
 // Over a real socket: the case the bug is in.
-const http = require('node:http');
-const xufa = require('../..');
+import http from 'node:http';
+import xufa from '../../index.js';
 
 const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 

@@ -4,7 +4,7 @@
   "description": "Templates of text and HTML with safe expressions, blocks, filters and partials, compiled once, with no dependencies",
   "main": "./index.js",
   "types": "./index.d.ts",
-  "type": "commonjs",
+  "type": "module",
   "exports": {
     ".": {
       "types": "./index.d.ts",
@@ -46,8 +46,9 @@
     "@xufa/expression": "workspace:*"
   },
   "devDependencies": {
-    "vyntra": "^0.6.0",
-    "@xufa/http": "workspace:*"
+    "@xufa/http": "workspace:*",
+    "@xufa/session": "workspace:*",
+    "vyntra": "^0.7.0"
   },
   "publishConfig": {
     "access": "public"

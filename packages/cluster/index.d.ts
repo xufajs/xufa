@@ -46,6 +46,11 @@ export interface ClusterContext {
 export interface StartOptions {
   /** os.availableParallelism() by default; 0 (or false) runs everything in one process. */
   workers?: number | false;
+  /**
+   * The young generation of V8 in each worker, MB of each half (32): V8 grows it to 64 under load, 128 MB a worker
+   * for no data; false leaves V8's. A --max-semi-space-size of execArgv or NODE_OPTIONS is kept.
+   */
+  semiSpace?: number | false;
   primary?: (context: ClusterContext) => unknown;
   worker?: (context: ClusterContext) => unknown;
   /** Milliseconds a worker has to stop before it is killed (10000). */
@@ -201,6 +206,29 @@ export interface UseOptions extends AcquireOptions {
   avoidFailed?: boolean;
   /** Busy answers tried again on other nodes (not attempts) before giving up (20). */
   maxBusy?: number;
+  /**
+   * Somewhere else for the work (a load balancer in front of the nodes...): from the attempt `after` on, or when no
+   * node is free in `wait`, fn runs on its node, without a slot of the pool (fallback: true in its context).
+   */
+  fallback?: UseFallback;
+}
+
+/** The fallback of use(): its node (or one made for each attempt), from which attempt, and how long to wait for a node. */
+export type UseFallback = {
+  node: PoolNode | ((attempt: number, error: unknown) => PoolNode | Promise<PoolNode>);
+  /** The first attempt (0, 1...) that goes to the fallback. */
+  after?: number;
+  /** No node free in this time: the fallback takes the attempt. */
+  wait?: number | string;
+} & ({ after: number } | { wait: number | string });
+
+/** What fn of use() gets besides its node. */
+export interface UseContext {
+  /** Aborted when the lease is taken back (leaseTimeout, its node gone) or the caller's signal aborts. */
+  signal: AbortSignal;
+  attempt: number;
+  /** The node is that of the fallback (no lease). */
+  fallback: boolean;
 }
 
 /** The pool of the primary, from any process. */
@@ -210,10 +238,7 @@ export declare class PoolClient<N extends PoolNode = PoolNode> {
   /** Waits for a free node. */
   acquire(options?: AcquireOptions): Promise<Lease<N>>;
   /** Runs fn on a free node, and gives the slot back when it ends. */
-  use<T>(
-    fn: (node: N, context: { signal: AbortSignal; attempt: number }) => T | Promise<T>,
-    options?: UseOptions
-  ): Promise<T>;
+  use<T>(fn: (node: N, context: UseContext) => T | Promise<T>, options?: UseOptions): Promise<T>;
   stats(): Promise<PoolStats>;
   /** A check of xufa.health, with the stats of the primary. */
   health(options?: PoolHealthOptions): PoolHealthCheck;
@@ -231,10 +256,7 @@ export declare class Pool<N extends PoolNode = PoolNode> extends EventEmitter {
   /** A check of xufa.health: down without nodes (minNodes), degraded with too many waiting (maxWaiting). */
   health(options?: PoolHealthOptions): PoolHealthCheck;
   acquire(options?: AcquireOptions): Promise<Lease<N>>;
-  use<T>(
-    fn: (node: N, context: { signal: AbortSignal; attempt: number }) => T | Promise<T>,
-    options?: UseOptions
-  ): Promise<T>;
+  use<T>(fn: (node: N, context: UseContext) => T | Promise<T>, options?: UseOptions): Promise<T>;
   /** Rejects the tickets, takes the leases back and stops watching the nodes. */
   close(): void;
   on(event: 'demand', listener: (stats: PoolStats) => void): this;

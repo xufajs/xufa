@@ -1,9 +1,10 @@
-'use strict'
+import { createRequire } from 'node:module';
+
+const require = createRequire(import.meta.url);
 
 const clone = require('rfdc')({ proto: true })
 
-
-const build = require('..')
+import build from '../index.js';
 
 test('ref internal - properties', () => {
   expect.assertions(2)

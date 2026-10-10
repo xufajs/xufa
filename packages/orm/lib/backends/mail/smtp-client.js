@@ -2,10 +2,10 @@
 // server knows no EHLO), STARTTLS (or TLS from the start: port 465), AUTH (PLAIN, LOGIN, XOAUTH2), and messages (MAIL,
 // RCPT for each recipient, DATA with its dots doubled), on connections kept in a pool for the next messages (RSET
 // after a message refused; a connection the server closed while it waited is opened again).
-const net = require('node:net');
-const tls = require('node:tls');
-const os = require('node:os');
-const { MailError } = require('../../errors');
+import net from 'node:net';
+import tls from 'node:tls';
+import os from 'node:os';
+import { MailError } from '../../errors.js';
 
 // An error of the server (with its code and text) or of the connection.
 function smtpError(message, response = null, extra = {}) {
@@ -365,4 +365,4 @@ class SmtpPool {
   }
 }
 
-module.exports = { SmtpConnection, SmtpPool };
+export { SmtpConnection, SmtpPool };

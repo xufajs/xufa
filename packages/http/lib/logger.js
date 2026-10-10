@@ -1,19 +1,23 @@
 // The logger of an instance (@xufa/logger, a logger instance given, or a logger that does nothing), the child
 // logger of each request, and the LogController writing the lines of the framework itself.
-const {
+import {
   XUFA_ERR_LOG_LOGGER_AND_LOGGER_INSTANCE_PROVIDED,
   XUFA_ERR_LOG_INVALID_LOGGER_CONFIG,
   XUFA_ERR_LOG_INVALID_LOGGER_INSTANCE,
   XUFA_ERR_LOG_INVALID_LOGGER,
   XUFA_ERR_LOG_INVALID_LOG_CONTROLLER,
   XUFA_ERR_LOG_INVALID_DESTINATION,
-} = require('./errors');
-const { kLogController } = require('./symbols');
+} from './errors.js';
+import { kLogController } from './symbols.js';
+import { createRequire } from 'node:module';
 
-// @xufa/logger is loaded when a logger is configured: instances without logging do not load it.
+const require = createRequire(import.meta.url);
+
+// @xufa/logger is loaded when a logger is configured: instances without logging do not load it (require() of an ES
+// module, which an import could not leave for later).
 let loggerModule = null;
 function loadLogger() {
-  if (loggerModule === null) loggerModule = require('@xufa/logger'); // eslint-disable-line global-require
+  if (loggerModule === null) loggerModule = require('@xufa/logger');
   return loggerModule;
 }
 
@@ -203,7 +207,7 @@ function now() {
   return performance.now();
 }
 
-module.exports = {
+export {
   now,
   createInstanceLogger,
   createChildLogger,

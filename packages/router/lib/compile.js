@@ -8,7 +8,7 @@
 // The function is walk(path, originPath, len, derivedConstraints, decode, result): it gives 0 when it found the
 // route (its handler, store and params written to result), 1 when there is none, 2 when there is none and a
 // parameter was longer than maxParamLength.
-const { decodeParam } = require('./url');
+import { decodeParam } from './url.js';
 
 // Trees with more nodes are walked by match(): the time to compile them would be too long.
 const MAX_NODES = 20000;
@@ -142,4 +142,4 @@ function compileTree(root, maxParamLength) {
   return new Function('refs', 'max', 'decodeParam', source)(refs, maxParamLength, decodeParam);
 }
 
-module.exports = { compileTree };
+export { compileTree };

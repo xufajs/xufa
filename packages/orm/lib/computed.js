@@ -2,15 +2,15 @@
 // value it computes from the other fields of its object. Virtual by default: no column, computed when it is read.
 // With `stored: true` it is a column like any other, set when its object is saved and when an update changes a field
 // it reads, so it can be filtered, ordered and aggregated.
-const { ModelError } = require('./errors');
+import { ModelError } from './errors.js';
+import * as expressionModule from '@xufa/expression';
 
 let engine = null;
 
 // The expression engine, loaded the first time a model has a computed field of an expression.
 function expressionEngine() {
   if (engine === null) {
-    // eslint-disable-next-line global-require
-    const { Engine } = require('@xufa/expression');
+    const { Engine } = expressionModule;
     engine = new Engine();
   }
   return engine;
@@ -170,4 +170,4 @@ function affects(field, changed) {
   return false;
 }
 
-module.exports = { prepareComputed, affects, namesOf, roundDecimal, expressionEngine };
+export { prepareComputed, affects, namesOf, roundDecimal, expressionEngine };

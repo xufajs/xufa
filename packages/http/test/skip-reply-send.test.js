@@ -3,7 +3,7 @@
 
 const split = require('split2')
 const net = require('node:net')
-const Fastify = require('@xufa/http')
+const Fastify = require('..')
 
 const lifecycleHooks = [
   'onRequest',

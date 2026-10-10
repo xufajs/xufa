@@ -28,4 +28,4 @@ class ExpressionError extends Error {
   }
 }
 
-module.exports = { ExpressionError, locate };
+export { ExpressionError, locate };

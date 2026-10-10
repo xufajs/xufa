@@ -86,8 +86,8 @@ export declare function render(source: string, context?: TemplateContext, option
 export declare function fill(value: unknown, context?: TemplateContext): unknown;
 
 export interface TemplatePluginOptions extends TemplateEngineOptions {
-  /** The folder of the views ('views'). */
-  root?: string;
+  /** The folder of the views ('views'), or several (the app's, then its apps'): a name is the file of the first that has it. */
+  root?: string | string[];
   /** Added to names without one ('.html'). */
   extension?: string;
   /** The view a view is rendered in, as body (none by default). */
@@ -104,7 +104,20 @@ export interface TemplatePluginOptions extends TemplateEngineOptions {
   chunkSize?: number;
   /** An engine of your own (the options of the engine are then those it has). */
   engine?: TemplateEngine;
+  /**
+   * The context of each view of a request (Django's context processors): functions of the request and the reply,
+   * run for every reply.view(); app.viewContext(fn) adds more.
+   */
+  context?: ViewContextFunction | ViewContextFunction[];
+  /** request, url() of the named routes, staticUrl(), csrfToken and messages in every view of a request (true). */
+  builtins?: boolean;
 }
+
+/** A function of the context of the views of requests. */
+export type ViewContextFunction = (
+  request: any,
+  reply: any
+) => Record<string, unknown> | Promise<Record<string, unknown>>;
 
 export interface ViewOptions {
   /** The layout of this view (false: none). */
@@ -118,12 +131,15 @@ export type ReplyView<Reply = any> = (name: string, data?: Record<string, unknow
 /** reply.viewAsync and app.view: the text of a view. */
 export type RenderView = (name: string, data?: Record<string, unknown>, options?: ViewOptions) => Promise<string>;
 
+/** app.hasView: whether a view is a file of one of the roots. */
+export type HasView = (name: string) => boolean;
+
 /**
  * The plugin for @xufa/http (and fastify): views are files of root, rendered and sent by reply.view(name, data). It
- * decorates the app with view, and replies with view, viewAsync and locals. To type them:
+ * decorates the app with view, hasView and viewContext, and replies with view, viewAsync and locals. To type them:
  *
  *   declare module '@xufa/http' {
- *     interface XufaInstance { view: RenderView }
+ *     interface XufaInstance { view: RenderView; hasView: HasView }
  *     interface XufaReply { view: ReplyView<XufaReply>; viewAsync: RenderView; locals: Record<string, unknown> | null }
  *   }
  */

@@ -1,7 +1,7 @@
 // Attacks on JWT verification: each must be refused.
-const crypto = require('node:crypto');
-const jwt = require('..');
-const jws = require('../lib/jws');
+import crypto from 'node:crypto';
+import * as jwt from '../index.js';
+import * as jws from '../lib/jws.js';
 
 const b64 = (value) => Buffer.from(typeof value === 'string' ? value : JSON.stringify(value)).toString('base64url');
 const forge = (header, payload, signature = '') => `${b64(header)}.${b64(payload)}.${signature}`;

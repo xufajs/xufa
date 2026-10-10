@@ -1,9 +1,9 @@
 // Not found handlers: a router of their own, with a handler for each prefix that set one.
-const createRouter = require('@xufa/router');
-const Reply = require('./reply');
-const Request = require('./request');
-const Context = require('./context');
-const {
+import createRouter from '@xufa/router';
+import Reply from './reply.js';
+import Request from './request.js';
+import Context from './context.js';
+import {
   kRoutePrefix,
   kCanSetNotFoundHandler,
   kFourOhFourLevelInstance,
@@ -11,12 +11,12 @@ const {
   kHooks,
   kErrorHandler,
   kLogController,
-} = require('./symbols');
-const { lifecycleHooks } = require('./hooks');
-const { buildErrorHandler } = require('./error-handler');
-const { XUFA_ERR_NOT_FOUND } = require('./errors');
-const { createChildLogger } = require('./logger');
-const { getGenReqId } = require('./req-id');
+} from './symbols.js';
+import { lifecycleHooks } from './hooks.js';
+import { buildErrorHandler } from './error-handler.js';
+import { XUFA_ERR_NOT_FOUND } from './errors.js';
+import { createChildLogger } from './logger.js';
+import { getGenReqId } from './req-id.js';
 
 function fourOhFour(options) {
   const { logger } = options;
@@ -121,4 +121,7 @@ function fourOhFour(options) {
   return { router, setNotFoundHandler, setContext, arrange404 };
 }
 
-module.exports = fourOhFour;
+export default fourOhFour;
+
+// What require() gives (the tests of fastify are CommonJS).
+export { fourOhFour as 'module.exports' };

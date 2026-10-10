@@ -1,5 +1,3 @@
-'use strict';
-
 // Histories: the runs of the jobs, recorded by the scheduler: { name, scheduledAt, startedAt, duration, status
 // ('done', 'failed' or 'timeout'), attempts, error (its message), host }. A history is { record(entry), last(name),
 // list(name, { limit }) }; last() is what catchUp reads.
@@ -7,8 +5,8 @@
 // - memoryHistory({ keep }): in this process, the last `keep` runs of each job (100).
 // - ormHistory(db, { maxAge }): in a table of a database of @xufa/orm (any backend), shared by the processes of every
 //   machine; runs older than maxAge (30 days) are deleted, at most once an hour.
-const { SchedulerError } = require('./errors');
-const { toMs } = require('./duration');
+import { SchedulerError } from './errors.js';
+import { toMs } from './duration.js';
 
 function memoryHistory({ keep = 100 } = {}) {
   const runs = new Map(); // name -> entries, the last first
@@ -35,15 +33,10 @@ function memoryHistory({ keep = 100 } = {}) {
 // A history in a table of an ORM database: its model (registered in db at once) is created by db.sync(), or by
 // history.sync() alone. Options: table ('xufa_scheduler_runs'), model ('XufaSchedulerRun'), maxAge ('30d').
 function ormHistory(db, { table = 'xufa_scheduler_runs', model: modelName = 'XufaSchedulerRun', maxAge = '30d' } = {}) {
-  let orm;
-  try {
-    orm = require('@xufa/orm'); // eslint-disable-line global-require
-  } catch (err) {
-    throw new SchedulerError(`ormHistory() needs @xufa/orm (${err.message})`);
-  }
-  if (!db || typeof db.register !== 'function') {
+  if (!db || typeof db.register !== 'function' || !db.orm) {
     throw new SchedulerError('ormHistory(db): db is a Database of @xufa/orm');
   }
+  const { orm } = db;
   const keepFor = maxAge === null ? null : toMs(maxAge, 'the maxAge of the history');
   const { Model, fields } = orm;
   const Run = {
@@ -105,4 +98,4 @@ function ormHistory(db, { table = 'xufa_scheduler_runs', model: modelName = 'Xuf
   };
 }
 
-module.exports = { memoryHistory, ormHistory };
+export { memoryHistory, ormHistory };

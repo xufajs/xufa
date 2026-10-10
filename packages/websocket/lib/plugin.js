@@ -1,9 +1,7 @@
-'use strict';
-
 // WebSocket routes for @xufa/http (and fastify): a route with `{ websocket: true }` answers the upgrade of its
 // requests with a WebSocket, after the hooks of the route (authentication, rate limits...) have run, as any request.
 //
-//   app.register(require('@xufa/websocket/plugin'));
+//   app.register(websocketPlugin); // import websocketPlugin from '@xufa/websocket/plugin'
 //   app.get('/chat', { websocket: true }, (socket, request) => {
 //     socket.on('message', (message) => socket.send(`echo: ${message}`));
 //   });
@@ -11,10 +9,10 @@
 // The code is the one of @fastify/websocket 11.3.3 (MIT, Matteo Collina and the fastify contributors), with ws as
 // @xufa/websocket and duplexify as a small Duplex (duplexOf): no dependencies. Its tests are ported too (test/fastify).
 
-const { ServerResponse } = require('node:http');
-const { Duplex, PassThrough } = require('node:stream');
-const { randomBytes } = require('node:crypto');
-const WebSocket = require('../index');
+import { ServerResponse } from 'node:http';
+import { Duplex, PassThrough } from 'node:stream';
+import { randomBytes } from 'node:crypto';
+import WebSocket from '../index.js';
 
 const kWs = Symbol('ws-socket');
 const kWsHead = Symbol('ws-head');
@@ -301,7 +299,11 @@ xufaWebsocket[Symbol.for('xufa.display-name')] = '@xufa/websocket';
 xufaWebsocket[Symbol.for('fastify.display-name')] = '@xufa/websocket';
 xufaWebsocket[Symbol.for('plugin-meta')] = { name: '@xufa/websocket', fastify: '5.x' };
 
-module.exports = xufaWebsocket;
-module.exports.default = xufaWebsocket;
-module.exports.xufaWebsocket = xufaWebsocket;
-module.exports.fastifyWebsocket = xufaWebsocket;
+export default xufaWebsocket;
+xufaWebsocket.default = xufaWebsocket;
+xufaWebsocket.xufaWebsocket = xufaWebsocket;
+xufaWebsocket.fastifyWebsocket = xufaWebsocket;
+
+export { xufaWebsocket as 'module.exports' };
+
+export { xufaWebsocket, xufaWebsocket as fastifyWebsocket };

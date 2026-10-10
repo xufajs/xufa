@@ -1,7 +1,7 @@
 'use strict'
 
 
-const Fastify = require('@xufa/http')
+const Fastify = require('..')
 
 // asyncDispose doesn't exist in node <= 16
 test.skipIf(!('asyncDispose' in Symbol))('async dispose should close fastify', async () => {

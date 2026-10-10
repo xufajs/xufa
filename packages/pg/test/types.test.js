@@ -1,4 +1,5 @@
-const { types, parseConfig } = require('..');
+import { types, parseConfig } from '../index.js';
+import { dateText } from '../lib/binary.js';
 
 const { parserOf, paramToText } = types;
 
@@ -48,6 +49,32 @@ describe('types', () => {
     expect(parse(1082, '2024-02-29').getTime()).toBe(new Date(2024, 1, 29).getTime());
   });
 
+  it("dates: 'text' reads binary dates as PostgreSQL writes them, without Dates", () => {
+    const of = (days) => {
+      const buffer = Buffer.alloc(4);
+      buffer.writeInt32BE(days);
+      return dateText(buffer, 0);
+    };
+    // Days since 2000-01-01.
+    expect([of(0), of(59), of(60), of(-1), of(366), of(9778)]).toEqual([
+      '2000-01-01',
+      '2000-02-29',
+      '2000-03-01',
+      '1999-12-31',
+      '2001-01-01',
+      '2026-10-09',
+    ]);
+    // (the days PostgreSQL counts: date '2000-01-01' - date '1900-01-01' is 36524)
+    expect([of(-36524), of(-730119), of(-730120)]).toEqual(['1900-01-01', '0001-01-01', '0001-12-31 BC']);
+    expect([of(0x7fffffff), of(-0x80000000)]).toEqual(['infinity', '-infinity']);
+    // Every day from 1800 to 2200 as Date would make it.
+    for (let days = -73048; days < 73049; days += 1) {
+      const d = new Date(Date.UTC(2000, 0, 1) + days * 86400000);
+      const text = `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, '0')}-${String(d.getUTCDate()).padStart(2, '0')}`;
+      if (of(days) !== text) expect([days, of(days)]).toEqual([days, text]);
+    }
+  });
+
   it('parses arrays', () => {
     expect(parse(1007, '{1,2,NULL,-3}')).toEqual([1, 2, null, -3]);
     expect(parse(1009, '{a,"b c","d\\"e","f\\\\g",NULL,"NULL"}')).toEqual(['a', 'b c', 'd"e', 'f\\g', null, 'NULL']);
@@ -91,5 +118,33 @@ describe('parseConfig', () => {
     });
     expect(parseConfig({ user: 'a' })).toMatchObject({ user: 'a', host: '127.0.0.1', port: 5432, database: 'a' });
     expect(parseConfig({ connectionString: 'postgres://a@h/d', port: 1 }).port).toBe(1);
+  });
+});
+
+describe('the queries the pool pipelines', () => {
+  it('reads are pipelined; writes, locks and data-changing CTEs are not', async () => {
+    const { isRead } = await import('../lib/client.js');
+    expect(
+      [
+        'SELECT 1',
+        '  select * from t where id = $1',
+        'WITH x AS (SELECT 1) SELECT * FROM x',
+        'SHOW server_version',
+        { text: 'SELECT "updatedAt" FROM t' },
+      ].map(isRead)
+    ).toEqual([true, true, true, true, true]);
+    expect(
+      [
+        'INSERT INTO t VALUES (1)',
+        'UPDATE t SET a = 1',
+        'DELETE FROM t',
+        'SELECT * FROM t FOR UPDATE',
+        'SELECT * FROM t FOR NO KEY UPDATE SKIP LOCKED',
+        'WITH d AS (DELETE FROM t RETURNING *) SELECT * FROM d',
+        'BEGIN',
+        'COMMIT',
+        { name: 'x' },
+      ].map(isRead)
+    ).toEqual([false, false, false, false, false, false, false, false, false]);
   });
 });

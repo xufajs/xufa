@@ -68,6 +68,10 @@
           <li><a href="../websocket/index.html">@xufa/websocket</a></li>
           <li><a href="../admin/index.html">@xufa/admin</a></li>
           <li><a href="../session/index.html">@xufa/session</a></li>
+          <li><a href="../forms/index.html">@xufa/forms</a></li>
+          <li><a href="../views/index.html">@xufa/views</a></li>
+          <li><a href="../mail/index.html">@xufa/mail</a></li>
+          <li><a href="../i18n/index.html">@xufa/i18n</a></li>
           <li><a href="../openapi/index.html">@xufa/openapi</a></li>
           <li><a href="../client/index.html">@xufa/client</a></li>
           <li><a href="../schema/index.html">@xufa/schema</a></li>
@@ -111,8 +115,10 @@
 
         <h2 id="start">Quick start</h2>
         <pre><code class="language-sh">npm install @xufa/router</code></pre>
-        <pre><code class="language-js">const http = require('node:http');
-const router = require('@xufa/router')({
+        <pre><code class="language-js">import http from 'node:http';
+import findMyWay from '@xufa/router';
+
+const router = findMyWay({
   ignoreTrailingSlash: true,
   defaultRoute: (req, res) =&gt; { res.statusCode = 404; res.end('Not found'); },
 });
@@ -175,7 +181,7 @@ router.lookup(req, res); // Accept-Version: 2.x =&gt; v2
 router.on('GET', '/', { constraints: { host: /.*\.example\.com/ } }, tenantHome);
 
 // A strategy of your own:
-const Router = require('@xufa/router');
+import Router from '@xufa/router';
 const router2 = Router({
   constraints: {
     region: {
@@ -216,7 +222,7 @@ const router2 = Router({
           <code>params</code> and the unparsed <code>querystring</code>. The result object is reused: read it before the
           next call.
         </p>
-        <pre><code class="language-js">const Router = require('@xufa/router');
+        <pre><code class="language-js">import Router from '@xufa/router';
 const found = router.match('GET', '/users/7?full=true');
 if (found !== null &amp;&amp; found.status === Router.FOUND) found.handler(req, res, found.params, found.store);</code></pre>
 
@@ -309,7 +315,7 @@ console.log(router.prettyPrint({ commonPrefix: false, includeMeta: true }));</co
 
         <h2 id="from-fmw">Coming from find-my-way</h2>
         <ul>
-          <li>The API and the behaviour are find-my-way's (its test suite passes); <code>require('find-my-way')</code> can be replaced by <code>require('@xufa/router')</code>.</li>
+          <li>The API and the behaviour are find-my-way's (its test suite passes); <code>find-my-way</code> can be replaced by <code>@xufa/router</code>.</li>
           <li>Added: <code>match()</code>, the map of static paths, the method <code>QUERY</code>, and the helpers.</li>
         </ul>
 

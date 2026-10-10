@@ -1,6 +1,6 @@
 // The payload of a token (parsed when it is JSON), or { header, payload, signature } with { complete: true }; null
 // when it is not a JWS. Nothing is verified.
-const jws = require('./jws');
+import * as jws from './jws.js';
 
 function decodeOrThrow(token, options = {}) {
   const opts = options || {};
@@ -30,5 +30,7 @@ function decode(token, options) {
   }
 }
 
-module.exports = decode;
-module.exports.decodeOrThrow = decodeOrThrow;
+export default decode;
+decode.decodeOrThrow = decodeOrThrow;
+
+export { decodeOrThrow };

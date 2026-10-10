@@ -1,9 +1,9 @@
 // The schemas made (plain JSON Schemas, as written by hand), objects made from objects, the errors of what is not a
 // schema, and the schemas in the routes of @xufa/http and fastify (ajv): requests validated, replies
 // serialized, shared schemas by $ref.
-const xufa = require('@xufa/http');
-const fastify = require('fastify');
-const { s, isOptional } = require('..');
+import xufa from '@xufa/http';
+import fastify from 'fastify';
+import { s, isOptional } from '../index.js';
 
 describe('the schemas made', () => {
   it('scalars, formats, literals and enums', () => {

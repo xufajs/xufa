@@ -15,4 +15,4 @@ function seconds(value, name = 'duration') {
   return total;
 }
 
-module.exports = { seconds };
+export { seconds };

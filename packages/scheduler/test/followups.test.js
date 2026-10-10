@@ -1,9 +1,9 @@
 // Retries (backoff, attempts, timeouts of each attempt, stop() during a wait, one run for the lock and the overlap),
 // the history of the runs (in memory, and in an ORM database: recorded, listed, last, pruned), and catchUp (the last
 // time missed runs when a scheduler starts, once among machines that share the history and a lock).
-const { Database } = require('@xufa/orm');
-const { Scheduler, memoryHistory, ormHistory, memoryLock, ormLock, SchedulerError } = require('..');
-const { fakeClock, settle } = require('./clock');
+import { Database } from '@xufa/orm';
+import { Scheduler, memoryHistory, ormHistory, memoryLock, ormLock, SchedulerError } from '../index.js';
+import { fakeClock, settle } from './clock.js';
 
 describe('retries', () => {
   it('a run that fails is tried again after a delay that grows; the attempts are one run', async () => {

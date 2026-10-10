@@ -1,9 +1,9 @@
-const fs = require('node:fs');
-const os = require('node:os');
-const path = require('node:path');
-const { Database, Model, fields, setEncryptionKeys, generateEncryptionKey } = require('..');
-const { defineSuite } = require('./suite');
-const { url, available } = require('../../pg/test/server');
+import fs from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
+import { Database, Model, fields, setEncryptionKeys, generateEncryptionKey } from '../index.js';
+import { defineSuite } from './suite.js';
+import { url, available } from '../../pg/test/server.js';
 
 describe.skipIf(!available)('postgres', () => {
   defineSuite('postgres', () => new Database({ backend: 'postgres', url, max: 5 }));

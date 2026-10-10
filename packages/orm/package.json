@@ -4,7 +4,7 @@
   "description": "The ORM of xufa: Django-like models and querysets over SQL and NoSQL databases, with no dependencies",
   "main": "./index.js",
   "types": "./index.d.ts",
-  "type": "commonjs",
+  "type": "module",
   "exports": {
     ".": {
       "types": "./index.d.ts",
@@ -55,7 +55,7 @@
   "devDependencies": {
     "@xufa/cluster": "workspace:*",
     "@xufa/http": "workspace:*",
-    "vyntra": "^0.6.0"
+    "vyntra": "^0.7.0"
   },
   "publishConfig": {
     "access": "public"

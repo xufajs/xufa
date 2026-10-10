@@ -52,4 +52,4 @@ class RetryError extends Error {
   }
 }
 
-module.exports = { ClientError, HTTPError, TimeoutError, RequestError, RetryError };
+export { ClientError, HTTPError, TimeoutError, RequestError, RetryError };

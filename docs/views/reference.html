@@ -1,0 +1,491 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>@xufa/views: Reference · xufa</title>
+    <meta
+      name="description"
+      content="The reference of @xufa/views: every function, class, interface and type it declares, made from its TypeScript declarations."
+    />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%23d9502b'/%3E%3Ctext x='16' y='22.5' font-family='monospace' font-size='18' font-weight='700' fill='white' text-anchor='middle'%3Ex%3C/text%3E%3C/svg%3E"
+    />
+    <link rel="stylesheet" href="../style.css?v=0.1.0" />
+    <script src="../main.js?v=0.1.0"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js" defer></script>
+  </head>
+  <body>
+    <header class="header">
+      <div class="header-inner">
+        <a class="logo" href="../index.html"><span class="logo-mark">x</span>xufa</a>
+        <nav class="nav">
+          <a href="../guide.html">Guide</a>
+          <a href="../playground.html">Playground</a>
+          <a href="../http/index.html">HTTP</a>
+          <a href="../orm/index.html">ORM</a>
+          <a class="hide-small" href="../auth/index.html">Auth</a>
+          <a class="hide-small" href="../sequelize/index.html">Sequelize</a>
+          <a class="hide-small" href="../packages.html" aria-current="page">Packages</a>
+          <a class="hide-small" href="../benchmarks.html">Benchmarks</a>
+          <a href="https://github.com/xufajs/xufa">GitHub</a>
+          <button class="theme-toggle" type="button" aria-label="Switch between light and dark theme">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+              <path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z" />
+            </svg>
+          </button>
+        </nav>
+      </div>
+    </header>
+
+    <div class="docs">
+      <button class="menu-toggle" type="button" aria-expanded="false">☰ Contents</button>
+      <aside class="sidebar">
+        <h4>Reference</h4>
+        <ul>
+          <li><a href="#functions">Functions (5)</a></li>
+          <li><a href="#classes">Classes (14)</a></li>
+          <li><a href="#constants">Constants (1)</a></li>
+          <li><a href="#interfaces">Interfaces (7)</a></li>
+          <li><a href="#types">Types (3)</a></li>
+        </ul>
+        <h4>Packages</h4>
+        <ul>
+          <li><a href="../websocket/index.html">@xufa/websocket</a></li>
+          <li><a href="../admin/index.html">@xufa/admin</a></li>
+          <li><a href="../session/index.html">@xufa/session</a></li>
+          <li><a href="../forms/index.html">@xufa/forms</a></li>
+          <li><a href="index.html" aria-current="page">@xufa/views</a></li>
+          <li><a href="../mail/index.html">@xufa/mail</a></li>
+          <li><a href="../i18n/index.html">@xufa/i18n</a></li>
+          <li><a href="../openapi/index.html">@xufa/openapi</a></li>
+          <li><a href="../client/index.html">@xufa/client</a></li>
+          <li><a href="../schema/index.html">@xufa/schema</a></li>
+          <li><a href="../pg/index.html">@xufa/pg</a></li>
+          <li><a href="../mongo/index.html">@xufa/mongo</a></li>
+          <li><a href="../expression/index.html">@xufa/expression</a></li>
+          <li><a href="../template/index.html">@xufa/template</a></li>
+          <li><a href="../cluster/index.html">@xufa/cluster</a></li>
+          <li><a href="../scheduler/index.html">@xufa/scheduler</a></li>
+          <li><a href="../queue/index.html">@xufa/queue</a></li>
+          <li><a href="../config/index.html">@xufa/config</a></li>
+          <li><a href="../discovery/index.html">@xufa/discovery</a></li>
+          <li><a href="../netcache/index.html">@xufa/netcache</a></li>
+          <li><a href="../faults/index.html">@xufa/faults</a></li>
+          <li><a href="../marshal/index.html">@xufa/marshal</a></li>
+          <li><a href="../yaml/index.html">@xufa/yaml</a></li>
+          <li><a href="../jwt/index.html">@xufa/jwt</a></li>
+          <li><a href="../logger/index.html">@xufa/logger</a></li>
+          <li><a href="../router/index.html">@xufa/router</a></li>
+          <li><a href="../serializer/index.html">@xufa/serializer</a></li>
+          <li><a href="../inject/index.html">@xufa/inject</a></li>
+          <li><a href="../boot/index.html">@xufa/boot</a></li>
+          <li><a href="../errors/index.html">@xufa/errors</a></li>
+          <li><a href="../packages.html">All the packages</a></li>
+        </ul>
+      </aside>
+
+      <article class="content">
+        <nav class="package-tabs" aria-label="@xufa/views">
+          <a href="index.html">Overview</a>
+          <a href="reference.html" aria-current="page">Reference</a>
+        </nav>
+        <h1>Reference</h1>
+        <p class="intro">
+          Views of classes, as Django's generic views: View, TemplateView, RedirectView, ListView and DetailView of models of @xufa/orm, and FormView, CreateView, UpdateView and DeleteView with the forms of @xufa/forms. Every declaration of its TypeScript declarations
+          (<code>packages/views/index.d.ts</code> or <code>index.d.cts</code>), as they are written, with their comments: made from them each time
+          the docs are built. How to use them is in <a href="index.html">the overview</a>.
+        </p>
+
+        <h2 id="functions">Functions</h2>
+        <p class="ref-index"><a href="#ref-getObjectOr404"><code>getObjectOr404</code></a>, <a href="#ref-getListOr404"><code>getListOr404</code></a>, <a href="#ref-addressOf"><code>addressOf</code></a>, <a href="#ref-crud"><code>crud</code></a>, <a href="#ref-plugin"><code>plugin</code></a></p>
+
+        <h3 id="ref-getObjectOr404"><code>getObjectOr404</code></h3>
+        <pre><code class="language-ts">export declare function getObjectOr404&lt;M = any&gt;(source: any, conditions?: Record&lt;string, unknown&gt;): Promise&lt;M&gt;;</code></pre>
+        <p>Django's get_object_or_404: of a model or a QuerySet.</p>
+
+        <h3 id="ref-getListOr404"><code>getListOr404</code></h3>
+        <pre><code class="language-ts">export declare function getListOr404&lt;M = any&gt;(source: any, conditions?: Record&lt;string, unknown&gt;): Promise&lt;M[]&gt;;</code></pre>
+        <p>Django's get_list_or_404.</p>
+
+        <h3 id="ref-addressOf"><code>addressOf</code></h3>
+        <pre><code class="language-ts">export declare function addressOf(app: any, object: any): string | null;</code></pre>
+        <p>The address of an object: its absoluteUrl (or getAbsoluteUrl()), else the route &lt;model&gt;-detail of the app, else null.</p>
+
+        <h3 id="ref-crud"><code>crud</code></h3>
+        <pre><code class="language-ts">export declare function crud(Model: any, options?: CrudOptions): RouteOptions[];</code></pre>
+        <p>The five pages of a model, with Django's names (books, book-detail, book-create, book-update, book-delete).</p>
+
+        <h3 id="ref-plugin"><code>plugin</code></h3>
+        <pre><code class="language-ts">export declare function plugin(app: any, options: ViewDefaults, done: (err?: Error) =&gt; void): void;</code></pre>
+        <p>The plugin: app.viewDefaults for the views of the app.</p>
+
+        <h2 id="classes">Classes</h2>
+        <p class="ref-index"><a href="#ref-Http404"><code>Http404</code></a>, <a href="#ref-ImproperlyConfigured"><code>ImproperlyConfigured</code></a>, <a href="#ref-View"><code>View</code></a>, <a href="#ref-TemplateView"><code>TemplateView</code></a>, <a href="#ref-RedirectView"><code>RedirectView</code></a>, <a href="#ref-ModelView"><code>ModelView</code></a>, <a href="#ref-SingleObjectView"><code>SingleObjectView</code></a>, <a href="#ref-DetailView"><code>DetailView</code></a>, <a href="#ref-ListView"><code>ListView</code></a>, <a href="#ref-FormView"><code>FormView</code></a>, <a href="#ref-ModelFormView"><code>ModelFormView</code></a>, <a href="#ref-CreateView"><code>CreateView</code></a>, <a href="#ref-UpdateView"><code>UpdateView</code></a>, <a href="#ref-DeleteView"><code>DeleteView</code></a></p>
+
+        <h3 id="ref-Http404"><code>Http404</code></h3>
+        <pre><code class="language-ts">export declare class Http404 extends Error { ... }</code></pre>
+        <p>Django's Http404: a 404 the error handler of the app shows.</p>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>new (message?: string)</code></td><td></td><td></td></tr>
+                <tr><td><code>statusCode</code></td><td><code>404</code></td><td></td></tr>
+                <tr><td><code>code</code></td><td><code>'XUFA_VIEWS_ERR_NOT_FOUND'</code></td><td></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-ImproperlyConfigured"><code>ImproperlyConfigured</code></h3>
+        <pre><code class="language-ts">export declare class ImproperlyConfigured extends Error { ... }</code></pre>
+        <p>Django's ImproperlyConfigured: a view not set up for what it is asked (a 500).</p>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>code</code></td><td><code>'XUFA_VIEWS_ERR_IMPROPERLY_CONFIGURED'</code></td><td></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-View"><code>View</code></h3>
+        <pre><code class="language-ts">export declare class View { ... }</code></pre>
+        <p>A view: a method for each method of HTTP it answers (get, post...), made for each request by asView(). Its settings are static fields of its class; asView(options) changes them for a route.</p>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>static httpMethodNames</code></td><td><code>string[]</code></td><td></td></tr>
+                <tr><td><code>static loginRequired</code></td><td><code>boolean</code></td><td></td></tr>
+                <tr><td><code>static permissionRequired</code></td><td><code>string | string[] | null</code></td><td></td></tr>
+                <tr><td><code>static extraContext</code></td><td><code>Record&lt;string, unknown&gt; | null</code></td><td></td></tr>
+                <tr><td><code>static asView&lt;T extends View&gt;(this: new (options?: any) =&gt; T, options?: Settings&lt;T&gt;)</code></td><td><code><a href="#ref-ViewHandler">ViewHandler</a></code></td><td><p>The handler of a route (options: settings of the class for this route).</p></td></tr>
+                <tr><td><code>static readonly methods</code></td><td><code>string[]</code></td><td><p>The methods of HTTP it answers (HEAD comes with GET).</p></td></tr>
+                <tr><td><code>static asRoute&lt;T extends View&gt;(this: new (options?: any) =&gt; T, url: string, routeOptions?: Partial&lt;RouteOptions&gt; &amp; { name?: string }, options?: Settings&lt;T&gt;)</code></td><td><code>RouteOptions</code></td><td><p>A route: app.route(BookList.asRoute('/books/', { name: 'books' })).</p></td></tr>
+                <tr><td><code>new (options?: Record&lt;string, unknown&gt;)</code></td><td></td><td></td></tr>
+                <tr><td><code>httpMethodNames</code></td><td><code>string[]</code></td><td></td></tr>
+                <tr><td><code>loginRequired</code></td><td><code>boolean</code></td><td></td></tr>
+                <tr><td><code>permissionRequired</code></td><td><code>string | string[] | null</code></td><td></td></tr>
+                <tr><td><code>extraContext</code></td><td><code>Record&lt;string, unknown&gt; | null</code></td><td></td></tr>
+                <tr><td><code>request</code></td><td><code>XufaRequest</code></td><td></td></tr>
+                <tr><td><code>reply</code></td><td><code>XufaReply</code></td><td></td></tr>
+                <tr><td><code>params</code></td><td><code>Record&lt;string, string&gt;</code></td><td></td></tr>
+                <tr><td><code>query</code></td><td><code>Record&lt;string, any&gt;</code></td><td></td></tr>
+                <tr><td><code>dispatch()</code></td><td><code>Promise&lt;unknown&gt;</code></td><td></td></tr>
+                <tr><td><code>httpMethodNotAllowed()</code></td><td><code>XufaReply</code></td><td></td></tr>
+                <tr><td><code>reverse(name: string, params?: Record&lt;string, unknown&gt; | unknown[], options?: { query?: Record&lt;string, unknown&gt; })</code></td><td><code>string</code></td><td><p>The address of a named route (app.reverse).</p></td></tr>
+                <tr><td><code>redirect(url: string, code?: number)</code></td><td><code>XufaReply</code></td><td></td></tr>
+                <tr><td><code>getContextData(context?: Record&lt;string, unknown&gt;)</code></td><td><code>Promise&lt;Record&lt;string, unknown&gt;&gt;</code></td><td></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-TemplateView"><code>TemplateView</code></h3>
+        <pre><code class="language-ts">export declare class TemplateView extends View { ... }</code></pre>
+        <p>A view with a template of</p>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>static templateName</code></td><td><code>string | null</code></td><td></td></tr>
+                <tr><td><code>static baseTemplate</code></td><td><code>string | null</code></td><td><p>The template the built-in ones extend: app.viewDefaults.baseTemplate, else 'base'.</p></td></tr>
+                <tr><td><code>static title</code></td><td><code>string | ((view: any) =&gt; string) | null</code></td><td><p>The title of the page: a text with {field} of the object, or a function of the view.</p></td></tr>
+                <tr><td><code>templateName</code></td><td><code>string | null</code></td><td></td></tr>
+                <tr><td><code>baseTemplate</code></td><td><code>string | null</code></td><td></td></tr>
+                <tr><td><code>title</code></td><td><code>string | ((view: any) =&gt; string) | null</code></td><td></td></tr>
+                <tr><td><code>getTemplateNames()</code></td><td><code>string[]</code></td><td><p>The names to try, the first the app has (app.hasView) is rendered.</p></td></tr>
+                <tr><td><code>getTitle()</code></td><td><code>string | undefined</code></td><td></td></tr>
+                <tr><td><code>renderToResponse(context: Record&lt;string, unknown&gt;)</code></td><td><code>Promise&lt;unknown&gt;</code></td><td></td></tr>
+                <tr><td><code>get()</code></td><td><code>Promise&lt;unknown&gt;</code></td><td></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-RedirectView"><code>RedirectView</code></h3>
+        <pre><code class="language-ts">export declare class RedirectView extends View { ... }</code></pre>
+        <p>To url ({param} filled) or a named route (patternName); permanent: 301; 410 without an address.</p>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>static url</code></td><td><code>string | null</code></td><td></td></tr>
+                <tr><td><code>static patternName</code></td><td><code>string | null</code></td><td></td></tr>
+                <tr><td><code>static permanent</code></td><td><code>boolean</code></td><td></td></tr>
+                <tr><td><code>static queryString</code></td><td><code>boolean</code></td><td></td></tr>
+                <tr><td><code>url</code></td><td><code>string | null</code></td><td></td></tr>
+                <tr><td><code>patternName</code></td><td><code>string | null</code></td><td></td></tr>
+                <tr><td><code>permanent</code></td><td><code>boolean</code></td><td></td></tr>
+                <tr><td><code>queryString</code></td><td><code>boolean</code></td><td></td></tr>
+                <tr><td><code>getRedirectUrl()</code></td><td><code>string | null</code></td><td></td></tr>
+                <tr><td><code>get()</code></td><td><code>XufaReply</code></td><td></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-ModelView"><code>ModelView</code></h3>
+        <pre><code class="language-ts">export declare class ModelView&lt;M = any&gt; extends TemplateView { ... }</code></pre>
+        <p>The settings of the views of models.</p>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>static model</code></td><td><code>any</code></td><td></td></tr>
+                <tr><td><code>static queryset</code></td><td><code>any</code></td><td></td></tr>
+                <tr><td><code>static templateDir</code></td><td><code>string | null</code></td><td></td></tr>
+                <tr><td><code>static templateNameSuffix</code></td><td><code>string</code></td><td></td></tr>
+                <tr><td><code>static genericTemplate</code></td><td><code>string | null</code></td><td><p>The built-in template when the app has no &lt;model&gt;&lt;suffix&gt;: xufa/list, xufa/detail, xufa/form...</p></td></tr>
+                <tr><td><code>model</code></td><td><code>any</code></td><td></td></tr>
+                <tr><td><code>queryset</code></td><td><code>any</code></td><td></td></tr>
+                <tr><td><code>templateDir</code></td><td><code>string | null</code></td><td></td></tr>
+                <tr><td><code>templateNameSuffix</code></td><td><code>string</code></td><td></td></tr>
+                <tr><td><code>genericTemplate</code></td><td><code>string | null</code></td><td></td></tr>
+                <tr><td><code>getModel()</code></td><td><code>any</code></td><td></td></tr>
+                <tr><td><code>getQueryset()</code></td><td><code>any</code></td><td></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-SingleObjectView"><code>SingleObjectView</code></h3>
+        <pre><code class="language-ts">export declare class SingleObjectView&lt;M = any&gt; extends ModelView&lt;M&gt; { ... }</code></pre>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>static pkUrlKwarg</code></td><td><code>string</code></td><td></td></tr>
+                <tr><td><code>static slugUrlKwarg</code></td><td><code>string</code></td><td></td></tr>
+                <tr><td><code>static slugField</code></td><td><code>string</code></td><td></td></tr>
+                <tr><td><code>static queryPkAndSlug</code></td><td><code>boolean</code></td><td></td></tr>
+                <tr><td><code>static contextObjectName</code></td><td><code>string | null</code></td><td></td></tr>
+                <tr><td><code>object</code></td><td><code>M | null</code></td><td></td></tr>
+                <tr><td><code>getObject(queryset?: any)</code></td><td><code>Promise&lt;M&gt;</code></td><td></td></tr>
+                <tr><td><code>getContextObjectName()</code></td><td><code>string</code></td><td></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-DetailView"><code>DetailView</code></h3>
+        <pre><code class="language-ts">export declare class DetailView&lt;M = any&gt; extends SingleObjectView&lt;M&gt; { ... }</code></pre>
+        <p>An object (404 when it is not there) in &lt;model&gt;_detail, as object and &lt;model&gt; (bookInstance); the built-in template shows fieldValues (fields: those, else all but the key).</p>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>static fields</code></td><td><code>string[] | null</code></td><td></td></tr>
+                <tr><td><code>fields</code></td><td><code>string[] | null</code></td><td></td></tr>
+                <tr><td><code>fieldValues()</code></td><td><code>{ name: string; label: string; value: unknown }[]</code></td><td></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-ListView"><code>ListView</code></h3>
+        <pre><code class="language-ts">export declare class ListView&lt;M = any&gt; extends ModelView&lt;M&gt; { ... }</code></pre>
+        <p>The objects in pages of paginateBy in &lt;model&gt;_list: objectList, &lt;model&gt;List, page, paginator, isPaginated.</p>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>static ordering</code></td><td><code>string | string[] | null</code></td><td></td></tr>
+                <tr><td><code>static paginateBy</code></td><td><code>number | false | null</code></td><td><p>Objects in a page: else app.viewDefaults.paginateBy; false: no pages.</p></td></tr>
+                <tr><td><code>static paginateOrphans</code></td><td><code>number</code></td><td></td></tr>
+                <tr><td><code>static allowEmpty</code></td><td><code>boolean</code></td><td></td></tr>
+                <tr><td><code>static pageKwarg</code></td><td><code>string</code></td><td></td></tr>
+                <tr><td><code>static pagination</code></td><td><code>'numbers' | 'keyset'</code></td><td><p>'keyset': pages by keys (KeysetPaginator of</p></td></tr>
+                <tr><td><code>static cursorKwarg</code></td><td><code>string</code></td><td><p>The query parameter of the cursor of keyset pages ('cursor').</p></td></tr>
+                <tr><td><code>static contextObjectName</code></td><td><code>string | null</code></td><td></td></tr>
+                <tr><td><code>objectList</code></td><td><code>M[]</code></td><td></td></tr>
+                <tr><td><code>getOrdering()</code></td><td><code>string | string[] | null</code></td><td></td></tr>
+                <tr><td><code>getPaginateBy()</code></td><td><code>number | null</code></td><td></td></tr>
+                <tr><td><code>getContextObjectName()</code></td><td><code>string</code></td><td></td></tr>
+                <tr><td><code>paginateQueryset(queryset: any, size: number)</code></td><td><code>Promise&lt;{ paginator: any; page: any; objectList: M[]; isPaginated: boolean }&gt;</code></td><td></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-FormView"><code>FormView</code></h3>
+        <pre><code class="language-ts">export declare class FormView&lt;F extends Form = Form&gt; extends TemplateView { ... }</code></pre>
+        <p>A form of its own (formClass): GET shows it, POST cleans it: formValid (to successUrl) or formInvalid.</p>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>static formClass</code></td><td><code>any</code></td><td></td></tr>
+                <tr><td><code>static initial</code></td><td><code>Record&lt;string, unknown&gt; | null</code></td><td></td></tr>
+                <tr><td><code>static prefix</code></td><td><code>string | null</code></td><td></td></tr>
+                <tr><td><code>static successUrl</code></td><td><code>string | null</code></td><td></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-ModelFormView"><code>ModelFormView</code></h3>
+        <pre><code class="language-ts">export declare class ModelFormView&lt;M = any&gt; extends SingleObjectView&lt;M&gt; { ... }</code></pre>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>static formClass</code></td><td><code>any</code></td><td></td></tr>
+                <tr><td><code>static fields</code></td><td><code>string[] | '__all__' | null</code></td><td></td></tr>
+                <tr><td><code>static initial</code></td><td><code>Record&lt;string, unknown&gt; | null</code></td><td></td></tr>
+                <tr><td><code>static prefix</code></td><td><code>string | null</code></td><td></td></tr>
+                <tr><td><code>static successUrl</code></td><td><code>string | null</code></td><td><p>A text with {field} of the object, else the object's absoluteUrl or getAbsoluteUrl().</p></td></tr>
+                <tr><td><code>fields</code></td><td><code>string[] | '__all__' | null</code></td><td></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-CreateView"><code>CreateView</code></h3>
+        <pre><code class="language-ts">export declare class CreateView&lt;M = any&gt; extends ModelFormView&lt;M&gt; { ... }</code></pre>
+        <p>The form of a new object (&lt;model&gt;_form), saved and to its address.</p>
+
+        <h3 id="ref-UpdateView"><code>UpdateView</code></h3>
+        <pre><code class="language-ts">export declare class UpdateView&lt;M = any&gt; extends ModelFormView&lt;M&gt; { ... }</code></pre>
+        <p>The form of the object of the route (&lt;model&gt;_form).</p>
+
+        <h3 id="ref-DeleteView"><code>DeleteView</code></h3>
+        <pre><code class="language-ts">export declare class DeleteView&lt;M = any&gt; extends SingleObjectView&lt;M&gt; { ... }</code></pre>
+        <p>GET asks (&lt;model&gt;_confirm_delete), or lists the blockers; POST (or DELETE) deletes and goes to successUrl; a POST the blockers stop comes back to the question.</p>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>static formClass</code></td><td><code>any</code></td><td></td></tr>
+                <tr><td><code>static successUrl</code></td><td><code>string | null</code></td><td></td></tr>
+                <tr><td><code>static question</code></td><td><code>string | null</code></td><td><p>The question: a text with {field} of the object.</p></td></tr>
+                <tr><td><code>static blockedText</code></td><td><code>string | null</code></td><td><p>The text before the blockers: a text with {field} of the object.</p></td></tr>
+                <tr><td><code>question</code></td><td><code>string | null</code></td><td></td></tr>
+                <tr><td><code>blockedText</code></td><td><code>string | null</code></td><td></td></tr>
+                <tr><td><code>getQuestion()</code></td><td><code>string</code></td><td></td></tr>
+                <tr><td><code>getBlockers()</code></td><td><code>Promise&lt;<a href="#ref-Blocker">Blocker</a>[]&gt;</code></td><td></td></tr>
+                <tr><td><code>getBlockedText(blockers: Blocker[])</code></td><td><code>string</code></td><td></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h2 id="constants">Constants</h2>
+        <p class="ref-index"><a href="#ref-templates"><code>templates</code></a></p>
+
+        <h3 id="ref-templates"><code>templates</code></h3>
+        <pre><code class="language-ts">export declare const templates: string;</code></pre>
+        <p>The folder of the built-in templates (xufa/list, xufa/detail, xufa/form, xufa/confirm_delete), for the roots of</p>
+
+        <h2 id="interfaces">Interfaces</h2>
+        <p class="ref-index"><a href="#ref-FormViewSettings"><code>FormViewSettings</code></a>, <a href="#ref-FormView"><code>FormView</code></a>, <a href="#ref-ModelFormView"><code>ModelFormView</code></a>, <a href="#ref-Blocker"><code>Blocker</code></a>, <a href="#ref-DeleteView"><code>DeleteView</code></a>, <a href="#ref-CrudOptions"><code>CrudOptions</code></a>, <a href="#ref-ViewDefaults"><code>ViewDefaults</code></a></p>
+
+        <h3 id="ref-FormViewSettings"><code>FormViewSettings</code></h3>
+        <pre><code class="language-ts">interface FormViewSettings&lt;F&gt; { ... }</code></pre>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>formClass</code></td><td><code>(new (options?: any) =&gt; F) | null</code></td><td></td></tr>
+                <tr><td><code>initial</code></td><td><code>Record&lt;string, unknown&gt; | null</code></td><td></td></tr>
+                <tr><td><code>prefix</code></td><td><code>string | null</code></td><td></td></tr>
+                <tr><td><code>successUrl</code></td><td><code>string | ((view: any) =&gt; string) | null</code></td><td></td></tr>
+                <tr><td><code>getFormClass()</code></td><td><code>new (options?: any) =&gt; F</code></td><td></td></tr>
+                <tr><td><code>getInitial()</code></td><td><code>Record&lt;string, unknown&gt;</code></td><td></td></tr>
+                <tr><td><code>getFormKwargs()</code></td><td><code>Record&lt;string, unknown&gt;</code></td><td></td></tr>
+                <tr><td><code>getForm(FormClass?: new (options?: any) =&gt; F)</code></td><td><code>F</code></td><td></td></tr>
+                <tr><td><code>getSuccessUrl()</code></td><td><code>string</code></td><td></td></tr>
+                <tr><td><code>formValid(form: F)</code></td><td><code>Promise&lt;unknown&gt;</code></td><td></td></tr>
+                <tr><td><code>formInvalid(form: F)</code></td><td><code>Promise&lt;unknown&gt;</code></td><td></td></tr>
+                <tr><td><code>renderForm(form: F)</code></td><td><code>Promise&lt;unknown&gt;</code></td><td></td></tr>
+                <tr><td><code>get()</code></td><td><code>Promise&lt;unknown&gt;</code></td><td></td></tr>
+                <tr><td><code>post()</code></td><td><code>Promise&lt;unknown&gt;</code></td><td></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-FormView"><code>FormView</code></h3>
+        <pre><code class="language-ts">export interface FormView&lt;F extends Form = Form&gt; extends FormViewSettings&lt;F&gt; { ... }</code></pre>
+
+        <h3 id="ref-ModelFormView"><code>ModelFormView</code></h3>
+        <pre><code class="language-ts">export interface ModelFormView&lt;M = any&gt; extends FormViewSettings&lt;ModelForm&lt;M&gt;&gt; { ... }</code></pre>
+
+        <h3 id="ref-Blocker"><code>Blocker</code></h3>
+        <pre><code class="language-ts">export interface Blocker { ... }</code></pre>
+        <p>An object that keeps another from being deleted (a foreign key with onDelete 'protect').</p>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>object</code></td><td><code>any</code></td><td></td></tr>
+                <tr><td><code>href</code></td><td><code>string | null</code></td><td><p>Its address (absoluteUrl, or the route &lt;model&gt;-detail), or null.</p></td></tr>
+                <tr><td><code>text</code></td><td><code>string</code></td><td></td></tr>
+                <tr><td><code>relation</code></td><td><code>string</code></td><td><p>Model.field of the foreign key.</p></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-DeleteView"><code>DeleteView</code></h3>
+        <pre><code class="language-ts">export interface DeleteView&lt;M = any&gt; extends FormViewSettings&lt;Form&gt; { ... }</code></pre>
+
+        <h3 id="ref-CrudOptions"><code>CrudOptions</code></h3>
+        <pre><code class="language-ts">export interface CrudOptions { ... }</code></pre>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>fields?</code></td><td><code>string[] | '__all__'</code></td><td><p>The fields of the forms of create and update.</p></td></tr>
+                <tr><td><code>name?</code></td><td><code>string</code></td><td><p>The name of the model in routes ('book': book-detail...), and of the list ('books').</p></td></tr>
+                <tr><td><code>plural?</code></td><td><code>string</code></td><td></td></tr>
+                <tr><td><code>prefix?</code></td><td><code>string</code></td><td><p>Before every path ('/catalog').</p></td></tr>
+                <tr><td><code>templateDir?</code></td><td><code>string</code></td><td></td></tr>
+                <tr><td><code>permissions?</code></td><td><code>boolean | { create?: string | false; update?: string | false; delete?: string | false }</code></td><td><p>true: Model.add, .change and .delete for create, update and delete; false: none; or one per page (false: none).</p></td></tr>
+                <tr><td><code>only?</code></td><td><code>('list' | 'detail' | 'create' | 'update' | 'delete')[]</code></td><td><p>The pages made ('list', 'detail', 'create', 'update', 'delete').</p></td></tr>
+                <tr><td><code>list?</code></td><td><code><a href="#ref-CrudPage">CrudPage</a></code></td><td></td></tr>
+                <tr><td><code>detail?</code></td><td><code><a href="#ref-CrudPage">CrudPage</a></code></td><td></td></tr>
+                <tr><td><code>create?</code></td><td><code><a href="#ref-CrudPage">CrudPage</a></code></td><td></td></tr>
+                <tr><td><code>update?</code></td><td><code><a href="#ref-CrudPage">CrudPage</a></code></td><td></td></tr>
+                <tr><td><code>delete?</code></td><td><code><a href="#ref-CrudPage">CrudPage</a></code></td><td></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-ViewDefaults"><code>ViewDefaults</code></h3>
+        <pre><code class="language-ts">export interface ViewDefaults { ... }</code></pre>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>baseTemplate?</code></td><td><code>string</code></td><td><p>The template the built-in ones extend ('base').</p></td></tr>
+                <tr><td><code>paginateBy?</code></td><td><code>number | null</code></td><td><p>Objects in a page of the lists that give none.</p></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h2 id="types">Types</h2>
+        <p class="ref-index"><a href="#ref-ViewHandler"><code>ViewHandler</code></a>, <a href="#ref-Settings"><code>Settings</code></a>, <a href="#ref-CrudPage"><code>CrudPage</code></a></p>
+
+        <h3 id="ref-ViewHandler"><code>ViewHandler</code></h3>
+        <pre><code class="language-ts">export type ViewHandler = ((request: XufaRequest, reply: XufaReply) =&gt; Promise&lt;unknown&gt;) &amp; {
+  viewClass: typeof View;
+  viewOptions: Record&lt;string, unknown&gt;;
+};</code></pre>
+
+        <h3 id="ref-Settings"><code>Settings</code></h3>
+        <pre><code class="language-ts">type Settings&lt;T&gt; = { [K in keyof T]?: T[K] extends (...args: any[]) =&gt; any ? T[K] | null : T[K] };</code></pre>
+
+        <h3 id="ref-CrudPage"><code>CrudPage</code></h3>
+        <pre><code class="language-ts">export type CrudPage = Record&lt;string, unknown&gt; &amp; {
+  view?: typeof View;
+  path?: string;
+  selectRelated?: string | string[];
+  prefetchRelated?: string | string[];
+};</code></pre>
+        <p>The settings of one page of crud(): those of its view, a view of its own, its queryset's related objects, its path.</p>
+      </article>
+    </div>
+
+    <footer class="footer">
+      <div class="container">
+        <span>xufa is MIT licensed. &copy; Jes&uacute;s Seijas</span>
+        <span>
+          <a href="../guide.html">Guide</a> &middot; <a href="../playground.html">Playground</a> &middot; <a href="../http/index.html">HTTP</a> &middot; <a href="../orm/index.html">ORM</a> &middot; <a href="../auth/index.html">Auth</a> &middot;
+          <a href="../sequelize/index.html">Sequelize</a> &middot; <a href="../packages.html">Packages</a> &middot;
+          <a href="../benchmarks.html">Benchmarks</a> &middot; <a href="https://github.com/xufajs/xufa">GitHub</a>
+        </span>
+      </div>
+    </footer>
+  </body>
+</html>

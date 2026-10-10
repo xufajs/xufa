@@ -3,7 +3,7 @@
 
 const Ajv = require('ajv')
 const { kRequestCacheValidateFns, kRouteContext } = require('../../lib/symbols')
-const Fastify = require('@xufa/http')
+const Fastify = require('../..')
 
 const defaultSchema = {
   type: 'object',

@@ -1,0 +1,37 @@
+{{!-- login.html: the form of auth.pages (username and password; the code of an authenticator app when asked). --}}
+{{extends 'base_generic'}}
+
+{{#block content}}
+{{#if form.errors.__all__}}
+<p>{{ form.nonFieldErrors()[0] }}</p>
+{{/if}} {{#if next}} {{#if user}}
+<p>Your account doesn't have access to this page. To proceed, please login with an account that has access.</p>
+{{else}}
+<p>Please login to see this page.</p>
+{{/if}} {{/if}}
+
+<form method="post" action="{{ url('login') }}">
+  <input type="hidden" name="_csrf" value="{{ csrfToken }}" />
+  <table>
+    <tr>
+      <td>{{{ form.field('username').labelTag() }}}</td>
+      <td>{{{ form.field('username').widget() }}}</td>
+    </tr>
+    <tr>
+      <td>{{{ form.field('password').labelTag() }}}</td>
+      <td>{{{ form.field('password').widget() }}}</td>
+    </tr>
+    {{#if form.needsCode}}
+    <tr>
+      <td>{{{ form.field('code').labelTag() }}}</td>
+      <td>{{{ form.field('code').widget({ inputmode: 'numeric' }) }}}</td>
+    </tr>
+    {{/if}}
+  </table>
+
+  <input type="submit" value="login" />
+  <input type="hidden" name="next" value="{{ next }}" />
+</form>
+
+<p><a href="{{ url('password_reset') }}">Lost password?</a></p>
+{{/block content}}

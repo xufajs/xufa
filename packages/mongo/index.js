@@ -1,17 +1,9 @@
 // @xufa/mongo: a MongoDB driver with no dependencies, with the API of the official driver for what applications use
 // most (see lib/client.js), BSON included. The MongoDB backend of @xufa/orm is made with it.
-const { MongoClient, Db, Collection, Cursor, ClientSession, parseUrl } = require('./lib/client');
-const bson = require('./lib/bson');
-const errors = require('./lib/errors');
+import { MongoClient, Db, Collection, Cursor, ClientSession, parseUrl } from './lib/client.js';
+import * as bson from './lib/bson.js';
 
-module.exports = {
-  MongoClient,
-  Db,
-  Collection,
-  Cursor,
-  ClientSession,
-  parseUrl,
-  ...bson,
-  bson,
-  ...errors,
-};
+export * from './lib/bson.js';
+export * from './lib/errors.js';
+
+export { MongoClient, Db, Collection, Cursor, ClientSession, parseUrl, bson };

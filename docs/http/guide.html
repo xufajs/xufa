@@ -74,6 +74,7 @@
           <li><a href="#errors">Errors</a></li>
           <li><a href="#error-handler">Error handlers</a></li>
           <li><a href="#not-found">Not found</a></li>
+          <li><a href="#error-pages">Error pages</a></li>
           <li><a href="#dev-errors">The page of errors</a></li>
         </ul>
         <h4>Running it</h4>
@@ -112,7 +113,7 @@
         <h2 id="getting-started">Getting started</h2>
         <pre><code class="language-sh">npm install @xufa/http</code></pre>
         <pre><code class="language-js">// server.js
-const xufa = require('@xufa/http');
+import xufa from '@xufa/http';
 
 const app = xufa({ logger: true });
 
@@ -142,25 +143,28 @@ $ curl localhost:3000
           (<a href="#testing">Testing</a>), and the parts of the app are plugins (<a href="#plugins">Plugins</a>).
         </p>
         <pre><code class="language-js">// app.js: the app, without listening.
-const xufa = require('@xufa/http');
+import xufa from '@xufa/http';
+import db from './plugins/db.js';
+import books from './routes/books.js';
+import users from './routes/users.js';
 
 function build(options = {}) {
   const app = xufa(options);
-  app.register(require('./plugins/db'));
-  app.register(require('./routes/books'), { prefix: '/books' });
-  app.register(require('./routes/users'), { prefix: '/users' });
+  app.register(db);
+  app.register(books, { prefix: '/books' });
+  app.register(users, { prefix: '/users' });
   return app;
 }
 
-module.exports = { build };
+export { build };
 
 // server.js: the app, listening.
-const { build } = require('./app');
+import { build } from './app.js';
 
 const app = build({ logger: true });
 app.listen({ port: Number(process.env.PORT) || 3000, host: '0.0.0.0' });</code></pre>
         <pre data-run><code class="language-js">// routes/books.js: a plugin with the routes of books.
-module.exports = async function books(app) {
+export default async function books(app) {
   app.get('/', async () =&gt; app.db.books.list());
   app.get('/:id', async (request) =&gt; app.db.books.get(request.params.id));
 };</code></pre>
@@ -216,9 +220,47 @@ app.route({
               <tr><td><code>logLevel</code></td><td>The level of the logs of this route (<code>'warn'</code> to quiet a health check)</td></tr>
               <tr><td><code>errorHandler</code></td><td>The error handler of this route</td></tr>
               <tr><td><code>attachValidation</code></td><td>Invalid requests reach the handler, with <code>request.validationError</code></td></tr>
+              <tr><td><code>name</code></td><td>The name of the route, for <code>app.reverse()</code> (<a href="#route-names">Names of routes</a>)</td></tr>
             </tbody>
           </table>
         </div>
+
+        <h3 id="route-names">Names of routes</h3>
+        <p>
+          A route with a <code>name</code> gives its address back with <code>app.reverse(name, params, { query })</code>,
+          as Django's <code>reverse()</code>: links are written once, by name, and follow the routes when their paths or
+          the prefixes of their plugins change. The parameters go by name or in order; a parameter with a regular
+          expression must match it, and values are encoded (a <code>*</code> keeps its slashes).
+        </p>
+<!--run-before: import xufa from '@xufa/http'; const app = xufa(); -->
+        <pre data-run="route-names"><code class="language-js">app.register(
+  async (catalog) =&gt; {
+    catalog.get('/book/:id(^\\d+$)', { name: 'book' }, async (request) =&gt; request.params);
+    catalog.get('/books/', { name: 'books' }, async () =&gt; []);
+  },
+  { prefix: '/catalog' }
+);
+await app.ready();
+
+console.log(app.reverse('book', { id: 7 }));
+console.log(app.reverse('books', null, { query: { page: 2 } }));
+console.log(app.routeNames().book);</code></pre>
+        <pre data-output><code class="language-plaintext">/catalog/book/7
+/catalog/books/?page=2
+{ url: '/catalog/book/:id(^\\d+$)', methods: [ 'GET', 'HEAD' ] }</code></pre>
+        <p id="path-converters">
+          As Django's path converters, a parameter can say its kind: <code>/books/&lt;int:pk&gt;/</code> takes digits
+          only and gives <code>request.params.pk</code> as a number (to the hooks of the route too);
+          <code>&lt;slug:name&gt;</code> letters, digits, <code>-</code> and <code>_</code>; <code>&lt;uuid:id&gt;</code> a
+          uuid; <code>&lt;str:name&gt;</code> (or <code>&lt;name&gt;</code>) any text but a slash; and
+          <code>&lt;path:file&gt;</code> the rest of the address, slashes too (the last part of a route). A value that is
+          not of its kind is not the route: 404.
+        </p>
+        <p>
+          A name is of one path (the same path by other methods is one name; another path is an error when the route is
+          added); an unknown name, a parameter missing or not of its expression throw <code>XUFA_ERR_ROUTE_NAME</code>.
+          <code>xufa routes</code> lists the named routes too.
+        </p>
 
         <h2 id="request">The request</h2>
         <pre><code class="language-js">app.post('/books/:id/reviews', async (request) =&gt; {
@@ -244,7 +286,7 @@ app.route({
         </p>
 
         <h2 id="reply">The reply</h2>
-<!--run-before: const fs = require('node:fs'); const xufa = require('@xufa/http'); const app = xufa(); -->
+<!--run-before: import fs from 'node:fs'; import xufa from '@xufa/http'; const app = xufa(); -->
         <pre data-run="reply"><code class="language-js">app.get('/report', async (request, reply) =&gt; {
   reply.code(202); // the status (200 by default)
   reply.header('cache-control', 'no-store'); // a header (headers({...}) for several)
@@ -285,7 +327,7 @@ console.log(old.statusCode, old.headers.location);</code></pre>
           async, or from a callback. In an async handler that calls <code>reply.send()</code>, return the reply
           (<code>return reply.send(...)</code>) so that xufa knows it was sent.
         </p>
-<!--run-before: const xufa = require('@xufa/http'); const app = xufa(); -->
+<!--run-before: import xufa from '@xufa/http'; const app = xufa(); -->
         <pre data-run="returning"><code class="language-js">app.get('/a', async () =&gt; ({ a: 1 })); // returned
 
 app.get('/b', (request, reply) =&gt; {
@@ -315,7 +357,7 @@ for (const url of ['/a', '/b', '/c']) console.log(url, (await app.inject(url)).b
           <a href="../schema/index.html">@xufa/schema</a> when the app starts, and a request that does not fit gets a 400 before
           the handler runs.
         </p>
-<!--run-before: const xufa = require('@xufa/http'); const app = xufa(); -->
+<!--run-before: import xufa from '@xufa/http'; const app = xufa(); -->
         <pre data-run="validation"><code class="language-js">app.post(
   '/users',
   {
@@ -367,10 +409,10 @@ for (const payload of ['{"name":"Ada","extra":1}', '{"name":""}', '{}', '{bad'])
           <a href="../schema/guide.html#s">s</a> of @xufa/schema writes the same JSON Schema with less to type, and
           derives schemas from schemas: the body of a create without the id, a patch with every property optional.
         </p>
-<!--run-before: const xufa = require('@xufa/http'); const app = xufa(); const books = new Map();
+<!--run-before: import xufa from '@xufa/http'; const app = xufa(); const books = new Map();
 const createBook = async (request, reply) => { const book = { id: books.size + 1, ...request.body }; books.set(book.id, book); return reply.code(201).send(book); };
 const updateBook = async (request) => Object.assign(books.get(request.params.id), request.body); -->
-        <pre data-run="s"><code class="language-js">const { s } = require('@xufa/schema');
+        <pre data-run="s"><code class="language-js">import { s } from '@xufa/schema';
 
 const Book = s.object(
   { id: s.integer(), title: s.string({ minLength: 1 }), tags: s.array(s.string()), pages: s.optional(s.integer()) },
@@ -399,7 +441,7 @@ console.log(refused.statusCode, refused.json().message);</code></pre>
           <code>app.addSchema()</code> adds a schema with an <code>$id</code> that routes refer to with
           <code>$ref</code>. Like everything an app adds, it is seen by the plugins registered in it after.
         </p>
-<!--run-before: const xufa = require('@xufa/http'); const app = xufa();
+<!--run-before: import xufa from '@xufa/http'; const app = xufa();
 const listBooks = async () => [{ id: 1, title: 'Dune', secret: 'x' }]; const getBook = async (request) => ({ id: request.params.id, title: 'Dune' }); -->
         <pre data-run="shared-schemas"><code class="language-js">app.addSchema({
   $id: 'Book',
@@ -420,7 +462,7 @@ console.log((await app.inject('/books')).body); // listBooks gives a secret too:
           written faster than by <code>JSON.stringify</code>, and only with the properties of the schema. A field
           nobody should see (a hash of a password) cannot leak through a route whose response schema does not have it.
         </p>
-<!--run-before: const xufa = require('@xufa/http'); const { s } = require('@xufa/schema'); const app = xufa();
+<!--run-before: import xufa from '@xufa/http'; import { s } from '@xufa/schema'; const app = xufa();
 const db = { users: new Map([[7, { id: 7, name: 'Ada', passwordHash: '$scrypt$...' }]]) };
 app.addHook('onRequest', async (request) => { request.user = { id: 7 }; }); -->
         <pre data-run="serialization"><code class="language-js">app.get(
@@ -445,7 +487,7 @@ console.log((await app.inject('/me')).body);</code></pre>
           <code>keyword</code>, <code>params</code>, <code>message</code>) and <code>validationContext</code>
           (<code>'body'</code>, <code>'querystring'</code>...), for an error handler that answers in a format of its own:
         </p>
-<!--run-before: const xufa = require('@xufa/http'); const app = xufa({ ajv: { customOptions: { allErrors: true } } });
+<!--run-before: import xufa from '@xufa/http'; const app = xufa({ ajv: { customOptions: { allErrors: true } } });
 app.post('/users', { schema: { body: { type: 'object', required: ['name'], properties: { name: { type: 'string' }, age: { type: 'integer', minimum: 0 } } } } }, async (request) => request.body); -->
         <pre data-run="validation-errors"><code class="language-js">app.setErrorHandler((error, request, reply) =&gt; {
   if (error.validation) {
@@ -472,7 +514,7 @@ console.log(response.statusCode, response.body);</code></pre>
           <code>app.register(plugin, options)</code> loads it, in order: plugins registered first are loaded first, and an
           async plugin is waited for before the next.
         </p>
-<!--run-before: const xufa = require('@xufa/http'); const app = xufa(); const listBooks = async ({ limit }) => ({ limit }); -->
+<!--run-before: import xufa from '@xufa/http'; const app = xufa(); const listBooks = async ({ limit }) => ({ limit }); -->
         <pre data-run="plugins"><code class="language-js">// A plugin: a function of (app, options).
 async function books(app, options) {
   app.get('/', async () =&gt; listBooks({ limit: options.limit }));
@@ -495,7 +537,7 @@ console.log((await app.inject('/books')).body);</code></pre>
           This is how a part of an app has its own hooks (authentication for <code>/admin</code> only) without the rest
           paying for them.
         </p>
-<!--run-before: const xufa = require('@xufa/http'); const app = xufa();
+<!--run-before: import xufa from '@xufa/http'; const app = xufa();
 const requireAdmin = async (request, reply) => { if (request.headers['x-role'] !== 'admin') return reply.code(403).send({ message: 'Admins only' }); };
 const getStats = async () => ({ users: 42 }); const getPublic = async () => ({ hello: 'world' }); -->
         <pre data-run="encapsulation"><code class="language-js">app.register(
@@ -518,9 +560,9 @@ for (const url of ['/admin/stats', '/public']) {
           To add to the app that registers it (a database connection every route uses), wrap the plugin in
           <code>xufa.plugin()</code> (fastify-plugin): it then adds to its parent.
         </p>
-        <pre data-run><code class="language-js">const { plugin } = require('@xufa/http');
+        <pre data-run><code class="language-js">import { plugin } from '@xufa/http';
 
-module.exports = plugin(
+export default plugin(
   async (app, options) =&gt; {
     const db = await connect(options.url);
     app.decorate('db', db);
@@ -535,7 +577,7 @@ module.exports = plugin(
           <code>decorateReply</code> to every reply. Declare them once, at the start, so that every request and reply
           has the same shape (which V8 makes fast); then set their values in hooks.
         </p>
-<!--run-before: const xufa = require('@xufa/http'); const app = xufa();
+<!--run-before: import xufa from '@xufa/http'; const app = xufa();
 const userOf = async (authorization) => (authorization ? { id: authorization.split(' ')[1] } : null); -->
         <pre data-run="decorators"><code class="language-js">app.decorate('config', { name: 'books' }); // app.config
 app.decorateRequest('user', null); // request.user, null until a hook sets it
@@ -573,7 +615,7 @@ console.log((await app.inject('/me')).body);</code></pre>
             </tbody>
           </table>
         </div>
-<!--run-before: const xufa = require('@xufa/http'); const app = xufa();
+<!--run-before: import xufa from '@xufa/http'; const app = xufa();
 const rateLimit = async () => {}; const loadBook = async (request) => { request.book = { title: 'Dune' }; };
 const handler = async (request) => request.book; -->
         <pre data-run="hooks"><code class="language-js">app.addHook('onRequest', async (request, reply) =&gt; {
@@ -608,9 +650,9 @@ console.log(served.statusCode, served.headers['x-served-by'], served.body);</cod
           <code>statusCode</code> is the status of the reply, 500 without one.
           <a href="../errors/index.html">@xufa/errors</a> makes classes of errors with a code, a status and a message:
         </p>
-<!--run-before: const xufa = require('@xufa/http'); const app = xufa();
+<!--run-before: import xufa from '@xufa/http'; const app = xufa();
 const findBook = async () => ({ title: 'Dune', deletedAt: new Date() }); -->
-        <pre data-run="errors"><code class="language-js">const createError = require('@xufa/errors');
+        <pre data-run="errors"><code class="language-js">import createError from '@xufa/errors';
 
 const BookGone = createError('APP_BOOK_GONE', 'Book %s is gone', 410);
 
@@ -632,7 +674,7 @@ console.log(response.statusCode, response.body);</code></pre>
         </div>
 
         <h2 id="error-handler">Error handlers</h2>
-<!--run-before: const xufa = require('@xufa/http'); const app = xufa(); -->
+<!--run-before: import xufa from '@xufa/http'; const app = xufa(); -->
         <pre data-run="error-handler"><code class="language-js">app.setErrorHandler(async (error, request, reply) =&gt; {
   const status = error.statusCode &gt;= 400 ? error.statusCode : 500;
   if (status &gt;= 500) request.log.error(error); // logged with the request's id
@@ -657,9 +699,16 @@ for (const url of ['/db', '/teapot']) {
           An error handler is encapsulated like the rest: a plugin can have its own (its errors, and those of its
           children). Errors it throws go to the error handler of the parent.
         </p>
+        <p>
+          One context has one handler of <code>setErrorHandler</code>. <code>app.addErrorHandler(fn)</code> adds one over
+          those of the context without taking it: plugins add theirs (the ORM's answers its validation errors as 400 and
+          duplicates as 409; <a href="#error-pages">errorPages</a> the pages of browsers), the last added goes first, and
+          the app may still set its own, which goes before them. A handler that throws the error (or sends it) passes it
+          to the one under it.
+        </p>
 
         <h2 id="not-found">Not found</h2>
-<!--run-before: const xufa = require('@xufa/http'); const app = xufa(); -->
+<!--run-before: import xufa from '@xufa/http'; const app = xufa(); -->
         <pre data-run="not-found"><code class="language-js">app.setNotFoundHandler(async (request, reply) =&gt; {
   reply.code(404);
   return { error: `No ${request.method} ${request.url}` };
@@ -674,6 +723,25 @@ console.log(response.statusCode, response.body);</code></pre>
           can have their own; <code>reply.callNotFound()</code> sends a request to it from a handler.
         </p>
 
+        <h2 id="error-pages">Error pages</h2>
+        <p>
+          <code>xufa.errorPages</code> is Django's <code>handler404</code>, <code>handler403</code>,
+          <code>handler400</code> and <code>handler500</code> with their templates: a request of a browser
+          (<code>Accept: text/html</code>) that fails gets the view of <a href="../template/index.html">@xufa/template</a> of its
+          status, with that status; the others (API clients) go on to the error handlers under it, as JSON. Statuses
+          without a view go on too, and a view that fails passes the error on as it was.
+        </p>
+        <pre><code class="language-js">app.register(template.plugin, { root: 'templates' });
+app.register(xufa.errorPages, { views: { 404: '404', 403: '403', 500: '500' } }); // or views: 'errors' (errors/404...)</code></pre>
+        <p>
+          A view gets <code>statusCode</code>, <code>title</code> (<code>Not Found</code>), <code>message</code> (that of
+          the error for 4xx; for 5xx that of the status: their messages are for the logs, where they go),
+          <code>permission</code> (of a 403 of <code>permissionRequired</code>), <code>error</code> (4xx), and what
+          <code>context(error, request)</code> adds. 5xx without a view of their own take that of 500. With
+          <code>notFound</code> (true), routes that are not there are 404s of it too (it sets the not-found handler).
+          In development, <a href="#dev-errors">devErrors</a> shows its page over them.
+        </p>
+
         <h2 id="dev-errors">The page of errors in development</h2>
         <p>
           <code>xufa.devErrors</code> gives browsers a page when a request fails, as Laravel's Ignition and Django's debug
@@ -681,7 +749,7 @@ console.log(response.statusCode, response.body);</code></pre>
           (params, query, body, headers; those of credentials hidden) and the routes. A route that is not there shows the
           list of the routes. Requests that do not ask for HTML get the JSON they get without it.
         </p>
-<!--run-before: const xufa = require('@xufa/http'); const app = xufa(); -->
+<!--run-before: import xufa from '@xufa/http'; const app = xufa(); -->
         <pre data-run="dev-errors"><code class="language-js">app.register(xufa.devErrors); // off when NODE_ENV is production
 app.get('/books/:id', async () =&gt; {
   throw new Error('The database is down');
@@ -710,7 +778,7 @@ console.log(json.statusCode, json.json().message);</code></pre>
           text is down, what throws or goes over its <code>timeout</code> (2 s) is down, and
           <code>{ status: 'degraded', ...details }</code> is degraded.
         </p>
-<!--run-before: const xufa = require('@xufa/http'); const app = xufa(); -->
+<!--run-before: import xufa from '@xufa/http'; const app = xufa(); -->
         <pre data-run="health"><code class="language-js">let nodes = 3;
 app.register(xufa.health, {
   checks: {
@@ -735,7 +803,7 @@ console.log(ready.statusCode, ready.json(), (await app.inject('/health')).json()
           <li><code>heal: { after: '5m', run(result) }</code> in a check runs a cure when it has been down that long (restart what it checks), and again after another <code>after</code> while it stays down.</li>
           <li>The packages of xufa give their checks, ready for <code>checks</code>: <code>db.health({ slow })</code> of <a href="../orm/guide.html#maintenance">@xufa/orm</a> (critical: the latency of a ping), <code>queue.health({ maxLag, maxPending, maxFailed })</code> of <a href="../queue/index.html#health">@xufa/queue</a>, <code>pool.health({ minNodes, maxWaiting })</code> of <a href="../cluster/index.html#pool-api">@xufa/cluster</a> and <code>netcache.health({ minPeers })</code> of <a href="../netcache/index.html#api">@xufa/netcache</a> (not critical: the app serves without them, degraded). Each takes <code>critical</code> and <code>timeout</code>:
             <code>checks: { database: db.health(), queue: queue.health({ maxLag: '5m' }), converters: usePool('converters').health(), cache: netcache.health() }</code>.</li>
-          <li><code>prefix</code> (<code>'/health'</code>), <code>details: false</code> (the status only, for routes others can reach), <code>logLevel</code> of the routes (<code>'warn'</code>: probes do not fill the logs). <code>app.health.check()</code> runs them now; <code>app.health.report</code> and <code>app.health.status</code> tell the last run.</li>
+          <li><code>prefix</code> (<code>'/health'</code>), <code>details: false</code> (the status only, for routes others can reach), <code>logLevel</code> of the routes (<code>'warn'</code>: probes do not fill the logs). <code>app.health.check()</code> runs them now; <code>app.health.report</code> and <code>app.health.status</code> tell the last run (typed in the app of TypeScript, as <code>app.maintenance</code>).</li>
         </ul>
 
         <h2 id="maintenance">Maintenance mode</h2>
@@ -746,7 +814,7 @@ console.log(ready.statusCode, ready.json(), (await app.inject('/health')).json()
           secret path. <code>xufa down</code> turns it on and <code>xufa up</code> off (see
           <a href="../guide.html#command-line">the command line</a>).
         </p>
-<!--run-before: const xufa = require('@xufa/http'); const app = xufa(); -->
+<!--run-before: import xufa from '@xufa/http'; const app = xufa(); -->
         <pre data-run="maintenance"><code class="language-js">let state = null; // what xufa down writes: a file, or maintenance(db) of @xufa/orm
 app.register(xufa.maintenance, { file: false, store: { get: () =&gt; state }, refresh: 0 });
 app.get('/books', async () =&gt; ['Dune']);
@@ -773,8 +841,8 @@ console.log((await app.inject({ url: '/books', headers: { cookie } })).statusCod
           are refused (<code>onProtoPoisoning</code>, <code>onConstructorPoisoning</code>), and bodies larger than
           <code>bodyLimit</code> (1 MiB) are a 413. Other types are a 415 unless you add a parser:
         </p>
-<!--run-before: const xufa = require('@xufa/http'); const app = xufa(); const fs = require('node:fs'); const path = require('node:path');
-const { pipeline } = require('node:stream/promises'); const dir = fs.mkdtempSync(path.join(require('node:os').tmpdir(), 'uploads-')); -->
+<!--run-before: import xufa from '@xufa/http'; const app = xufa(); import fs from 'node:fs'; import path from 'node:path';
+import { pipeline } from 'node:stream/promises'; import os from 'node:os'; const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'uploads-')); -->
         <pre data-run="bodies"><code class="language-js">app.addContentTypeParser('text/csv', { parseAs: 'string' }, (request, body, done) =&gt; {
   done(null, body.split('\n').map((line) =&gt; line.split(',')));
 });
@@ -807,6 +875,80 @@ console.log(xml.statusCode, xml.json().code);</code></pre>
 {"saved":"notes.txt"} some bytes
 415 XUFA_ERR_CTP_INVALID_MEDIA_TYPE</code></pre>
 
+        <h3 id="forms">Forms</h3>
+        <p>
+          <code>xufa.formBody</code> parses the bodies of HTML forms, as Django's <code>request.POST</code> and
+          <code>request.FILES</code>: <code>application/x-www-form-urlencoded</code> and <code>multipart/form-data</code>
+          become <code>request.body</code>. A field given again, or named with <code>[]</code>, is a list; a file is
+          <code>{ filename, contentType, size, data }</code> (<code>data</code>, a Buffer).
+        </p>
+<!--run-before: import xufa from '@xufa/http'; const app = xufa(); -->
+        <pre data-run="forms"><code class="language-js">app.register(xufa.formBody, { fileSize: 5 * 1024 * 1024 });
+app.post('/books', async (request) =&gt; {
+  const { title, genre, cover } = request.body;
+  return { title, genre, cover: cover &amp;&amp; [cover.filename, cover.size] };
+});
+
+const form = await app.inject({
+  method: 'POST',
+  url: '/books',
+  headers: { 'content-type': 'application/x-www-form-urlencoded' },
+  payload: 'title=Dune&amp;genre=1&amp;genre=3',
+});
+const boundary = 'xufa';
+const upload = await app.inject({
+  method: 'POST',
+  url: '/books',
+  headers: { 'content-type': `multipart/form-data; boundary=${boundary}` },
+  payload: [
+    `--${boundary}`,
+    'Content-Disposition: form-data; name="title"', '', 'Dune',
+    `--${boundary}`,
+    'Content-Disposition: form-data; name="cover"; filename="cover.png"', 'Content-Type: image/png', '', 'PNG...',
+    `--${boundary}--`, '',
+  ].join('\r\n'),
+});
+console.log(form.body);
+console.log(upload.body);</code></pre>
+        <pre data-output><code class="language-plaintext">{"title":"Dune","genre":["1","3"]}
+{"title":"Dune","cover":["cover.png",6]}</code></pre>
+        <p>
+          Limits: <code>bodyLimit</code> (1 MiB for urlencoded bodies, 20 MiB for multipart ones), <code>files</code> (10),
+          <code>fileSize</code> (10 MiB), <code>fields</code> (1000), <code>fieldSize</code> (1 MiB) and <code>parts</code>
+          (1000); past one, the answer is 413 (too large) or 400. <code>multipart: false</code> parses urlencoded bodies
+          only. Keys of prototypes (<code>__proto__</code>) are dropped.
+        </p>
+
+        <h3 id="static">Static files</h3>
+        <p>
+          <code>xufa.staticFiles</code> serves the files of some folders under a prefix, as Django's staticfiles with
+          whitenoise: their type, an <code>ETag</code> and <code>Last-Modified</code> (304 when the browser has the file),
+          and the <code>.br</code> or <code>.gz</code> file next to one when the browser takes it.
+          <code>app.staticUrl(path)</code> is the address of a file with its version (a hash of its bytes), as
+          <code>{% static %}</code>: an address with the right version is cached for a year, so a page links to the file it
+          was written for and a new deploy changes the address.
+        </p>
+<!--run-before: import xufa from '@xufa/http'; const app = xufa(); import fs from 'node:fs'; import path from 'node:path';
+import os from 'node:os'; const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'static-')); fs.mkdirSync(path.join(dir, 'css')); fs.writeFileSync(path.join(dir, 'css', 'site.css'), 'body { margin: 0 }'); -->
+        <pre data-run="static"><code class="language-js">app.register(xufa.staticFiles, { root: [dir], prefix: '/static/' });
+await app.ready();
+
+const address = app.staticUrl('css/site.css'); // in the templates: &lt;link href="{{ staticUrl('css/site.css') }}"&gt;
+const res = await app.inject(address);
+const again = await app.inject({ url: address, headers: { 'if-none-match': res.headers.etag } });
+console.log(address.replace(/v=\w+/, 'v=...'));
+console.log(res.statusCode, res.headers['content-type'], res.headers['cache-control']);
+console.log(again.statusCode, (await app.inject('/static/../secret')).statusCode);</code></pre>
+        <pre data-output><code class="language-plaintext">/static/css/site.css?v=...
+200 text/css; charset=utf-8 public, max-age=31536000, immutable
+304 404</code></pre>
+        <p>
+          <code>root</code> is a folder or a list (the first with the file serves it); paths out of them, names that start
+          with a dot and folders are a 404. <code>maxAge</code> is the cache of addresses without their version (0: the
+          browser asks again, with the ETag), <code>immutable</code> that of versioned ones; <code>types</code> adds types by
+          extension.
+        </p>
+
         <h2 id="logs">Logs</h2>
         <p>
           <code>logger: true</code> (or the options of a logger) makes an <a href="../logger/index.html">@xufa/logger</a>: pino's
@@ -837,7 +979,7 @@ app.get('/books', async (request) =&gt; {
           fast, and nothing listens. With the app made by a function (<a href="#layout">The layout of an app</a>), each
           test has an app of its own.
         </p>
-        <pre><code class="language-js">const { build } = require('../app');
+        <pre><code class="language-js">import { build } from '../app.js';
 
 describe('books', () =&gt; {
   let app;
@@ -862,6 +1004,27 @@ describe('books', () =&gt; {
           For failures of what the app depends on (a slow database, an API that answers 503), see
           <a href="../faults/index.html">@xufa/faults</a>.
         </p>
+        <h3 id="test-client">The client of tests</h3>
+        <p>
+          <code>new xufa.TestClient(app)</code> is Django's test <code>Client</code>: a browser over
+          <code>inject()</code> that keeps its cookies (its session), posts forms (<code>post(url, data)</code>; JSON with
+          <code>{ json: true }</code>) with the CSRF token of its session (<code>enforceCsrfChecks: true</code> sends
+          none), follows redirects (<code>{ follow: true }</code>: <code>res.redirectChain</code>), and logs in:
+          <code>login(credentials)</code> (whether they log in, with the <a href="../auth/guide.html#account-pages">accounts
+          of @xufa/auth</a>) and <code>forceLogin(user)</code> (without a password). Each response says which views of
+          <a href="../template/index.html">@xufa/template</a> it rendered and with what: <code>res.templates</code>
+          (<code>assertTemplateUsed</code>), <code>res.context</code> (Django's <code>response.context</code>), and
+          <code>res.textContent</code> (the text a reader sees).
+        </p>
+        <pre><code class="language-js">const client = new xufa.TestClient(app);
+await client.forceLogin(librarian);
+const res = await client.get('/catalog/authors/', { page: 2 });
+expect(res.templates).toEqual(['catalog/author_list']);
+expect(res.context.isPaginated).toBe(true);
+expect(res.context.authorList).toHaveLength(3);
+
+const made = await client.post('/catalog/author/create/', { firstName: 'Ada', lastName: 'Lovelace' }, { follow: true });
+expect(made.textContent).toContain('Author: Lovelace, Ada');</code></pre>
 
         <h2 id="typescript">TypeScript</h2>
         <p>
@@ -948,13 +1111,15 @@ await app.listen({ port: Number(process.env.PORT) || 3000, host: '0.0.0.0' });</
 
         <h2 id="with-xufa">With the rest of xufa</h2>
         <p>The other packages of xufa are plugins of the app. An app with a database, users and its OpenAPI document:</p>
-        <pre><code class="language-js">const xufa = require('xufa');
-const { Database, Model, fields, plugin: orm, resource } = require('xufa/orm');
-const auth = require('xufa/auth');
-const openapi = require('xufa/openapi');
-const { loadConfig } = require('xufa/config');
+        <pre><code class="language-js">import xufa from 'xufa';
+import { Database, Model, fields, plugin as orm, resource } from 'xufa/orm';
+import * as auth from 'xufa/auth';
+import openapi from 'xufa/openapi';
+import openapiUi from 'xufa/openapi/ui';
+import { loadConfig } from 'xufa/config';
+import schema from './config-schema.js';
 
-const config = loadConfig({ schema: require('./config-schema') });
+const config = loadConfig({ schema });
 
 class Book extends Model {
   static fields = { title: fields.string(), pages: fields.integer({ null: true }) };
@@ -965,7 +1130,7 @@ db.register(Book, User, RefreshToken);
 
 const app = xufa({ logger: config.logger });
 await app.register(openapi, { openapi: { info: { title: 'Books', version: '1.0.0' } } });
-await app.register(require('xufa/openapi/ui'), { routePrefix: '/docs' });
+await app.register(openapiUi, { routePrefix: '/docs' });
 app.register(orm, { database: db, migrate: { dir: 'migrations' } });
 app.register(auth.plugin, { keys: config.jwtKey, login: { findUser, claims } });
 

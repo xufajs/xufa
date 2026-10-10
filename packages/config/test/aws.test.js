@@ -1,11 +1,11 @@
 // The sources of AWS (Parameter Store, Secrets Manager) against a server that answers as they do and checks the
 // signatures; and the signatures, against a vector of the test suite of AWS (post-vanilla).
-const fs = require('node:fs');
-const http = require('node:http');
-const os = require('node:os');
-const path = require('node:path');
-const { loadRemoteConfig, sources } = require('..');
-const { sign } = require('../lib/aws');
+import fs from 'node:fs';
+import http from 'node:http';
+import os from 'node:os';
+import path from 'node:path';
+import { loadRemoteConfig, sources } from '../index.js';
+import { sign } from '../lib/aws.js';
 
 const credentials = { accessKeyId: 'AKIDEXAMPLE', secretAccessKey: 'wJalrXUtnFEMI/K7MDENG+bPxRfiCYEXAMPLEKEY' };
 

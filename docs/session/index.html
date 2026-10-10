@@ -6,7 +6,7 @@
     <title>@xufa/session · xufa</title>
     <meta
       name="description"
-      content="@xufa/session: sessions of browsers for @xufa/http, with no dependencies: signed cookies, stores in memory or in a database of @xufa/orm, flash messages and CSRF tokens."
+      content="@xufa/session: sessions of browsers for @xufa/http, with no dependencies: signed cookies, stores in memory or in a database of @xufa/orm, flash messages, CSRF tokens, and logging a user out everywhere."
     />
     <link
       rel="icon"
@@ -47,6 +47,8 @@
           <li><a href="#start">Quick start</a></li>
           <li><a href="#values">Values</a></li>
           <li><a href="#login">Logins and logouts</a></li>
+          <li><a href="#everywhere">Log out everywhere</a></li>
+          <li><a href="#devices">The sessions of a user</a></li>
           <li><a href="#flash">Flash messages</a></li>
           <li><a href="#csrf">CSRF</a></li>
           <li><a href="#stores">Stores</a></li>
@@ -57,6 +59,10 @@
           <li><a href="../websocket/index.html">@xufa/websocket</a></li>
           <li><a href="../admin/index.html">@xufa/admin</a></li>
           <li><a href="index.html" aria-current="page">@xufa/session</a></li>
+          <li><a href="../forms/index.html">@xufa/forms</a></li>
+          <li><a href="../views/index.html">@xufa/views</a></li>
+          <li><a href="../mail/index.html">@xufa/mail</a></li>
+          <li><a href="../i18n/index.html">@xufa/i18n</a></li>
           <li><a href="../openapi/index.html">@xufa/openapi</a></li>
           <li><a href="../client/index.html">@xufa/client</a></li>
           <li><a href="../schema/index.html">@xufa/schema</a></li>
@@ -97,8 +103,8 @@
         </p>
 
         <h2 id="start">Quick start</h2>
-        <pre data-run><code class="language-js">const xufa = require('@xufa/http');
-const { sessionPlugin } = require('@xufa/session');
+        <pre data-run><code class="language-js">import xufa from '@xufa/http';
+import { sessionPlugin } from '@xufa/session';
 
 const app = xufa();
 app.register(sessionPlugin, { secret: 'a secret of 32 characters or more!!' }); // process.env.SESSION_SECRET
@@ -137,6 +143,65 @@ app.post('/logout', async (request, reply) =&gt; {
           login is worth nothing after it. <code>destroy()</code> ends the session and clears its cookie.
         </p>
 
+        <h2 id="everywhere">Log out everywhere</h2>
+        <p>
+          A session tied to its user with <code>await request.session.login(user.pk)</code> (which regenerates it too)
+          can be logged out with every other session of that user: in every browser, process and machine that shares the
+          store.
+        </p>
+        <pre><code class="language-js">app.post('/login', async (request) =&gt; {
+  const user = await checkPassword(request.body);
+  await request.session.login(user.pk); // request.session.user is '42' from now on
+  return { ok: true };
+});
+app.post('/logout-everywhere', async (request) =&gt; {
+  await request.session.logoutEverywhere(); // this one too
+  return { ok: true };
+});
+app.post('/logout-others', async (request) =&gt; {
+  await request.session.logoutOthers(); // this one goes on, with a new id and CSRF token
+  return { csrf: request.session.csrfToken() };
+});
+// An admin ending the sessions of a user (a password changed, an account locked).
+await app.sessions.logoutUser(user.pk);</code></pre>
+        <p>
+          Ending every session of a user does not delete them one by one: the store keeps a <em>generation</em> of each user (under
+          <code>user:&lt;id&gt;</code>, which no cookie can name: their ids are signed): logging out everywhere raises it,
+          and a session made in an older generation is emptied at its next request (<code>request.session.endedEverywhere</code>
+          says so). It works with every store, costs one more read of the store for the requests of sessions with a user,
+          and a generation lasts as long as a session can (<code>maxAge</code>).
+        </p>
+        <p>
+          That read goes away where the generation is kept with the user: <code>app.sessions.useGenerations({ read(id,
+          request), write(id, generation) })</code> reads it from there (<code>undefined</code>: the store's) and writes it
+          at each raise. <a href="../auth/index.html">@xufa/auth</a> does it with the users of <code>AbstractUser</code>, whose row
+          has <code>sessionGeneration</code>: the request reads its user anyway, and nothing else.
+        </p>
+
+        <h2 id="devices">The sessions of a user</h2>
+        <p>
+          The record of a user keeps the ids of its sessions too (written at its logins and new ids, not at every
+          request), and each session its device: its user agent, address, login and last request (written with the
+          session, or <code>touchAfter</code> after it was last written: an hour by default). <code>app.sessions.list(userId)</code> gives those still there, last seen first, each named by its
+          <em>handle</em>, a hash of its id (an id would open the session; a handle only names it), and
+          <code>app.sessions.end(userId, handle)</code> ends one. <code>request.session.handle</code> is that of the
+          session of a request: a page of "your devices" marks it, and ends the others.
+        </p>
+        <pre><code class="language-js">app.get('/account/sessions', async (request) =&gt;
+  (await app.sessions.list(request.session.user)).map((item) =&gt; ({
+    ...item, // { handle, agent, ip, since, seen, expiresAt }
+    current: item.handle === request.session.handle,
+  }))
+);
+app.post('/account/sessions/:handle/end', async (request) =&gt; ({
+  ended: await app.sessions.end(request.session.user, request.params.handle),
+}));</code></pre>
+        <p>
+          Two logins of a user at the same moment, in two processes, may leave one of them out of the list (it is read
+          and written whole); the session itself is not touched, and a logout everywhere ends it all the same. A user
+          keeps its last 100 sessions in the list.
+        </p>
+
         <h2 id="flash">Flash messages</h2>
         <p>
           <code>flash(key, value)</code> keeps a value for the next request only, as Rails and Laravel do: a message set
@@ -144,6 +209,14 @@ app.post('/logout', async (request, reply) =&gt; {
         </p>
         <pre><code class="language-js">request.session.flash('notice', 'Saved');   // then reply.redirect('/books')
 const notice = request.session.flash('notice'); // in the next request; gone after it</code></pre>
+        <p>
+          Messages for the user, as Django's: <code>message(text, level)</code> keeps one for the page shown next (this
+          one, or the next one after a redirect), and <code>messages()</code> gives those waiting, as
+          <code>{ text, level }</code>, once. Templates have them as <code>messages</code>
+          (<a href="../template/index.html#context">The context of every view</a>).
+        </p>
+        <pre><code class="language-js">request.session.message('The book was saved', 'success');
+return reply.redirect(app.reverse('book-detail', [book.pk])); // its page shows the message, once</code></pre>
 
         <h2 id="csrf">CSRF</h2>
         <p>
@@ -151,6 +224,10 @@ const notice = request.session.flash('notice'); // in the next request; gone aft
           <code>csrfToken()</code> back in a field <code>_csrf</code>, and scripts in the header
           <code>x-csrf-token</code>; a 403 otherwise. Requests without a session (they act as nobody) and routes with
           <code>config: { csrf: false }</code> (webhooks) need none.
+          While a session keeps nothing, its token goes in a signed cookie of its own (<code>sid_csrf</code>, as Django's
+          <code>csrftoken</code>), not in the store: a visitor who only sees pages with forms makes no session, and the
+          writes of a browser with that cookie are checked against it (a login form). A session that starts keeping
+          something keeps that token; a login makes a new one.
         </p>
         <pre><code class="language-html">&lt;form method="post" action="/books"&gt;
   &lt;input type="hidden" name="_csrf" value="{{ csrf }}"&gt;
@@ -165,6 +242,16 @@ const notice = request.session.flash('notice'); // in the next request; gone aft
           (<code>db.expire()</code>, or the option <code>expire</code> of the plugin of the ORM). A store of your own has
           <code>get(id)</code>, <code>set(id, data, expiresAt)</code> and <code>delete(id)</code>.
         </p>
+        <p>
+          <code>ormStore(db, { asyncCommit: true })</code> (in a project, <code>sessions: { asyncCommit: true }</code> of
+          <code>xufa.yaml</code>) writes sessions without waiting for the disk, in PostgreSQL: <code>SET LOCAL
+          synchronous_commit TO OFF</code>, the statements of the write sent together. A page that writes its session (a
+          counter of visits, a cart) answers about twice as fast; a crash of the database server may lose the writes of its
+          last fraction of a second (a user logged out again, a message lost), and nothing else. The records of the users
+          (the generations of "log out everywhere", their lists of sessions) always wait for the disk: a crash does not
+          undo a logout everywhere. Projects made by <code>xufa new</code> have it on (<code>false</code> turns it off);
+          the store alone has it off.
+        </p>
 
         <h2 id="options">Options</h2>
         <div class="table-wrap">
@@ -174,8 +261,10 @@ const notice = request.session.flash('notice'); // in the next request; gone aft
               <tr><td><code>secret</code></td><td></td><td>32 characters or more; <code>[new, old]</code> to rotate them (the first signs, all are checked)</td></tr>
               <tr><td><code>store</code></td><td><code>memoryStore()</code></td><td>Where sessions are kept</td></tr>
               <tr><td><code>maxAge</code></td><td><code>'14d'</code></td><td>How long a session lasts</td></tr>
-              <tr><td><code>rolling</code></td><td><code>true</code></td><td>Each request makes it last <code>maxAge</code> again</td></tr>
+              <tr><td><code>rolling</code></td><td><code>true</code></td><td>Its requests make it last <code>maxAge</code> again (written when <code>touchAfter</code> has passed since it was)</td></tr>
+              <tr><td><code>touchAfter</code></td><td>1 hour, or half of <code>maxAge</code></td><td>How long after a session was written a request pushes its expiry back; <code>0</code>: every request</td></tr>
               <tr><td><code>csrf</code></td><td><code>false</code></td><td>Writes of a session need its token</td></tr>
+              <tr><td><code>csrfCookieName</code></td><td><code>'sid_csrf'</code></td><td>The cookie of the token while a session keeps nothing</td></tr>
               <tr><td><code>cookieName</code></td><td><code>'sid'</code></td><td>The name of the cookie</td></tr>
               <tr><td><code>cookie</code></td><td></td><td><code>path</code> (/), <code>domain</code>, <code>sameSite</code> (lax), <code>secure</code> (on HTTPS), <code>httpOnly</code> (true), <code>partitioned</code></td></tr>
             </tbody>

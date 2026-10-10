@@ -1,0 +1,240 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>xufa and Django: Benchmarks · xufa</title>
+    <meta
+      name="description"
+      content="The same app on xufa and on Django served at its best (gunicorn, granian, uvicorn): the LocalLibrary of the Django tutorial and its port, on the same PostgreSQL and data, 4 processes each."
+    />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%23d9502b'/%3E%3Ctext x='16' y='22.5' font-family='monospace' font-size='18' font-weight='700' fill='white' text-anchor='middle'%3Ex%3C/text%3E%3C/svg%3E"
+    />
+    <link rel="stylesheet" href="style.css?v=0.1.0" />
+    <script src="main.js?v=0.1.0"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js" defer></script>
+  </head>
+  <body>
+    <header class="header">
+      <div class="header-inner">
+        <a class="logo" href="index.html"><span class="logo-mark">x</span>xufa</a>
+        <nav class="nav">
+          <a href="guide.html" aria-current="page">Guide</a>
+          <a href="playground.html">Playground</a>
+          <a href="http/index.html">HTTP</a>
+          <a href="orm/index.html">ORM</a>
+          <a class="hide-small" href="auth/index.html">Auth</a>
+          <a class="hide-small" href="sequelize/index.html">Sequelize</a>
+          <a class="hide-small" href="packages.html">Packages</a>
+          <a class="hide-small" href="benchmarks.html">Benchmarks</a>
+          <a href="https://github.com/xufajs/xufa">GitHub</a>
+          <button class="theme-toggle" type="button" aria-label="Switch between light and dark theme">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+              <path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z" />
+            </svg>
+          </button>
+        </nav>
+      </div>
+    </header>
+
+    <div class="docs">
+      <button class="menu-toggle" type="button" aria-expanded="false">☰ Contents</button>
+      <aside class="sidebar">
+        <h4>Benchmarks</h4>
+        <ul>
+          <li><a href="#results">Results</a></li>
+          <li><a href="#app">The app</a></li>
+          <li><a href="#django">Django at its best</a></li>
+          <li><a href="#scenarios">The scenarios</a></li>
+          <li><a href="#notes">What to keep in mind</a></li>
+          <li><a href="#run">Run them yourself</a></li>
+          <li><a href="benchmarks.html">Every benchmark of xufa</a></li>
+        </ul>
+      </aside>
+
+      <article class="content">
+        <h1>xufa and Django</h1>
+        <p class="intro">
+          The same app on both: the LocalLibrary of the Django tutorial, and its port to xufa
+          (<code>examples/locallibrary</code>), on the same PostgreSQL with the same data, the same number of processes,
+          and Django served by each server that serves it well. Each card compares xufa with the fastest of them in that
+          scenario.
+        </p>
+
+        <h2 id="results">Results</h2>
+        <p>
+          2026-10-10: 13th Gen Intel(R) Core(TM) i7-13700H (20 cores), Linux in WSL 2. 4 processes on each
+          side, 64 connections, 3 rounds of 10 s after 3 s of
+          warm-up; the median of the rounds. Node.js 24.21.0; Python 3.14.4,
+          Django 6.1.2, gunicorn 26.2.0, granian 2.8.4, uvicorn 0.54.0,
+          psycopg 3.3.6; PostgreSQL 18.6.
+        </p>
+        <div class="pairs">
+          <div class="pair win">
+            <div class="head"><span>Plain text <small>· Django on granian (WSGI)</small></span><span class="times">11.64&times;</span></div>
+            <div class="chart-row us"><span class="name">xufa</span><span class="track"><span class="fill" style="width: 100.0%"></span></span><span class="value">185k</span></div>
+            <div class="chart-row"><span class="name">Django</span><span class="track"><span class="fill" style="width: 8.6%"></span></span><span class="value">16k</span></div>
+          </div>
+          <div class="pair win">
+            <div class="head"><span>A book as JSON <small>· Django on granian (WSGI)</small></span><span class="times">14.72&times;</span></div>
+            <div class="chart-row us"><span class="name">xufa</span><span class="track"><span class="fill" style="width: 100.0%"></span></span><span class="value">24k</span></div>
+            <div class="chart-row"><span class="name">Django</span><span class="track"><span class="fill" style="width: 6.8%"></span></span><span class="value">1.7k</span></div>
+          </div>
+          <div class="pair win">
+            <div class="head"><span>Home page <small>· Django on granian (WSGI)</small></span><span class="times">10.02&times;</span></div>
+            <div class="chart-row us"><span class="name">xufa</span><span class="track"><span class="fill" style="width: 100.0%"></span></span><span class="value">11k</span></div>
+            <div class="chart-row"><span class="name">Django</span><span class="track"><span class="fill" style="width: 10.0%"></span></span><span class="value">1.1k</span></div>
+          </div>
+          <div class="pair win">
+            <div class="head"><span>Book list <small>· Django on granian (WSGI)</small></span><span class="times">8.91&times;</span></div>
+            <div class="chart-row us"><span class="name">xufa</span><span class="track"><span class="fill" style="width: 100.0%"></span></span><span class="value">8.9k</span></div>
+            <div class="chart-row"><span class="name">Django</span><span class="track"><span class="fill" style="width: 11.2%"></span></span><span class="value">1.0k</span></div>
+          </div>
+          <div class="pair win">
+            <div class="head"><span>Book detail <small>· Django on gunicorn (sync)</small></span><span class="times">15.40&times;</span></div>
+            <div class="chart-row us"><span class="name">xufa</span><span class="track"><span class="fill" style="width: 100.0%"></span></span><span class="value">13k</span></div>
+            <div class="chart-row"><span class="name">Django</span><span class="track"><span class="fill" style="width: 6.5%"></span></span><span class="value">868</span></div>
+          </div>
+          <div class="pair win">
+            <div class="head"><span>Loans of the user <small>· Django on gunicorn (sync)</small></span><span class="times">10.65&times;</span></div>
+            <div class="chart-row us"><span class="name">xufa</span><span class="track"><span class="fill" style="width: 100.0%"></span></span><span class="value">7.1k</span></div>
+            <div class="chart-row"><span class="name">Django</span><span class="track"><span class="fill" style="width: 9.4%"></span></span><span class="value">666</span></div>
+          </div>
+          <div class="pair win">
+            <div class="head"><span>Edit an author <small>· Django on granian (WSGI)</small></span><span class="times">8.54&times;</span></div>
+            <div class="chart-row us"><span class="name">xufa</span><span class="track"><span class="fill" style="width: 100.0%"></span></span><span class="value">5.1k</span></div>
+            <div class="chart-row"><span class="name">Django</span><span class="track"><span class="fill" style="width: 11.7%"></span></span><span class="value">600</span></div>
+          </div>
+        </div>
+        <details class="raw">
+          <summary>Every server: requests a second, latency p50 / p99 (bench/results/django-5.md)</summary>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>Scenario</th><th>xufa</th><th>gunicorn (sync)</th><th>gunicorn (gthread)</th><th>granian (WSGI)</th><th>uvicorn (ASGI)</th></tr></thead>
+              <tbody>
+                <tr><td>Plain text</td><td>184,593<br><small>&lt;1 ms / 1.0 ms ⚠</small></td><td>6,447<br><small>2477 ms / 4977 ms ⚠</small></td><td>4,689<br><small>11 ms / 25 ms ⚠</small></td><td>15,862<br><small>2.0 ms / 15 ms</small></td><td>1,135<br><small>54 ms / 77 ms ⚠</small></td></tr>
+                <tr><td>A book as JSON</td><td>24,336<br><small>2.0 ms / 6.0 ms ⚠</small></td><td>1,407<br><small>2784 ms / 4815 ms ⚠</small></td><td>1,293<br><small>47 ms / 91 ms ⚠</small></td><td>1,653<br><small>34 ms / 76 ms</small></td><td>492<br><small>122 ms / 217 ms ⚠</small></td></tr>
+                <tr><td>Home page</td><td>11,218<br><small>5.0 ms / 11 ms ⚠</small></td><td>450<br><small>2808 ms / 4706 ms</small></td><td>975<br><small>52 ms / 152 ms ⚠</small></td><td>1,119<br><small>53 ms / 117 ms ⚠</small></td><td>422<br><small>141 ms / 287 ms ⚠</small></td></tr>
+                <tr><td>Book list</td><td>8,937<br><small>6.0 ms / 13 ms ⚠</small></td><td>826<br><small>2774 ms / 4990 ms</small></td><td>896<br><small>59 ms / 123 ms ⚠</small></td><td>1,003<br><small>56 ms / 122 ms ⚠</small></td><td>427<br><small>144 ms / 238 ms ⚠</small></td></tr>
+                <tr><td>Book detail</td><td>13,362<br><small>4.0 ms / 10 ms ⚠</small></td><td>868<br><small>2323 ms / 5196 ms ⚠</small></td><td>768<br><small>82 ms / 144 ms ⚠</small></td><td>867<br><small>68 ms / 134 ms</small></td><td>396<br><small>155 ms / 275 ms</small></td></tr>
+                <tr><td>Loans of the user</td><td>7,088<br><small>8.0 ms / 17 ms ⚠</small></td><td>666<br><small>2520 ms / 5057 ms ⚠</small></td><td>499<br><small>118 ms / 249 ms ⚠</small></td><td>629<br><small>98 ms / 149 ms</small></td><td>283<br><small>199 ms / 491 ms</small></td></tr>
+                <tr><td>Edit an author</td><td>5,124<br><small>11 ms / 25 ms ⚠</small></td><td>423<br><small>2714 ms / 5025 ms ⚠</small></td><td>515<br><small>125 ms / 237 ms ⚠</small></td><td>600<br><small>104 ms / 216 ms ⚠</small></td><td>303<br><small>213 ms / 325 ms ⚠</small></td></tr>
+              </tbody>
+            </table>
+          </div>
+        </details>
+        <h3>Memory</h3>
+        <p>
+          The resident memory of all the processes of each server after the scenarios (xufa: the primary and its four
+          workers).
+        </p>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>xufa</th><th>gunicorn (sync)</th><th>gunicorn (gthread)</th><th>granian (WSGI)</th><th>uvicorn (ASGI)</th></tr></thead>
+              <tbody><tr><td>1008 MB</td><td>337 MB</td><td>361 MB</td><td>447 MB</td><td>588 MB</td></tr></tbody>
+            </table>
+          </div>
+
+        <h2 id="app">The app</h2>
+        <p>
+          <code>examples/django-locallibrary</code> is the MDN tutorial as it is published; <code>examples/locallibrary</code>
+          is its port, page by page. Both get the same rows (<code>bench/django/data.mjs</code>: 500 authors, 2,000 books,
+          6,000 copies, 10 genres, 5 languages, a reader with loans and a librarian), each in a database of its own on one
+          PostgreSQL, vacuumed and analyzed after the rows go in. Both apps have an index on the books' title and author,
+          the order of their list, that also holds the id (<code>INCLUDE</code>; the tutorial has none: each page sorted
+          every book), and keep the four counts of the home page for 10 s (Django's cache,
+          xufa's <code>cached()</code>, which also forgets them when their model is written). Sessions are kept in the
+          database on both sides; xufa's app writes them with <code>asyncCommit</code>, the setting of a new project
+          (PostgreSQL confirms them before they reach the disk; Django has no such option for its sessions). Two pages are only for the benchmark, the same on
+          each: a plain text, and a book as JSON.
+        </p>
+
+        <h2 id="django">Django at its best</h2>
+        <p>
+          The tutorial is written to learn, not to be fast, so Django runs as it would be deployed
+          (<code>bench/django/site/benchsite</code>): <code>DEBUG</code> off (cached templates), psycopg 3 with its
+          compiled implementation, persistent connections (Django's pool under ASGI, as its docs advise), no static files
+          middleware, no log of requests. The tutorial's list views load the author of each book with a query of its own;
+          here they load their relations as the port does (<code>select_related</code>, <code>prefetch_related</code>),
+          so both make the same queries. Four servers run it, four processes each: gunicorn with sync workers and with
+          threads (<code>gthread</code>, 4 per process), granian (WSGI, 4 threads per process) and uvicorn (ASGI). xufa
+          runs as deployed: <code>NODE_ENV=production</code>, four workers of <code>node:cluster</code>, no log of
+          requests.
+        </p>
+
+        <h2 id="scenarios">The scenarios</h2>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Scenario</th><th>What it does</th></tr></thead>
+            <tbody>
+              <tr><td>Plain text</td><td>A text of 13 bytes: the framework alone</td></tr>
+              <tr><td>A book as JSON</td><td>A book with its author, language and genres: 2 queries, as JSON</td></tr>
+              <tr><td>Home page</td><td>4 counts (kept 10 s), the visits of the browser kept in its session (a write), a template; 100 visitors</td></tr>
+              <tr><td>Book list</td><td>A page of 10 books with their authors, ordered by title, and its paginator</td></tr>
+              <tr><td>Book detail</td><td>A book with its author, language, genres and copies</td></tr>
+              <tr><td>Loans of the user</td><td>The copies the reader borrowed: a logged-in page</td></tr>
+              <tr><td>Edit an author</td><td>The form of an author sent back (CSRF token, validation, an UPDATE, a redirect) by a librarian; 50 authors</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p>
+          Each request is checked before it is measured (its status, and the size of its answer, about the same on both
+          sides). The writes go to rows of their own (100 visitors, 50 authors), as real traffic does: on one row, every
+          request would wait for the lock of the one before it, and both would measure PostgreSQL.
+        </p>
+
+        <h2 id="notes">What to keep in mind</h2>
+        <ul>
+          <li>
+            The book list is the closest. Its pages go up to the 200th (<code>OFFSET 1990</code>, as Django's
+            paginator). From an offset of 100, xufa's ORM asks PostgreSQL for the ids of the page first, from the index
+            alone, then loads those ten books with their authors; Django skips the rows of the whole join. Django orders by <code>author</code> through the author's own order (last name, first
+            name), which the index cannot give: it still sorts.
+          </li>
+          <li>
+            The home page writes its session on every visit. With <code>asyncCommit</code> that write doesn't wait for
+            the disk (a crash of PostgreSQL could lose the last fraction of a second of session writes); without it,
+            xufa's home page answers about half as many requests.
+          </li>
+          <li>
+            gunicorn's sync workers serve one request at a time: with 64 connections, requests wait seconds in its queue
+            (its p99). They are still the most common way to deploy Django.
+          </li>
+          <li>
+            xufa takes more memory under load, and it is not data it keeps: each worker starts at about 93 MB, as a
+            process of Django, and after a collection its live heap is the same 21 MB as when idle. What grows is V8's
+            young generation, made bigger to collect less often: <code>@xufa/cluster</code> caps it at 32 MB a half
+            (<code>semiSpace</code>), which keeps a worker near 200 MB with the same speed.
+          </li>
+          <li>
+            Linux in WSL 2 shares the machine with Windows: ⚠ marks rounds more than 10% apart. Even so, in every scenario
+            the slowest round of xufa answered at least six times as many requests as the fastest round of any server of
+            Django.
+          </li>
+        </ul>
+
+        <h2 id="run">Run them yourself</h2>
+        <pre><code class="language-sh">pnpm bench:linux django --out results/django-5       # from Windows, in WSL
+node bench/django.js --rounds 3 --duration 10          # on Linux
+node bench/django.js --servers xufa,granian-wsgi --scenarios hello,json,book</code></pre>
+        <p>
+          It needs PostgreSQL (<code>apt install postgresql</code>) and Python 3; it makes a cluster of PostgreSQL of its
+          own and a venv with Django and its servers in <code>~/bench-django</code>.
+        </p>
+      </article>
+    </div>
+
+    <footer class="footer">
+      <div class="container">
+        <span>xufa is MIT licensed. &copy; Jes&uacute;s Seijas</span>
+        <span>
+          <a href="guide.html">Guide</a> &middot; <a href="playground.html">Playground</a> &middot; <a href="http/index.html">HTTP</a> &middot; <a href="orm/index.html">ORM</a> &middot; <a href="auth/index.html">Auth</a> &middot;
+          <a href="sequelize/index.html">Sequelize</a> &middot; <a href="packages.html">Packages</a> &middot;
+          <a href="benchmarks.html">Benchmarks</a> &middot; <a href="https://github.com/xufajs/xufa">GitHub</a>
+        </span>
+      </div>
+    </footer>
+  </body>
+</html>

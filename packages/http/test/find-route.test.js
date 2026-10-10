@@ -2,7 +2,7 @@
 
 
 const Fastify = require('..')
-const fastifyPlugin = require('@xufa/http').plugin
+const fastifyPlugin = require('..').plugin
 
 test('findRoute should return null when route cannot be found due to a different method', async () => {
   expect.assertions(1)

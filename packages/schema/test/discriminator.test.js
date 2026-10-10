@@ -1,4 +1,4 @@
-const { compileJsonSchema, standaloneJsonSchema, toErrors, Float, OneOfType, Schema, Values } = require('..');
+import { compileJsonSchema, standaloneJsonSchema, toErrors, Float, OneOfType, Schema, Values } from '../index.js';
 
 const pets = {
   type: 'object',

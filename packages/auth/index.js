@@ -2,24 +2,30 @@
 // rotate, one-time codes of authenticator apps (TOTP), logins locked after failures, refresh tokens that rotate, and
 // the plugin of @xufa/http that puts them together, with strategies (API keys, HTTP Basic, and those of Passport).
 //
-//   const auth = require('@xufa/auth');
+//   import * as auth from '@xufa/auth';
 //   app.register(auth.plugin, {
 //     keys: process.env.JWT_KEY,
 //     login: { findUser: (username) => User.objects.filter({ email: username }).first() },
 //   });
 //   app.get('/me', { config: { auth: true } }, (request) => request.user);
-const { hashPassword, verifyPassword, needsRehash, PASSWORD_DEFAULTS } = require('./lib/password');
-const { KeySet } = require('./lib/keys');
-const { signJwt, signJwtAsync, verifyJwt, verifyJwtAsync, decodeJwt } = require('./lib/jwt-keyset');
-const totp = require('./lib/totp');
-const { Lockout, MemoryStore } = require('./lib/lockout');
-const { normalizeIdentifier } = require('./lib/identifier');
-const { skeleton } = require('./lib/confusables');
-const { RefreshTokens, MemoryTokenStore, modelStore, refreshTokenFields } = require('./lib/refresh');
-const { parseCookies, serializeCookie } = require('./lib/cookies');
-const { KeyVault, MemoryKeyStore, vaultModelStore, vaultFields, VaultError } = require('./lib/vault');
-const { authPlugin, rolesOf, tenantsOf, ALL_TENANTS } = require('./lib/plugin');
-const {
+import { hashPassword, verifyPassword, needsRehash, PASSWORD_DEFAULTS } from './lib/password.js';
+import { KeySet } from './lib/keys.js';
+import { signJwt, signJwtAsync, verifyJwt, verifyJwtAsync, decodeJwt } from './lib/jwt-keyset.js';
+import { qrCode, qrSvg, QrError } from './lib/qr.js';
+import { Credentials, CredentialError } from './lib/credentials.js';
+import { AbstractUser, AbstractGroup, UNUSABLE_PASSWORD } from './lib/user.js';
+import * as messages from './lib/messages.js';
+import { Lockout, MemoryStore } from './lib/lockout.js';
+import { normalizeIdentifier } from './lib/identifier.js';
+import { skeleton } from './lib/confusables.js';
+import { RefreshTokens, MemoryTokenStore, modelStore, refreshTokenFields } from './lib/refresh.js';
+import { parseCookies, serializeCookie } from './lib/cookies.js';
+import { KeyVault, MemoryKeyStore, vaultModelStore, vaultFields, VaultError } from './lib/vault.js';
+import { authPlugin, rolesOf, tenantsOf, ALL_TENANTS } from './lib/plugin.js';
+import { Rbac, RbacError } from './lib/rbac.js';
+import { accountsPlugin, AccountError, emailOf } from './lib/accounts.js';
+import { pagesPlugin } from './lib/pages.js';
+import {
   apiKey,
   apiKeyFields,
   basic,
@@ -27,17 +33,28 @@ const {
   hashApiKey,
   parseApiKey,
   verifyApiKey,
-} = require('./lib/strategies');
-const { passport, oauthState } = require('./lib/passport');
-const errors = require('./lib/errors');
+} from './lib/strategies.js';
+import { passport, oauthState } from './lib/passport.js';
 
-module.exports = {
-  plugin: authPlugin,
+export * from './lib/totp.js';
+export const AUTH_MESSAGES = messages.MESSAGES;
+export const authMessage = messages.message;
+export const setTranslator = messages.setTranslator;
+export * from './lib/errors.js';
+
+export {
+  authPlugin as plugin,
+  accountsPlugin as accounts,
+  pagesPlugin as pages,
+  AccountError,
+  emailOf,
   normalizeIdentifier,
   skeleton,
   rolesOf,
   tenantsOf,
   ALL_TENANTS,
+  Rbac,
+  RbacError,
   hashPassword,
   verifyPassword,
   needsRehash,
@@ -53,7 +70,14 @@ module.exports = {
   verifyJwt,
   verifyJwtAsync,
   decodeJwt,
-  ...totp,
+  qrCode,
+  Credentials,
+  AbstractUser,
+  AbstractGroup,
+  UNUSABLE_PASSWORD,
+  CredentialError,
+  qrSvg,
+  QrError,
   Lockout,
   MemoryStore,
   RefreshTokens,
@@ -71,5 +95,4 @@ module.exports = {
   basic,
   passport,
   oauthState,
-  ...errors,
 };

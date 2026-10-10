@@ -1,5 +1,3 @@
-'use strict';
-
 // Templates in the texts of a configuration: {{ expression }}, of @xufa/expression (a safe part of JavaScript: no
 // assignments, nothing of the process), with `env` (the variables of the environment) and `config` (the other keys,
 // templates of theirs resolved first; a cycle is an error). A text that is only one template is the value of its
@@ -8,8 +6,8 @@
 //
 //   port: '{{ env.PORT ?? 3000 }}'
 //   url: 'postgres://{{ env.DB_USER }}@{{ config.database.host }}/app'
-const { Engine } = require('@xufa/expression');
-const { ConfigError } = require('./errors');
+import { Engine } from '@xufa/expression';
+import { ConfigError } from './errors.js';
 
 const TEMPLATE = /\{\{([\s\S]*?)\}\}/g;
 const WHOLE = /^\{\{([\s\S]*?)\}\}$/;
@@ -21,7 +19,9 @@ const hasTemplate = (value) => typeof value === 'string' && value.includes('{{')
 
 // The tree with its templates resolved (a new tree; the one given is not changed). `literal`: values that are not
 // templates (a Map of paths, 'a.b', to the value given there by a source that has no templates).
-function resolveTemplates(tree, env, literal = new Map()) {
+// `verbatim`: paths ('auth.mails') whose texts are not templates of the configuration (they are templates of
+// something else: emails, pages), nor anything below them.
+function resolveTemplates(tree, env, literal = new Map(), verbatim = []) {
   const done = new Map(); // path -> value
   const resolving = [];
   const errors = [];
@@ -81,7 +81,12 @@ function resolveTemplates(tree, env, literal = new Map()) {
     });
   }
 
-  const isLiteral = (path, value) => literal.size > 0 && literal.get(path.join('.')) === value;
+  const isVerbatim = (path) => {
+    const key = path.join('.');
+    return verbatim.some((prefix) => key === prefix || key.startsWith(`${prefix}.`));
+  };
+  const isLiteral = (path, value) =>
+    (literal.size > 0 && literal.get(path.join('.')) === value) || (verbatim.length > 0 && isVerbatim(path));
 
   function valueAt(path) {
     const key = path.join('.');
@@ -133,4 +138,4 @@ function resolveTemplates(tree, env, literal = new Map()) {
   return out;
 }
 
-module.exports = { resolveTemplates, hasTemplate };
+export { resolveTemplates, hasTemplate };

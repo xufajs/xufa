@@ -1,7 +1,4 @@
-'use strict'
-
-
-const build = require('..')
+import build from '../index.js';
 
 test('external $ref schema should be reused, not inlined at every reference', () => {
   expect.assertions(3)

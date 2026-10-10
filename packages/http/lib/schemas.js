@@ -1,12 +1,12 @@
 // Shared schemas (addSchema), the normalization of route schemas, and the serializer of a response by status code.
-const { kSchemaVisited, kSchemaResponse } = require('./symbols');
-const {
+import { kSchemaVisited, kSchemaResponse } from './symbols.js';
+import {
   XUFA_ERR_SCH_MISSING_ID,
   XUFA_ERR_SCH_ALREADY_PRESENT,
   XUFA_ERR_SCH_DUPLICATE,
   XUFA_ERR_SCH_CONTENT_MISSING_SCHEMA,
-} = require('./errors');
-const ContentType = require('./content-type');
+} from './errors.js';
+import ContentType from './content-type.js';
 
 const kFluentSchema = Symbol.for('fluent-schema-object');
 const SCHEMAS_SOURCE = ['params', 'body', 'querystring', 'query', 'headers'];
@@ -107,11 +107,8 @@ function getSchemaSerializer(context, statusCode, contentType) {
 
 const STATUS_CLASSES = ['0xx', '1xx', '2xx', '3xx', '4xx', '5xx', '6xx', '7xx', '8xx', '9xx'];
 
-module.exports = {
-  buildSchemas(initStore) {
-    return new Schemas(initStore);
-  },
-  getSchemaSerializer,
-  normalizeSchema,
-  clone,
-};
+export function buildSchemas(initStore) {
+  return new Schemas(initStore);
+}
+
+export { getSchemaSerializer, normalizeSchema, clone };

@@ -1,4 +1,4 @@
-const { ValidateType, toTypes } = require('./validate-type');
+import { ValidateType, toTypes } from './validate-type.js';
 
 class AnyOfType extends ValidateType {
   constructor(options = {}) {
@@ -56,9 +56,4 @@ function oanyOf(types, isMandatory = false, isNullable = false) {
   return new AnyOfType({ types, isMandatory, isNullable });
 }
 
-module.exports = {
-  AnyOfType,
-  AnyOf,
-  anyOf,
-  oanyOf,
-};
+export { AnyOfType, AnyOf, anyOf, oanyOf };

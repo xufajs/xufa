@@ -1,10 +1,8 @@
-'use strict';
+import zlib from 'node:zlib';
 
-const zlib = require('node:zlib');
-
-const bufferUtil = require('./buffer-util');
-const Limiter = require('./limiter');
-const { kStatusCode } = require('./constants');
+import * as bufferUtil from './buffer-util.js';
+import Limiter from './limiter.js';
+import { kStatusCode } from './constants.js';
 
 const FastBuffer = Buffer[Symbol.species];
 const TRAILER = Buffer.from([0x00, 0x00, 0xff, 0xff]);
@@ -420,7 +418,7 @@ class PerMessageDeflate {
   }
 }
 
-module.exports = PerMessageDeflate;
+export default PerMessageDeflate;
 
 /**
  * The listener of the `zlib.DeflateRaw` stream `'data'` event.
@@ -483,3 +481,6 @@ function inflateOnError(err) {
   err[kStatusCode] = 1007;
   this[kCallback](err);
 }
+
+// What require() gives (the tests of ws are CommonJS).
+export { PerMessageDeflate as 'module.exports' };

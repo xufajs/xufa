@@ -82,6 +82,10 @@
           <li><a href="../websocket/index.html">@xufa/websocket</a></li>
           <li><a href="../admin/index.html">@xufa/admin</a></li>
           <li><a href="../session/index.html">@xufa/session</a></li>
+          <li><a href="../forms/index.html">@xufa/forms</a></li>
+          <li><a href="../views/index.html">@xufa/views</a></li>
+          <li><a href="../mail/index.html">@xufa/mail</a></li>
+          <li><a href="../i18n/index.html">@xufa/i18n</a></li>
           <li><a href="../openapi/index.html">@xufa/openapi</a></li>
           <li><a href="../client/index.html">@xufa/client</a></li>
           <li><a href="../schema/index.html">@xufa/schema</a></li>
@@ -125,7 +129,7 @@
 
         <h2 id="start">Quick start</h2>
         <pre><code class="language-sh">npm install @xufa/mongo</code></pre>
-        <pre><code class="language-js">const { MongoClient, ObjectId } = require('@xufa/mongo');
+        <pre><code class="language-js">import { MongoClient, ObjectId } from '@xufa/mongo';
 
 const client = await new MongoClient('mongodb://localhost:27017/app').connect();
 const users = client.db().collection('users');
@@ -251,6 +255,14 @@ try {
           <code>startTransaction()</code>, <code>commitTransaction()</code> and <code>abortTransaction()</code>, with
           <code>inTransaction</code>. Transactions need a replica set or a sharded cluster (MongoDB has none on a single
           server).
+        </p>
+        <p>
+          As the official drivers do, <code>withTransaction()</code> runs the whole transaction again when it meets a
+          <code>TransientTransactionError</code> (a write conflict with another transaction, an election, a network error
+          inside it), and its commit again (with a majority write concern) when its result is unknown
+          (<code>UnknownTransactionCommitResult</code>), until <code>{ timeout }</code> (120 s) has passed. So
+          <code>fn</code> may run more than once: it should only write in the transaction. Network errors get those
+          labels from the driver; <code>err.hasErrorLabel(label)</code> tells.
         </p>
 
         <h2 id="urls">Connection strings</h2>

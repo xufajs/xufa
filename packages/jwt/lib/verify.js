@@ -1,11 +1,11 @@
 // verify(token, secretOrPublicKey, options, callback): the payload of a token whose signature is valid and whose
 // claims hold, as jsonwebtoken verifies it (the same options, checks and errors), with EdDSA (Ed25519, Ed448) too.
-const { KeyObject } = require('node:crypto');
-const { JsonWebTokenError, NotBeforeError, TokenExpiredError } = require('./errors');
-const { decodeOrThrow } = require('./decode');
-const timespan = require('./timespan');
-const { validateAsymmetricKey, keyObjectOf } = require('./keys');
-const jws = require('./jws');
+import { KeyObject } from 'node:crypto';
+import { JsonWebTokenError, NotBeforeError, TokenExpiredError } from './errors.js';
+import { decodeOrThrow } from './decode.js';
+import timespan from './timespan.js';
+import { validateAsymmetricKey, keyObjectOf } from './keys.js';
+import * as jws from './jws.js';
 
 const PUB_KEY_ALGS = ['RS256', 'RS384', 'RS512', 'PS256', 'PS384', 'PS512'];
 const EC_KEY_ALGS = ['ES256', 'ES384', 'ES512', 'ES256K'];
@@ -20,7 +20,7 @@ const RSA_KEY_ALGS = ['RS256', 'RS384', 'RS512', 'PS256', 'PS384', 'PS512'];
 const HS_ALGS = ['HS256', 'HS384', 'HS512'];
 const ED_KEY_ALGS = ['EdDSA'];
 
-module.exports = function verify(token, secretOrPublicKeyArg, optionsArg, callbackArg) {
+const __default = function verify(token, secretOrPublicKeyArg, optionsArg, callbackArg) {
   let options = optionsArg;
   let callback = callbackArg;
   if (typeof options === 'function' && !callback) {
@@ -234,3 +234,4 @@ module.exports = function verify(token, secretOrPublicKeyArg, optionsArg, callba
     return checkClaims();
   });
 };
+export default __default;

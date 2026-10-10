@@ -1,0 +1,42 @@
+{{extends 'base_generic'}}
+
+{{#block content}}
+<h1>Title: {{ book.title }}</h1>
+
+<p><strong>Author:</strong> {{#if book.author}}<a href="{{ book.author.absoluteUrl }}">{{ book.author }}</a>{{/if}}</p>
+<p><strong>Summary:</strong> {{ book.summary }}</p>
+<p><strong>ISBN:</strong> {{ book.isbn }}</p>
+<p><strong>Language:</strong> {{ book.language }}</p>
+<p><strong>Genre:</strong> {{ book.genre | join(', ') }}</p>
+
+<div style="margin-left: 20px; margin-top: 20px">
+  <h4>Copies</h4>
+
+  {{#each book.bookInstanceSet as copy}}
+  <hr />
+  <p class="{{ copy.status === 'a' ? 'text-success' : copy.status === 'd' ? 'text-danger' : 'text-warning' }}">
+    {{ copy.display('status') }}
+  </p>
+  {{#if copy.status !== 'a'}}
+  <p><strong>Due to be returned:</strong> {{ copy.dueBack }}</p>
+  {{/if}}
+  <p><strong>Imprint:</strong> {{ copy.imprint }}</p>
+  <p class="text-muted"><strong>Id:</strong> <a href="{{ copy.absoluteUrl }}">{{ copy.id }}</a></p>
+  {{else}}
+  <p>The library has no copies of this book.</p>
+  {{/each}}
+</div>
+{{/block content}}
+
+{{#block sidebar}}
+{{ block.super }} {{#if perms.has('Book.change') || perms.has('Book.delete')}}
+<hr />
+<ul class="sidebar-nav">
+  {{#if perms.has('Book.change')}}
+  <li><a href="{{ url('book-update', book.pk) }}">Update Book</a></li>
+  {{/if}} {{#if !(book.bookInstanceSet | length) && perms.has('Book.delete')}}
+  <li><a href="{{ url('book-delete', book.pk) }}">Delete Book</a></li>
+  {{/if}}
+</ul>
+{{/if}}
+{{/block sidebar}}

@@ -55,6 +55,10 @@
           <li><a href="../websocket/index.html">@xufa/websocket</a></li>
           <li><a href="../admin/index.html">@xufa/admin</a></li>
           <li><a href="../session/index.html">@xufa/session</a></li>
+          <li><a href="../forms/index.html">@xufa/forms</a></li>
+          <li><a href="../views/index.html">@xufa/views</a></li>
+          <li><a href="../mail/index.html">@xufa/mail</a></li>
+          <li><a href="../i18n/index.html">@xufa/i18n</a></li>
           <li><a href="../openapi/index.html">@xufa/openapi</a></li>
           <li><a href="../client/index.html">@xufa/client</a></li>
           <li><a href="../schema/index.html">@xufa/schema</a></li>
@@ -90,7 +94,7 @@
         <h1>Reference</h1>
         <p class="intro">
           A PostgreSQL driver with the API of pg: pipelined, with prepared statements, and no dependencies. Every declaration of its TypeScript declarations
-          (<code>packages/pg/index.d.ts</code>), as they are written, with their comments: made from them each time
+          (<code>packages/pg/index.d.ts</code> or <code>index.d.cts</code>), as they are written, with their comments: made from them each time
           the docs are built. How to use them is in <a href="index.html">the overview</a>.
         </p>
 
@@ -282,6 +286,7 @@
                 <tr><td><code>lock_timeout?</code></td><td><code>number</code></td><td></td></tr>
                 <tr><td><code>idle_in_transaction_session_timeout?</code></td><td><code>number</code></td><td></td></tr>
                 <tr><td><code>types?</code></td><td><code>Map&lt;number, (value: string) =&gt; unknown&gt; | Record&lt;number, (value: string) =&gt; unknown&gt;</code></td><td><p>Parsers by type oid, of the text of the values (those types are read as text).</p></td></tr>
+                <tr><td><code>dates?</code></td><td><code>'text'</code></td><td><p>'text': date columns as their text ('2026-10-09'), not Dates at local midnight (what</p></td></tr>
                 <tr><td><code>prepare?</code></td><td><code>boolean</code></td><td><p>false: statements are not prepared.</p></td></tr>
                 <tr><td><code>binary?</code></td><td><code>boolean</code></td><td><p>false: only the text format (no binary parameters and results).</p></td></tr>
                 <tr><td><code>query_timeout?</code></td><td><code>number</code></td><td><p>Milliseconds after which queries are cancelled.</p></td></tr>
@@ -297,6 +302,7 @@
               <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
               <tbody>
                 <tr><td><code>max?</code></td><td><code>number</code></td><td></td></tr>
+                <tr><td><code>pipeline?</code></td><td><code>number</code></td><td><p>How many reads a connection takes before another is opened (8; 1: a connection for each query at once, up to max). Reads (SELECT, WITH, VALUES, TABLE, SHOW) are pipelined on the connections open, never behind a write; writes take a connection of their own, as their commits wait for the disk.</p></td></tr>
                 <tr><td><code>idleTimeoutMillis?</code></td><td><code>number</code></td><td></td></tr>
                 <tr><td><code>acquireTimeoutMillis?</code></td><td><code>number</code></td><td><p>How long a query or connect() waits for a connection, free or being opened (0: no limit); past it, an error of code ACQUIRE_TIMEOUT.</p></td></tr>
               </tbody>

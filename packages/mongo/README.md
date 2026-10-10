@@ -6,7 +6,7 @@ the API of the [official driver](https://www.mongodb.com/docs/drivers/node/) for
 MongoDB backend of [@xufa/orm](../orm) is made with it.
 
 ```js
-const { MongoClient, ObjectId } = require('@xufa/mongo');
+import { MongoClient, ObjectId } from '@xufa/mongo';
 
 const client = await new MongoClient('mongodb://localhost:27017/app').connect();
 const users = client.db().collection('users');
@@ -24,6 +24,9 @@ await session.endSession();
 await client.close();
 ```
 
+- `session.withTransaction(fn, { timeout })`: as the official drivers, the transaction runs again on a
+  `TransientTransactionError` (a write conflict...) and its commit again on an `UnknownTransactionCommitResult`, for
+  120 s; `fn` may run more than once.
 - `MongoClient(url, options)`: `connect()`, `db(name)`, `startSession()`, `close()`. Options (also in the connection
   string): `maxPoolSize` (5 by server), `readPreference`, `retryWrites` and `retryReads` (true), `replicaSet`,
   `directConnection`, `heartbeatFrequencyMS` (10000), `serverSelectionTimeoutMS` (30000), `localThresholdMS` (15),
@@ -70,7 +73,7 @@ compares the BSON of both.
 The tests that need a server use `XUFA_MONGO_URL` (`mongodb://127.0.0.1:27017/xufa_test` by default, and `off` to
 skip them) and only touch the collections they create in that database. Those of replica sets (failover, read
 preferences, transactions) use `XUFA_MONGO_RS_URL` (a replica set `rs3` of three members on 27031 to 27033 by
-default), and are skipped when it cannot be reached.
+default: `npm run mongo:rs` at the root of the repository starts it), and are skipped when it cannot be reached.
 
 ## License
 

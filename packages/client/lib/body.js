@@ -7,9 +7,9 @@
 //   files streamed and its length known before (as undici does): servers that refuse a chunked one take it.
 // encodeBody(body) gives { body, headers } (headers: those to add when the caller has not given them), or null when it
 // is not one of these (texts, Buffers and streams go as they are; anything else goes through fetch).
-const { randomBytes } = require('node:crypto');
-const { Blob } = require('node:buffer');
-const { Readable } = require('node:stream');
+import { randomBytes } from 'node:crypto';
+import { Blob } from 'node:buffer';
+import { Readable } from 'node:stream';
 
 // FormData is a global of Node.js (of undici), with no module of its own.
 const { FormData } = globalThis;
@@ -76,4 +76,4 @@ function encodeBody(body) {
   return null;
 }
 
-module.exports = { encodeBody };
+export { encodeBody };

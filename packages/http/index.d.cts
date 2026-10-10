@@ -1,0 +1,599 @@
+// Ported from fastify (fastify.d.ts, MIT License) by tools/port-types/port.js: do not edit, change the tool.
+import * as http from 'node:http';
+import pluginFunction = require('./types/plugin-function');
+import * as http2 from 'node:http2';
+import * as https from 'node:https';
+import { Socket } from 'node:net';
+
+import { BuildCompilerFromPool, ValidatorFactory } from './types/compilers';
+import { XufaError } from '@xufa/errors';
+import { SerializerOptions as FJSOptions, SerializerFactory } from './types/compilers';
+import { ConstraintStrategy, Config as FindMyWayConfig, HTTPVersion } from '@xufa/router';
+import {
+  InjectOptions,
+  CallbackFunc as LightMyRequestCallback,
+  Chain as LightMyRequestChain,
+  Response as LightMyRequestResponse,
+} from '@xufa/inject';
+
+import {
+  AddContentTypeParser,
+  ConstructorAction,
+  XufaBodyParser,
+  XufaContentTypeParser,
+  getDefaultJsonParser,
+  hasContentTypeParser,
+  ProtoAction,
+} from './types/content-type-parser';
+import { XufaContextConfig } from './types/context';
+import { XufaErrorCodes } from './types/errors';
+import {
+  DoneFuncWithErrOrRes,
+  HookHandlerDoneFunction,
+  onCloseAsyncHookHandler,
+  onCloseHookHandler,
+  onErrorAsyncHookHandler,
+  onErrorHookHandler,
+  onListenAsyncHookHandler,
+  onListenHookHandler,
+  onReadyAsyncHookHandler,
+  onReadyHookHandler,
+  onRegisterHookHandler,
+  onRequestAbortAsyncHookHandler,
+  onRequestAbortHookHandler,
+  onRequestAsyncHookHandler,
+  onRequestHookHandler,
+  onResponseAsyncHookHandler,
+  onResponseHookHandler,
+  onRouteHookHandler,
+  onSendAsyncHookHandler,
+  onSendHookHandler,
+  onTimeoutAsyncHookHandler,
+  onTimeoutHookHandler,
+  preCloseAsyncHookHandler,
+  preCloseHookHandler,
+  preHandlerAsyncHookHandler,
+  preHandlerHookHandler,
+  preParsingAsyncHookHandler,
+  preParsingHookHandler,
+  preSerializationAsyncHookHandler,
+  preSerializationHookHandler,
+  preValidationAsyncHookHandler,
+  preValidationHookHandler,
+  RequestPayload,
+} from './types/hooks';
+import { XufaInstance, XufaListenOptions, PrintRoutesOptions } from './types/instance';
+import {
+  XufaBaseLogger,
+  XufaChildLoggerFactory,
+  XufaLogFn,
+  XufaLoggerOptions,
+  LogController as LogControllerClass,
+  LogLevel,
+  PinoLoggerOptions,
+} from './types/logger';
+import { XufaPluginAsync, XufaPluginCallback, XufaPluginOptions } from './types/plugin';
+import { XufaRegister, XufaRegisterOptions, RegisterOptions } from './types/register';
+import { XufaReply } from './types/reply';
+import { XufaRequest, RequestGenericInterface } from './types/request';
+import {
+  RouteGenericInterface,
+  RouteHandler,
+  RouteHandlerMethod,
+  RouteOptions,
+  RouteShorthandMethod,
+  RouteShorthandOptions,
+  RouteShorthandOptionsWithHandler,
+} from './types/route';
+import {
+  XufaSchema,
+  XufaSchemaCompiler,
+  XufaSchemaValidationError,
+  XufaSerializerCompiler,
+  SchemaErrorDataVar,
+  SchemaErrorFormatter,
+} from './types/schema';
+import { XufaServerFactory, XufaServerFactoryHandler } from './types/server-factory';
+import { XufaTypeProvider, XufaTypeProviderDefault, SafePromiseLike } from './types/type-provider';
+import {
+  ContextConfigDefault,
+  HTTPMethods,
+  RawReplyDefaultExpression,
+  RawRequestDefaultExpression,
+  RawServerBase,
+  RawServerDefault,
+  RequestBodyDefault,
+  RequestHeadersDefault,
+  RequestParamsDefault,
+  RequestQuerystringDefault,
+} from './types/utils';
+
+declare module '@xufa/errors' {
+  interface XufaError {
+    validationContext?: SchemaErrorDataVar;
+    validation?: XufaSchemaValidationError[];
+  }
+}
+
+type Xufa = typeof xufa;
+
+declare namespace xufa {
+  export const errorCodes: XufaErrorCodes;
+  /** Wraps a plugin so that it is not encapsulated, with its metadata (what fastify-plugin does for fastify). */
+  export const plugin: typeof pluginFunction;
+  export type PluginMetadata = pluginFunction.PluginMetadata;
+  /**
+   * The page of the errors for development: browsers get the error, its stack with the source and the request (off
+   * when NODE_ENV is production, unless enabled; notFound: false leaves the 404 to the app).
+   */
+  export const devErrors: XufaPluginCallback<{ enabled?: boolean; context?: number; notFound?: boolean }>;
+  /** The result of a check of health. */
+  export interface HealthResult {
+    status: 'up' | 'degraded' | 'down';
+    error?: string;
+    details?: unknown;
+    duration: number;
+    since: string;
+    critical: boolean;
+  }
+  /** What GET /health gives (and app.health.check()). */
+  export interface HealthReport {
+    status: 'up' | 'degraded' | 'down';
+    closing?: boolean;
+    checks: Record<string, HealthResult>;
+    uptime: number;
+    checkedAt: string | null;
+  }
+  /**
+   * A check: a function (it gives nothing, true or details: up; false or a text: down; throws: down; or
+   * { status: 'degraded', ...details }), or { check, critical (true), timeout, heal: { after, run } }.
+   */
+  export type HealthCheck =
+    | (() => unknown)
+    | {
+        check: () => unknown;
+        critical?: boolean;
+        timeout?: number | string;
+        heal?: { after: number | string; run: (result: HealthResult) => unknown };
+      };
+  /**
+   * The routes of the health of the app: GET /health/live, /health/ready (503 when a critical check is down, or the
+   * app closes) and /health (the report). app.health: check(), report, status.
+   */
+  export const health: XufaPluginCallback<{
+    prefix?: string;
+    checks?: Record<string, HealthCheck>;
+    timeout?: number | string;
+    cache?: number | string;
+    interval?: number | string;
+    details?: boolean;
+    logLevel?: string;
+    onChange?: (
+      status: HealthReport['status'],
+      previous: HealthReport['status'] | null,
+      report: HealthReport
+    ) => unknown;
+  }>;
+  /** The state of the maintenance mode (what xufa down writes). */
+  export interface MaintenanceState {
+    message?: string;
+    retryAfter?: number;
+    secret?: string;
+    allow?: string[];
+    redirect?: string;
+    since?: string;
+  }
+  /** Where the maintenance mode is kept: a file, maintenance(db) of @xufa/orm, or yours. */
+  export interface MaintenanceStore {
+    get(): MaintenanceState | null | Promise<MaintenanceState | null>;
+  }
+  /**
+   * The maintenance mode: while xufa down has it on, requests get a 503 (the health routes, routes with
+   * config.maintenance: false, the addresses allowed and the secret path go through). app.maintenance.state().
+   */
+  export const maintenance: XufaPluginCallback<{
+    file?: string | false;
+    store?: MaintenanceStore | MaintenanceStore[];
+    refresh?: number;
+    except?: string[];
+    render?: (state: MaintenanceState, request: XufaRequest) => string;
+  }>;
+  /** A file of a multipart form in request.body: its name, type, size and bytes. */
+  export interface FormFile {
+    filename: string;
+    contentType: string;
+    size: number;
+    data: Buffer;
+  }
+  /**
+   * The bodies of HTML forms: application/x-www-form-urlencoded and multipart/form-data become request.body (a
+   * field given again, or named with [], is a list; files are FormFile). Past a limit: 413, or 400.
+   */
+  export const formBody: XufaPluginCallback<{
+    bodyLimit?: number;
+    multipart?: boolean;
+    files?: number;
+    fileSize?: number;
+    fields?: number;
+    fieldSize?: number;
+    parts?: number;
+  }>;
+  /**
+   * Static files: the files of folders under a prefix (/static/), with ETags (304), precompressed .br and .gz
+   * files, and app.staticUrl(path): the address with the version of the file, cached for a year.
+   */
+  export const staticFiles: XufaPluginCallback<{
+    root: string | string[];
+    prefix?: string;
+    maxAge?: number;
+    immutable?: number;
+    dotfiles?: boolean;
+    precompressed?: boolean;
+    types?: Record<string, string>;
+  }>;
+  /**
+   * Error pages (Django's handler404, handler500 and their templates): for requests of browsers, the views of
+   * @xufa/template by status (404, 403, 400, 500: { error, statusCode, message, permission }); the others go on
+   * to the error handlers under it (JSON). notFound: routes that are not there too.
+   */
+  /** A response of a TestClient: what it rendered (views of @xufa/template and their context), and the redirects it followed. */
+  export interface TestResponse extends LightMyRequestResponse {
+    templates: string[];
+    context: Record<string, any> | null;
+    contexts: Record<string, any>[];
+    readonly textContent: string;
+    redirectChain?: [string, number][];
+  }
+  type TestOptions = { headers?: Record<string, string>; follow?: boolean; json?: boolean };
+  /**
+   * A client of an app for tests (Django's test Client): its cookies, the CSRF token of its session on writes,
+   * login(credentials) and forceLogin(user) with the accounts of @xufa/auth, redirects followed, and the views
+   * a response rendered with their context.
+   */
+  export class TestClient {
+    constructor(
+      app: XufaInstance<any, any, any, any, any>,
+      options?: { headers?: Record<string, string>; enforceCsrfChecks?: boolean }
+    );
+    cookies: Map<string, string>;
+    readonly cookieHeader: string;
+    request(options: InjectOptions): Promise<TestResponse>;
+    get(url: string, query?: Record<string, unknown> | null, options?: TestOptions): Promise<TestResponse>;
+    head(url: string, query?: Record<string, unknown> | null, options?: TestOptions): Promise<TestResponse>;
+    post(url: string, data?: unknown, options?: TestOptions): Promise<TestResponse>;
+    put(url: string, data?: unknown, options?: TestOptions): Promise<TestResponse>;
+    patch(url: string, data?: unknown, options?: TestOptions): Promise<TestResponse>;
+    delete(url: string, data?: unknown, options?: TestOptions): Promise<TestResponse>;
+    follow(response: TestResponse): Promise<TestResponse>;
+    login(credentials: Record<string, unknown>): Promise<boolean>;
+    forceLogin(user: unknown): Promise<void>;
+    logout(): void;
+  }
+  /** The text a reader sees of HTML: no tags, scripts or styles, entities read, in one line. */
+  export function textOf(html: string): string;
+  export const errorPages: XufaPluginCallback<{
+    views?: Partial<Record<400 | 401 | 403 | 404 | 405 | 409 | 410 | 429 | 500 | 503, string>> | string;
+    notFound?: boolean;
+    html?: (request: XufaRequest) => boolean;
+    context?: (error: any, request: XufaRequest) => Record<string, unknown>;
+  }>;
+  export { LogControllerClass as LogController };
+
+  export type XufaHttp2SecureOptions<
+    Server extends http2.Http2SecureServer,
+    Logger extends XufaBaseLogger = XufaBaseLogger,
+  > = XufaServerOptions<Server, Logger> & {
+    http2: true;
+    https: http2.SecureServerOptions;
+    http2SessionTimeout?: number;
+  };
+
+  export type XufaHttp2Options<
+    Server extends http2.Http2Server,
+    Logger extends XufaBaseLogger = XufaBaseLogger,
+  > = XufaServerOptions<Server, Logger> & {
+    http2: true;
+    http2SessionTimeout?: number;
+  };
+
+  export type XufaHttpsOptions<
+    Server extends https.Server,
+    Logger extends XufaBaseLogger = XufaBaseLogger,
+  > = XufaServerOptions<Server, Logger> & {
+    https: https.ServerOptions | null;
+    http2?: false;
+  };
+
+  export type XufaHttpOptions<
+    Server extends http.Server,
+    Logger extends XufaBaseLogger = XufaBaseLogger,
+  > = XufaServerOptions<Server, Logger> & {
+    http?: http.ServerOptions | null;
+    http2?: false;
+  };
+
+  type FindMyWayVersion<RawServer extends RawServerBase> = RawServer extends http.Server
+    ? HTTPVersion.V1
+    : HTTPVersion.V2;
+  type FindMyWayConfigForServer<RawServer extends RawServerBase> = FindMyWayConfig<FindMyWayVersion<RawServer>>;
+
+  export interface ConnectionError extends Error {
+    code: string;
+    bytesParsed: number;
+    rawPacket: {
+      type: string;
+      data: number[];
+    };
+  }
+
+  type TrustProxyFunction = (address: string, hop: number) => boolean;
+
+  export type XufaRouterOptions<RawServer extends RawServerBase> = Omit<
+    FindMyWayConfigForServer<RawServer>,
+    'defaultRoute' | 'onBadUrl' | 'onMaxParamLength' | 'querystringParser' | 'constraints'
+  > & {
+    constraints?: {
+      [name: string]: ConstraintStrategy<FindMyWayVersion<RawServer>, unknown>;
+    };
+    defaultRoute?: (req: RawRequestDefaultExpression<RawServer>, res: RawReplyDefaultExpression<RawServer>) => void;
+    onBadUrl?: (
+      path: string,
+      req: RawRequestDefaultExpression<RawServer>,
+      res: RawReplyDefaultExpression<RawServer>
+    ) => void;
+    onMaxParamLength?: (
+      path: string,
+      req: RawRequestDefaultExpression<RawServer>,
+      res: RawReplyDefaultExpression<RawServer>
+    ) => void;
+    querystringParser?: (str: string) => { [key: string]: unknown };
+  };
+
+  /**
+   * Options for a xufa server instance. Utilizes conditional logic on the generic server parameter to enforce certain https and http2
+   */
+  export type XufaServerOptions<
+    RawServer extends RawServerBase = RawServerDefault,
+    Logger extends XufaBaseLogger = XufaBaseLogger,
+  > = {
+    ignoreTrailingSlash?: boolean;
+    ignoreDuplicateSlashes?: boolean;
+    connectionTimeout?: number;
+    keepAliveTimeout?: number;
+    maxRequestsPerSocket?: number;
+    forceCloseConnections?: boolean | 'idle';
+    requestTimeout?: number;
+    pluginTimeout?: number;
+    bodyLimit?: number;
+    handlerTimeout?: number;
+    maxParamLength?: number;
+    logController?: LogControllerClass;
+    exposeHeadRoutes?: boolean;
+    onProtoPoisoning?: ProtoAction;
+    onConstructorPoisoning?: ConstructorAction;
+    logger?: boolean | (XufaLoggerOptions<RawServer> & PinoLoggerOptions);
+    loggerInstance?: Logger;
+    serializerOpts?: FJSOptions | Record<string, unknown>;
+    serverFactory?: XufaServerFactory<RawServer>;
+    requestIdHeader?: string | false;
+    genReqId?: (req: RawRequestDefaultExpression<RawServer>) => string;
+    trustProxy?: boolean | string | string[] | TrustProxyFunction;
+    schemaController?: {
+      bucket?: (parentSchemas?: unknown) => {
+        add(schema: unknown): XufaInstance;
+        getSchema(schemaId: string): unknown;
+        getSchemas(): Record<string, unknown>;
+      };
+      compilersFactory?: {
+        buildValidator?: ValidatorFactory;
+        buildSerializer?: SerializerFactory;
+      };
+    };
+    return503OnClosing?: boolean;
+    /**
+     * xufa writes the head of common HTTP/1.1 responses itself instead of res.writeHead() (faster; on by default).
+     * false leaves every head to Node.
+     */
+    fastHead?: boolean;
+    ajv?: Parameters<BuildCompilerFromPool>[1];
+    /**
+     * Options of @xufa/schema for the validators of the routes (the same as ajv.validatorOptions), as
+     * { foldMessages: true }.
+     */
+    validation?: Record<string, unknown>;
+    frameworkErrors?: <
+      RequestGeneric extends RequestGenericInterface = RequestGenericInterface,
+      TypeProvider extends XufaTypeProvider = XufaTypeProviderDefault,
+      SchemaCompiler extends XufaSchema = XufaSchema,
+    >(
+      error: XufaError,
+      req: XufaRequest<RequestGeneric, RawServer, RawRequestDefaultExpression<RawServer>, XufaSchema, TypeProvider>,
+      res: XufaReply<
+        RequestGeneric,
+        RawServer,
+        RawRequestDefaultExpression<RawServer>,
+        RawReplyDefaultExpression<RawServer>,
+        XufaContextConfig,
+        SchemaCompiler,
+        TypeProvider
+      >
+    ) => void;
+    rewriteUrl?: (
+      // The RawRequestDefaultExpression, RawReplyDefaultExpression, and XufaTypeProviderDefault parameters
+      // should be narrowed further but those generic parameters are not passed to this XufaServerOptions type
+      this: XufaInstance<
+        RawServer,
+        RawRequestDefaultExpression<RawServer>,
+        RawReplyDefaultExpression<RawServer>,
+        Logger,
+        XufaTypeProviderDefault
+      >,
+      req: RawRequestDefaultExpression<RawServer>
+    ) => string;
+    schemaErrorFormatter?: SchemaErrorFormatter;
+    /**
+     * listener to error events emitted by client connections
+     */
+    clientErrorHandler?: (error: ConnectionError, socket: Socket) => void;
+    childLoggerFactory?: XufaChildLoggerFactory;
+    allowErrorHandlerOverride?: boolean;
+    routerOptions?: XufaRouterOptions<RawServer>;
+  };
+
+  /* Export additional types */
+  export type {
+    LightMyRequestChain,
+    InjectOptions,
+    LightMyRequestResponse,
+    LightMyRequestCallback, // '@xufa/inject'
+    XufaRequest,
+    RequestGenericInterface, // './types/request'
+    XufaReply, // './types/reply'
+    XufaPluginCallback,
+    XufaPluginAsync,
+    XufaPluginOptions, // './types/plugin'
+    XufaListenOptions,
+    XufaInstance,
+    PrintRoutesOptions, // './types/instance'
+    XufaLoggerOptions,
+    XufaBaseLogger,
+    XufaLogFn,
+    LogLevel, // './types/logger'
+    XufaContextConfig, // './types/context'
+    RouteHandler,
+    RouteHandlerMethod,
+    RouteOptions,
+    RouteShorthandMethod,
+    RouteShorthandOptions,
+    RouteShorthandOptionsWithHandler,
+    RouteGenericInterface, // './types/route'
+    XufaRegister,
+    XufaRegisterOptions,
+    RegisterOptions, // './types/register'
+    XufaBodyParser,
+    XufaContentTypeParser,
+    AddContentTypeParser,
+    hasContentTypeParser,
+    getDefaultJsonParser,
+    ProtoAction,
+    ConstructorAction, // './types/content-type-parser'
+    XufaError, // '@xufa/errors'
+    XufaSchema,
+    XufaSchemaValidationError,
+    XufaSchemaCompiler,
+    XufaSerializerCompiler, // './types/schema'
+    HTTPMethods,
+    RawServerBase,
+    RawRequestDefaultExpression,
+    RawReplyDefaultExpression,
+    RawServerDefault,
+    ContextConfigDefault,
+    RequestBodyDefault,
+    RequestQuerystringDefault,
+    RequestParamsDefault,
+    RequestHeadersDefault,
+    // './types/utils'
+    DoneFuncWithErrOrRes,
+    HookHandlerDoneFunction,
+    RequestPayload,
+    onCloseAsyncHookHandler,
+    onCloseHookHandler,
+    onErrorAsyncHookHandler,
+    onErrorHookHandler,
+    onReadyAsyncHookHandler,
+    onReadyHookHandler,
+    onListenAsyncHookHandler,
+    onListenHookHandler,
+    onRegisterHookHandler,
+    onRequestAsyncHookHandler,
+    onRequestHookHandler,
+    onResponseAsyncHookHandler,
+    onResponseHookHandler,
+    onRouteHookHandler,
+    onSendAsyncHookHandler,
+    onSendHookHandler,
+    onTimeoutAsyncHookHandler,
+    onTimeoutHookHandler,
+    preHandlerAsyncHookHandler,
+    preHandlerHookHandler,
+    preParsingAsyncHookHandler,
+    preParsingHookHandler,
+    preSerializationAsyncHookHandler,
+    preSerializationHookHandler,
+    preValidationAsyncHookHandler,
+    preValidationHookHandler,
+    onRequestAbortHookHandler,
+    onRequestAbortAsyncHookHandler,
+    preCloseAsyncHookHandler,
+    preCloseHookHandler, // './types/hooks'
+    XufaServerFactory,
+    XufaServerFactoryHandler, // './types/serverFactory'
+    XufaTypeProvider,
+    XufaTypeProviderDefault,
+    SafePromiseLike, // './types/type-provider'
+    XufaErrorCodes, // './types/errors'
+  };
+  // named export
+  // import { plugin } from 'plugin'
+  // const { plugin } = require('plugin')
+  export const xufa: Xufa;
+  // default export
+  // import plugin from 'plugin'
+  export { xufa as default };
+}
+
+/**
+ * Xufa factory function for the standard xufa http, https, or http2 server instance.
+ *
+ * The default function utilizes http
+ *
+ * @param opts Xufa server options
+ * @returns Xufa server instance
+ */
+declare function xufa<
+  Server extends http2.Http2SecureServer,
+  Request extends RawRequestDefaultExpression<Server> = RawRequestDefaultExpression<Server>,
+  Reply extends RawReplyDefaultExpression<Server> = RawReplyDefaultExpression<Server>,
+  Logger extends XufaBaseLogger = XufaBaseLogger,
+  TypeProvider extends XufaTypeProvider = XufaTypeProviderDefault,
+>(
+  opts: xufa.XufaHttp2SecureOptions<Server, Logger>
+): XufaInstance<Server, Request, Reply, Logger, TypeProvider> &
+  SafePromiseLike<XufaInstance<Server, Request, Reply, Logger, TypeProvider>>;
+
+declare function xufa<
+  Server extends http2.Http2Server,
+  Request extends RawRequestDefaultExpression<Server> = RawRequestDefaultExpression<Server>,
+  Reply extends RawReplyDefaultExpression<Server> = RawReplyDefaultExpression<Server>,
+  Logger extends XufaBaseLogger = XufaBaseLogger,
+  TypeProvider extends XufaTypeProvider = XufaTypeProviderDefault,
+>(
+  opts: xufa.XufaHttp2Options<Server, Logger>
+): XufaInstance<Server, Request, Reply, Logger, TypeProvider> &
+  SafePromiseLike<XufaInstance<Server, Request, Reply, Logger, TypeProvider>>;
+
+declare function xufa<
+  Server extends https.Server,
+  Request extends RawRequestDefaultExpression<Server> = RawRequestDefaultExpression<Server>,
+  Reply extends RawReplyDefaultExpression<Server> = RawReplyDefaultExpression<Server>,
+  Logger extends XufaBaseLogger = XufaBaseLogger,
+  TypeProvider extends XufaTypeProvider = XufaTypeProviderDefault,
+>(
+  opts: xufa.XufaHttpsOptions<Server, Logger>
+): XufaInstance<Server, Request, Reply, Logger, TypeProvider> &
+  SafePromiseLike<XufaInstance<Server, Request, Reply, Logger, TypeProvider>>;
+
+declare function xufa<
+  Server extends http.Server,
+  Request extends RawRequestDefaultExpression<Server> = RawRequestDefaultExpression<Server>,
+  Reply extends RawReplyDefaultExpression<Server> = RawReplyDefaultExpression<Server>,
+  Logger extends XufaBaseLogger = XufaBaseLogger,
+  TypeProvider extends XufaTypeProvider = XufaTypeProviderDefault,
+>(
+  opts?: xufa.XufaHttpOptions<Server, Logger>
+): XufaInstance<Server, Request, Reply, Logger, TypeProvider> &
+  SafePromiseLike<XufaInstance<Server, Request, Reply, Logger, TypeProvider>>;
+
+// CJS export
+// const xufa = require('xufa')
+export = xufa;

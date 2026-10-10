@@ -1,4 +1,4 @@
-const createError = require('..');
+import createError from '../index.js';
 
 const { XufaError } = createError;
 

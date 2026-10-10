@@ -1,4 +1,4 @@
-const { toEwkt, fromEwkb, toEwkb } = require('../lib/geo');
+import { toEwkt, fromEwkb, toEwkb } from '../lib/geo.js';
 
 const crs = (srid) => ({ type: 'name', properties: { name: `EPSG:${srid}` } });
 

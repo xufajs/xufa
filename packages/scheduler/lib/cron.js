@@ -1,5 +1,3 @@
-'use strict';
-
 // Cron expressions: 'minute hour day-of-month month day-of-week', or with seconds first (6 fields). Each field is *
 // (or ?), a value, a range (1-5), a list (1,15,30), and steps (*/15, 0-30/10, 5/20); months and days of the week by
 // name too (jan-dec, sun-sat; 0 and 7 are Sunday). The macros @yearly (@annually), @monthly, @weekly, @daily
@@ -9,8 +7,8 @@
 // next(after) is the first instant after another one on the wall clock of a time zone: times that do not exist there
 // (a clock going forward) are skipped; an hour that repeats (a clock going back) is found twice, which the scheduler
 // runs once.
-const { SchedulerError } = require('./errors');
-const { zoneOf } = require('./zone');
+import { SchedulerError } from './errors.js';
+import { zoneOf } from './zone.js';
 
 const MACROS = {
   '@yearly': '0 0 1 1 *',
@@ -186,4 +184,4 @@ class Cron {
   }
 }
 
-module.exports = { Cron, parse };
+export { Cron, parse };

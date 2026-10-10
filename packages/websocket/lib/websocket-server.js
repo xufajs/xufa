@@ -1,17 +1,15 @@
 /* eslint no-unused-vars: ["error", { "varsIgnorePattern": "^Duplex$", "caughtErrors": "none" }] */
 
-'use strict';
+import EventEmitter from 'node:events';
+import http from 'node:http';
+import { Duplex } from 'node:stream';
+import { createHash } from 'node:crypto';
 
-const EventEmitter = require('node:events');
-const http = require('node:http');
-const { Duplex } = require('node:stream');
-const { createHash } = require('node:crypto');
-
-const extension = require('./extension');
-const PerMessageDeflate = require('./permessage-deflate');
-const subprotocol = require('./subprotocol');
-const WebSocket = require('./websocket');
-const { CLOSE_TIMEOUT, GUID, kWebSocket } = require('./constants');
+import * as extension from './extension.js';
+import PerMessageDeflate from './permessage-deflate.js';
+import * as subprotocol from './subprotocol.js';
+import WebSocket from './websocket.js';
+import { CLOSE_TIMEOUT, GUID, kWebSocket } from './constants.js';
 
 const keyRegex = /^[+/0-9A-Za-z]{22}==$/;
 
@@ -429,7 +427,7 @@ class WebSocketServer extends EventEmitter {
   }
 }
 
-module.exports = WebSocketServer;
+export default WebSocketServer;
 
 /**
  * Add event listeners on an `EventEmitter` using a map of <event, listener>

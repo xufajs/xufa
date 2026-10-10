@@ -24,7 +24,14 @@ const scheduler = new Scheduler({ timezone: 'Europe/Madrid', lock: memoryLock(),
 expectType<Scheduler>(createScheduler());
 
 expectType<JobInfo>(scheduler.add({ name: 'cleanup', every: '10m', run: async ({ signal }) => signal.aborted }));
-scheduler.add({ name: 'report', cron: '0 8 * * mon-fri', timezone: 'UTC', timeout: '5m', overlap: 'wait', run: () => {} });
+scheduler.add({
+  name: 'report',
+  cron: '0 8 * * mon-fri',
+  timezone: 'UTC',
+  timeout: '5m',
+  overlap: 'wait',
+  run: () => {},
+});
 scheduler.add({ name: 'once', at: new Date(), run: () => {} });
 scheduler.add({ name: 'soon', in: 30000, immediate: true, lock: false, run: () => {} });
 scheduler.add({
@@ -89,3 +96,14 @@ expectType<Promise<number>>(runs.prune(new Date()));
 expectType<Promise<HistoryEntry | null>>(runs.last('x'));
 expectType<'done' | 'failed' | 'timeout'>({} as HistoryEntry['status']);
 expectType<number>(scheduler.job('x')!.retries);
+
+// health(): a check of xufa.health.
+{
+  const watched = new Scheduler();
+  const health = watched.health({ late: '30s', failures: 2, maxRun: '10m', jobs: ['report'], critical: true });
+  health.check().then((report) => {
+    expectType<'up' | 'degraded' | 'down'>(report.status);
+    expectType<number>(report.jobs.report.failuresInRow);
+  });
+  expectError(watched.health({ failures: 'two' }));
+}

@@ -1,4 +1,4 @@
-const { Any } = require('..');
+import { Any } from '../index.js';
 
 describe('Any Type', () => {
   it('Should allow undefined if not mandatory', () => {

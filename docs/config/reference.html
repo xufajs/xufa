@@ -44,7 +44,7 @@
       <aside class="sidebar">
         <h4>Reference</h4>
         <ul>
-          <li><a href="#functions">Functions (4)</a></li>
+          <li><a href="#functions">Functions (5)</a></li>
           <li><a href="#classes">Classes (1)</a></li>
           <li><a href="#constants">Constants (1)</a></li>
           <li><a href="#interfaces">Interfaces (11)</a></li>
@@ -55,6 +55,10 @@
           <li><a href="../websocket/index.html">@xufa/websocket</a></li>
           <li><a href="../admin/index.html">@xufa/admin</a></li>
           <li><a href="../session/index.html">@xufa/session</a></li>
+          <li><a href="../forms/index.html">@xufa/forms</a></li>
+          <li><a href="../views/index.html">@xufa/views</a></li>
+          <li><a href="../mail/index.html">@xufa/mail</a></li>
+          <li><a href="../i18n/index.html">@xufa/i18n</a></li>
           <li><a href="../openapi/index.html">@xufa/openapi</a></li>
           <li><a href="../client/index.html">@xufa/client</a></li>
           <li><a href="../schema/index.html">@xufa/schema</a></li>
@@ -90,12 +94,12 @@
         <h1>Reference</h1>
         <p class="intro">
           The configuration of an app from layers (files by environment, .env, variables, HTTP, Consul, Vault, folders of secrets, overrides), with safe templates, a schema that converts and checks, and secrets redacted. Every declaration of its TypeScript declarations
-          (<code>packages/config/index.d.ts</code>), as they are written, with their comments: made from them each time
+          (<code>packages/config/index.d.ts</code> or <code>index.d.cts</code>), as they are written, with their comments: made from them each time
           the docs are built. How to use them is in <a href="index.html">the overview</a>.
         </p>
 
         <h2 id="functions">Functions</h2>
-        <p class="ref-index"><a href="#ref-loadConfig"><code>loadConfig</code></a>, <a href="#ref-loadRemoteConfig"><code>loadRemoteConfig</code></a>, <a href="#ref-watchConfig"><code>watchConfig</code></a>, <a href="#ref-parseDotenv"><code>parseDotenv</code></a></p>
+        <p class="ref-index"><a href="#ref-loadConfig"><code>loadConfig</code></a>, <a href="#ref-loadRemoteConfig"><code>loadRemoteConfig</code></a>, <a href="#ref-watchConfig"><code>watchConfig</code></a>, <a href="#ref-parseDotenv"><code>parseDotenv</code></a>, <a href="#ref-readConfigFile"><code>readConfigFile</code></a></p>
 
         <h3 id="ref-loadConfig"><code>loadConfig</code></h3>
         <pre><code class="language-ts">export function loadConfig&lt;const S extends Schema&gt;(options: LoadOptions &amp; { schema: S }): Config&lt;InferConfig&lt;S&gt;&gt;;
@@ -127,6 +131,10 @@ export function watchConfig&lt;T = Record&lt;string, any&gt;&gt;(
 
         <h3 id="ref-parseDotenv"><code>parseDotenv</code></h3>
         <pre><code class="language-ts">export function parseDotenv(text: string, file?: string): Record&lt;string, string&gt;;</code></pre>
+
+        <h3 id="ref-readConfigFile"><code>readConfigFile</code></h3>
+        <pre><code class="language-ts">export function readConfigFile&lt;T = any&gt;(file: string, context?: unknown): T;</code></pre>
+        <p>One file of JSON, YAML or JS (a JS function is called with context), as the layers read them.</p>
 
         <h2 id="classes">Classes</h2>
         <p class="ref-index"><a href="#ref-ConfigError"><code>ConfigError</code></a></p>
@@ -244,6 +252,8 @@ export function watchConfig&lt;T = Record&lt;string, any&gt;&gt;(
               <tbody>
                 <tr><td><code>dir?</code></td><td><code>string</code></td><td><p>The folder of the files of the configuration ('config', from cwd).</p></td></tr>
                 <tr><td><code>cwd?</code></td><td><code>string</code></td><td></td></tr>
+                <tr><td><code>file?</code></td><td><code>string</code></td><td><p>One file of the app, read over the defaults and below config/: 'xufa' finds xufa.json, .yaml, .yml, .js or .cjs in cwd (one only); a name with its extension is that file.</p></td></tr>
+                <tr><td><code>verbatim?</code></td><td><code>string[]</code></td><td><p>Paths whose texts are not templates of the configuration, nor below them (templates of emails: 'auth.mails').</p></td></tr>
                 <tr><td><code>env?</code></td><td><code>string</code></td><td><p>The environment: its file (config/production.json...). NODE_ENV, or 'development'.</p></td></tr>
                 <tr><td><code>environment?</code></td><td><code>Record&lt;string, string | undefined&gt;</code></td><td><p>The variables (process.env).</p></td></tr>
                 <tr><td><code>defaults?</code></td><td><code>Record&lt;string, unknown&gt;</code></td><td><p>Below the files.</p></td></tr>

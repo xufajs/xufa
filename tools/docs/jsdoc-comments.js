@@ -5,10 +5,11 @@
 //
 //   node tools/docs/jsdoc-comments.js            # every packages/*/index.d.ts
 //   node tools/docs/jsdoc-comments.js --check    # writes nothing; fails when a file would change
-const fs = require('node:fs');
-const path = require('node:path');
+import fs from 'node:fs';
+import path from 'node:path';
+import { declarationsOf } from './lib/declarations.js';
 
-const PACKAGES = path.join(__dirname, '../../packages');
+const PACKAGES = path.join(import.meta.dirname, '../../packages');
 
 function convert(text) {
   const lines = text.split('\n');
@@ -55,8 +56,8 @@ function main() {
   const check = process.argv.includes('--check');
   const changed = [];
   for (const name of fs.readdirSync(PACKAGES)) {
-    const file = path.join(PACKAGES, name, 'index.d.ts');
-    if (!fs.existsSync(file)) continue;
+    const file = declarationsOf(path.join(PACKAGES, name));
+    if (!file) continue;
     const text = fs.readFileSync(file, 'utf8');
     // Declarations made by a tool (ported ones) are changed in the tool, not here.
     if (/do not edit/.test(text.split('\n').slice(0, 3).join('\n'))) continue;
@@ -71,5 +72,6 @@ function main() {
   } else console.log(changed.length ? `jsdoc: ${changed.join(', ')}` : 'jsdoc: nothing to change');
 }
 
-module.exports = { convert };
-if (require.main === module) main();
+if (process.argv[1] === import.meta.filename) main();
+
+export { convert };

@@ -1,11 +1,14 @@
 // The sections of docs/benchmarks.html from the PostgreSQL driver to "Run them yourself": charts from the numbers of
 // bench/results, with the tables under "All numbers". The rest of the page (the summary, the ORM, how they are
 // measured, how to run them) is written by hand in the page.
-const fs = require('node:fs');
-const path = require('node:path');
+import fs from 'node:fs';
+import path from 'node:path';
 
-const RESULTS = path.join(__dirname, '../../../bench/results/');
-const logger = require('./logger-performance');
+const RESULTS = path.join(import.meta.dirname, '../../../bench/results/');
+import * as logger from './logger-performance.js';
+import { createRequire } from 'node:module';
+
+const require = createRequire(import.meta.url);
 
 const esc = (text) => String(text).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 const fmt = (n) => {
@@ -205,7 +208,7 @@ function openapiResults() {
 
 // The section of @xufa/schema (its results are in bench/results/schema, its pages written by bench/schema/report.js).
 function schemaSection() {
-  return require('../../../bench/schema/report').section(); // eslint-disable-line global-require
+  return require('../../../bench/schema/report.js').section(); // eslint-disable-line global-require
 }
 
 function openapiSection() {
@@ -320,7 +323,7 @@ const views = [
 
 // The scenarios of the HTTP benchmarks: [name, what it does], from bench/scenarios.
 function scenarios() {
-  const dir = path.join(__dirname, '../../../bench/scenarios');
+  const dir = path.join(import.meta.dirname, '../../../bench/scenarios');
   return fs
     .readdirSync(dir)
     .filter((file) => file.endsWith('.js') && !file.startsWith('openapi-'))
@@ -806,4 +809,4 @@ function buildBenchmarks(page) {
   return page.slice(0, start) + sections + page.slice(end);
 }
 
-module.exports = { buildBenchmarks, httpSection };
+export { buildBenchmarks, httpSection, pair, chart, fmt, esc, raw };

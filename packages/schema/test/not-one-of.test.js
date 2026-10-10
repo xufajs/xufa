@@ -1,16 +1,4 @@
-const {
-  Integer,
-  Not,
-  OneOf,
-  String,
-  compileJsonSchema,
-  fromJsonSchema,
-  not,
-  oneOf,
-  ooneOf,
-  onot,
-  toErrors,
-} = require('..');
+import { Integer, Not, OneOf, String, compileJsonSchema, fromJsonSchema, not, oneOf, ooneOf, onot, toErrors } from '../index.js';
 
 // Errors of each value, after checking the interpreted type and the compiled functions agree.
 function errorsOf(json, values) {

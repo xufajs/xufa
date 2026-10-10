@@ -3,7 +3,7 @@
 
 const dns = require('node:dns').promises
 const dnsCb = require('node:dns')
-const Fastify = require('@xufa/http')
+const Fastify = require('..')
 const helper = require('./helper')
 
 let localhostForURL

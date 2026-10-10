@@ -67,4 +67,4 @@ function prettyPrintTimeTree(node, prefix = '') {
   return result;
 }
 
-module.exports = { TimeTree };
+export { TimeTree };

@@ -2,16 +2,16 @@
 // passport-headerapikey, passport-http, passport-jwt) and as routes of login (passport-local, and passport-oauth2
 // against a provider made here, with its state in a cookie: oauthState()). No Passport, no sessions: a login gives the
 // tokens of the plugin.
-const crypto = require('node:crypto');
-const http = require('node:http');
-const xufa = require('@xufa/http');
-const { Strategy: BearerStrategy } = require('passport-http-bearer');
-const { HeaderAPIKeyStrategy } = require('passport-headerapikey');
-const { BasicStrategy } = require('passport-http');
-const { Strategy: JwtStrategy, ExtractJwt } = require('passport-jwt');
-const { Strategy: LocalStrategy } = require('passport-local');
-const OAuth2Strategy = require('passport-oauth2');
-const auth = require('..');
+import crypto from 'node:crypto';
+import http from 'node:http';
+import xufa from '@xufa/http';
+import { Strategy as BearerStrategy } from 'passport-http-bearer';
+import { HeaderAPIKeyStrategy } from 'passport-headerapikey';
+import { BasicStrategy } from 'passport-http';
+import { Strategy as JwtStrategy, ExtractJwt } from 'passport-jwt';
+import { Strategy as LocalStrategy } from 'passport-local';
+import OAuth2Strategy from 'passport-oauth2';
+import * as auth from '../index.js';
 
 const KEY = 'a secret of at least thirty-two bytes!';
 const USERS = [

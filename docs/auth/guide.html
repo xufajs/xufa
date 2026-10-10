@@ -6,7 +6,7 @@
     <title>@xufa/auth: Guide · xufa</title>
     <meta
       name="description"
-      content="How to use @xufa/auth: the plugin of @xufa/http, login routes, tenants, strategies and Passport, passwords, JSON Web Tokens with rotating keys, TOTP, lockout, refresh tokens and errors."
+      content="How to use @xufa/auth: the plugin of @xufa/http, login routes, tenants, roles and permissions by tenant, strategies and Passport, passwords, JSON Web Tokens with rotating keys, TOTP, lockout, refresh tokens and errors."
     />
     <link
       rel="icon"
@@ -47,7 +47,10 @@
           <li><a href="#app">An app with logins</a></li>
           <li><a href="#plugin">The plugin</a></li>
           <li><a href="#login">Login routes</a></li>
+          <li><a href="#accounts">Accounts of a site</a></li>
+          <li><a href="#account-pages">Pages of the accounts</a></li>
           <li><a href="#tenants">Tenants</a></li>
+          <li><a href="#rbac">Roles and permissions</a></li>
           <li><a href="#strategies">Strategies</a></li>
           <li><a href="#passport">Passport</a></li>
         </ul>
@@ -81,9 +84,9 @@
 
         <h2 id="app">An app with logins</h2>
         <p>Users in the <a href="../orm/index.html">ORM</a>, logins with an optional second factor, and routes that need a user or a role:</p>
-        <pre data-run><code class="language-js">const xufa = require('xufa');
-const { Database, Model, fields, plugin: orm } = require('xufa/orm');
-const auth = require('xufa/auth'); // or require('@xufa/auth')
+        <pre data-run><code class="language-js">import xufa from 'xufa';
+import { Database, Model, fields, plugin as orm } from 'xufa/orm';
+import * as auth from 'xufa/auth'; // or from '@xufa/auth'
 
 class User extends Model {
   static fields = {
@@ -170,6 +173,178 @@ POST /auth/logout   { "refreshToken": "..." }   -&gt; 204</code></pre>
           password, and verifies a password in both cases, so neither the answer nor its time tells which.
         </p>
 
+        <h2 id="users">Users</h2>
+        <p>
+          <code>AbstractUser(Model, fields)</code> is the model of users of Django's <code>django.contrib.auth</code>, of
+          the Model and fields of <a href="../orm/guide.html">@xufa/orm</a> (@xufa/auth does not depend on it): a unique
+          <code>username</code>, <code>email</code>, the hash of <code>password</code>, <code>firstName</code> and
+          <code>lastName</code>, <code>isStaff</code>, <code>isSuperuser</code>, <code>isActive</code>,
+          <code>dateJoined</code>, <code>lastLogin</code>, a <code>role</code> (of an <a href="#rbac">Rbac</a>, as
+          Django's groups) and its own <code>permissions</code> (as <code>user_permissions</code>), and
+          <code>sessionGeneration</code>: raised by each "log out everywhere" of <a href="../session/index.html#everywhere">@xufa/session</a>,
+          read with the user (so no request reads it apart). Extend it with fields of your own.
+        </p>
+        <pre><code class="language-js">import { Model, fields } from '@xufa/orm';
+import { AbstractUser } from '@xufa/auth';
+
+class User extends AbstractUser(Model, fields, { email: { unique: true } }) {
+  static fields = { ...super.fields, totpSecret: fields.encrypted(fields.string({ null: true })) };
+}
+
+const admin = await User.createSuperuser({ username: 'admin', email: 'admin@example.com', password: 'a long password' });
+const ada = await User.createUser({ username: 'ada', email: 'ada@example.com', password: 's3cret-enough', role: 'librarian' });
+await ada.checkPassword('s3cret-enough'); // true
+ada.hasPerm('Book.add');                   // its own permissions (and every one for a superuser)
+ada.fullName;                              // 'Ada Lovelace' with its names</code></pre>
+        <p>
+          <code>setPassword(raw)</code> hashes with scrypt, <code>setUnusablePassword()</code> (a user who logs in
+          elsewhere), <code>checkPassword(raw)</code>. The accounts (<code>model: User</code>, with <code>loginBy:
+          'username'</code> to log in by username) and <a href="../admin/index.html#security">the admin</a>
+          (<code>login: { model: User }</code>) take the model as it is: they find, check and change its users, refuse those
+          not <code>isActive</code> and set <code>lastLogin</code>. <code>xufa createsuperuser</code> makes one.
+        </p>
+
+        <h2 id="accounts">Accounts of a site</h2>
+        <p>
+          For sites with sessions (pages, not tokens), <code>auth.accounts</code> gives the routes of the accounts, as
+          Laravel Breeze: sign up, log in and out, reset a forgotten password with a link by email, change it, and verify
+          the email. It needs <a href="../session/index.html">@xufa/session</a> (registered before) and, for the links,
+          a <code>Mailer</code> of <a href="../mail/index.html">@xufa/mail</a>; your app keeps the users, and tells the plugin how to
+          find, create and change them.
+        </p>
+        <pre><code class="language-js">app.register(sessionPlugin, { secret: process.env.SESSION_SECRET, store: ormStore(db), csrf: true });
+app.register(auth.accounts, {
+  secret: process.env.ACCOUNTS_SECRET, // signs the links (32 characters or more)
+  users: {
+    findByEmail: (email) =&gt; User.objects.filter({ email }).first(),
+    findBySkeleton: (key) =&gt; User.objects.filter({ emailSkeleton: key }).first(), // look-alike emails are taken too
+    findById: (id) =&gt; User.objects.filter({ pk: id }).first(),
+    create: (values) =&gt; User.objects.create(values), // { email, emailSkeleton, password (its hash), name }
+    setPassword: (user, hash) =&gt; User.objects.filter({ pk: user.pk }).update({ password: hash }),
+    markVerified: (user) =&gt; User.objects.filter({ pk: user.pk }).update({ emailVerifiedAt: new Date() }),
+  },
+  signup: { fields: ['name'] },
+  mailer, // new Mailer({ model: Email, app: { name: 'Shop' } })
+  links: {
+    reset: (token) =&gt; `https://shop.example/reset-password?token=${token}`,
+    verify: (token) =&gt; `https://shop.example/verify-email?token=${token}`,
+  },
+});
+
+app.get('/orders', { preHandler: app.accounts.required }, async (request) =&gt; Order.objects.filter({ user: request.account.pk }));</code></pre>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Route</th><th>What it does</th></tr></thead>
+            <tbody>
+              <tr><td><code>POST /account/signup</code></td><td><code>{ email, password, ...signup.fields }</code>: the user made, logged in, and a link to verify its email sent. 400 with the errors by field: an email taken (or one that looks the same), a password too short, or with the email in it.</td></tr>
+              <tr><td><code>POST /account/login</code></td><td><code>{ email, password, code }</code>: the same 401 for a wrong email and a wrong password; the code of an authenticator app asked once the password is right; 429 after 5 failures of an email (or 20 of an address).</td></tr>
+              <tr><td><code>POST /account/logout</code></td><td>This session; <code>{ everywhere: true }</code>: every session of the user.</td></tr>
+              <tr><td><code>GET /account/me</code></td><td>The user, or 401.</td></tr>
+              <tr><td><code>GET /account/sessions</code>, <code>POST /account/sessions/:handle/end</code></td><td>The sessions of the user (device, address, login, last request; <code>current</code> marks this one), and another ended (this one: 400). With <a href="../session/index.html#devices">@xufa/session</a>.</td></tr>
+              <tr><td><code>POST /account/password/forgot</code></td><td><code>{ email }</code>: a link to reset the password by email. 202 and the same answer whether the account exists or not.</td></tr>
+              <tr><td><code>POST /account/password/reset</code></td><td><code>{ token, password }</code>: the new password; every session of the user ends.</td></tr>
+              <tr><td><code>POST /account/password/change</code></td><td><code>{ current, password }</code> of a user logged in: the other sessions end, this one goes on.</td></tr>
+              <tr><td><code>GET /account/security</code></td><td>What the user has and may change: <code>{ password, totp: { can, enabled }, recovery: { left } }</code>.</td></tr>
+              <tr><td><code>POST /account/totp/start</code>, <code>/totp/confirm</code>, <code>/totp/disable</code></td><td>With <code>users.setTotp</code>: <code>{ password }</code> gives <code>{ secret, uri, svg }</code> (the QR code to scan); <code>{ code }</code> of the app turns it on and gives <code>{ recoveryCodes }</code>, shown once; <code>{ password }</code> removes it.</td></tr>
+              <tr><td><code>POST /account/recovery-codes</code></td><td>With <code>recoveryCodes</code> and <code>users.setRecoveryCodes</code>: <code>{ password }</code> gives new codes (the old ones stop working). At the login, a recovery code works once in place of a code of the app (the answer that asks for the code says <code>recovery: true</code>).</td></tr>
+              <tr><td><code>POST /account/email/verify</code>, <code>/email/resend</code></td><td><code>{ token }</code> of the link; another link.</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <ul>
+          <li>The links have no table: they are signed tokens. A link to reset carries the hash of the password it replaces, so it works once and dies when the password changes (and after <code>resetTtl</code>, 1 hour); a link to verify carries the email it verifies (<code>verifyTtl</code>, 2 days).</li>
+          <li><code>active(user)</code> (not locked nor disabled): an account that is not cannot log in (403, once its password is right), and its sessions end at their next request; <code>app.accounts.endSessions(user)</code> ends them at once, in every browser and machine (the sessions of <a href="../admin/index.html">the admin</a> too: they are of the same user). A password reset ends them all, a change all but the one that changed it.</li>
+          <li>Emails are kept trimmed, NFKC and in lower case; <code>findBySkeleton</code> makes look-alikes (a Cyrillic а for an a) count as taken.</li>
+          <li><code>app.accounts.user(request)</code> gives the user of a request (<code>request.account</code> after it), <code>required</code> is the hook of the routes that need one (and a verified email with <code>requireVerified</code>), <code>logIn(request, user)</code> and <code>resetLink(user)</code> are there for your own flows, and for pages of your own that take a reset link: <code>checkResetToken(token)</code> gives its user while it is good (Django's <code>validlink</code>), <code>resetPassword(token, password)</code> sets the new one and ends the user's sessions (an <code>AccountError</code> with <code>errors.token</code> or <code>errors.password</code> otherwise). <code>mails: { reset, verify }</code> make the emails your own.</li>
+          <li>The routes answer JSON, for the pages and forms of your site. With <code>csrf: true</code> in the session, their writes need its token (a fresh session needs none: a signup or a login).</li>
+        </ul>
+
+        <h3 id="pages">Pages of users who logged in</h3>
+        <p>
+          For sites of pages, the accounts guard routes as Django's <code>login_required</code> and
+          <code>permission_required</code>: <code>loginRequired</code> sends a page to <code>loginUrl</code> with
+          <code>?next=</code> (a client that asks for JSON gets 401), and <code>permissionRequired(...permissions)</code> answers 403 to a
+          user without them. The permissions are those of the roles of <code>rbac</code> (an
+          <a href="#rbac">Rbac</a> or its options) and each user's own (<code>userPermissions(user)</code>,
+          <code>user.permissions</code> by default, as Django's user_permissions).
+        </p>
+        <pre><code class="language-js">app.register(auth.accounts, {
+  ...options,
+  loginUrl: '/accounts/login/',
+  rbac: { roles: { librarian: ['Book.*', 'BookInstance.markReturned'] } },
+});
+app.get('/mybooks/', { preHandler: app.accounts.loginRequired }, myBooks);
+app.post('/book/:pk/renew/', { preHandler: app.accounts.permissionRequired('BookInstance.markReturned') }, renew);
+await app.accounts.can(user, 'Book.add'); // true or false</code></pre>
+        <p>
+          With <a href="../template/index.html#context">@xufa/template</a>, every view of a request has <code>user</code>
+          (null for nobody) and <code>perms</code> (<code>{{#if perms.has('Book.add')}}</code>), whatever the order of the
+          plugins. The 403 is an error of status 403: the error handler of the app shows its page.
+        </p>
+
+        <h2 id="account-pages">Pages of the accounts</h2>
+        <p>
+          <code>auth.pages</code> (after <code>auth.accounts</code>, with <code>xufa.formBody</code> and the session) is
+          Django's <code>django.contrib.auth.urls</code>: the HTML pages to log in (by email or username, as
+          <code>loginBy</code> says, to <code>?next=</code>, a path of the site only), log out (POST), change the password,
+          and reset a forgotten one with a link by email (the same answer for every email; the link works once). Their
+          forms are those of <a href="../forms/index.html">@xufa/forms</a>, their errors the messages of the accounts (translated
+          with <code>translateAuth</code>).
+        </p>
+        <pre><code class="language-js">app.register(xufa.formBody);
+app.register(sessionPlugin, { secret, csrf: true });
+app.register(auth.accounts, { secret, model: User, loginBy: 'username', loginUrl: '/accounts/login/', mailer });
+app.register(template.plugin, { root: 'templates' });
+app.register(auth.pages, { prefix: '/accounts', views: 'registration', siteUrl: 'https://library.example' });</code></pre>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Address</th><th>Name</th><th>Template</th><th>Context</th></tr></thead>
+            <tbody>
+              <tr><td><code>login/</code></td><td><code>login</code></td><td><code>login</code></td><td><code>form</code> (username or email, password; <code>needsCode</code> asks the code of an authenticator app), <code>next</code></td></tr>
+              <tr><td><code>logout/</code> (POST)</td><td><code>logout</code></td><td><code>logged_out</code></td><td>(or <code>logoutRedirectUrl</code>)</td></tr>
+              <tr><td><code>password_change/</code></td><td><code>password_change</code></td><td><code>password_change_form</code></td><td><code>form</code> (oldPassword, newPassword1, newPassword2); a user only</td></tr>
+              <tr><td><code>password_change/done/</code></td><td><code>password_change_done</code></td><td><code>password_change_done</code></td><td></td></tr>
+              <tr><td><code>password_reset/</code></td><td><code>password_reset</code></td><td><code>password_reset_form</code></td><td><code>form</code> (email)</td></tr>
+              <tr><td><code>password_reset/done/</code></td><td><code>password_reset_done</code></td><td><code>password_reset_done</code></td><td></td></tr>
+              <tr><td><code>reset/:token/</code></td><td><code>password_reset_confirm</code></td><td><code>password_reset_confirm</code></td><td><code>validlink</code>, <code>form</code> (newPassword1, newPassword2)</td></tr>
+              <tr><td><code>reset/done/</code></td><td><code>password_reset_complete</code></td><td><code>password_reset_complete</code></td><td></td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p>
+          With <code>views</code> (a folder of the views of <a href="../template/index.html">@xufa/template</a>), each page renders
+          the app's template of that name, with <code>urls</code> (the addresses of the pages) in its context; without it,
+          pages of its own (plain, light and dark; their titles, texts, labels and buttons in the language of the request, with <code>i18n.translateAuth(auth)</code> of <a href="../i18n/index.html">@xufa/i18n</a>: es, fr, de, pt, it). <code>loginRedirectUrl</code> (<code>'/'</code>) is where a login goes
+          without <code>next</code>. The links of the emails are the confirm page on <code>siteUrl</code>; give it in
+          production (else they take the host of the request). The flows are methods of <code>app.accounts</code> for pages
+          of your own: <code>authenticate(given)</code>, <code>logOut(request)</code>, <code>changePassword(request,
+          { current, password })</code>, <code>requestReset(email, request, { link })</code>,
+          <code>checkResetToken(token)</code> and <code>resetPassword(token, password)</code>.
+        </p>
+
+        <h2 id="credentials">Credentials</h2>
+        <p>
+          The logins of <code>auth.accounts</code>, of the login route of the plugin and of
+          <a href="../admin/index.html#security">the admin</a> are one: <code>Credentials</code>. Use it for a login of your own
+          (a form, a CLI, a WebSocket):
+        </p>
+        <pre><code class="language-js">const credentials = new auth.Credentials({
+  findUser: (email) =&gt; User.objects.filter({ email }).first(),
+  totp: (user) =&gt; user.totpSecret,
+  setPassword: (user, hash) =&gt; User.objects.filter({ pk: user.pk }).update({ password: hash }),
+});
+try {
+  const user = await credentials.login({ identifier: body.email, password: body.password, code: body.code, ip: request.ip });
+} catch (err) {
+  if (!(err instanceof auth.CredentialError)) throw err;
+  // err.reason: 'invalid', 'code' (err.needsCode: ask for it), 'throttled' (err.retryAfter), 'locked'...
+}</code></pre>
+        <ul>
+          <li><strong>login():</strong> the same answer and time for a user that is not there, a wrong password and a user that <code>allow(user)</code> refuses; a user that <code>active(user)</code> refuses is told it is locked (403) once its password is right; then the code of an authenticator app (each code once with <code>lastTotpStep</code>/<code>onTotp</code>) or a recovery code; failures locked out by identifier (5 in 15 minutes) and by address (20); a hash made with other <code>passwordOptions</code> made again (<code>rehash</code>, or <code>setPassword</code>).</li>
+          <li><strong>The account of a user:</strong> <code>changePassword(user, { current, password, email })</code> and <code>setPassword()</code> (the policy: <code>minPassword</code> 8, <code>maxPassword</code> 256, not the email in it, <code>checkPassword</code>); <code>startTotp(user, { password, label, issuer, session })</code> gives the QR code of a new secret kept in the session for 10 minutes, <code>confirmTotp(user, { code, session })</code> turns it on with new recovery codes, <code>disableTotp()</code>, <code>renewRecoveryCodes()</code>, <code>state(user)</code>. Each asks for the password again, its failures locked out by account.</li>
+          <li><strong>Errors:</strong> a <code>CredentialError</code> has a <code>reason</code>, <code>statusCode</code>, <code>errors</code> by field, <code>needsCode</code>, <code>recovery</code> and <code>retryAfter</code>; <code>messages: { invalid: 'Wrong email or password' }</code> words them your way (a text, a key of your catalogs, or <code>'auth.invalidEmail'</code>: a message of @xufa/auth). Every message users read is a key of <code>auth.AUTH_MESSAGES</code>: <a href="../i18n/index.html#auth-admin"><code>i18n.translateAuth(auth)</code></a> gives them, and the emails of the links, in the language of each request.</li>
+        </ul>
+
         <h2 id="tenants">Tenants</h2>
         <p>
           A user may use the tenants of its claims: <code>tenants</code> (a list) or <code>tenant</code>; <code>'*'</code>
@@ -195,6 +370,127 @@ app.register(orm.plugin, {
     authorize: (request, id, reply) =&gt; app.auth.canUseTenant(request, id, reply), // 401, 403, or the tenant
   },
 });</code></pre>
+
+        <h2 id="rbac">Roles and permissions</h2>
+        <p>
+          <code>Rbac</code> gives roles their permissions and users their roles <em>by tenant</em>: a user may be an
+          editor in one tenant, a viewer in another and nothing in the rest, while the people who run the service have a
+          role in every tenant (<code>'*'</code>) or are superusers. A permission is a name (<code>'Book.change'</code>);
+          a role lists them, with patterns (<code>'Book.*'</code>, <code>'*.view'</code>, <code>'*'</code>; a
+          <code>*</code> never crosses a dot), and may take those of other roles (<code>inherits</code>).
+        </p>
+        <pre data-run><code class="language-js">import { Rbac } from '@xufa/auth';
+
+const rbac = new Rbac({
+  roles: {
+    viewer: ['*.view'],
+    editor: { inherits: 'viewer', permissions: ['Book.add', 'Book.change'] },
+    manager: { inherits: 'editor', permissions: ['Book.delete', 'Author.*'] },
+    support: ['*.view', 'Ticket.*'],
+  },
+});
+
+// Grants: a role in a tenant, or in every tenant (no tenant, or '*').
+const eve = { grants: [{ role: 'editor', tenant: 'acme' }, { role: 'viewer', tenant: 'globex' }] };
+const sam = { grants: [{ role: 'support' }] }; // the support team: every tenant
+const root = { superuser: true };
+
+(async () =&gt; {
+  console.log(await rbac.can(eve, 'Book.change', { tenant: 'acme' }));
+  console.log(await rbac.can(eve, 'Book.change', { tenant: 'globex' }));
+  console.log(await rbac.can(eve, 'Book.view', { tenant: 'initech' }));
+  console.log(await rbac.can(sam, 'Ticket.close', { tenant: 'initech' }));
+  console.log(await rbac.can(root, 'Book.delete', { tenant: 'anywhere' }));
+  console.log(rbac.tenantsIn(await rbac.access(eve)), rbac.tenantsIn(await rbac.access(sam)));
+})();</code></pre>
+        <pre data-output><code class="language-plaintext">true
+false
+false
+true
+true
+[ 'acme', 'globex' ] [ '*' ]</code></pre>
+        <p>
+          The grants of a user are <code>grants(user)</code> when it is given (a table of memberships, say); else
+          <code>user.grants</code> (a list of <code>{ role, tenant }</code>, or <code>{ acme: 'editor' }</code>), or its
+          <code>roles</code> in its <code>tenants</code>. Superusers are <code>superuser(user)</code>
+          (<code>user.superuser</code> or <code>user.isSuperuser</code> by default; <code>false</code>: none).
+          <code>access(user)</code> is what a user may as plain data (<code>{ superuser, grants }</code>), to keep in a
+          session or a token and ask with <code>allows(access, permission, tenant)</code> without loading the user.
+        </p>
+        <p>
+          Given to the plugin as <code>rbac</code>, routes ask for permissions in the tenant of the request with
+          <code>{ can }</code>, handlers with <code>request.can()</code>, and the tenants of a user are those of its
+          grants (for <code>canUseTenant</code> and <code>{ tenant: true }</code>):
+        </p>
+        <pre><code class="language-js">app.register(auth.plugin, {
+  keys,
+  login,
+  rbac: {
+    roles: { viewer: ['*.view'], editor: { inherits: 'viewer', permissions: ['Book.add', 'Book.change'] } },
+    grants: (user) =&gt; Membership.objects.filter({ user: user.sub }).values('tenant', 'role'),
+  },
+});
+
+app.delete('/books/:id', { config: { auth: { can: 'Book.delete' } } }, handler); // 403 without it in the tenant
+app.get('/books/:id', async (request) =&gt; {
+  const book = await Book.objects.get({ id: request.params.id });
+  return { ...book.toJSON(), editable: await request.can('Book.change') };
+});
+// The resources of the ORM: Book.view (list, get), Book.add, Book.change and Book.delete.
+app.register(orm.resource(Book, { permissions: true }), { prefix: '/books' });</code></pre>
+        <p>
+          <a href="../admin/index.html#security">The admin</a> takes the same <code>Rbac</code>: each user sees the models it may
+          view in the tenant it chooses, and only the buttons of what it may do.
+        </p>
+        <h3 id="object-rules">Rules of objects</h3>
+        <p>
+          A permission of a role can be for some objects only, as Django's <code>get_queryset</code> and
+          <code>has_change_permission(request, obj)</code>: <code>where</code> gives, by patterns of permissions, the
+          conditions of the ORM of the objects (a function of the user; <code>true</code> for all, <code>false</code> for
+          none). A user with several roles has the objects of any of them; a role without a <code>where</code> for a
+          permission has all its objects; a role that inherits keeps the limits of what it inherits.
+          <code>rbac.scopeOf(access, user, permission)</code> (and <code>app.auth.scopeOf(request, permission)</code>)
+          gives <code>null</code> (all), <code>false</code> (none) or the conditions. The resources of the ORM with
+          <code>permissions</code> and <a href="../admin/index.html#rbac">the admin</a> follow them: their lists, objects, counts,
+          changes, deletes and actions are those of the rules (another object is not found). A <code>where</code> for
+          <code>Model.add</code> is of the new objects (Django's <code>has_add_permission</code> of its values): one that
+          does not meet it is not kept (403, its transaction rolled back). The choices of the admin are the objects one
+          may view.
+        </p>
+        <pre><code class="language-js">const rbac = new auth.Rbac({
+  roles: {
+    viewer: ['*.view'],
+    // An editor sees every book, and changes and deletes its own.
+    editor: {
+      inherits: 'viewer',
+      permissions: ['Book.change', 'Book.delete'],
+      where: { 'Book.change': (user) =&gt; ({ ownerId: user.id }), 'Book.delete': (user) =&gt; ({ ownerId: user.id }) },
+    },
+  },
+});
+rbac.scopeOf(await rbac.access(ada), ada, 'Book.change'); // [{ ownerId: 7 }]</code></pre>
+
+        <h3 id="groups">Groups</h3>
+        <p>
+          As Django's groups, roles can live in the database and be edited in the admin: <code>AbstractGroup(Model,
+          fields)</code> is their model (a <code>name</code>, its <code>permissions</code> and the roles it
+          <code>inherits</code>), and the option <code>model</code> of <code>Rbac</code> takes its rows as roles, next to
+          those in code (a group named as a role in code adds to it). Users are in groups with
+          <code>AbstractUser(Model, fields, { groups: () =&gt; Group })</code> (a many-to-many, <code>user.groups</code>):
+          the roles of a user are its groups, and its <code>role</code> or <code>roles</code>. A save or delete of a group
+          is seen at the next question; changes made by other processes after <code>refresh</code> (60 seconds). In the
+          <a href="../admin/index.html">admin</a>, the permissions of users and groups and the roles a group inherits are
+          picked from lists (those of its models, and the roles of its <code>rbac</code>).
+        </p>
+        <pre><code class="language-js">class Group extends auth.AbstractGroup(Model, fields) {}
+class User extends auth.AbstractUser(Model, fields, { groups: () =&gt; Group }) {}
+
+const rbac = new auth.Rbac({ roles: { viewer: ['*.view'] }, model: Group });
+await Group.objects.create({ name: 'editors', permissions: ['Book.*'], inherits: ['viewer'] });
+await ada.groups.set([editors.pk]);
+await rbac.can(ada, 'Book.change'); // true
+
+app.register(admin, { prefix: '/admin', models: [Book, User, Group], rbac }); // groups edited in the admin</code></pre>
 
         <h2 id="strategies">Strategies</h2>
         <p>
@@ -240,8 +536,8 @@ app.get('/admin', { config: { auth: { strategy: ['jwt', 'basic'], roles: 'admin'
           Tested with passport-local, passport-http, passport-http-bearer, passport-headerapikey, passport-jwt and
           passport-oauth2.
         </p>
-        <pre><code class="language-js">const { Strategy: BearerStrategy } = require('passport-http-bearer');
-const { Strategy: GitHubStrategy } = require('passport-github2');
+        <pre><code class="language-js">import { Strategy as BearerStrategy } from 'passport-http-bearer';
+import { Strategy as GitHubStrategy } from 'passport-github2';
 
 // Credentials in every request: one more strategy.
 app.register(auth.plugin, {
@@ -310,7 +606,7 @@ const claims = auth.verifyJwt(token, keys, { issuer: 'app' }); // or a TokenErro
           secret of the vault, the tenant and the key: a copy of the store is no key, and the keys of one tenant cannot
           be moved to another.
         </p>
-        <pre><code class="language-js">const { KeyVault, vaultModelStore, vaultFields } = require('@xufa/auth');
+        <pre><code class="language-js">import { KeyVault, vaultModelStore, vaultFields } from '@xufa/auth';
 
 class TenantKeys extends Model {
   static fields = vaultFields(fields);
@@ -354,13 +650,15 @@ await vault.rotate('acme'); // a new key</code></pre>
         <pre><code class="language-js">// Enrolling: the app scans the QR code of the URI, and the user types a code to confirm it.
 const secret = auth.generateSecret();
 const uri = auth.totpUri({ secret, issuer: 'Acme', label: 'ada@example.com' });
+const svg = auth.qrSvg(uri); // the QR code to show: &lt;svg ...&gt;
 const step = auth.verifyTotp(code, secret); // null, or the time step to keep with the user</code></pre>
         <p>
           <code>verifyTotp(code, secret, { window, after })</code> takes the codes of <code>window</code> steps around now
           and returns the step of the code; codes of the step <code>after</code> or before are refused, so keeping the step
           of each login makes each code work once. <code>totp()</code> and <code>hotp()</code> follow RFC 6238 and RFC 4226
           (SHA1, SHA256 or SHA512, 6 to 10 digits). <code>generateRecoveryCodes(n)</code> gives codes to log in without the
-          app; keep their <code>hashRecoveryCode()</code>. Keep the secrets of TOTP encrypted (they are passwords that never
+          app; keep their <code>hashRecoveryCode()</code>. <code>qrSvg(text, { level, border, size })</code> draws the QR
+          code of the URI with no dependencies (<code>qrCode(text)</code> gives its matrix). Keep the secrets of TOTP encrypted (they are passwords that never
           change), in <a href="../orm/guide.html#encrypted"><code>fields.encrypted()</code></a> of the ORM, as in the example.
         </p>
 

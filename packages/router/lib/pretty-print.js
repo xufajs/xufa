@@ -1,5 +1,5 @@
 // The tree of routes as text, in the format of find-my-way.
-const { httpMethod, deepEqualConstraints } = require('./strategies');
+import { httpMethod, deepEqualConstraints } from './strategies.js';
 
 const treeData = Symbol('treeData');
 
@@ -124,4 +124,4 @@ function prettyPrintTree(root, options) {
   return printObjectTree(tree);
 }
 
-module.exports = { prettyPrintTree };
+export { prettyPrintTree };

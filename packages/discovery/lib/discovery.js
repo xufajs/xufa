@@ -6,11 +6,11 @@
 // unicast (seeds: addresses to say it to, for networks with neither, as the ones of most clouds; the nodes tell each
 // other the addresses they know, so one seed is enough). With a secret, packets are sealed (lib/codec.js): only the
 // nodes that know it join, and packets older than `maxSkew` or seen already are refused.
-const crypto = require('node:crypto');
-const dgram = require('node:dgram');
-const os = require('node:os');
-const { EventEmitter } = require('node:events');
-const { createCodec, MAX_PACKET } = require('./codec');
+import crypto from 'node:crypto';
+import dgram from 'node:dgram';
+import os from 'node:os';
+import { EventEmitter } from 'node:events';
+import { createCodec, MAX_PACKET } from './codec.js';
 
 const DEFAULTS = {
   service: 'xufa',
@@ -389,4 +389,4 @@ function createDiscovery(options) {
   return new Discovery(options);
 }
 
-module.exports = { Discovery, DiscoveryError, createDiscovery, MAX_PACKET };
+export { Discovery, DiscoveryError, createDiscovery, MAX_PACKET };

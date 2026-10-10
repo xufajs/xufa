@@ -7,11 +7,12 @@
 //   const list = await books.get('/books', { query: { author: 'ada', page: 2 } });
 //   const created = await books.post('/books', { json: { title: 'Dune' } });
 //   app.get('/mine', async (request) => books.for(request).get('/books'));
-const { retry, backoff } = require('./retry');
-const { HTTPError, TimeoutError, RequestError } = require('./errors');
-const { httpTransport } = require('./transport');
-const { proxyOf } = require('./proxy');
-const { encodeBody } = require('./body');
+import { retry, backoff } from './retry.js';
+import { HTTPError, TimeoutError, RequestError } from './errors.js';
+import { httpTransport } from './transport.js';
+import { proxyOf } from './proxy.js';
+import { encodeBody } from './body.js';
+import * as faultsModule from '@xufa/faults';
 
 // Methods retried by default: those whose repetition does not change more than once.
 const IDEMPOTENT = ['GET', 'HEAD', 'OPTIONS', 'PUT', 'DELETE', 'TRACE'];
@@ -131,7 +132,7 @@ const isStream = (body) =>
 const METHODS = ['get', 'head', 'options', 'post', 'put', 'patch', 'delete'];
 
 function clientFaults() {
-  const { Faults } = require('@xufa/faults'); // eslint-disable-line global-require
+  const { Faults } = faultsModule;
   const refused = (message) =>
     Object.assign(new TypeError(message), {
       cause: Object.assign(new Error('connect ECONNREFUSED (a fault injected)'), { code: 'ECONNREFUSED' }),
@@ -360,4 +361,4 @@ function createClient(defaults = {}, shared = { faults: null, transports: new Ma
   return client;
 }
 
-module.exports = { createClient, IDEMPOTENT, RETRY_STATUSES, urlOf };
+export { createClient, IDEMPOTENT, RETRY_STATUSES, urlOf };

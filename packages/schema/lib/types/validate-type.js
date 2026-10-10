@@ -1,4 +1,12 @@
 // A validate() result is undefined (valid), a string (one error) or a possibly empty array of errors.
+
+// What compile.js and schema.js give when they load: they import this module (its types extend ValidateType), so
+// it does not import them (a cycle that would run a type before ValidateType is made).
+const late = { compileType: null, Schema: null };
+function provide(parts) {
+  Object.assign(late, parts);
+}
+
 function hasErrors(result) {
   if (!Array.isArray(result)) {
     return Boolean(result);
@@ -44,8 +52,7 @@ class ValidateType {
   // Compiles the type into generated code, several times faster than validate(): see compileType() in compile.js for
   // the options. The compiled function does not see changes made to the type afterwards.
   compile(options = {}) {
-    // eslint-disable-next-line global-require -- compile.js requires this module
-    return require('../compile').compileType(this, options);
+    return late.compileType(this, options);
   }
 
   // Presence part of isValid: a boolean when undefined/null decide the result, undefined otherwise.
@@ -109,9 +116,7 @@ function toType(value, name) {
     return value;
   }
   if (isPlainObject(value)) {
-    // eslint-disable-next-line global-require -- schema.js requires this module
-    const { Schema } = require('../schema');
-    return new Schema(value);
+    return new late.Schema(value);
   }
   if (value === null || typeof value !== 'object' || Array.isArray(value)) {
     throw new TypeError(`${name} must be a type or an object of types`);
@@ -129,11 +134,4 @@ function toTypes(values, name) {
   return values.map((value, i) => toType(value, `${name}[${i}]`));
 }
 
-module.exports = {
-  ValidateType,
-  hasErrors,
-  toErrors,
-  isPlainObject,
-  toType,
-  toTypes,
-};
+export { ValidateType, hasErrors, toErrors, isPlainObject, toType, toTypes, provide };

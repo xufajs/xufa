@@ -2,7 +2,7 @@
 // same schema in the DSL. The samples are merged position by position: the types seen at each one (an integer and a
 // number give "number", null makes it nullable), the keys of objects (required when every object at that position has
 // them), and the elements of arrays, all merged into one schema. Strings get a format when every one matches it.
-const { FORMATS, matchesFormat } = require('./formats');
+import { FORMATS, matchesFormat } from './formats.js';
 
 // The formats detected, in order of preference: the first one every string matches is chosen. Host names, URI
 // references and the like match plain words, so they are left out; a URI needs "scheme://".
@@ -223,4 +223,4 @@ function inferSchemaCode(samples, options = {}) {
   return `${header}const ${name} = ${code};\n`;
 }
 
-module.exports = { inferJsonSchema, inferSchemaCode };
+export { inferJsonSchema, inferSchemaCode };

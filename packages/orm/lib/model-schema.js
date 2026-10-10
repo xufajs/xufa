@@ -1,5 +1,3 @@
-'use strict';
-
 // Model.schema(): the JSON Schema of the objects of a model as @xufa/schema makes them (draft-07: null as a type of
 // its own, not `nullable`), so s.omit(), s.pick(), s.partial() and s.extend() take it, routes validate and serialize
 // with it, and in TypeScript it carries the type of the objects (as their JSON: dates and bytes are strings).
@@ -12,11 +10,14 @@
 //
 // It is the one source of the schemas of models: Model.jsonSchema() is this one in the form of OpenAPI 3.0
 // (`nullable: true`), and the resources document their routes with it.
-const { s } = require('@xufa/schema');
+import { s } from '@xufa/schema';
 
 function propertyOf(field) {
   let schema = { ...field.jsonSchema() };
   if (field.choices) schema.enum = [...field.choices];
+  // The label and help of the field, for the documents of the API.
+  if (field.label) schema.title = field.label;
+  if (field.help) schema.description = field.help;
   // Computed fields, and what a blob backend gives, are in the objects, never in what is given.
   if (field.computed !== null || field.readOnly === true) schema.readOnly = true;
   if (field.null) schema = s.nullable(schema);
@@ -75,4 +76,4 @@ function openapiSchema(model, { exclude = [], partial = false } = {}) {
   return schema;
 }
 
-module.exports = { modelSchema, openapiSchema, nullableOf };
+export { modelSchema, openapiSchema, nullableOf };

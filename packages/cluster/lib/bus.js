@@ -7,7 +7,9 @@
 //
 // With useMarshal() (start({ marshal })), data goes as @xufa/marshal writes it: the instances of registered classes
 // arrive as themselves, and so do the errors thrown by the handlers of requests (their class, cause and fields).
-const cluster = require('node:cluster');
+import cluster from 'node:cluster';
+import * as faultsModule from '@xufa/faults';
+import * as marshalModule from '@xufa/marshal';
 
 const TAG = '__xufaBus';
 const EMPTY = [];
@@ -34,7 +36,7 @@ function errorOf(data) {
 const EVENTS = ['send', 'sendTo', 'broadcast'];
 
 function busFaults(bus) {
-  const { Faults, sleep } = require('@xufa/faults'); // eslint-disable-line global-require
+  const { Faults, sleep } = faultsModule;
   const faults = new Faults({
     name: 'bus',
     operations: [...EVENTS, 'request'],
@@ -114,7 +116,7 @@ class Bus {
   // Sends data written by @xufa/marshal, with `registry` (its default one when not given). The processes that
   // receive must know the same classes (they run the same code).
   useMarshal(registry) {
-    const { marshal, unmarshal, registry: fallback } = require('@xufa/marshal'); // eslint-disable-line global-require
+    const { marshal, unmarshal, registry: fallback } = marshalModule;
     const options = { registry: registry || fallback };
     this.marshaller = { write: (value) => marshal(value, options), read: (nodes) => unmarshal(nodes, options) };
     return this;
@@ -279,4 +281,4 @@ class Bus {
   }
 }
 
-module.exports = { Bus, BusError };
+export { Bus, BusError };

@@ -1,7 +1,5 @@
-'use strict'
-
-
-const FindMyWay = require('../')
+import FindMyWay from '../index.js';
+import indexModule from '../index.js';
 
 test('the router is an object with methods', () => {
   expect.assertions(4)
@@ -728,7 +726,7 @@ test('register all known HTTP methods', () => {
   expect.assertions(6)
   const findMyWay = FindMyWay()
 
-  const httpMethods = require('..').httpMethods
+  const httpMethods = indexModule.httpMethods
   const handlers = {}
   for (const i in httpMethods) {
     const m = httpMethods[i]

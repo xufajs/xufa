@@ -4,7 +4,7 @@
   "description": "The nodes of a service found on the network by UDP (multicast, broadcast or seeds), sealed with a secret, with no dependencies",
   "main": "./index.js",
   "types": "./index.d.ts",
-  "type": "commonjs",
+  "type": "module",
   "exports": {
     ".": {
       "types": "./index.d.ts",
@@ -47,7 +47,7 @@
   },
   "devDependencies": {
     "tsd": "^0.33.0",
-    "vyntra": "^0.6.0"
+    "vyntra": "^0.7.0"
   },
   "publishConfig": {
     "access": "public"

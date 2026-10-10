@@ -1,4 +1,4 @@
-const { ValidateType } = require('./validate-type');
+import { ValidateType } from './validate-type.js';
 
 class AnyType extends ValidateType {
   isValid(value) {
@@ -24,9 +24,4 @@ function oany(isMandatory = false, isNullable = false) {
   return new AnyType({ isMandatory, isNullable });
 }
 
-module.exports = {
-  AnyType,
-  Any,
-  any,
-  oany,
-};
+export { AnyType, Any, any, oany };

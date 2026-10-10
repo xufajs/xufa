@@ -4,7 +4,7 @@
   "description": "JSON Web Tokens with the API of jsonwebtoken (and jws, jwa) and their test suites, without dependencies",
   "main": "./index.js",
   "types": "./index.d.ts",
-  "type": "commonjs",
+  "type": "module",
   "exports": {
     ".": {
       "types": "./index.d.ts",
@@ -48,7 +48,7 @@
     "chai": "^4.1.2",
     "ecdsa-sig-formatter": "^1.0.11",
     "sinon": "^6.0.0",
-    "vyntra": "^0.6.0"
+    "vyntra": "^0.7.0"
   },
   "publishConfig": {
     "access": "public"

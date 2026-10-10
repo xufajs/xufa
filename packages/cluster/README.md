@@ -5,8 +5,8 @@ stops them all gracefully. A bus carries events and requests between the process
 among the workers, and the same code runs in one process in development and tests. No dependencies.
 
 ```js
-const { start, bus } = require('@xufa/cluster');
-const config = require('./config'); // loadConfig() of @xufa/config: read in every process
+import { start, bus } from '@xufa/cluster';
+import config from './config.js'; // loadConfig() of @xufa/config: read in every process
 
 start({
   workers: config.cluster.workers, // os.availableParallelism() when undefined; 0 runs everything in one process
@@ -68,7 +68,7 @@ whichever worker sent it. The work (the function, the request it answers) stays 
 node go through the bus.
 
 ```js
-const { createPool, usePool } = require('@xufa/cluster');
+import { createPool, usePool } from '@xufa/cluster';
 
 // primary: the nodes (a list, or a Discovery of @xufa/discovery: peers, 'up', 'down')
 createPool('converters', {
@@ -99,7 +99,9 @@ const result = await converters.use((node, { signal }) => post(`${node.meta.url}
   NetCache, a Discovery, or `{ publish, subscribe }`), a slot given back is told to the other machines, whose tickets
   waiting are served at once instead of at their next look (`pollEvery`). And a node that
   answers 429 (or what `busy(err)` says) is left aside for its Retry-After (or `busyFor`): `use()` runs the work
-  elsewhere without counting an attempt (`maxBusy`).
+  elsewhere without counting an attempt (`maxBusy`). `fallback: { node, after, wait }`: from the attempt `after` on,
+  or when no node is free in `wait`, the work runs on that node (a load balancer in front of the nodes) without a
+  slot, with `fallback: true` in its context.
 - `pool.health({ minNodes, maxWaiting })` (or `usePool(name).health()` in a worker): a check of `xufa.health` of
   [@xufa/http](../http): down with fewer nodes than `minNodes` (1), degraded with more tickets waiting than
   `maxWaiting`; not critical by default.

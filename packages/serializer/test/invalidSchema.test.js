@@ -1,7 +1,4 @@
-'use strict'
-
-
-const build = require('..')
+import build from '../index.js';
 
 // Covers issue #139
 test('Should throw on invalid schema', () => {

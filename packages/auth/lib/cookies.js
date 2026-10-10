@@ -35,4 +35,4 @@ function serializeCookie(name, value, options = {}) {
   return cookie;
 }
 
-module.exports = { parseCookies, serializeCookie };
+export { parseCookies, serializeCookie };

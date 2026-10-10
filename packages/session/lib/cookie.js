@@ -1,8 +1,6 @@
-'use strict';
-
 // Cookies of the session: the header Cookie read, a Set-Cookie written (RFC 6265), and the id of a session signed with
 // HMAC-SHA256 (id.signature, base64url), checked with every secret given (the first signs: secrets can be rotated).
-const crypto = require('node:crypto');
+import crypto from 'node:crypto';
 
 function parseCookies(header) {
   const cookies = {};
@@ -59,4 +57,4 @@ function unsign(signed, secrets) {
 
 const newId = () => crypto.randomBytes(24).toString('base64url');
 
-module.exports = { parseCookies, serializeCookie, sign, unsign, newId };
+export { parseCookies, serializeCookie, sign, unsign, newId };

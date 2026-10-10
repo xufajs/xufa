@@ -1,7 +1,7 @@
 'use strict'
 
 
-const fp = require('@xufa/http').plugin
+const fp = require('..').plugin
 const errors = require('http-errors')
 const split = require('split2')
 const Fastify = require('..')

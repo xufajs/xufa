@@ -1,8 +1,6 @@
-'use strict';
+import { isUtf8 } from 'node:buffer';
 
-const { isUtf8 } = require('node:buffer');
-
-const { hasBlob } = require('./constants');
+import { hasBlob } from './constants.js';
 
 //
 // Allowed token characters:
@@ -122,14 +120,9 @@ function isBlob(value) {
   );
 }
 
-module.exports = {
-  isBlob,
-  isValidStatusCode,
-  isValidUTF8: _isValidUTF8,
-  tokenChars,
-};
-
 // buffer.isUtf8 (Node.js 18.14 and later) is native: faster than the loop above but for short buffers.
-module.exports.isValidUTF8 = function (buf) {
+export const isValidUTF8 = function (buf) {
   return buf.length < 24 ? _isValidUTF8(buf) : isUtf8(buf);
 };
+
+export { isBlob, isValidStatusCode, tokenChars };

@@ -1,7 +1,5 @@
-'use strict';
-
 // The compiled walk (lib/compile.js) against the walk of match(): the same routes, the same results.
-const createRouter = require('../');
+import createRouter from '../index.js';
 
 const { Router } = createRouter;
 

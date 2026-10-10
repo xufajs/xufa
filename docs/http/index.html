@@ -86,12 +86,12 @@
         <h2 id="install">Install</h2>
         <pre><code class="language-sh">npm install @xufa/http   # or: npm install xufa</code></pre>
         <p>It needs Node.js 22.22.3 or later (24.15 or later on the 24 line). CommonJS and ES modules both work:</p>
-        <pre data-run><code class="language-js">const xufa = require('@xufa/http');
+        <pre data-run><code class="language-js">import xufa from '@xufa/http';
 // import xufa from '@xufa/http'
 // import { xufa } from '@xufa/http'</code></pre>
 
         <h2 id="first-app">A first app</h2>
-        <pre><code class="language-js">const xufa = require('@xufa/http');
+        <pre><code class="language-js">import xufa from '@xufa/http';
 
 const app = xufa({ logger: true });
 
@@ -171,7 +171,7 @@ $ curl -s -X POST localhost:3000/books -H 'content-type: application/json' -d '{
           <code>reply</code>, <code>request</code>, the logger, <code>inject()</code> and the type providers of
           TypeScript. The <a href="api.html">API</a> page lists all of it as xufa has it. What is different (the
           names of errors, the validator, the logger, a few options) is in <a href="fastify.html">From fastify</a>:
-          for most apps, moving is changing <code>require('fastify')</code> into <code>require('@xufa/http')</code>.
+          for most apps, moving is changing <code>'fastify'</code> into <code>'@xufa/http'</code> in an import (or a <code>require()</code>).
         </p>
 
         <h2 id="parts">Its parts</h2>

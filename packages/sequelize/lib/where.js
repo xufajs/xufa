@@ -3,13 +3,13 @@
 //
 //   { name: 'Ada', pages: { [Op.gt]: 100 }, [Op.or]: [{ a: 1 }, { b: 2 }] }
 //   -> and({ name: 'Ada', pages__gt: 100 }, or({ a: 1 }, { b: 2 }))
-const { and, or, not, F, jsonPath } = require('@xufa/orm');
-const { Op } = require('./operators');
-const { NotSupportedError } = require('./errors');
-const { isPlainObject } = require('./utils');
-const { stringifyRange, rangeSqlType } = require('./range');
-const { Raw, fragmentOf, isFragment, columnSql } = require('./fragments');
-const { sqlTypeOf } = require('./sql-types');
+import { and, or, not, F, jsonPath } from '@xufa/orm';
+import { Op } from './operators.js';
+import { NotSupportedError } from './errors.js';
+import { isPlainObject } from './utils.js';
+import { stringifyRange, rangeSqlType } from './range.js';
+import { Raw, fragmentOf, isFragment, columnSql } from './fragments.js';
+import { sqlTypeOf } from './sql-types.js';
 
 const SQL_COMPARISONS = new Map([
   [Op.eq, '='],
@@ -498,4 +498,4 @@ function parseJsonPath(text) {
   return { steps, cast: undefined };
 }
 
-module.exports = { translateWhere, parseJsonPath, JsonRef, leaf };
+export { translateWhere, parseJsonPath, JsonRef, leaf };

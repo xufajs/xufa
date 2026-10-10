@@ -1,5 +1,3 @@
-'use strict';
-
 // The scheduler: jobs run every so often (every), on a cron expression (cron), or once (at, in), each on a timer of
 // its own, so a slow job delays no other one and the failure of one stops none.
 //
@@ -22,11 +20,11 @@
 //   history: when it starts, the last time due that the history has no run of runs once.
 // - history (memoryHistory(), ormHistory(db)): every run is recorded (when, how long, how it ended, its attempts).
 // - Events: 'run' (a run starts), 'retry', 'done', 'failure', 'skip' (with why: 'running' or 'locked').
-const os = require('node:os');
-const { EventEmitter } = require('node:events');
-const { SchedulerError, TimeoutError } = require('./errors');
-const { toMs } = require('./duration');
-const { Cron } = require('./cron');
+import os from 'node:os';
+import { EventEmitter } from 'node:events';
+import { SchedulerError, TimeoutError } from './errors.js';
+import { toMs } from './duration.js';
+import { Cron } from './cron.js';
 
 const MAX_DELAY = 2147483647; // the longest timeout of Node.js: longer waits are made of several
 const OVERLAPS = ['skip', 'wait', 'allow'];
@@ -112,6 +110,14 @@ class Job {
     this.lastWall = null; // the wall-clock time of the last cron run (an hour that repeats runs once)
     this.done = false; // a job of once that ran
     this.stats = { runs: 0, failures: 0, skipped: 0, retries: 0, lastRun: null, lastDuration: null, lastError: null };
+    this.failuresInRow = 0; // the runs that failed since the last that did not
+    this.runningSince = null; // when its run in this process started
+    this.lastScheduled = null; // the time its last run in this process was due
+  }
+
+  // Whether it runs again and again (every, cron): those can miss a run.
+  get repeats() {
+    return this.kind === 'every' || this.kind === 'cron';
   }
 
   // The time of the run after `now` (ms), or null.
@@ -218,6 +224,72 @@ class Scheduler extends EventEmitter {
 
   jobs() {
     return [...this.map.values()].map((job) => job.info());
+  }
+
+  // A check of xufa.health: degraded when a job missed a run (it was due more than `late` ago and nothing ran it: in
+  // the history, every machine's runs; without one, this process's timers), failed its last `failures` runs (failed
+  // or timed out), or runs for longer than `maxRun`. `jobs`: the names checked (every job). Its details: each job's
+  // next run, last run and status, and its failures in a row.
+  health({ late = '1m', failures = 1, maxRun, jobs: names, critical = false, timeout } = {}) {
+    const lateMs = toMs(late, 'the late of health()');
+    const maxRunMs = maxRun === undefined ? null : toMs(maxRun, 'the maxRun of health()');
+    if (!Number.isInteger(failures) || failures < 1) {
+      throw new SchedulerError(`health(): failures is an integer of 1 or more (${failures})`);
+    }
+    const check = async () => {
+      const now = this.clock.now();
+      const problems = [];
+      const details = {};
+      const chosen = names
+        ? names.map((name) => {
+            const job = this.map.get(name);
+            if (!job) throw new SchedulerError(`health(): there is no job ${name}`);
+            return job;
+          })
+        : [...this.map.values()];
+      for (const job of chosen) {
+        const runs = this.historyStore ? await this.historyStore.list(job.name, { limit: failures }) : [];
+        const last = runs[0] || null;
+        const lastAt = last ? new Date(last.scheduledAt).getTime() : null;
+        // The runs that failed since the last that did not (of every machine, with a history).
+        const firstDone = runs.findIndex((run) => run.status === 'done');
+        const inRow = this.historyStore ? (firstDone === -1 ? runs.length : firstDone) : job.failuresInRow;
+        // Missed: a time it was due more than `late` ago with no run after the last one (or after its start).
+        let missed = null;
+        if (job.repeats && job.running === 0 && (job.kind === 'cron' || job.align)) {
+          const since = lastAt !== null ? lastAt : job.lastScheduled !== null ? job.lastScheduled : job.started;
+          if (since !== null && since !== undefined) missed = job.missedAfter(since, now - lateMs);
+        } else if (job.repeats && job.running === 0 && this.started && job.next !== null && now - job.next > lateMs) {
+          missed = job.next;
+        }
+        const overrun = maxRunMs !== null && job.runningSince !== null && now - job.runningSince > maxRunMs;
+        if (missed !== null) problems.push(`${job.name} missed its run of ${new Date(missed).toISOString()}`);
+        if (inRow >= failures) {
+          problems.push(`${job.name} failed its last ${inRow === 1 ? 'run' : `${inRow} runs`}`);
+        }
+        if (overrun) problems.push(`${job.name} runs for ${Math.round((now - job.runningSince) / 1000)} s`);
+        details[job.name] = {
+          schedule: job.schedule,
+          next: job.next === null ? null : new Date(job.next).toISOString(),
+          running: job.running > 0,
+          lastRun: last
+            ? new Date(last.scheduledAt).toISOString()
+            : job.stats.lastRun === null
+              ? null
+              : new Date(job.stats.lastRun).toISOString(),
+          lastStatus: last ? last.status : job.stats.lastRun === null ? null : job.stats.lastError ? 'failed' : 'done',
+          failuresInRow: inRow,
+          ...(missed !== null ? { missed: new Date(missed).toISOString() } : {}),
+        };
+      }
+      return {
+        status: problems.length ? 'degraded' : 'up',
+        ...(problems.length ? { error: problems.join('; ') } : {}),
+        started: this.started,
+        jobs: details,
+      };
+    };
+    return { check, critical, ...(timeout !== undefined ? { timeout } : {}) };
   }
 
   // The runs of a job in the history, the last first ([] without a history).
@@ -402,6 +474,8 @@ class Scheduler extends EventEmitter {
       timers.push(this.clock.setTimeout(renew, every));
     }
     const started = this.clock.now();
+    if (job.runningSince === null) job.runningSince = started;
+    job.lastScheduled = at;
     this.emit('run', { name: job.name, scheduledAt: new Date(at) });
     if (this.logger) this.logger.debug({ job: job.name }, `Job ${job.name} started`);
 
@@ -435,6 +509,7 @@ class Scheduler extends EventEmitter {
       for (const timer of timers) this.clock.clearTimeout(timer);
       this.inFlight.delete(run);
       job.running -= 1;
+      if (job.running === 0) job.runningSince = null;
       const duration = this.clock.now() - started;
       if (outcome.error) this.failed(job, outcome.error, at, duration, attempt);
       else {
@@ -442,6 +517,7 @@ class Scheduler extends EventEmitter {
         job.stats.lastRun = started;
         job.stats.lastDuration = duration;
         job.stats.lastError = null;
+        job.failuresInRow = 0;
         this.emit('done', {
           name: job.name,
           scheduledAt: new Date(at),
@@ -522,6 +598,7 @@ class Scheduler extends EventEmitter {
 
   failed(job, error, at, duration, attempts = 1) {
     job.stats.failures += 1;
+    job.failuresInRow += 1;
     job.stats.lastRun = this.clock.now() - duration;
     job.stats.lastDuration = duration;
     job.stats.lastError = error;
@@ -546,4 +623,4 @@ class Scheduler extends EventEmitter {
   }
 }
 
-module.exports = { Scheduler, systemClock };
+export { Scheduler, systemClock };

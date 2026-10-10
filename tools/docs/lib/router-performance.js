@@ -1,8 +1,8 @@
 // The Performance section of docs/router.html, from bench/results/router-2.md: included in pages/router.page.html.
-const fs = require('node:fs');
-const path = require('node:path');
+import fs from 'node:fs';
+import path from 'node:path';
 
-const results = fs.readFileSync(path.join(__dirname, '../../../bench/results/router-2.md'), 'utf8');
+const results = fs.readFileSync(path.join(import.meta.dirname, '../../../bench/results/router-2.md'), 'utf8');
 const rows = {};
 for (const line of results.split('\n').slice(2)) {
   const cells = line.split('|').map((c) => c.trim());
@@ -67,4 +67,4 @@ ${pairs}        </div>
         </p>
 `;
 
-module.exports = { routerPerformance: () => section };
+export const routerPerformance = () => section;

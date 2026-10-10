@@ -1,7 +1,4 @@
-'use strict'
-
-
-const FindMyWay = require('../')
+import FindMyWay from '../index.js';
 
 test('Wildcard route should not be blocked by Parametric with different method / 1', () => {
   expect.assertions(1)

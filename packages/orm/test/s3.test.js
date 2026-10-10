@@ -2,11 +2,14 @@
 // (test/fake-s3.js, which checks every signature): uploads in parts and their abort, metadata changed by copies, keys
 // of every character, signed and public URLs, drops in batches, errors. With XUFA_S3_URL
 // (http://<key>:<secret>@<host>:<port>/<bucket>?region=<region>, as MinIO's), the same against that store.
-const { Readable } = require('node:stream');
-const { Database, Model, fields } = require('..');
-const { sign, presign } = require('../lib/backends/blob/sigv4');
-const { S3Backend, S3Error } = require('../lib/backends/blob/s3');
-const { fakeS3 } = require('./fake-s3');
+import { Readable } from 'node:stream';
+import { Database, Model, fields } from '../index.js';
+import { sign, presign } from '../lib/backends/blob/sigv4.js';
+import { S3Backend, S3Error } from '../lib/backends/blob/s3.js';
+import { fakeS3 } from './fake-s3.js';
+import { createRequire } from 'node:module';
+
+const require = createRequire(import.meta.url);
 
 const EXAMPLE = { accessKeyId: 'AKIAIOSFODNN7EXAMPLE', secretAccessKey: 'wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY' };
 const MAY_24 = new Date('2013-05-24T00:00:00Z');

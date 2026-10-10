@@ -13,11 +13,11 @@
 //
 //   const rates = cached(async (currency) => fetchRates(currency), { ttl: 600000 });
 //   await rates('EUR'); // the next calls of the next 10 minutes are answered from the cache
-const { reportCacheError } = require('./cache-errors');
-const crypto = require('node:crypto');
-const { AsyncLocalStorage } = require('node:async_hooks');
-const { MemoryCache } = require('./cache');
-const { resolvePath } = require('./query');
+import { reportCacheError } from './cache-errors.js';
+import crypto from 'node:crypto';
+import { AsyncLocalStorage } from 'node:async_hooks';
+import { MemoryCache } from './cache.js';
+import { resolvePath } from './query.js';
 
 // --- Keys: a value written the same way every time.
 
@@ -271,4 +271,4 @@ function cached(fn, options = {}) {
   return call;
 }
 
-module.exports = { cached, cachedQuery, followWrites, inTransaction, describe, changed };
+export { cached, cachedQuery, followWrites, inTransaction, describe, changed };

@@ -1,6 +1,6 @@
 const { sep } = require('node:path')
 
-const Fastify = require('@xufa/http')
+const Fastify = require('../..')
 const { kSchemaController } = require('../../lib/symbols')
 
 test('SchemaController are NOT loaded when the controllers are custom', async () => {

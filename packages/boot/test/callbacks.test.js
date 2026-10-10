@@ -1,7 +1,4 @@
-'use strict'
-
-
-const boot = require('..')
+import boot from '../index.js';
 
 test('reentrant', (testCompleted) => {
   expect.assertions(7)

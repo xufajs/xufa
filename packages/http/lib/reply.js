@@ -1,6 +1,6 @@
 // The reply of a request: status, headers, serialization of the payload, onSend hooks and writing the response.
-const { finished } = require('node:stream');
-const {
+import { finished } from 'node:stream';
+import {
   kFourOhFourContext,
   kReplyErrorHandlerCalled,
   kReplyHijacked,
@@ -24,12 +24,12 @@ const {
   kRequestResponse,
   kRequestSignal,
   kLogController,
-} = require('./symbols');
-const { onSendHookRunner, onResponseHookRunner, preHandlerHookRunner, preSerializationHookRunner } = require('./hooks');
-const { handleError } = require('./error-handler');
-const { getSchemaSerializer } = require('./schemas');
-const { fastHead } = require('./fast-head');
-const {
+} from './symbols.js';
+import { onSendHookRunner, onResponseHookRunner, preHandlerHookRunner, preSerializationHookRunner } from './hooks.js';
+import { handleError } from './error-handler.js';
+import { getSchemaSerializer } from './schemas.js';
+import { fastHead } from './fast-head.js';
+import {
   XUFA_ERR_REP_INVALID_PAYLOAD_TYPE,
   XUFA_ERR_REP_RESPONSE_BODY_CONSUMED,
   XUFA_ERR_REP_READABLE_STREAM_LOCKED,
@@ -41,9 +41,10 @@ const {
   XUFA_ERR_MISSING_SERIALIZATION_FN,
   XUFA_ERR_MISSING_CONTENTTYPE_SERIALIZATION_FN,
   XUFA_ERR_DEC_UNDECLARED,
-} = require('./errors');
-const decorators = require('./decorate');
-const ContentType = require('./content-type');
+} from './errors.js';
+import * as decorators from './decorate.js';
+import ContentType from './content-type.js';
+import handleRequestModule from './handle-request.js';
 
 const JSON_TYPE = 'application/json; charset=utf-8';
 const TEXT_TYPE = 'text/plain; charset=utf-8';
@@ -54,7 +55,7 @@ const toString = Object.prototype.toString;
 // handle-request.js requires this module: its functions are read when they are needed.
 let handleRequestInternals = null;
 function internals() {
-  if (handleRequestInternals === null) handleRequestInternals = require('./handle-request').internals; // eslint-disable-line global-require
+  if (handleRequestInternals === null) handleRequestInternals = handleRequestModule.internals;
   return handleRequestInternals;
 }
 
@@ -883,7 +884,12 @@ function serialize(context, data, statusCode, contentType, bytes = false) {
 
 function noop() {}
 
-module.exports = Reply;
-module.exports.buildReply = buildReply;
-module.exports.setupResponseListeners = setupResponseListeners;
-module.exports.onErrorHook = onErrorHook;
+export default Reply;
+Reply.buildReply = buildReply;
+Reply.setupResponseListeners = setupResponseListeners;
+Reply.onErrorHook = onErrorHook;
+
+export { buildReply, setupResponseListeners, onErrorHook };
+
+// What require() gives (the tests of fastify are CommonJS).
+export { Reply as 'module.exports' };

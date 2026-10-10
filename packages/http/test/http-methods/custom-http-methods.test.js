@@ -2,7 +2,7 @@
 
 const http = require('node:http')
 
-const Fastify = require('@xufa/http')
+const Fastify = require('../..')
 
 function addEcho (fastify, method) {
   fastify.route({

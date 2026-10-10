@@ -11,7 +11,7 @@ npm install @xufa/jwt
 ```
 
 ```js
-const jwt = require('@xufa/jwt');
+import * as jwt from '@xufa/jwt';
 
 const token = jwt.sign({ sub: '42', role: 'admin' }, process.env.JWT_SECRET, { expiresIn: '15m', issuer: 'app' });
 const claims = jwt.verify(token, process.env.JWT_SECRET, { algorithms: ['HS256'], issuer: 'app' });
@@ -21,7 +21,7 @@ const signed = jwt.sign({ sub: '42' }, privateKey, { algorithm: 'ES256', keyid: 
 jwt.verify(signed, publicKey); // ES256/384/512 taken for an EC key, never HMAC nor none
 ```
 
-`require('jsonwebtoken')` can be replaced by `require('@xufa/jwt')`: the options, the checks, the messages and the
+`jsonwebtoken` can be replaced by `@xufa/jwt` (in imports or requires): the options, the checks, the messages and the
 errors (`JsonWebTokenError`, `TokenExpiredError`, `NotBeforeError`) are those of jsonwebtoken 9, with the fixes of its
 open pull requests that hold:
 
@@ -56,8 +56,8 @@ HS256/384/512 (HMAC), RS256/384/512 (RSASSA-PKCS1-v1_5), PS256/384/512 (RSASSA-P
 
 ## jws and jwa
 
-`require('@xufa/jwt/jws')` has jws's `sign`, `verify`, `decode`, `isValid`, `createSign` and `createVerify` (streams),
-and `require('@xufa/jwt/jwa')` jwa's `jwa(algorithm)`, `{ sign(input, key), verify(input, signature, key) }`.
+`@xufa/jwt/jws` has jws's `sign`, `verify`, `decode`, `isValid`, `createSign` and `createVerify` (streams),
+and `@xufa/jwt/jwa` jwa's `jwa(algorithm)`, `{ sign(input, key), verify(input, signature, key) }`.
 
 ## Performance
 

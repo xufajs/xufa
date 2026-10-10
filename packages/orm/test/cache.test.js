@@ -1,17 +1,7 @@
-const path = require('node:path');
-const { spawnSync } = require('node:child_process');
-const {
-  Database,
-  Databases,
-  Model,
-  fields,
-  MemoryCache,
-  SharedCache,
-  LocalCache,
-  NotFoundError,
-  QueryError,
-} = require('..');
-const { Bus } = require('@xufa/cluster');
+import path from 'node:path';
+import { spawnSync } from 'node:child_process';
+import { Database, Databases, Model, fields, MemoryCache, SharedCache, LocalCache, NotFoundError, QueryError } from '../index.js';
+import { Bus } from '@xufa/cluster';
 
 describe('MemoryCache', () => {
   it('evicts the least used keys and expires values', async () => {
@@ -212,7 +202,7 @@ describe('caches of clusters in one process', () => {
 
 describe('caches of clusters', () => {
   it('share the objects of models between workers, and invalidate them in every worker', () => {
-    const fixture = path.join(__dirname, 'fixtures', 'cluster-cache.js');
+    const fixture = path.join(import.meta.dirname, 'fixtures', 'cluster-cache.js');
     const result = spawnSync(process.execPath, [fixture], { timeout: 60000 });
     const lines = result.stdout
       .toString()

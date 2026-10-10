@@ -1,14 +1,14 @@
 // The behavior of Sequelize on every dialect: the same models and operations give the same results in SQLite and
 // PostgreSQL. Each test file calls defineSuite with a function that makes a Sequelize of its dialect.
-const {
+import {
   DataTypes,
   Op,
   ValidationError,
   UniqueConstraintError,
   ForeignKeyConstraintError,
   EmptyResultError,
-} = require('..');
-const { Sequelize } = require('..');
+} from '../index.js';
+import { Sequelize } from '../index.js';
 
 function defineModels(sequelize) {
   const Publisher = sequelize.define('Publisher', { name: { type: DataTypes.STRING, allowNull: false, unique: true } });
@@ -1693,4 +1693,4 @@ function defineSuite(name, makeSequelize) {
   });
 }
 
-module.exports = { defineSuite };
+export { defineSuite };

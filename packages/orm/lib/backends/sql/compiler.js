@@ -1,9 +1,9 @@
 // Compiles the descriptions of queries (lib/query.js) to SQL with parameters, in a dialect. The foreign keys a query
 // follows are LEFT JOINs (t1, t2... after t0, the table of the model); conditions under NOT are made two-valued with
 // COALESCE, so that NULL is false as in MongoDB and JavaScript; NULLs sort first.
-const { collectJoins, pathKey, lastOf, hasExists } = require('../../query');
-const { specOf } = require('../../schema');
-const { STATE, State, defineState, tableKey } = require('../../meta');
+import { collectJoins, pathKey, lastOf, hasExists } from '../../query.js';
+import { specOf } from '../../schema.js';
+import { STATE, State, defineState, tableKey } from '../../meta.js';
 
 const OPERATORS = { exact: '=', gt: '>', gte: '>=', lt: '<', lte: '<=' };
 const FUNCTIONS = { count: 'COUNT', sum: 'SUM', avg: 'AVG', min: 'MIN', max: 'MAX' };
@@ -26,6 +26,8 @@ function dateValueSql(dialect, sql, item) {
   return sql;
 }
 const TABLE_MARKER = '\u0000table\u0000';
+// The OFFSET from which a page asks for its keys first (deferrable()).
+const DEFER_FROM = 100;
 const TEXT_LOOKUPS = new Set(['contains', 'startswith', 'endswith', 'icontains', 'istartswith', 'iendswith']);
 
 // A number for every object used in the keys of compiled queries (models, relations of EXISTS conditions).
@@ -362,7 +364,8 @@ class SqlCompiler {
         continue;
       }
       const json = orderBy[i].jsonPath ? `>${JSON.stringify(orderBy[i].jsonPath)}` : '';
-      key += `${orderBy[i].desc ? '-' : ''}${pathKey(orderBy[i].fields)}${json},`;
+      const date = orderBy[i].part ? `#${orderBy[i].part}` : orderBy[i].trunc ? `%${orderBy[i].trunc}` : '';
+      key += `${orderBy[i].desc ? '-' : ''}${pathKey(orderBy[i].fields)}${json}${date},`;
     }
     if (kind !== 'select') return key;
     if (query.values) {
@@ -572,9 +575,16 @@ class SqlCompiler {
 
   orderBy(ctx, orderBy) {
     if (!orderBy || orderBy.length === 0) return '';
-    const items = orderBy.map(({ fields, desc, jsonPath, raw, params }) => {
+    const items = orderBy.map((item) => {
+      const { fields, desc, jsonPath, raw, params } = item;
       if (raw) return this.fragment(ctx, raw, params);
-      const column = jsonPath ? this.dialect.jsonPath(ctx.column(fields), jsonPath, 'string') : ctx.column(fields);
+      const column = jsonPath
+        ? this.dialect.jsonPath(ctx.column(fields), jsonPath, 'string')
+        : dateValueSql(this.dialect, ctx.column(fields), item);
+      // NULLs first going up, last going down, on every backend. A column of the table that can't be NULL needs no
+      // NULLS: so an index on it (made ASC NULLS LAST by PostgreSQL) orders the rows, instead of a sort of them all.
+      const notNull = fields.length === 1 && !jsonPath && !item.part && !item.trunc && !lastOf(fields).null;
+      if (notNull) return `${column} ${desc ? 'DESC' : 'ASC'}`;
       return `${column} ${desc ? 'DESC NULLS LAST' : 'ASC NULLS FIRST'}`;
     });
     return ` ORDER BY ${items.join(', ')}`;
@@ -584,7 +594,10 @@ class SqlCompiler {
   // Compiled once for every shape of query: then only its parameters are made.
   select(query) {
     const leaves = [];
-    const key = this.keyOf('select', query, leaves);
+    // A page far into the rows (OFFSET): its keys first, then its rows (see deferrable()); a shape of its own.
+    const deferred = this.deferrable(query);
+    let key = this.keyOf('select', query, leaves);
+    if (key !== null && deferred) key += '|deferred';
     const kept = key === null ? undefined : this.plan(query.meta, key);
     if (kept) {
       return { sql: kept.sql, params: this.paramsOf(kept.plan, leaves, query), decode: kept.decode, make: kept.make };
@@ -629,7 +642,18 @@ class SqlCompiler {
       .join(', ');
     let sql;
     if (query.per) sql = this.selectPer(ctx, query, select, columns.length);
-    else {
+    else if (deferred) {
+      // The keys of the page (an index of the order skips the rows before it without reading them: with the keys in
+      // it, INCLUDE, not even the table), then the rows of those keys with their relations, in the same order.
+      const sub = ctx.subquery(query.meta);
+      const pk = [query.meta.pk];
+      const where = this.where(sub, query.where);
+      const innerOrder = this.orderBy(sub, query.orderBy);
+      const limit = dialect.limit(query.limit, query.offset, sub.limitParam(query));
+      const inner = `SELECT ${sub.column(pk)} FROM ${sub.from()}${where ? ` WHERE ${where}` : ''}${innerOrder}${limit}`;
+      const order = this.orderBy(ctx, query.orderBy);
+      sql = `SELECT ${select} FROM ${ctx.from()} WHERE ${ctx.column(pk)} IN (${inner})${order}`;
+    } else {
       const where = this.where(ctx, query.where);
       const order = this.orderBy(ctx, query.orderBy);
       const limit = dialect.limit(query.limit, query.offset, ctx.limitParam(query));
@@ -642,6 +666,19 @@ class SqlCompiler {
     return { ...compiled, params: ctx.params };
   }
 
+  // Whether a select pages far (OFFSET of DEFER_FROM rows or more, with a limit) by columns of its model: PostgreSQL
+  // reads and leaves every row before the page (and joins their relations); asking for the keys of the page first lets
+  // it skip them in an index of the order.
+  deferrable(query) {
+    if (this.dialect.name !== 'postgres') return false;
+    if (query.per || query.values || query.lock || query.limit === null || !(query.offset >= DEFER_FROM)) return false;
+    const { pk } = query.meta;
+    if (!pk || pk.composite) return false;
+    return (query.orderBy || []).every(
+      (item) => !item.raw && !item.jsonPath && !item.part && !item.trunc && item.fields && item.fields.length === 1
+    );
+  }
+
   // limitPer(): the rows numbered in their groups (ROW_NUMBER() OVER (PARTITION BY ...)) by a subquery, and those of
   // the numbers asked. The values of the order are selected too (o0, o1...) to order the rows outside; with fragments
   // in the order, the rows are ordered by their numbers only (the order inside every group).
@@ -652,8 +689,11 @@ class SqlCompiler {
     const order = this.orderBy(ctx, query.orderBy);
     const plain = query.orderBy.every((item) => !item.raw);
     const orderColumns = plain
-      ? query.orderBy.map(({ fields, jsonPath }, i) => {
-          const column = jsonPath ? dialect.jsonPath(ctx.column(fields), jsonPath, 'string') : ctx.column(fields);
+      ? query.orderBy.map((item, i) => {
+          const { fields, jsonPath } = item;
+          const column = jsonPath
+            ? dialect.jsonPath(ctx.column(fields), jsonPath, 'string')
+            : dateValueSql(dialect, ctx.column(fields), item);
           return `, ${column} AS o${i}`;
         })
       : [];
@@ -1036,9 +1076,25 @@ class SqlCompiler {
 
   createIndex(owner, index) {
     const { quote } = this.dialect;
-    const columns = index.columns.map(quote).join(', ');
+    const lower = new Set(index.lower || []);
+    // PostgreSQL: a column that can be NULL is indexed with its NULLs first, as the ORM orders (ASC NULLS FIRST, and
+    // DESC NULLS LAST read backwards): its ORDER BY is then read from the index, not sorted (PostgreSQL's own order is
+    // NULLs last). SQLite puts them first already.
+    const nullsFirst = (column) =>
+      this.dialect.name === 'postgres' && owner.columns && owner.columns[column] && owner.columns[column].null;
+    const columns = index.columns
+      .map((column) => {
+        const sql = lower.has(column) ? `LOWER(${quote(column)})` : quote(column);
+        return nullsFirst(column) ? `${sql} NULLS FIRST` : sql;
+      })
+      .join(', ');
     const where = index.condition ? ` WHERE ${index.condition}` : '';
-    return `CREATE ${index.unique ? 'UNIQUE ' : ''}INDEX IF NOT EXISTS ${quote(index.name)} ON ${this.table(owner)} (${columns})${where}`;
+    // INCLUDE: PostgreSQL (the others index the keys only).
+    const include =
+      index.include && index.include.length && this.dialect.name === 'postgres'
+        ? ` INCLUDE (${index.include.map((column) => quote(column)).join(', ')})`
+        : '';
+    return `CREATE ${index.unique ? 'UNIQUE ' : ''}INDEX IF NOT EXISTS ${quote(index.name)} ON ${this.table(owner)} (${columns})${include}${where}`;
   }
 
   // CREATE TABLE and CREATE INDEX statements of the schema of a table. `known` are the keys of the tables its foreign
@@ -1194,4 +1250,4 @@ function keyOf(ref) {
   return tableKey(ref.table, ref.schema);
 }
 
-module.exports = { SqlCompiler };
+export { SqlCompiler };

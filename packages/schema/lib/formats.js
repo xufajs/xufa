@@ -590,10 +590,4 @@ function matchesFormat(check, value) {
   return typeof check === 'function' ? check(value) : check.test(value);
 }
 
-module.exports = {
-  FORMATS,
-  FORMAT_COMPARES,
-  FORMAT_FUNCTIONS,
-  isRfc1123Hostname,
-  matchesFormat,
-};
+export { FORMATS, FORMAT_COMPARES, FORMAT_FUNCTIONS, isRfc1123Hostname, matchesFormat };

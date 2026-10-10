@@ -7,7 +7,7 @@
 //
 // verifyTotp() returns the time step of the code, so that a code is used once: keep it and give it as `after` next
 // time (a code of that step or before is refused).
-const crypto = require('node:crypto');
+import crypto from 'node:crypto';
 
 const ALPHABET = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567';
 const ALGORITHMS = { SHA1: 'sha1', SHA256: 'sha256', SHA512: 'sha512' };
@@ -130,7 +130,7 @@ function hashRecoveryCode(code) {
   return crypto.createHash('sha256').update(clean).digest('hex');
 }
 
-module.exports = {
+export {
   base32Encode,
   base32Decode,
   generateSecret,

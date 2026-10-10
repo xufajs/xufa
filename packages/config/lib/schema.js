@@ -1,5 +1,3 @@
-'use strict';
-
 // Schemas: the keys of a configuration, nested as it is; a key whose `type` is a text is one value:
 //
 //   { server: { port: { type: 'port', default: 3000, env: 'PORT' } },
@@ -10,7 +8,7 @@
 // of the length of strings and arrays), items (the type of the items of an array), sensitive (redacted when shown),
 // doc. Texts (as the variables of the environment are) become the type: '8080' a port, 'true' or 'off' a boolean,
 // '1h30m' a duration, '["a"]' or 'a,b' an array, '{"a":1}' an object.
-const { ConfigError } = require('./errors');
+import { ConfigError } from './errors.js';
 
 const TYPES = ['string', 'number', 'integer', 'boolean', 'port', 'url', 'duration', 'array', 'object', 'any'];
 const TRUE = ['true', '1', 'yes', 'on'];
@@ -146,4 +144,4 @@ function check(value, spec) {
   return null;
 }
 
-module.exports = { leaves, coerce, check, isSpec, isPlain, TYPES };
+export { leaves, coerce, check, isSpec, isPlain, TYPES };

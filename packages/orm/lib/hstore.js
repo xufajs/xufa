@@ -48,4 +48,4 @@ function parseHstore(text) {
   return result;
 }
 
-module.exports = { toHstore, parseHstore };
+export { toHstore, parseHstore };

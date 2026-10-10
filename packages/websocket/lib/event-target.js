@@ -1,6 +1,4 @@
-'use strict';
-
-const { kForOnEventAttribute, kListener } = require('./constants');
+import { kForOnEventAttribute, kListener } from './constants.js';
 
 const kCode = Symbol('kCode');
 const kData = Symbol('kData');
@@ -263,14 +261,6 @@ const EventTarget = {
   },
 };
 
-module.exports = {
-  CloseEvent,
-  ErrorEvent,
-  Event,
-  EventTarget,
-  MessageEvent,
-};
-
 /**
  * Call an event listener
  *
@@ -286,3 +276,5 @@ function callListener(listener, thisArg, event) {
     listener.call(thisArg, event);
   }
 }
+
+export { CloseEvent, ErrorEvent, Event, EventTarget, MessageEvent };

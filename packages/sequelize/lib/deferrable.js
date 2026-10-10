@@ -50,4 +50,4 @@ function deferrableOf(isDeferrable, initiallyDeferred) {
   return initiallyDeferred === 'YES' ? Deferrable.INITIALLY_DEFERRED : Deferrable.INITIALLY_IMMEDIATE;
 }
 
-module.exports = { Deferrable, deferrableSql, deferrableOf };
+export { Deferrable, deferrableSql, deferrableOf };

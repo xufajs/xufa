@@ -6,7 +6,7 @@ by status, hooks and logs. Bound to a request of [@xufa/http](../http), a call i
 request goes away, logs with `request.log` and sends its id on.
 
 ```js
-const { createClient } = require('@xufa/client');
+import { createClient } from '@xufa/client';
 
 const books = createClient({ baseUrl: 'https://api.example.com/v1', headers: { authorization: `Bearer ${token}` } });
 

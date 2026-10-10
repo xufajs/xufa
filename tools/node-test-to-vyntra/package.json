@@ -7,6 +7,6 @@
   },
   "devDependencies": {
     "acorn": "^8.15.0",
-    "vyntra": "^0.6.0"
+    "vyntra": "^0.7.0"
   }
 }

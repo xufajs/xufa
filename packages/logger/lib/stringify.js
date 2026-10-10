@@ -60,4 +60,4 @@ function stringify(value, parent) {
 // A key is quoted as any string.
 const asKey = asString;
 
-module.exports = { asString, asKey, stringify, safeStringify };
+export { asString, asKey, stringify, safeStringify };

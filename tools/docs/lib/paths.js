@@ -1,11 +1,11 @@
 // Where each page and file of the site is: every package in a folder of its own (docs/<package>/index.html, its other
 // pages beside it: docs/schema/guide.html...), and the pages of the site at its root (index.html, guide.html,
-// packages.html, benchmarks.html, playground.html, with style.css, main.js and xufa.js).
+// packages.html, benchmarks.html, django-benchmarks.html, playground.html, with style.css, main.js and xufa.js).
 //
 // The sources of the pages (pages/*.page.html) and the generators name every page by its old flat name
 // (`schema-guide.html`, `http.html#routes`, `style.css`); rewriteLinks() turns those names into paths relative to the
 // page they are in. The old names of the packages stay as small pages that send to their folders (redirects()).
-const path = require('node:path');
+import path from 'node:path';
 
 // The pages of the packages, by their old flat names: [flat name, path from the root].
 const PACKAGE_PAGES = [
@@ -19,6 +19,10 @@ const PACKAGE_PAGES = [
     'websocket',
     'admin',
     'session',
+    'forms',
+    'views',
+    'mail',
+    'i18n',
     'openapi',
     'client',
     'schema',
@@ -75,6 +79,7 @@ const ROOT_FILES = [
   'guide.html',
   'packages.html',
   'benchmarks.html',
+  'django-benchmarks.html',
   'playground.html',
   'style.css',
   'main.js',
@@ -139,4 +144,4 @@ function redirects() {
   }));
 }
 
-module.exports = { pathOf, fileOf, relative, rewriteLinks, redirects, PACKAGE_PAGES, PACKAGE_FILES, MAP };
+export { pathOf, fileOf, relative, rewriteLinks, redirects, PACKAGE_PAGES, PACKAGE_FILES, MAP };

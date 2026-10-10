@@ -178,6 +178,30 @@ function fixFile(relPath, code) {
   return out;
 }
 
+// require('@xufa/http') from the tests, as a path to the package: under test/ (a package.json of its own, for
+// CommonJS) Node does not find the package by its name.
+function packageRoot(dir) {
+  for (let at = dir; ; at = path.dirname(at)) {
+    const file = path.join(at, 'package.json');
+    if (fs.existsSync(file) && JSON.parse(fs.readFileSync(file, 'utf8')).name === '@xufa/http') return at;
+    if (path.dirname(at) === at) return null;
+  }
+}
+
+function requireByPath(code, target) {
+  const root = packageRoot(path.dirname(path.resolve(target)));
+  if (!root) return code;
+  const rel =
+    path
+      .relative(path.dirname(path.resolve(target)), root)
+      .split(path.sep)
+      .join('/') || '.';
+  return code.replace(
+    /require\((['"])@xufa\/http(\/[^'"]+)?\1\)/g,
+    (all, quote, sub = '') => `require('${rel}${sub}')`
+  );
+}
+
 function port(input, output, filter) {
   let todos = 0;
   const walk = (dir, rel) => {
@@ -211,6 +235,7 @@ function port(input, output, filter) {
       code = rewriteRequires(code);
       for (const [pattern, replacement] of RENAMES) code = code.replace(pattern, replacement);
       code = fixFile(relPath, code);
+      code = requireByPath(code, target);
       fs.writeFileSync(target, code);
     }
   };

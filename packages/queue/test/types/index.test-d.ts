@@ -1,8 +1,9 @@
-import { expectType } from 'tsd';
+import { expectType, expectError } from 'tsd';
 import { Database } from '@xufa/orm';
 import { Queue, Job, queuePlugin, Pipelines, StepStatus } from '../..';
 import xufa from '@xufa/http';
 import { usePool } from '@xufa/cluster';
+import { Scheduler } from '@xufa/scheduler';
 
 const db = new Database({ backend: 'memory' });
 const queue = new Queue(db, { attempts: 5, backoff: { delay: '10s', max: '1h' }, keepDone: true });
@@ -77,3 +78,28 @@ pipelines.define({
   }
 })();
 new Pipelines(queue, { maxDepth: 5 });
+
+// Tasks, and runs that start later, with a priority, in a queue.
+{
+  const tasks = new Pipelines(new Queue(new Database()));
+  tasks.task('monthly-report', async (input: { month: number }) => ({ file: `report-${input.month}` }), {
+    attempts: 3,
+    description: 'The report of a month',
+  });
+  tasks.start('monthly-report', { month: 10 }, { delay: '1h', priority: 5, queue: 'reports' }).then((run) => {
+    expectType<number>(run.priority);
+    expectType<Date | null>(run.runAt);
+  });
+  tasks.start('monthly-report', { month: 11 }, { at: new Date() });
+  expectError(tasks.start('monthly-report', null, { at: new Date(), delay: '1h' }));
+  expectError(tasks.task('x', 'not a function'));
+  const scheduler = new Scheduler();
+  tasks.schedule(scheduler, 'monthly-report', {
+    cron: '0 6 1 * *',
+    timezone: 'Europe/Madrid',
+    input: ({ scheduledAt }: { scheduledAt: Date }) => ({ month: scheduledAt.getMonth() + 1 }),
+    priority: 2,
+  });
+  expectType<string | undefined>(tasks.schedules.get('monthly-report')?.trigger);
+  expectError(tasks.schedule(scheduler, 'monthly-report'));
+}

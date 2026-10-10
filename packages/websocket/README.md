@@ -11,10 +11,11 @@ npm install @xufa/websocket
 ## WebSocket routes
 
 ```js
-const xufa = require('xufa');
+import xufa from 'xufa';
+import websocketPlugin from '@xufa/websocket/plugin';
 
 const app = xufa();
-app.register(require('@xufa/websocket/plugin'));
+app.register(websocketPlugin);
 
 app.get('/chat', { websocket: true }, (socket, request) => {
   socket.on('message', (message) => socket.send(`echo: ${message}`));
@@ -30,7 +31,7 @@ are those of [@fastify/websocket](https://github.com/fastify/fastify-websocket):
 ## Rooms in a cluster and between machines
 
 ```js
-const { Hub } = require('@xufa/websocket/hub');
+import { Hub } from '@xufa/websocket/hub';
 
 const hub = new Hub({ bus, cache }); // the bus of @xufa/cluster, a NetCache of @xufa/netcache: as there are
 
@@ -56,7 +57,7 @@ ids of the sockets of this process) and `hub.send()` (to every socket) complete 
 ## The client and server of ws
 
 ```js
-const { WebSocket, WebSocketServer } = require('@xufa/websocket');
+import { WebSocket, WebSocketServer } from '@xufa/websocket';
 
 const wss = new WebSocketServer({ port: 8080, perMessageDeflate: true });
 wss.on('connection', (socket) => socket.on('message', (data) => socket.send(data)));
@@ -65,7 +66,7 @@ const ws = new WebSocket('ws://localhost:8080');
 ws.on('open', () => ws.send('hello'));
 ```
 
-`require('ws')` can be replaced by `require('@xufa/websocket')` (and `import { WebSocketServer } from
+`ws` can be replaced by `@xufa/websocket` (in imports or requires) (and `import { WebSocketServer } from
 '@xufa/websocket'`): the code is the one of ws 8.22.0, for Node.js 22 and later. UTF-8 is validated by
 `buffer.isUtf8`, native, so `utf-8-validate` is left out. `bufferutil` is used as ws uses it: when the application has
 installed it (`npm i bufferutil`), unless `WS_NO_BUFFER_UTIL` is set. It is not a dependency; without it, frames are

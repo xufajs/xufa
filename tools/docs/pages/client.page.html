@@ -17,7 +17,7 @@
 
         <h2 id="start">Quick start</h2>
         <pre><code class="language-sh">npm install @xufa/client</code></pre>
-        <pre><code class="language-js">const { createClient } = require('@xufa/client');
+        <pre><code class="language-js">import { createClient } from '@xufa/client';
 
 const books = createClient({ baseUrl: 'https://api.example.com/v1', headers: { authorization: `Bearer ${token}` } });
 const list = await books.get('/books', { query: { author: 'ada', tags: ['sf', 'classic'] } });

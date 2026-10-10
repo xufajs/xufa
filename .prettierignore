@@ -19,3 +19,10 @@ packages/openapi/lib/util/
 packages/openapi/examples/
 # Generated from Unicode confusables.txt (packages/auth/scripts/generate-confusables.js).
 packages/auth/lib/confusables-data.js
+# The page of the admin as built (packages/admin/client/build.js).
+packages/admin/lib/client/dist
+# The Django project ported by examples/locallibrary, kept as it is.
+examples/django-locallibrary/
+# Templates of @xufa/template ({{ }} in tags is not HTML that prettier reads).
+examples/locallibrary/**/templates/
+packages/views/templates/

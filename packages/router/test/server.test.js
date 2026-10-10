@@ -1,8 +1,5 @@
-'use strict'
-
-
-const http = require('http')
-const FindMyWay = require('../')
+import http from 'http';
+import FindMyWay from '../index.js';
 
 test('basic router with http server', (done) => {
   expect.assertions(6)

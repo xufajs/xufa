@@ -11,11 +11,15 @@
 //   { op: 'createIndex', table, index }               { op: 'dropIndex', table, name }
 //   { op: 'sql', sql }  (SQL backends)               { op: 'run', fn: async (db) => {} }  (data migrations)
 // Renames are not detected (they are a drop and an add): write renameColumn or renameTable instead.
-const fs = require('node:fs');
-const path = require('node:path');
-const { specOf, defaultOf } = require('./schema');
-const { ModelError } = require('./errors');
-const { tableKey } = require('./meta');
+import fs from 'node:fs';
+import path from 'node:path';
+import { pathToFileURL } from 'node:url';
+import { specOf, defaultOf } from './schema.js';
+import { ModelError } from './errors.js';
+import { tableKey } from './meta.js';
+import { createRequire } from 'node:module';
+
+const require = createRequire(import.meta.url);
 
 const FILE = /^(\d{4})_[\w-]+\.js$/;
 
@@ -163,68 +167,132 @@ function diff(from, metas) {
   return [...creates, ...indexDrops, ...changes, ...indexCreates, ...drops];
 }
 
-// The migration files of a folder, in order: { name, operations }.
-function loadMigrations(dir) {
+// The migration files of a folder, in order: { name, operations }. ES modules (export const operations) or CommonJS
+// (module.exports = { operations }); a file changed since it was read is read again (the query of its address).
+async function loadMigrations(dir) {
   if (!fs.existsSync(dir)) return [];
-  return fs
+  const files = fs
     .readdirSync(dir)
     .filter((file) => FILE.test(file))
-    .sort()
-    .map((file) => {
-      const full = path.resolve(dir, file);
-      delete require.cache[full];
-      const module = require(full);
-      if (!Array.isArray(module.operations)) throw new Error(`The migration ${file} has no operations`);
-      return { name: file.slice(0, -3), operations: module.operations };
-    });
+    .sort();
+  const loaded = [];
+  for (const file of files) {
+    const full = path.resolve(dir, file);
+    delete require.cache[full];
+    const { mtimeMs } = fs.statSync(full);
+    const module = await import(`${pathToFileURL(full).href}?mtime=${mtimeMs}`);
+    const operations = module.operations ?? (module.default && module.default.operations);
+    if (!Array.isArray(operations)) throw new Error(`The migration ${file} has no operations`);
+    loaded.push({ name: file.slice(0, -3), operations });
+  }
+  return loaded;
+}
+
+// Whether the files of a folder are ES modules: the type of the nearest package.json.
+function isModuleFolder(dir) {
+  for (let current = path.resolve(dir); ; current = path.dirname(current)) {
+    const pkg = path.join(current, 'package.json');
+    if (fs.existsSync(pkg)) return JSON.parse(fs.readFileSync(pkg, 'utf8')).type === 'module';
+    if (path.dirname(current) === current) return false;
+  }
+}
+
+// Migrations kept elsewhere than files ({ name, operations }), checked.
+function checkedExtra(extra) {
+  if (!Array.isArray(extra)) throw new TypeError('extra: a list of migrations ({ name, operations })');
+  for (const migration of extra) {
+    if (!migration || typeof migration.name !== 'string' || !Array.isArray(migration.operations)) {
+      throw new TypeError('extra: each migration is { name, operations }');
+    }
+  }
+  return extra;
 }
 
 function stateOf(migrations) {
   return migrations.reduce((state, migration) => migration.operations.reduce(applyOperation, state), { tables: {} });
 }
 
-function render(operations, date) {
+// The text of a migration: an ES module, or CommonJS where the folder's package is.
+function render(operations, date, esm = true) {
   const header = [
     `// A migration of xufa, made by makeMigrations() on ${date.toISOString()}. Its operations can be edited, and`,
     '// written by hand: renameColumn, renameTable, sql and run (data migrations, with a function of the database).',
   ];
-  return `${header.join('\n')}\nmodule.exports = {\n  operations: ${JSON.stringify(operations, null, 2).replace(/\n/g, '\n  ')},\n};\n`;
+  const list = JSON.stringify(operations, null, 2);
+  if (esm) return `${header.join('\n')}\nexport const operations = ${list};\n`;
+  return `${header.join('\n')}\nmodule.exports = {\n  operations: ${list.replace(/\n/g, '\n  ')},\n};\n`;
 }
 
+// The metas of some models (an app's), with the tables of their many-to-many, in the order of the database.
+function metasOf(database, models) {
+  const wanted = new Set();
+  for (const model of models) {
+    wanted.add(model.meta);
+    for (const field of model.meta.manyToMany || []) if (field.through) wanted.add(field.through.meta);
+  }
+  return database.sortedMetas().filter((meta) => wanted.has(meta));
+}
+
+// The name a migration is recorded with: an app's has its label (catalog.0001_initial), so apps can have the same
+// numbers.
+const recordedName = (label, name) => (label ? `${label}.${name}` : name);
+
 // Writes the migration from the files of `dir` to the models: { name, file, operations }, or null when there is none.
-async function makeMigrations(database, { dir, name } = {}) {
+// models: those of an app (Django's makemigrations <app>): only their tables, in its folder. before: operations that
+// come first (renameTable, renameColumn: what the diff would see as a table or column dropped and another added),
+// applied before the rest is found. write: false finds it without writing it (and gives its text). extra: migrations
+// kept elsewhere ([{ name, operations }]: those of models kept in the database), after those of the folder.
+async function makeMigrations(database, { dir, name, models, before = [], write = true, extra = [] } = {}) {
   if (!dir) throw new Error('makeMigrations needs the folder of the migrations (dir)');
-  const migrations = loadMigrations(dir);
-  const operations = diff(stateOf(migrations), database.sortedMetas());
+  const migrations = [...(await loadMigrations(dir)), ...checkedExtra(extra)];
+  const state = before.reduce(applyOperation, stateOf(migrations));
+  const operations = [...before, ...diff(state, models ? metasOf(database, models) : database.sortedMetas())];
   if (operations.length === 0) return null;
   const number = String(
     migrations.length ? Number(FILE.exec(`${migrations[migrations.length - 1].name}.js`)[1]) + 1 : 1
   ).padStart(4, '0');
   const label = (name || (migrations.length ? 'auto' : 'initial')).replace(/[^\w-]+/g, '_');
   const fileName = `${number}_${label}`;
-  fs.mkdirSync(dir, { recursive: true });
   const file = path.join(dir, `${fileName}.js`);
-  fs.writeFileSync(file, render(operations, new Date()));
+  const text = render(operations, new Date(), isModuleFolder(dir));
+  if (!write) return { name: fileName, file, operations, text };
+  fs.mkdirSync(dir, { recursive: true });
+  fs.writeFileSync(file, text);
   return { name: fileName, file, operations };
 }
 
-// The migrations of `dir` with whether each is applied.
-async function showMigrations(database, { dir } = {}) {
-  const applied = new Set(await database.backend.appliedMigrations());
-  return loadMigrations(dir).map((migration) => ({ name: migration.name, applied: applied.has(migration.name) }));
+// Writes a migration of operations given as a file of `dir` (name: 0003_books), in the module format of the folder's
+// package: its file. Migrations kept elsewhere (in the database) become files so.
+function writeMigration(dir, name, operations) {
+  if (!FILE.test(`${name}.js`))
+    throw new Error(`A migration's name is its number and a label (0003_books), not ${name}`);
+  fs.mkdirSync(dir, { recursive: true });
+  const file = path.join(dir, `${name}.js`);
+  fs.writeFileSync(file, render(operations, new Date(), isModuleFolder(dir)));
+  return file;
 }
 
-// Applies the migrations of `dir` not applied yet (up to `to`, a name, when given): the names applied.
-async function migrate(database, { dir, to } = {}) {
+// The migrations of `dir` with whether each is applied (label: of an app).
+async function showMigrations(database, { dir, label, extra = [] } = {}) {
+  const applied = new Set(await database.backend.appliedMigrations());
+  return [...(await loadMigrations(dir)), ...checkedExtra(extra)].map((migration) => ({
+    name: migration.name,
+    applied: applied.has(recordedName(label, migration.name)),
+  }));
+}
+
+// Applies the migrations of `dir` not applied yet (up to `to`, a name, when given): the names applied. label: of an
+// app (its migrations are recorded as label.name); the apps are migrated one after the other, in their order.
+async function migrate(database, { dir, to, label, extra = [] } = {}) {
   if (!dir) throw new Error('migrate needs the folder of the migrations (dir)');
   const { backend } = database;
-  const migrations = loadMigrations(dir);
+  const migrations = [...(await loadMigrations(dir)), ...checkedExtra(extra)];
   const applied = new Set(await backend.appliedMigrations());
   const done = [];
   let state = { tables: {} };
   for (let i = 0; i < migrations.length; i += 1) {
     const migration = migrations[i];
-    if (applied.has(migration.name)) {
+    if (applied.has(recordedName(label, migration.name))) {
       state = migration.operations.reduce(applyOperation, state);
     } else {
       await backend.migrationTransaction(async () => {
@@ -235,7 +303,7 @@ async function migrate(database, { dir, to } = {}) {
           else await backend.migrationOperation(op, state, after);
           state = after;
         }
-        await backend.recordMigration(migration.name);
+        await backend.recordMigration(recordedName(label, migration.name));
       });
       done.push(migration.name);
     }
@@ -244,4 +312,4 @@ async function migrate(database, { dir, to } = {}) {
   return done;
 }
 
-module.exports = { makeMigrations, migrate, showMigrations, diff, applyOperation, loadMigrations, stateOf };
+export { makeMigrations, migrate, showMigrations, diff, applyOperation, loadMigrations, stateOf, writeMigration };

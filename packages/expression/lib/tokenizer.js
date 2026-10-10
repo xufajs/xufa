@@ -1,6 +1,6 @@
 // The tokens of an expression: numbers, strings, template literals (their parts and the tokens of their ${}),
 // names and punctuators. Each token has its type, value and position in the source.
-const { ExpressionError } = require('./errors');
+import { ExpressionError } from './errors.js';
 
 // Longest first, so '===' is not read as '==' and '='.
 const PUNCTUATORS = [
@@ -229,4 +229,4 @@ function readTemplate(source, i) {
   return { type: 'template', quasis, expressions, start: i, end: j + 1 };
 }
 
-module.exports = { tokenize };
+export { tokenize };

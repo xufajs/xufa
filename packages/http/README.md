@@ -14,7 +14,7 @@ npm install @xufa/http
 ```
 
 ```js
-const xufa = require('@xufa/http');
+import xufa from '@xufa/http';
 // or: import xufa from '@xufa/http'  /  import { xufa } from '@xufa/http'
 
 const app = xufa({ logger: true });
@@ -92,6 +92,41 @@ need no plugin: @xufa/schema has them.
 with the lines of the source, the request (credentials hidden) and the routes, as Laravel's Ignition and Django's debug
 page; other clients get the usual JSON. It is off when `NODE_ENV` is `production`, unless `enabled: true`.
 
+### Error pages
+
+`app.register(xufa.errorPages, { views: { 404: '404', 403: '403', 500: '500' } })` is Django's `handler404` and
+`handler500` with templates: browsers get the view of the status (of @xufa/template), API clients the JSON of the error
+handlers under it. `app.addErrorHandler(fn)` adds a handler over those of a context without taking it (the ORM's and
+errorPages' are added): `setErrorHandler` stays free for the app, and goes first.
+
+### The client of tests
+
+`new xufa.TestClient(app)` is Django's test `Client`: cookies kept, forms posted with the CSRF token of its session,
+`login(credentials)` and `forceLogin(user)` (with the accounts of @xufa/auth), redirects followed (`{ follow: true }`),
+and the views a response rendered: `res.templates`, `res.context`, `res.textContent`.
+
+### Names of routes
+
+A route with a `name` (`app.get('/books/:id', { name: 'book' }, handler)`) gives its address back:
+`app.reverse('book', { id: 7 }, { query: { page: 2 } })` is `/books/7?page=2`, with the prefix of its plugin, as
+Django's `reverse()`. `app.routeNames()` lists them, and `xufa routes` prints them.
+Parameters can say their kind, as Django's path converters: `/books/<int:pk>/` (a number in `request.params.pk`),
+`<slug:...>`, `<uuid:...>`, `<str:...>` (or `<name>`) and `<path:...>` (the rest); other values are a 404.
+
+### Forms
+
+`app.register(xufa.formBody)`: the bodies of HTML forms (`application/x-www-form-urlencoded` and
+`multipart/form-data`) become `request.body`, as Django's `request.POST` and `request.FILES`: a field given again or
+named with `[]` is a list, a file is `{ filename, contentType, size, data }`. Limits: `bodyLimit`, `files`,
+`fileSize`, `fields`, `fieldSize`, `parts` (413 or 400 past them); `multipart: false` for urlencoded bodies only.
+
+### Static files
+
+`app.register(xufa.staticFiles, { root: ['static'], prefix: '/static/' })`: the files of the folders, with their type,
+an ETag (304) and the `.br`/`.gz` files next to them; `app.staticUrl('css/site.css')` is their address with the version
+of the file (`?v=<hash>`), cached for a year, as Django's `{% static %}` with whitenoise. Paths out of the folders and
+dotfiles are a 404.
+
 ### Health and maintenance
 
 ```js
@@ -122,9 +157,9 @@ app.register(xufa.maintenance, { store: maintenance(db) }); // xufa down / xufa 
 `xufa.plugin()` is fastify-plugin:
 
 ```js
-const { plugin } = require('@xufa/http');
+import { plugin } from '@xufa/http';
 
-module.exports = plugin(
+export default plugin(
   async (app, options) => {
     app.decorate('db', await connect(options.url));
   },

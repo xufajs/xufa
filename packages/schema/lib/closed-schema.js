@@ -1,4 +1,4 @@
-const { Schema } = require('./schema');
+import { Schema } from './schema.js';
 
 class ClosedSchema extends Schema {
   constructor(schema = {}, options = {}) {
@@ -6,6 +6,4 @@ class ClosedSchema extends Schema {
   }
 }
 
-module.exports = {
-  ClosedSchema,
-};
+export { ClosedSchema };

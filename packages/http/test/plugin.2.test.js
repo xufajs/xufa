@@ -1,8 +1,8 @@
 'use strict'
 
 
-const Fastify = require('@xufa/http')
-const fp = require('@xufa/http').plugin
+const Fastify = require('..')
+const fp = require('..').plugin
 
 test('check dependencies - should not throw', async () => {
   expect.assertions(11)

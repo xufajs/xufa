@@ -1,7 +1,4 @@
-'use strict'
-
-
-const errors = require('../lib/errors')
+import * as errors from '../lib/errors.js';
 
 test('Correct codes of AvvioErrors', () => {
   const testcases = [

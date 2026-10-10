@@ -1,5 +1,3 @@
-'use strict';
-
 // The errors of the queue: a wrong job or option, and a job that ran past its timeout (timeout: true).
 class QueueError extends Error {
   constructor(message) {
@@ -9,4 +7,4 @@ class QueueError extends Error {
   }
 }
 
-module.exports = { QueueError };
+export { QueueError };

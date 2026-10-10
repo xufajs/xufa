@@ -1,8 +1,9 @@
-'use strict'
+import { createRequire } from 'node:module';
 
+const require = createRequire(import.meta.url);
 
 const rfdc = require('rfdc')({ proto: true })
-const FindMyWay = require('..')
+import FindMyWay from '../index.js';
 
 function equalRouters (t, router1, router2) {
   expect(router1._opts).toEqual(router2._opts)

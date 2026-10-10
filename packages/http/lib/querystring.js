@@ -151,4 +151,4 @@ function stringify(object) {
   return parts.join('&');
 }
 
-module.exports = { parse, stringify, decodeComponent, NullObject };
+export { parse, stringify, decodeComponent, NullObject };

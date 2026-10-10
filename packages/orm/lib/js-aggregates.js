@@ -6,8 +6,8 @@
 //
 // A reverse relation is followed at the start of a path (books__pages; books__author__name), not after a foreign key
 // or another reverse relation.
-const { BackendError } = require('./errors');
-const { lastOf, pathKey } = require('./query');
+import { BackendError } from './errors.js';
+import { lastOf, pathKey } from './query.js';
 
 // Nulls first, then numbers, strings, dates... (as the memory backend orders them); decimals by their digits.
 const normalize = (value) => (value instanceof Date ? value.getTime() : value);
@@ -150,4 +150,4 @@ async function aggregateAcross(backend, query, aggregates, groupBy, db = null) {
   return results;
 }
 
-module.exports = { aggregateAcross, isReverse };
+export { aggregateAcross, isReverse };

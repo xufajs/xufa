@@ -1,4 +1,4 @@
-const { String } = require('..');
+import { String } from '../index.js';
 
 describe('String Type', () => {
   it('Should allow undefined if not mandatory', () => {

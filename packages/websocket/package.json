@@ -3,21 +3,21 @@
   "version": "0.1.0",
   "description": "WebSockets (RFC 6455, permessage-deflate): client and server with the API and the tests of ws, with no dependencies",
   "main": "./index.js",
-  "types": "./index.d.ts",
-  "type": "commonjs",
+  "types": "./index.d.cts",
+  "type": "module",
   "exports": {
     ".": {
       "import": {
         "types": "./index.d.mts",
-        "default": "./wrapper.mjs"
+        "default": "./index.js"
       },
       "require": {
-        "types": "./index.d.ts",
+        "types": "./index.d.cts",
         "default": "./index.js"
       }
     },
     "./plugin": {
-      "types": "./plugin.d.ts",
+      "types": "./plugin.d.cts",
       "default": "./lib/plugin.js"
     },
     "./package.json": "./package.json",
@@ -28,9 +28,8 @@
   },
   "files": [
     "index.js",
-    "index.d.ts",
-    "plugin.d.ts",
-    "wrapper.mjs",
+    "index.d.cts",
+    "plugin.d.cts",
     "lib",
     "LICENSE",
     "LICENSE.ws",
@@ -70,7 +69,7 @@
   "devDependencies": {
     "@xufa/http": "workspace:*",
     "tsd": "^0.33.0",
-    "vyntra": "^0.6.0",
+    "vyntra": "^0.7.0",
     "split2": "^4.2.0",
     "@xufa/cluster": "workspace:*",
     "@xufa/netcache": "workspace:*",

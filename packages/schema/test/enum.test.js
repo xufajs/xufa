@@ -1,4 +1,4 @@
-const { Enum, enumt, oenumt } = require('..');
+import { Enum, enumt, oenumt } from '../index.js';
 
 describe('Enum Type', () => {
   it('Should allow undefined if not mandatory', () => {

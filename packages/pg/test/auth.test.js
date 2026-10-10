@@ -1,15 +1,15 @@
 // Authentication against a scripted server: SCRAM-SHA-256 with and without channel binding (the server checks the
 // proof of the client and the binding data from what the client sent, as PostgreSQL does), cleartext and MD5
 // passwords, OAUTHBEARER, and what require_auth and channel_binding refuse.
-const crypto = require('node:crypto');
-const fs = require('node:fs');
-const net = require('node:net');
-const path = require('node:path');
-const tls = require('node:tls');
-const { Client } = require('..');
+import crypto from 'node:crypto';
+import fs from 'node:fs';
+import net from 'node:net';
+import path from 'node:path';
+import tls from 'node:tls';
+import { Client } from '../index.js';
 
-const KEY = fs.readFileSync(path.join(__dirname, 'fixtures', 'ip-key.pem'));
-const CERT = fs.readFileSync(path.join(__dirname, 'fixtures', 'ip-cert.pem'));
+const KEY = fs.readFileSync(path.join(import.meta.dirname, 'fixtures', 'ip-key.pem'));
+const CERT = fs.readFileSync(path.join(import.meta.dirname, 'fixtures', 'ip-cert.pem'));
 const PASSWORD = 'secret';
 
 const message = (type, body) => {

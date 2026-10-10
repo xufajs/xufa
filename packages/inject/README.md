@@ -5,7 +5,7 @@ Fake HTTP requests to a Node.js request handler, without a socket, with the API 
 [xufa](../xufa), and works with any `(req, res)` handler.
 
 ```js
-const inject = require('@xufa/inject');
+import inject from '@xufa/inject';
 
 const handler = (req, res) => {
   res.writeHead(200, { 'content-type': 'text/plain' });

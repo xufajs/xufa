@@ -9,7 +9,7 @@ import {
 } from '@xufa/inject';
 import * as http from 'node:http';
 import { AddressInfo } from 'node:net';
-import { XufaRouterOptions } from '../index';
+import { XufaRouterOptions, HealthReport, MaintenanceState } from '../index.cjs';
 import {
   AddContentTypeParser,
   ConstructorAction,
@@ -188,6 +188,37 @@ export interface XufaInstance<
   version: string;
   log: Logger;
   listeningOrigin: string;
+  /**
+   * The health of the app, with xufa.health registered: check() runs its checks now, report is that of the last run
+   * (null before the first), status the one now (down while the app closes).
+   */
+  health: {
+    check(): Promise<HealthReport>;
+    readonly report: HealthReport | null;
+    readonly status: HealthReport['status'];
+  };
+  /** The maintenance mode, with xufa.maintenance registered: state() reads it again (null when the app is up). */
+  maintenance: { state(): Promise<MaintenanceState | null> };
+  /** The address of a static file with its version (xufa.staticFiles): staticUrl('css/site.css'). */
+  staticUrl(path: string): string;
+  /**
+   * The address of a route by its name (option name), with its parameters by name or in order, and a query:
+   * reverse('book', { id: 7 }, { query: { page: 2 } }) is '/books/7?page=2' (Django's reverse()).
+   */
+  reverse(
+    name: string,
+    params?: Record<string, unknown> | unknown[] | null,
+    options?: { query?: Record<string, unknown> }
+  ): string;
+  /** The routes by name, with their addresses and methods. */
+  routeNames(): Record<string, { url: string; methods: string[] }>;
+  /**
+   * An error handler over those of this context, without taking it (setErrorHandler is still free, and goes
+   * first): one that throws the error, or sends it, passes it to the one under it.
+   */
+  addErrorHandler(
+    handler: (this: XufaInstance, error: any, request: XufaRequest, reply: XufaReply) => any
+  ): XufaInstance<RawServer, RawRequest, RawReply, Logger, TypeProvider>;
   addresses(): AddressInfo[];
   withTypeProvider<Provider extends XufaTypeProvider>(): XufaInstance<
     RawServer,

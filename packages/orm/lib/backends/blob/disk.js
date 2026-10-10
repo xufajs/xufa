@@ -10,13 +10,13 @@
 //
 // `url(table, key)`: the URL of an object where the folder is served (by a CDN, or app.register(static)), for
 // BlobValue.url().
-const fs = require('node:fs');
-const fsp = require('node:fs/promises');
-const path = require('node:path');
-const crypto = require('node:crypto');
-const { pipeline } = require('node:stream/promises');
-const { BlobBackend, exists } = require('./base');
-const { BackendError } = require('../../errors');
+import fs from 'node:fs';
+import fsp from 'node:fs/promises';
+import path from 'node:path';
+import crypto from 'node:crypto';
+import { pipeline } from 'node:stream/promises';
+import { BlobBackend, exists } from './base.js';
+import { BackendError } from '../../errors.js';
 
 const RESERVED = /^(con|prn|aux|nul|com\d|lpt\d)(\.|$)/i;
 const META = '.meta';
@@ -234,4 +234,4 @@ class DiskBackend extends BlobBackend {
   }
 }
 
-module.exports = { DiskBackend };
+export { DiskBackend };

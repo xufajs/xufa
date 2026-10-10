@@ -1,7 +1,7 @@
 // @xufa/marshal: values as JSON that keeps classes, references, cycles and the types JSON does not have.
-const { marshal, unmarshal, stringify, parse } = require('./lib/marshal');
-const { clone } = require('./lib/clone');
-const { Registry, registry, ENCODE, DECODE } = require('./lib/registry');
-const { MarshalError } = require('./lib/errors');
+import { marshal, unmarshal, stringify, parse } from './lib/marshal.js';
+import { clone } from './lib/clone.js';
+import { Registry, registry, ENCODE, DECODE } from './lib/registry.js';
+import { MarshalError } from './lib/errors.js';
 
-module.exports = { marshal, unmarshal, stringify, parse, clone, Registry, registry, ENCODE, DECODE, MarshalError };
+export { marshal, unmarshal, stringify, parse, clone, Registry, registry, ENCODE, DECODE, MarshalError };

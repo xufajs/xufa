@@ -4,7 +4,7 @@
   "description": "Schemas of data: written as code (plain JSON Schema, with their TypeScript types), as JSON Schema (draft-04 to 2020-12) or with a builder of types; compiled into fast validators (the validator of the routes of xufa), standalone code, or inferred from samples. No dependencies",
   "main": "./index.js",
   "types": "./index.d.ts",
-  "type": "commonjs",
+  "type": "module",
   "exports": {
     ".": {
       "types": "./index.d.ts",
@@ -64,7 +64,7 @@
     "json-schema-test-suite": "github:json-schema-org/JSON-Schema-Test-Suite#5b0ee1613e45fcc2bddac00e07c19cd49b00d8a8",
     "tsd": "^0.33.0",
     "typescript": "~6.0.3",
-    "vyntra": "^0.6.0"
+    "vyntra": "^0.7.0"
   },
   "publishConfig": {
     "access": "public"

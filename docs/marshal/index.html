@@ -62,6 +62,10 @@
           <li><a href="../websocket/index.html">@xufa/websocket</a></li>
           <li><a href="../admin/index.html">@xufa/admin</a></li>
           <li><a href="../session/index.html">@xufa/session</a></li>
+          <li><a href="../forms/index.html">@xufa/forms</a></li>
+          <li><a href="../views/index.html">@xufa/views</a></li>
+          <li><a href="../mail/index.html">@xufa/mail</a></li>
+          <li><a href="../i18n/index.html">@xufa/i18n</a></li>
           <li><a href="../openapi/index.html">@xufa/openapi</a></li>
           <li><a href="../client/index.html">@xufa/client</a></li>
           <li><a href="../schema/index.html">@xufa/schema</a></li>
@@ -104,7 +108,7 @@
 
         <h2 id="start">Quick start</h2>
         <pre><code class="language-sh">npm install @xufa/marshal</code></pre>
-        <pre data-run="marshal"><code class="language-js">const { stringify, parse, clone, registry } = require('@xufa/marshal');
+        <pre data-run="marshal"><code class="language-js">import { stringify, parse, clone, registry } from '@xufa/marshal';
 
 class Point {
   constructor(x, y) {
@@ -137,7 +141,7 @@ true true</code></pre>
           the class, <strong>without calling its constructor</strong>. A class with state outside its fields (private
           <code>#fields</code>, a handle) says how it is written:
         </p>
-        <pre><code class="language-js">const { ENCODE, DECODE } = require('@xufa/marshal');
+        <pre><code class="language-js">import { ENCODE, DECODE } from '@xufa/marshal';
 
 class Money {
   #cents;

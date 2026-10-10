@@ -2,7 +2,7 @@
 // as int32 when they are integers that fit, otherwise as doubles; bigints as int64; Dates, RegExps, Buffers
 // (binary), ObjectId, and the classes below for the types JavaScript has no value for. int64 values are decoded as
 // numbers when they are safe integers, and as bigints otherwise.
-const { randomBytes } = require('node:crypto');
+import { randomBytes } from 'node:crypto';
 
 const inspect = Symbol.for('nodejs.util.inspect.custom');
 
@@ -976,7 +976,7 @@ function deserialize(buffer, offset = 0) {
   }
 }
 
-module.exports = {
+export {
   serialize,
   serializeSections,
   deserialize,

@@ -40,7 +40,7 @@
                 <button role="tab" id="tab-seq" aria-controls="panel-seq" aria-selected="false">Sequelize</button>
               </div>
               <div class="tab-panel" id="panel-http" role="tabpanel" aria-labelledby="tab-http">
-                <pre><code class="language-js">const xufa = require('xufa');
+                <pre><code class="language-js">import xufa from 'xufa';
 
 const app = xufa({ logger: true });
 
@@ -63,7 +63,7 @@ app.get(
 await app.listen({ port: 3000 });</code></pre>
               </div>
               <div class="tab-panel" id="panel-orm" role="tabpanel" aria-labelledby="tab-orm" hidden>
-                <pre><code class="language-js">const { Database, Model, fields, Count } = require('xufa/orm');
+                <pre><code class="language-js">import { Database, Model, fields, Count } from 'xufa/orm';
 
 class Author extends Model {
   static fields = { name: fields.string({ maxLength: 100 }) };
@@ -88,8 +88,8 @@ const long = await Book.objects
 await Author.objects.values('name').annotate({ books: Count('books') });</code></pre>
               </div>
               <div class="tab-panel" id="panel-seq" role="tabpanel" aria-labelledby="tab-seq" hidden>
-                <pre data-run><code class="language-js">// require('sequelize'), changed: the rest of the code as it was.
-const { Sequelize, DataTypes, Op } = require('@xufa/sequelize');
+                <pre data-run><code class="language-js">// 'sequelize', changed: the rest of the code as it was.
+import { Sequelize, DataTypes, Op } from '@xufa/sequelize';
 
 const sequelize = new Sequelize(process.env.DATABASE_URL);
 const Author = sequelize.define('Author', { name: DataTypes.STRING });

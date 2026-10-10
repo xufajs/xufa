@@ -14,8 +14,8 @@
 // other machines; what comes from other machines it sends to every worker. Delivery to other processes is as
 // reliable as their channel: the bus between the processes of a machine, and the pub/sub of the cache (only the
 // machines connected at that moment) between machines.
-const crypto = require('node:crypto');
-const { WebSocket } = require('../index');
+import crypto from 'node:crypto';
+import { WebSocket } from '../index.js';
 
 const kId = Symbol('xufa.hub.id');
 
@@ -173,4 +173,4 @@ class Hub {
   }
 }
 
-module.exports = { Hub };
+export { Hub };

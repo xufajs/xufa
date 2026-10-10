@@ -1,9 +1,7 @@
-'use strict';
-
 // The wall clock of a time zone: what an instant is there (year, month, day, hour, minute, second, day of the week).
 // Without a time zone, the local one of the process (Date's getters); with one, Intl (an IANA name: 'Europe/Madrid',
 // 'UTC', 'America/New_York').
-const { SchedulerError } = require('./errors');
+import { SchedulerError } from './errors.js';
 
 const WEEKDAYS = { Sun: 0, Mon: 1, Tue: 2, Wed: 3, Thu: 4, Fri: 5, Sat: 6 };
 
@@ -100,4 +98,4 @@ function zoneOf(name) {
   return zone;
 }
 
-module.exports = { zoneOf };
+export { zoneOf };

@@ -3,9 +3,12 @@
 // expressions), a rule refused by the server, removed, a hang released, a scenario started and stopped, one written on
 // the page (not JSON, refused, started), every rule cleared, a wrong token asked again; and no error of a script nor of
 // the Content-Security-Policy on the way.
-const fs = require('node:fs');
-const xufa = require('@xufa/http');
-const { Faults, cacheFaults, plugin } = require('..');
+import fs from 'node:fs';
+import xufa from '@xufa/http';
+import { Faults, cacheFaults, plugin } from '../index.js';
+import { createRequire } from 'node:module';
+
+const require = createRequire(import.meta.url);
 
 const TOKEN = 'a-token-of-the-staging-admin';
 

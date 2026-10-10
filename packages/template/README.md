@@ -4,7 +4,7 @@ Templates of text and HTML, with the safe expressions of [`@xufa/expression`](..
 partials and escaping, compiled once and rendered many times. No dependencies outside xufa.
 
 ```js
-const { render, compile, fill } = require('@xufa/template');
+import { render, compile, fill } from '@xufa/template';
 
 const page = compile(`
 <h1>{{ title | upper }}</h1>
@@ -22,18 +22,19 @@ page({ title: 'Books', items, user });
 
 ## Tags
 
-| Tag                                              | What it does                                                                                                                                                                                                                                    |
-| ------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `{{ expression }}`                               | Its value, escaped for HTML                                                                                                                                                                                                                     |
-| `{{{ expression }}}`                             | Its value as it is                                                                                                                                                                                                                              |
-| `{{ value \| filter(args) \| other }}`           | Filters: functions of the value                                                                                                                                                                                                                 |
-| `{{#if a}} {{else if b}} {{else}} {{/if}}`       | The first branch whose condition holds                                                                                                                                                                                                          |
-| `{{#each list as item, key}} {{else}} {{/each}}` | Each item (lists, strings, iterables, `Map`s and objects: the key is the index or key), `loop.index`, `loop.number`, `loop.first`, `loop.last`, `loop.length`, `loop.key`; `{{else}}` when there is none. `item` is the name when none is given |
-| `{{#with value as name}} {{/with}}`              | A value by a name                                                                                                                                                                                                                               |
-| `{{> name}}`, `{{> name context}}`               | A partial, with the context, or over it the properties of the one given                                                                                                                                                                         |
-| `{{! comment }}`, `{{!-- comment --}}`           | Nothing (the second can hold `}}`)                                                                                                                                                                                                              |
-| `{{~` and `~}}`                                  | Take out the white space before and after the tag                                                                                                                                                                                               |
-| `\{{`                                            | The text `{{`                                                                                                                                                                                                                                   |
+| Tag                                                | What it does                                                                                                                                                                                                                                    |
+| -------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `{{ expression }}`                                 | Its value, escaped for HTML                                                                                                                                                                                                                     |
+| `{{{ expression }}}`                               | Its value as it is                                                                                                                                                                                                                              |
+| `{{ value \| filter(args) \| other }}`             | Filters: functions of the value                                                                                                                                                                                                                 |
+| `{{#if a}} {{else if b}} {{else}} {{/if}}`         | The first branch whose condition holds                                                                                                                                                                                                          |
+| `{{#each list as item, key}} {{else}} {{/each}}`   | Each item (lists, strings, iterables, `Map`s and objects: the key is the index or key), `loop.index`, `loop.number`, `loop.first`, `loop.last`, `loop.length`, `loop.key`; `{{else}}` when there is none. `item` is the name when none is given |
+| `{{#with value as name}} {{/with}}`                | A value by a name                                                                                                                                                                                                                               |
+| `{{> name}}`, `{{> name context}}`                 | A partial, with the context, or over it the properties of the one given                                                                                                                                                                         |
+| `{{extends 'base'}}`, `{{#block name}} {{/block}}` | Django's extends and blocks: a template fills the blocks of the one it extends (the first tag); `{{ block.super }}` writes those of the base; `{{extends layout}}`: the name an expression gives                                                |
+| `{{! comment }}`, `{{!-- comment --}}`             | Nothing (the second can hold `}}`)                                                                                                                                                                                                              |
+| `{{~` and `~}}`                                    | Take out the white space before and after the tag                                                                                                                                                                                               |
+| `\{{`                                              | The text `{{`                                                                                                                                                                                                                                   |
 
 Expressions are those of [`@xufa/expression`](../expression): JavaScript without assignments, statements or access to
 prototypes and constructors (`{{ items.map(i => i.name).join(', ') }}`, ``{{ `${count} items` }}``,
@@ -74,8 +75,8 @@ one.
 `plugin` renders views, files of a folder, as `@fastify/view` does (on fastify too):
 
 ```js
-const xufa = require('xufa');
-const template = require('@xufa/template'); // or require('xufa/template')
+import xufa from 'xufa';
+import * as template from '@xufa/template'; // or from 'xufa/template'
 
 const app = xufa();
 app.register(template.plugin, { root: 'views', layout: 'layout', defaultContext: { site: 'Books' } });
@@ -89,6 +90,12 @@ app.get('/books/:id', async (request, reply) => reply.view('books/show', { book:
 content type); `reply.viewAsync()` and `app.view()` give the text. The context is `defaultContext`, then
 `reply.locals`, then the data. With a layout (of the plugin, or of the call; `false` for none), the view is given to it
 as `{{ body }}`. Partials are files too: `{{> partials/header}}` is `views/partials/header.html`.
+
+The context of every view of a request, as Django's context processors: `context` (functions of `(request, reply)`,
+async too) and `app.viewContext(fn)` of other plugins (the accounts of @xufa/auth add `user` and `perms`); and with
+`builtins` (true) `request`, `url(name, ...params)` (named routes), `staticUrl(path)`, `csrfToken` and `messages`.
+`app.hasView(name)` says whether a view is a file of the roots (the views of @xufa/views fall back to their built-in
+templates when the app has none).
 
 | Option           | Default                     | What it does                                                                  |
 | ---------------- | --------------------------- | ----------------------------------------------------------------------------- |

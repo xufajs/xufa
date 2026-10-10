@@ -1,12 +1,10 @@
-'use strict';
-
 // The maintenance mode of an app kept in its database (any backend), so that every machine of the app sees it: xufa
 // down --everywhere sets it, xufa up clears it, and the plugin xufa.maintenance of @xufa/http reads it (store).
 //
 //   app.register(xufa.maintenance, { store: maintenance(db) });
 //   await maintenance(db).set({ message: 'Back in 10 minutes', retryAfter: 600 });
-const { Model } = require('./model');
-const fields = require('./fields');
+import { Model } from './model.js';
+import fields from './fields.js';
 
 function maintenanceModel(table, name) {
   return {
@@ -60,4 +58,4 @@ function maintenance(db, options = {}) {
   };
 }
 
-module.exports = { maintenance };
+export { maintenance };

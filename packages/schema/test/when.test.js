@@ -1,4 +1,4 @@
-const { When, Integer, Schema, String, Values, compileType, isJsonType } = require('..');
+import { When, Integer, Schema, String, Values, compileType, isJsonType } from '../index.js';
 
 describe('When', () => {
   it('Should only check values of its JSON type', () => {

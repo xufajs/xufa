@@ -1,23 +1,27 @@
 // Sequelize: a connection to a database (postgres or sqlite, and mongodb or memory with @xufa/orm's backends), the
 // models defined in it, transactions and raw queries. The database is a Database of @xufa/orm, opened (and the models
 // built in it) before the first query.
-const { AsyncLocalStorage } = require('node:async_hooks');
-const fs = require('node:fs');
-const path = require('node:path');
-const { Database } = require('@xufa/orm');
-const { Model, HOOKS } = require('./model');
-const { DataTypes } = require('./data-types');
-const { Op } = require('./operators');
-const errors = require('./errors');
-const { Transaction } = require('./transaction');
-const { Deferrable } = require('./deferrable');
-const { Validator } = require('./validate');
-const { QueryTypes, formatQuery, nestRow } = require('./query');
-const { QueryInterface, literal } = require('./query-interface');
-const DIALECT_INFO = require('./dialects.json');
-const { ConnectionManager } = require('./connection-manager');
-const associations = require('./associations');
-const inflection = require('./utils');
+import { AsyncLocalStorage } from 'node:async_hooks';
+import fs from 'node:fs';
+import path from 'node:path';
+import { Database } from '@xufa/orm';
+import { Model, HOOKS } from './model.js';
+import { DataTypes } from './data-types.js';
+import { Op } from './operators.js';
+import * as errors from './errors.js';
+import { Transaction } from './transaction.js';
+import { Deferrable } from './deferrable.js';
+import { Validator } from './validate.js';
+import { QueryTypes, formatQuery, nestRow } from './query.js';
+import { QueryInterface, literal } from './query-interface.js';
+import DIALECT_INFO from './dialects.json' with { type: 'json' };
+import { ConnectionManager } from './connection-manager.js';
+import * as associations from './associations.js';
+import * as inflection from './utils.js';
+import { createRequire } from 'node:module';
+import * as dataTypesModule from './data-types.js';
+
+const require = createRequire(import.meta.url);
 
 const { isPlainObject } = inflection;
 
@@ -1041,7 +1045,7 @@ class Sequelize {
   // As Sequelize: the parse and stringify functions given to the DataTypes are taken (the parse functions of types the
   // dialect cannot parse are an error).
   refreshTypes() {
-    require('./data-types').checkParsers(this.dialectName); // eslint-disable-line global-require
+    dataTypesModule.checkParsers(this.dialectName);
     this.xufaTypesVersion = (this.xufaTypesVersion || 0) + 1;
   }
 
@@ -1197,7 +1201,7 @@ const Utils = {
     if (typeof value === 'function' && !value.kind) return value();
     const type = value && (typeof value === 'function' ? value.key : value.key);
     if (type === 'UUIDV1' || type === 'UUIDV4') return require('node:crypto').randomUUID(); // eslint-disable-line global-require
-    if (type === 'UUIDV7') return require('./data-types').uuidv7(); // eslint-disable-line global-require
+    if (type === 'UUIDV7') return dataTypesModule.uuidv7();
     if (type === 'NOW') return Utils.now(dialect);
     if (Array.isArray(value)) return value.slice();
     if (isPlainObject(value)) return { ...value };
@@ -1418,4 +1422,4 @@ Sequelize.prototype.DataTypes = DataTypes;
 // As Sequelize: validate is authenticate (the same function).
 Sequelize.prototype.validate = Sequelize.prototype.authenticate;
 
-module.exports = { Sequelize };
+export { Sequelize };

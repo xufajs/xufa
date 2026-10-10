@@ -1,7 +1,7 @@
 // What authentication a connection accepts (libpq's require_auth and channel_binding), and the hash of the
 // certificate of a server that binds a SCRAM exchange to its TLS channel (tls-server-end-point, RFC 5929).
-const crypto = require('node:crypto');
-const { ConnectionError } = require('./errors');
+import crypto from 'node:crypto';
+import { ConnectionError } from './errors.js';
 
 const METHODS = new Set(['password', 'md5', 'scram-sha-256', 'oauth', 'gss', 'sspi', 'none']);
 const CHANNEL_BINDING = new Set(['disable', 'prefer', 'require']);
@@ -136,4 +136,4 @@ function endPoint(socket) {
   return crypto.createHash(certificateHash(certificate.raw)).update(certificate.raw).digest();
 }
 
-module.exports = { parseRequireAuth, parseChannelBinding, allows, refuse, certificateHash, endPoint };
+export { parseRequireAuth, parseChannelBinding, allows, refuse, certificateHash, endPoint };

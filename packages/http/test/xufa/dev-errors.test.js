@@ -1,8 +1,8 @@
 // Tests of xufa (not ported from fastify): devErrors, the page of the errors for development. Browsers get the page
 // (the error, its causes, the lines of the source, the request with its credentials hidden, the routes); other
 // clients the JSON they get without it; off in production unless enabled.
-const xufa = require('@xufa/http');
-const { framesOf } = require('../../lib/dev-errors');
+import xufa from '../../index.js';
+import { framesOf } from '../../lib/dev-errors.js';
 
 const HTML = { accept: 'text/html,application/xhtml+xml' };
 

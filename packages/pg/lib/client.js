@@ -4,15 +4,15 @@
 // A Pool sends the queries of pool.query() to its connections pipelined: the least busy one takes the next query,
 // and new connections are opened (up to max) only when they are all busy. pool.connect() gives a connection to one
 // user (for transactions) until it is released.
-const fs = require('node:fs');
-const os = require('node:os');
-const { EventEmitter } = require('node:events');
-const { Connection } = require('./connection');
-const { copyRows } = require('./copy');
-const { escapeIdentifier, escapeLiteral } = require('./types');
-const { parseRequireAuth, parseChannelBinding } = require('./auth');
-const { traceQuery, traceConnect, tracePoolConnect, publishRelease, publishRemove } = require('./diagnostics');
-const { ConnectionError, PgError } = require('./errors');
+import fs from 'node:fs';
+import os from 'node:os';
+import { EventEmitter } from 'node:events';
+import { Connection } from './connection.js';
+import { copyRows } from './copy.js';
+import { escapeIdentifier, escapeLiteral } from './types.js';
+import { parseRequireAuth, parseChannelBinding } from './auth.js';
+import { traceQuery, traceConnect, tracePoolConnect, publishRelease, publishRemove } from './diagnostics.js';
+import { ConnectionError, PgError } from './errors.js';
 
 // Text of a URL decoded, or as it is when it is no valid percent-encoding (a stray % in a password).
 function decode(text) {
@@ -280,6 +280,24 @@ function isMultipleStatements(err) {
 // statements. Queries without values are prepared too, unless their text has several statements: those are simple
 // queries (their results are an array, as in pg), and the connection remembers their texts.
 // A query, traced (pg:query) when someone listens.
+// Whether a query only reads (SELECT, WITH, VALUES, TABLE, SHOW, with no INSERT, UPDATE, DELETE, MERGE nor rows locked):
+// reads are pipelined on few connections, writes are not (their commits wait for the disk: those of other connections
+// are not to wait behind them). Kept by text (the same texts run again and again).
+const READ_START = /^\s*(?:SELECT|WITH|VALUES|TABLE|SHOW)\b/i;
+const WRITES_IN = /\b(?:INSERT|UPDATE|DELETE|MERGE)\b|\bFOR\s+(?:NO\s+KEY\s+)?(?:UPDATE|SHARE|KEY\s+SHARE)\b/i;
+const readTexts = new Map();
+function isRead(textOrConfig) {
+  const text = typeof textOrConfig === 'string' ? textOrConfig : textOrConfig && textOrConfig.text;
+  if (typeof text !== 'string') return false;
+  let read = readTexts.get(text);
+  if (read === undefined) {
+    read = READ_START.test(text) && !WRITES_IN.test(text);
+    if (readTexts.size >= 2000) readTexts.clear();
+    readTexts.set(text, read);
+  }
+  return read;
+}
+
 function runQuery(connection, textOrConfig, values) {
   const config = typeof textOrConfig === 'string' ? { text: textOrConfig } : textOrConfig;
   return traceQuery(connection, config, () => runQueryUntraced(connection, textOrConfig, values));
@@ -395,12 +413,16 @@ class Pool extends EventEmitter {
     super();
     const {
       max = 10,
+      pipeline = 8,
       idleTimeoutMillis = 10000,
       acquireTimeoutMillis = 0,
       ...rest
     } = typeof config === 'string' ? { connectionString: config } : config;
     this.options = parseConfig(rest);
     this.max = max;
+    // How many queries a connection may have on the way before another is opened (up to max): with more, queries are
+    // pipelined on the connections open, instead of more backends of the server competing for its processors.
+    this.pipeline = Math.max(1, pipeline);
     this.idleTimeoutMillis = idleTimeoutMillis;
     // How long a query or connect() waits for a connection (a free one, or one being opened): 0 for no limit.
     this.acquireTimeoutMillis = acquireTimeoutMillis;
@@ -518,10 +540,13 @@ class Pool extends EventEmitter {
     return connection;
   }
 
-  // The connection for a query: the least busy of those not taken, or a new one when all are busy.
-  async shared() {
+  // The connection for a query: the least busy of those not taken, or a new one when all are busy (a read: the busiest
+  // that takes more, see packed()).
+  async shared(read = false) {
     for (;;) {
       if (this.ended) throw new PgError('The pool has ended');
+      const packed = read ? this.packed() : null;
+      if (packed !== null) return this.use(packed);
       let best = null;
       for (let i = 0; i < this.connections.length; i += 1) {
         const connection = this.connections[i];
@@ -535,12 +560,37 @@ class Pool extends EventEmitter {
   }
 
   async query(textOrConfig, values) {
-    const connection = this.connections.length ? this.pick() : null;
-    return runQuery(connection || (await this.acquiring(this.shared())), textOrConfig, values);
+    const read = this.pipeline > 1 && isRead(textOrConfig);
+    const connection = (this.connections.length ? this.pick(read) : null) || (await this.acquiring(this.shared(read)));
+    if (read) return runQuery(connection, textOrConfig, values);
+    // A write: its connection takes no reads until it ends.
+    connection.writing = (connection.writing || 0) + 1;
+    try {
+      return await runQuery(connection, textOrConfig, values);
+    } finally {
+      connection.writing -= 1;
+    }
+  }
+
+  // A read, with pipeline: the busiest connection that still takes queries (fewer than pipeline on the way, and no write
+  // waiting for its commit), so reads go to as few connections as they need, and those left idle close
+  // (idleTimeoutMillis); null when none does.
+  packed() {
+    if (this.pipeline <= 1) return null;
+    let best = null;
+    for (let i = 0; i < this.connections.length; i += 1) {
+      const connection = this.connections[i];
+      if (!connection.taken && !connection.closed && !connection.writing && connection.busy < this.pipeline) {
+        if (best === null || connection.busy > best.busy) best = connection;
+      }
+    }
+    return best;
   }
 
   // The path of most queries: an idle connection (or the least busy when the pool is full), without awaiting.
-  pick() {
+  pick(read = false) {
+    const packed = read ? this.packed() : null;
+    if (packed !== null) return this.use(packed);
     let best = null;
     for (let i = 0; i < this.connections.length; i += 1) {
       const connection = this.connections[i];
@@ -704,4 +754,4 @@ Pool.prototype[Symbol.asyncDispose] = function asyncDispose() {
   return this.end();
 };
 
-module.exports = { Client, Pool, PoolClient, parseConfig };
+export { Client, Pool, PoolClient, parseConfig, isRead };

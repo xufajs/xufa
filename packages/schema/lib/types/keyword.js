@@ -1,4 +1,4 @@
-const { ValidateType } = require('./validate-type');
+import { ValidateType } from './validate-type.js';
 
 // Tests of the JSON types a keyword of your own can be limited to. null never reaches them: whether a node accepts null
 // is worked out when converting (see acceptsNull() in json-schema.js).
@@ -57,7 +57,4 @@ class KeywordType extends ValidateType {
   }
 }
 
-module.exports = {
-  KeywordType,
-  KEYWORD_TYPE_TESTS,
-};
+export { KeywordType, KEYWORD_TYPE_TESTS };

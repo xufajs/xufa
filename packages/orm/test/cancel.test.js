@@ -1,10 +1,10 @@
 // Reads that stop with a signal: QuerySet.signal(), withSignal(), and the plugin with `cancel` (the signal of each
 // request, aborted when its client goes away). Reads not started throw its reason; PostgreSQL cancels the one that
 // runs (and the server stops it: pg_stat_activity). Writes are not stopped.
-const http = require('node:http');
-const xufa = require('@xufa/http');
-const { Database, Model, fields, withSignal, plugin } = require('..');
-const { url, available } = require('../../pg/test/server');
+import http from 'node:http';
+import xufa from '@xufa/http';
+import { Database, Model, fields, withSignal, plugin } from '../index.js';
+import { url, available } from '../../pg/test/server.js';
 
 const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 

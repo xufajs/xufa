@@ -1,22 +1,55 @@
 // The fields of the models. A field knows its JavaScript value: it coerces what it is given (toValue), validates it
 // (check) and gives defaults. How a value is stored is the business of each backend, which reads the field's `dbType`.
-const { randomUUID } = require('node:crypto');
-const { checkGeometry } = require('./geo');
-const { getKeyring, isEncrypted } = require('./encryption');
-const { EncryptionError } = require('./errors');
-const { fieldValidators } = require('./rules');
+import { message, ValueError } from './messages.js';
+import { randomUUID } from 'node:crypto';
+import { checkGeometry } from './geo.js';
+import { getKeyring, isEncrypted } from './encryption.js';
+import { EncryptionError } from './errors.js';
+import { fieldValidators } from './rules.js';
+import * as blobModule from './blob.js';
 
 const EMPTY = [];
+
+// The choices of a field: a list of values, a list of [value, label] (Django's choices), or an object of labels by
+// value. { values, labels }: the values (what is kept) and their labels (a Map; null when there are none).
+function choicesOf(given) {
+  if (given === undefined || given === null) return { values: undefined, labels: null };
+  if (Array.isArray(given)) {
+    if (given.length && given.every((item) => Array.isArray(item) && item.length === 2)) {
+      return { values: given.map(([value]) => value), labels: new Map(given) };
+    }
+    return { values: given, labels: null };
+  }
+  if (typeof given === 'object') {
+    const entries = Object.entries(given);
+    return { values: entries.map(([value]) => value), labels: new Map(entries) };
+  }
+  throw new TypeError('choices are a list of values, a list of [value, label], or an object of labels by value');
+}
 
 class Field {
   constructor(options = {}) {
     this.options = options;
     this.null = Boolean(options.null);
     this.default = options.default;
-    this.unique = Boolean(options.unique);
+    // unique: 'ci' is unique whatever the case of the text (a unique index of its lower case, as Django's
+    // UniqueConstraint(Lower('name'))).
+    this.uniqueCi = options.unique === 'ci';
+    this.unique = options.unique === 'ci' ? false : Boolean(options.unique);
+    // Its own messages (Django's error_messages): { unique }.
+    this.messages = options.messages && typeof options.messages === 'object' ? options.messages : {};
     this.index = Boolean(options.index);
     this.primaryKey = Boolean(options.primaryKey);
-    this.choices = options.choices;
+    const choices = choicesOf(options.choices);
+    this.choices = choices.values;
+    // The labels of the choices (Django's get_FOO_display()): model.display(name).
+    this.choiceLabels = choices.labels;
+    // What forms and the admin show of the field (Django's verbose_name and help_text), and whether a form may leave
+    // it empty (blank: by default, a field with null may; blank: false refuses '' too).
+    this.label = typeof options.label === 'string' ? options.label : null;
+    this.help = typeof options.help === 'string' ? options.help : null;
+    this.blank = options.blank === undefined ? this.null : Boolean(options.blank);
+    this.blankGiven = options.blank !== undefined;
     // Functions of the value, or rules (expressions, { rule, message }) compiled to functions when the field is bound.
     this.validatorSpecs = options.validate ? [].concat(options.validate) : EMPTY;
     this.validators = this.validatorSpecs.every((spec) => typeof spec === 'function') ? this.validatorSpecs : EMPTY;
@@ -92,17 +125,22 @@ class Field {
   check(value) {
     const messages = [];
     if (value === null) {
-      if (!this.null && !this.auto) messages.push('This field is required.');
+      if (!this.null && !this.auto) messages.push(message('required'));
+      return messages;
+    }
+    // blank: false refuses an empty text, as Django's full_clean() (blank=False).
+    if (this.blankGiven && !this.blank && value === '') {
+      messages.push(message('required'));
       return messages;
     }
     if (this.choices && !this.choices.includes(value)) {
-      messages.push(`The value ${JSON.stringify(value)} is not a valid choice.`);
+      messages.push(message('choice', { value: JSON.stringify(value) }));
     }
     this.checkValue(value, messages);
     for (let i = 0; i < this.validators.length; i += 1) {
       const result = this.validators[i](value);
       if (typeof result === 'string') messages.push(result);
-      else if (result === false) messages.push('The value is not valid.');
+      else if (result === false) messages.push(message('invalid'));
     }
     return messages;
   }
@@ -150,7 +188,7 @@ class IdField extends Field {
   toValue(value) {
     if (typeof value === 'number' || typeof value === 'string' || typeof value === 'bigint') return this.fromDb(value);
     if (typeof value === 'object' && typeof value.toHexString === 'function') return value.toHexString();
-    throw new TypeError('The value must be a key (a number or a string).');
+    throw new ValueError('key');
   }
 
   jsonSchema() {
@@ -172,15 +210,15 @@ class StringField extends Field {
   toValue(value) {
     if (typeof value === 'string') return value;
     if (typeof value === 'number' || typeof value === 'bigint') return String(value);
-    throw new TypeError('The value must be a string.');
+    throw new ValueError('string');
   }
 
   checkValue(value, messages) {
     if (this.maxLength !== undefined && value.length > this.maxLength) {
-      messages.push(`Ensure this value has at most ${this.maxLength} characters (it has ${value.length}).`);
+      messages.push(message('maxLength', { max: this.maxLength, length: value.length }));
     }
     if (this.minLength !== undefined && value.length < this.minLength) {
-      messages.push(`Ensure this value has at least ${this.minLength} characters (it has ${value.length}).`);
+      messages.push(message('minLength', { min: this.minLength, length: value.length }));
     }
   }
 
@@ -206,8 +244,8 @@ class NumberField extends Field {
   }
 
   checkValue(value, messages) {
-    if (this.min !== undefined && value < this.min) messages.push(`Ensure this value is at least ${this.min}.`);
-    if (this.max !== undefined && value > this.max) messages.push(`Ensure this value is at most ${this.max}.`);
+    if (this.min !== undefined && value < this.min) messages.push(message('min', { min: this.min }));
+    if (this.max !== undefined && value > this.max) messages.push(message('max', { max: this.max }));
   }
 
   jsonSchema() {
@@ -226,7 +264,7 @@ class IntegerField extends NumberField {
   toValue(value) {
     const number = typeof value === 'string' && value.trim() !== '' ? Number(value) : value;
     if (typeof number === 'bigint') return Number(number);
-    if (!Number.isInteger(number)) throw new TypeError('The value must be an integer.');
+    if (!Number.isInteger(number)) throw new ValueError('integer');
     return number;
   }
 }
@@ -242,7 +280,7 @@ class FloatField extends NumberField {
     if (typeof value === 'number' || (typeof value === 'string' && value.trim() === 'NaN')) return Number(value);
     const number = typeof value === 'string' && value.trim() !== '' ? Number(value) : value;
     if (typeof number === 'bigint') return Number(number);
-    if (typeof number !== 'number' || Number.isNaN(number)) throw new TypeError('The value must be a number.');
+    if (typeof number !== 'number' || Number.isNaN(number)) throw new ValueError('number');
     return number;
   }
 }
@@ -267,7 +305,7 @@ class BigIntegerField extends NumberField {
     if (typeof value === 'bigint') big = value;
     else if (typeof value === 'string' && /^-?\d+$/.test(value.trim())) big = BigInt(value.trim());
     else if (Number.isInteger(value)) big = Number.isSafeInteger(value) ? null : BigInt(value);
-    else throw new TypeError('The value must be an integer.');
+    else throw new ValueError('integer');
     return this.inMode(big === null ? value : big);
   }
 
@@ -306,7 +344,7 @@ class DecimalField extends Field {
   toValue(value) {
     const text = typeof value === 'number' || typeof value === 'bigint' ? String(value) : value;
     if (typeof text !== 'string' || !/^-?(\d+\.?\d*|\.\d+)(e[-+]?\d+)?$/i.test(text.trim())) {
-      throw new TypeError('The value must be a decimal number.');
+      throw new ValueError('decimal');
     }
     return padDecimal(text.trim(), this.scale);
   }
@@ -325,10 +363,10 @@ class DecimalField extends Field {
     const places = fraction.length;
     const digits = whole.replace(/^0+/, '').length + places;
     if (Number.isInteger(this.scale) && places > this.scale) {
-      messages.push(`Ensure that there are no more than ${this.scale} decimal places.`);
+      messages.push(message('decimalPlaces', { scale: this.scale }));
     }
     if (Number.isInteger(this.precision) && digits > this.precision) {
-      messages.push(`Ensure that there are no more than ${this.precision} digits in total.`);
+      messages.push(message('digits', { precision: this.precision }));
     }
   }
 
@@ -379,10 +417,10 @@ class DateField extends Field {
     const infinite = infiniteDate(value);
     if (infinite !== null) return infinite;
     if (value instanceof Date) {
-      if (Number.isNaN(value.getTime())) throw new TypeError('The value must be a date.');
+      if (Number.isNaN(value.getTime())) throw new ValueError('date');
       return `${value.getFullYear()}-${pad(value.getMonth() + 1)}-${pad(value.getDate())}`;
     }
-    if (typeof value !== 'string' || !DATE.test(value.slice(0, 10))) throw new TypeError('The value must be a date.');
+    if (typeof value !== 'string' || !DATE.test(value.slice(0, 10))) throw new ValueError('date');
     return value.slice(0, 10);
   }
 
@@ -401,7 +439,7 @@ class BytesField extends Field {
     if (Buffer.isBuffer(value)) return value;
     if (value instanceof Uint8Array) return Buffer.from(value);
     if (typeof value === 'string') return Buffer.from(value);
-    throw new TypeError('The value must be a Buffer.');
+    throw new ValueError('buffer');
   }
 
   jsonSchema() {
@@ -418,7 +456,7 @@ class BooleanField extends Field {
     if (value === true || value === false) return value;
     if (value === 1 || value === 'true' || value === '1') return true;
     if (value === 0 || value === 'false' || value === '0') return false;
-    throw new TypeError('The value must be true or false.');
+    throw new ValueError('boolean');
   }
 
   jsonSchema() {
@@ -446,7 +484,7 @@ class DateTimeField extends Field {
     const infinite = infiniteDate(value);
     if (infinite !== null) return infinite;
     const date = value instanceof Date ? value : new Date(value);
-    if (typeof value === 'boolean' || Number.isNaN(date.getTime())) throw new TypeError('The value must be a date.');
+    if (typeof value === 'boolean' || Number.isNaN(date.getTime())) throw new ValueError('date');
     return date;
   }
 
@@ -471,13 +509,13 @@ class HStoreField extends Field {
   toValue(value) {
     const object = typeof value === 'string' ? JSON.parse(value) : value;
     if (!object || typeof object !== 'object' || Array.isArray(object)) {
-      throw new TypeError('The value must be an object of strings.');
+      throw new ValueError('stringObject');
     }
     const result = {};
     Object.keys(object).forEach((key) => {
       const item = object[key];
       if (item !== null && item !== undefined && typeof item === 'object') {
-        throw new TypeError('The values of an hstore must be strings.');
+        throw new ValueError('hstoreValues');
       }
       result[key] = item === null || item === undefined ? null : String(item);
     });
@@ -530,7 +568,7 @@ class ArrayField extends Field {
   }
 
   toValue(value) {
-    if (!Array.isArray(value)) throw new TypeError('The value must be an array.');
+    if (!Array.isArray(value)) throw new ValueError('array');
     return value.map((item) => (item === null || item === undefined ? null : this.base.toValue(item)));
   }
 
@@ -670,7 +708,7 @@ class UuidField extends Field {
   }
 
   toValue(value) {
-    if (typeof value !== 'string' || !UUID.test(value)) throw new TypeError('The value must be a UUID.');
+    if (typeof value !== 'string' || !UUID.test(value)) throw new ValueError('uuid');
     return value.toLowerCase();
   }
 
@@ -727,6 +765,8 @@ class ForeignKey extends Field {
   clone() {
     const field = super.clone();
     field.resolvedTarget = undefined;
+    field.heldField = undefined;
+    field.decoder = undefined;
     return field;
   }
 
@@ -734,14 +774,27 @@ class ForeignKey extends Field {
     return this.targetField.dbType;
   }
 
-  // The values of the key are made as those of the field it holds (the mode of its bigints or keys).
+  // The values of the key are made as those of the field it holds (the mode of its bigints or keys). Read for each
+  // column of each row: the function is kept while the field it holds is the same.
   get fromDb() {
     const target = this.targetField;
-    return target.fromDb ? (value) => target.fromDb(value) : undefined;
+    if (!this.decoder || this.decoder.target !== target) {
+      this.decoder = { target, fn: target.fromDb ? (value) => target.fromDb(value) : undefined };
+    }
+    return this.decoder.fn;
   }
 
-  // The field of the target the key holds: its primary key, or the unique field named by `toField`.
+  // The field of the target the key holds: its primary key, or the unique field named by `toField`. Kept while the
+  // target's meta is the same (it was looked for at each value read and written).
   get targetField() {
+    const { meta } = this.target;
+    if (this.heldField && this.heldField.meta === meta) return this.heldField.field;
+    const field = this.findTargetField();
+    this.heldField = { meta, field };
+    return field;
+  }
+
+  findTargetField() {
     const { toField } = this.options;
     if (!toField && !this.target.meta.pk) {
       throw new TypeError(
@@ -794,6 +847,12 @@ class ManyToManyField {
     this.options = options;
     this.relatedName = options.relatedName;
     this.throughOption = options.through;
+    // As other fields: what forms and the admin show of it, and whether a form may leave it empty (blank: true; by
+    // default it may not, as Django's).
+    this.label = typeof options.label === 'string' ? options.label : null;
+    this.help = typeof options.help === 'string' ? options.help : null;
+    this.blank = Boolean(options.blank);
+    this.blankGiven = options.blank !== undefined;
     this.model = undefined;
     this.name = undefined;
     this.resolvedTarget = undefined;
@@ -832,8 +891,8 @@ class BlobField extends Field {
   }
 
   toValue(value) {
-    const { isBody } = require('./blob'); // eslint-disable-line global-require
-    if (!isBody(value)) throw new TypeError('The value must be a Buffer, a string, a stream or a blob.');
+    const { isBody } = blobModule;
+    if (!isBody(value)) throw new ValueError('body');
     return value;
   }
 
@@ -881,11 +940,11 @@ class BlobInfoField extends Field {
   toValue(value) {
     if (this.blobInfo === 'updatedAt') {
       const date = value instanceof Date ? value : new Date(value);
-      if (Number.isNaN(date.getTime())) throw new TypeError('The value must be a date.');
+      if (Number.isNaN(date.getTime())) throw new ValueError('date');
       return date;
     }
     if (this.blobInfo === 'size') {
-      if (!Number.isInteger(value)) throw new TypeError('The value must be an integer.');
+      if (!Number.isInteger(value)) throw new ValueError('integer');
       return value;
     }
     return String(value);
@@ -943,7 +1002,7 @@ class MailInfoField extends Field {
   toValue(value) {
     if (this.mailInfo === 'sentAt') {
       const date = value instanceof Date ? value : new Date(value);
-      if (Number.isNaN(date.getTime())) throw new TypeError('The value must be a date.');
+      if (Number.isNaN(date.getTime())) throw new ValueError('date');
       return date;
     }
     if (this.mailInfo === 'response' || this.mailInfo === 'raw' || this.mailInfo === 'messageId') return String(value);
@@ -1026,4 +1085,31 @@ const fields = {
   },
 };
 
-module.exports = fields;
+export default fields;
+
+// The classes of the fields, by name too.
+export {
+  Field,
+  IdField,
+  StringField,
+  TextField,
+  IntegerField,
+  BigIntegerField,
+  FloatField,
+  DecimalField,
+  DateField,
+  BytesField,
+  BooleanField,
+  DateTimeField,
+  JsonField,
+  ArrayField,
+  EncryptedField,
+  GeometryField,
+  HStoreField,
+  UuidField,
+  ForeignKey,
+  ManyToManyField,
+  BlobField,
+  BlobInfoField,
+  MailInfoField,
+};

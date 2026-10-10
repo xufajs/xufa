@@ -1,7 +1,7 @@
 // A destination writing to a file descriptor or a file, synchronously or buffered (what sonic-boom does for pino).
-const fs = require('node:fs');
-const path = require('node:path');
-const { EventEmitter } = require('node:events');
+import fs from 'node:fs';
+import path from 'node:path';
+import { EventEmitter } from 'node:events';
 
 const MAX_WRITE = 16 * 1024;
 const RETRY_CODES = new Set(['EAGAIN', 'EBUSY']);
@@ -170,4 +170,4 @@ class Destination extends EventEmitter {
   }
 }
 
-module.exports = { Destination };
+export { Destination };

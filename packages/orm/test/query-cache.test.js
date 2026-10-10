@@ -1,6 +1,6 @@
 // Results kept in caches: querysets (cached()) until a model they read is written, and functions of yours (cached).
-const { Database, Model, fields, cached, MemoryCache, Count, Sum } = require('..');
-const { url, available } = require('../../pg/test/server');
+import { Database, Model, fields, cached, MemoryCache, Count, Sum } from '../index.js';
+import { url, available } from '../../pg/test/server.js';
 
 const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 

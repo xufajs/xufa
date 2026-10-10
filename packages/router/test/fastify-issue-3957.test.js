@@ -1,7 +1,4 @@
-'use strict'
-
-
-const FindMyWay = require('../')
+import FindMyWay from '../index.js';
 
 test('wildcard should not limit by maxParamLength', () => {
   expect.assertions(1)

@@ -1,8 +1,8 @@
 // Nodes of this machine only: unicast to 127.0.0.1, and multicast on the loopback interface with a TTL of 0 (on a
 // group and port of their own), so no packet of the tests leaves the machine.
-const dgram = require('node:dgram');
-const { Discovery, DiscoveryError, MAX_PACKET } = require('..');
-const { createCodec } = require('../lib/codec');
+import dgram from 'node:dgram';
+import { Discovery, DiscoveryError, MAX_PACKET } from '../index.js';
+import { createCodec } from '../lib/codec.js';
 
 const nodes = [];
 const node = (options) => {

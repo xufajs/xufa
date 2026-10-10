@@ -48,13 +48,17 @@
           <li><a href="#classes">Classes (5)</a></li>
           <li><a href="#constants">Constants (1)</a></li>
           <li><a href="#interfaces">Interfaces (16)</a></li>
-          <li><a href="#types">Types (7)</a></li>
+          <li><a href="#types">Types (8)</a></li>
         </ul>
         <h4>Packages</h4>
         <ul>
           <li><a href="../websocket/index.html">@xufa/websocket</a></li>
           <li><a href="../admin/index.html">@xufa/admin</a></li>
           <li><a href="../session/index.html">@xufa/session</a></li>
+          <li><a href="../forms/index.html">@xufa/forms</a></li>
+          <li><a href="../views/index.html">@xufa/views</a></li>
+          <li><a href="../mail/index.html">@xufa/mail</a></li>
+          <li><a href="../i18n/index.html">@xufa/i18n</a></li>
           <li><a href="../openapi/index.html">@xufa/openapi</a></li>
           <li><a href="../client/index.html">@xufa/client</a></li>
           <li><a href="../schema/index.html">@xufa/schema</a></li>
@@ -90,7 +94,7 @@
         <h1>Reference</h1>
         <p class="intro">
           Jobs in the background and pipelines of steps, kept in a database of @xufa/orm, with no dependencies. Every declaration of its TypeScript declarations
-          (<code>packages/queue/index.d.ts</code>), as they are written, with their comments: made from them each time
+          (<code>packages/queue/index.d.ts</code> or <code>index.d.cts</code>), as they are written, with their comments: made from them each time
           the docs are built. How to use them is in <a href="index.html">the overview</a>.
         </p>
 
@@ -193,7 +197,23 @@
                 <tr><td><code>block(type: string, spec: BlockSpec | ((input: any, ctx: StepContext) =&gt; unknown))</code></td><td><code>this</code></td><td><p>A kind of step. Built in: 'transform' (config.map or config.value: expressions), 'wait', and 'pipeline' (runs the pipeline config.pipeline with its input, or config.input, an expression, and goes on with its result).</p></td></tr>
                 <tr><td><code>check(definition: PipelineDefinition)</code></td><td><code>string[]</code></td><td><p>Every error of a definition (an empty list when it is valid).</p></td></tr>
                 <tr><td><code>define(definition: PipelineDefinition)</code></td><td><code>this</code></td><td><p>Defines a pipeline (a PipelineError with every error when it is not valid).</p></td></tr>
-                <tr><td><code>start&lt;Result = unknown&gt;(pipeline: string | PipelineDefinition, input?: unknown, options?: { key?: string; trigger?: string })</code></td><td><code>Promise&lt;<a href="#ref-PipelineRun">PipelineRun</a>&lt;Result&gt;&gt;</code></td><td><p>Starts a run (its steps without after are queued). key: a run with it running is given instead.</p></td></tr>
+                <tr><td><code>task(name: string, run: (input: any, ctx: StepContext) =&gt; unknown, options?: Omit&lt;BlockSpec, 'run'&gt; &amp; { trigger?: string; description?: string })</code></td><td><code>this</code></td><td><p>A task: a block and a pipeline of one step that runs it, by one name (its runs kept, retried and shown as those of any pipeline). Options: those of the block, and the trigger and description of the pipeline.</p></td></tr>
+                <tr><td><code>schedule(scheduler: { add(job: any): any }, pipeline: string, spec: {
+      /** The name of the job (the pipeline's). */
+      name?: string;
+      every?: number | string;
+      cron?: string;
+      timezone?: string;
+      at?: Date | string | number;
+      in?: number | string;
+      /** A value, or the input of each time. */
+      input?: unknown | ((time: { scheduledAt: Date; name: string }) =&gt; unknown);
+      priority?: number;
+      queue?: string;
+      [option: string]: unknown;
+    })</code></td><td><code>any</code></td><td><p>A pipeline started on a schedule of a Scheduler of</p></td></tr>
+                <tr><td><code>readonly schedules</code></td><td><code>Map&lt;string, { name: string; pipeline: string; trigger: string; scheduler: unknown }&gt;</code></td><td><p>The schedules that start runs (schedule()), by the name of their job.</p></td></tr>
+                <tr><td><code>start&lt;Result = unknown&gt;(pipeline: string | PipelineDefinition, input?: unknown, options?: StartOptions)</code></td><td><code>Promise&lt;<a href="#ref-PipelineRun">PipelineRun</a>&lt;Result&gt;&gt;</code></td><td><p>Starts a run (its steps without after are queued). key: a run with it running is given instead. priority and queue: those of the jobs of its steps (a step keeps its own); delay or at: when its first steps run.</p></td></tr>
                 <tr><td><code>trigger(event: string, input?: unknown, options?: { key?: string })</code></td><td><code>Promise&lt;<a href="#ref-PipelineRun">PipelineRun</a>[]&gt;</code></td><td><p>Starts a run of every pipeline with that trigger.</p></td></tr>
                 <tr><td><code>get&lt;Result = unknown&gt;(runId: unknown)</code></td><td><code>Promise&lt;{ run: <a href="#ref-PipelineRun">PipelineRun</a>&lt;Result&gt;; steps: Record&lt;string, <a href="#ref-PipelineStepRow">PipelineStepRow</a>&gt; } | null&gt;</code></td><td><p>A run with its steps by id.</p></td></tr>
                 <tr><td><code>readonly runs</code></td><td><code>QuerySet&lt;<a href="#ref-PipelineRun">PipelineRun</a>&gt;</code></td><td><p>The runs, as a queryset.</p></td></tr>
@@ -441,7 +461,6 @@
 
         <h3 id="ref-PipelineRun"><code>PipelineRun</code></h3>
         <pre><code class="language-ts">export interface PipelineRun&lt;Result = unknown&gt; extends Model { ... }</code></pre>
-        <p>A run of a pipeline: an object of its model (table xufa_pipeline_runs).</p>
         <div class="table-wrap">
             <table class="ref-members">
               <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
@@ -455,6 +474,9 @@
                 <tr><td><code>trigger</code></td><td><code>string | null</code></td><td></td></tr>
                 <tr><td><code>key</code></td><td><code>string | null</code></td><td></td></tr>
                 <tr><td><code>inFlight</code></td><td><code>number</code></td><td><p>Its steps queued or running (with concurrency).</p></td></tr>
+                <tr><td><code>priority</code></td><td><code>number</code></td><td><p>The priority and queue of the jobs of its steps (those of a step win).</p></td></tr>
+                <tr><td><code>queue</code></td><td><code>string | null</code></td><td></td></tr>
+                <tr><td><code>runAt</code></td><td><code>Date | null</code></td><td><p>When its first steps run (start() with delay or at), or null.</p></td></tr>
                 <tr><td><code>parent</code></td><td><code>string | null</code></td><td><p>A run of a step of another run (the block 'pipeline'): that run, that step, and how deep it is (0: none).</p></td></tr>
                 <tr><td><code>parentStep</code></td><td><code>string | null</code></td><td></td></tr>
                 <tr><td><code>depth</code></td><td><code>number</code></td><td></td></tr>
@@ -513,7 +535,7 @@
           </div>
 
         <h2 id="types">Types</h2>
-        <p class="ref-index"><a href="#ref-Duration"><code>Duration</code></a>, <a href="#ref-JobStatus"><code>JobStatus</code></a>, <a href="#ref-Backoff"><code>Backoff</code></a>, <a href="#ref-JobCounts"><code>JobCounts</code></a>, <a href="#ref-RunStatus"><code>RunStatus</code></a>, <a href="#ref-StepStatus"><code>StepStatus</code></a>, <a href="#ref-OnTimeout"><code>OnTimeout</code></a></p>
+        <p class="ref-index"><a href="#ref-Duration"><code>Duration</code></a>, <a href="#ref-JobStatus"><code>JobStatus</code></a>, <a href="#ref-Backoff"><code>Backoff</code></a>, <a href="#ref-JobCounts"><code>JobCounts</code></a>, <a href="#ref-RunStatus"><code>RunStatus</code></a>, <a href="#ref-StepStatus"><code>StepStatus</code></a>, <a href="#ref-OnTimeout"><code>OnTimeout</code></a>, <a href="#ref-StartOptions"><code>StartOptions</code></a></p>
 
         <h3 id="ref-Duration"><code>Duration</code></h3>
         <pre><code class="language-ts">export type Duration = number | string;</code></pre>
@@ -546,6 +568,15 @@
         <h3 id="ref-OnTimeout"><code>OnTimeout</code></h3>
         <pre><code class="language-ts">export type OnTimeout = 'fail' | 'skip' | { output: unknown };</code></pre>
         <p>What a paused step does at its waitTimeout: its run fails, its branch is skipped, or it goes on with an output.</p>
+
+        <h3 id="ref-StartOptions"><code>StartOptions</code></h3>
+        <pre><code class="language-ts">export type StartOptions = {
+  key?: string;
+  trigger?: string;
+  priority?: number;
+  queue?: string;
+} &amp; ({ delay?: number | string; at?: never } | { at?: Date | string | number; delay?: never });</code></pre>
+        <p>The options of a run: its key and trigger, and those of the jobs of its steps.</p>
       </article>
     </div>
 

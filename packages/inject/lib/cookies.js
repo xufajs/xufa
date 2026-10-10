@@ -46,4 +46,4 @@ function parseResponseCookies(response) {
   return (Array.isArray(header) ? header : [header]).map(parseSetCookie);
 }
 
-module.exports = { serialize, parseSetCookie, parseResponseCookies };
+export { serialize, parseSetCookie, parseResponseCookies };

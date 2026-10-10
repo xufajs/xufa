@@ -4,16 +4,53 @@
 // (with loop.index, loop.first, loop.last...), {{#with value as name}} {{/with}}; partials {{> name}} and
 // {{> name context}}; comments {{! ... }} and {{!-- ... --}}; {{~ and ~}} take out the white space around a tag.
 //
-//   const { render, fill } = require('@xufa/template');
+//   import { render, fill } from '@xufa/template';
 //   render('<h1>{{ title | upper }}</h1>{{#each items as item}}<li>{{ item.name }}</li>{{/each}}', data);
 //   fill({ url: '{{ env.DATABASE_URL }}', port: '{{ Number(env.PORT ?? 5432) }}' }, { env: process.env });
-const { Engine } = require('@xufa/expression');
-const { TemplateCompiler } = require('./lib/compiler');
-const { TemplateError } = require('./lib/errors');
-const { FILTERS, SafeString, escapeHtml } = require('./lib/filters');
-const { templatePlugin } = require('./lib/plugin');
+import { Engine } from '@xufa/expression';
+import { TemplateCompiler } from './lib/compiler.js';
+import { TemplateError } from './lib/errors.js';
+import { FILTERS, SafeString, escapeHtml } from './lib/filters.js';
+import { templatePlugin } from './lib/plugin.js';
 
 const NO_ESCAPE = (text) => text;
+
+// The compiled templates by their source, then by escape and name: the source is not copied into a key at each render
+// (a template of some kilobytes was, twice a page), and a source given again is the same string, whose hash V8 keeps.
+// At most `max` templates: the oldest source goes first.
+class SourceCache {
+  constructor(max) {
+    this.max = max;
+    this.sources = new Map();
+    this.size = 0;
+  }
+
+  get(source, key) {
+    const keyed = this.sources.get(source);
+    return keyed === undefined ? undefined : keyed.get(key);
+  }
+
+  set(source, key, compiled) {
+    if (this.max <= 0) return;
+    let keyed = this.sources.get(source);
+    if (keyed === undefined) {
+      keyed = new Map();
+      this.sources.set(source, keyed);
+    }
+    if (!keyed.has(key)) this.size += 1;
+    keyed.set(key, compiled);
+    while (this.size > this.max && this.sources.size > 1) {
+      const [oldest, entries] = this.sources.entries().next().value;
+      this.sources.delete(oldest);
+      this.size -= entries.size;
+    }
+  }
+
+  clear() {
+    this.sources.clear();
+    this.size = 0;
+  }
+}
 
 class TemplateEngine {
   // `filters`: over the default ones; `globals` and `builtins`: those of the expressions (see @xufa/expression);
@@ -48,9 +85,9 @@ class TemplateEngine {
       strict: Boolean(strict),
       cacheSize: 2000,
     });
-    this.cache = new Map();
+    this.cache = new SourceCache(this.cacheSize);
     this.partialCache = new Map();
-    this.loadedCache = new Map();
+    this.loadedCache = new SourceCache(this.cacheSize);
   }
 
   // A filter more (or another): templates compiled before are compiled again.
@@ -85,12 +122,10 @@ class TemplateEngine {
     if (!this.loadPartial) return null;
     const source = this.loadPartial(name);
     if (source === undefined || source === null) return null;
-    const sourceKey = `${mode}:${name}:${source}`;
-    compiled = this.loadedCache.get(sourceKey);
+    compiled = this.loadedCache.get(source, key);
     if (!compiled) {
       compiled = new TemplateCompiler(this, source, { name, escape }).compile();
-      if (this.loadedCache.size >= this.cacheSize) this.loadedCache.delete(this.loadedCache.keys().next().value);
-      this.loadedCache.set(sourceKey, compiled);
+      this.loadedCache.set(source, key, compiled);
     }
     return compiled;
   }
@@ -100,14 +135,11 @@ class TemplateEngine {
   compile(source, options = {}) {
     if (typeof source !== 'string') throw new TypeError('A template is a string');
     const escape = options.escape === false ? NO_ESCAPE : this.escapeFn;
-    const key = `${escape === this.escapeFn ? 'e' : 'r'}:${options.name || ''}:${source}`;
-    let compiled = this.cache.get(key);
+    const key = `${escape === this.escapeFn ? 'e' : 'r'}:${options.name || ''}`;
+    let compiled = this.cache.get(source, key);
     if (!compiled) {
       compiled = new TemplateCompiler(this, source, { name: options.name, escape }).compile();
-      if (this.cacheSize > 0) {
-        if (this.cache.size >= this.cacheSize) this.cache.delete(this.cache.keys().next().value);
-        this.cache.set(key, compiled);
-      }
+      this.cache.set(source, key, compiled);
     }
     return compiled;
   }
@@ -145,14 +177,8 @@ class TemplateEngine {
 
 const engine = new TemplateEngine();
 
-module.exports = {
-  TemplateEngine,
-  TemplateError,
-  plugin: templatePlugin,
-  SafeString,
-  escapeHtml,
-  FILTERS,
-  compile: (source, options) => engine.compile(source, options),
-  render: (source, context, options) => engine.render(source, context, options),
-  fill: (value, context) => engine.fill(value, context),
-};
+export const compile = (source, options) => engine.compile(source, options);
+export const render = (source, context, options) => engine.render(source, context, options);
+export const fill = (value, context) => engine.fill(value, context);
+
+export { TemplateEngine, TemplateError, templatePlugin as plugin, SafeString, escapeHtml, FILTERS };

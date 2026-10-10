@@ -1,7 +1,7 @@
-'use strict'
+import boot from '../index.js';
+import { createRequire } from 'node:module';
 
-
-const boot = require('..')
+const require = createRequire(import.meta.url);
 
 const message = (name) => `Plugin did not start in time: '${name}'. You may have forgotten to call 'done' function or to resolve a Promise`
 
@@ -48,7 +48,7 @@ test('timeout without calling next - use file as name', (done) => {
   const app = boot({}, {
     timeout: 10 // 10 ms
   })
-  app.use(require('./fixtures/plugin-no-next'))
+  app.use(require('./fixtures/plugin-no-next.js').default)
   app.ready((err) => {
     expect(err).toBeTruthy()
     expect(err.message).toBe(message('noNext'))

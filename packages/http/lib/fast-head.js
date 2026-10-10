@@ -7,8 +7,8 @@
 // It sets the fields of Node's ServerResponse that writeHead() sets (_header, _headerSent) and reads those that decide
 // keep-alive: the first time it is used, a self-test compares its head with the one of Node, and turns it off for good
 // when they differ (a version of Node that changed them).
-const http = require('node:http');
-const { Duplex } = require('node:stream');
+import http from 'node:http';
+import { Duplex } from 'node:stream';
 
 // The symbol of the headers set on Node's response (setHeader), found once.
 const kOutHeaders = Object.getOwnPropertySymbols(new http.OutgoingMessage()).find(
@@ -230,4 +230,4 @@ function fastHead(res, req, statusCode, headers, length) {
   return true;
 }
 
-module.exports = { fastHead, fastHeadWorks, writeFastHead };
+export { fastHead, fastHeadWorks, writeFastHead };

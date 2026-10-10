@@ -1,4 +1,4 @@
-const { compile, render, fill, TemplateEngine, TemplateError, SafeString, escapeHtml } = require('..');
+import { compile, render, fill, TemplateEngine, TemplateError, SafeString, escapeHtml } from '../index.js';
 
 const data = () => ({
   title: 'Books <&> "quotes"',
@@ -77,6 +77,9 @@ describe('filters', () => {
       ['{{{ html | escape }}}', '&lt;b&gt;bold&lt;/b&gt;'],
     ];
     cases.forEach(([source, expected]) => expect(render(source, data())).toBe(expected));
+    // Iterables (a loaded QuerySet) by their items.
+    const loaded = { *[Symbol.iterator]() { yield 'a'; yield 'b'; } };
+    expect(render('{{ list | length }}: {{ list | join }}', { list: loaded })).toBe('2: a, b');
   });
 
   it('takes filters of its own', () => {

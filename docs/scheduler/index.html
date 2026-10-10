@@ -49,6 +49,7 @@
           <li><a href="#cron">Cron expressions</a></li>
           <li><a href="#retries">Retries</a></li>
           <li><a href="#state">State and events</a></li>
+          <li><a href="#health">Health</a></li>
         </ul>
         <h4>Running</h4>
         <ul>
@@ -61,6 +62,10 @@
           <li><a href="../websocket/index.html">@xufa/websocket</a></li>
           <li><a href="../admin/index.html">@xufa/admin</a></li>
           <li><a href="../session/index.html">@xufa/session</a></li>
+          <li><a href="../forms/index.html">@xufa/forms</a></li>
+          <li><a href="../views/index.html">@xufa/views</a></li>
+          <li><a href="../mail/index.html">@xufa/mail</a></li>
+          <li><a href="../i18n/index.html">@xufa/i18n</a></li>
           <li><a href="../openapi/index.html">@xufa/openapi</a></li>
           <li><a href="../client/index.html">@xufa/client</a></li>
           <li><a href="../schema/index.html">@xufa/schema</a></li>
@@ -104,7 +109,7 @@
 
         <h2 id="start">Quick start</h2>
         <pre><code class="language-sh">npm install @xufa/scheduler</code></pre>
-        <pre><code class="language-js">const { Scheduler } = require('@xufa/scheduler'); // or require('xufa/scheduler')
+        <pre><code class="language-js">import { Scheduler } from '@xufa/scheduler'; // or from 'xufa/scheduler'
 
 const scheduler = new Scheduler({ logger, timezone: 'Europe/Madrid' });
 scheduler.add({ name: 'purge sessions', every: '10m', run: () =&gt; Session.objects.filter({ expired: true }).delete() });
@@ -184,6 +189,24 @@ await scheduler.stop(); // waits for the runs going on (10 s), then aborts their
           <code>'locked'</code>); <code>onError(error, job)</code> and the logger see every failure.
         </p>
 
+        <h2 id="health">Health</h2>
+        <p>
+          <code>scheduler.health()</code> is a check of <a href="../http/guide.html#health"><code>xufa.health</code></a>:
+          degraded when a job missed a run, failed its last runs, or runs for too long, with each job's next run, last
+          run and status in its details.
+        </p>
+        <pre><code class="language-js">app.register(xufa.health, {
+  checks: {
+    scheduler: scheduler.health({ late: '1m', failures: 3, maxRun: '30m' }),
+  },
+});</code></pre>
+        <ul>
+          <li><strong>Missed:</strong> a job of <code>every</code> or <code>cron</code> was due more than <code>late</code> (<code>'1m'</code>) ago and nothing ran it. With a shared <a href="#history">history</a> it is a run of no machine (the process that runs it, behind a lock, may be another); without one, the timers of this process.</li>
+          <li><strong>Failing:</strong> its last <code>failures</code> runs (1) failed or timed out, in the history (of every machine) or in this process.</li>
+          <li><strong>Too long:</strong> a run of this process going on for longer than <code>maxRun</code>.</li>
+          <li><code>jobs: ['report']</code> checks only those; <code>critical</code> (false) and <code>timeout</code> are those of every check.</li>
+        </ul>
+
         <h2 id="history">History and catch-up</h2>
         <p>
           With a <code>history</code>, the scheduler records every run: <code>{ name, scheduledAt, startedAt, duration,
@@ -201,13 +224,27 @@ scheduler.add({ name: 'invoices', cron: '0 2 * * *', catchUp: true, run: makeInv
           a database, one machine catches up a time, and those that start later do not again.
         </p>
 
+        <h2 id="pipelines">Runs of pipelines</h2>
+        <p>
+          A job runs in the process of the scheduler, and keeps no more than its history. For work that should be kept,
+          retried and seen, make the job start a run of a pipeline of <a href="../queue/index.html#recurring">@xufa/queue</a>:
+          the scheduler only starts it, the workers of the queue do it.
+        </p>
+        <pre><code class="language-js">pipelines.task('nightly-export', () =&gt; exportRows(), { attempts: 3 });
+pipelines.schedule(scheduler, 'nightly-export', { cron: '0 2 * * *', timezone: 'Europe/Madrid' });</code></pre>
+        <p>
+          <a href="../admin/index.html#work">The admin</a> (option <code>scheduler</code>) lists the jobs of the scheduler in Work:
+          when each runs next, its last run (for those of pipelines, the last run of the pipeline and all of them), and
+          <em>Run now</em>.
+        </p>
+
         <h2 id="cluster">Clusters and machines</h2>
         <p>
           A scheduler runs its jobs in its process: in a cluster of <a href="../cluster/index.html">@xufa/cluster</a>, make it in
           the <code>primary</code> (or in one worker), not in every worker. On several machines, give the schedulers a
           lock in a database of <a href="../orm/index.html">@xufa/orm</a> (any backend), and each time of a job runs in one of them:
         </p>
-        <pre><code class="language-js">const config = require('./config'); // loadConfig() of @xufa/config
+        <pre><code class="language-js">import config from './config.js'; // loadConfig() of @xufa/config
 
 start({
   primary: async ({ onShutdown }) =&gt; {

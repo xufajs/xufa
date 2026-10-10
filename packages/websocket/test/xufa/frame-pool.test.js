@@ -1,11 +1,11 @@
 // The buffers of masked frames used again (lib/frame-pool.js): over a real socket, with many frames in flight, each
 // message arrives as sent (a buffer given back too soon would be overwritten by the next frame while still being
 // written); text is encoded into the frame itself; and nothing is pooled on a socket that is not a net.Socket.
-const crypto = require('node:crypto');
-const { Duplex } = require('node:stream');
-const { WebSocket, WebSocketServer } = require('../..');
-const Sender = require('../../lib/sender');
-const framePool = require('../../lib/frame-pool');
+import crypto from 'node:crypto';
+import { Duplex } from 'node:stream';
+import { WebSocket, WebSocketServer } from '../../index.js';
+import Sender from '../../lib/sender.js';
+import * as framePool from '../../lib/frame-pool.js';
 
 // Sizes around the limits of the pool, and text with characters of 2, 3 and 4 bytes.
 const SIZES = [100, 4000, 4096, 5000, 16 * 1024, 65535, 65536, 300 * 1024, 1024 * 1024, 4 * 1024 * 1024 + 1];

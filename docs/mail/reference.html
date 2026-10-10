@@ -1,0 +1,353 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>@xufa/mail: Reference · xufa</title>
+    <meta
+      name="description"
+      content="The reference of @xufa/mail: every function, class, interface and type it declares, made from its TypeScript declarations."
+    />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%23d9502b'/%3E%3Ctext x='16' y='22.5' font-family='monospace' font-size='18' font-weight='700' fill='white' text-anchor='middle'%3Ex%3C/text%3E%3C/svg%3E"
+    />
+    <link rel="stylesheet" href="../style.css?v=0.1.0" />
+    <script src="../main.js?v=0.1.0"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js" defer></script>
+  </head>
+  <body>
+    <header class="header">
+      <div class="header-inner">
+        <a class="logo" href="../index.html"><span class="logo-mark">x</span>xufa</a>
+        <nav class="nav">
+          <a href="../guide.html">Guide</a>
+          <a href="../playground.html">Playground</a>
+          <a href="../http/index.html">HTTP</a>
+          <a href="../orm/index.html">ORM</a>
+          <a class="hide-small" href="../auth/index.html">Auth</a>
+          <a class="hide-small" href="../sequelize/index.html">Sequelize</a>
+          <a class="hide-small" href="../packages.html" aria-current="page">Packages</a>
+          <a class="hide-small" href="../benchmarks.html">Benchmarks</a>
+          <a href="https://github.com/xufajs/xufa">GitHub</a>
+          <button class="theme-toggle" type="button" aria-label="Switch between light and dark theme">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+              <path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z" />
+            </svg>
+          </button>
+        </nav>
+      </div>
+    </header>
+
+    <div class="docs">
+      <button class="menu-toggle" type="button" aria-expanded="false">☰ Contents</button>
+      <aside class="sidebar">
+        <h4>Reference</h4>
+        <ul>
+          <li><a href="#functions">Functions (3)</a></li>
+          <li><a href="#classes">Classes (6)</a></li>
+          <li><a href="#constants">Constants (2)</a></li>
+          <li><a href="#interfaces">Interfaces (5)</a></li>
+          <li><a href="#types">Types (5)</a></li>
+        </ul>
+        <h4>Packages</h4>
+        <ul>
+          <li><a href="../websocket/index.html">@xufa/websocket</a></li>
+          <li><a href="../admin/index.html">@xufa/admin</a></li>
+          <li><a href="../session/index.html">@xufa/session</a></li>
+          <li><a href="../forms/index.html">@xufa/forms</a></li>
+          <li><a href="../views/index.html">@xufa/views</a></li>
+          <li><a href="index.html" aria-current="page">@xufa/mail</a></li>
+          <li><a href="../i18n/index.html">@xufa/i18n</a></li>
+          <li><a href="../openapi/index.html">@xufa/openapi</a></li>
+          <li><a href="../client/index.html">@xufa/client</a></li>
+          <li><a href="../schema/index.html">@xufa/schema</a></li>
+          <li><a href="../pg/index.html">@xufa/pg</a></li>
+          <li><a href="../mongo/index.html">@xufa/mongo</a></li>
+          <li><a href="../expression/index.html">@xufa/expression</a></li>
+          <li><a href="../template/index.html">@xufa/template</a></li>
+          <li><a href="../cluster/index.html">@xufa/cluster</a></li>
+          <li><a href="../scheduler/index.html">@xufa/scheduler</a></li>
+          <li><a href="../queue/index.html">@xufa/queue</a></li>
+          <li><a href="../config/index.html">@xufa/config</a></li>
+          <li><a href="../discovery/index.html">@xufa/discovery</a></li>
+          <li><a href="../netcache/index.html">@xufa/netcache</a></li>
+          <li><a href="../faults/index.html">@xufa/faults</a></li>
+          <li><a href="../marshal/index.html">@xufa/marshal</a></li>
+          <li><a href="../yaml/index.html">@xufa/yaml</a></li>
+          <li><a href="../jwt/index.html">@xufa/jwt</a></li>
+          <li><a href="../logger/index.html">@xufa/logger</a></li>
+          <li><a href="../router/index.html">@xufa/router</a></li>
+          <li><a href="../serializer/index.html">@xufa/serializer</a></li>
+          <li><a href="../inject/index.html">@xufa/inject</a></li>
+          <li><a href="../boot/index.html">@xufa/boot</a></li>
+          <li><a href="../errors/index.html">@xufa/errors</a></li>
+          <li><a href="../packages.html">All the packages</a></li>
+        </ul>
+      </aside>
+
+      <article class="content">
+        <nav class="package-tabs" aria-label="@xufa/mail">
+          <a href="index.html">Overview</a>
+          <a href="reference.html" aria-current="page">Reference</a>
+        </nav>
+        <h1>Reference</h1>
+        <p class="intro">
+          Emails as classes (as Laravel's Mailables) rendered with templates in a layout for email clients, sent through the mail backends of @xufa/orm at once or from jobs of @xufa/queue, and notifications by mail, database or channels of your own, with no dependencies. Every declaration of its TypeScript declarations
+          (<code>packages/mail/index.d.ts</code> or <code>index.d.cts</code>), as they are written, with their comments: made from them each time
+          the docs are built. How to use them is in <a href="index.html">the overview</a>.
+        </p>
+
+        <h2 id="functions">Functions</h2>
+        <p class="ref-index"><a href="#ref-mailFields"><code>mailFields</code></a>, <a href="#ref-textOf"><code>textOf</code></a>, <a href="#ref-notificationFields"><code>notificationFields</code></a></p>
+
+        <h3 id="ref-mailFields"><code>mailFields</code></h3>
+        <pre><code class="language-ts">export declare function mailFields(fields: any): Record&lt;string, any&gt;;</code></pre>
+        <p>The fields of a model of emails: class Email extends Model { static fields = mailFields(fields); }.</p>
+
+        <h3 id="ref-textOf"><code>textOf</code></h3>
+        <pre><code class="language-ts">export declare function textOf(html: string | null | undefined): string;</code></pre>
+        <p>The text of the HTML of an email: blocks on lines, links with their addresses, lists, entities decoded.</p>
+
+        <h3 id="ref-notificationFields"><code>notificationFields</code></h3>
+        <pre><code class="language-ts">export declare function notificationFields(fields: any): Record&lt;string, any&gt;;</code></pre>
+        <p>The fields of the model of the notifications kept: notifiableType, notifiableId, type, data, readAt, createdAt.</p>
+
+        <h2 id="classes">Classes</h2>
+        <p class="ref-index"><a href="#ref-Mailable"><code>Mailable</code></a>, <a href="#ref-Mailer"><code>Mailer</code></a>, <a href="#ref-MailError"><code>MailError</code></a>, <a href="#ref-Notification"><code>Notification</code></a>, <a href="#ref-AnonymousNotifiable"><code>AnonymousNotifiable</code></a>, <a href="#ref-Notifier"><code>Notifier</code></a></p>
+
+        <h3 id="ref-Mailable"><code>Mailable</code></h3>
+        <pre><code class="language-ts">export declare class Mailable { ... }</code></pre>
+        <p>An email as a class (Laravel's Mailables): its fields are the data of its templates.</p>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>envelope()</code></td><td><code><a href="#ref-Envelope">Envelope</a> | Promise&lt;<a href="#ref-Envelope">Envelope</a>&gt;</code></td><td></td></tr>
+                <tr><td><code>content()</code></td><td><code><a href="#ref-Content">Content</a> | Promise&lt;<a href="#ref-Content">Content</a>&gt;</code></td><td></td></tr>
+                <tr><td><code>attachments()</code></td><td><code><a href="#ref-Attachment">Attachment</a>[] | Promise&lt;<a href="#ref-Attachment">Attachment</a>[]&gt;</code></td><td></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-Mailer"><code>Mailer</code></h3>
+        <pre><code class="language-ts">export declare class Mailer { ... }</code></pre>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>new (options: MailerOptions)</code></td><td></td><td></td></tr>
+                <tr><td><code>render(mail: Mailable | PlainMail, overrides?: Envelope)</code></td><td><code>Promise&lt;<a href="#ref-Message">Message</a>&gt;</code></td><td><p>The email rendered: subject, HTML in the layout, its text. The recipients and subject given override its own.</p></td></tr>
+                <tr><td><code>preview(mail: Mailable | PlainMail, overrides?: Envelope)</code></td><td><code>Promise&lt;string&gt;</code></td><td><p>Its HTML (in a browser, in tests).</p></td></tr>
+                <tr><td><code>send&lt;M extends Model = any&gt;(mail: Mailable | PlainMail, overrides?: Envelope)</code></td><td><code>Promise&lt;M&gt;</code></td><td><p>Sends it now: the object of the model of the emails (its mailInfo fields: what the sending gave).</p></td></tr>
+                <tr><td><code>queue(mail: Mailable | PlainMail, options?: QueueOptions)</code></td><td><code>Promise&lt;any&gt;</code></td><td><p>Sends it from a job of the queue: rendered now, sent by a worker (tried again when the server fails).</p></td></tr>
+                <tr><td><code>deliver&lt;M extends Model = any&gt;(message: Message)</code></td><td><code>Promise&lt;M&gt;</code></td><td><p>An email rendered, as an object of the model (which sends it).</p></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-MailError"><code>MailError</code></h3>
+        <pre><code class="language-ts">export declare class MailError extends Error { ... }</code></pre>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>code</code></td><td><code>string</code></td><td></td></tr>
+                <tr><td><code>statusCode</code></td><td><code>number</code></td><td></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-Notification"><code>Notification</code></h3>
+        <pre><code class="language-ts">export declare class Notification { ... }</code></pre>
+        <p>Something that happened, told by channels: via() and to&lt;Channel&gt;() (toMail, toDatabase...).</p>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>via(notifiable: any)</code></td><td><code>string[] | Promise&lt;string[]&gt;</code></td><td></td></tr>
+                <tr><td><code>toMail?(notifiable: any)</code></td><td><code><a href="#ref-Mailable">Mailable</a> | <a href="#ref-PlainMail">PlainMail</a> | Promise&lt;<a href="#ref-Mailable">Mailable</a> | <a href="#ref-PlainMail">PlainMail</a>&gt;</code></td><td></td></tr>
+                <tr><td><code>toDatabase?(notifiable: any)</code></td><td><code>Record&lt;string, unknown&gt; | Promise&lt;Record&lt;string, unknown&gt;&gt;</code></td><td></td></tr>
+                <tr><td><code>[method: string]</code></td><td><code>unknown</code></td><td></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-AnonymousNotifiable"><code>AnonymousNotifiable</code></h3>
+        <pre><code class="language-ts">export declare class AnonymousNotifiable { ... }</code></pre>
+        <p>Someone who is not a user: its address by channel.</p>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>new (routes?: Record&lt;string, unknown&gt;)</code></td><td></td><td></td></tr>
+                <tr><td><code>readonly routes</code></td><td><code>Record&lt;string, unknown&gt;</code></td><td></td></tr>
+                <tr><td><code>route(channel: string, address: unknown)</code></td><td><code>this</code></td><td></td></tr>
+                <tr><td><code>routeNotificationFor(channel: string)</code></td><td><code>unknown</code></td><td></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-Notifier"><code>Notifier</code></h3>
+        <pre><code class="language-ts">export declare class Notifier { ... }</code></pre>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>new (options?: NotifierOptions)</code></td><td></td><td></td></tr>
+                <tr><td><code>static route(channel: string, address: unknown)</code></td><td><code><a href="#ref-AnonymousNotifiable">AnonymousNotifiable</a></code></td><td><p>Someone with an address and no user: Notifier.route('mail', 'a@example.com').</p></td></tr>
+                <tr><td><code>channel(name: string, fn: (notifiable: any, message: unknown, notification: Notification) =&gt; unknown)</code></td><td><code>this</code></td><td></td></tr>
+                <tr><td><code>notify(notifiables: unknown | unknown[], notification: Notification, options?: { now?: boolean; delay?: number | string; priority?: number })</code></td><td><code>Promise&lt;unknown[]&gt;</code></td><td><p>Sends a notification to one notifiable or many: from jobs (with a queue), or at once ({ now: true }).</p></td></tr>
+                <tr><td><code>of(notifiable: Model, options?: { unread?: boolean })</code></td><td><code>import('@xufa/orm').QuerySet&lt;any&gt;</code></td><td><p>The notifications kept of a notifiable, the newest first ({ unread: true }: not read).</p></td></tr>
+                <tr><td><code>markRead(notifiable: Model, keys?: unknown[] | null)</code></td><td><code>Promise&lt;number&gt;</code></td><td><p>Marks the notifications of a notifiable as read (those of these keys, or all): how many.</p></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h2 id="constants">Constants</h2>
+        <p class="ref-index"><a href="#ref-LAYOUT"><code>LAYOUT</code></a>, <a href="#ref-BUTTON"><code>BUTTON</code></a></p>
+
+        <h3 id="ref-LAYOUT"><code>LAYOUT</code></h3>
+        <pre><code class="language-ts">export declare const LAYOUT: string;</code></pre>
+        <p>The layout of the emails (a template), and the partial {{&gt; button ({ url, text: 'Go' }) }}.</p>
+
+        <h3 id="ref-BUTTON"><code>BUTTON</code></h3>
+        <pre><code class="language-ts">export declare const BUTTON: string;</code></pre>
+
+        <h2 id="interfaces">Interfaces</h2>
+        <p class="ref-index"><a href="#ref-Envelope"><code>Envelope</code></a>, <a href="#ref-Content"><code>Content</code></a>, <a href="#ref-Message"><code>Message</code></a>, <a href="#ref-MailerOptions"><code>MailerOptions</code></a>, <a href="#ref-NotifierOptions"><code>NotifierOptions</code></a></p>
+
+        <h3 id="ref-Envelope"><code>Envelope</code></h3>
+        <pre><code class="language-ts">export interface Envelope { ... }</code></pre>
+        <p>Who an email goes to and what it is called (templates: 'Order {{ order.number }}').</p>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>from?</code></td><td><code><a href="#ref-Address">Address</a></code></td><td></td></tr>
+                <tr><td><code>to?</code></td><td><code><a href="#ref-Addresses">Addresses</a></code></td><td></td></tr>
+                <tr><td><code>cc?</code></td><td><code><a href="#ref-Addresses">Addresses</a></code></td><td></td></tr>
+                <tr><td><code>bcc?</code></td><td><code><a href="#ref-Addresses">Addresses</a></code></td><td></td></tr>
+                <tr><td><code>replyTo?</code></td><td><code><a href="#ref-Addresses">Addresses</a></code></td><td></td></tr>
+                <tr><td><code>subject?</code></td><td><code>string</code></td><td></td></tr>
+                <tr><td><code>headers?</code></td><td><code>Record&lt;string, string&gt;</code></td><td></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-Content"><code>Content</code></h3>
+        <pre><code class="language-ts">export interface Content { ... }</code></pre>
+        <p>What an email says: a view (name.html and name.txt of the views of the Mailer), or html and text (templates of</p>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>view?</code></td><td><code>string</code></td><td></td></tr>
+                <tr><td><code>html?</code></td><td><code>string</code></td><td></td></tr>
+                <tr><td><code>text?</code></td><td><code>string</code></td><td></td></tr>
+                <tr><td><code>with?</code></td><td><code>Record&lt;string, unknown&gt;</code></td><td></td></tr>
+                <tr><td><code>preheader?</code></td><td><code>string</code></td><td></td></tr>
+                <tr><td><code>footer?</code></td><td><code>string</code></td><td></td></tr>
+                <tr><td><code>layout?</code></td><td><code>false | string</code></td><td></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-Message"><code>Message</code></h3>
+        <pre><code class="language-ts">export interface Message extends Envelope { ... }</code></pre>
+        <p>An email rendered: what the model of the emails gets.</p>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>subject</code></td><td><code>string</code></td><td></td></tr>
+                <tr><td><code>text</code></td><td><code>string</code></td><td></td></tr>
+                <tr><td><code>html?</code></td><td><code>string</code></td><td></td></tr>
+                <tr><td><code>attachments?</code></td><td><code><a href="#ref-Attachment">Attachment</a>[]</code></td><td></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-MailerOptions"><code>MailerOptions</code></h3>
+        <pre><code class="language-ts">export interface MailerOptions { ... }</code></pre>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>model</code></td><td><code>ModelClass&lt;any&gt;</code></td><td><p>The model of the emails (fields of mailFields()), in a database of smtp (or memory-mail).</p></td></tr>
+                <tr><td><code>views?</code></td><td><code>string | null</code></td><td><p>The folder of the views: name.html and name.txt.</p></td></tr>
+                <tr><td><code>layout?</code></td><td><code>boolean | string</code></td><td><p>The HTML around every email: true (the one of xufa), false, or a template ({{{ body }}}).</p></td></tr>
+                <tr><td><code>app?</code></td><td><code>{ name?: string; url?: string; [key: string]: unknown }</code></td><td><p>The app in the layout: its name and url.</p></td></tr>
+                <tr><td><code>globals?</code></td><td><code>Record&lt;string, unknown&gt;</code></td><td><p>Data of every template.</p></td></tr>
+                <tr><td><code>footer?</code></td><td><code>string | null</code></td><td><p>The line under every email.</p></td></tr>
+                <tr><td><code>engine?</code></td><td><code>TemplateEngine | null</code></td><td><p>An engine of</p></td></tr>
+                <tr><td><code>queue?</code></td><td><code>{ define(name: string, handler: (payload: any) =&gt; unknown, options?: any): unknown; enqueue(name: string, payload?: unknown, options?: any): Promise&lt;any&gt;; } | null</code></td><td><p>A Queue of</p></td></tr>
+                <tr><td><code>jobName?</code></td><td><code>string</code></td><td><p>The name of the job that sends ('xufa:mail').</p></td></tr>
+                <tr><td><code>attempts?</code></td><td><code>number</code></td><td><p>Its attempts (5).</p></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-NotifierOptions"><code>NotifierOptions</code></h3>
+        <pre><code class="language-ts">export interface NotifierOptions { ... }</code></pre>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>mailer?</code></td><td><code><a href="#ref-Mailer">Mailer</a> | null</code></td><td></td></tr>
+                <tr><td><code>model?</code></td><td><code>ModelClass&lt;any&gt; | null</code></td><td><p>The model of the notifications kept (notificationFields()): the channel database.</p></td></tr>
+                <tr><td><code>queue?</code></td><td><code><a href="#ref-MailerOptions">MailerOptions</a>['queue']</code></td><td><p>A Queue of</p></td></tr>
+                <tr><td><code>notifications?</code></td><td><code>Array&lt;new (...args: any[]) =&gt; <a href="#ref-Notification">Notification</a>&gt;</code></td><td><p>The classes of the notifications (made again in the workers).</p></td></tr>
+                <tr><td><code>models?</code></td><td><code>ModelClass&lt;any&gt;[]</code></td><td><p>The models notified or carried by notifications, found by name in the workers.</p></td></tr>
+                <tr><td><code>channels?</code></td><td><code>Record&lt;string, (notifiable: any, message: unknown, notification: <a href="#ref-Notification">Notification</a>) =&gt; unknown&gt;</code></td><td><p>Channels of your own: fn(notifiable, message of to&lt;Channel&gt;(), notification).</p></td></tr>
+                <tr><td><code>jobName?</code></td><td><code>string</code></td><td></td></tr>
+                <tr><td><code>attempts?</code></td><td><code>number</code></td><td></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h2 id="types">Types</h2>
+        <p class="ref-index"><a href="#ref-Address"><code>Address</code></a>, <a href="#ref-Addresses"><code>Addresses</code></a>, <a href="#ref-Attachment"><code>Attachment</code></a>, <a href="#ref-PlainMail"><code>PlainMail</code></a>, <a href="#ref-QueueOptions"><code>QueueOptions</code></a></p>
+
+        <h3 id="ref-Address"><code>Address</code></h3>
+        <pre><code class="language-ts">export type Address = string | { name?: string; address: string };</code></pre>
+        <p>An address: 'Ada &lt;ada@example.com&gt;', or { name, address }.</p>
+
+        <h3 id="ref-Addresses"><code>Addresses</code></h3>
+        <pre><code class="language-ts">export type Addresses = Address | Address[];</code></pre>
+
+        <h3 id="ref-Attachment"><code>Attachment</code></h3>
+        <pre><code class="language-ts">export type Attachment =
+  | { filename: string; content: Buffer | Uint8Array | string; contentType?: string; cid?: string; encoding?: 'base64' }
+  | { path: string; filename?: string; contentType?: string; cid?: string };</code></pre>
+        <p>A file of an email: its bytes (or text), or a path read when the email is rendered; cid for images of the HTML.</p>
+
+        <h3 id="ref-PlainMail"><code>PlainMail</code></h3>
+        <pre><code class="language-ts">export type PlainMail = Envelope &amp; Content &amp; { attachments?: Attachment[] };</code></pre>
+        <p>An email as a plain object: its envelope, content and attachments.</p>
+
+        <h3 id="ref-QueueOptions"><code>QueueOptions</code></h3>
+        <pre><code class="language-ts">export type QueueOptions = Envelope &amp; {
+  delay?: number | string;
+  at?: Date | string | number;
+  priority?: number;
+  queue?: string;
+  attempts?: number;
+  key?: string;
+};</code></pre>
+        <p>The options of queue(): those of the message, and of the job.</p>
+      </article>
+    </div>
+
+    <footer class="footer">
+      <div class="container">
+        <span>xufa is MIT licensed. &copy; Jes&uacute;s Seijas</span>
+        <span>
+          <a href="../guide.html">Guide</a> &middot; <a href="../playground.html">Playground</a> &middot; <a href="../http/index.html">HTTP</a> &middot; <a href="../orm/index.html">ORM</a> &middot; <a href="../auth/index.html">Auth</a> &middot;
+          <a href="../sequelize/index.html">Sequelize</a> &middot; <a href="../packages.html">Packages</a> &middot;
+          <a href="../benchmarks.html">Benchmarks</a> &middot; <a href="https://github.com/xufajs/xufa">GitHub</a>
+        </span>
+      </div>
+    </footer>
+  </body>
+</html>

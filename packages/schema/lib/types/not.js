@@ -1,4 +1,4 @@
-const { ValidateType, toType } = require('./validate-type');
+import { ValidateType, toType } from './validate-type.js';
 
 // Value must not satisfy `type`.
 class NotType extends ValidateType {
@@ -41,9 +41,4 @@ function onot(type, isMandatory = false, isNullable = false) {
   return new NotType({ type, isMandatory, isNullable });
 }
 
-module.exports = {
-  NotType,
-  Not,
-  not,
-  onot,
-};
+export { NotType, Not, not, onot };

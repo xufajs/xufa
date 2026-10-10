@@ -1,7 +1,7 @@
 // A plugin being loaded: its function runs with the server (or its encapsulated copy), and the plugins it registers
 // are queued in its own queue, loaded once it is done.
-const { EventEmitter } = require('node:events');
-const { BOOT_ERR_PLUGIN_EXEC_TIMEOUT } = require('./errors');
+import { EventEmitter } from 'node:events';
+import { BOOT_ERR_PLUGIN_EXEC_TIMEOUT } from './errors.js';
 
 // Set by fastify-plugin (and xufa's own plugin helper) on the functions it wraps.
 const kPluginMeta = Symbol.for('plugin-meta');
@@ -152,4 +152,4 @@ class Plugin extends EventEmitter {
   }
 }
 
-module.exports = { Plugin, kPluginMeta, isPromiseLike };
+export { Plugin, kPluginMeta, isPromiseLike };

@@ -2,7 +2,7 @@
 // as those Sequelize makes, and describeTable gives what it gives): VARCHAR(255), TINYINT(1), DATETIME,
 // TIMESTAMP WITH TIME ZONE...
 
-const { rangeSqlType } = require('./range');
+import { rangeSqlType } from './range.js';
 
 const SQLITE = {
   STRING: (o) => `VARCHAR${o.binary ? ' BINARY' : ''}(${o.length || 255})`,
@@ -143,7 +143,7 @@ function generatedSql(name, attribute) {
   return ` GENERATED ALWAYS AS (${sql}) ${mode}`;
 }
 
-module.exports = {
+export {
   generatedSql,
   sqlTypeOf,
   autoIncrementOf,

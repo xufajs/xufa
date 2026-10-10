@@ -1,5 +1,3 @@
-'use strict';
-
 // xufa generate: files of an app from a name and fields, as the generators of Rails and Laravel's make:.
 //
 //   xufa generate model Book title:string pages:integer:null author:references isbn:string:unique
@@ -72,7 +70,7 @@ function modelFile(name, fieldSpecs, { timestamps = true } = {}) {
   const fields = fieldSpecs.map(parseField);
   const requires = [...new Set(fields.filter((field) => field.target).map((field) => field.target))]
     .filter((target) => target !== name)
-    .map((target) => `const { ${target} } = require('./${kebab(target)}');`);
+    .map((target) => `import { ${target} } from './${kebab(target)}.js';`);
   const lines = fields.map((field) => `    ${field.name}: ${fieldCode(field).replace(`() => ${name}`, "'self'")},`);
   if (timestamps) {
     lines.push(
@@ -81,17 +79,13 @@ function modelFile(name, fieldSpecs, { timestamps = true } = {}) {
     );
   }
   const ordering = timestamps ? "\n\n  static options = { ordering: ['-createdAt'] };" : '';
-  return `'use strict';
-
-const { Model, fields } = require('xufa/orm');
+  return `import { Model, fields } from 'xufa/orm';
 ${requires.length ? `${requires.join('\n')}\n` : ''}
-class ${name} extends Model {
+export class ${name} extends Model {
   static fields = {
 ${lines.join('\n')}
   };${ordering}
 }
-
-module.exports = { ${name} };
 `;
 }
 
@@ -109,17 +103,15 @@ function resourceFile(name, fieldSpecs) {
   options.push(
     `  ordering: [${[...fields.filter((field) => !['text', 'json'].includes(field.type)).map((field) => `'${field.name}'`), "'createdAt'"].join(', ')}],`
   );
-  return `'use strict';
-
-// The routes of ${plural(name)} (at /${plural(kebab(name))}): GET / (list: filters, search, ordering, pages), GET /:id,
+  return `// The routes of ${plural(name)} (at /${plural(kebab(name))}): GET / (list: filters, search, ordering, pages), GET /:id,
 // POST /, PUT and PATCH /:id, DELETE /:id. Options: the guide of the ORM (Resources).
-const orm = require('xufa/orm');
-const { ${name} } = require('../models');
+import * as orm from 'xufa/orm';
+import { ${name} } from '../models/index.js';
 
-module.exports = orm.resource(${name}, {
+export default orm.resource(${name}, {
 ${options.join('\n')}
 });
 `;
 }
 
-module.exports = { modelFile, resourceFile, parseField, plural, kebab, pascal, camel };
+export { modelFile, resourceFile, parseField, plural, kebab, pascal, camel };

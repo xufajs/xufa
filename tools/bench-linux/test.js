@@ -7,9 +7,9 @@
 // node tools/bench-linux/test.js [--distro Ubuntu] [package...]      (pnpm test:linux)
 //   node tools/bench-linux/test.js                 every package with tests
 //   node tools/bench-linux/test.js orm faults      those
-const fs = require('node:fs');
-const path = require('node:path');
-const { ROOT, linuxPath, quote, wsl } = require('./run');
+import fs from 'node:fs';
+import path from 'node:path';
+import { ROOT, linuxPath, quote, wsl } from './run.js';
 
 function main() {
   const args = process.argv.slice(2);
@@ -30,10 +30,10 @@ function main() {
   const packages = args.length ? args : all;
 
   const version = process.version;
-  const setup = `bash ${quote(`${linuxPath(__dirname)}/setup.sh`)} ${quote(linuxPath(ROOT))} ${quote(version)}`;
+  const setup = `bash ${quote(`${linuxPath(import.meta.dirname)}/setup.sh`)} ${quote(linuxPath(ROOT))} ${quote(version)}`;
   if (wsl(distro, setup) !== 0) throw new Error('Making the copy of the repository in WSL failed');
 
-  const tests = `bash ${quote(`${linuxPath(__dirname)}/test.sh`)} ${quote(version)} ${packages.map(quote).join(' ')}`;
+  const tests = `bash ${quote(`${linuxPath(import.meta.dirname)}/test.sh`)} ${quote(version)} ${packages.map(quote).join(' ')}`;
   const status = wsl(distro, tests);
   if (status !== 0) throw new Error('Tests failed in Linux (above)');
   console.log(`test-linux: ${packages.length} packages passed in Linux`);

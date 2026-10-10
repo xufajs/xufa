@@ -1,7 +1,7 @@
 // The keywords of OpenAPI in route schemas (style, explode, example, x- extensions...): fastify's ajv ignores unknown
 // keywords, and schemas written for @fastify/swagger (@xufa/openapi) have them. The validator compiler declares them
 // to @xufa/schema as annotations, so a schema with them compiles and validates, and other unknown keywords still throw.
-const xufa = require('../..');
+import xufa from '../../index.js';
 
 describe('keywords of OpenAPI in route schemas', () => {
   it('compile, and are only annotations', async () => {

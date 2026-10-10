@@ -2,7 +2,7 @@
 
 
 const { Hooks } = require('../../lib/hooks')
-const { default: fastify } = require('@xufa/http')
+const { default: fastify } = require('../..')
 const noop = () => {}
 
 test('hooks should have 4 array with the registered hooks', () => {

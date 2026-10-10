@@ -1,6 +1,8 @@
-const { ObjType, ValidateType, toType } = require('./types');
-const { assignDefaults } = require('./defaults');
-const { readCoerced } = require('./coerce');
+import { ObjType, ValidateType, toType } from './types/index.js';
+import { provide } from './types/validate-type.js';
+import { assignDefaults } from './defaults.js';
+import { readCoerced } from './coerce.js';
+import * as compileModule from './compile.js';
 
 // Declared keys are read as own properties only: {}.toString or {}.constructor must not count as present.
 // A value read from a plain object is its own unless Object.prototype has the key, which avoids the slower
@@ -180,8 +182,7 @@ class Schema {
   // Compiles the schema into generated code, several times faster than validate(): see compileType() in compile.js
   // for the options. The compiled function does not see changes made to the schema afterwards.
   compile(options = {}) {
-    // eslint-disable-next-line global-require -- compile.js requires this module
-    return require('./compile').compileType(this, options);
+    return compileModule.compileType(this, options);
   }
 
   // Error messages of a value already known to be invalid.
@@ -298,6 +299,6 @@ class Schema {
   }
 }
 
-module.exports = {
-  Schema,
-};
+provide({ Schema });
+
+export { Schema };

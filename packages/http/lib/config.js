@@ -1,6 +1,6 @@
 // The options of an instance: defaults, and initialConfig, the frozen copy of the options that can be read back
 // (only the known ones, coerced to their types, secrets like the https certificates hidden).
-const { XUFA_ERR_INIT_OPTS_INVALID } = require('./errors');
+import { XUFA_ERR_INIT_OPTS_INVALID } from './errors.js';
 
 const defaultInitOptions = {
   connectionTimeout: 0,
@@ -168,8 +168,14 @@ function getSecuredInitialConfig(options) {
   return Object.freeze(config);
 }
 
-module.exports = getSecuredInitialConfig;
-module.exports.getSecuredInitialConfig = getSecuredInitialConfig;
-module.exports.defaultInitOptions = defaultInitOptions;
-module.exports.deepFreeze = deepFreeze;
-module.exports.utils = { deepFreezeObject: deepFreeze };
+export default getSecuredInitialConfig;
+getSecuredInitialConfig.getSecuredInitialConfig = getSecuredInitialConfig;
+getSecuredInitialConfig.defaultInitOptions = defaultInitOptions;
+getSecuredInitialConfig.deepFreeze = deepFreeze;
+getSecuredInitialConfig.utils = { deepFreezeObject: deepFreeze };
+const __utils = getSecuredInitialConfig.utils;
+
+export { getSecuredInitialConfig, defaultInitOptions, deepFreeze, __utils as utils };
+
+// What require() gives (the tests of fastify are CommonJS).
+export { getSecuredInitialConfig as 'module.exports' };

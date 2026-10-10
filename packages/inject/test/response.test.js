@@ -1,8 +1,4 @@
-'use strict'
-
-
-
-const Response = require('../lib/response')
+import Response from '../lib/response.js';
 
 test('multiple calls to res.destroy should not be called', (done) => {
   expect.assertions(2)

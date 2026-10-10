@@ -1,7 +1,8 @@
-'use strict'
+import FindMyWay from '../index.js';
+import { createRequire } from 'node:module';
 
+const require = createRequire(import.meta.url);
 
-const FindMyWay = require('..')
 const rfdc = require('rfdc')({ proto: true })
 
 const customHeaderConstraint = {

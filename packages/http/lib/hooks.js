@@ -1,5 +1,5 @@
 // Hooks: the lists of an instance, and the runners calling them in order, each with a callback or a promise.
-const {
+import {
   XUFA_ERR_HOOK_INVALID_TYPE,
   XUFA_ERR_HOOK_INVALID_HANDLER,
   XUFA_ERR_SEND_UNDEFINED_ERR,
@@ -7,8 +7,8 @@ const {
   XUFA_ERR_HOOK_NOT_SUPPORTED,
   BOOT_ERRORS_MAP,
   appendStackTrace,
-} = require('./errors');
-const { kChildren, kHooks, kRequestPayloadStream } = require('./symbols');
+} from './errors.js';
+import { kChildren, kHooks, kRequestPayloadStream } from './symbols.js';
 
 const applicationHooks = ['onRoute', 'onRegister', 'onReady', 'onListen', 'preClose', 'onClose'];
 const lifecycleHooks = [
@@ -343,7 +343,7 @@ function onRequestAbortHookRunner(functions, request, cb) {
   next();
 }
 
-module.exports = {
+export {
   Hooks,
   buildHooks,
   hookRunnerGenerator,
@@ -363,3 +363,33 @@ module.exports = {
   supportedHooks,
   applicationHooks,
 };
+
+// What require() gives (the tests of fastify are CommonJS): the exports, and onSendHookRunner, which a test replaces
+// (the binding is replaced, so the modules that import it call the replacement).
+const commonjs = {
+  Hooks,
+  buildHooks,
+  hookRunnerGenerator,
+  preParsingHookRunner,
+  onResponseHookRunner,
+  preSerializationHookRunner,
+  onRequestAbortHookRunner,
+  hookIterator,
+  hookRunnerApplication,
+  onListenHookRunner,
+  preHandlerHookRunner,
+  preValidationHookRunner,
+  onRequestHookRunner,
+  onTimeoutHookRunner,
+  lifecycleHooks,
+  supportedHooks,
+  applicationHooks,
+};
+Object.defineProperty(commonjs, 'onSendHookRunner', {
+  enumerable: true,
+  get: () => onSendHookRunner,
+  set: (fn) => {
+    onSendHookRunner = fn; // eslint-disable-line no-func-assign
+  },
+});
+export { commonjs as 'module.exports' };

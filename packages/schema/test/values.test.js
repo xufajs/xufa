@@ -1,4 +1,4 @@
-const { Values, Const } = require('..');
+import { Values, Const } from '../index.js';
 
 describe('Values', () => {
   it('Should return an error if value is undefined and is mandatory', () => {

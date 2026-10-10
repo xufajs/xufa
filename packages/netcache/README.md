@@ -10,8 +10,8 @@ npm install @xufa/netcache
 ```
 
 ```js
-const { NetCache } = require('@xufa/netcache');
-const { Database } = require('@xufa/orm');
+import { NetCache } from '@xufa/netcache';
+import { Database } from '@xufa/orm';
 
 const cache = await new NetCache({ secret: process.env.CACHE_SECRET, service: 'shop' }).start();
 const db = new Database({ backend: 'postgres', url: process.env.DATABASE_URL, cache });
@@ -78,9 +78,9 @@ Without a secret (`insecure: true`), any machine of the network can read and wri
 One NetCache by machine, in the primary, and the workers reach it through the bus with the SharedCache of @xufa/orm:
 
 ```js
-const { start, bus } = require('@xufa/cluster');
-const { SharedCache, Database } = require('@xufa/orm');
-const { NetCache } = require('@xufa/netcache');
+import { start, bus } from '@xufa/cluster';
+import { SharedCache, Database } from '@xufa/orm';
+import { NetCache } from '@xufa/netcache';
 
 start({
   primary: async ({ onShutdown }) => {

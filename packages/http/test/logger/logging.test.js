@@ -6,7 +6,7 @@ const stream = require('node:stream')
 const split = require('split2')
 const pino = require('@xufa/logger')
 
-const Fastify = require('@xufa/http')
+const Fastify = require('../..')
 const { LogController } = require('../../lib/logger')
 const helper = require('../helper')
 const { on } = stream

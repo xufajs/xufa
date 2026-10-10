@@ -1,7 +1,7 @@
 // The validation of instances as in Sequelize: allowNull (notNull Violation), strings that are not strings (string
 // violation), the validators of attributes (validate: { isEmail: true, len: [2, 10], custom(value) {...} }) with the
 // names of validator.js, and the validators of the model (options.validate). Errors are ValidationErrorItems.
-const { ValidationError, ValidationErrorItem } = require('./errors');
+import { ValidationError, ValidationErrorItem } from './errors.js';
 
 const EMAIL = /^[^\s@"(),:;<>[\\\]]+@[^\s@"(),:;<>[\\\]]+\.[^\s@"(),:;<>[\\\]]{2,}$/;
 const URL_PATTERN = /^(https?|ftp):\/\/[^\s/$.?#].[^\s]*$/i;
@@ -297,4 +297,4 @@ const Validator = {
   },
 };
 
-module.exports = { validateInstance, checkEnums, VALIDATORS, Validator };
+export { validateInstance, checkEnums, VALIDATORS, Validator };

@@ -1,14 +1,14 @@
 // Without Buffer (in a browser): typed arrays, ArrayBuffer and DataView as base64 by btoa and atob, and errors and
 // other objects not taken for Buffers.
+import * as withBuffer from '../index.js';
+
 describe('without Buffer', () => {
   let lib;
   const saved = globalThis.Buffer;
-  beforeAll(() => {
-    const file = require.resolve('../lib/marshal');
-    delete require.cache[file];
+  beforeAll(async () => {
+    // A module of its own (the query makes another instance), loaded without Buffer.
     globalThis.Buffer = undefined;
-    lib = require('../lib/marshal');
-    delete require.cache[file];
+    lib = await import('../lib/marshal.js?without-buffer');
   });
   afterAll(() => {
     globalThis.Buffer = saved;
@@ -31,7 +31,7 @@ describe('without Buffer', () => {
     expect([back.error instanceof TypeError, back.error.message]).toEqual([true, 'boom']);
     // The same text as with Buffer.
     globalThis.Buffer = saved;
-    expect(require('..').stringify({ bytes: new Uint8Array([0, 1, 255]) })).toBe(stringify({ bytes: new Uint8Array([0, 1, 255]) }));
+    expect(withBuffer.stringify({ bytes: new Uint8Array([0, 1, 255]) })).toBe(stringify({ bytes: new Uint8Array([0, 1, 255]) }));
     globalThis.Buffer = undefined;
   });
 });

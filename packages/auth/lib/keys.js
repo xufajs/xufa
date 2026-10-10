@@ -7,7 +7,7 @@
 // EdDSA: the private key signs, and its public key verifies). Each key has its algorithm: given ({ key, algorithm }),
 // or HS256 for secrets and the algorithm its type has (RS256 for RSA, ES256/384/512 for its curve, EdDSA). An
 // encrypted private key in PEM is given with its passphrase: { key, passphrase }.
-const crypto = require('node:crypto');
+import crypto from 'node:crypto';
 
 const HMAC = { HS256: 'sha256', HS384: 'sha384', HS512: 'sha512' };
 const CURVES = { prime256v1: 'ES256', secp384r1: 'ES384', secp521r1: 'ES512' };
@@ -115,4 +115,4 @@ class KeySet {
   }
 }
 
-module.exports = { KeySet, HMAC };
+export { KeySet, HMAC };

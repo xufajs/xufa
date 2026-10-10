@@ -1,22 +1,12 @@
 // @xufa/pg: a PostgreSQL driver with no dependencies, with the API of pg (node-postgres): Client, Pool, query().
 // Queries that run again are prepared once per connection, and the queries of a pool are pipelined.
-const { Client, Pool, PoolClient, parseConfig } = require('./lib/client');
-const { Connection } = require('./lib/connection');
-const types = require('./lib/types');
-const copy = require('./lib/copy');
-const errors = require('./lib/errors');
+import { Client, Pool, PoolClient, parseConfig } from './lib/client.js';
+import { Connection } from './lib/connection.js';
+import * as types from './lib/types.js';
+import * as copy from './lib/copy.js';
 
 const { escapeIdentifier, escapeLiteral } = types;
 
-module.exports = {
-  Client,
-  Pool,
-  PoolClient,
-  Connection,
-  parseConfig,
-  escapeIdentifier,
-  escapeLiteral,
-  types,
-  copy,
-  ...errors,
-};
+export * from './lib/errors.js';
+
+export { Client, Pool, PoolClient, Connection, parseConfig, escapeIdentifier, escapeLiteral, types, copy };

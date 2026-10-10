@@ -62,6 +62,10 @@
           <li><a href="../websocket/index.html">@xufa/websocket</a></li>
           <li><a href="../admin/index.html">@xufa/admin</a></li>
           <li><a href="../session/index.html">@xufa/session</a></li>
+          <li><a href="../forms/index.html">@xufa/forms</a></li>
+          <li><a href="../views/index.html">@xufa/views</a></li>
+          <li><a href="../mail/index.html">@xufa/mail</a></li>
+          <li><a href="../i18n/index.html">@xufa/i18n</a></li>
           <li><a href="index.html" aria-current="page">@xufa/openapi</a></li>
           <li><a href="../client/index.html">@xufa/client</a></li>
           <li><a href="../schema/index.html">@xufa/schema</a></li>
@@ -105,12 +109,13 @@
 
         <h2 id="start">Quick start</h2>
         <pre><code class="language-sh">npm install @xufa/openapi</code></pre>
-        <pre><code class="language-js">const xufa = require('xufa');
-const openapi = require('@xufa/openapi');
+        <pre><code class="language-js">import xufa from 'xufa';
+import openapi from '@xufa/openapi';
+import openapiUi from '@xufa/openapi/ui';
 
 const app = xufa();
 await app.register(openapi, { openapi: { info: { title: 'Books', version: '1.0.0' } } });
-await app.register(require('@xufa/openapi/ui'), { routePrefix: '/docs' });
+await app.register(openapiUi, { routePrefix: '/docs' });
 
 app.register(orm.resource(Book, { filters: ['author'], ordering: ['pages'] }), { prefix: '/books' });
 
@@ -162,7 +167,7 @@ await app.listen({ port: 3000 }); // http://localhost:3000/docs</code></pre>
           tried in the explorer, before it is written.
         </p>
         <pre><code class="language-js">await app.register(openapi, { mode: 'static', specification: { path: './openapi.yaml' } });
-await app.register(require('@xufa/openapi/ui'));
+await app.register(openapiUi);
 await app.register(openapi.operations, {
   path: './openapi.yaml', // or document: { openapi: '3.1.0', ... }
   handlers: {
@@ -195,7 +200,7 @@ await app.register(openapi.operations, {
           <li><code>transformSpecification(document, request, reply)</code>: the document of a request (on a copy).</li>
           <li><code>uiHooks: { onRequest, preHandler }</code>, to protect its routes; <code>csp: true</code> (or a policy) for a Content-Security-Policy.</li>
         </ul>
-        <pre><code class="language-js">app.register(require('@xufa/openapi/ui'), {
+        <pre><code class="language-js">app.register(openapiUi, {
   routePrefix: '/docs',
   ui: 'scalar',
   uiHooks: { onRequest: app.auth.authorize('staff') },
@@ -211,7 +216,7 @@ await app.register(openapi.operations, {
 
         <h2 id="from-swagger">Coming from @fastify/swagger</h2>
         <ul>
-          <li><code>require('@fastify/swagger')</code> can be replaced by <code>require('@xufa/openapi')</code>: same options, same <code>app.swagger()</code>, and the same documents (its test suite runs on it).</li>
+          <li><code>@fastify/swagger</code> can be replaced by <code>@xufa/openapi</code> (an import, or a <code>require()</code>): same options, same <code>app.swagger()</code>, and the same documents (its test suite runs on it).</li>
           <li><code>@fastify/swagger-ui</code>: <code>@xufa/openapi/ui</code> has its routes (<code>/documentation</code>, <code>/json</code>, <code>/yaml</code>) and main options (<code>routePrefix</code>, <code>uiConfig</code>, <code>initOAuth</code>, <code>transformSpecification</code>, <code>uiHooks</code>), and loads the explorer from a CDN (or a folder) instead of installing it.</li>
           <li>json-schema-resolver, rfdc and yaml are written in (yaml as @xufa/yaml).</li>
         </ul>

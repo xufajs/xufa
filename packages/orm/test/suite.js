@@ -1,9 +1,32 @@
 // The tests every backend passes: the same models and queries give the same results on all of them. Each test file
 // of a backend calls defineSuite with a function that makes a Database of it.
-const { Model, fields, Q, or, not, F, Raw, Count, Sum, Avg, Min, Max, ValidationError, NotFoundError } = require('..');
-const { MultipleObjectsError, ProtectedError, QueryError, FieldError, LookupError, UniqueError } = require('..');
-const { setEncryptionKeys, generateEncryptionKey, reencrypt, jsonPath, maintenance, QuerySet, CombinedQuerySet } = require('..');
-const { Extract, Trunc } = require('..');
+import {
+  Model,
+  fields,
+  Q,
+  or,
+  not,
+  F,
+  Raw,
+  Count,
+  Sum,
+  Avg,
+  Min,
+  Max,
+  ValidationError,
+  NotFoundError,
+} from '../index.js';
+import { MultipleObjectsError, ProtectedError, QueryError, FieldError, LookupError, UniqueError } from '../index.js';
+import {
+  setEncryptionKeys,
+  generateEncryptionKey,
+  reencrypt,
+  jsonPath,
+  maintenance,
+  QuerySet,
+  CombinedQuerySet,
+} from '../index.js';
+import { Extract, Trunc } from '../index.js';
 
 function defineModels() {
   class Publisher extends Model {
@@ -712,6 +735,93 @@ function defineSuite(name, makeDatabase, options = {}) {
         expect(await Book.objects.offset(3).count()).toBe(1);
       });
 
+      it('orders NULLs first going up and last going down; columns that cannot be NULL alike', async () => {
+        const { Book, Author } = models;
+        const author = await Author.objects.create({ name: 'Ada' });
+        for (const [title, rating] of [
+          ['b', 2],
+          ['d', null],
+          ['a', 1],
+          ['c', null],
+        ]) {
+          await Book.objects.create({ title, rating, author });
+        }
+        expect(titles(await Book.objects.orderBy('rating', 'title'))).toEqual(['c', 'd', 'a', 'b']);
+        expect(titles(await Book.objects.orderBy('-rating', '-title'))).toEqual(['b', 'a', 'd', 'c']);
+        expect(titles(await Book.objects.orderBy('title'))).toEqual(['a', 'b', 'c', 'd']);
+        expect(titles(await Book.objects.orderBy('-title').limit(2))).toEqual(['d', 'c']);
+      });
+
+      it('pages by keys (KeysetPaginator): every object once, forwards and back, ties and NULLs by their order', async () => {
+        const { Book, Author } = models;
+        const { KeysetPaginator } = await import('../index.js');
+        const author = await Author.objects.create({ name: 'Ada' });
+        // Titles repeated (ties end by the key) and ratings that may be NULL.
+        for (let i = 0; i < 23; i += 1) {
+          await Book.objects.create({ title: `t${i % 7}`, rating: i % 4 === 0 ? null : i % 5, author });
+        }
+        const walk = async (queryset, perPage) => {
+          const all = (await queryset.orderBy(...queryset.state.orderBy, 'pk')).map((book) => book.pk);
+          const paginator = new KeysetPaginator(queryset, perPage);
+          const pages = [];
+          let page = await paginator.page();
+          pages.push(page);
+          while (page.hasNext) {
+            page = await paginator.page(page.nextCursor);
+            pages.push(page);
+          }
+          expect(pages.flatMap((p) => p.objectList.map((book) => book.pk))).toEqual(all);
+          expect(pages.every((p) => p.objectList.length === perPage || p === pages[pages.length - 1])).toBe(true);
+          // Back from the last page: the same pages, in reverse.
+          const back = [page.objectList.map((book) => book.pk)];
+          while (page.hasPrevious) {
+            page = await paginator.page(page.previousCursor);
+            back.unshift(page.objectList.map((book) => book.pk));
+          }
+          expect(back).toEqual(pages.map((p) => p.objectList.map((book) => book.pk)));
+          return pages.length;
+        };
+        expect(await walk(Book.objects.orderBy('title'), 5)).toBe(5);
+        expect(await walk(Book.objects.orderBy('-title'), 4)).toBe(6);
+        expect(await walk(Book.objects.orderBy('rating', '-title'), 6)).toBe(4);
+        expect(await walk(Book.objects.orderBy('-rating'), 7)).toBe(4);
+        expect(await walk(Book.objects.filter({ title: 't3' }).orderBy('title'), 10)).toBe(1);
+        const paginator = new KeysetPaginator(Book.objects.orderBy('title'), 5);
+        await expect(paginator.page('not-a-cursor')).rejects.toMatchObject({ statusCode: 404 });
+        expect(() => new KeysetPaginator(Book.objects.orderBy('author__name'), 5)).toThrow(/no relations/);
+      });
+
+      it('pages far into the rows (OFFSET of 100 and more) as the near ones, relations loaded', async () => {
+        const { Book, Author } = models;
+        const authors = [await Author.objects.create({ name: 'Ada' }), await Author.objects.create({ name: 'Alan' })];
+        await Book.objects.bulkCreate(
+          Array.from({ length: 140 }, (_, i) => ({
+            title: `t${String(i % 37).padStart(2, '0')}`,
+            author: authors[i % 2],
+          }))
+        );
+        const all = (await Book.objects.selectRelated('author').orderBy('title', 'pk')).map((b) => [
+          b.pk,
+          b.author.name,
+        ]);
+        for (const from of [0, 99, 100, 125, 135]) {
+          const page = await Book.objects
+            .selectRelated('author')
+            .orderBy('title', 'pk')
+            .slice(from, from + 10);
+          expect(page.map((b) => [b.pk, b.author.name])).toEqual(all.slice(from, from + 10));
+        }
+        const filtered = await Book.objects.filter({ author: authors[1] }).orderBy('-title', 'pk').slice(100, 110);
+        expect(filtered.length).toBe(0);
+        const descending = await Book.objects.orderBy('-title', '-pk').slice(110, 115);
+        expect(descending.map((b) => b.pk)).toEqual(
+          [...all]
+            .reverse()
+            .slice(110, 115)
+            .map(([pk]) => pk)
+        );
+      });
+
       it('limits every group (limitPer)', async () => {
         const { Book } = models;
         await seed();
@@ -800,6 +910,13 @@ function defineSuite(name, makeDatabase, options = {}) {
         expect(authors[2].publisher).toBeNull();
         const books = await Book.objects.prefetchRelated('author');
         expect(books.every((book) => book.author instanceof Author)).toBe(true);
+        // Loaded relations are read without waiting (templates: {{#each author.books as book}}); others say how.
+        expect(titles([...authors[0].books]).sort()).toEqual(['Notes on the Engine', 'The Analytical Engine']);
+        expect(() => [...books[0].author.books]).toThrow('await it, or load the relation (prefetchRelated)');
+        // Paths: the books of each author, then the author of each of those books (once each).
+        const nested = await Book.objects.orderBy('title').prefetchRelated('author__books', 'author');
+        const loaded = nested.find((book) => book.author && book.author.name === 'Ada');
+        expect(titles([...loaded.author.books]).sort()).toEqual(['Notes on the Engine', 'The Analytical Engine']);
       });
 
       it('follows reverse relations', async () => {
@@ -881,6 +998,7 @@ function defineSuite(name, makeDatabase, options = {}) {
         const byTitle = Object.fromEntries(loaded.map((book) => [book.title, book]));
         expect((await byTitle['Notes on the Engine'].labels).map((tag) => tag.name).sort()).toEqual(['code', 'math']);
         expect(await byTitle.Compilers.labels).toEqual([]);
+        expect([...byTitle['Notes on the Engine'].labels].map((tag) => tag.name).sort()).toEqual(['code', 'math']);
         expect(JSON.parse(JSON.stringify(byTitle['The Analytical Engine'])).labels).toEqual([
           { id: math.pk, name: 'math' },
         ]);
@@ -973,7 +1091,11 @@ function defineSuite(name, makeDatabase, options = {}) {
         expect(await Publisher.objects.count()).toBe(0);
         expect(await Author.objects.filter({ publisher__isnull: true }).count()).toBe(2);
         const review = await Review.objects.create({ book: books[2], stars: 4 });
-        await expect(books[2].delete()).rejects.toBeInstanceOf(ProtectedError);
+        const protectedErr = await books[2].delete().catch((err) => err);
+        expect(protectedErr).toBeInstanceOf(ProtectedError);
+        // As Django's protected_objects: what keeps it.
+        expect(protectedErr.relation).toBe('Review.book');
+        expect((await protectedErr.protectedObjects).map((item) => item.pk)).toEqual([review.pk]);
         expect(await Book.objects.count()).toBe(2);
         await review.delete();
         await books[2].delete();
@@ -2075,7 +2197,11 @@ function defineSuite(name, makeDatabase, options = {}) {
       Post = class extends Model {
         static options = { table: 'soft_post', softDelete: true, ordering: ['title'] };
 
-        static fields = { title: fields.string(), status: fields.string({ default: 'draft' }), views: fields.integer({ default: 0 }) };
+        static fields = {
+          title: fields.string(),
+          status: fields.string({ default: 'draft' }),
+          views: fields.integer({ default: 0 }),
+        };
 
         static scopes = {
           published: (qs) => qs.filter({ status: 'published' }),
@@ -2113,7 +2239,12 @@ function defineSuite(name, makeDatabase, options = {}) {
       expect(await objects.published().valuesList('title', { flat: true })).toEqual(['a', 'b']);
       expect(await objects.published().popular().valuesList('title', { flat: true })).toEqual(['a']);
       expect(await objects.popular(60).count()).toBe(1);
-      expect(await objects.filter({ title__in: ['a', 'c'] }).published().count()).toBe(1);
+      expect(
+        await objects
+          .filter({ title__in: ['a', 'c'] })
+          .published()
+          .count()
+      ).toBe(1);
       await objects.all().forceDelete();
     });
 
@@ -2147,7 +2278,10 @@ function defineSuite(name, makeDatabase, options = {}) {
       const posts = Post.objects.using(sdb);
       const comments = Comment.objects.using(sdb);
       const post = await posts.create({ title: 'p' });
-      const [kept, removed] = await comments.bulkCreate([{ text: 'kept', postId: post.pk }, { text: 'removed', postId: post.pk }]);
+      const [kept, removed] = await comments.bulkCreate([
+        { text: 'kept', postId: post.pk },
+        { text: 'removed', postId: post.pk },
+      ]);
       await removed.delete();
       expect(removed.removedAt).toBeInstanceOf(Date);
       expect(await comments.count()).toBe(1);
@@ -2476,7 +2610,11 @@ function defineSuite(name, makeDatabase, options = {}) {
       Event = class extends Model {
         static options = { table: 'parted_event' };
 
-        static fields = { title: fields.string(), at: fields.datetime({ null: true }), day: fields.date({ null: true }) };
+        static fields = {
+          title: fields.string(),
+          at: fields.datetime({ null: true }),
+          day: fields.date({ null: true }),
+        };
       };
       Object.defineProperty(Event, 'name', { value: 'PartedEvent' });
       Book = class extends Model {
@@ -2549,7 +2687,11 @@ function defineSuite(name, makeDatabase, options = {}) {
 
     it('Extract and Trunc in values() and the groups of annotate(): reports by year, month, week...', async () => {
       const E = Event.objects.using(pdb);
-      expect(await E.values({ year: Extract('at', 'year') }).annotate({ n: Count() }).orderBy('year')).toEqual([
+      expect(
+        await E.values({ year: Extract('at', 'year') })
+          .annotate({ n: Count() })
+          .orderBy('year')
+      ).toEqual([
         { year: null, n: 1 },
         { year: 2021, n: 1 },
         { year: 2025, n: 1 },
@@ -2564,24 +2706,76 @@ function defineSuite(name, makeDatabase, options = {}) {
         [true, '2026-01-01T00:00:00.000Z', 1],
       ]);
       // Of dates: texts of dates. The week starts on Monday (2026-10-04 is a Sunday).
-      expect(await E.filter({ title: 'c' }).values({ w: Trunc('day', 'week'), q: Trunc('day', 'quarter'), y: Trunc('day', 'year') })).toEqual([
-        { w: '2026-09-28', q: '2026-10-01', y: '2026-01-01' },
-      ]);
+      expect(
+        await E.filter({ title: 'c' }).values({
+          w: Trunc('day', 'week'),
+          q: Trunc('day', 'quarter'),
+          y: Trunc('day', 'year'),
+        })
+      ).toEqual([{ w: '2026-09-28', q: '2026-10-01', y: '2026-01-01' }]);
       const [a] = await E.filter({ title: 'a' }).values({ h: Trunc('at', 'hour'), s: Trunc('at', 'second') });
       expect([a.h.toISOString(), a.s.toISOString()]).toEqual(['2025-12-31T23:00:00.000Z', '2025-12-31T23:59:59.000Z']);
       // Plain values and lists, with the fields; nothing for no date.
-      expect(await E.orderBy('title').valuesList('title', { wd: Extract('at', 'week_day'), h: Extract('at', 'hour') })).toEqual([
+      expect(
+        await E.orderBy('title').valuesList('title', { wd: Extract('at', 'week_day'), h: Extract('at', 'hour') })
+      ).toEqual([
         ['a', 4, 23],
         ['b', 5, 0],
         ['c', 1, 12],
         ['d', 1, 8],
         ['e', null, null],
       ]);
-      expect(await E.valuesList({ m: Extract('day', 'month') }, { flat: true }).distinct().orderBy('m')).toEqual([null, 1, 10, 12]);
+      expect(
+        await E.valuesList({ m: Extract('day', 'month') }, { flat: true })
+          .distinct()
+          .orderBy('m')
+      ).toEqual([null, 1, 10, 12]);
       expect(() => E.values({ h: Trunc('day', 'hour') }).toQuery()).toThrow(QueryError);
       expect(() => E.values({ m: Extract('title', 'month') }).toQuery()).toThrow(QueryError);
       expect(() => Extract('at', 'decade')).toThrow(QueryError);
       expect(new Trunc('at', 'week')).toBeInstanceOf(Trunc);
+    });
+
+    it('plain values() ordered by their Extract and Trunc keys (nulls first going up, last going down), sliced', async () => {
+      const E = Event.objects.using(pdb);
+      const hours = (qs) => qs.then((rows) => rows.map((row) => `${row.title}:${row.h}`).join(' '));
+      expect(await hours(E.values('title', { h: Extract('at', 'hour') }).orderBy('h'))).toBe(
+        'e:null b:0 d:8 c:12 a:23'
+      );
+      expect(await hours(E.values('title', { h: Extract('at', 'hour') }).orderBy('-h'))).toBe(
+        'a:23 c:12 d:8 b:0 e:null'
+      );
+      expect(
+        await hours(
+          E.values('title', { h: Extract('at', 'hour') })
+            .orderBy('-h')
+            .slice(1, 3)
+        )
+      ).toBe('c:12 d:8');
+      const years = await E.exclude({ at: null })
+        .values('title', { y: Trunc('at', 'year') })
+        .orderBy('-y', 'title')
+        .limit(3);
+      expect(years.map((row) => [row.title, row.y.toISOString().slice(0, 4)])).toEqual([
+        ['b', '2026'],
+        ['c', '2026'],
+        ['a', '2025'],
+      ]);
+      expect(
+        await E.exclude({ day: null })
+          .valuesList({ m: Extract('day', 'month') }, { flat: true })
+          .orderBy('-m')
+      ).toEqual(
+        (await E.exclude({ day: null }).valuesList({ m: Extract('day', 'month') }, { flat: true })).sort(
+          (x, y) => y - x
+        )
+      );
+      // A name that is not a key of values() is a field, as before.
+      expect(() =>
+        E.values({ h: Extract('at', 'hour') })
+          .orderBy('hour')
+          .toQuery()
+      ).toThrow('Cannot resolve "hour"');
     });
 
     it('distinct(): the rows of values once, ordered and sliced; with names, the first object of each group', async () => {
@@ -2628,11 +2822,19 @@ function defineSuite(name, makeDatabase, options = {}) {
       expect((await all.orderBy('-pages', 'title')).map((book) => book.title)).toEqual(['D', 'B', 'B', 'A']);
       expect(await all.count()).toBe(4);
       expect(await all.exists()).toBe(true);
-      expect(await B.filter({ pages: 1 }).union(B.filter({ pages: 2 }), { all: true }).exists()).toBe(false);
+      expect(
+        await B.filter({ pages: 1 })
+          .union(B.filter({ pages: 2 }), { all: true })
+          .exists()
+      ).toBe(false);
       // Values: each row once.
-      const genres = B.values('genre').filter({ year: 2001 }).union(B.values('genre').filter({ year: 2005 }));
+      const genres = B.values('genre')
+        .filter({ year: 2001 })
+        .union(B.values('genre').filter({ year: 2005 }));
       expect(await genres.orderBy('genre')).toEqual([{ genre: 'crime' }, { genre: 'sf' }]);
-      const lists = B.valuesList('year', { flat: true }).limit(1).union(B.valuesList('year', { flat: true }).orderBy('-year').limit(1));
+      const lists = B.valuesList('year', { flat: true })
+        .limit(1)
+        .union(B.valuesList('year', { flat: true }).orderBy('-year').limit(1));
       expect(await lists.orderBy('year')).toEqual([2001, 2005]);
       expect(() => B.union('nope')).toThrow(QueryError);
     });
@@ -2664,10 +2866,16 @@ function defineSuite(name, makeDatabase, options = {}) {
       expect(await of2001.intersection(of2005)).toEqual([{ genre: 'crime' }]);
       expect(await of2001.difference(of2005)).toEqual([{ genre: 'sf' }]);
       // Combined with each other.
-      expect(await ids(B.filter({ genre: 'sf' }).union(B.filter({ year: 2005 })).difference(B.filter({ pages__gt: 400 })))).toEqual(['A', 'E']);
+      expect(
+        await ids(
+          B.filter({ genre: 'sf' })
+            .union(B.filter({ year: 2005 }))
+            .difference(B.filter({ pages__gt: 400 }))
+        )
+      ).toEqual(['A', 'E']);
       expect(() => B.intersection()).toThrow(QueryError);
     });
   });
 }
 
-module.exports = { defineSuite, defineModels };
+export { defineSuite, defineModels };

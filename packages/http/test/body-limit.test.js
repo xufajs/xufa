@@ -1,6 +1,6 @@
 'use strict'
 
-const Fastify = require('@xufa/http')
+const Fastify = require('..')
 const zlib = require('node:zlib')
 
 

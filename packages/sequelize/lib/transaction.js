@@ -2,7 +2,7 @@
 // with no function) runs one of @xufa/orm until commit() or rollback() ends it: its queries are those given
 // { transaction } (run in its async context, so they use its connection).
 
-const { randomUUID } = require('node:crypto');
+import { randomUUID } from 'node:crypto';
 
 const ROLLBACK = Symbol('xufa.sequelize.rollback');
 // A transaction whose COMMIT or ROLLBACK failed: rolled back, and its connection closed instead of given back.
@@ -173,4 +173,4 @@ class Transaction {
   }
 }
 
-module.exports = { Transaction };
+export { Transaction };

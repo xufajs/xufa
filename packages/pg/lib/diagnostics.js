@@ -10,7 +10,7 @@
 //   pg:pool:remove    Channel: { client: { processID } }
 //
 // Nothing is made when no one subscribes.
-const dc = require('node:diagnostics_channel');
+import dc from 'node:diagnostics_channel';
 
 const queryChannel = dc.tracingChannel('pg:query');
 const connectionChannel = dc.tracingChannel('pg:connection');
@@ -68,4 +68,4 @@ function publishRemove(connection) {
   if (poolRemoveChannel.hasSubscribers) poolRemoveChannel.publish({ client: { processID: connection.processID } });
 }
 
-module.exports = { traceQuery, traceConnect, tracePoolConnect, publishRelease, publishRemove };
+export { traceQuery, traceConnect, tracePoolConnect, publishRelease, publishRemove };

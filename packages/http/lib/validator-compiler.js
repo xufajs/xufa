@@ -5,6 +5,8 @@
 //
 // The data is changed as fastify's ajv configuration does: coerceTypes 'array', useDefaults, removeAdditional.
 
+import * as schemaModule from '@xufa/schema';
+
 const DEFAULT_OPTIONS = Object.freeze({
   coerceTypes: 'array',
   useDefaults: true,
@@ -20,7 +22,7 @@ let validator = null;
 
 // Loaded when a route first has a schema to validate (apps without schemas never load it).
 function loadValidator() {
-  if (validator === null) validator = require('@xufa/schema'); // eslint-disable-line global-require
+  if (validator === null) validator = schemaModule;
   return validator;
 }
 
@@ -384,4 +386,4 @@ function ValidatorSelector() {
   };
 }
 
-module.exports = { ValidatorSelector, ValidatorCompiler, toAjvError, DEFAULT_OPTIONS };
+export { ValidatorSelector, ValidatorCompiler, toAjvError, DEFAULT_OPTIONS };

@@ -1,7 +1,7 @@
 'use strict'
 
 
-const Fastify = require('@xufa/http')
+const Fastify = require('..')
 const jsonParser = require('fast-json-body')
 
 test('parameterized parser matches preserve precedence and encapsulation on repeated requests', async () => {

@@ -1,4 +1,4 @@
-const { StringType } = require('./string');
+import { StringType } from './string.js';
 
 class EnumType extends StringType {
   constructor(options = {}) {
@@ -42,10 +42,4 @@ function oenumt(options, isMandatory = false, isNullable = false) {
   return new EnumType({ options, isMandatory, isNullable });
 }
 
-module.exports = {
-  EnumType,
-  Enum,
-  enumt,
-  oenumt,
-  oenum: oenumt,
-};
+export { EnumType, Enum, enumt, oenumt, oenumt as oenum };

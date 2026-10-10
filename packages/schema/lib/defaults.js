@@ -34,7 +34,4 @@ function assignDefaults(target, defaults) {
   }
 }
 
-module.exports = {
-  copyDefault,
-  assignDefaults,
-};
+export { copyDefault, assignDefaults };

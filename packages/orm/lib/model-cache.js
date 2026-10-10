@@ -4,8 +4,8 @@
 // checked when it is read (a row whose value changed is not taken). Saving or deleting an object removes it; update()
 // and delete() of QuerySets clear the model. Inside transactions the cache is not read nor filled (it would keep what
 // may be rolled back).
-const { reportCacheError } = require('./cache-errors');
-const { MemoryCache } = require('./cache');
+import { reportCacheError } from './cache-errors.js';
+import { MemoryCache } from './cache.js';
 
 function settingsOf(model) {
   const option = model.meta.options.cache;
@@ -111,4 +111,4 @@ async function clear(db, model) {
   await storeOf(db).clear(prefixOf(db, model));
 }
 
-module.exports = { lookupOf, read, write, forget, clear, settingsOf };
+export { lookupOf, read, write, forget, clear, settingsOf };

@@ -1,9 +1,13 @@
 // Model.schema(): the schema of the objects of a model as @xufa/schema makes them (null as a type, choices as enums,
 // foreign keys by their keys, computed fields read-only), `input: true` without what is never given, taken by s.omit()
 // and s.partial(), and used by routes of @xufa/http to validate bodies and write replies.
-const xufa = require('@xufa/http');
-const { s } = require('@xufa/schema');
-const { Database, Model, fields, modelOptions } = require('..');
+import xufa from '@xufa/http';
+import { s } from '@xufa/schema';
+import { Database, Model, fields, modelOptions } from '../index.js';
+import { createRequire } from 'node:module';
+import * as modelModule from '../lib/model.js';
+
+const require = createRequire(import.meta.url);
 
 function makeModels() {
   class Writer extends Model {
@@ -124,7 +128,7 @@ describe('Model.schema()', () => {
   });
 
   it('modelOptions() knows the options of ModelOptions in index.d.ts, no more and no fewer', () => {
-    const { MODEL_OPTIONS } = require('../lib/model'); // eslint-disable-line global-require
+    const { MODEL_OPTIONS } = modelModule;
     const declarations = require('node:fs').readFileSync(require.resolve('../index.d.ts'), 'utf8'); // eslint-disable-line global-require
     const block = /export interface ModelOptions \{([\s\S]*?)\n\}/.exec(declarations)[1];
     const declared = [...block.matchAll(/^ {2}(\w+)\?:/gm)].map((match) => match[1]);

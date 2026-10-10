@@ -1,8 +1,8 @@
 'use strict'
 
 
-const Fastify = require('@xufa/http')
-const fp = require('@xufa/http').plugin
+const Fastify = require('..')
+const fp = require('..').plugin
 
 test('if a plugin raises an error and there is not a callback to handle it, the server must not start', (testDone) => {
   expect.assertions(2)

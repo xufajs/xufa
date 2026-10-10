@@ -1,6 +1,6 @@
 // Options of @xufa/schema itself for the validator of the routes (ajv.validatorOptions): here foldMessages, which
 // writes the messages known when compiling as one text. The answers are the same as without it.
-const xufa = require('../..');
+import xufa from '../../index.js';
 
 const schema = {
   body: {

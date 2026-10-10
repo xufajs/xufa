@@ -1,7 +1,4 @@
-'use strict'
-
-
-const boot = require('..')
+import boot from '../index.js';
 const noop = () => {}
 
 test('boot a plugin and then execute a call after that', (testDone) => {

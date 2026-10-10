@@ -1,5 +1,3 @@
-'use strict';
-
 // Locks: which process runs a time of a job, when several have the same jobs (processes on several machines). A lock
 // is { claim({ name, slot, ttl }), renew({ name, token, ttl }), release({ name, token }) }: claim gives a token, or
 // null when that time (slot, ms) was taken, or a run of the job goes on in another process (its claim not released
@@ -9,9 +7,9 @@
 // - ormLock(db): in a table of a database of @xufa/orm (any backend), so processes on any machine share it. The
 //   times of a job agree between machines (every is aligned to the clock), so the first to claim one runs it. The
 //   expiry uses the clock of each machine: keep them in time (NTP), and ttl well above their difference.
-const os = require('node:os');
-const { randomBytes } = require('node:crypto');
-const { SchedulerError } = require('./errors');
+import os from 'node:os';
+import { randomBytes } from 'node:crypto';
+import { SchedulerError } from './errors.js';
 
 const ownerToken = () => `${os.hostname()}:${process.pid}:${randomBytes(6).toString('hex')}`;
 
@@ -39,14 +37,10 @@ function memoryLock({ now = () => Date.now() } = {}) {
 // A lock in a table of an ORM database: its model (registered in db at once) is created by db.sync(), or by
 // lock.sync() alone. Options: table ('xufa_scheduler_locks'), model (the name of its model, 'XufaSchedulerLock').
 function ormLock(db, { table = 'xufa_scheduler_locks', model: modelName = 'XufaSchedulerLock' } = {}) {
-  let orm;
-  try {
-    orm = require('@xufa/orm'); // eslint-disable-line global-require
-  } catch (err) {
-    throw new SchedulerError(`ormLock() needs @xufa/orm (${err.message})`);
+  if (!db || typeof db.register !== 'function' || !db.orm) {
+    throw new SchedulerError('ormLock(db): db is a Database of @xufa/orm');
   }
-  if (!db || typeof db.register !== 'function') throw new SchedulerError('ormLock(db): db is a Database of @xufa/orm');
-  const { Model, fields, UniqueError } = orm;
+  const { Model, fields, UniqueError } = db.orm;
   const Lock = {
     [modelName]: class extends Model {
       static fields = {
@@ -92,4 +86,4 @@ function ormLock(db, { table = 'xufa_scheduler_locks', model: modelName = 'XufaS
   };
 }
 
-module.exports = { memoryLock, ormLock };
+export { memoryLock, ormLock };

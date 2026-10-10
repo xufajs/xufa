@@ -1,7 +1,7 @@
 // The examples of the docs, run: every <pre data-run> of tools/docs/pages/*.page.html is a program that must run
 // without an error and end (a server it opens, closed), and when the block after it is a <pre data-output>, print
-// exactly that. Each runs in a process of its own, in an async function (top-level await works), with @xufa/* and
-// xufa/* resolved to the packages of this repository (resolve.js).
+// exactly that. Each runs in a process of its own, as an ES module (top-level await works), with @xufa/* and xufa/*
+// resolved to the packages of this repository (resolve.js).
 //
 //   node tools/docs/examples/run.js            # the examples marked; fails when one does not run as shown
 //   node tools/docs/examples/run.js --all      # every JavaScript block, marked or not: which run as they are
@@ -12,12 +12,13 @@
 // example after it in its page (the requires a page makes once); <!--run-before: code--> just before an example adds
 // code to that one only (a require its page leaves out, values it assumes); <!--run-setup: code--> is code for every
 // example after it in its page, not shown (the models a page talks about).
-const fs = require('node:fs');
-const os = require('node:os');
-const path = require('node:path');
-const { spawn } = require('node:child_process');
+import fs from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
+import { spawn } from 'node:child_process';
+import { pathToFileURL } from 'node:url';
 
-const PAGES = path.join(__dirname, '../pages');
+const PAGES = path.join(import.meta.dirname, '../pages');
 const TIMEOUT = 10000;
 // Addresses of servers of databases: examples naming them are run only when marked.
 const SERVER = /\b(?:mongodb(?:\+srv)?|postgres(?:ql)?|mysql|redis|amqp):\/\//;
@@ -82,13 +83,12 @@ function examplesOf(file, all) {
 
 // Runs one: { ok, reason }.
 function runOne(example, dir) {
-  const file = path.join(dir, `${example.page}-${example.line}.js`);
-  fs.writeFileSync(
-    file,
-    `'use strict';\n(async () => {\n${example.code}\n})().catch((err) => {\n  console.error(err);\n  process.exitCode = 1;\n});\n`
-  );
+  // An ES module (imports, top-level await): an error it throws ends it with a code, and its stack in stderr.
+  const file = path.join(dir, `${example.page}-${example.line}.mjs`);
+  fs.writeFileSync(file, `${example.code}\n`);
   return new Promise((resolve) => {
-    const child = spawn(process.execPath, ['-r', path.join(__dirname, 'resolve.js'), file], {
+    const resolver = pathToFileURL(path.join(import.meta.dirname, 'resolve.js')).href;
+    const child = spawn(process.execPath, ['--import', resolver, file], {
       cwd: dir,
       // As the environment of a machine of development: no NODE_ENV (what examples print may depend on it).
       env: Object.fromEntries(

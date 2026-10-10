@@ -1,4 +1,4 @@
-const { compileJsonSchemaAsync, loadJsonSchemas, standaloneJsonSchema } = require('..');
+import { compileJsonSchemaAsync, loadJsonSchemas, standaloneJsonSchema } from '../index.js';
 
 const documents = {
   'https://example.com/address.json': {

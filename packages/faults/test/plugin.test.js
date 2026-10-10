@@ -2,9 +2,9 @@
 // off in production unless allowed; rules added with their options as JSON (filters as names or { regex }), listed,
 // removed, released, up, cleared; expiring after `for` (never more than maxDuration), and gone when the app closes.
 // The same on @xufa/http and fastify.
-const xufa = require('@xufa/http');
-const fastify = require('fastify');
-const { Faults, cacheFaults, plugin, FaultError } = require('..');
+import xufa from '@xufa/http';
+import fastify from 'fastify';
+import { Faults, cacheFaults, plugin, FaultError } from '../index.js';
 
 const TOKEN = 'a-token-of-the-staging-admin';
 const auth = { authorization: `Bearer ${TOKEN}` };

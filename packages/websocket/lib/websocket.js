@@ -1,22 +1,20 @@
 /* eslint no-unused-vars: ["error", { "varsIgnorePattern": "^Duplex|Readable$", "caughtErrors": "none" }] */
 
-'use strict';
+import EventEmitter from 'node:events';
+import https from 'node:https';
+import http from 'node:http';
+import net from 'node:net';
+import tls from 'node:tls';
+import { randomBytes, createHash } from 'node:crypto';
+import { Duplex, Readable } from 'node:stream';
+import { URL } from 'node:url';
 
-const EventEmitter = require('node:events');
-const https = require('node:https');
-const http = require('node:http');
-const net = require('node:net');
-const tls = require('node:tls');
-const { randomBytes, createHash } = require('node:crypto');
-const { Duplex, Readable } = require('node:stream');
-const { URL } = require('node:url');
+import PerMessageDeflate from './permessage-deflate.js';
+import Receiver from './receiver.js';
+import Sender from './sender.js';
+import { isBlob } from './validation.js';
 
-const PerMessageDeflate = require('./permessage-deflate');
-const Receiver = require('./receiver');
-const Sender = require('./sender');
-const { isBlob } = require('./validation');
-
-const {
+import {
   BINARY_TYPES,
   CLOSE_TIMEOUT,
   EMPTY_BUFFER,
@@ -26,12 +24,12 @@ const {
   kStatusCode,
   kWebSocket,
   NOOP,
-} = require('./constants');
-const {
-  EventTarget: { addEventListener, removeEventListener },
-} = require('./event-target');
-const { format, parse } = require('./extension');
-const { toBuffer } = require('./buffer-util');
+} from './constants.js';
+import { EventTarget } from './event-target.js';
+import { format, parse } from './extension.js';
+import { toBuffer } from './buffer-util.js';
+
+const { addEventListener, removeEventListener } = EventTarget;
 
 const kAborted = Symbol('kAborted');
 const protocolVersions = [8, 13];
@@ -615,7 +613,7 @@ Object.defineProperty(WebSocket.prototype, 'CLOSED', {
 WebSocket.prototype.addEventListener = addEventListener;
 WebSocket.prototype.removeEventListener = removeEventListener;
 
-module.exports = WebSocket;
+export default WebSocket;
 
 /**
  * Initialize a WebSocket client.

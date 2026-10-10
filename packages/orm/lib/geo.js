@@ -246,4 +246,4 @@ function toEwkb(geojson) {
   return Buffer.concat(parts);
 }
 
-module.exports = { toEwkt, fromEwkb, toEwkb, checkGeometry, sridOf };
+export { toEwkt, fromEwkb, toEwkb, checkGeometry, sridOf };

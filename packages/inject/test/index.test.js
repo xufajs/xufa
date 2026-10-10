@@ -1,20 +1,21 @@
-'use strict'
+import { Readable, finished, pipeline } from 'node:stream';
+import qs from 'node:querystring';
+import fs from 'node:fs';
+import zlib from 'node:zlib';
+import http from 'node:http';
+import eos from 'end-of-stream';
+import express from 'express';
+import multer from 'multer';
 
+import inject from '../index.js';
+import { parseURL } from '../lib/url.js';
 
-const { Readable, finished, pipeline } = require('node:stream')
-const qs = require('node:querystring')
-const fs = require('node:fs')
-const zlib = require('node:zlib')
-const http = require('node:http')
-const eos = require('end-of-stream')
-const express = require('express')
-const multer = require('multer')
+import NpmFormData from 'form-data';
+import formAutoContent from 'form-auto-content';
+import { createRequire } from 'node:module';
 
-const inject = require('../index')
-const parseURL = require('../lib/url').parseURL
+const require = createRequire(import.meta.url);
 
-const NpmFormData = require('form-data')
-const formAutoContent = require('form-auto-content')
 const httpMethods = [
   'delete',
   'get',

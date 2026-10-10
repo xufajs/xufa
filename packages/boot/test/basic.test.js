@@ -1,7 +1,4 @@
-'use strict'
-
-
-const boot = require('..')
+import boot from '../index.js';
 
 test('boot an empty app', (testCompleted) => {
   expect.assertions(1)

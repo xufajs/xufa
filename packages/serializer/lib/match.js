@@ -1,7 +1,7 @@
 // Predicates compiled from JSON schemas: whether a value matches a schema. Used to choose the branch of anyOf, oneOf
 // and if/then/else to serialize a value with. Strings also match values with a toJSON() method (Dates), as they are
 // written as strings.
-const { deepEqual } = require('./deep-equal');
+import { deepEqual } from './deep-equal.js';
 
 const FORMATS = {
   'date-time': /^\d{4}-\d\d-\d\d[tT ]\d\d:\d\d:\d\d(?:\.\d+)?(?:[zZ]|[+-]\d\d(?::?\d\d)?)$/,
@@ -258,4 +258,4 @@ function createMatcher(resolver, options = {}) {
   return compile;
 }
 
-module.exports = { createMatcher };
+export { createMatcher };

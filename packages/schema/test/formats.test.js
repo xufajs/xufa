@@ -1,15 +1,7 @@
-const vm = require('vm');
-const {
-  Schema,
-  String,
-  builtInFormats,
-  compileJsonSchema,
-  fromJsonSchema,
-  standaloneJsonSchema,
-  toErrors,
-} = require('..');
-const { FORMATS, FORMAT_FUNCTIONS, matchesFormat } = require('../lib/formats');
-const { HELPER_SOURCES } = require('../lib/standalone-helpers');
+import vm from 'vm';
+import { Schema, String, builtInFormats, compileJsonSchema, fromJsonSchema, standaloneJsonSchema, toErrors } from '../index.js';
+import { FORMATS, FORMAT_FUNCTIONS, matchesFormat } from '../lib/formats.js';
+import { HELPER_SOURCES } from '../lib/standalone-helpers.js';
 
 // Every compiled mode and the uncompiled type give the same verdict and messages.
 function check(schema, value, options) {

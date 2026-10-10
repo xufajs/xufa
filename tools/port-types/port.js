@@ -4,16 +4,23 @@
 // other upstream packages pointed to the xufa ones. Changes the renames can not make are in the `patch` functions.
 //
 // node tools/port-types/port.js [package name filter]
-const fs = require('node:fs');
-const path = require('node:path');
+import fs from 'node:fs';
+import path from 'node:path';
+import { execFileSync } from 'node:child_process';
 
-const ROOT = path.join(__dirname, '..', '..');
+const ROOT = path.join(import.meta.dirname, '..', '..');
 const STORE = path.join(ROOT, 'node_modules', '.pnpm');
 
-// The directory of an installed upstream package (the highest version in the store), or of a checkout of its
-// repository next to this one (`dir`: as the tests of the framework are ported from ../fastify).
+// The directory of an installed upstream package (the version the root installs, as its devDependencies say; else the
+// highest version in the store), or of a checkout of its repository next to this one (`dir`: as the tests of the
+// framework are ported from ../fastify).
 function upstream(name, dir) {
   if (dir) return path.join(ROOT, dir);
+  try {
+    return path.dirname(fs.realpathSync(require.resolve(`${name}/package.json`, { paths: [ROOT] })));
+  } catch {
+    // Not a dependency of the root: the store.
+  }
   const prefix = `${name.replace('/', '+')}@`;
   const dirs = fs
     .readdirSync(STORE)
@@ -26,7 +33,10 @@ function upstream(name, dir) {
 const HEADER = (name, file) =>
   `// Ported from ${name} (${file}, MIT License) by tools/port-types/port.js: do not edit, change the tool.\n`;
 
-const PACKAGES = require('./packages');
+import PACKAGES from './packages.js';
+import { createRequire } from 'node:module';
+
+const require = createRequire(import.meta.url);
 
 function port(filter) {
   for (const pkg of PACKAGES) {
@@ -52,3 +62,5 @@ function port(filter) {
 }
 
 port(process.argv[2]);
+// The packages are ES modules: their CommonJS declarations (export =) become .d.cts (tools/esm/declarations.mjs).
+execFileSync(process.execPath, [path.join(ROOT, 'tools/esm/declarations.mjs')], { stdio: 'inherit' });

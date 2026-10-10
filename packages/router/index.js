@@ -3,14 +3,14 @@
 // Routes live in a radix tree per method (static parts, parameters, regular expressions, wildcards, with
 // backtracking), and the routes without parameters are also kept in a Map per method: most requests are found with a
 // single lookup by path.
-const { METHODS } = require('node:http');
-const { StaticNode, NODE_TYPES } = require('./lib/node');
-const { compileTree } = require('./lib/compile');
-const { Constrainer, NullObject } = require('./lib/constraints');
-const { prettyPrintTree } = require('./lib/pretty-print');
-const { isSafeRegex } = require('./lib/safe-regex');
-const strategies = require('./lib/strategies');
-const url = require('./lib/url');
+import { METHODS } from 'node:http';
+import { StaticNode, NODE_TYPES } from './lib/node.js';
+import { compileTree } from './lib/compile.js';
+import { Constrainer, NullObject } from './lib/constraints.js';
+import { prettyPrintTree } from './lib/pretty-print.js';
+import { isSafeRegex } from './lib/safe-regex.js';
+import * as strategies from './lib/strategies.js';
+import * as url from './lib/url.js';
 
 const { splitEncoded, decodeParam, pathFromAbsoluteURL, removeDuplicateSlashes, trimLastSlash } = url;
 const { deepEqualConstraints } = strategies;
@@ -794,16 +794,36 @@ Router.sanitizeUrlPath = function sanitizeUrlPath(rawUrl, useSemicolonDelimiter)
 // Walks of a tree by match() before it is compiled: compiling costs more than a few walks.
 Router.COMPILE_AFTER = 16;
 
-module.exports = createRouter;
-module.exports.Router = Router;
-module.exports.httpMethods = httpMethods;
-module.exports.FOUND = FOUND;
-module.exports.BAD_URL = BAD_URL;
-module.exports.MAX_PARAM_LENGTH = MAX_PARAM_LENGTH;
-module.exports.sanitizeUrlPath = Router.sanitizeUrlPath;
-module.exports.removeDuplicateSlashes = removeDuplicateSlashes;
-module.exports.trimLastSlash = trimLastSlash;
-module.exports.safeDecodeURI = url.safeDecodeURI;
-module.exports.safeDecodeURIComponent = url.safeDecodeURIComponent;
-module.exports.isSafeRegex = isSafeRegex;
-module.exports.NullObject = NullObject;
+export default createRouter;
+createRouter.Router = Router;
+createRouter.httpMethods = httpMethods;
+createRouter.FOUND = FOUND;
+createRouter.BAD_URL = BAD_URL;
+createRouter.MAX_PARAM_LENGTH = MAX_PARAM_LENGTH;
+createRouter.sanitizeUrlPath = Router.sanitizeUrlPath;
+const __sanitizeUrlPath = createRouter.sanitizeUrlPath;
+createRouter.removeDuplicateSlashes = removeDuplicateSlashes;
+createRouter.trimLastSlash = trimLastSlash;
+createRouter.safeDecodeURI = url.safeDecodeURI;
+const __safeDecodeURI = createRouter.safeDecodeURI;
+createRouter.safeDecodeURIComponent = url.safeDecodeURIComponent;
+const __safeDecodeURIComponent = createRouter.safeDecodeURIComponent;
+createRouter.isSafeRegex = isSafeRegex;
+createRouter.NullObject = NullObject;
+
+export { createRouter as 'module.exports' };
+
+export {
+  Router,
+  httpMethods,
+  FOUND,
+  BAD_URL,
+  MAX_PARAM_LENGTH,
+  __sanitizeUrlPath as sanitizeUrlPath,
+  removeDuplicateSlashes,
+  trimLastSlash,
+  __safeDecodeURI as safeDecodeURI,
+  __safeDecodeURIComponent as safeDecodeURIComponent,
+  isSafeRegex,
+  NullObject,
+};

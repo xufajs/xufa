@@ -1,8 +1,9 @@
 // The hub: rooms in one process, between machines (two NetCaches here), and between the workers of a cluster.
-const path = require('node:path');
-const { spawnSync } = require('node:child_process');
-const { WebSocket, WebSocketServer } = require('../..');
-const { Hub } = require('../../lib/hub');
+import path from 'node:path';
+import { spawnSync } from 'node:child_process';
+import { WebSocket, WebSocketServer } from '../../index.js';
+import { Hub } from '../../lib/hub.js';
+import * as netcacheModule from '@xufa/netcache';
 
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 const closers = [];
@@ -85,7 +86,7 @@ describe('a hub in one process', () => {
 
 describe('a hub between machines (through @xufa/netcache)', () => {
   it('what one machine sends to a room reaches the sockets of that room on the others', async () => {
-    const { NetCache } = require('@xufa/netcache');
+    const { NetCache } = netcacheModule;
     const cacheOf = async (seed) => {
       const cache = await new NetCache({
         secret: 'a secret of sixteen bytes or more',
@@ -122,7 +123,7 @@ describe('a hub between machines (through @xufa/netcache)', () => {
 
 describe('a hub in a cluster (through @xufa/cluster)', () => {
   it('what a worker sends to a room reaches the sockets of that room in the other workers', () => {
-    const result = spawnSync(process.execPath, [path.join(__dirname, 'fixtures', 'hub-cluster.js')], {
+    const result = spawnSync(process.execPath, [path.join(import.meta.dirname, 'fixtures', 'hub-cluster.js')], {
       timeout: 30000,
     });
     const lines = result.stdout

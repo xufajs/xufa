@@ -1,10 +1,10 @@
 // Model: the models of Sequelize (init or sequelize.define, find*, create, update, destroy, associations, hooks,
 // scopes, paranoid models) over @xufa/orm. Each model has a model of @xufa/orm made from its attributes (its schema
 // and queries), built before the first query; its instances keep their values in dataValues, as in Sequelize.
-const {
+import {
   QuerySet,
-  Model: XufaModel,
-  fields: xufaFields,
+  Model as XufaModel,
+  fields as xufaFields,
   and,
   F,
   Count,
@@ -13,9 +13,9 @@ const {
   Min,
   Max,
   parseHstore,
-} = require('@xufa/orm');
-const { normalizeType, defaultValueOf, DataTypes, customParserOf, customStringifyOf } = require('./data-types');
-const {
+} from '@xufa/orm';
+import { normalizeType, defaultValueOf, DataTypes, customParserOf, customStringifyOf } from './data-types.js';
+import {
   generatedSql,
   sqlTypeOf,
   autoIncrementOf,
@@ -25,17 +25,17 @@ const {
   createEnumSql,
   enumValuesOf,
   enumOptionsOf,
-} = require('./sql-types');
-const { deferrableSql } = require('./deferrable');
-const { stringifyRange, parseRange } = require('./range');
-const { Raw, fragmentOf, isFragment, columnSql, literalSql } = require('./fragments');
-const { translateWhere, parseJsonPath, JsonRef } = require('./where');
-const { validateInstance, checkEnums } = require('./validate');
-const { whereSql, literal } = require('./query-interface');
-const { BelongsTo, HasMany, HasOne, BelongsToMany } = require('./associations');
-const { Op } = require('./operators');
-const errors = require('./errors');
-const { pluralize, singularize, underscore, isPlainObject } = require('./utils');
+} from './sql-types.js';
+import { deferrableSql } from './deferrable.js';
+import { stringifyRange, parseRange } from './range.js';
+import { Raw, fragmentOf, isFragment, columnSql, literalSql } from './fragments.js';
+import { translateWhere, parseJsonPath, JsonRef } from './where.js';
+import { validateInstance, checkEnums } from './validate.js';
+import { whereSql, literal } from './query-interface.js';
+import { BelongsTo, HasMany, HasOne, BelongsToMany } from './associations.js';
+import { Op } from './operators.js';
+import * as errors from './errors.js';
+import { pluralize, singularize, underscore, isPlainObject } from './utils.js';
 
 const { NotSupportedError, EmptyResultError, InstanceError, ValidationError, ValidationErrorItem } = errors;
 
@@ -4147,4 +4147,4 @@ async function loadInclude(parents, include, options) {
   }
 }
 
-module.exports = { Model, HOOKS, Context, normalizeIncludes };
+export { Model, HOOKS, Context, normalizeIncludes };

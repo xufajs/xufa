@@ -1,7 +1,4 @@
-'use strict'
-
-
-const fjs = require('..')
+import fjs from '../index.js';
 
 test('fix-604', () => {
   const schema = {

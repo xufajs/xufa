@@ -103,4 +103,4 @@ function rangeSqlType(subtype) {
   );
 }
 
-module.exports = { stringifyRange, parseRange, rangeSqlType, rangeLiteral, formatDate };
+export { stringifyRange, parseRange, rangeSqlType, rangeLiteral, formatDate };

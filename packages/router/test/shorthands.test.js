@@ -1,8 +1,7 @@
-'use strict'
+import ____1 from '../index.js';
+const httpMethods = ____1.httpMethods;
 
-const httpMethods = require('..').httpMethods
-
-const FindMyWay = require('../')
+import FindMyWay from '../index.js';
 
 describe('should support shorthand', () => {
   for (const i in httpMethods) {

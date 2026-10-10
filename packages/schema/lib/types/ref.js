@@ -1,4 +1,4 @@
-const { ValidateType, toType } = require('./validate-type');
+import { ValidateType, toType } from './validate-type.js';
 
 // Validates with the type it refers to, which is set once references are resolved; recursive schemas refer back to a
 // type that contains the reference. Only undefined is handled here (isMandatory); null and other values go to the
@@ -43,7 +43,4 @@ function Ref(options) {
   return new RefType(options);
 }
 
-module.exports = {
-  RefType,
-  Ref,
-};
+export { RefType, Ref };

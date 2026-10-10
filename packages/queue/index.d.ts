@@ -282,6 +282,14 @@ export interface PipelineDefinition {
 }
 
 /** A run of a pipeline: an object of its model (table xufa_pipeline_runs). */
+/** The options of a run: its key and trigger, and those of the jobs of its steps. */
+export type StartOptions = {
+  key?: string;
+  trigger?: string;
+  priority?: number;
+  queue?: string;
+} & ({ delay?: number | string; at?: never } | { at?: Date | string | number; delay?: never });
+
 export interface PipelineRun<Result = unknown> extends Model {
   pipeline: string;
   status: RunStatus;
@@ -294,6 +302,11 @@ export interface PipelineRun<Result = unknown> extends Model {
   key: string | null;
   /** Its steps queued or running (with concurrency). */
   inFlight: number;
+  /** The priority and queue of the jobs of its steps (those of a step win). */
+  priority: number;
+  queue: string | null;
+  /** When its first steps run (start() with delay or at), or null. */
+  runAt: Date | null;
   /** A run of a step of another run (the block 'pipeline'): that run, that step, and how deep it is (0: none). */
   parent: string | null;
   parentStep: string | null;
@@ -347,11 +360,48 @@ export declare class Pipelines extends EventEmitter {
   check(definition: PipelineDefinition): string[];
   /** Defines a pipeline (a PipelineError with every error when it is not valid). */
   define(definition: PipelineDefinition): this;
-  /** Starts a run (its steps without after are queued). key: a run with it running is given instead. */
+  /**
+   * A task: a block and a pipeline of one step that runs it, by one name (its runs kept, retried and shown as those of
+   * any pipeline). Options: those of the block, and the trigger and description of the pipeline.
+   */
+  task(
+    name: string,
+    run: (input: any, ctx: StepContext) => unknown,
+    options?: Omit<BlockSpec, 'run'> & { trigger?: string; description?: string }
+  ): this;
+  /**
+   * A pipeline started on a schedule of a Scheduler of @xufa/scheduler: a job of the scheduler (every, cron, timezone,
+   * at, in, catchUp, lock...) whose run starts a run (trigger 'schedule:<name>', key 'schedule:<name>:<time due>':
+   * a time already started is not started again). The info of the job.
+   */
+  schedule(
+    scheduler: { add(job: any): any },
+    pipeline: string,
+    spec: {
+      /** The name of the job (the pipeline's). */
+      name?: string;
+      every?: number | string;
+      cron?: string;
+      timezone?: string;
+      at?: Date | string | number;
+      in?: number | string;
+      /** A value, or the input of each time. */
+      input?: unknown | ((time: { scheduledAt: Date; name: string }) => unknown);
+      priority?: number;
+      queue?: string;
+      [option: string]: unknown;
+    }
+  ): any;
+  /** The schedules that start runs (schedule()), by the name of their job. */
+  readonly schedules: Map<string, { name: string; pipeline: string; trigger: string; scheduler: unknown }>;
+  /**
+   * Starts a run (its steps without after are queued). key: a run with it running is given instead. priority and
+   * queue: those of the jobs of its steps (a step keeps its own); delay or at: when its first steps run.
+   */
   start<Result = unknown>(
     pipeline: string | PipelineDefinition,
     input?: unknown,
-    options?: { key?: string; trigger?: string }
+    options?: StartOptions
   ): Promise<PipelineRun<Result>>;
   /** Starts a run of every pipeline with that trigger. */
   trigger(event: string, input?: unknown, options?: { key?: string }): Promise<PipelineRun[]>;

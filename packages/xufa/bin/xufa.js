@@ -1,8 +1,7 @@
 #!/usr/bin/env node
-'use strict';
 
 // xufa: the command line of an app of xufa, as Django's manage.py, Rails' rails and Laravel's artisan.
-const { run } = require('../lib/cli');
+import { run } from '../lib/cli/index.js';
 
 run(process.argv.slice(2)).then(
   (code) => {

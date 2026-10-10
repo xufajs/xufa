@@ -2,8 +2,8 @@
  * @xufa/schema: schemas written with s (plain JSON Schema), JSON Schema or the builder of types; compiled into
  * functions that check values; with their TypeScript types (Infer, SchemaTypeProvider).
  */
-import type { IsBuilt, InferBuilt } from './lib/builder';
-export * from './lib/builder';
+import type { IsBuilt, InferBuilt } from './lib/builder.js';
+export * from './lib/builder.js';
 
 // Type declarations of @xufa/schema: its validator, and the builder of types. Every type records the values it accepts
 // in its type parameter `Out`, including undefined and null when it accepts them, so Infer<typeof type> gives the

@@ -3,11 +3,11 @@
   "version": "0.1.0",
   "description": "Asynchronous loading of plugins in order, with encapsulation, after/ready/close hooks and timeouts, with the API of avvio",
   "main": "./index.js",
-  "types": "./index.d.ts",
-  "type": "commonjs",
+  "types": "./index.d.cts",
+  "type": "module",
   "exports": {
     ".": {
-      "types": "./index.d.ts",
+      "types": "./index.d.cts",
       "default": "./index.js"
     },
     "./package.json": "./package.json"
@@ -15,7 +15,7 @@
   "files": [
     "index.js",
     "lib",
-    "index.d.ts"
+    "index.d.cts"
   ],
   "scripts": {
     "test": "vyntra",
@@ -46,7 +46,7 @@
     "@xufa/errors": "workspace:*"
   },
   "devDependencies": {
-    "vyntra": "^0.6.0"
+    "vyntra": "^0.7.0"
   },
   "publishConfig": {
     "access": "public"

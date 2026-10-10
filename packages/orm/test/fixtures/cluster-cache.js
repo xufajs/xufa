@@ -1,10 +1,10 @@
 // Two workers on one SQLite file: with a SharedCache, an object read by worker 1 is answered from the cache to worker
 // 2 (no query); with a LocalCache, the save of worker 2 invalidates the copy of worker 1.
-const fs = require('node:fs');
-const os = require('node:os');
-const path = require('node:path');
-const xufa = require('@xufa/cluster');
-const { Database, Model, fields, SharedCache, LocalCache } = require('../..');
+import fs from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
+import * as xufa from '@xufa/cluster';
+import { Database, Model, fields, SharedCache, LocalCache } from '../../index.js';
 
 const file = process.env.XUFA_CACHE_DB || path.join(os.tmpdir(), `xufa-cache-${process.pid}.db`);
 const report = (data) => process.stdout.write(`${JSON.stringify(data)}\n`);

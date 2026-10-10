@@ -1,9 +1,9 @@
 // Tenants: users may use the tenants of their claims (tenants, or tenant; '*' every tenant). Routes with
 // { auth: { tenant: true } } (the tenant of the request) or { tenant: '*' }, with roles; and canUseTenant as the
 // authorize of the tenants of @xufa/orm, checked before a tenant is entered.
-const xufa = require('@xufa/http');
-const { Tenants, Model, fields, plugin: orm } = require('@xufa/orm');
-const auth = require('..');
+import xufa from '@xufa/http';
+import { Tenants, Model, fields, plugin as orm } from '@xufa/orm';
+import * as auth from '../index.js';
 
 const KEY = 'a secret of at least thirty-two bytes!';
 

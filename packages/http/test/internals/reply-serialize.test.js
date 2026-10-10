@@ -2,7 +2,7 @@
 
 
 const { kReplyCacheSerializeFns, kRouteContext } = require('../../lib/symbols')
-const Fastify = require('@xufa/http')
+const Fastify = require('../..')
 
 function getDefaultSchema () {
   return {

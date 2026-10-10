@@ -1,7 +1,4 @@
-'use strict'
-
-
-const FindMyWay = require('..')
+import FindMyWay from '../index.js';
 
 test('If there are constraints param, router.off method support filter', () => {
   expect.assertions(12)

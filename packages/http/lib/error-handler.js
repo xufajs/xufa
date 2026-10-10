@@ -1,7 +1,7 @@
 // Error handlers: the one of the route or the instance, its parents when it throws, and the fallback writing the
 // error as JSON.
-const { STATUS_CODES } = require('node:http');
-const {
+import { STATUS_CODES } from 'node:http';
+import {
   kReplyHeaders,
   kReplyNextErrorHandler,
   kReplyIsRunningOnErrorHook,
@@ -9,10 +9,11 @@ const {
   kLogController,
   kDiagnosticsStore,
   kReplyHasStatusCode,
-} = require('./symbols');
-const { XUFA_ERR_REP_INVALID_PAYLOAD_TYPE, XUFA_ERR_FAILED_ERROR_SERIALIZATION } = require('./errors');
-const { getSchemaSerializer } = require('./schemas');
-const serializeError = require('./error-serializer');
+} from './symbols.js';
+import { XUFA_ERR_REP_INVALID_PAYLOAD_TYPE, XUFA_ERR_FAILED_ERROR_SERIALIZATION } from './errors.js';
+import { getSchemaSerializer } from './schemas.js';
+import serializeError from './error-serializer.js';
+import wrapThenableModule from './wrap-thenable.js';
 
 // wrap-thenable.js requires reply.js, which requires this module: required when needed.
 let wrapThenable = null;
@@ -88,7 +89,7 @@ function handleError(reply, error, cb) {
     const result = func(error, reply.request, reply);
     if (result !== undefined) {
       if (result !== null && typeof result.then === 'function') {
-        if (wrapThenable === null) wrapThenable = require('./wrap-thenable'); // eslint-disable-line global-require
+        if (wrapThenable === null) wrapThenable = wrapThenableModule;
         wrapThenable(result, reply, reply[kDiagnosticsStore] || null);
       } else {
         reply.send(result);
@@ -134,4 +135,4 @@ function fallbackErrorHandler(error, reply, cb) {
   cb(reply, payload);
 }
 
-module.exports = { buildErrorHandler, handleError, setErrorStatusCode, rootErrorHandler };
+export { buildErrorHandler, handleError, setErrorStatusCode, rootErrorHandler };

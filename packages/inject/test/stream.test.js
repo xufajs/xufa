@@ -1,12 +1,9 @@
-'use strict'
+import fs from 'node:fs';
 
+import zlib from 'node:zlib';
+import express from 'express';
 
-const fs = require('node:fs')
-
-const zlib = require('node:zlib')
-const express = require('express')
-
-const inject = require('../index')
+import inject from '../index.js';
 
 function accumulate (stream, cb) {
   const chunks = []

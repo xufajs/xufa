@@ -1,8 +1,5 @@
-'use strict'
-
-
-const http = require('node:http')
-const FindMyWay = require('../')
+import http from 'node:http';
+import FindMyWay from '../index.js';
 
 test('full-url', () => {
   const findMyWay = FindMyWay({

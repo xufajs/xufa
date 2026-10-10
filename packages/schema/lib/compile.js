@@ -1,7 +1,8 @@
-const { deepEqual } = require('./deep-equal');
-const { Schema } = require('./schema');
-const { ClosedSchema } = require('./closed-schema');
-const {
+import { deepEqual } from './deep-equal.js';
+import { provide } from './types/validate-type.js';
+import { Schema } from './schema.js';
+import { ClosedSchema } from './closed-schema.js';
+import {
   AllOfType,
   AnyOfType,
   AnyType,
@@ -21,11 +22,11 @@ const {
   WhenType,
   hasErrors,
   toErrors,
-} = require('./types');
-const { NO_TYPE, EVERY_TYPE } = require('./types/one-of');
-const { KeywordType } = require('./types/keyword');
-const { FORMAT_LIMITS } = require('./types/string');
-const { FORMAT_COMPARES } = require('./formats');
+} from './types/index.js';
+import { NO_TYPE, EVERY_TYPE } from './types/one-of.js';
+import { KeywordType } from './types/keyword.js';
+import { FORMAT_LIMITS } from './types/string.js';
+import { FORMAT_COMPARES } from './formats.js';
 
 // What the built-in comparisons of times put before a value to read its time (see compareTime() in formats.js).
 const TIME_PREFIXES = new Map([
@@ -40,12 +41,12 @@ const FORMAT_LIMIT_FAILS = {
   formatExclusiveMinimum: '<= 0',
   formatExclusiveMaximum: '>= 0',
 };
-const { copyDefault } = require('./defaults');
-const { CoerceType, coerceSpecOf } = require('./coerce');
-const { codePointLength } = require('./types/code-point-length');
-const { hasDuplicates } = require('./types/has-duplicates');
-const { JSON_TYPES, UnevaluatedType, staticEvaluatedBy, staticEvaluatedByAll } = require('./unevaluated');
-const { errorObject, pathName } = require('./error-objects');
+import { copyDefault } from './defaults.js';
+import { CoerceType, coerceSpecOf } from './coerce.js';
+import { codePointLength } from './types/code-point-length.js';
+import { hasDuplicates } from './types/has-duplicates.js';
+import { JSON_TYPES, UnevaluatedType, staticEvaluatedBy, staticEvaluatedByAll } from './unevaluated.js';
+import { errorObject, pathName } from './error-objects.js';
 
 // The path of error objects that the code `path` gives when it is the same for every value (keys and positions
 // written in the schema, out of loops): an array of keys and indexes, else undefined.
@@ -1886,10 +1887,6 @@ function compileType(type, options = {}) {
   };
 }
 
-module.exports = {
-  generateSource,
-  compileErrors,
-  compileFirstError,
-  compileIsValid,
-  compileType,
-};
+provide({ compileType });
+
+export { generateSource, compileErrors, compileFirstError, compileIsValid, compileType };

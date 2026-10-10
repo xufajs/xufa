@@ -8,11 +8,13 @@
 //
 // Values are copied in and out (structured clone): the objects of the ORM cannot change what is cached.
 
+import * as faultsModule from '@xufa/faults';
+
 class MemoryCache {
   // Its faults (lib/faults.js): get, set, delete and clear made to fail, wait or hang, for tests of resilience.
   get faults() {
     if (!this.faultsOf) {
-      const { cacheFaults } = require('@xufa/faults'); // eslint-disable-line global-require
+      const { cacheFaults } = faultsModule;
       Object.defineProperty(this, 'faultsOf', { value: cacheFaults(this, 'cache'), enumerable: false });
     }
     return this.faultsOf;
@@ -92,7 +94,7 @@ class SharedCache {
   // Its faults (lib/faults.js): get, set, delete and clear made to fail, wait or hang, for tests of resilience.
   get faults() {
     if (!this.faultsOf) {
-      const { cacheFaults } = require('@xufa/faults'); // eslint-disable-line global-require
+      const { cacheFaults } = faultsModule;
       Object.defineProperty(this, 'faultsOf', { value: cacheFaults(this, 'cache'), enumerable: false });
     }
     return this.faultsOf;
@@ -163,4 +165,4 @@ class LocalCache extends MemoryCache {
   }
 }
 
-module.exports = { MemoryCache, SharedCache, LocalCache };
+export { MemoryCache, SharedCache, LocalCache };

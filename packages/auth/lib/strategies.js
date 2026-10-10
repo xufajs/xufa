@@ -12,11 +12,11 @@
 //   { fail: { challenge } }   credentials that are not valid (challenge: for the WWW-Authenticate header)
 //   null                      no credentials of this kind: the next strategy is tried
 // A strategy of Passport is one with passport(strategy) (lib/passport.js).
-const crypto = require('node:crypto');
-const { hashPassword, verifyPassword } = require('./password');
-const { Lockout } = require('./lockout');
-const { seconds } = require('./duration');
-const { Unauthorized, Locked } = require('./errors');
+import crypto from 'node:crypto';
+import { hashPassword, verifyPassword } from './password.js';
+import { Lockout } from './lockout.js';
+import { seconds } from './duration.js';
+import { Unauthorized, Locked } from './errors.js';
 
 // --- API keys: '<id>.<secret>', of which only a hash of the secret is kept (with the id, to find it). The secret is
 // 32 random bytes: a hash (SHA-256) is enough to keep it, and fast enough to check on every request (a password needs
@@ -211,13 +211,4 @@ function failureError(failures) {
   return new Unauthorized(first ? first.message : 'Authentication is required');
 }
 
-module.exports = {
-  apiKey,
-  apiKeyFields,
-  basic,
-  generateApiKey,
-  hashApiKey,
-  parseApiKey,
-  verifyApiKey,
-  failureError,
-};
+export { apiKey, apiKeyFields, basic, generateApiKey, hashApiKey, parseApiKey, verifyApiKey, failureError };

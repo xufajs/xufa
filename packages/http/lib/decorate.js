@@ -1,13 +1,13 @@
 // Decorators of instances, requests and replies.
-const { kReply, kRequest, kState, kHasBeenDecorated } = require('./symbols');
-const {
+import { kReply, kRequest, kState, kHasBeenDecorated } from './symbols.js';
+import {
   XUFA_ERR_DEC_ALREADY_PRESENT,
   XUFA_ERR_DEC_MISSING_DEPENDENCY,
   XUFA_ERR_DEC_AFTER_START,
   XUFA_ERR_DEC_REFERENCE_TYPE,
   XUFA_ERR_DEC_DEPENDENCY_INVALID_TYPE,
   XUFA_ERR_DEC_UNDECLARED,
-} = require('./errors');
+} from './errors.js';
 
 const isAccessor = (fn) => Boolean(fn) && (typeof fn.getter === 'function' || typeof fn.setter === 'function');
 
@@ -113,12 +113,12 @@ function getInstanceDecorator(name) {
   return typeof this[name] === 'function' ? this[name].bind(this) : this[name];
 }
 
-module.exports = {
-  add: decorateInstance,
-  exist: checkExistence,
-  existRequest: checkRequestExistence,
-  existReply: checkReplyExistence,
-  dependencies: checkDependencies,
+export {
+  decorateInstance as add,
+  checkExistence as exist,
+  checkRequestExistence as existRequest,
+  checkReplyExistence as existReply,
+  checkDependencies as dependencies,
   decorateReply,
   decorateRequest,
   getInstanceDecorator,

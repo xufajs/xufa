@@ -16,14 +16,14 @@
 // one header (x-amz-meta-xufa: base64 of its JSON, at most 2 KB as S3 allows); changing it alone copies the object on
 // itself (its body is not sent again). url() of a body is a signed URL of GET (expiresIn: '15m' by default, at most
 // 7 days).
-const { Readable } = require('node:stream');
-const crypto = require('node:crypto');
-const { BlobBackend, exists } = require('./base');
-const { sign, presign, encode, sha256, EMPTY_HASH, UNSIGNED } = require('./sigv4');
-const { httpClient } = require('./http-client');
-const { tag, tags, escapeXml } = require('./xml');
-const { BackendError } = require('../../errors');
-const { seconds } = require('../../duration');
+import { Readable } from 'node:stream';
+import crypto from 'node:crypto';
+import { BlobBackend, exists } from './base.js';
+import { sign, presign, encode, sha256, EMPTY_HASH, UNSIGNED } from './sigv4.js';
+import { httpClient } from './http-client.js';
+import { tag, tags, escapeXml } from './xml.js';
+import { BackendError } from '../../errors.js';
+import { seconds } from '../../duration.js';
 
 const MIB = 1024 * 1024;
 const META = 'x-amz-meta-xufa';
@@ -342,4 +342,4 @@ class S3Backend extends BlobBackend {
 
 S3Backend.UNSIGNED = UNSIGNED;
 
-module.exports = { S3Backend, S3Error };
+export { S3Backend, S3Error };

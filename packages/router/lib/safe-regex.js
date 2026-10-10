@@ -50,4 +50,4 @@ function isSafeRegex(regex) {
   return true;
 }
 
-module.exports = { isSafeRegex };
+export { isSafeRegex };

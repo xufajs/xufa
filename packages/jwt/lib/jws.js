@@ -1,7 +1,7 @@
 // JSON Web Signatures (RFC 7515), compact form, as the jws package gives them: sign({ header, payload, secret }),
 // verify(token, algorithm, key), decode(token), isValid(token), and the streams createSign() and createVerify().
-const Stream = require('node:stream');
-const jwa = require('./jwa');
+import Stream from 'node:stream';
+import jwa from './jwa.js';
 
 const ALGORITHMS = [
   'HS256',
@@ -257,15 +257,5 @@ const createSign = (opts) => new SignStream(opts);
 const createVerify = (opts) => new VerifyStream(opts);
 
 // Names only: Node finds them for `import { createSign } from '@xufa/jwt/jws'`.
-module.exports = {
-  ALGORITHMS,
-  sign,
-  verify,
-  signAsync,
-  decode,
-  isValid,
-  createSign,
-  createVerify,
-  SignStream,
-  VerifyStream,
-};
+
+export { ALGORITHMS, sign, verify, signAsync, decode, isValid, createSign, createVerify, SignStream, VerifyStream };

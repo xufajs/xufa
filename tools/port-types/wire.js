@@ -1,11 +1,11 @@
 #!/usr/bin/env node
 // Points the package.json of a package of xufa to its declarations, and adds the script testing them.
 // node tools/port-types/wire.js <package directory name> <test:types command> [declaration files...]
-const fs = require('node:fs');
-const path = require('node:path');
+import fs from 'node:fs';
+import path from 'node:path';
 
 const [dir, command, ...declarations] = process.argv.slice(2);
-const file = path.join(__dirname, '..', '..', 'packages', dir, 'package.json');
+const file = path.join(import.meta.dirname, '..', '..', 'packages', dir, 'package.json');
 const pkg = JSON.parse(fs.readFileSync(file, 'utf8'));
 const files = declarations.length > 0 ? declarations : ['index.d.ts'];
 

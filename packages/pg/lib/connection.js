@@ -2,15 +2,15 @@
 // its Sync, and the replies are matched in order, so one connection runs many queries at the same time. Queries
 // that run again are prepared once per connection (named statements, by their text) and then only bound and
 // executed; their rows are made by a function compiled for their columns.
-const net = require('node:net');
-const tls = require('node:tls');
-const crypto = require('node:crypto');
-const { EventEmitter } = require('node:events');
-const { Writer } = require('./writer');
-const { parserOf, paramToText } = require('./types');
-const { resultParsers, paramWriters } = require('./binary');
-const { DatabaseError, ConnectionError, PgError } = require('./errors');
-const { parseRequireAuth, parseChannelBinding, allows, refuse, endPoint } = require('./auth');
+import net from 'node:net';
+import tls from 'node:tls';
+import crypto from 'node:crypto';
+import { EventEmitter } from 'node:events';
+import { Writer } from './writer.js';
+import { parserOf, paramToText } from './types.js';
+import { resultParsers, paramWriters, dateText } from './binary.js';
+import { DatabaseError, ConnectionError, PgError } from './errors.js';
+import { parseRequireAuth, parseChannelBinding, allows, refuse, endPoint } from './auth.js';
 
 const PROTOCOL_VERSION = 196608;
 // Settings of the session given in the config and sent in the startup message (as pg does).
@@ -69,7 +69,7 @@ function readFields(buffer, start, end) {
 }
 
 // The description of the rows of a query: the fields, the parser of each and the function that makes a row.
-function describe(buffer, start, custom) {
+function describe(buffer, start, custom, datesAsText = false) {
   const count = buffer.readInt16BE(start);
   const fields = new Array(count);
   const parsers = new Array(count);
@@ -92,8 +92,13 @@ function describe(buffer, start, custom) {
     };
     offset += 18;
     fields[i] = field;
-    parsers[i] = parserOf(field.dataTypeID, custom);
-    const binary = custom && custom.has(field.dataTypeID) ? undefined : resultParsers.get(field.dataTypeID);
+    const ownDate = datesAsText && field.dataTypeID === 1082 && !(custom && custom.has(1082));
+    parsers[i] = ownDate ? (b, s, e) => b.latin1Slice(s, e) : parserOf(field.dataTypeID, custom);
+    const binary = ownDate
+      ? dateText
+      : custom && custom.has(field.dataTypeID)
+        ? undefined
+        : resultParsers.get(field.dataTypeID);
     binaryParsers[i] = binary || parsers[i];
     if (binary) {
       if (resultFormats === null) resultFormats = new Array(count).fill(0);
@@ -172,6 +177,8 @@ class Connection extends EventEmitter {
     this.pending = null;
     this.partial = null;
     this.custom = options.types || null;
+    // dates: 'text': the values of date columns as their text ('2026-10-09'), not Dates at local midnight.
+    this.datesAsText = options.dates === 'text';
     // What the server asked for (method), whether it was bound to the channel, and what is accepted.
     this.auth = {
       requirement: parseRequireAuth(options.require_auth),
@@ -407,7 +414,7 @@ class Connection extends EventEmitter {
         return;
       }
       case ROW_DESCRIPTION:
-        query.description = describe(buffer, start, this.custom);
+        query.description = describe(buffer, start, this.custom, this.datesAsText);
         if (query.statement) query.statement.description = query.description;
         return;
       case PARAMETER_DESCRIPTION: {
@@ -1165,4 +1172,4 @@ class Connection extends EventEmitter {
   }
 }
 
-module.exports = { Connection, describe, commandOf };
+export { Connection, describe, commandOf };

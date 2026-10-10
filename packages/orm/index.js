@@ -1,7 +1,7 @@
 // @xufa/orm: the ORM of xufa. Models and QuerySets in the spirit of Django over SQL and NoSQL databases: a query is
 // described once (lib/query.js) and every backend compiles it to its database.
 //
-//   const { Database, Model, fields } = require('@xufa/orm');
+//   import { Database, Model, fields } from '@xufa/orm';
 //
 //   class Author extends Model {
 //     static fields = { name: fields.string({ maxLength: 100 }) };
@@ -11,68 +11,91 @@
 //   await db.sync();
 //   await Author.objects.create({ name: 'Ada' });
 //   const authors = await Author.objects.filter({ name__istartswith: 'a' }).orderBy('name');
-const fields = require('./lib/fields');
-const errors = require('./lib/errors');
-const { Model, modelOptions } = require('./lib/model');
-const { AuditEntry, auditResource } = require('./lib/audit');
-const { QuerySet } = require('./lib/queryset');
-const { Database } = require('./lib/database');
-const { Databases } = require('./lib/databases');
-const { Tenants } = require('./lib/tenants');
-const {
-  Q,
-  JsonPath,
-  jsonPath,
-  and,
-  or,
-  not,
-  F,
-  Raw,
-  Count,
-  Sum,
-  Avg,
-  Min,
-  Max,
-  Extract,
-  Trunc,
-} = require('./lib/query');
-const { Backend } = require('./lib/backends/base');
-const { MemoryBackend } = require('./lib/backends/memory');
-const { FsBackend } = require('./lib/backends/fs');
-const { BlobBackend } = require('./lib/backends/blob/base');
-const { BlobValue } = require('./lib/blob');
-const { Faults } = require('@xufa/faults');
-const { FaultError } = require('./lib/faults');
-const { SqlBackend } = require('./lib/backends/sql/backend');
-const { SqlCompiler } = require('./lib/backends/sql/compiler');
-const dialects = require('./lib/backends/sql/dialects');
-const { ormPlugin } = require('./lib/plugin');
-const { resource } = require('./lib/resource');
-const { MemoryCache, SharedCache, LocalCache } = require('./lib/cache');
-const migrations = require('./lib/migrations');
-const { toHstore, parseHstore } = require('./lib/hstore');
-const encryption = require('./lib/encryption');
-const { withSignal } = require('./lib/context');
-const { cached } = require('./lib/query-cache');
+import fields from './lib/fields.js';
+import * as errors from './lib/errors.js';
+import { Model, modelOptions } from './lib/model.js';
+import { AuditEntry, auditResource } from './lib/audit.js';
+import { QuerySet } from './lib/queryset.js';
+import { Paginator, Page, InvalidPage, PageNotAnInteger, EmptyPage } from './lib/paginator.js';
+import { KeysetPaginator, KeysetPage } from './lib/keyset.js';
+import { Lower } from './lib/constraints.js';
+import { Database } from './lib/database.js';
+import * as orm from './index.js';
+import { Databases } from './lib/databases.js';
+import { Tenants } from './lib/tenants.js';
+import { Q, JsonPath, jsonPath, and, or, not, F, Raw, Count, Sum, Avg, Min, Max, Extract, Trunc } from './lib/query.js';
+import { Backend } from './lib/backends/base.js';
+import { MemoryBackend } from './lib/backends/memory.js';
+import { FsBackend } from './lib/backends/fs.js';
+import { BlobBackend } from './lib/backends/blob/base.js';
+import { BlobValue } from './lib/blob.js';
+import { Faults } from '@xufa/faults';
+import { FaultError } from './lib/faults.js';
+import { SqlBackend } from './lib/backends/sql/backend.js';
+import { SqlCompiler } from './lib/backends/sql/compiler.js';
+import * as dialects from './lib/backends/sql/dialects.js';
+import { ormPlugin } from './lib/plugin.js';
+import { resource } from './lib/resource.js';
+import { rollbackEach } from './lib/testing.js';
+import { modelsFromSpec, specOf, SpecError, TYPES as SPEC_TYPES } from './lib/spec.js';
+import { message as validationMessage, setTranslator, MESSAGES } from './lib/messages.js';
+import { MemoryCache, SharedCache, LocalCache } from './lib/cache.js';
+import * as migrations from './lib/migrations.js';
+import { toHstore, parseHstore } from './lib/hstore.js';
+import * as encryption from './lib/encryption.js';
+import { withSignal } from './lib/context.js';
+import { cached } from './lib/query-cache.js';
+import { factory, sequence, Factory } from './lib/factory.js';
+import { maintenance } from './lib/maintenance.js';
+import { CombinedQuerySet } from './lib/combine.js';
+// The backends: their drivers (@xufa/pg, @xufa/mongo) are loaded when a database of theirs connects.
+import { SqliteBackend } from './lib/backends/sqlite.js';
+import { MongoBackend } from './lib/backends/mongo/backend.js';
+import { PostgresBackend } from './lib/backends/postgres.js';
+import { MemoryBlobBackend } from './lib/backends/blob/memory.js';
+import { DiskBackend } from './lib/backends/blob/disk.js';
+import { S3Backend } from './lib/backends/blob/s3.js';
+import { AzureBackend } from './lib/backends/blob/azure.js';
+import { SmtpBackend } from './lib/backends/mail/smtp.js';
+import { MemoryMailBackend } from './lib/backends/mail/memory.js';
+import { ConsoleMailBackend } from './lib/backends/mail/console.js';
+
+// db.orm: the module of the ORM of a database (Model, fields, Paginator...). Packages that take a database (sessions,
+// the scheduler, the slots of a cluster, the views) make their models with it: those of the copy of the ORM that has
+// the database, without depending on @xufa/orm themselves.
+Object.defineProperty(Database.prototype, 'orm', { get: () => orm, configurable: true });
 
 Database.registerBackend('memory', () => MemoryBackend);
 Database.registerBackend('fs', () => FsBackend);
-Database.registerBackend('sqlite', () => require('./lib/backends/sqlite').SqliteBackend);
-Database.registerBackend('mongodb', () => require('./lib/backends/mongo/backend').MongoBackend);
-Database.registerBackend('postgres', () => require('./lib/backends/postgres').PostgresBackend);
-Database.registerBackend('memory-blob', () => require('./lib/backends/blob/memory').MemoryBlobBackend);
-Database.registerBackend('disk', () => require('./lib/backends/blob/disk').DiskBackend);
-Database.registerBackend('s3', () => require('./lib/backends/blob/s3').S3Backend);
-Database.registerBackend('azure-blob', () => require('./lib/backends/blob/azure').AzureBackend);
-Database.registerBackend('smtp', () => require('./lib/backends/mail/smtp').SmtpBackend);
-Database.registerBackend('memory-mail', () => require('./lib/backends/mail/memory').MemoryMailBackend);
+Database.registerBackend('sqlite', () => SqliteBackend);
+Database.registerBackend('mongodb', () => MongoBackend);
+Database.registerBackend('postgres', () => PostgresBackend);
+Database.registerBackend('memory-blob', () => MemoryBlobBackend);
+Database.registerBackend('disk', () => DiskBackend);
+Database.registerBackend('s3', () => S3Backend);
+Database.registerBackend('azure-blob', () => AzureBackend);
+Database.registerBackend('smtp', () => SmtpBackend);
+Database.registerBackend('memory-mail', () => MemoryMailBackend);
+Database.registerBackend('console-mail', () => ConsoleMailBackend);
 
-const { factory, sequence, Factory } = require('./lib/factory');
-const { maintenance } = require('./lib/maintenance');
-const { CombinedQuerySet } = require('./lib/combine');
+export * from './lib/errors.js';
+export const Keyring = encryption.Keyring;
+export const setEncryptionKeys = encryption.setEncryptionKeys;
+export const generateEncryptionKey = encryption.generateEncryptionKey;
+export const isEncrypted = encryption.isEncrypted;
+export const reencrypt = encryption.reencrypt;
+export const backends = { Backend, MemoryBackend, FsBackend, BlobBackend, SqlBackend, SqlCompiler, dialects };
 
-module.exports = {
+export {
   maintenance,
+  Lower,
+  Paginator,
+  Page,
+  KeysetPaginator,
+  KeysetPage,
+  InvalidPage,
+  PageNotAnInteger,
+  EmptyPage,
   CombinedQuerySet,
   factory,
   sequence,
@@ -106,20 +129,21 @@ module.exports = {
   Min,
   Max,
   errors,
-  ...errors,
-  plugin: ormPlugin,
+  ormPlugin as plugin,
   resource,
+  rollbackEach,
+  modelsFromSpec,
+  specOf,
+  SpecError,
+  SPEC_TYPES,
+  validationMessage,
+  setTranslator,
+  MESSAGES,
   MemoryCache,
   SharedCache,
   LocalCache,
   migrations,
-  Keyring: encryption.Keyring,
-  setEncryptionKeys: encryption.setEncryptionKeys,
-  generateEncryptionKey: encryption.generateEncryptionKey,
-  isEncrypted: encryption.isEncrypted,
-  reencrypt: encryption.reencrypt,
   BlobValue,
   Faults,
   FaultError,
-  backends: { Backend, MemoryBackend, FsBackend, BlobBackend, SqlBackend, SqlCompiler, dialects },
 };

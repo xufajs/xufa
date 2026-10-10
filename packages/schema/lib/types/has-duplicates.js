@@ -1,4 +1,4 @@
-const { deepEqual } = require('../deep-equal');
+import { deepEqual } from '../deep-equal.js';
 
 // An element is a duplicate when an earlier index (holes read as undefined) is deep-equal to it.
 // Primitive arrays use a Set, which has the same equality as deepEqual for primitives (NaN included).
@@ -16,6 +16,4 @@ function hasDuplicates(value) {
   return false;
 }
 
-module.exports = {
-  hasDuplicates,
-};
+export { hasDuplicates };

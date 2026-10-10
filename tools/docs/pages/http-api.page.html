@@ -297,9 +297,9 @@
         </div>
 
         <h2 id="plugins">Plugins</h2>
-        <pre data-run><code class="language-js">const { plugin } = require('@xufa/http');
+        <pre data-run><code class="language-js">import { plugin } from '@xufa/http';
 
-module.exports = plugin(async (app, options) =&gt; { /* ... */ }, {
+export default plugin(async (app, options) =&gt; { /* ... */ }, {
   name: 'my-plugin', // for hasPlugin() and the dependencies of others
   xufa: '0.x', // the versions of xufa it needs (a semver range)
   dependencies: ['db'], // plugins that must be registered before
@@ -314,7 +314,7 @@ module.exports = plugin(async (app, options) =&gt; { /* ... */ }, {
 
         <h2 id="error-codes">Error codes</h2>
         <p>
-          <code>require('@xufa/http').errorCodes</code>: classes of errors (<code>instanceof</code> works), each with its
+          <code>errorCodes</code> of <code>@xufa/http</code>: classes of errors (<code>instanceof</code> works), each with its
           <code>code</code> and <code>statusCode</code>. The codes are fastify's with <code>XUFA_ERR_</code> in place of
           <code>FST_ERR_</code>; … is where a value of the error goes.
         </p>

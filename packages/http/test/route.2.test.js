@@ -1,7 +1,7 @@
 'use strict'
 
 
-const Fastify = require('@xufa/http')
+const Fastify = require('..')
 
 test('same route definition object on multiple prefixes', async () => {
   expect.assertions(2)

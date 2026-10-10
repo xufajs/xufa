@@ -78,4 +78,4 @@ function createRedactor(options) {
   };
 }
 
-module.exports = { createRedactor, parsePath };
+export { createRedactor, parsePath };

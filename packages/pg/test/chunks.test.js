@@ -2,7 +2,7 @@
 // pipelined queries are written as the server writes them, cut into chunks at random points (inside the headers of
 // messages too) and read by a connection, which must give the same rows as without the cuts. The seed is random
 // (XUFA_FUZZ_SEED replays one), and printed when a round fails.
-const { Connection } = require('../lib/connection');
+import { Connection } from '../lib/connection.js';
 
 // A small PRNG of a seed (mulberry32), so that a round can be replayed.
 function random(seed) {

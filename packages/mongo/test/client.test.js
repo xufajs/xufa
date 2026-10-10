@@ -1,5 +1,5 @@
-const { MongoClient, MongoServerError, ObjectId, parseUrl } = require('..');
-const { url, available } = require('./server');
+import { MongoClient, MongoServerError, ObjectId, parseUrl } from '../index.js';
+import { url, available } from './server.js';
 
 describe('parseUrl', () => {
   it('parses connection strings', () => {

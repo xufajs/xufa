@@ -1,5 +1,3 @@
-'use strict';
-
 // The keywords $merge and $patch of ajv-merge-patch: a schema made from another one (source) and a JSON Merge Patch
 // (RFC 7386, $merge) or a JSON Patch (RFC 6902, $patch), made before the schema is compiled.
 //
@@ -88,4 +86,4 @@ function applyPatch(document, operations, what) {
   return doc;
 }
 
-module.exports = { mergePatch, applyPatch };
+export { mergePatch, applyPatch };

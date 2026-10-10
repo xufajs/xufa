@@ -46,13 +46,17 @@
         <ul>
           <li><a href="#functions">Functions (7)</a></li>
           <li><a href="#classes">Classes (2)</a></li>
-          <li><a href="#interfaces">Interfaces (3)</a></li>
+          <li><a href="#interfaces">Interfaces (6)</a></li>
         </ul>
         <h4>Packages</h4>
         <ul>
           <li><a href="../websocket/index.html">@xufa/websocket</a></li>
           <li><a href="../admin/index.html">@xufa/admin</a></li>
           <li><a href="index.html" aria-current="page">@xufa/session</a></li>
+          <li><a href="../forms/index.html">@xufa/forms</a></li>
+          <li><a href="../views/index.html">@xufa/views</a></li>
+          <li><a href="../mail/index.html">@xufa/mail</a></li>
+          <li><a href="../i18n/index.html">@xufa/i18n</a></li>
           <li><a href="../openapi/index.html">@xufa/openapi</a></li>
           <li><a href="../client/index.html">@xufa/client</a></li>
           <li><a href="../schema/index.html">@xufa/schema</a></li>
@@ -88,7 +92,7 @@
         <h1>Reference</h1>
         <p class="intro">
           Sessions of browsers for @xufa/http, with no dependencies: signed cookies, stores in memory or in a database of @xufa/orm (any backend, expired by a TTL index), flash messages and CSRF tokens. Every declaration of its TypeScript declarations
-          (<code>packages/session/index.d.ts</code>), as they are written, with their comments: made from them each time
+          (<code>packages/session/index.d.ts</code> or <code>index.d.cts</code>), as they are written, with their comments: made from them each time
           the docs are built. How to use them is in <a href="index.html">the overview</a>.
         </p>
 
@@ -104,7 +108,12 @@
         <h3 id="ref-ormStore"><code>ormStore</code></h3>
         <pre><code class="language-ts">export declare function ormStore(
   db: Database,
-  options?: { table?: string; model?: string }
+  options?: {
+    table?: string;
+    model?: string;
+    /** PostgreSQL: writes do not wait for the disk (a crash of the server may lose its last fraction of a second of them). */
+    asyncCommit?: boolean;
+  }
 ): SessionStore &amp; { model: ModelClass&lt;Model&gt; };</code></pre>
         <p>Sessions as objects of a model of</p>
 
@@ -149,6 +158,7 @@
               <tbody>
                 <tr><td><code>readonly id</code></td><td><code>string</code></td><td><p>Its id (in the cookie, signed).</p></td></tr>
                 <tr><td><code>readonly fresh</code></td><td><code>boolean</code></td><td><p>Made by this request (no cookie, or one of a session that is not there).</p></td></tr>
+                <tr><td><code>readonly handle</code></td><td><code>string</code></td><td><p>What names it among the sessions of its user (app.sessions.list(), end()): a hash of its id, not its id.</p></td></tr>
                 <tr><td><code>get&lt;T = unknown&gt;(key: string)</code></td><td><code>T | undefined</code></td><td></td></tr>
                 <tr><td><code>set(key: string, value: unknown)</code></td><td><code>this</code></td><td></td></tr>
                 <tr><td><code>has(key: string)</code></td><td><code>boolean</code></td><td></td></tr>
@@ -157,9 +167,17 @@
                 <tr><td><code>clear()</code></td><td><code>this</code></td><td></td></tr>
                 <tr><td><code>regenerate()</code></td><td><code>this</code></td><td><p>A new id, the values kept: after a login, so an id known before it is worth nothing.</p></td></tr>
                 <tr><td><code>destroy()</code></td><td><code>this</code></td><td><p>Ends the session: its values go, and its cookie is cleared.</p></td></tr>
+                <tr><td><code>readonly user</code></td><td><code>string | null</code></td><td><p>The id of the user of the session (login()), or null.</p></td></tr>
+                <tr><td><code>readonly endedEverywhere?</code></td><td><code>boolean</code></td><td><p>This request emptied the session: its user had logged out everywhere since it was made.</p></td></tr>
+                <tr><td><code>login(userId: string | number)</code></td><td><code>Promise&lt;this&gt;</code></td><td><p>Ties the session to a user, with a new id (after a login).</p></td></tr>
+                <tr><td><code>logout()</code></td><td><code>this</code></td><td><p>Ends the session (as destroy()).</p></td></tr>
+                <tr><td><code>logoutEverywhere()</code></td><td><code>Promise&lt;this&gt;</code></td><td><p>Ends every session of its user (in every browser, process and machine with the store), this one too.</p></td></tr>
+                <tr><td><code>logoutOthers()</code></td><td><code>Promise&lt;this&gt;</code></td><td><p>Ends every other session of its user; this one goes on with a new id.</p></td></tr>
                 <tr><td><code>flash(key: string, value: unknown)</code></td><td><code>this</code></td><td><p>A value for the next request only.</p></td></tr>
                 <tr><td><code>flash&lt;T = unknown&gt;(key: string)</code></td><td><code>T | undefined</code></td><td><p>The value the last request left (once).</p></td></tr>
-                <tr><td><code>csrfToken()</code></td><td><code>string</code></td><td><p>The token forms send back (x-csrf-token, or _csrf in the body).</p></td></tr>
+                <tr><td><code>message(text: string, level?: 'debug' | 'info' | 'success' | 'warning' | 'error' | string)</code></td><td><code>this</code></td><td><p>A message for the user, for the page shown next (Django's messages).</p></td></tr>
+                <tr><td><code>messages()</code></td><td><code>{ text: string; level: string }[]</code></td><td><p>The messages waiting (of the last request and this one), once.</p></td></tr>
+                <tr><td><code>csrfToken()</code></td><td><code>string</code></td><td><p>The token forms send back (x-csrf-token, or _csrf in the body): in the session, or in a cookie of its own while the session keeps nothing.</p></td></tr>
                 <tr><td><code>checkCsrf(token: unknown)</code></td><td><code>boolean</code></td><td></td></tr>
               </tbody>
             </table>
@@ -179,7 +197,7 @@
           </div>
 
         <h2 id="interfaces">Interfaces</h2>
-        <p class="ref-index"><a href="#ref-SessionStore"><code>SessionStore</code></a>, <a href="#ref-SessionOptions"><code>SessionOptions</code></a>, <a href="#ref-XufaRequest"><code>XufaRequest</code></a></p>
+        <p class="ref-index"><a href="#ref-SessionStore"><code>SessionStore</code></a>, <a href="#ref-SessionOptions"><code>SessionOptions</code></a>, <a href="#ref-SessionsApi"><code>SessionsApi</code></a>, <a href="#ref-UserSession"><code>UserSession</code></a>, <a href="#ref-XufaRequest"><code>XufaRequest</code></a>, <a href="#ref-XufaInstance"><code>XufaInstance</code></a></p>
 
         <h3 id="ref-SessionStore"><code>SessionStore</code></h3>
         <pre><code class="language-ts">export interface SessionStore { ... }</code></pre>
@@ -206,9 +224,50 @@
                 <tr><td><code>store?</code></td><td><code><a href="#ref-SessionStore">SessionStore</a></code></td><td><p>In memory by default: ormStore(db) for every process.</p></td></tr>
                 <tr><td><code>cookieName?</code></td><td><code>string</code></td><td><p>The name of the cookie ('sid').</p></td></tr>
                 <tr><td><code>maxAge?</code></td><td><code>number | string</code></td><td><p>How long a session lasts without requests ('14d').</p></td></tr>
-                <tr><td><code>rolling?</code></td><td><code>boolean</code></td><td><p>Each request makes it last maxAge again (true).</p></td></tr>
+                <tr><td><code>rolling?</code></td><td><code>boolean</code></td><td><p>Its requests make it last maxAge again (true): written when touchAfter has passed since it was, not at each one.</p></td></tr>
+                <tr><td><code>touchAfter?</code></td><td><code>number | string</code></td><td><p>How long after a session was written a request pushes its expiry back (1 hour, or half of maxAge when shorter; 0: every request).</p></td></tr>
                 <tr><td><code>csrf?</code></td><td><code>boolean</code></td><td><p>Writes (POST, PUT, PATCH, DELETE) of a session need its token (false). Routes leave it with config: { csrf: false }.</p></td></tr>
+                <tr><td><code>csrfCookieName?</code></td><td><code>string</code></td><td><p>The cookie of the CSRF token of a visitor whose session keeps nothing (<code>&lt;cookieName&gt;_csrf</code>).</p></td></tr>
                 <tr><td><code>cookie?</code></td><td><code>{ path?: string; domain?: string; sameSite?: 'lax' | 'strict' | 'none'; secure?: boolean; httpOnly?: boolean; partitioned?: boolean; }</code></td><td><p>The cookie: path ('/'), domain, sameSite ('lax'), secure (when the request is HTTPS), httpOnly (true), partitioned.</p></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-SessionsApi"><code>SessionsApi</code></h3>
+        <pre><code class="language-ts">export interface SessionsApi { ... }</code></pre>
+        <p>What the plugin decorates the app with, as app.sessions.</p>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>store</code></td><td><code><a href="#ref-SessionStore">SessionStore</a></code></td><td></td></tr>
+                <tr><td><code>open(fn?: (session: Session) =&gt; unknown)</code></td><td><code>Promise&lt;{ id: string; cookie: string }&gt;</code></td><td><p>A session made out of a request (fn fills it: login(), set()), kept: its Cookie (name=value) and id.</p></td></tr>
+                <tr><td><code>csrfTokenOf(cookieHeader: string | undefined)</code></td><td><code>Promise&lt;string | null&gt;</code></td><td><p>The CSRF token of the session of a Cookie header (made when it has none), or of its CSRF cookie, for a test client; null without either.</p></td></tr>
+                <tr><td><code>logoutUser(userId: string | number)</code></td><td><code>Promise&lt;void&gt;</code></td><td><p>Ends every session of a user (an admin ending those of another).</p></td></tr>
+                <tr><td><code>generationOf(userId: string | number)</code></td><td><code>Promise&lt;number&gt;</code></td><td><p>The generation of a user: raised by each logout everywhere.</p></td></tr>
+                <tr><td><code>useGenerations(source: {
+    read(userId: string, request?: unknown): Promise&lt;number | undefined&gt; | number | undefined;
+    write(userId: string, generation: number): Promise&lt;unknown&gt; | unknown;
+  })</code></td><td><code>void</code></td><td><p>Where the generations of "log out everywhere" are read and written besides the store (@xufa/auth keeps them in the row of the user, read with it): read() gives undefined when it does not know (the store's is used).</p></td></tr>
+                <tr><td><code>list(userId: string | number)</code></td><td><code>Promise&lt;<a href="#ref-UserSession">UserSession</a>[]&gt;</code></td><td><p>The sessions of a user still there, last seen first.</p></td></tr>
+                <tr><td><code>end(userId: string | number, handle: string)</code></td><td><code>Promise&lt;boolean&gt;</code></td><td><p>Ends a session of a user by its handle: whether it was there.</p></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-UserSession"><code>UserSession</code></h3>
+        <pre><code class="language-ts">export interface UserSession { ... }</code></pre>
+        <p>A session of a user: its device, as its last requests came.</p>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>handle</code></td><td><code>string</code></td><td></td></tr>
+                <tr><td><code>agent</code></td><td><code>string | null</code></td><td><p>Its user agent (300 characters at most).</p></td></tr>
+                <tr><td><code>ip</code></td><td><code>string | null</code></td><td></td></tr>
+                <tr><td><code>since</code></td><td><code>Date | null</code></td><td><p>Its login.</p></td></tr>
+                <tr><td><code>seen</code></td><td><code>Date | null</code></td><td><p>Its last request (written with the session, or touchAfter after it was last written: an hour by default).</p></td></tr>
+                <tr><td><code>expiresAt</code></td><td><code>Date</code></td><td></td></tr>
               </tbody>
             </table>
           </div>
@@ -220,6 +279,17 @@
               <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
               <tbody>
                 <tr><td><code>session</code></td><td><code><a href="#ref-Session">Session</a></code></td><td></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-XufaInstance"><code>XufaInstance</code></h3>
+        <pre><code class="language-ts">interface XufaInstance { ... }</code></pre>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>sessions</code></td><td><code><a href="#ref-SessionsApi">SessionsApi</a></code></td><td></td></tr>
               </tbody>
             </table>
           </div>

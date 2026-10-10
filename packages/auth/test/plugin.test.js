@@ -1,7 +1,8 @@
 // The plugin in an app of @xufa/http: routes that need a user, roles, the tokens of headers, cookies and queries,
 // and the routes of logging in, refreshing and logging out.
-const xufa = require('@xufa/http');
-const auth = require('..');
+import xufa from '@xufa/http';
+import * as auth from '../index.js';
+import * as ormModule from '@xufa/orm';
 
 const KEY = 'a secret of at least thirty-two bytes!';
 const FAST = { ln: 10 };
@@ -234,7 +235,7 @@ describe('auth plugin', () => {
 
 describe('auth plugin with resources of @xufa/orm', () => {
   it('checks the rules of each action', async () => {
-    const { Database, Model, fields, plugin: orm, resource } = require('@xufa/orm');
+    const { Database, Model, fields, plugin: orm, resource } = ormModule;
     class Article extends Model {
       static fields = { title: fields.string() };
     }

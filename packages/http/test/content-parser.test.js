@@ -1,7 +1,7 @@
 'use strict'
 
 
-const { spyWarning } = require('@xufa/http/lib/warnings')
+const { spyWarning } = require('../lib/warnings')
 const { Readable } = require('node:stream')
 const Fastify = require('..')
 const keys = require('../lib/symbols')

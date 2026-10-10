@@ -7,7 +7,7 @@ const AJV = require('ajv')
 const Schema = require('fluent-json-schema')
 const { waitForCb } = require('./helper')
 const { kRequestContentType } = require('../lib/symbols')
-const { spyWarning } = require('@xufa/http/lib/warnings')
+const { spyWarning } = require('../lib/warnings')
 const { XUFASEC002 } = require('../lib/warnings')
 
 const customSchemaCompilers = {

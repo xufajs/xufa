@@ -1,6 +1,6 @@
 // The database of the code running when it is one of a tenant (lib/tenants.js): { db } in an AsyncLocalStorage, read by
 // Model.db.
-const { AsyncLocalStorage } = require('node:async_hooks');
+import { AsyncLocalStorage } from 'node:async_hooks';
 
 const current = new AsyncLocalStorage();
 
@@ -25,4 +25,7 @@ function withSignal(signal, fn) {
   return cancellation.run({ signal }, fn);
 }
 
-module.exports = { current, currentDatabase, cancellation, currentSignal, withSignal };
+// The models of Tenants: their queries run in a tenant, never in another database (outside one, an error).
+const tenantModels = new WeakSet();
+
+export { current, currentDatabase, cancellation, currentSignal, withSignal, tenantModels };

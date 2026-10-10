@@ -1,4 +1,4 @@
-import { errorCodes } from '@xufa/http'
+import { errorCodes } from '../../index.js'
 
 
 test('errorCodes in ESM', async () => {

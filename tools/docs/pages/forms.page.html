@@ -1,0 +1,223 @@
+<!--{
+  "file": "forms.html",
+  "name": "@xufa/forms",
+  "title": "@xufa/forms",
+  "description": "@xufa/forms: forms as django.forms: fields that clean what a body gives, forms with their errors by field and their HTML, and forms of models of @xufa/orm (ModelForm) checked by the model.",
+  "groups": [
+    ["Forms", [["start", "Quick start"], ["fields", "Fields"], ["cleaning", "Cleaning"], ["html", "HTML"]]],
+    ["Models", [["model-forms", "ModelForm"], ["saving", "Saving"]]],
+    ["More", [["views", "In a route"], ["languages", "Languages"]]]
+  ]
+}-->
+        <h1>@xufa/forms</h1>
+        <p class="intro">
+          Forms as Django's: fields that take what a body gives (texts, dates, choices, objects of a model, files of
+          <a href="http-guide.html#forms">xufa.formBody</a>), clean it and say what is wrong with it, forms with their errors
+          by field and their HTML, and forms of models of <a href="orm-guide.html">the ORM</a> whose fields come from the
+          model and are checked by it (its validation, rules, unique values and constraints). No dependencies.
+        </p>
+
+        <h2 id="start">Quick start</h2>
+        <pre data-run><code class="language-js">import { Form, fields, ValidationError } from '@xufa/forms';
+
+class RenewBookForm extends Form {
+  static fields = {
+    renewalDate: fields.date({ help: 'Enter a date between now and 4 weeks (default 3).' }),
+  };
+
+  cleanRenewalDate(value) {
+    if (value &lt; '2026-01-01') throw new ValidationError('Invalid date - renewal in past');
+    return value;
+  }
+}
+
+const form = new RenewBookForm({ data: { renewalDate: '2025-12-24' } }); // request.body
+console.log(await form.isValid(), form.errors);
+const good = new RenewBookForm({ data: { renewalDate: '2026-11-02' } });
+console.log(await good.isValid(), good.cleanedData);
+console.log(new RenewBookForm().asP());</code></pre>
+        <pre data-output><code class="language-plaintext">false { renewalDate: [ 'Invalid date - renewal in past' ] }
+true { renewalDate: '2026-11-02' }
+&lt;p&gt;&lt;label for="id_renewalDate"&gt;Renewal date:&lt;/label&gt; &lt;input type="date" name="renewalDate" value="" id="id_renewalDate" aria-describedby="id_renewalDate_helptext" required&gt; &lt;span class="helptext" id="id_renewalDate_helptext"&gt;Enter a date between now and 4 weeks (default 3).&lt;/span&gt;&lt;/p&gt;</code></pre>
+
+        <h2 id="fields">Fields</h2>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Field</th><th>Value</th><th>Options</th></tr></thead>
+            <tbody>
+              <tr><td><code>string</code>, <code>text</code> (a textarea), <code>email</code>, <code>url</code>, <code>password</code>, <code>hidden</code></td><td>A text (trimmed), or null</td><td><code>maxLength</code>, <code>minLength</code>, <code>strip</code>, <code>type</code></td></tr>
+              <tr><td><code>integer</code>, <code>number</code>, <code>decimal</code></td><td>A number (a decimal: its text)</td><td><code>min</code>, <code>max</code>, <code>step</code>; <code>maxDigits</code>, <code>decimalPlaces</code></td></tr>
+              <tr><td><code>boolean</code></td><td>A checkbox: true or false (required: it must be checked)</td><td></td></tr>
+              <tr><td><code>date</code>, <code>datetime</code></td><td><code>'YYYY-MM-DD'</code>; a Date</td><td><code>min</code>, <code>max</code></td></tr>
+              <tr><td><code>choice</code>, <code>multipleChoice</code></td><td>A value of the choices (a list of them)</td><td><code>choices</code> (values, <code>[value, label]</code>, or an object of labels), <code>emptyLabel</code>, <code>widget: 'radio'</code> or <code>'checkbox'</code></td></tr>
+              <tr><td><code>modelChoice</code>, <code>modelMultipleChoice</code></td><td>An object of a QuerySet (a list of them)</td><td><code>queryset</code>, <code>labelOf(object)</code></td></tr>
+              <tr><td><code>file</code></td><td>A file of a multipart body: <code>{ filename, contentType, size, data }</code></td><td><code>maxSize</code>, <code>accept</code> (types: <code>'image/*'</code>)</td></tr>
+              <tr><td><code>json</code></td><td>JSON parsed from a textarea</td><td></td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p>
+          Every field takes <code>required</code> (true), <code>label</code> (made of its name: <code>dateOfBirth</code> is
+          "Date of birth"), <code>help</code> (HTML, as Django's <code>help_text</code>), <code>initial</code>,
+          <code>disabled</code> (shown, its value the initial one), <code>validators</code> (functions that give a message or
+          throw a <code>ValidationError</code>) and <code>attrs</code> of its input. A form gets the fields of its parents;
+          <code>null</code> takes one out. <code>messages</code> gives a field its own texts by the code of the error
+          (Django's <code>error_messages</code>): <code>{ required, invalid, min, max... }</code>.
+        </p>
+        <p>
+          The limits of a date are days, <code>'today'</code>, days relative to today (<code>'+4w'</code>,
+          <code>'-1d'</code>, <code>'+3m'</code>, <code>'+1y'</code>) or a function, read when the form is checked (and
+          written in its input, for the browser's picker). Django's renewal form needs no <code>clean</code> method:
+        </p>
+        <pre><code class="language-js">class RenewBookForm extends Form {
+  static fields = {
+    renewalDate: fields.date({
+      min: 'today',
+      max: '+4w',
+      messages: { min: 'Invalid date - renewal in past', max: 'Invalid date - renewal more than 4 weeks ahead' },
+    }),
+  };
+}
+
+new RenewBookForm({ initial: { renewalDate: addDays(21) } }); // three weeks ahead at first</code></pre>
+        <p>
+          <code>today()</code>, <code>addDays(days, from)</code>, <code>addMonths(months, from)</code> and
+          <code>dateOf(spec)</code> give days as <code>'YYYY-MM-DD'</code> texts, as date fields hold them, in the time of
+          the machine (Django's <code>date.today()</code>).
+        </p>
+
+        <h2 id="cleaning">Cleaning</h2>
+        <p>
+          <code>await form.isValid()</code> cleans each field (its value, then <code>required</code>, its checks and its
+          validators), then the method <code>clean&lt;Name&gt;(value)</code> of the form (it gives the value, may be async),
+          then <code>clean(data)</code> for the checks of several fields. <code>form.errors</code> are the messages by field,
+          and those of the whole form under <code>__all__</code> (<code>nonFieldErrors()</code>);
+          <code>addError(name, message)</code> adds one. <code>cleanedData</code> holds the values. A form without
+          <code>data</code> (not sent) is not valid and has no errors; <code>prefix</code> names its inputs
+          <code>prefix-name</code> (several forms in a page).
+        </p>
+        <pre data-run><code class="language-js">import { Form, fields, ValidationError } from '@xufa/forms';
+
+class ContactForm extends Form {
+  static fields = {
+    email: fields.email(),
+    kind: fields.choice({ choices: [['q', 'Question'], ['c', 'Complaint']] }),
+    order: fields.integer({ required: false, min: 1 }),
+  };
+
+  clean(data) {
+    if (data.kind === 'c' &amp;&amp; !data.order) throw new ValidationError('A complaint names its order');
+    return data;
+  }
+}
+const form = new ContactForm({ data: { email: 'ada@', kind: 'c' } });
+await form.isValid();
+console.log(form.errors);</code></pre>
+        <pre data-output><code class="language-plaintext">{
+  email: [ 'Enter a valid email address.' ],
+  __all__: [ 'A complaint names its order' ]
+}</code></pre>
+
+        <h2 id="html">HTML</h2>
+        <p>
+          <code>asTable()</code>, <code>asP()</code>, <code>asUl()</code> and <code>asDiv()</code> write the form: labels,
+          inputs with the values sent (or initial), errors as <code>&lt;ul class="errorlist"&gt;</code>, help texts. In a
+          template of <a href="template.html">@xufa/template</a>, with the token of the session:
+        </p>
+        <pre><code class="language-html">&lt;form method="post"&gt;
+  &lt;input type="hidden" name="_csrf" value="{{ csrfToken }}"&gt;
+  &lt;table&gt;{{{ form.asTable() }}}&lt;/table&gt;
+  &lt;input type="submit" value="Submit"&gt;
+&lt;/form&gt;
+
+{{#each form.visibleFields as field}}
+  &lt;div class="field"&gt;{{{ field.labelTag() }}} {{{ field.widget({ class: 'input' }) }}} {{{ field.errorsHtml() }}}&lt;/div&gt;
+{{/each}}</code></pre>
+        <p>
+          A field of a form (<code>form.field(name)</code>, <code>form.boundFields</code>) has <code>label</code>,
+          <code>help</code>, <code>errors</code>, <code>value</code>, <code>id</code> and <code>htmlName</code>, and writes
+          <code>labelTag()</code>, <code>widget(attrs)</code>, <code>errorsHtml()</code> and <code>helpHtml()</code>.
+          Values are escaped; inputs have <code>required</code>, <code>maxlength</code>, <code>min</code> and the like for
+          the browser, and <code>aria-invalid</code> with errors.
+        </p>
+
+        <h2 id="model-forms">ModelForm</h2>
+        <p>
+          A form of a model: its fields are made of those of the model (<code>meta.fields</code>, or
+          <code>'__all__'</code>; <code>meta.exclude</code>), with their labels and help, choices with labels as selects
+          (without the empty option when they have a default), foreign keys and many-to-many as choices of their objects,
+          and required unless the field may be blank. <code>meta.labels</code>, <code>meta.help</code> and
+          <code>meta.widgets</code> change them; fields of the form (<code>static fields</code>) go over them.
+        </p>
+<!--run-before: import { Database, Model, fields } from '@xufa/orm'; const db = new Database({ backend: 'memory' });
+class Author extends Model { static fields = { name: fields.string({ maxLength: 100 }) }; toString() { return this.name; } }
+class Genre extends Model { static fields = { name: fields.string({ maxLength: 100 }) }; toString() { return this.name; } }
+class Book extends Model { static fields = { title: fields.string({ maxLength: 200 }), author: fields.foreignKey(() => Author, { null: true }), isbn: fields.string({ maxLength: 13, unique: true, label: 'ISBN' }), genre: fields.manyToMany(() => Genre), status: fields.string({ choices: [['a', 'Available'], ['o', 'On loan']], default: 'a' }) }; }
+db.register(Author, Genre, Book); await db.sync(); const ada = await Author.objects.create({ name: 'Ada' }); const poetry = await Genre.objects.create({ name: 'Poetry' }); -->
+        <pre data-run="model-form"><code class="language-js">import { ModelForm } from '@xufa/forms';
+
+class BookForm extends ModelForm {
+  static meta = { model: Book, fields: ['title', 'author', 'isbn', 'genre', 'status'] };
+}
+
+const form = new BookForm({
+  data: { title: 'Notes', author: String(ada.pk), isbn: '9780000000001', genre: [String(poetry.pk)], status: 'a' },
+});
+console.log(await form.isValid());
+const book = await form.save();
+console.log(book.title, book.authorId, (await book.genre.all()).map(String));
+
+const again = new BookForm({ data: { title: 'Copy', isbn: '9780000000001', genre: [String(poetry.pk)] } });
+console.log(await again.isValid(), again.errors);</code></pre>
+        <pre data-output><code class="language-plaintext">true
+Notes 1 [ 'Poetry' ]
+false {
+  status: [ 'This field is required.' ],
+  isbn: [ 'Book with this ISBN already exists.' ]
+}</code></pre>
+        <p>
+          After the form cleans its fields, the model checks the object made of them (its validation and rules: their
+          messages go under their fields, or to the form; the fields of the model left out of the form are not checked,
+          the view fills them with <code>save({ commit: false })</code>), then its unique fields and unique constraints
+          (of the fields without errors) are asked to the database, as Django's <code>validate_unique</code>: a
+          constraint's message (<code>Lower('name')</code>...) goes under its field.
+        </p>
+        <p>
+          <code>modelFormOf(Book, { fields: ['title', 'isbn'] })</code> makes the class of a form, as Django's
+          <code>modelform_factory</code> (generic views of a list of fields).
+        </p>
+
+        <h2 id="saving">Saving</h2>
+        <p>
+          <code>new BookForm({ data, instance })</code> changes an object: its values (and those of its many-to-many) are
+          those shown, and its own values are not duplicates of itself. <code>await form.save()</code> saves the object and
+          then its many-to-many; <code>save({ commit: false })</code> gives it unsaved (then <code>saveLinks(object)</code>).
+          Saving a form that is not valid throws. A unique value saved by another at the same time is a
+          <code>ValidationError</code>, with its message under its field.
+        </p>
+
+        <h2 id="views">In a route</h2>
+        <pre><code class="language-js">app.register(xufa.formBody); // request.body of HTML forms
+app.route({
+  method: ['GET', 'POST'],
+  url: '/catalog/book/:pk/update/',
+  name: 'book-update',
+  preHandler: app.accounts.permissionRequired('Book.change'),
+  handler: async (request, reply) =&gt; {
+    const book = await Book.objects.get({ pk: request.params.pk });
+    const form = new BookForm({ instance: book, data: request.method === 'POST' ? request.body : null });
+    if (await form.isValid()) {
+      await form.save();
+      return reply.redirect(app.reverse('book-detail', [book.pk]));
+    }
+    await form.prepare(); // the objects of its choices
+    return reply.view('catalog/form', { form });
+  },
+});</code></pre>
+
+        <h2 id="languages">Languages</h2>
+        <p>
+          Its messages are keys with English defaults (<code>FORMS_MESSAGES</code>); <a href="i18n.html">@xufa/i18n</a>
+          gives them in the language of each request: <code>i18n.translateForms(forms)</code> (es, fr, de, pt, it, and the
+          catalogs of the app over them, as <code>forms.required</code>).
+        </p>

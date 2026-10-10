@@ -1,16 +1,20 @@
 // The schemas of an instance (addSchema) and the compilers of validators and serializers, inherited by the
 // encapsulated instances.
-const { buildSchemas } = require('./schemas');
+import { buildSchemas } from './schemas.js';
+import { createRequire } from 'node:module';
+
+// The default compilers are loaded when an instance uses them (require() of ES modules): not with custom ones.
+const require = createRequire(import.meta.url);
 
 function buildSchemaController(parent, opts) {
   if (parent) return new SchemaController(parent, opts);
   const compilersFactory = { buildValidator: null, buildSerializer: null, ...(opts && opts.compilersFactory) };
   if (!compilersFactory.buildValidator) {
-    const { ValidatorSelector } = require('./validator-compiler'); // eslint-disable-line global-require
+    const { ValidatorSelector } = require('./validator-compiler.js');
     compilersFactory.buildValidator = ValidatorSelector();
   }
   if (!compilersFactory.buildSerializer) {
-    const { SerializerSelector } = require('./serializer-compiler'); // eslint-disable-line global-require
+    const { SerializerSelector } = require('./serializer-compiler.js');
     compilersFactory.buildSerializer = SerializerSelector();
   }
   const isCustom = (name) =>
@@ -98,4 +102,7 @@ class SchemaController {
 
 SchemaController.buildSchemaController = buildSchemaController;
 
-module.exports = SchemaController;
+export default SchemaController;
+
+// What require() gives (the tests of fastify are CommonJS).
+export { SchemaController as 'module.exports' };

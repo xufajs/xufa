@@ -1,8 +1,11 @@
-const fs = require('node:fs');
-const os = require('node:os');
-const path = require('node:path');
-const { Database, Model, fields, backends, setEncryptionKeys, generateEncryptionKey } = require('..');
-const { defineSuite } = require('./suite');
+import fs from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
+import { Database, Model, fields, backends, setEncryptionKeys, generateEncryptionKey } from '../index.js';
+import { defineSuite } from './suite.js';
+import { createRequire } from 'node:module';
+
+const require = createRequire(import.meta.url);
 
 const { FsBackend } = backends;
 const root = fs.mkdtempSync(path.join(os.tmpdir(), 'xufa-fs-'));

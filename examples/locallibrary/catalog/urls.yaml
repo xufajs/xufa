@@ -1,0 +1,38 @@
+# The pages of the catalog (catalog/urls.py). crud gives a model's five pages, with Django's names: books,
+# book-detail, book-create, book-update, book-delete (Book.add, .change and .delete for the last three).
+prefix: /catalog
+routes:
+  - { path: /, name: index, view: index }
+
+  - crud: Book
+    fields: [title, author, summary, isbn, genre, language]
+    list: { selectRelated: author }
+    detail: { selectRelated: [author, language], prefetchRelated: [genre, bookInstanceSet] }
+    delete: { blockedText: "You can't delete this book until all copies have been deleted:" }
+
+  - crud: Author
+    fields: [firstName, lastName, dateOfBirth, dateOfDeath]
+    detail: { view: AuthorDetail }
+    create: { initial: { dateOfDeath: '2023-11-11' } }
+    delete:
+      title: 'Delete Author: {lastName}, {firstName}'
+      question: Are you sure you want to delete the author?
+      blockedText: "You can't delete this author until all their books have been deleted:"
+
+  - { crud: Genre, fields: [name], list: { ordering: name }, detail: { prefetchRelated: bookSet__author } }
+  - { crud: Language, fields: [name], list: { ordering: name }, detail: { prefetchRelated: bookSet } }
+
+  - crud: BookInstance
+    fields: [book, imprint, dueBack, borrower, status]
+    list: { selectRelated: [book, borrower] }
+    detail: { selectRelated: [book, book__author] }
+    update: { fields: [imprint, dueBack, borrower, status] }
+    delete: { title: 'Delete Book Copy: {id}', question: Are you sure you want to delete this copy of the book? }
+
+  - { path: mybooks/, name: my-borrowed, view: LoanedBooksByUser }
+  - { path: borrowed/, name: all-borrowed, view: LoanedBooksAll }
+  - path: book/<uuid:pk>/renew/
+    name: renew-book-librarian
+    view: renewBookLibrarian
+    methods: [GET, POST]
+    permission: BookInstance.markReturned

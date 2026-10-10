@@ -5,13 +5,13 @@
 // the same (see client.js). As fetch, it asks for compressed answers (gzip, deflate, br) and decompresses them. Through
 // a proxy (the option proxy, a function of the URL: see proxy.js), https: servers are reached by tunnels (CONNECT) kept
 // alive, and requests to http: servers go to the proxy with the whole URL.
-const http = require('node:http');
-const https = require('node:https');
-const tls = require('node:tls');
-const zlib = require('node:zlib');
-const { promisify } = require('node:util');
-const { Readable, Transform, pipeline } = require('node:stream');
-const { ReadableStream } = require('node:stream/web');
+import http from 'node:http';
+import https from 'node:https';
+import tls from 'node:tls';
+import zlib from 'node:zlib';
+import { promisify } from 'node:util';
+import { Readable, Transform, pipeline } from 'node:stream';
+import { ReadableStream } from 'node:stream/web';
 
 // What is asked for when the caller does not say (fetch asks the same), and how each is decompressed (off the main
 // thread). Deflate is zlib's (RFC 1950), or raw as some servers send it: fetch takes both.
@@ -418,4 +418,4 @@ function httpTransport({ maxSockets = 256, tls: tlsOptions = {} } = {}) {
   return request;
 }
 
-module.exports = { httpTransport };
+export { httpTransport };

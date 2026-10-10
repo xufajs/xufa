@@ -1,7 +1,4 @@
-'use strict'
-
-
-const build = require('..')
+import build from '../index.js';
 
 test('possibly nullable integer primitive alternative', () => {
   expect.assertions(1)

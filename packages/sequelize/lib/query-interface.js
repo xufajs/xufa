@@ -2,9 +2,9 @@
 // remove, change, rename), indexes and constraints, and rows in bulk. Its SQL is that of Sequelize: the types of
 // sql-types.js, constraints named as it names them. SQLite cannot change most of a table: it is made again (a new
 // table, the rows copied, the old one dropped and the new one renamed), as SQLite recommends.
-const { NotSupportedError, UnknownConstraintError } = require('./errors');
-const { normalizeType, DataType } = require('./data-types');
-const {
+import { NotSupportedError, UnknownConstraintError } from './errors.js';
+import { normalizeType, DataType } from './data-types.js';
+import {
   generatedSql,
   sqlTypeOf,
   autoIncrementOf,
@@ -14,10 +14,10 @@ const {
   enumTypeRef,
   enumValuesOf,
   enumOptionsOf,
-} = require('./sql-types');
-const { Op } = require('./operators');
-const { underscore, isPlainObject } = require('./utils');
-const { deferrableSql, deferrableOf } = require('./deferrable');
+} from './sql-types.js';
+import { Op } from './operators.js';
+import { underscore, isPlainObject } from './utils.js';
+import { deferrableSql, deferrableOf } from './deferrable.js';
 
 const quote = (name) => `"${String(name).replace(/"/g, '""')}"`;
 const ON_ACTIONS = /^(CASCADE|SET NULL|SET DEFAULT|RESTRICT|NO ACTION)$/i;
@@ -1737,4 +1737,4 @@ class QueryInterface {
   }
 }
 
-module.exports = { QueryInterface, literal, whereSql };
+export { QueryInterface, literal, whereSql };

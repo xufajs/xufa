@@ -1,6 +1,6 @@
 // plugin(fn, options): marks a plugin to run in the instance registering it (no encapsulation), with its metadata
 // (name, the xufa versions it needs, decorators and plugins it depends on). What fastify-plugin does.
-const { XUFA_ERR_PLUGIN_NOT_VALID } = require('./errors');
+import { XUFA_ERR_PLUGIN_NOT_VALID } from './errors.js';
 
 let count = 0;
 
@@ -36,4 +36,7 @@ function plugin(fn, options = {}) {
   return func;
 }
 
-module.exports = plugin;
+export default plugin;
+
+// What require() gives (the tests of fastify are CommonJS).
+export { plugin as 'module.exports' };

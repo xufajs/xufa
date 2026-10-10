@@ -66,6 +66,10 @@
           <li><a href="../websocket/index.html">@xufa/websocket</a></li>
           <li><a href="../admin/index.html">@xufa/admin</a></li>
           <li><a href="../session/index.html">@xufa/session</a></li>
+          <li><a href="../forms/index.html">@xufa/forms</a></li>
+          <li><a href="../views/index.html">@xufa/views</a></li>
+          <li><a href="../mail/index.html">@xufa/mail</a></li>
+          <li><a href="../i18n/index.html">@xufa/i18n</a></li>
           <li><a href="../openapi/index.html">@xufa/openapi</a></li>
           <li><a href="../client/index.html">@xufa/client</a></li>
           <li><a href="../schema/index.html">@xufa/schema</a></li>
@@ -109,7 +113,7 @@
 
         <h2 id="start">Quick start</h2>
         <pre><code class="language-sh">npm install @xufa/inject</code></pre>
-        <pre data-run><code class="language-js">const inject = require('@xufa/inject');
+        <pre data-run><code class="language-js">import inject from '@xufa/inject';
 
 const handler = (req, res) =&gt; {
   res.writeHead(200, { 'content-type': 'text/plain' });
@@ -122,7 +126,7 @@ res.payload; // 'POST /items?x=1'</code></pre>
         <p>Any <code>(req, res)</code> handler: <code>node:http</code>, Express, Koa's <code>app.callback()</code>...</p>
 
         <h2 id="xufa">In xufa</h2>
-        <pre><code class="language-js">const app = require('./app'); // a xufa app, not listening
+        <pre><code class="language-js">import app from './app.js'; // a xufa app, not listening
 
 test('creates a user', async () =&gt; {
   const res = await app.inject({ method: 'POST', url: '/users', payload: { name: 'Ada' } });
@@ -202,7 +206,7 @@ await inject(handler, { method: 'POST', url: '/', payload: 'data', simulate: { e
         <p><code>inject.isInjection(req)</code> (or of the response) tells whether a request came from inject.</p>
 
         <h2 id="from-lmr">Coming from light-my-request</h2>
-        <p>The API is light-my-request's, and so are its tests; <code>require('light-my-request')</code> can be replaced by <code>require('@xufa/inject')</code>.</p>
+        <p>The API is light-my-request's, and so are its tests; <code>light-my-request</code> can be replaced by <code>@xufa/inject</code> (in imports or requires).</p>
 
         <h2 id="typescript">TypeScript</h2>
         <p>light-my-request's declarations: <code>InjectOptions</code>, <code>Response</code>, <code>Chain</code>.</p>

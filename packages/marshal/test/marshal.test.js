@@ -1,4 +1,4 @@
-const { marshal, unmarshal, stringify, parse, clone, Registry, ENCODE, DECODE, MarshalError } = require('..');
+import { marshal, unmarshal, stringify, parse, clone, Registry, ENCODE, DECODE, MarshalError } from '../index.js';
 
 const roundTrip = (value, options) => parse(stringify(value, options), options);
 

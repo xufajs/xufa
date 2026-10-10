@@ -1,4 +1,4 @@
-const { Integer } = require('..');
+import { Integer } from '../index.js';
 
 describe('Integer Type', () => {
   it('Should allow undefined if not mandatory', () => {

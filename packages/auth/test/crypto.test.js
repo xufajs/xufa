@@ -1,26 +1,6 @@
 // Passwords, JWTs and one-time codes: their own round trips, and the test vectors of their RFCs.
-const crypto = require('node:crypto');
-const {
-  hashPassword,
-  verifyPassword,
-  needsRehash,
-  KeySet,
-  signJwt,
-  signJwtAsync,
-  verifyJwt,
-  verifyJwtAsync,
-  decodeJwt,
-  TokenError,
-  base32Encode,
-  base32Decode,
-  generateSecret,
-  hotp,
-  totp,
-  verifyTotp,
-  totpUri,
-  generateRecoveryCodes,
-  hashRecoveryCode,
-} = require('..');
+import crypto from 'node:crypto';
+import { hashPassword, verifyPassword, needsRehash, KeySet, signJwt, signJwtAsync, verifyJwt, verifyJwtAsync, decodeJwt, TokenError, base32Encode, base32Decode, generateSecret, hotp, totp, verifyTotp, totpUri, generateRecoveryCodes, hashRecoveryCode } from '../index.js';
 
 // Fast parameters for the tests (the defaults take 128 MiB and a fraction of a second).
 const FAST = { ln: 10 };

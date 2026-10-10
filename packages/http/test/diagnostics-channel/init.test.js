@@ -1,56 +1,31 @@
 'use strict'
 
-
-const proxyquire = require('proxyquire')
+// The initialization channel, with the real node:diagnostics_channel (the library is an ES module: proxyquire, which
+// replaced the channel module of CommonJS requires, cannot reach its imports).
+const diagnostics = require('node:diagnostics_channel')
+const Xufa = require('../..')
 
 test('diagnostics_channel when present and subscribers', async () => {
-  expect.assertions(3)
+  expect.assertions(2)
 
   let fastifyInHook
-
-  const diagnostics = {
-    channel (name) {
-      expect(name).toBe('xufa.initialization')
-      return {
-        hasSubscribers: true,
-        publish (event) {
-          expect(event.fastify).toBeTruthy()
-          fastifyInHook = event.fastify
-        }
-      }
-    },
-    '@noCallThru': true
+  const onInit = (event) => {
+    expect(event.fastify).toBeTruthy()
+    fastifyInHook = event.fastify
   }
-
-  const fastify = proxyquire('../../lib/xufa', {
-    'node:diagnostics_channel': diagnostics
-  })()
-  expect(fastifyInHook).toBe(fastify)
-
-  // The assertions of resolved promises run before the test ends.
-  await new Promise((resolve) => setImmediate(resolve))
+  diagnostics.subscribe('xufa.initialization', onInit)
+  try {
+    const fastify = Xufa()
+    expect(fastifyInHook).toBe(fastify)
+  } finally {
+    diagnostics.unsubscribe('xufa.initialization', onInit)
+  }
 })
 
 test('diagnostics_channel when present and no subscribers', async () => {
-  expect.assertions(1)
+  expect.assertions(2)
 
-  const diagnostics = {
-    channel (name) {
-      expect(name).toBe('xufa.initialization')
-      return {
-        hasSubscribers: false,
-        publish () {
-          expect.fail('publish should not be called')
-        }
-      }
-    },
-    '@noCallThru': true
-  }
-
-  proxyquire('../../lib/xufa', {
-    'node:diagnostics_channel': diagnostics
-  })()
-
-  // The assertions of resolved promises run before the test ends.
-  await new Promise((resolve) => setImmediate(resolve))
+  expect(diagnostics.channel('xufa.initialization').hasSubscribers).toBe(false)
+  const fastify = Xufa()
+  expect(fastify).toBeTruthy()
 })

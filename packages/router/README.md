@@ -4,8 +4,10 @@ A fast HTTP router with the API of [find-my-way](https://github.com/delvedor/fin
 is the router of [xufa](../xufa), and works on its own.
 
 ```js
-const http = require('node:http');
-const router = require('@xufa/router')({ ignoreTrailingSlash: true });
+import http from 'node:http';
+import findMyWay from '@xufa/router';
+
+const router = findMyWay({ ignoreTrailingSlash: true });
 
 router.get('/users/:id', (req, res, params, store, searchParams) => res.end(`user ${params.id}`));
 router.on(['GET', 'HEAD'], '/files/*', (req, res, params) => res.end(params['*']));

@@ -1,9 +1,9 @@
 // sign(payload, secretOrPrivateKey, options, callback): a JWT, as jsonwebtoken makes it (the same options, checks and
 // errors), with EdDSA (Ed25519, Ed448) too.
-const { KeyObject } = require('node:crypto');
-const timespan = require('./timespan');
-const { validateAsymmetricKey, keyObjectOf } = require('./keys');
-const jws = require('./jws');
+import { KeyObject } from 'node:crypto';
+import timespan from './timespan.js';
+import { validateAsymmetricKey, keyObjectOf } from './keys.js';
+import * as jws from './jws.js';
 
 const SUPPORTED_ALGS = [
   'RS256',
@@ -110,7 +110,7 @@ function once(fn) {
   };
 }
 
-module.exports = function sign(payloadArg, secretOrPrivateKeyArg, optionsArg, callbackArg) {
+const __default = function sign(payloadArg, secretOrPrivateKeyArg, optionsArg, callbackArg) {
   let payload = payloadArg;
   let secretOrPrivateKey = secretOrPrivateKeyArg;
   let options = optionsArg;
@@ -262,3 +262,4 @@ module.exports = function sign(payloadArg, secretOrPrivateKeyArg, optionsArg, ca
   }
   return signature;
 };
+export default __default;

@@ -1,7 +1,7 @@
 'use strict'
 
 
-const fastify = require('@xufa/http')()
+const fastify = require('../..')()
 fastify.addHttpMethod('SEARCH', { hasBody: true })
 
 const schema = {

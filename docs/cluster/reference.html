@@ -47,14 +47,18 @@
           <li><a href="#functions">Functions (5)</a></li>
           <li><a href="#classes">Classes (6)</a></li>
           <li><a href="#constants">Constants (3)</a></li>
-          <li><a href="#interfaces">Interfaces (13)</a></li>
-          <li><a href="#types">Types (2)</a></li>
+          <li><a href="#interfaces">Interfaces (14)</a></li>
+          <li><a href="#types">Types (3)</a></li>
         </ul>
         <h4>Packages</h4>
         <ul>
           <li><a href="../websocket/index.html">@xufa/websocket</a></li>
           <li><a href="../admin/index.html">@xufa/admin</a></li>
           <li><a href="../session/index.html">@xufa/session</a></li>
+          <li><a href="../forms/index.html">@xufa/forms</a></li>
+          <li><a href="../views/index.html">@xufa/views</a></li>
+          <li><a href="../mail/index.html">@xufa/mail</a></li>
+          <li><a href="../i18n/index.html">@xufa/i18n</a></li>
           <li><a href="../openapi/index.html">@xufa/openapi</a></li>
           <li><a href="../client/index.html">@xufa/client</a></li>
           <li><a href="../schema/index.html">@xufa/schema</a></li>
@@ -90,7 +94,7 @@
         <h1>Reference</h1>
         <p class="intro">
           An app in a cluster of processes, the messages between them, and pools of nodes shared by its workers, with no dependencies. Every declaration of its TypeScript declarations
-          (<code>packages/cluster/index.d.ts</code>), as they are written, with their comments: made from them each time
+          (<code>packages/cluster/index.d.ts</code> or <code>index.d.cts</code>), as they are written, with their comments: made from them each time
           the docs are built. How to use them is in <a href="index.html">the overview</a>.
         </p>
 
@@ -187,7 +191,7 @@
                 <tr><td><code>new (name: string, options: { bus: Bus; busy?: (err: unknown) =&gt; boolean })</code></td><td></td><td></td></tr>
                 <tr><td><code>readonly name</code></td><td><code>string</code></td><td></td></tr>
                 <tr><td><code>acquire(options?: AcquireOptions)</code></td><td><code>Promise&lt;<a href="#ref-Lease">Lease</a>&lt;N&gt;&gt;</code></td><td><p>Waits for a free node.</p></td></tr>
-                <tr><td><code>use&lt;T&gt;(fn: (node: N, context: { signal: AbortSignal; attempt: number }) =&gt; T | Promise&lt;T&gt;, options?: UseOptions)</code></td><td><code>Promise&lt;T&gt;</code></td><td><p>Runs fn on a free node, and gives the slot back when it ends.</p></td></tr>
+                <tr><td><code>use&lt;T&gt;(fn: (node: N, context: UseContext) =&gt; T | Promise&lt;T&gt;, options?: UseOptions)</code></td><td><code>Promise&lt;T&gt;</code></td><td><p>Runs fn on a free node, and gives the slot back when it ends.</p></td></tr>
                 <tr><td><code>stats()</code></td><td><code>Promise&lt;<a href="#ref-PoolStats">PoolStats</a>&gt;</code></td><td></td></tr>
                 <tr><td><code>health(options?: PoolHealthOptions)</code></td><td><code><a href="#ref-PoolHealthCheck">PoolHealthCheck</a></code></td><td><p>A check of xufa.health, with the stats of the primary.</p></td></tr>
               </tbody>
@@ -208,7 +212,7 @@
                 <tr><td><code>stats()</code></td><td><code><a href="#ref-PoolStats">PoolStats</a></code></td><td></td></tr>
                 <tr><td><code>health(options?: PoolHealthOptions)</code></td><td><code><a href="#ref-PoolHealthCheck">PoolHealthCheck</a></code></td><td><p>A check of xufa.health: down without nodes (minNodes), degraded with too many waiting (maxWaiting).</p></td></tr>
                 <tr><td><code>acquire(options?: AcquireOptions)</code></td><td><code>Promise&lt;<a href="#ref-Lease">Lease</a>&lt;N&gt;&gt;</code></td><td></td></tr>
-                <tr><td><code>use&lt;T&gt;(fn: (node: N, context: { signal: AbortSignal; attempt: number }) =&gt; T | Promise&lt;T&gt;, options?: UseOptions)</code></td><td><code>Promise&lt;T&gt;</code></td><td></td></tr>
+                <tr><td><code>use&lt;T&gt;(fn: (node: N, context: UseContext) =&gt; T | Promise&lt;T&gt;, options?: UseOptions)</code></td><td><code>Promise&lt;T&gt;</code></td><td></td></tr>
                 <tr><td><code>close()</code></td><td><code>void</code></td><td><p>Rejects the tickets, takes the leases back and stops watching the nodes.</p></td></tr>
                 <tr><td><code>on(event: 'demand', listener: (stats: PoolStats) =&gt; void)</code></td><td><code>this</code></td><td></td></tr>
                 <tr><td><code>on(event: 'scale', listener: (info: PoolStats &amp; { from: number; to: number }) =&gt; void)</code></td><td><code>this</code></td><td></td></tr>
@@ -247,7 +251,7 @@
         <pre><code class="language-ts">export declare const isWorker: boolean;</code></pre>
 
         <h2 id="interfaces">Interfaces</h2>
-        <p class="ref-index"><a href="#ref-ClusterContext"><code>ClusterContext</code></a>, <a href="#ref-StartOptions"><code>StartOptions</code></a>, <a href="#ref-PoolNode"><code>PoolNode</code></a>, <a href="#ref-PoolNodeSource"><code>PoolNodeSource</code></a>, <a href="#ref-PoolHealthCheck"><code>PoolHealthCheck</code></a>, <a href="#ref-PoolHealthOptions"><code>PoolHealthOptions</code></a>, <a href="#ref-PoolStats"><code>PoolStats</code></a>, <a href="#ref-PoolAutoscale"><code>PoolAutoscale</code></a>, <a href="#ref-PoolOptions"><code>PoolOptions</code></a>, <a href="#ref-AcquireOptions"><code>AcquireOptions</code></a>, <a href="#ref-UseOptions"><code>UseOptions</code></a>, <a href="#ref-PoolNotifier"><code>PoolNotifier</code></a>, <a href="#ref-SlotStore"><code>SlotStore</code></a></p>
+        <p class="ref-index"><a href="#ref-ClusterContext"><code>ClusterContext</code></a>, <a href="#ref-StartOptions"><code>StartOptions</code></a>, <a href="#ref-PoolNode"><code>PoolNode</code></a>, <a href="#ref-PoolNodeSource"><code>PoolNodeSource</code></a>, <a href="#ref-PoolHealthCheck"><code>PoolHealthCheck</code></a>, <a href="#ref-PoolHealthOptions"><code>PoolHealthOptions</code></a>, <a href="#ref-PoolStats"><code>PoolStats</code></a>, <a href="#ref-PoolAutoscale"><code>PoolAutoscale</code></a>, <a href="#ref-PoolOptions"><code>PoolOptions</code></a>, <a href="#ref-AcquireOptions"><code>AcquireOptions</code></a>, <a href="#ref-UseOptions"><code>UseOptions</code></a>, <a href="#ref-UseContext"><code>UseContext</code></a>, <a href="#ref-PoolNotifier"><code>PoolNotifier</code></a>, <a href="#ref-SlotStore"><code>SlotStore</code></a></p>
 
         <h3 id="ref-ClusterContext"><code>ClusterContext</code></h3>
         <pre><code class="language-ts">export interface ClusterContext { ... }</code></pre>
@@ -272,6 +276,7 @@
               <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
               <tbody>
                 <tr><td><code>workers?</code></td><td><code>number | false</code></td><td><p>os.availableParallelism() by default; 0 (or false) runs everything in one process.</p></td></tr>
+                <tr><td><code>semiSpace?</code></td><td><code>number | false</code></td><td><p>The young generation of V8 in each worker, MB of each half (32): V8 grows it to 64 under load, 128 MB a worker for no data; false leaves V8's. A --max-semi-space-size of execArgv or NODE_OPTIONS is kept.</p></td></tr>
                 <tr><td><code>primary?</code></td><td><code>(context: <a href="#ref-ClusterContext">ClusterContext</a>) =&gt; unknown</code></td><td></td></tr>
                 <tr><td><code>worker?</code></td><td><code>(context: <a href="#ref-ClusterContext">ClusterContext</a>) =&gt; unknown</code></td><td></td></tr>
                 <tr><td><code>shutdownTimeout?</code></td><td><code>number</code></td><td><p>Milliseconds a worker has to stop before it is killed (10000).</p></td></tr>
@@ -420,6 +425,21 @@
                 <tr><td><code>retryOn?</code></td><td><code>(err: unknown, attempt: number) =&gt; boolean</code></td><td><p>Which errors are tried again (all).</p></td></tr>
                 <tr><td><code>avoidFailed?</code></td><td><code>boolean</code></td><td><p>Retries avoid the nodes where the work failed (true).</p></td></tr>
                 <tr><td><code>maxBusy?</code></td><td><code>number</code></td><td><p>Busy answers tried again on other nodes (not attempts) before giving up (20).</p></td></tr>
+                <tr><td><code>fallback?</code></td><td><code><a href="#ref-UseFallback">UseFallback</a></code></td><td><p>Somewhere else for the work (a load balancer in front of the nodes...): from the attempt <code>after</code> on, or when no node is free in <code>wait</code>, fn runs on its node, without a slot of the pool (fallback: true in its context).</p></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-UseContext"><code>UseContext</code></h3>
+        <pre><code class="language-ts">export interface UseContext { ... }</code></pre>
+        <p>What fn of use() gets besides its node.</p>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>signal</code></td><td><code>AbortSignal</code></td><td><p>Aborted when the lease is taken back (leaseTimeout, its node gone) or the caller's signal aborts.</p></td></tr>
+                <tr><td><code>attempt</code></td><td><code>number</code></td><td></td></tr>
+                <tr><td><code>fallback</code></td><td><code>boolean</code></td><td><p>The node is that of the fallback (no lease).</p></td></tr>
               </tbody>
             </table>
           </div>
@@ -453,11 +473,21 @@
           </div>
 
         <h2 id="types">Types</h2>
-        <p class="ref-index"><a href="#ref-Duration"><code>Duration</code></a>, <a href="#ref-PoolErrorCode"><code>PoolErrorCode</code></a></p>
+        <p class="ref-index"><a href="#ref-Duration"><code>Duration</code></a>, <a href="#ref-UseFallback"><code>UseFallback</code></a>, <a href="#ref-PoolErrorCode"><code>PoolErrorCode</code></a></p>
 
         <h3 id="ref-Duration"><code>Duration</code></h3>
         <pre><code class="language-ts">export type Duration = number | string;</code></pre>
         <p>Milliseconds, or a text: '500ms', '30s', '5m', '1h', '1m30s'.</p>
+
+        <h3 id="ref-UseFallback"><code>UseFallback</code></h3>
+        <pre><code class="language-ts">export type UseFallback = {
+  node: PoolNode | ((attempt: number, error: unknown) =&gt; PoolNode | Promise&lt;PoolNode&gt;);
+  /** The first attempt (0, 1...) that goes to the fallback. */
+  after?: number;
+  /** No node free in this time: the fallback takes the attempt. */
+  wait?: number | string;
+} &amp; ({ after: number } | { wait: number | string });</code></pre>
+        <p>The fallback of use(): its node (or one made for each attempt), from which attempt, and how long to wait for a node.</p>
 
         <h3 id="ref-PoolErrorCode"><code>PoolErrorCode</code></h3>
         <pre><code class="language-ts">export type PoolErrorCode =

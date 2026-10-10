@@ -20,11 +20,11 @@
 // are no field are refused (400). With strict: true, those that are not writable are refused too, and every key
 // refused is in one ValidationError (400, with the errors of each key); in an update, one with the value the object
 // has is accepted (a body that is an object as it was read).
-const createError = require('@xufa/errors');
-const { Q, or, LOOKUPS } = require('./query');
-const { QuerySet } = require('./queryset');
-const { QueryError, FieldError, LookupError, NotFoundError, ValidationError } = require('./errors');
-const { resourceDocs } = require('./resource-openapi');
+import createError from '@xufa/errors';
+import { Q, or, LOOKUPS } from './query.js';
+import { QuerySet } from './queryset.js';
+import { QueryError, FieldError, LookupError, NotFoundError, ValidationError } from './errors.js';
+import { resourceDocs } from './resource-openapi.js';
 
 // The objects of resources as components of the document of an app (components/schemas/<name>), by app (its server,
 // shared by all its plugins): name -> the JSON of the schema. A name taken by another schema keeps the documentation
@@ -114,6 +114,7 @@ function resource(model, options = {}) {
     pagination = true,
     lookup = 'pk',
     auth,
+    permissions,
     hooks = {},
     serialize,
     openapi = true,
@@ -198,8 +199,23 @@ function resource(model, options = {}) {
     return related.length ? qs.selectRelated(...related) : qs;
   }
 
-  async function find(request) {
-    const qs = scoped(request);
+  // The objects of an action for the user of the request (the where of the roles of the rbac of @xufa/auth, with
+  // permissions): null for all, false for none, or conditions (any of them). Async, apart from its QuerySet (awaiting
+  // a QuerySet runs it).
+  async function scopeOf(request, action) {
+    const auth = request.server && request.server.auth;
+    if (!permissionName || !auth || !auth.rbac || typeof auth.scopeOf !== 'function') return null;
+    return auth.scopeOf(request, `${permissionName}.${PERMISSIONS[action]}`);
+  }
+
+  function within(qs, scope) {
+    if (scope === null || scope === undefined) return qs;
+    if (scope === false) return qs.filter({ pk__in: [] });
+    return qs.filter(Q.from('or', scope));
+  }
+
+  async function find(request, action = 'get') {
+    const qs = within(scoped(request), await scopeOf(request, action));
     const id = request.params.id;
     let value;
     try {
@@ -272,12 +288,30 @@ function resource(model, options = {}) {
       })
     : null;
 
+  // The permissions of the actions (with the rbac of @xufa/auth): permissions true (the name of the model) or a name
+  // gives <name>.view (list, get), <name>.add (create), <name>.change (update) and <name>.delete (delete).
+  if (permissions !== undefined && permissions !== true && (typeof permissions !== 'string' || !permissions)) {
+    throw new TypeError(`permissions of the resource of ${model.name} is true or a name`);
+  }
+  const permissionName = permissions === true ? model.name : permissions;
+  const PERMISSIONS = { list: 'view', get: 'view', create: 'add', update: 'change', delete: 'delete' };
+  // The rule of an action with its permission: over the rule given (roles, a check, or a rule object).
+  const withPermission = (rule, action) => {
+    if (!permissionName || rule === false) return rule;
+    const can = `${permissionName}.${PERMISSIONS[action]}`;
+    if (rule === undefined || rule === true) return { can };
+    if (typeof rule === 'string' || Array.isArray(rule)) return { roles: rule, can };
+    if (typeof rule === 'function') return { check: rule, can };
+    return { ...rule, can };
+  };
+
   // The configuration of the route of an action: { auth } for @xufa/auth (auth: a rule for every action, or a rule
-  // by action), and { openapi }, its documentation (`partial`: the PATCH of update).
+  // by action; with permissions, its permission too), and { openapi }, its documentation (`partial`: the PATCH of
+  // update).
   let ref = null;
   const configOf = (action, partial = false) => {
     const config = {};
-    const rule = auth && typeof auth === 'object' && !Array.isArray(auth) ? auth[action] : auth;
+    const rule = withPermission(auth && typeof auth === 'object' && !Array.isArray(auth) ? auth[action] : auth, action);
     if (rule !== undefined) config.auth = rule;
     if (docs) config.openapi = docs(action, partial, ref);
     return Object.keys(config).length ? { config } : {};
@@ -287,7 +321,7 @@ function resource(model, options = {}) {
     if (docs) ref = componentRef(app, docs.component);
     if (actions.includes('list')) {
       app.get('/', configOf('list'), async (request) => {
-        const qs = listQuery(scoped(request), request.query || {});
+        const qs = listQuery(within(scoped(request), await scopeOf(request, 'list')), request.query || {});
         if (!pagination) return (await qs).map((object) => output(object, request));
         const query = request.query || {};
         const limit = Math.min(integer(query.limit, 'limit', pageSize), maxPageSize);
@@ -304,7 +338,19 @@ function resource(model, options = {}) {
         let values = valuesOf(request.body);
         if (hooks.beforeCreate) values = (await hooks.beforeCreate(values, request)) || values;
         const object = new model(values); // eslint-disable-line new-cap
-        await object.save();
+        // The rules of the user for adding (the where of its roles): the new object meets them, or it is not kept.
+        const scope = await scopeOf(request, 'create');
+        if (scope === null) await object.save();
+        else {
+          const create = async () => {
+            await object.save();
+            if (!(await within(model.objects.all(), scope).filter({ pk: object.pk }).exists())) {
+              throw Object.assign(new Error('You cannot do this'), { statusCode: 403, code: 'XUFA_ORM_ERR_FORBIDDEN' });
+            }
+          };
+          const { db } = model;
+          await (db && typeof db.transaction === 'function' ? db.transaction(create) : create());
+        }
         // Read again from the queryset, with its related objects.
         const created = related.length ? await scoped(request).filter({ pk: object.pk }).first() : object;
         if (hooks.afterCreate) await hooks.afterCreate(created || object, request);
@@ -314,7 +360,7 @@ function resource(model, options = {}) {
     }
     if (actions.includes('update')) {
       const update = (partial) => async (request) => {
-        const object = await find(request);
+        const object = await find(request, 'update');
         let values = valuesOf(request.body, object);
         if (!partial) {
           // PUT: the writable fields not given take their default (null when they have none).
@@ -328,7 +374,8 @@ function resource(model, options = {}) {
           object[key] = value;
         });
         await object.save();
-        const updated = related.length ? await find(request) : object;
+        // Read again (with its related objects) from the queryset, whatever the change made of it.
+        const updated = related.length ? await scoped(request).filter({ pk: object.pk }).first() : object;
         if (hooks.afterUpdate) await hooks.afterUpdate(updated, request);
         return output(updated, request);
       };
@@ -337,7 +384,7 @@ function resource(model, options = {}) {
     }
     if (actions.includes('delete')) {
       app.delete('/:id', configOf('delete'), async (request, reply) => {
-        const object = await find(request);
+        const object = await find(request, 'delete');
         if (hooks.beforeDelete) await hooks.beforeDelete(object, request);
         await object.delete();
         reply.code(204).send();
@@ -349,4 +396,4 @@ function resource(model, options = {}) {
   return plugin;
 }
 
-module.exports = { resource, BadRequest };
+export { resource, BadRequest };

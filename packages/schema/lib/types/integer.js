@@ -1,4 +1,4 @@
-const { FloatType } = require('./float');
+import { FloatType } from './float.js';
 
 class IntegerType extends FloatType {
   validate(value, fieldName = 'Value') {
@@ -37,9 +37,4 @@ function oint(min, max, isMandatory = false, isNullable = false) {
   return new IntegerType({ min, max, isMandatory, isNullable });
 }
 
-module.exports = {
-  IntegerType,
-  Integer,
-  int,
-  oint,
-};
+export { IntegerType, Integer, int, oint };

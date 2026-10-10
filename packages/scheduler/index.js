@@ -1,16 +1,13 @@
-'use strict';
-
 // @xufa/scheduler: jobs run every so often, on cron expressions or once, each on a timer of its own: no overlapping
 // runs, timeouts that abort, retries with backoff, failures that stop no other job, a history of the runs (and times
 // missed run when a process starts again), and, with a lock in a database, each time run by one process among those
 // of several machines. No dependencies.
-const { Scheduler } = require('./lib/scheduler');
-const { Cron } = require('./lib/cron');
-const { memoryLock, ormLock } = require('./lib/locks');
-const { memoryHistory, ormHistory } = require('./lib/history');
-const { schedulerPlugin } = require('./lib/plugin');
-const { toMs } = require('./lib/duration');
-const errors = require('./lib/errors');
+import { Scheduler } from './lib/scheduler.js';
+import { Cron } from './lib/cron.js';
+import { memoryLock, ormLock } from './lib/locks.js';
+import { memoryHistory, ormHistory } from './lib/history.js';
+import { schedulerPlugin } from './lib/plugin.js';
+import { toMs } from './lib/duration.js';
 
 const createScheduler = (options) => new Scheduler(options);
 
@@ -27,15 +24,6 @@ function nextRuns(expression, count = 5, { timezone, from = Date.now() } = {}) {
   return out;
 }
 
-module.exports = {
-  Scheduler,
-  createScheduler,
-  schedulerPlugin,
-  memoryLock,
-  ormLock,
-  memoryHistory,
-  ormHistory,
-  nextRuns,
-  toMs,
-  ...errors,
-};
+export * from './lib/errors.js';
+
+export { Scheduler, createScheduler, schedulerPlugin, memoryLock, ormLock, memoryHistory, ormHistory, nextRuns, toMs };

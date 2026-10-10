@@ -2,7 +2,7 @@
 
 
 const Fastify = require('..')
-const fp = require('@xufa/http').plugin
+const fp = require('..').plugin
 
 test('encapsulates an child logger factory', async () => {
   expect.assertions(4)

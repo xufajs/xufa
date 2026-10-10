@@ -1,11 +1,31 @@
 'use strict'
 
 
-const proxyquire = require('proxyquire')
+// The library with some of the modules it imports replaced (its modules are ES modules: proxyquire, which replaced
+// the requires of CommonJS, cannot reach them; vyntra's doMock and a fresh import can).
+async function xufaWith (mocks) {
+  vi.resetModules()
+  for (const [name, factory] of Object.entries(mocks)) vi.doMock(name, factory)
+  try {
+    return (await import('../lib/xufa.js')).default
+  } finally {
+    for (const name of Object.keys(mocks)) vi.doUnmock(name)
+  }
+}
+// finished() fails when lib/reply.js calls it with a callback only; the real one runs for the other modules (doMock
+// replaces it for every module, proxyquire did for reply.js only).
+const stream = require('node:stream')
+const failingFinished = () => ({
+  ...stream,
+  finished: (...args) => {
+    if (!/[\\/]lib[\\/]reply\.js/.test(new Error().stack)) return stream.finished(...args)
+    if (args.length === 2) { args[1](new Error('test-error')) }
+  }
+})
 const fs = require('node:fs')
 const resolve = require('node:path').resolve
 const zlib = require('node:zlib')
-const pipeline = require('node:stream').pipeline
+const pipeline = stream.pipeline
 const Fastify = require('..')
 const { waitForCb } = require('./helper')
 
@@ -53,80 +73,68 @@ test('onSend hook stream', async () => {
   await new Promise((resolve) => setImmediate(resolve))
 })
 
-test('onSend hook stream should work even if payload is not a proper stream', (testDone) => {
+test('onSend hook stream should work even if payload is not a proper stream', async () => {
   expect.assertions(1)
 
-  const reply = proxyquire('../lib/reply', {
-    'node:stream': {
-      finished: (...args) => {
-        if (args.length === 2) { args[1](new Error('test-error')) }
-      }
+  const Fastify = await xufaWith({ 'node:stream': failingFinished })
+  await new Promise((testDone) => {
+    const spyLogger = {
+      fatal: () => { },
+      error: () => { },
+      warn: (message) => {
+        expect(message).toBe('stream payload does not end properly')
+        fastify.close()
+        testDone()
+      },
+      info: () => { },
+      debug: () => { },
+      trace: () => { },
+      child: () => { return spyLogger }
     }
-  })
-  const Fastify = proxyquire('../lib/xufa', {
-    './reply': reply
-  })
-  const spyLogger = {
-    fatal: () => { },
-    error: () => { },
-    warn: (message) => {
-      expect(message).toBe('stream payload does not end properly')
-      fastify.close()
-      testDone()
-    },
-    info: () => { },
-    debug: () => { },
-    trace: () => { },
-    child: () => { return spyLogger }
-  }
 
-  const fastify = Fastify({ loggerInstance: spyLogger })
-  fastify.get('/', function (req, reply) {
-    reply.send({ hello: 'world' })
-  })
-  fastify.addHook('onSend', (req, reply, payload, done) => {
-    const fakeStream = { pipe: () => { } }
-    done(null, fakeStream)
+    const fastify = Fastify({ loggerInstance: spyLogger })
+    fastify.get('/', function (req, reply) {
+      reply.send({ hello: 'world' })
+    })
+    fastify.addHook('onSend', (req, reply, payload, done) => {
+      const fakeStream = { pipe: () => { } }
+      done(null, fakeStream)
+    })
+
+    fastify.inject({
+      url: '/',
+      method: 'GET'
+    })
   })
 
-  fastify.inject({
-    url: '/',
-    method: 'GET'
-  })
 })
 
-test('onSend hook stream should work on payload with "close" ending function', (testDone) => {
+test('onSend hook stream should work on payload with "close" ending function', async () => {
   expect.assertions(1)
 
-  const reply = proxyquire('../lib/reply', {
-    'node:stream': {
-      finished: (...args) => {
-        if (args.length === 2) { args[1](new Error('test-error')) }
+  const Fastify = await xufaWith({ 'node:stream': failingFinished })
+  await new Promise((testDone) => {
+
+    const fastify = Fastify({ logger: false })
+    fastify.get('/', function (req, reply) {
+      reply.send({ hello: 'world' })
+    })
+    fastify.addHook('onSend', (req, reply, payload, done) => {
+      const fakeStream = {
+        pipe: () => { },
+        close: (cb) => {
+          cb()
+          expect('close callback called').toBeTruthy()
+          testDone()
+        }
       }
-    }
-  })
-  const Fastify = proxyquire('../lib/xufa', {
-    './reply': reply
+      done(null, fakeStream)
+    })
+
+    fastify.inject({
+      url: '/',
+      method: 'GET'
+    })
   })
 
-  const fastify = Fastify({ logger: false })
-  fastify.get('/', function (req, reply) {
-    reply.send({ hello: 'world' })
-  })
-  fastify.addHook('onSend', (req, reply, payload, done) => {
-    const fakeStream = {
-      pipe: () => { },
-      close: (cb) => {
-        cb()
-        expect('close callback called').toBeTruthy()
-        testDone()
-      }
-    }
-    done(null, fakeStream)
-  })
-
-  fastify.inject({
-    url: '/',
-    method: 'GET'
-  })
 })

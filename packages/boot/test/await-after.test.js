@@ -1,10 +1,7 @@
-'use strict'
-
-
-const boot = require('..')
-const { setTimeout: sleep } = require('node:timers/promises')
-const fs = require('node:fs/promises')
-const path = require('node:path')
+import boot from '../index.js';
+import { setTimeout as sleep } from 'node:timers/promises';
+import fs from 'node:fs/promises';
+import path from 'node:path';
 
 test('await after - nested plugins with same tick callbacks', async () => {
   const app = {}
@@ -359,7 +356,7 @@ test('without autostart and sync/async plugin mix', async () => {
   }
 
   async function second () {
-    const contents = await fs.readFile(path.join(__dirname, 'fixtures', 'dummy.txt'), 'utf-8')
+    const contents = await fs.readFile(path.join(import.meta.dirname, 'fixtures', 'dummy.txt'), 'utf-8')
     expect(contents).toBe('hello, world!')
     secondLoaded = true
   }

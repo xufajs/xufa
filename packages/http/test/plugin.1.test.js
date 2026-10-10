@@ -2,8 +2,8 @@
 
 
 
-const Fastify = require('@xufa/http')
-const fp = require('@xufa/http').plugin
+const Fastify = require('..')
+const fp = require('..').plugin
 
 test('require a plugin', (testDone) => {
   expect.assertions(1)

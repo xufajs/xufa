@@ -1,14 +1,14 @@
 // Compiling the schemas of a route (validation of params, body, querystring and headers, serialization of
 // responses), and validating a request.
-const {
-  kSchemaHeaders: headersSchema,
-  kSchemaParams: paramsSchema,
-  kSchemaQuerystring: querystringSchema,
-  kSchemaBody: bodySchema,
-  kSchemaResponse: responseSchema,
-} = require('./symbols');
-const { XUFA_ERR_SCH_RESPONSE_SCHEMA_NOT_NESTED_2XX } = require('./errors');
-const { XUFAWRN001, XUFASEC002 } = require('./warnings');
+import {
+  kSchemaHeaders as headersSchema,
+  kSchemaParams as paramsSchema,
+  kSchemaQuerystring as querystringSchema,
+  kSchemaBody as bodySchema,
+  kSchemaResponse as responseSchema,
+} from './symbols.js';
+import { XUFA_ERR_SCH_RESPONSE_SCHEMA_NOT_NESTED_2XX } from './errors.js';
+import { XUFAWRN001, XUFASEC002 } from './warnings.js';
 
 const STATUS_CODE = /^[1-5](?:\d{2}|xx)$|^default$/;
 
@@ -280,10 +280,6 @@ function settle(result, context, request, dataVar, next) {
   });
 }
 
-module.exports = {
-  symbols: { bodySchema, querystringSchema, responseSchema, paramsSchema, headersSchema },
-  compileSchemasForValidation,
-  compileSchemasForSerialization,
-  validate,
-  lowerCaseHeadersSchema,
-};
+export const symbols = { bodySchema, querystringSchema, responseSchema, paramsSchema, headersSchema };
+
+export { compileSchemasForValidation, compileSchemasForSerialization, validate, lowerCaseHeadersSchema };

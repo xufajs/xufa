@@ -981,7 +981,7 @@ test('reply.send(new NotFound()) should not invoke the 404 handler', async () =>
 test('reply can set multiple instances of same header', async () => {
   expect.assertions(3)
 
-  const fastify = require('@xufa/http')()
+  const fastify = require('../..')()
 
   fastify.get('/headers', function (req, reply) {
     reply
@@ -1002,7 +1002,7 @@ test('reply can set multiple instances of same header', async () => {
 test('reply.hasHeader returns correct values', async () => {
   expect.assertions(2)
 
-  const fastify = require('@xufa/http')()
+  const fastify = require('../..')()
 
   fastify.get('/headers', function (req, reply) {
     reply.header('x-foo', 'foo')
@@ -1020,7 +1020,7 @@ test('reply.hasHeader returns correct values', async () => {
 test('reply.getHeader returns correct values', async () => {
   expect.assertions(4)
 
-  const fastify = require('@xufa/http')()
+  const fastify = require('../..')()
 
   fastify.get('/headers', function (req, reply) {
     reply.header('x-foo', 'foo')
@@ -1064,7 +1064,7 @@ test('reply.getHeader returns raw header if there is not in the reply headers', 
 test('reply.getHeaders returns correct values', (done) => {
   expect.assertions(3)
 
-  const fastify = require('@xufa/http')()
+  const fastify = require('../..')()
 
   fastify.get('/headers', function (req, reply) {
     reply.header('x-foo', 'foo')
@@ -1095,7 +1095,7 @@ test('reply.getHeaders returns correct values', (done) => {
 test('reply.removeHeader can remove the value', async () => {
   expect.assertions(3)
 
-  const fastify = require('@xufa/http')()
+  const fastify = require('../..')()
 
   onTestFinished(() => fastify.close())
 
@@ -1117,7 +1117,7 @@ test('reply.removeHeader can remove the value', async () => {
 test('reply.removeHeader removes raw headers', async () => {
   expect.assertions(9)
 
-  const fastify = require('@xufa/http')()
+  const fastify = require('../..')()
 
   onTestFinished(() => fastify.close())
 
@@ -1144,7 +1144,7 @@ test('reply.removeHeader removes raw headers', async () => {
 test('reply.removeHeader removes layered headers', async () => {
   expect.assertions(7)
 
-  const fastify = require('@xufa/http')()
+  const fastify = require('../..')()
 
   onTestFinished(() => fastify.close())
 
@@ -1170,7 +1170,7 @@ test('reply.removeHeader removes layered headers', async () => {
 test('reply.removeHeader does not throw after headers are sent', async () => {
   expect.assertions(3)
 
-  const fastify = require('@xufa/http')()
+  const fastify = require('../..')()
 
   onTestFinished(() => fastify.close())
 
@@ -1191,7 +1191,7 @@ test('reply.removeHeader does not throw after headers are sent', async () => {
 test('reply.header can reset the value', async () => {
   expect.assertions(1)
 
-  const fastify = require('@xufa/http')()
+  const fastify = require('../..')()
 
   onTestFinished(() => fastify.close())
 
@@ -1212,7 +1212,7 @@ test('reply.header can reset the value', async () => {
 test('reply.hasHeader computes raw and fastify headers', async () => {
   expect.assertions(2)
 
-  const fastify = require('@xufa/http')()
+  const fastify = require('../..')()
 
   onTestFinished(() => fastify.close())
 
@@ -1234,7 +1234,7 @@ test('reply.hasHeader computes raw and fastify headers', async () => {
 test('Reply should handle JSON content type with a charset', async () => {
   expect.assertions(10)
 
-  const fastify = require('@xufa/http')()
+  const fastify = require('../..')()
 
   fastify.get('/default', function (req, reply) {
     reply.send({ hello: 'world' })
@@ -1347,7 +1347,7 @@ test('Reply should handle JSON content type with a charset', async () => {
 test('Content type and charset set previously', (done) => {
   expect.assertions(2)
 
-  const fastify = require('@xufa/http')()
+  const fastify = require('../..')()
 
   fastify.addHook('onRequest', function (req, reply, done) {
     reply.header('content-type', 'application/json; charset=utf-16')
@@ -1401,7 +1401,7 @@ test('.statusCode is getter and setter', (done) => {
 test('reply.header setting multiple cookies as multiple Set-Cookie headers', async () => {
   expect.assertions(5)
 
-  const fastify = require('@xufa/http')()
+  const fastify = require('../..')()
   onTestFinished(() => fastify.close())
 
   fastify.get('/headers', function (req, reply) {

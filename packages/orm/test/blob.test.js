@@ -2,13 +2,15 @@
 // and metadata), with the querysets of the ORM: what they ask the store (an object, a listing, the metadata only when
 // needed), bodies read when asked, writes (metadata alone, or the body), deletes; and, on disk, the files as they are
 // and keys that cannot leave the folder.
-const fs = require('node:fs');
-const os = require('node:os');
-const path = require('node:path');
-const { Readable } = require('node:stream');
-const { Database, Model, fields, BlobValue, UniqueError, ModelError, Sum, Count } = require('..');
-const { fakeS3 } = require('./fake-s3');
-const { fakeAzure } = require('./fake-azure');
+import fs from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
+import { Readable } from 'node:stream';
+import { Database, Model, fields, BlobValue, UniqueError, ModelError, Sum, Count } from '../index.js';
+import { fakeS3 } from './fake-s3.js';
+import { fakeAzure } from './fake-azure.js';
+import httpModule from '@xufa/http';
+import * as indexModule from '../index.js';
 
 function makeModel() {
   class Upload extends Model {
@@ -321,8 +323,8 @@ describe('disk', () => {
 
 describe('blobs in an app', () => {
   it('routes that upload and stream files, and a folder for each tenant', async () => {
-    const xufa = require('@xufa/http'); // eslint-disable-line global-require
-    const { Tenants, plugin } = require('..'); // eslint-disable-line global-require
+    const xufa = httpModule;
+    const { Tenants, plugin } = indexModule;
     class Doc extends Model {
       static fields = { key: fields.string({ primaryKey: true }), body: fields.blob(), size: fields.blobInfo('size') };
     }

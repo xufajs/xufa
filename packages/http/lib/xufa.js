@@ -1,33 +1,43 @@
 // xufa: creates an instance. The API of fastify, built on the packages of this repository.
-const http = require('node:http');
-const diagnostics = require('node:diagnostics_channel');
-const Boot = require('@xufa/boot');
-const { version: VERSION } = require('../package.json');
-const symbols = require('./symbols');
-const { createServer } = require('./server');
-const Reply = require('./reply');
-const Request = require('./request');
-const Context = require('./context');
-const decorator = require('./decorate');
-const ContentTypeParser = require('./content-type-parser');
-const SchemaController = require('./schema-controller');
-const { Hooks, hookRunnerApplication, supportedHooks } = require('./hooks');
-const {
+import http from 'node:http';
+import diagnostics from 'node:diagnostics_channel';
+import Boot from '@xufa/boot';
+import __package_json1 from '../package.json' with { type: 'json' };
+const { version: VERSION } = __package_json1;
+import symbols from './symbols.js';
+import { createServer } from './server.js';
+import Reply from './reply.js';
+import Request from './request.js';
+import Context from './context.js';
+import * as decorator from './decorate.js';
+import ContentTypeParser from './content-type-parser.js';
+import SchemaController from './schema-controller.js';
+import { Hooks, hookRunnerApplication, supportedHooks } from './hooks.js';
+import {
   createInstanceLogger,
   createChildLogger,
   defaultChildLoggerFactory,
   createLogController,
   LogController,
-} = require('./logger');
-const pluginUtils = require('./plugin-utils');
-const { getGenReqId, reqIdGenFactory } = require('./req-id');
-const { buildRouting, validateBodyLimitOption, buildRouterOptions, checkAsyncHook } = require('./route');
-const build404 = require('./four-oh-four');
-const getSecuredInitialConfig = require('./config');
-const override = require('./plugin-override');
-const plugin = require('./plugin');
-const { buildErrorHandler } = require('./error-handler');
-const { appendStackTrace, BOOT_ERRORS_MAP, ...errorCodes } = require('./errors');
+} from './logger.js';
+import * as pluginUtils from './plugin-utils.js';
+import { getGenReqId, reqIdGenFactory } from './req-id.js';
+import { buildRouting, validateBodyLimitOption, buildRouterOptions, checkAsyncHook } from './route.js';
+import build404 from './four-oh-four.js';
+import getSecuredInitialConfig from './config.js';
+import override from './plugin-override.js';
+import plugin from './plugin.js';
+import { buildErrorHandler } from './error-handler.js';
+import __errors2 from './errors.js';
+const { appendStackTrace, BOOT_ERRORS_MAP, ...errorCodes } = __errors2;
+import injectModule from '@xufa/inject';
+import * as devErrorsModule from './dev-errors.js';
+import * as healthModule from './health.js';
+import * as maintenanceModule from './maintenance.js';
+import * as formBodyModule from './form-body.js';
+import * as staticFilesModule from './static-files.js';
+import * as errorPagesModule from './error-pages.js';
+import * as testClientModule from './test-client.js';
 
 const {
   kBoot,
@@ -187,6 +197,14 @@ function xufa(serverOptions) {
     findRoute(opts) {
       return router.findRoute(opts);
     },
+    // The address of a route by its name (Django's reverse()): reverse('book', { id: 7 }, { query }).
+    reverse(name, params, options) {
+      return router.reverse(name, params, options);
+    },
+    // The routes by name: { name: { url, methods } }.
+    routeNames() {
+      return router.routeNames();
+    },
     log: options.logger,
     [kLogController]: logController,
     withTypeProvider() {
@@ -237,6 +255,7 @@ function xufa(serverOptions) {
     printRoutes,
     setNotFoundHandler,
     setErrorHandler,
+    addErrorHandler,
     setChildLoggerFactory,
     initialConfig,
     addConstraintStrategy: router.addConstraintStrategy,
@@ -394,7 +413,7 @@ function xufa(serverOptions) {
 
   // Fake requests (@xufa/inject); the instance gets ready first when it is not.
   function injectRequest(opts, cb) {
-    if (inject === null) inject = require('@xufa/inject'); // eslint-disable-line global-require
+    if (inject === null) inject = injectModule;
     if (instance[kState].started) {
       if (instance[kState].closing) {
         const error = new XUFA_ERR_REOPENED_CLOSE_SERVER();
@@ -615,6 +634,16 @@ function xufa(serverOptions) {
     return this;
   }
 
+  // An error handler over those of this context without taking it: plugins (the ORM's, errorPages) add theirs, and the
+  // app may still set its own (setErrorHandler), which goes first. A handler that throws the error (or sends it)
+  // passes it to the one under it.
+  function addErrorHandler(func) {
+    throwIfAlreadyStarted('Cannot call "addErrorHandler"!');
+    if (typeof func !== 'function') throw new XUFA_ERR_ERROR_HANDLER_NOT_FN();
+    this[kErrorHandler] = buildErrorHandler(this[kErrorHandler], func.bind(this));
+    return this;
+  }
+
   function setChildLoggerFactory(factory) {
     throwIfAlreadyStarted('Cannot call "setChildLoggerFactory"!');
     this[kChildLoggerFactory] = factory;
@@ -779,12 +808,43 @@ function validateSchemaErrorFormatter(formatter) {
   if (formatter.constructor.name === 'AsyncFunction') throw new XUFA_ERR_SCHEMA_ERROR_FORMATTER_NOT_FN('AsyncFunction');
 }
 
-module.exports = xufa;
-module.exports.xufa = xufa;
-module.exports.default = xufa;
-module.exports.errorCodes = errorCodes;
-module.exports.LogController = LogController;
-module.exports.plugin = plugin;
-module.exports.devErrors = require('./dev-errors').devErrors;
-module.exports.health = require('./health').health;
-module.exports.maintenance = require('./maintenance').maintenance;
+export default xufa;
+xufa.xufa = xufa;
+xufa.default = xufa;
+xufa.errorCodes = errorCodes;
+xufa.LogController = LogController;
+xufa.plugin = plugin;
+xufa.devErrors = devErrorsModule.devErrors;
+const __devErrors = xufa.devErrors;
+xufa.health = healthModule.health;
+const __health = xufa.health;
+xufa.maintenance = maintenanceModule.maintenance;
+const __maintenance = xufa.maintenance;
+xufa.formBody = formBodyModule.formBody;
+const __formBody = xufa.formBody;
+xufa.staticFiles = staticFilesModule.staticFiles;
+const __staticFiles = xufa.staticFiles;
+xufa.errorPages = errorPagesModule.errorPages;
+const __errorPages = xufa.errorPages;
+xufa.TestClient = testClientModule.TestClient;
+const __TestClient = xufa.TestClient;
+xufa.textOf = testClientModule.textOf;
+const __textOf = xufa.textOf;
+
+export {
+  xufa,
+  errorCodes,
+  LogController,
+  plugin,
+  __devErrors as devErrors,
+  __health as health,
+  __maintenance as maintenance,
+  __formBody as formBody,
+  __staticFiles as staticFiles,
+  __errorPages as errorPages,
+  __TestClient as TestClient,
+  __textOf as textOf,
+};
+
+// What require() gives (the tests of fastify are CommonJS).
+export { xufa as 'module.exports' };

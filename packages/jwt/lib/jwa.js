@@ -2,8 +2,8 @@
 // verify(input, signature, key) }, with signatures in base64url. HS256/384/512 (HMAC), RS256/384/512 (RSASSA-PKCS1),
 // PS256/384/512 (RSASSA-PSS), ES256/384/512 (ECDSA, signatures as R || S), none, and two jwa does not have: EdDSA
 // (Ed25519 and Ed448, RFC 8037) and ES256K (ECDSA on secp256k1, RFC 8812). All by node:crypto.
-const crypto = require('node:crypto');
-const util = require('node:util');
+import crypto from 'node:crypto';
+import util from 'node:util';
 
 const MSG_INVALID_ALGORITHM =
   '"%s" is not a valid algorithm.\n  Supported algorithms are:\n  "HS256", "HS384", "HS512", "RS256", "RS384", "RS512", "PS256", "PS384", "PS512", "ES256", "ES384", "ES512" and "none".';
@@ -195,4 +195,6 @@ function jwa(algorithm) {
   return methods;
 }
 
-module.exports = jwa;
+export default jwa;
+
+export { jwa as 'module.exports' };

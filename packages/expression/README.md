@@ -4,7 +4,7 @@ Expressions of JavaScript, a safe part of it, compiled once and run many times o
 formulas, conditions and templates that users or configuration write. No dependencies.
 
 ```js
-const { compile, evaluate } = require('@xufa/expression');
+import { compile, evaluate } from '@xufa/expression';
 
 const total = compile('items.filter(i => i.price > min).reduce((sum, i) => sum + i.price * i.quantity, 0)');
 total({ items, min: 10 }); // compiled once: as fast as JavaScript written by hand

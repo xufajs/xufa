@@ -1,8 +1,5 @@
-'use strict'
-
-
-const validator = require('is-my-json-valid')
-const build = require('..')
+import validator from 'is-my-json-valid';
+import build from '../index.js';
 
 test('object with RexExp', () => {
   expect.assertions(3)

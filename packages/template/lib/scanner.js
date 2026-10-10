@@ -1,7 +1,7 @@
 // The parts of a template: texts and tags. A tag is {{ expression }} (escaped), {{{ expression }}} (as it is),
 // {{#if}}, {{else}}, {{/if}} and the other blocks, {{> partial}} or {{! comment }} ({{!-- comment --}} can hold }}).
 // {{~ and ~}} take out the white space before and after a tag; \{{ is the text {{.
-const { TemplateError } = require('./errors');
+import { TemplateError } from './errors.js';
 
 // The end of the expression that starts at `i`: where `close` is, out of strings and braces.
 function endOf(source, i, close, name, tag = i) {
@@ -121,4 +121,4 @@ function scan(source, name) {
   return parts;
 }
 
-module.exports = { scan };
+export { scan };

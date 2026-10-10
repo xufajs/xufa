@@ -2,7 +2,7 @@
 
 const { Readable } = require('node:stream')
 
-const Fastify = require('@xufa/http')
+const Fastify = require('..')
 const fs = require('node:fs')
 const { sleep, waitForCb } = require('./helper')
 

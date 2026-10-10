@@ -1,7 +1,7 @@
 // Caches that fail (cache.faults of MemoryCache, SharedCache, LocalCache): reads and writes that fail are misses
 // (the database answers; onCacheError, or a warning once, is told), and deletes that fail are errors (what the cache
 // keeps would be old).
-const { Database, Model, fields, MemoryCache, SharedCache, LocalCache, FaultError, cached, Faults } = require('..');
+import { Database, Model, fields, MemoryCache, SharedCache, LocalCache, FaultError, cached, Faults } from '../index.js';
 
 function makeModel() {
   class User extends Model {

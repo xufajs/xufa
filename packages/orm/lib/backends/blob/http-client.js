@@ -1,11 +1,9 @@
-'use strict';
-
 // The requests of the s3 backend over node:http and node:https, with connections kept for the next ones: a function
 // of the shape of fetch (url, { method, headers, body }) that gives what the backend reads of an answer (status, ok,
 // headers.get(), text(), body.cancel(), and stream: the body as a Node stream). Node's fetch is several times slower
 // for small requests (HEAD above all: about 1,600 a second where this makes 14,000, on one machine).
-const http = require('node:http');
-const https = require('node:https');
+import http from 'node:http';
+import https from 'node:https';
 
 function httpClient({ maxSockets = 64 } = {}) {
   const agents = {
@@ -61,4 +59,4 @@ function httpClient({ maxSockets = 64 } = {}) {
   return request;
 }
 
-module.exports = { httpClient };
+export { httpClient };

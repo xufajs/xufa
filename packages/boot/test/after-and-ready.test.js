@@ -1,7 +1,4 @@
-'use strict'
-
-
-const boot = require('..')
+import boot from '../index.js';
 
 test('boot a plugin and then execute a call after that', (testDone) => {
   expect.assertions(5)

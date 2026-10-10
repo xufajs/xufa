@@ -1,5 +1,3 @@
-'use strict';
-
 // The maintenance mode (as Laravel's php artisan down): while it is on, requests get a 503 (with Retry-After, a page
 // for browsers and JSON for the rest), but the health routes, routes with config.maintenance: false, the addresses
 // allowed, and the browsers that opened the secret path (a cookie) go through. xufa down turns it on: a file of this
@@ -7,9 +5,9 @@
 // turns it off.
 //
 //   app.register(xufa.maintenance, { store: maintenance(db) }); // the file, and the database
-const fs = require('node:fs');
-const path = require('node:path');
-const crypto = require('node:crypto');
+import fs from 'node:fs';
+import path from 'node:path';
+import crypto from 'node:crypto';
 
 const ESCAPES = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' };
 const escape = (value) => String(value).replace(/[&<>"']/g, (c) => ESCAPES[c]);
@@ -151,4 +149,4 @@ function maintenance(app, options, done) {
 maintenance[Symbol.for('skip-override')] = true;
 maintenance[Symbol.for('fastify.display-name')] = 'xufa.maintenance';
 
-module.exports = { maintenance, fileStore, bypassOf };
+export { maintenance, fileStore, bypassOf };

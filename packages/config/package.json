@@ -4,7 +4,7 @@
   "description": "The configuration of an app from layers (files by environment, .env, variables, HTTP, Consul, Vault, folders of secrets, overrides), with safe templates, a schema that converts and checks, and secrets redacted",
   "main": "./index.js",
   "types": "./index.d.ts",
-  "type": "commonjs",
+  "type": "module",
   "exports": {
     ".": {
       "types": "./index.d.ts",
@@ -51,7 +51,7 @@
   },
   "devDependencies": {
     "tsd": "^0.33.0",
-    "vyntra": "^0.6.0"
+    "vyntra": "^0.7.0"
   },
   "publishConfig": {
     "access": "public"

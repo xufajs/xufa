@@ -1,6 +1,6 @@
 import { expectType, expectError } from 'tsd';
 import { MongoClient, Collection, Cursor, ObjectId, MongoServerError, InsertManyResult, Document } from '../..';
-import { Decimal128 } from '../..';
+import { Decimal128, MongoNetworkError } from '../..';
 
 interface User {
   _id?: ObjectId;
@@ -21,7 +21,9 @@ async function main() {
   expectType<User[]>(await cursor.toArray());
   expectType<User | null>(await users.findOne({ name: 'Ada' }));
   for await (const user of users.find()) expectType<User>(user);
-  expectType<InsertManyResult>(await users.insertMany([{ name: 'Ada', age: 36 }], { ordered: false, writeConcern: { w: 'majority' } }));
+  expectType<InsertManyResult>(
+    await users.insertMany([{ name: 'Ada', age: 36 }], { ordered: false, writeConcern: { w: 'majority' } })
+  );
   expectType<number>((await users.updateMany({}, { $inc: { age: 1 } })).modifiedCount);
   expectType<Document[]>(await users.aggregate([{ $group: { _id: '$age' } }]).toArray());
   const session = client.startSession();
@@ -43,3 +45,12 @@ const price = Decimal128.fromString('19.99');
 expectType<string>(price.toString());
 expectType<number | bigint>(price.toParts().coefficient);
 expectType<Decimal128>(Decimal128.fromParts(false, 1999n, -2));
+
+// withTransaction: its timeout, and the labels of the errors.
+{
+  const txClient = new MongoClient('mongodb://localhost/test');
+  const session = txClient.startSession();
+  session.withTransaction(async () => 1, { timeout: 30000 }).then((n) => expectType<number>(n));
+  expectType<boolean>(new MongoNetworkError('x').hasErrorLabel('TransientTransactionError'));
+  expectType<Promise<void>>(session.retryCommit());
+}

@@ -1,0 +1,150 @@
+<!--{
+  "file": "mail.html",
+  "name": "@xufa/mail",
+  "title": "@xufa/mail",
+  "description": "@xufa/mail: emails as classes (Laravel's Mailables) rendered with templates in a layout for email clients, sent through the mail backends of @xufa/orm at once or from jobs of @xufa/queue, and notifications by mail, database or channels of your own.",
+  "groups": [
+    ["Emails", [["start", "Quick start"], ["mailables", "Mailables"], ["content", "Content and layout"], ["sending", "Sending and queueing"], ["attachments", "Attachments"]]],
+    ["Notifications", [["notifications", "Notifications"], ["channels", "Channels"], ["database", "Kept in the database"]]]
+  ]
+}-->
+        <h1>@xufa/mail</h1>
+        <p class="intro">
+          Emails as classes, as Laravel's Mailables: each says who it goes to and what it says (a template of
+          <a href="template.html">@xufa/template</a> with its data), and a <code>Mailer</code> renders it in a layout that
+          email clients read and sends it, at once or from a job of <a href="queue.html">@xufa/queue</a>. Sending is
+          creating an object of the model of the emails of <a href="orm-guide.html#mail">the ORM</a> (SMTP, or kept in
+          memory in tests). And notifications: something that happened, told to the users it concerns by mail, kept in the
+          database, or by channels of your own.
+        </p>
+
+        <h2 id="start">Quick start</h2>
+        <pre data-run><code class="language-js">import { Database, Model, fields } from '@xufa/orm';
+import { Mailable, Mailer, mailFields } from '@xufa/mail';
+
+class Email extends Model {
+  static fields = mailFields(fields); // from, to, cc, bcc, replyTo, subject, text, html, attachments... and what was sent
+}
+// In production: { backend: 'smtp', url: 'smtp://user:password@smtp.example.com:587', from: ... }
+new Database({ backend: 'memory-mail', from: 'Shop &lt;shop@example.com&gt;' }).register(Email);
+
+class OrderShipped extends Mailable {
+  constructor(order) {
+    super();
+    this.order = order; // the fields of a mailable are the data of its templates
+  }
+
+  envelope() {
+    return { subject: 'Your order {{ order.number }} is on its way' };
+  }
+
+  content() {
+    return {
+      html: '&lt;p&gt;Hello {{ order.name }},&lt;/p&gt;&lt;p&gt;It arrives on {{ order.day }}.&lt;/p&gt;{{&gt; button ({ url: order.url, text: "Track it" }) }}',
+      preheader: 'It arrives soon',
+    };
+  }
+}
+
+const mailer = new Mailer({ model: Email, app: { name: 'Shop', url: 'https://shop.example' } });
+const order = { number: 'A-17', name: 'Ada', day: 'Friday', url: 'https://shop.example/track/A-17' };
+const sent = await mailer.send(new OrderShipped(order), { to: 'Ada &lt;ada@example.com&gt;' });
+console.log(sent.subject, sent.accepted);
+console.log(sent.text);</code></pre>
+        <pre data-output><code class="language-plaintext">Your order A-17 is on its way [ 'ada@example.com' ]
+Hello Ada,
+
+It arrives on Friday.
+
+Track it (https://shop.example/track/A-17)</code></pre>
+
+        <h2 id="mailables">Mailables</h2>
+        <p>A <code>Mailable</code> has three methods, each optional, and may be async:</p>
+        <ul>
+          <li><code>envelope()</code>: <code>{ subject, to, cc, bcc, replyTo, from, headers }</code>. The subject is a template. The recipients given to <code>send()</code> (and its subject) go over these.</li>
+          <li><code>content()</code>: <code>{ view }</code> (the files <code>name.html</code> and <code>name.txt</code> of the <code>views</code> of the Mailer), or <code>{ html, text }</code> (templates); <code>with</code>: their data, over the fields of the mailable, <code>app</code> and the <code>globals</code> of the Mailer; <code>preheader</code>, <code>footer</code>, <code>layout</code>.</li>
+          <li><code>attachments()</code>: the files of the email (see <a href="#attachments">Attachments</a>).</li>
+        </ul>
+        <p>A plain object is an email too: <code>mailer.send({ to, subject, view, with, attachments })</code>.</p>
+
+        <h2 id="content">Content and layout</h2>
+        <ul>
+          <li>HTML templates escape their values; text templates (<code>.txt</code>, <code>text</code>, the subject) do not.</li>
+          <li>Without text, the text is made of the HTML (clients without HTML show it, and the filters of spam read both): blocks on lines of their own, links as <code>text (address)</code>, lists with dashes.</li>
+          <li>The HTML goes in the layout of xufa: a column of 600 px in tables and inline styles, with the name of the app (<code>app: { name, url }</code>) above, the <code>footer</code> below, and the <code>preheader</code> (the line clients show after the subject) hidden at the top. <code>layout: false</code> (of the Mailer or of an email) sends the HTML as it is; a template of your own takes <code>{{{ body }}}</code>.</li>
+          <li><code>{{&gt; button ({ url, text: 'Go' }) }}</code> is a button that looks the same in every client. <code>mailer.preview(mail)</code> gives the HTML to look at.</li>
+        </ul>
+
+        <h2 id="sending">Sending and queueing</h2>
+        <pre><code class="language-js">const mailer = new Mailer({ model: Email, views: 'views/mail', app: { name: 'Shop' }, queue });
+
+await mailer.send(new OrderShipped(order), { to: user.email }); // now: the object of the model, with what was sent
+await mailer.queue(new OrderShipped(order), { to: user.email, delay: '5m', priority: 2 }); // from a worker</code></pre>
+        <ul>
+          <li><code>send()</code> creates the object of the model of the emails, which sends it: its <code>mailInfo</code> fields say what the server answered (<code>messageId</code>, <code>accepted</code>, <code>rejected</code>, <code>sentAt</code>).</li>
+          <li><code>queue()</code> renders the email now and enqueues a job (<code>xufa:mail</code>) that sends it, tried again when the server of mail fails (<code>attempts</code>, 5); options of the job: <code>delay</code>, <code>at</code>, <code>priority</code>, <code>queue</code>, <code>key</code>.</li>
+          <li>A model without a field the email has (an HTML email, a model without <code>html</code>) is an error, not a silence: <code>mailFields(fields)</code> has them all.</li>
+        </ul>
+
+        <h2 id="attachments">Attachments</h2>
+        <pre><code class="language-js">attachments() {
+  return [
+    { path: 'invoices/F-9.pdf' }, // read when the email is rendered
+    { filename: 'report.csv', content: csv, contentType: 'text/csv' },
+    { filename: 'logo.png', content: logo, cid: 'logo' }, // &lt;img src="cid:logo"&gt; in the HTML
+  ];
+}</code></pre>
+        <p>Queued, their bytes travel in the job as base64.</p>
+
+        <h2 id="notifications">Notifications</h2>
+        <p>
+          A <code>Notification</code> says by which channels it goes (<code>via(user)</code>) and what each one gets:
+          <code>toMail(user)</code> a Mailable (or a plain email), <code>toDatabase(user)</code> data to keep, and
+          <code>to&lt;Channel&gt;(user)</code> for channels of your own. A <code>Notifier</code> sends it to each user by
+          each channel, from a job each (one that fails is tried again alone), or at once.
+        </p>
+        <pre><code class="language-js">import { Notification, Notifier, notificationFields } from '@xufa/mail';
+
+class InvoicePaid extends Notification {
+  constructor(invoice) {
+    super();
+    this.invoice = invoice; // an object of a model: carried by its key, read again in the worker
+  }
+
+  via(user) {
+    return user.wantsEmail ? ['mail', 'database'] : ['database'];
+  }
+
+  toMail() {
+    return { subject: 'Invoice {{ invoice.number }} paid', view: 'invoice-paid' };
+  }
+
+  toDatabase() {
+    return { invoice: this.invoice.number, amount: this.invoice.amount };
+  }
+}
+
+const notifier = new Notifier({ mailer, queue, model: NotificationRecord, notifications: [InvoicePaid], models: [User, Invoice] });
+await notifier.notify(user, new InvoicePaid(invoice)); // jobs: one for the mail, one for the database
+await notifier.notify(admins, new InvoicePaid(invoice), { now: true }); // without the queue</code></pre>
+        <ul>
+          <li>By mail, a notification goes to <code>user.routeNotificationFor('mail')</code>, or to <code>user.email</code>.</li>
+          <li>With a queue, the classes of the notifications (<code>notifications</code>) and of the models they carry (<code>models</code>) are given to the Notifier, which makes them again in the workers: a notification carries its own fields as JSON, objects of models by their key (read again when the job runs), and dates.</li>
+          <li><code>Notifier.route('mail', 'billing@example.com')</code> is someone who is not a user (and <code>.route('sms', '+34...')</code> for more channels).</li>
+        </ul>
+
+        <h2 id="channels">Channels</h2>
+        <pre><code class="language-js">const notifier = new Notifier({
+  mailer,
+  channels: { sms: (user, text) =&gt; sms.send(user.routeNotificationFor('sms') || user.phone, text) },
+});
+// A notification with via() =&gt; ['sms'] and toSms(user) =&gt; 'Your code is 123456'</code></pre>
+
+        <h2 id="database">Kept in the database</h2>
+        <pre><code class="language-js">class NotificationRecord extends Model {
+  static fields = notificationFields(fields); // notifiableType, notifiableId, type, data, readAt, createdAt
+  static options = { table: 'notifications' };
+}
+
+const unread = await notifier.of(user, { unread: true }); // the newest first
+await notifier.markRead(user); // all, or markRead(user, [keys])</code></pre>

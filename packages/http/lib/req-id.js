@@ -1,5 +1,5 @@
 // Ids of requests: req-1, req-2... (in base 36), or the value of a header when requestIdHeader is set.
-const { kGenReqId } = require('./symbols');
+import { kGenReqId } from './symbols.js';
 
 // The largest SMI: ids stay small integers for V8 (and wrap around after 2^31 requests).
 const MAX_INT = 2147483647;
@@ -24,4 +24,4 @@ function getGenReqId(server, req) {
   return server[kGenReqId](req);
 }
 
-module.exports = { reqIdGenFactory, getGenReqId };
+export { reqIdGenFactory, getGenReqId };

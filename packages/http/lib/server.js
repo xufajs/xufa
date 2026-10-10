@@ -1,19 +1,19 @@
 // The HTTP server (http, https, http2, or one of the user) and listen(), which on 'localhost' listens on every
 // address it resolves to (127.0.0.1 and ::1).
-const http = require('node:http');
-const https = require('node:https');
-const http2 = require('node:http2');
-const dns = require('node:dns');
-const os = require('node:os');
-const { kState, kOptions, kServerBindings, kHttp2ServerSessions } = require('./symbols');
-const { XUFAWRN003 } = require('./warnings');
-const { onListenHookRunner } = require('./hooks');
-const {
+import http from 'node:http';
+import https from 'node:https';
+import http2 from 'node:http2';
+import dns from 'node:dns';
+import os from 'node:os';
+import { kState, kOptions, kServerBindings, kHttp2ServerSessions } from './symbols.js';
+import { XUFAWRN003 } from './warnings.js';
+import { onListenHookRunner } from './hooks.js';
+import {
   XUFA_ERR_REOPENED_CLOSE_SERVER,
   XUFA_ERR_REOPENED_SERVER,
   XUFA_ERR_LISTEN_OPTIONS_INVALID,
   XUFA_ERR_FORCE_CLOSE_CONNECTIONS_IDLE_NOT_AVAILABLE,
-} = require('./errors');
+} from './errors.js';
 
 function defaultListeningText(address) {
   return `Server listening at ${address}`;
@@ -303,4 +303,4 @@ function createCloseHttp2Sessions(server) {
   };
 }
 
-module.exports = { createServer, noopSet };
+export { createServer, noopSet };

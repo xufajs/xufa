@@ -1,9 +1,9 @@
 // $merge and $patch (as ajv-merge-patch): a schema made from a source and a JSON Merge Patch (RFC 7386) or a JSON
 // Patch (RFC 6902) when the schema is compiled; its source inline or by a $ref (a schema of the option schemas, the
 // document, a JSON Pointer); and standalone code of them.
-const vm = require('node:vm');
-const { compileJsonSchema, standaloneJsonSchema } = require('..');
-const { mergePatch, applyPatch } = require('../lib/merge-patch');
+import vm from 'node:vm';
+import { compileJsonSchema, standaloneJsonSchema } from '../index.js';
+import { mergePatch, applyPatch } from '../lib/merge-patch.js';
 
 const obj = {
   $id: 'obj.json#',

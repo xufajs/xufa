@@ -88,4 +88,4 @@ function markOutcomes(html) {
   return markCharts(markPairs(html));
 }
 
-module.exports = { markOutcomes, outcomeOf };
+export { markOutcomes, outcomeOf };

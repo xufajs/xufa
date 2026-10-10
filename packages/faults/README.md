@@ -47,16 +47,16 @@ every rule of every faults (the database, its caches, the clients, the bus...) a
 
 ```js
 // In the setup files of the runner (setupFiles of Jest, Vitest or vyntra; --require of Mocha):
-require('@xufa/faults/register'); // or require('xufa/faults/register')
+import '@xufa/faults/register'; // or 'xufa/faults/register'
 
 // Or in a test file, with the hooks of the runner:
-const { useFaults } = require('@xufa/faults'); // or require('xufa/faults')
-useFaults(); // afterEach of the runner (a global); useFaults(require('node:test')) for node:test
+import { useFaults } from '@xufa/faults'; // or from 'xufa/faults'
+useFaults(); // afterEach of the runner (a global); useFaults(await import('node:test')) for node:test
 ```
 
 - `strict`: a test that ends with faults still set fails, with what it left (`database: fail of insert (hits 0)`); they are
   cleared all the same, so the next test is not the one that fails for it. `useFaults({ strict: true })`,
-  `useFaults(require('node:test'), { strict: true })`, or `require('@xufa/faults/register-strict')` in the setup files. A
+  `useFaults(await import('node:test'), { strict: true })`, or `@xufa/faults/register-strict` in the setup files. A
   test that clears its faults in an `afterEach` of its own is fine: those run before the one of the setup files.
   xufa's own suites that use faults (faults, orm, client, cluster, netcache, xufa) run strict: with vyntra,
   `"vyntra": { "setupFiles": ["@xufa/faults/register-strict"] }` in package.json.
@@ -72,7 +72,7 @@ down, then the payment provider answers 503 now and then. For game days in stagi
 through all of it.
 
 ```js
-const { scenario } = require('@xufa/faults'); // or require('xufa/faults')
+import { scenario } from '@xufa/faults'; // or from 'xufa/faults'
 
 const brownout = scenario({
   name: 'payments brownout',
@@ -117,7 +117,7 @@ scheduler.add({
 script, a dashboard or a game day, without deploying:
 
 ```js
-const { plugin } = require('@xufa/faults'); // or require('xufa/faults')
+import { plugin } from '@xufa/faults'; // or from 'xufa/faults'
 
 app.register(plugin, {
   targets: { db, cache: db.cache, payments, bus }, // faults, or what has them
@@ -183,7 +183,7 @@ them: of every error whose code ends in `FAULT`.
 ## Faults of your own
 
 ```js
-const { Faults, wrap, cacheFaults } = require('@xufa/faults'); // or require('xufa/faults')
+import { Faults, wrap, cacheFaults } from '@xufa/faults'; // or from 'xufa/faults'
 
 const faults = new Faults({
   operations: ['charge', 'refund'],

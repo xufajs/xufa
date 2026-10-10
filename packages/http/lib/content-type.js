@@ -153,5 +153,10 @@ class ContentType {
   }
 }
 
-module.exports = ContentType;
-module.exports.LruMap = LruMap;
+export default ContentType;
+ContentType.LruMap = LruMap;
+
+export { LruMap };
+
+// What require() gives (the tests of fastify are CommonJS).
+export { ContentType as 'module.exports' };

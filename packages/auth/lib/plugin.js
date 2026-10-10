@@ -15,15 +15,20 @@
 // route with { auth: { tenant: true } } needs a user of the tenant of the request (request.tenant, which the plugin of
 // the ORM sets, or options.tenants.of(request)); { tenant: '*' } a user of every tenant. app.auth.canUseTenant(request,
 // id) is that check, for the authorize option of the tenants of the ORM (before the tenant is entered).
-const { KeySet } = require('./keys');
-const { signJwtAsync, verifyJwtAsync } = require('./jwt-keyset');
-const { seconds } = require('./duration');
-const { parseCookies, serializeCookie } = require('./cookies');
-const { hashPassword, verifyPassword, needsRehash } = require('./password');
-const { verifyTotp } = require('./totp');
-const { Lockout } = require('./lockout');
-const { RefreshTokens } = require('./refresh');
-const { TokenError, Unauthorized, Forbidden, TotpRequired, Locked } = require('./errors');
+//
+// Permissions: with rbac (an Rbac, or its options), a route with { auth: { can: 'Book.change' } } needs a user with
+// that permission (or all those of a list) in the tenant of the request; app.auth.can(request, permission) and
+// request.can(permission) ask it in a handler. The tenants of a user are then those of its grants.
+import { KeySet } from './keys.js';
+import { signJwtAsync, verifyJwtAsync } from './jwt-keyset.js';
+import { seconds } from './duration.js';
+import { parseCookies, serializeCookie } from './cookies.js';
+import { hashPassword, verifyPassword } from './password.js';
+import { Credentials, CredentialError } from './credentials.js';
+import { Lockout } from './lockout.js';
+import { RefreshTokens } from './refresh.js';
+import { TokenError, Unauthorized, Forbidden, TotpRequired, Locked } from './errors.js';
+import { Rbac, rolesOf, tenantsOf, ALL_TENANTS } from './rbac.js';
 
 const VERIFIED = Symbol('xufa.auth.verified');
 const RESULTS = Symbol('xufa.auth.results');
@@ -31,23 +36,6 @@ const FAILURES = Symbol('xufa.auth.failures');
 const BEARER = 'Bearer realm="api"';
 
 const keySetOf = (keys) => (keys instanceof KeySet ? keys : new KeySet(keys));
-
-// The roles of a user: user.roles (a list) or user.role.
-function rolesOf(user) {
-  if (!user) return [];
-  if (Array.isArray(user.roles)) return user.roles;
-  return user.role === undefined || user.role === null ? [] : [user.role];
-}
-
-// Every tenant, in the tenants of a user.
-const ALL_TENANTS = '*';
-
-// The tenants of a user: user.tenants (a list) or user.tenant, as texts.
-function tenantsOf(user) {
-  if (!user) return [];
-  if (Array.isArray(user.tenants)) return user.tenants.map(String);
-  return user.tenant === undefined || user.tenant === null ? [] : [String(user.tenant)];
-}
 
 // Whether a user may use a tenant: one of its tenants, or all ('*').
 function memberOf(tenants, tenant) {
@@ -59,7 +47,16 @@ async function authPlugin(app, options = {}) {
   // The tenant of a request, and the tenants of a user (their claims by default).
   const tenantOptions = options.tenants || {};
   const tenantOfRequest = tenantOptions.of || ((request) => request.tenant);
-  const tenantsOfUser = tenantOptions.claim || tenantsOf;
+  const rbac = !options.rbac ? null : options.rbac instanceof Rbac ? options.rbac : new Rbac(options.rbac);
+  // What each user may (by the object of the user: a request whose user changes asks again).
+  const accesses = new WeakMap();
+  const accessOf = (user) => {
+    if (!user || typeof user !== 'object') return rbac.access(null);
+    if (!accesses.has(user)) accesses.set(user, rbac.access(user));
+    return accesses.get(user);
+  };
+  const tenantsOfUser =
+    tenantOptions.claim || (rbac ? async (user) => rbac.tenantsIn(await accessOf(user)) : tenantsOf);
   const given = options.strategies || (keys ? ['jwt'] : []);
   if (!keys && (given.includes('jwt') || options.login || options.refresh)) {
     throw new TypeError('The auth plugin needs keys (a secret, a KeySet, or a function of the request)');
@@ -249,6 +246,24 @@ async function authPlugin(app, options = {}) {
     };
   }
 
+  // Whether the user of a request has a permission (or all those of a list) in a tenant (that of the request by
+  // default): false without a user.
+  async function can(request, permission, tenant) {
+    if (!rbac) throw new TypeError('app.auth.can() needs the option rbac of the auth plugin');
+    if (!request.user) return false;
+    const where = tenant === undefined ? await tenantOfRequest(request) : tenant;
+    return rbac.allows(await accessOf(request.user), permission, where);
+  }
+
+  // The objects of a permission for the user of a request, in a tenant (that of the request by default): null for
+  // every one, false for none, or conditions of the ORM (any of them): the where of its roles (Rbac).
+  async function scopeOf(request, permission, tenant) {
+    if (!rbac) throw new TypeError('app.auth.scopeOf() needs the option rbac of the auth plugin');
+    if (!request.user) return false;
+    const where = tenant === undefined ? await tenantOfRequest(request) : tenant;
+    return rbac.scopeOf(await accessOf(request.user), request.user, permission, where);
+  }
+
   // An access token of claims (for the keys of a request, when they are a function of it).
   async function sign(claims, request, extra = {}) {
     const set = await keysOf(request);
@@ -295,6 +310,10 @@ async function authPlugin(app, options = {}) {
     authenticateWith,
     authorize,
     canUseTenant,
+    can,
+    scopeOf,
+    rbac,
+    access: (user) => (rbac ? accessOf(user) : Promise.reject(new TypeError('access() needs the option rbac'))),
     tenantsOf: (user) => tenantsOfUser(user),
     keys: fixed,
     refresh,
@@ -310,12 +329,17 @@ async function authPlugin(app, options = {}) {
   app.decorateRequest('auth', null);
   app.decorateRequest('authError', null);
   app.decorateRequest('authStrategy', null);
+  if (rbac) {
+    app.decorateRequest('can', function canRequest(permission, tenant) {
+      return can(this, permission, tenant);
+    });
+  }
 
   // Every request is identified (request.user), so routes without auth know the user too.
   if (hook) app.addHook(hook, async (request, reply) => verifyRequest(request, reply));
 
-  // config: { auth: true | 'role' | ['roles'] | (user, request) => boolean | { strategy, roles, check, tenant } } on a
-  // route:
+  // config: { auth: true | 'role' | ['roles'] | (user, request) => boolean | { strategy, roles, check, tenant, can } }
+  // on a route:
   // checked before its handler (by a hook of every route, so routes declared before the plugin is loaded have it
   // too).
   const checks = new Map();
@@ -330,10 +354,17 @@ async function authPlugin(app, options = {}) {
         if (tenant !== undefined && tenant !== true && tenant !== ALL_TENANTS) {
           throw new TypeError(`The tenant of a rule of auth is true (of the request) or '*' (every tenant): ${tenant}`);
         }
+        const permissions = rule.can === undefined ? null : [].concat(rule.can);
+        if (permissions && !rbac)
+          throw new TypeError('A rule of auth with can needs the option rbac of the auth plugin');
+        if (permissions && (!permissions.length || permissions.some((name) => typeof name !== 'string' || !name))) {
+          throw new TypeError(`The can of a rule of auth is a permission or a list of them: ${rule.can}`);
+        }
         checks.set(rule, async (request, reply) => {
           await identifyWith(request, reply);
           if (tenant !== undefined) await checkTenant(request, tenant);
           if (!(await allows(request, roles, check))) throw new Forbidden('You cannot do this');
+          if (permissions && !(await can(request, permissions))) throw new Forbidden('You cannot do this');
         });
       } else checks.set(rule, authorize(rule));
     }
@@ -355,67 +386,38 @@ async function authPlugin(app, options = {}) {
   if (refresh) refreshRoutes(app, api, { ...options, prefix, refreshCookie });
 }
 
-// The route of logging in (POST <prefix>/login): a username and a password, and the code of an authenticator app.
+// The route of logging in (POST <prefix>/login): a username and a password, and the code of an authenticator app,
+// checked by the Credentials of @xufa/auth (one lockout, by username).
 function loginRoute(app, api, options) {
   const { login, prefix } = options;
   if (typeof login.findUser !== 'function') throw new TypeError('login needs findUser(username, request)');
   const fields = { username: 'username', password: 'password', code: 'code', ...login.fields };
-  const passwordOf = login.password || ((user) => user.password);
-  const totpOf = login.totp || (() => null);
   const claimsOf = login.claims || ((user) => ({ sub: String(user.id === undefined ? user.pk : user.id) }));
-  const lockout =
-    login.lockout === false ? null : login.lockout instanceof Lockout ? login.lockout : new Lockout(login.lockout);
-  const passwordSettings = login.passwordOptions;
-  // A hash to verify when there is no user, so that the answer takes the same time (made now, not at the first login
-  // of a user that does not exist).
-  let dummy = hashPassword('xufa-no-user', passwordSettings);
-  dummy.catch(() => {
-    dummy = null;
+  const credentials = new Credentials({
+    ...login,
+    lockout:
+      login.lockout === false ? false : login.lockout instanceof Lockout ? login.lockout : new Lockout(login.lockout),
+    ipLockout: false,
   });
-  const dummyHash = async () => {
-    if (!dummy) dummy = hashPassword('xufa-no-user', passwordSettings);
-    return dummy;
-  };
 
   app.post(`${prefix}/login`, async (request, reply) => {
     const body = request.body || {};
-    const username = body[fields.username];
-    const password = body[fields.password];
-    if (typeof username !== 'string' || typeof password !== 'string' || !username || !password) {
+    let user;
+    try {
+      user = await credentials.login({
+        identifier: body[fields.username],
+        password: body[fields.password],
+        code: body[fields.code],
+        request,
+      });
+    } catch (err) {
+      if (!(err instanceof CredentialError)) throw err;
+      if (err.reason === 'throttled') {
+        reply.header('retry-after', String(err.retryAfter));
+        throw Object.assign(new Locked('Too many failed attempts: try again later'), { retryAfter: err.retryAfter });
+      }
+      if (err.reason === 'code') throw new TotpRequired('The code of the authenticator app is needed');
       throw new Unauthorized('Invalid credentials');
-    }
-    if (lockout) {
-      try {
-        await lockout.check(username);
-      } catch (err) {
-        if (err instanceof Locked) reply.header('retry-after', String(err.retryAfter));
-        throw err;
-      }
-    }
-    const user = await login.findUser(username, request);
-    const hash = user ? passwordOf(user) : null;
-    const valid = await verifyPassword(password, hash || (await dummyHash()));
-    if (!user || !hash || !valid) {
-      if (lockout) await lockout.fail(username);
-      throw new Unauthorized('Invalid credentials');
-    }
-    const secret = await totpOf(user);
-    if (secret) {
-      const code = body[fields.code];
-      if (code === undefined || code === null || code === '') {
-        throw new TotpRequired('The code of the authenticator app is needed');
-      }
-      const after = login.lastTotpStep ? await login.lastTotpStep(user) : undefined;
-      const step = verifyTotp(code, secret, { ...login.totpOptions, after });
-      if (step === null) {
-        if (lockout) await lockout.fail(username);
-        throw new Unauthorized('Invalid credentials');
-      }
-      if (login.onTotp) await login.onTotp(user, step);
-    }
-    if (lockout) await lockout.succeed(username);
-    if (login.rehash && needsRehash(hash, passwordSettings)) {
-      await login.rehash(user, await hashPassword(password, passwordSettings));
     }
     return api.issue(await claimsOf(user), request, reply);
   });
@@ -466,4 +468,4 @@ authPlugin[Symbol.for('skip-override')] = true;
 authPlugin[Symbol.for('fastify.display-name')] = '@xufa/auth';
 authPlugin[Symbol.for('plugin-meta')] = { name: '@xufa/auth' };
 
-module.exports = { authPlugin, rolesOf, tenantsOf, ALL_TENANTS };
+export { authPlugin, rolesOf, tenantsOf, ALL_TENANTS };

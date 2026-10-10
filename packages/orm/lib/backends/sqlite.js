@@ -2,11 +2,17 @@
 // default) and the options of DatabaseSync. Foreign keys are enforced. In a database of a file, each transaction has a
 // connection of its own: the queries made outside it do not wait for it (they read what is committed). A write outside
 // transactions that meets the locks of a transaction of this process waits for it to end and is made then; one that
-// meets those of another process, or one made in a transaction, fails at once (SQLITE_BUSY). In memory, transactions
-// hold the only connection.
-const { SqlBackend } = require('./sql/backend');
-const { sqlite } = require('./sql/dialects');
-const { BackendError } = require('../errors');
+// meets those of another process is tried again, waiting without blocking (node:sqlite would block the process), for
+// up to busyTimeout (5000 ms, as Python's sqlite3 and so Django; 0: it fails at once), and so are BEGIN and COMMIT of
+// transactions. A statement inside a transaction that meets a lock fails at once (SQLITE_BUSY): waiting there can lock
+// two processes up; a transaction that writes takes the lock at its start with { mode: 'immediate' }, which waits. In
+// memory, transactions hold the only connection.
+import { SqlBackend } from './sql/backend.js';
+import { sqlite } from './sql/dialects.js';
+import { BackendError } from '../errors.js';
+import { createRequire } from 'node:module';
+
+const require = createRequire(import.meta.url);
 
 let DatabaseSync;
 
@@ -55,6 +61,8 @@ const WRITES = /^\s*(INSERT|UPDATE|DELETE|REPLACE)\b/i;
 // SQLITE_BUSY: a lock of another connection.
 const isBusy = (err) => Boolean(err) && err.errcode === 5;
 
+const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
 // The bigints of a row as numbers when they are safe integers.
 function safeNumbers(row) {
   const keys = Object.keys(row);
@@ -68,6 +76,10 @@ function safeNumbers(row) {
 class SqliteBackend extends SqlBackend {
   constructor(options = {}) {
     super(options, sqlite);
+    // How long a statement that meets the lock of another process is tried again (not an option of node:sqlite).
+    const { busyTimeout = 5000, ...rest } = this.options;
+    this.options = rest;
+    this.busyTimeout = busyTimeout;
     this.connection = null;
     this.statements = new Map();
     const { filename = ':memory:' } = options;
@@ -80,16 +92,44 @@ class SqliteBackend extends SqlBackend {
   }
 
   // Each call is one statement: one that met a lock wrote nothing, so it is made again once the transactions of this
-  // process that hold it end.
+  // process that hold it end, or (the lock of another process) a little later, until busyTimeout.
   async run(fn) {
     if (!this.separate || this.migrating) return super.run(fn);
     if (this.context.getStore()) return fn();
-    for (;;) {
+    let deadline = 0;
+    for (let attempt = 0; ; attempt += 1) {
       try {
         return await fn();
       } catch (err) {
-        if (!isBusy(err) || this.ending.size === 0) throw err;
-        await Promise.allSettled([...this.ending]);
+        if (!isBusy(err)) throw err;
+        if (this.ending.size) await Promise.allSettled([...this.ending]);
+        else {
+          if (!deadline) deadline = Date.now() + this.busyTimeout;
+          if (!(await this.waitBusy(deadline, attempt))) throw err;
+        }
+      }
+    }
+  }
+
+  // A pause before trying a statement again (1, 2, 4... up to 50 ms), or false when busyTimeout has passed.
+  async waitBusy(deadline, attempt) {
+    const left = deadline - Date.now();
+    if (left <= 0) return false;
+    await sleep(Math.min(2 ** attempt, 50, left));
+    return true;
+  }
+
+  // A statement of a transaction's own (BEGIN, COMMIT) tried again while another process holds the lock.
+  async execBusy(connection, sql) {
+    let deadline = 0;
+    for (let attempt = 0; ; attempt += 1) {
+      try {
+        connection.exec(sql);
+        return;
+      } catch (err) {
+        if (!isBusy(err)) throw err;
+        if (!deadline) deadline = Date.now() + this.busyTimeout;
+        if (!(await this.waitBusy(deadline, attempt))) throw err;
       }
     }
   }
@@ -113,6 +153,22 @@ class SqliteBackend extends SqlBackend {
     }
   }
 
+  // The transaction of a test: in a file with connections of their own, one for it (else the connection).
+  async openPinned() {
+    if (!this.separate) return { depth: 0 };
+    const { filename, ...options } = this.options;
+    const Database = loadSqlite();
+    const connection = new Database(filename, { ...options, timeout: 0 });
+    connection.exec('PRAGMA foreign_keys = ON');
+    registerFunctions(connection);
+    this.open.add(connection);
+    return { depth: 0, connection, statements: new Map() };
+  }
+
+  async closePinned(store) {
+    if (store.connection && this.open.delete(store.connection)) store.connection.close();
+  }
+
   async transactionTurn(fn, mode) {
     const { filename, ...options } = this.options;
     const Database = loadSqlite();
@@ -128,15 +184,22 @@ class SqliteBackend extends SqlBackend {
     this.ending.add(ending);
     try {
       return await this.context.run(store, async () => {
-        connection.exec(`BEGIN${mode}`);
+        await this.execBusy(connection, `BEGIN${mode}`);
         let result;
         try {
           result = await fn();
+          // A COMMIT that met a lock (readers of another process) leaves the transaction open: it is tried again.
+          await this.execBusy(connection, 'COMMIT');
         } catch (err) {
-          connection.exec('ROLLBACK');
+          if (connection.isTransaction !== false) {
+            try {
+              connection.exec('ROLLBACK');
+            } catch {
+              // (no transaction left to roll back)
+            }
+          }
           throw err;
         }
-        connection.exec('COMMIT');
         return result;
       });
     } finally {
@@ -230,4 +293,4 @@ class SqliteBackend extends SqlBackend {
   }
 }
 
-module.exports = { SqliteBackend };
+export { SqliteBackend };

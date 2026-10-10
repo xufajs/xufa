@@ -1,8 +1,5 @@
-'use strict'
-
-
-const validator = require('is-my-json-valid')
-const build = require('..')
+import validator from 'is-my-json-valid';
+import build from '../index.js';
 
 test('schema with const string', () => {
   expect.assertions(2)

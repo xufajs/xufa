@@ -456,9 +456,4 @@ class RefIndex {
   }
 }
 
-module.exports = {
-  RefIndex,
-  draftOfUri,
-  isLegacy,
-  documentsOf,
-};
+export { RefIndex, draftOfUri, isLegacy, documentsOf };

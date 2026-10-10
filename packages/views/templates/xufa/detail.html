@@ -1,0 +1,13 @@
+{{!-- The built-in page of a DetailView (<model>_detail.html when the app has none): its fields. --}}
+{{extends baseTemplate}}
+
+{{#block content}}
+<h1>{{ title }}</h1>
+
+<dl>
+  {{#each fieldValues as field}}
+  <dt>{{ field.label }}</dt>
+  <dd>{{#if field.value?.absoluteUrl}}<a href="{{ field.value.absoluteUrl }}">{{ field.value }}</a>{{else}}{{ field.value ?? '' }}{{/if}}</dd>
+  {{/each}}
+</dl>
+{{/block content}}

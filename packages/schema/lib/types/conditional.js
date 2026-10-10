@@ -1,4 +1,4 @@
-const { ValidateType, toType } = require('./validate-type');
+import { ValidateType, toType } from './validate-type.js';
 
 // When the value satisfies `ifType` it must satisfy `thenType`, otherwise `elseType`; a missing branch accepts
 // anything. Only the errors of the branch are reported, like JSON Schema if/then/else.
@@ -43,7 +43,4 @@ function Conditional(options) {
   return new ConditionalType(options);
 }
 
-module.exports = {
-  ConditionalType,
-  Conditional,
-};
+export { ConditionalType, Conditional };

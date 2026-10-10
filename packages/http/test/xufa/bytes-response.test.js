@@ -1,5 +1,5 @@
 // Tests of xufa (not ported from fastify): responses whose serializer writes bytes are sent as a Buffer.
-const xufa = require('@xufa/http');
+import xufa from '../../index.js';
 
 const listSchema = {
   response: {

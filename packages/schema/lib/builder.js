@@ -1,11 +1,9 @@
-'use strict';
-
 // @xufa/schema: JSON Schemas written as code, with their types in TypeScript. What it makes are plain JSON Schemas
 // (draft-07, the ones of fastify): routes of @xufa/http and fastify validate and serialize with them, @xufa/openapi
 // documents them; in TypeScript, Infer<typeof schema> is the type of the values, and SchemaTypeProvider types the
 // requests and replies of routes. No dependencies.
 //
-//   const { s } = require('@xufa/schema');
+//   import { s } from '@xufa/schema';
 //   const Book = s.object({
 //     id: s.integer({ minimum: 1 }),
 //     title: s.string({ minLength: 1 }),
@@ -194,4 +192,4 @@ const s = {
 
 const isOptional = (schema) => isSchema(schema) && schema[OPTIONAL] === true;
 
-module.exports = { s, isOptional, OPTIONAL };
+export { s, isOptional, OPTIONAL };

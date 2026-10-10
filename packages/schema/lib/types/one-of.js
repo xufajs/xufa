@@ -1,4 +1,4 @@
-const { ValidateType, toTypes } = require('./validate-type');
+import { ValidateType, toTypes } from './validate-type.js';
 
 const isObject = (value) => typeof value === 'object' && value !== null && !Array.isArray(value);
 
@@ -118,11 +118,4 @@ function ooneOf(types, isMandatory = false, isNullable = false) {
   return new OneOfType({ types, isMandatory, isNullable });
 }
 
-module.exports = {
-  OneOfType,
-  NO_TYPE,
-  EVERY_TYPE,
-  OneOf,
-  oneOf,
-  ooneOf,
-};
+export { OneOfType, NO_TYPE, EVERY_TYPE, OneOf, oneOf, ooneOf };

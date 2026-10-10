@@ -1,4 +1,4 @@
-const { AnyOf, Schema, String, Integer } = require('..');
+import { AnyOf, Schema, String, Integer } from '../index.js';
 
 describe('AnyOf', () => {
   it('Should return an error if value is undefined and is mandatory', () => {

@@ -1,7 +1,7 @@
 // The promise returned by a handler (or an error handler): its value is sent, its rejection is the error sent.
-const diagnostics = require('node:diagnostics_channel');
-const { kReplyIsError, kReplyHijacked } = require('./symbols');
-const { setErrorStatusCode } = require('./error-handler');
+import diagnostics from 'node:diagnostics_channel';
+import { kReplyIsError, kReplyHijacked } from './symbols.js';
+import { setErrorStatusCode } from './error-handler.js';
 
 const channels = diagnostics.tracingChannel('xufa.request.handler');
 
@@ -57,4 +57,7 @@ function wrapThenable(thenable, reply, store) {
   );
 }
 
-module.exports = wrapThenable;
+export default wrapThenable;
+
+// What require() gives (the tests of fastify are CommonJS).
+export { wrapThenable as 'module.exports' };

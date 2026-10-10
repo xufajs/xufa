@@ -1,5 +1,5 @@
 // Checks of the options of inject(), with the messages of light-my-request (which come from ajv).
-const { METHODS } = require('node:http');
+import { METHODS } from 'node:http';
 
 const methods = new Set([...METHODS, 'QUERY'].flatMap((m) => [m, m.toLowerCase()]));
 
@@ -48,4 +48,4 @@ function validateOptions(options) {
   return [];
 }
 
-module.exports = { validateOptions };
+export { validateOptions };

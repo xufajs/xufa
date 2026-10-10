@@ -1,4 +1,4 @@
 // @xufa/netcache: a cache shared by the machines of a service, with no dependencies outside xufa.
-const { NetCache, NetCacheError } = require('./lib/netcache');
+import { NetCache, NetCacheError } from './lib/netcache.js';
 
-module.exports = { NetCache, NetCacheError };
+export { NetCache, NetCacheError };

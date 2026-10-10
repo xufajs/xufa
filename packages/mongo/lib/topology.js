@@ -4,13 +4,14 @@
 // connections. A command that fails because its server went away (network errors, "not primary") marks the server
 // unknown, so the next selection waits for the new primary; MongoClient retries such commands once (retryable writes
 // and reads).
-const { EventEmitter } = require('node:events');
-const os = require('node:os');
-const { Connection } = require('./connection');
-const { authenticate } = require('./scram');
-const { MongoError, MongoNetworkError, MongoServerError } = require('./errors');
+import { EventEmitter } from 'node:events';
+import os from 'node:os';
+import { Connection } from './connection.js';
+import { authenticate } from './scram.js';
+import { MongoError, MongoNetworkError, MongoServerError } from './errors.js';
 
-const VERSION = require('../package.json').version;
+import __package_json1 from '../package.json' with { type: 'json' };
+const VERSION = __package_json1.version;
 
 // Errors of a server that is no longer the primary (or is shutting down).
 const NOT_PRIMARY = new Set([10107, 13435, 13436, 189, 91, 11600, 11602]);
@@ -365,4 +366,4 @@ class Topology extends EventEmitter {
   }
 }
 
-module.exports = { Topology, Server, isRetryable, isStateChange, isNetworkError, NOT_PRIMARY };
+export { Topology, Server, isRetryable, isStateChange, isNetworkError, NOT_PRIMARY };

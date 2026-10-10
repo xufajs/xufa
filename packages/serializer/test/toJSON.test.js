@@ -1,7 +1,4 @@
-'use strict'
-
-
-const build = require('..')
+import build from '../index.js';
 
 test('use toJSON method on object types', () => {
   expect.assertions(1)

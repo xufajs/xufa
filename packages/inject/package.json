@@ -3,11 +3,11 @@
   "version": "0.1.0",
   "description": "Fake HTTP requests to a Node.js request handler without a socket, with the API of light-my-request and no dependencies",
   "main": "./index.js",
-  "types": "./index.d.ts",
-  "type": "commonjs",
+  "types": "./index.d.cts",
+  "type": "module",
   "exports": {
     ".": {
-      "types": "./index.d.ts",
+      "types": "./index.d.cts",
       "default": "./index.js"
     },
     "./package.json": "./package.json"
@@ -15,7 +15,7 @@
   "files": [
     "index.js",
     "lib",
-    "index.d.ts"
+    "index.d.cts"
   ],
   "scripts": {
     "test": "vyntra",
@@ -50,7 +50,7 @@
     "formdata-node": "^6.0.3",
     "multer": "^2.0.2",
     "undici": "^7.16.0",
-    "vyntra": "^0.6.0"
+    "vyntra": "^0.7.0"
   },
   "publishConfig": {
     "access": "public"

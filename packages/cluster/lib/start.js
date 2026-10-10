@@ -9,10 +9,19 @@
 //   });
 //
 // With workers: 0 there is one process, which runs both functions.
-const cluster = require('node:cluster');
-const os = require('node:os');
+import cluster from 'node:cluster';
+import os from 'node:os';
 
 const SHUTDOWN = '__xufaShutdown';
+
+// The young generation of V8 in the workers (MB of each half): under load V8 makes it grow to 64 MB a half, 128 MB
+// a worker that holds no data (its live heap is some MB); 32 keeps a worker about 50 MB smaller with the same speed.
+// semiSpace: false leaves V8's; a size of the app's own (execArgv, NODE_OPTIONS) is kept.
+function workerArgv(semiSpace) {
+  const given = [...process.execArgv, process.env.NODE_OPTIONS || ''].join(' ');
+  if (semiSpace === false || /--max-semi-space-size/.test(given)) return process.execArgv;
+  return [...process.execArgv, `--max-semi-space-size=${semiSpace ?? 32}`];
+}
 // A worker that dies in less than this was failing: the next is forked after a delay (doubled up to MAX_DELAY).
 const QUICK_EXIT = 5000;
 const MAX_DELAY = 30000;
@@ -62,7 +71,11 @@ function createStarter(bus) {
   async function startPrimary(options) {
     const count = options.workers ?? os.availableParallelism();
     const { shutdownTimeout = 10000, restart = true } = options;
-    cluster.setupPrimary({ serialization: 'advanced', ...(options.exec ? { exec: options.exec } : {}) });
+    cluster.setupPrimary({
+      serialization: 'advanced',
+      execArgv: workerArgv(options.semiSpace),
+      ...(options.exec ? { exec: options.exec } : {}),
+    });
     bus.listen();
     const context = createContext(bus, 0, true);
     state.context = context;
@@ -148,4 +161,4 @@ function createStarter(bus) {
   return { start, stop, state };
 }
 
-module.exports = { createStarter, SHUTDOWN };
+export { createStarter, SHUTDOWN };

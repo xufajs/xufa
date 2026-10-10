@@ -248,6 +248,24 @@ export function verifyTotp(
 /** The otpauth:// URI of a secret, for the QR code of authenticator apps. */
 export function totpUri(options: TotpOptions & { secret: string; label: string; issuer?: string }): string;
 export function generateRecoveryCodes(count?: number): string[];
+
+/** The error correction of a QR code: L (7%), M (15%), Q (25%), H (30%). */
+export type QrLevel = 'L' | 'M' | 'Q' | 'H';
+/** The matrix of the QR code of a text (UTF-8): modules[y][x], true is dark; the smallest version that holds it. */
+export function qrCode(
+  text: string,
+  options?: { level?: QrLevel; minVersion?: number }
+): {
+  version: number;
+  size: number;
+  modules: boolean[][];
+};
+/** The SVG of the QR code of a text (totpUri() for an authenticator app), with a quiet zone of border modules. */
+export function qrSvg(
+  text: string,
+  options?: { level?: QrLevel; border?: number; dark?: string; light?: string; size?: number }
+): string;
+export class QrError extends Error {}
 export function hashRecoveryCode(code: string): string;
 
 // Lockout
@@ -414,13 +432,115 @@ type AuthCheck<User> = (user: User, request: any) => boolean | Promise<boolean>;
 /** The tenant of a route: true, a user of the tenant of the request; '*', a user of every tenant. */
 export type TenantRule = true | '*';
 
-/** Which strategies may identify the user (by name: the others are refused), any of some roles or a check, and the
- * tenant the user must be of. One of them at least. */
+interface AuthRuleParts<User> {
+  strategy?: string | string[];
+  roles?: string | string[];
+  check?: AuthCheck<User>;
+  tenant?: TenantRule;
+  /** A permission (or all those of a list) in the tenant of the request: needs the option rbac of the plugin. */
+  can?: string | string[];
+}
+
+/** Which strategies may identify the user (by name: the others are refused), any of some roles or a check, the
+ * tenant the user must be of, and the permissions it needs (rbac). One of them at least. */
 export type AuthRuleOf<User = any> =
-  | { strategy: string | string[]; roles?: string | string[]; check?: AuthCheck<User>; tenant?: TenantRule }
-  | { strategy?: string | string[]; roles: string | string[]; check?: AuthCheck<User>; tenant?: TenantRule }
-  | { strategy?: string | string[]; roles?: string | string[]; check: AuthCheck<User>; tenant?: TenantRule }
-  | { strategy?: string | string[]; roles?: string | string[]; check?: AuthCheck<User>; tenant: TenantRule };
+  | (AuthRuleParts<User> & { strategy: string | string[] })
+  | (AuthRuleParts<User> & { roles: string | string[] })
+  | (AuthRuleParts<User> & { check: AuthCheck<User> })
+  | (AuthRuleParts<User> & { tenant: TenantRule })
+  | (AuthRuleParts<User> & { can: string | string[] });
+
+// Roles and permissions by tenant (RBAC).
+
+/** A role: its permissions ('Book.change', 'Book.*', '*.view', '*'), or those and the roles whose permissions it
+ * takes too. */
+export type RoleSpec =
+  | string[]
+  | {
+      permissions?: string[];
+      inherits?: string | string[];
+      /**
+       * The objects each permission of the role is for, by patterns of permissions (Django's get_queryset and
+       * has_change_permission(obj)): conditions of the ORM of the user ({ ownerId: user.id }), true (all), false (none).
+       */
+      where?: Record<
+        string,
+        (
+          user: any,
+          context: { tenant: string | number | null; permission: string }
+        ) => Record<string, unknown> | boolean | null | undefined
+      >;
+    };
+
+/** The objects of a permission: null (all), false (none), or conditions of the ORM (any of them). */
+export type Scope = null | false | Array<Record<string, unknown>>;
+
+/** A role of a user in a tenant, or in every tenant ('*', the default). */
+export interface Grant {
+  role: string;
+  tenant?: string | number | null;
+}
+
+/** The grants of a user: a list of them, or a map { tenant: role | roles }. */
+export type Grants = Grant[] | Record<string, string | string[]>;
+
+export interface RbacOptions<User = any> {
+  roles?: Record<string, RoleSpec>;
+  /**
+   * A model of roles in the database (Django's Group: AbstractGroup): its rows are roles too, next to those in code (a
+   * group named as a role in code adds to it), read again after its saves and deletes, and every refresh ms (60000).
+   */
+  model?: any;
+  refresh?: number;
+  /** The grants of a user (by default user.grants, or its roles in its tenants, or in every tenant). */
+  grants?(user: User): Grants | null | undefined | Promise<Grants | null | undefined>;
+  /** Whether a user may do everything in every tenant (by default user.superuser or user.isSuperuser), or false. */
+  superuser?: ((user: User) => boolean | Promise<boolean>) | false;
+}
+
+/** What a user may, as plain data (for a session or the claims of a token). */
+export interface Access {
+  superuser: boolean;
+  grants: Array<{ role: string; tenant: string }>;
+}
+
+/** Roles and their permissions, granted to users in tenants (or in every tenant), and superusers. */
+export class Rbac<User = any> {
+  constructor(options: RbacOptions<User>);
+  /** What a user may: { superuser, grants }. */
+  access(user: User | null | undefined): Promise<Access>;
+  /** Whether an access has a permission (or all those of a list) in a tenant (without one: its grants of every tenant). */
+  allows(access: Access | null | undefined, permission: string | string[], tenant?: string | number | null): boolean;
+  /** Whether a user has a permission (or all those of a list) in a tenant. */
+  can(
+    user: User | null | undefined,
+    permission: string | string[],
+    options?: { tenant?: string | number | null }
+  ): Promise<boolean>;
+  /** The roles of an access in a tenant (and those of every tenant). */
+  rolesIn(access: Access | null | undefined, tenant?: string | number | null): string[];
+  /** The patterns of the permissions of an access in a tenant (['*'] for a superuser). */
+  permissionsIn(access: Access | null | undefined, tenant?: string | number | null): string[];
+  /** The tenants an access may use: ['*'] (every one) or their ids. */
+  tenantsIn(access: Access | null | undefined): string[];
+  /** Whether an access may use a tenant. */
+  inTenant(access: Access | null | undefined, tenant: string | number | null | undefined): boolean;
+  /** The objects of a permission for a user (the where of its roles): null for all, false for none, or conditions. */
+  scopeOf(
+    access: Access | null | undefined,
+    user: User | null | undefined,
+    permission: string,
+    tenant?: string | number | null
+  ): Scope;
+  /** The roles of the model, read now. */
+  load(): Promise<this>;
+  /** The roles of the model, read again when they may have changed (access() calls it). */
+  fresh(): Promise<this>;
+}
+
+export class RbacError extends TypeError {
+  code: 'XUFA_AUTH_ERR_RBAC';
+}
 
 /** Every tenant, in the tenants of a user ('*'). */
 export const ALL_TENANTS: '*';
@@ -642,6 +762,9 @@ export interface PluginOptions<User = any> {
   };
   /** Keep the refresh token in a cookie (HttpOnly, Secure, SameSite=Strict, the path of prefix), not in the body. */
   refreshCookie?: boolean | ({ name?: string } & Omit<CookieOptions, 'maxAge'>);
+  /** Roles and permissions by tenant: rules { can }, app.auth.can() and request.can(); the tenants of a user are
+   * those of its grants. */
+  rbac?: Rbac<User> | RbacOptions<User>;
 }
 
 /** What the plugin decorates the app with, as app.auth. */
@@ -670,6 +793,15 @@ export interface AuthApi<User = any> {
   canUseTenant(request: any, tenant: string, reply?: any): Promise<boolean>;
   /** The tenants a user may use (the claim of the options). */
   tenantsOf(user: User): Promise<string[]> | string[];
+  /** Whether the user of a request has a permission (or all those of a list) in a tenant (that of the request by
+   * default); needs rbac. With rbac, requests have can(permission, tenant?) too. */
+  can(request: any, permission: string | string[], tenant?: string | number | null): Promise<boolean>;
+  /** The objects of a permission for the user of a request (the where of its roles): null, false or conditions. */
+  scopeOf(request: any, permission: string, tenant?: string | number | null): Promise<Scope>;
+  /** The rbac of the plugin (null without it). */
+  rbac: Rbac<User> | null;
+  /** What a user may (needs rbac). */
+  access(user: User | null | undefined): Promise<Access>;
   /** The keys (null when they are a function of the request). */
   keys: KeySet | null;
   hashPassword: typeof hashPassword;
@@ -689,3 +821,382 @@ export interface AuthApi<User = any> {
  *   }
  */
 export function plugin(app: any, options: PluginOptions): Promise<void>;
+
+// The accounts of an app with sessions (as Laravel Breeze).
+
+/** The users of the app, as the accounts ask for them and change them. */
+export interface AccountUsers<User = any> {
+  findByEmail(email: string, request: any): User | null | undefined | Promise<User | null | undefined>;
+  findById(id: string, request: any): User | null | undefined | Promise<User | null | undefined>;
+  /** Another account with the same skeleton (look-alike characters) is taken too. */
+  findBySkeleton?(skeleton: string, request: any): User | null | undefined | Promise<User | null | undefined>;
+  /** Sign up: { email, emailSkeleton, password (its hash), and the fields of signup.fields }. Without it, no signup. */
+  create?(values: Record<string, unknown>, request: any): User | Promise<User>;
+  /** A new hash of the password (resets, changes, rehashes). */
+  setPassword?(user: User, hash: string, request: any): unknown;
+  /** The email of the user was verified. */
+  markVerified?(user: User, request: any): unknown;
+  /** The user of a username (loginBy: username). */
+  findByUsername?(username: string, request: any): User | null | undefined | Promise<User | null | undefined>;
+  /** The secret of an authenticator app the user set up (its first code checked), or null to remove it. */
+  setTotp?(user: User, secret: string | null, request: any): unknown;
+  /** The hashes of the recovery codes to keep (fewer after one is used, new ones, [] with the app removed). */
+  setRecoveryCodes?(user: User, hashes: string[], request: any): unknown;
+}
+
+/** An email of accounts given as data: its subject, and its text or html (templates of @xufa/template). */
+export interface AccountMail {
+  subject: string;
+  text?: string;
+  html?: string;
+  with?: Record<string, unknown>;
+}
+
+export interface AccountsOptions<User = any> {
+  /** 32 characters or more: signs the links of resets and verifications. */
+  secret: string;
+  /** The users (findByEmail, findById...); with model, only those to change. */
+  users?: Partial<AccountUsers<User>>;
+  /** A model of users (AbstractUser): its users found and changed, isActive, and lastLogin set at each login. */
+  model?: any;
+  /** What users log in with: their email (default) or their username (users.findByUsername). */
+  loginBy?: 'email' | 'username';
+  /** After each login (a model sets its lastLogin). */
+  onLogin?: ((user: User, request: any) => unknown) | null;
+  /** Where the routes are ('/account'). */
+  prefix?: string;
+  /** A Mailer of @xufa/mail: the emails of the links. */
+  mailer?: { send(mail: any, overrides?: any): Promise<unknown> } | null;
+  /** The addresses of the pages that take the tokens of the links. */
+  links?: { reset?: (token: string) => string; verify?: (token: string) => string };
+  /**
+   * The emails of the links, of your own: a function that gives a Mailable or a plain email, or a plain email (as in
+   * a file of configuration) whose templates have url (and link), email and user.
+   */
+  mails?: {
+    reset?: ((user: User, url: string) => unknown) | AccountMail;
+    verify?: ((user: User, url: string) => unknown) | AccountMail;
+  };
+  /** The name of the app, in the subjects of the emails. */
+  app?: { name?: string };
+  /** The fields of the user: its key, email, password hash and whether its email is verified. */
+  id?: (user: User) => string | number;
+  email?: (user: User) => string;
+  password?: (user: User) => string | null | undefined;
+  verified?: (user: User) => boolean;
+  /** Whether an account may be used (not locked nor disabled): a login is refused (403), and its sessions end at their next request. */
+  active?: (user: User) => boolean | Promise<boolean>;
+  /** What the routes answer of a user ({ id, email, verified }). */
+  profile?: (user: User) => unknown;
+  /** Codes of authenticator apps: the secret of a user (none: no code), its last step, and the one used. */
+  totp?: (user: User) => string | null | undefined | Promise<string | null | undefined>;
+  lastTotpStep?: (user: User) => number | null | undefined | Promise<number | null | undefined>;
+  onTotp?: (user: User, step: number) => unknown;
+  totpOptions?: { window?: number; digits?: number; period?: number; algorithm?: string };
+  /** The hashes of the recovery codes of a user (with users.setRecoveryCodes): each logs in once in place of a code. */
+  recoveryCodes?: (user: User) => string[] | null | undefined | Promise<string[] | null | undefined>;
+  /** Messages of your own, by reason of the Credentials (invalid, throttled...). */
+  messages?: Partial<Record<CredentialReason | 'notYours' | 'sameAsBefore', string>>;
+  passwordOptions?: PasswordOptions;
+  /** The policy of passwords: 8 to 256 characters, not the email in it, and checkPassword (a message, or nothing). */
+  minPassword?: number;
+  maxPassword?: number;
+  checkPassword?: (password: string, values: { email?: string | null }) => string | null | undefined;
+  /** signup.fields: the other fields a signup takes (name...); login: false (not logged in after it). */
+  signup?: { fields?: string[]; login?: boolean };
+  /** The routes of required need a verified email. */
+  requireVerified?: boolean;
+  /** Lockouts: by email (5 in 15 min), by address (20), links asked by email (5); a Lockout, its options, or false. */
+  lockout?: Lockout | LockoutOptions | false;
+  ipLockout?: Lockout | LockoutOptions | false;
+  linkLockout?: Lockout | LockoutOptions | false;
+  /** Where loginRequired sends pages of users who did not log in (with ?next=): an address, or a function of the request. */
+  loginUrl?: string | ((request: any) => string) | null;
+  /** The roles and their permissions, for permissionRequired: an Rbac or its options. */
+  rbac?: Rbac | RbacOptions | null;
+  /** The permissions of each user besides those of its roles (user.permissions by default, as Django's user_permissions). */
+  userPermissions?: (user: User) => string[] | null | undefined | Promise<string[] | null | undefined>;
+  /** How long the links work ('1h' and '2d'). */
+  resetTtl?: number | string;
+  verifyTtl?: number | string;
+}
+
+/** What accounts decorates the app with, as app.accounts. */
+export interface AccountsApi<User = any> {
+  /** The user of a request (its session), or null. */
+  user(request: any): Promise<User | null>;
+  /** The hook of the routes that need a user (and a verified email, with requireVerified): 401, or 403. */
+  required(request: any, reply: any): Promise<unknown>;
+  /** Logs a user in, in the session of the request. */
+  logIn(request: any, user: User): Promise<void>;
+  /** Sends a link to verify the email of a user. */
+  sendVerification(user: User): Promise<unknown>;
+  /** A link to reset the password of a user. */
+  resetLink(user: User): string;
+  /** The user of the token of a reset link while it is good (not expired, not used), else null: Django's validlink. */
+  checkResetToken(token: string, request?: any): Promise<User | null>;
+  /**
+   * A new password with the token of a reset link: the sessions of the user end. AccountError (400) with errors.token
+   * (a link not good) or errors.password (a weak one).
+   */
+  resetPassword(token: string, password: string, request?: any): Promise<User>;
+  /** Django's authenticate(): the user of { email or username, password, code }, or a CredentialError. */
+  authenticate(
+    given: { email?: string; username?: string; password?: string; code?: string },
+    request?: any
+  ): Promise<User>;
+  /** Out of this session, or of every session of the user. */
+  logOut(request: any, options?: { everywhere?: boolean }): Promise<void>;
+  /** A reset link by email (the same whatever the email); link(token): its address (links.reset by default). */
+  requestReset(email: string, request?: any, options?: { link?: (token: string) => string }): Promise<void>;
+  /** A new password for the user of a request, with the one now; its other sessions end. */
+  changePassword(request: any, given: { current: string; password: string }): Promise<void>;
+  /** What users log in with. */
+  loginBy: 'email' | 'username';
+  /** Ends every session of a user now (locked, disabled...): every browser, process and machine with the store. */
+  endSessions(user: User): Promise<void>;
+  /** login_required: pages go to loginUrl with ?next=, other clients get 401. */
+  loginRequired(request: any, reply: any): Promise<unknown>;
+  /** permission_required: the login without a user, 403 without every permission given. */
+  permissionRequired(...permissions: string[]): (request: any, reply: any) => Promise<unknown>;
+  /** The permissions of the user of a request, once a request. */
+  perms(request: any): Promise<{ has(permission: string): boolean; all: string[]; superuser?: boolean }>;
+  /** Whether a user has a permission (its roles, or its own). */
+  can(user: User, permission: string): Promise<boolean>;
+  /** The Rbac of the option rbac, or null. */
+  readonly rbac: Rbac | null;
+}
+
+/**
+ * The accounts of the users of an app with sessions (@xufa/session registered before): POST <prefix>/signup, /login,
+ * /logout ({ everywhere }), /password/forgot, /password/reset, /password/change, /email/verify, /email/resend, and
+ * GET /me, /sessions, /security; with users.setTotp, POST /totp/start, /totp/confirm, /totp/disable, and with
+ * recovery codes /recovery-codes. app.accounts, and request.account (the user of a request, once app.accounts.user() read it).
+ */
+export function accounts(app: any, options: AccountsOptions, done: (err?: Error) => void): void;
+
+export interface PagesOptions {
+  /** Where the pages are ('/accounts'). */
+  prefix?: string;
+  /** A folder of views of @xufa/template with Django's templates (login, logged_out, password_change_form...), or null for pages of its own. */
+  views?: string | null;
+  /** Where a login goes without next ('/'). */
+  loginRedirectUrl?: string;
+  /** Where a logout goes (null: the page that says so). */
+  logoutRedirectUrl?: string | null;
+  /** The site of the links of the emails (else the host of the request). */
+  siteUrl?: string | null;
+  /** Django's names for the routes (true). */
+  names?: boolean;
+}
+
+/** Pages of the accounts as Django's django.contrib.auth.urls (after accounts): app.accountPages.urls and its forms. */
+export function pages(app: any, options: PagesOptions, done: (err?: Error) => void): void;
+
+/** An error of the accounts: its status, and the errors by field. */
+export declare class AccountError extends Error {
+  statusCode: number;
+  errors?: Record<string, string[]>;
+}
+
+/** An email as the accounts keep it (trimmed, NFKC, lower case), or null when it is not one. */
+export function emailOf(value: unknown): string | null;
+
+// The credentials of the users: the logins and accounts of @xufa/auth and of @xufa/admin.
+
+/** Why a CredentialError refused. */
+export type CredentialReason =
+  | 'missing'
+  | 'invalid'
+  | 'code'
+  | 'wrongCode'
+  | 'locked'
+  | 'throttled'
+  | 'wrongPassword'
+  | 'weak'
+  | 'pending'
+  | 'noTotp'
+  | 'noPasswords'
+  | 'noApps'
+  | 'noRecovery';
+
+export interface CredentialsOptions<User = any> {
+  /** The user of an identifier (an email, a user name), or null: for login(). */
+  findUser?: (identifier: string, request: any) => User | null | undefined | Promise<User | null | undefined>;
+  /** Its hash (user.password). */
+  password?: (user: User) => string | null | undefined;
+  /** The secret of its authenticator app (none: no code), its last step, and the step of a code used. */
+  totp?: (user: User) => string | null | undefined | Promise<string | null | undefined>;
+  lastTotpStep?: (user: User) => number | null | undefined | Promise<number | null | undefined>;
+  onTotp?: (user: User, step: number) => unknown;
+  /** A new hash of the password made with passwordOptions (setPassword when not given). */
+  rehash?: (user: User, hash: string, request: any) => unknown;
+  /** Users it refuses get the answer of a wrong password. */
+  allow?: (user: User) => boolean | Promise<boolean>;
+  /** Users it refuses are told the account is locked (403), once their password is right. */
+  active?: (user: User) => boolean | Promise<boolean>;
+  setPassword?: (user: User, hash: string, request: any) => unknown;
+  setTotp?: (user: User, secret: string | null, request: any) => unknown;
+  /** Recovery codes: the hashes kept, and new ones to keep (both, or neither). */
+  recoveryCodes?: (user: User) => string[] | null | undefined | Promise<string[] | null | undefined>;
+  setRecoveryCodes?: (user: User, hashes: string[], request: any) => unknown;
+  /** Failures by identifier (5 in 15 minutes) and by address (20): a Lockout, its options, or false. */
+  lockout?: Lockout | LockoutOptions | false;
+  ipLockout?: Lockout | LockoutOptions | false;
+  passwordOptions?: PasswordOptions;
+  totpOptions?: { window?: number; digits?: number; period?: number; algorithm?: string };
+  /** The policy of new passwords: 8 to 256 characters, not the email in it, and checkPassword (a message, or nothing). */
+  minPassword?: number;
+  maxPassword?: number;
+  checkPassword?: (password: string, values: { email?: string | null }) => string | null | undefined;
+  id?: (user: User) => string | number;
+  messages?: Partial<Record<CredentialReason | 'notYours' | 'sameAsBefore', string>>;
+}
+
+/** A session as @xufa/session gives it: where an app being set up waits for its first code. */
+export interface CredentialSession {
+  get(key: string): any;
+  set(key: string, value: unknown): unknown;
+  delete(key: string): unknown;
+}
+
+/**
+ * The credentials of the users of an app: logins (password, then the code of an authenticator app or a recovery
+ * code; lockouts by identifier and by address; the same answer and time for every wrong user or password; rehashes),
+ * and the account of a user (a new password, an app set up with a QR code, recovery codes). Refusals are
+ * CredentialErrors.
+ */
+export declare class Credentials<User = any> {
+  constructor(options?: CredentialsOptions<User>);
+  readonly lockout: Lockout | null;
+  readonly ipLockout: Lockout | null;
+  /** Whether recovery codes are kept. */
+  readonly recovery: boolean;
+  login(input: { identifier: unknown; password: unknown; code?: unknown; ip?: string; request?: any }): Promise<User>;
+  /** What is wrong with a new password, or null. */
+  validatePassword(password: unknown, values?: { email?: string | null }): string | null;
+  /** The password of a user asked again (failures locked out by account). */
+  confirmPassword(user: User, password: unknown, field?: string): Promise<void>;
+  state(
+    user: User
+  ): Promise<{ password: boolean; totp: { can: boolean; enabled: boolean }; recovery: { left: number } | null }>;
+  changePassword(
+    user: User,
+    input: { current?: unknown; password?: unknown; email?: string },
+    request?: any
+  ): Promise<void>;
+  /** A password set without the one before (a reset): checked, hashed, kept. */
+  setPassword(user: User, password: unknown, request?: any, values?: { email?: string | null }): Promise<void>;
+  startTotp(
+    user: User,
+    input: { password: unknown; label: string; issuer?: string; session: CredentialSession }
+  ): Promise<{ secret: string; uri: string; svg: string }>;
+  confirmTotp(
+    user: User,
+    input: { code: unknown; session: CredentialSession; request?: any }
+  ): Promise<{ recoveryCodes: string[] | null }>;
+  disableTotp(user: User, input: { password: unknown; request?: any }): Promise<void>;
+  renewRecoveryCodes(user: User, input: { password: unknown; request?: any }): Promise<{ recoveryCodes: string[] }>;
+  newRecoveryCodes(user: User, request?: any): Promise<string[] | null>;
+}
+
+/** A refusal of the Credentials: its reason, status, errors by field, and whether a code is asked for. */
+export declare class CredentialError extends Error {
+  reason: CredentialReason;
+  statusCode: number;
+  errors: Record<string, string[]>;
+  /** The code of an authenticator app is asked for (and, with recovery, a recovery code works too). */
+  needsCode: boolean;
+  recovery: boolean;
+  /** Seconds until a lockout ends (throttled). */
+  retryAfter?: number;
+}
+
+/** The messages users read (logins, passwords, authenticator apps, accounts and their emails), by key, in English. */
+export const AUTH_MESSAGES: Readonly<Record<string, string>>;
+/** The message of a key with its parameters, translated (auth.<key>) when a translator is set. */
+export function authMessage(key: string, params?: Record<string, unknown>): string;
+/** The translator of the messages (as i18n.translateAuth(auth) of @xufa/i18n sets), or null. */
+export function setTranslator(
+  fn: ((key: string, params: Record<string, unknown>, english: string) => string) | null
+): void;
+
+// The model of users (django.contrib.auth's AbstractUser).
+
+/** The fields and methods of the users of AbstractUser. */
+export interface AbstractUserFields {
+  username: string;
+  email: string | null;
+  password: string;
+  firstName: string;
+  lastName: string;
+  isStaff: boolean;
+  isSuperuser: boolean;
+  isActive: boolean;
+  dateJoined: Date;
+  lastLogin: Date | null;
+  /** Raised by each "log out everywhere": sessions logged in with a lower one are over (read with the user). */
+  sessionGeneration: number;
+  /** The role of the user in an Rbac (Django's groups). */
+  role: string | null;
+  /** Its own permissions (Django's user_permissions). */
+  permissions: string[];
+  /** Hashes a password (scrypt) into password. */
+  setPassword(raw: string, options?: PasswordOptions): Promise<this>;
+  /** A password that never matches (a user who logs in elsewhere). */
+  setUnusablePassword(): this;
+  readonly hasUsablePassword: boolean;
+  checkPassword(raw: string): Promise<boolean>;
+  /** Its own permissions, and every one for an active superuser. */
+  hasPerm(permission: string): boolean;
+  readonly fullName: string;
+  readonly shortName: string;
+  readonly isAuthenticated: true;
+}
+
+export interface AbstractUserOptions {
+  /** The options of hashPassword (lighter in tests). */
+  passwordOptions?: PasswordOptions;
+  /** Options of the fields email and username over their defaults ({ unique: true }...). */
+  email?: Record<string, unknown>;
+  username?: Record<string, unknown>;
+  /** The model of the groups (AbstractGroup): a many-to-many groups, as Django's user.groups. */
+  groups?: () => any;
+}
+
+/** The fields of a group. */
+export interface AbstractGroupFields {
+  name: string;
+  /** Its permissions: Model.action, with * for any (Book.*, *.view). */
+  permissions: string[];
+  /** The roles whose permissions it has too. */
+  inherits: string[];
+}
+
+/** An abstract model of groups, as Django's Group: roles of an Rbac in the database (its option model). */
+export declare function AbstractGroup<M extends abstract new (...args: any[]) => any>(
+  Model: M,
+  fields: any
+): M & { new (...args: any[]): InstanceType<M> & AbstractGroupFields };
+
+/**
+ * An abstract model of users, as Django's AbstractUser, of the Model and fields of @xufa/orm (which @xufa/auth does
+ * not depend on): class User extends AbstractUser(Model, fields) {}. User.createUser(), User.createSuperuser().
+ */
+export declare function AbstractUser<M extends abstract new (...args: any[]) => any>(
+  Model: M,
+  fields: any,
+  options?: AbstractUserOptions
+): M & {
+  new (...args: any[]): InstanceType<M> & AbstractUserFields;
+  readonly userModel: true;
+  createUser(
+    values: Record<string, unknown> & { password?: string | null }
+  ): Promise<InstanceType<M> & AbstractUserFields>;
+  createSuperuser(
+    values: Record<string, unknown> & { password?: string | null }
+  ): Promise<InstanceType<M> & AbstractUserFields>;
+};
+
+/** The password of setUnusablePassword(). */
+export const UNUSABLE_PASSWORD: '!';

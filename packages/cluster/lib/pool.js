@@ -1,5 +1,3 @@
-'use strict';
-
 // Pools of nodes shared by the processes of a cluster: other servers (or anything) that take a few tasks at once
 // each, as document converters. The primary keeps the nodes, their slots (the tasks each one takes at once) and a
 // queue of tickets; a worker that needs a node sends a ticket and keeps its work (the function, the request it
@@ -22,8 +20,8 @@
 // the work goes to another one without counting as a failure. With notify (a NetCache of @xufa/netcache, a Discovery of
 // @xufa/discovery, or { publish, subscribe }), a machine that gives a slot back tells the others, whose tickets waiting
 // are served at once instead of at their next look (pollEvery).
-const cluster = require('node:cluster');
-const { EventEmitter } = require('node:events');
+import cluster from 'node:cluster';
+import { EventEmitter } from 'node:events';
 
 const ACQUIRE = 'xufa:pool:acquire';
 const RELEASE = 'xufa:pool:release';
@@ -105,6 +103,24 @@ function poolErrorOf(err) {
 
 // Durations: milliseconds, or text as '500ms', '30s', '10m', '1h' and sums ('1m30s').
 const UNITS = { ms: 1, s: 1000, m: 60000, h: 3600000, d: 86400000 };
+// The fallback of use(): { node (or node(attempt, error)), after (the first attempt that goes there: none by default),
+// wait (no node free in that time: the fallback) }.
+function fallbackOf(fallback) {
+  if (fallback === null || fallback === undefined) return null;
+  if (typeof fallback !== 'object' || (!fallback.node && typeof fallback.node !== 'function')) {
+    throw new PoolError('use(): fallback is { node, after, wait }: node is an object, or node(attempt, error)');
+  }
+  const after = fallback.after === undefined ? Infinity : fallback.after;
+  if (after !== Infinity && (!Number.isInteger(after) || after < 0)) {
+    throw new PoolError(`use(): fallback.after is the first attempt (0, 1...) that goes to the fallback: ${after}`);
+  }
+  const wait = fallback.wait === undefined || fallback.wait === null ? null : ms(fallback.wait, 'fallback.wait');
+  if (after === Infinity && wait === null) {
+    throw new PoolError('use(): fallback needs after (an attempt) or wait (a time without a free node)');
+  }
+  return { node: fallback.node, after, wait };
+}
+
 function ms(value, what) {
   if (value === undefined || value === null || value === 0 || value === Infinity) return 0;
   if (typeof value === 'number' && Number.isFinite(value) && value > 0) return value;
@@ -830,20 +846,56 @@ class PoolClient {
     return lease;
   }
 
-  // Runs fn(node, { signal, attempt }) on a free node, and gives the slot back when it ends. Options: retries (on
+  // Runs fn(node, { signal, attempt, fallback }) on a free node, and gives the slot back when it ends. With fallback
+  // ({ node, after, wait }): from the attempt `after` on (or when no node is free in `wait`), on its node instead (a
+  // load balancer in front of the nodes...), without a lease. Options: retries (on
   // other nodes while there are: 0), retryOn(err, attempt) (which errors: all), priority, signal. The signal of fn
   // is aborted when the lease is taken back (leaseTimeout, its node gone), and so is its promise.
-  async use(fn, { retries = 0, retryOn = null, priority = 0, signal, avoidFailed = true, maxBusy = 20 } = {}) {
+  async use(
+    fn,
+    { retries = 0, retryOn = null, priority = 0, signal, avoidFailed = true, maxBusy = 20, fallback = null } = {}
+  ) {
     if (typeof fn !== 'function') throw new PoolError('use(fn): fn is a function');
+    const spare = fallbackOf(fallback);
     const failed = [];
     let busy = 0;
+    let lastError;
+    // Whether an error ends the work (no attempt left, or retryOn says so).
+    const final = (err, attempt) => attempt >= retries || (retryOn && !retryOn(err, attempt));
     for (let attempt = 0; ; attempt += 1) {
-      const lease = await this.acquire({ priority, exclude: avoidFailed ? failed : [], signal });
+      // From attempt `after` on, the fallback (a load balancer...): no lease, the work goes there.
+      if (spare && attempt >= spare.after) {
+        try {
+          return await this.onFallback(fn, spare, attempt, lastError, signal);
+        } catch (err) {
+          if (signal && signal.aborted) throw signal.reason;
+          if (final(err, attempt)) throw err;
+          lastError = err;
+          continue;
+        }
+      }
+      let lease;
+      // With fallback.wait: no node free in that time, and the fallback takes this attempt.
+      const waited = spare && spare.wait !== null ? AbortSignal.timeout(spare.wait) : null;
+      const waiting = waited ? (signal ? AbortSignal.any([signal, waited]) : waited) : signal;
+      try {
+        lease = await this.acquire({ priority, exclude: avoidFailed ? failed : [], signal: waiting });
+      } catch (err) {
+        if (!waited || !waited.aborted || (signal && signal.aborted)) throw err;
+        try {
+          return await this.onFallback(fn, spare, attempt, lastError, signal);
+        } catch (fallbackError) {
+          if (signal && signal.aborted) throw signal.reason;
+          if (final(fallbackError, attempt)) throw fallbackError;
+          lastError = fallbackError;
+          continue;
+        }
+      }
       const work = signal ? AbortSignal.any([signal, lease.signal]) : lease.signal;
       let onRevoke;
       try {
         const result = await Promise.race([
-          Promise.resolve().then(() => fn(lease.node, { signal: work, attempt })),
+          Promise.resolve().then(() => fn(lease.node, { signal: work, attempt, fallback: false })),
           new Promise((resolve, reject) => {
             onRevoke = () => reject(lease.signal.reason);
             lease.signal.addEventListener('abort', onRevoke, { once: true });
@@ -860,12 +912,21 @@ class PoolClient {
           attempt -= 1;
           continue;
         }
-        if (attempt >= retries || (retryOn && !retryOn(err, attempt))) throw err;
+        if (final(err, attempt)) throw err;
+        lastError = err;
         if (!failed.includes(lease.node.id)) failed.push(lease.node.id);
       } finally {
         lease.signal.removeEventListener('abort', onRevoke);
       }
     }
+  }
+
+  // An attempt on the fallback: fn(node, { signal, attempt, fallback: true }), its node given or made by
+  // node(attempt, lastError).
+  async onFallback(fn, spare, attempt, lastError, signal) {
+    const node = typeof spare.node === 'function' ? await spare.node(attempt, lastError) : spare.node;
+    if (!node) throw new PoolError(`The fallback of the pool ${this.name} gave no node`, 'XUFA_POOL_FALLBACK');
+    return fn(node, { signal: signal || new AbortController().signal, attempt, fallback: true });
   }
 
   // A check of xufa.health, from a worker (the stats of the primary): { minNodes (1), maxWaiting, critical (false) }.
@@ -881,4 +942,4 @@ class PoolClient {
   }
 }
 
-module.exports = { Pool, PoolClient, PoolError, Lease, Autoscaler };
+export { Pool, PoolClient, PoolError, Lease, Autoscaler };

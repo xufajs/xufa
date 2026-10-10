@@ -3,8 +3,8 @@
 
 const net = require('node:net')
 const { once } = require('node:events')
-const { spyWarning } = require('@xufa/http/lib/warnings')
-const Fastify = require('@xufa/http')
+const { spyWarning } = require('../lib/warnings')
+const Fastify = require('..')
 const { XUFAWRN003 } = require('../lib/warnings')
 
 function createDeferredPromise () {

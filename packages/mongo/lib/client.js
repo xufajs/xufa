@@ -6,12 +6,12 @@
 //   const users = client.db().collection('users');
 //   await users.insertOne({ name: 'Ada' });
 //   const found = await users.find({ name: /^a/i }).sort({ name: 1 }).toArray();
-const dns = require('node:dns').promises;
-const { randomUUID } = require('node:crypto');
-const { Topology, isRetryable, isStateChange } = require('./topology');
-const { COMPRESSORS } = require('./connection');
-const { ObjectId, Binary, cursorIdOf, serializeSections } = require('./bson');
-const { MongoError } = require('./errors');
+import { promises as dns } from 'node:dns';
+import { randomUUID } from 'node:crypto';
+import { Topology, isRetryable, isStateChange } from './topology.js';
+import { COMPRESSORS } from './connection.js';
+import { ObjectId, Binary, cursorIdOf, serializeSections } from './bson.js';
+import { MongoError, MongoNetworkError } from './errors.js';
 
 function parseUrl(url) {
   const match = /^(mongodb(?:\+srv)?):\/\/(?:([^:@/]*)(?::([^@/]*))?@)?([^/?]+)(?:\/([^?]*))?(?:\?(.*))?$/.exec(url);
@@ -431,44 +431,111 @@ class ClientSession {
     }
   }
 
-  async end(command) {
+  async end(command, extra = {}) {
     const { transaction } = this;
     this.transaction = null;
     if (!transaction || !transaction.started) return;
-    // commitTransaction and abortTransaction are retried once (they are retryable writes).
-    await this.client.run(
-      'admin',
-      { [command]: 1, lsid: this.id, txnNumber: this.txnNumber, autocommit: false },
-      { retry: 'write', keepSession: true }
-    );
+    if (command === 'commitTransaction') this.committed = this.txnNumber;
+    await this.runEnd(command, extra);
+  }
+
+  // commitTransaction and abortTransaction are retried once (they are retryable writes). A network error of a commit
+  // leaves its result unknown (UnknownTransactionCommitResult), as the drivers of MongoDB label it.
+  async runEnd(command, extra) {
+    try {
+      await this.client.run(
+        'admin',
+        { [command]: 1, lsid: this.id, txnNumber: this.txnNumber, autocommit: false, ...extra },
+        { retry: 'write', keepSession: true }
+      );
+    } catch (err) {
+      // (Errors of the server come with their labels.)
+      if (command === 'commitTransaction' && err instanceof MongoNetworkError)
+        labelOf(err, 'UnknownTransactionCommitResult');
+      throw err;
+    }
   }
 
   commitTransaction() {
     return this.end('commitTransaction');
   }
 
+  // Commits the last transaction again (its result was unknown): with a majority write concern, as the drivers do.
+  async retryCommit() {
+    if (this.committed !== this.txnNumber) throw new MongoError('There is no commit to retry');
+    await this.runEnd('commitTransaction', { writeConcern: { w: 'majority', wtimeout: 10000 } });
+  }
+
   abortTransaction() {
     return this.end('abortTransaction');
   }
 
-  // Runs fn(session) in a transaction: committed when it ends, aborted when it throws.
-  async withTransaction(fn) {
-    this.startTransaction();
-    let result;
-    try {
-      result = await fn(this);
-    } catch (err) {
-      await this.abortTransaction().catch(() => {});
-      throw err;
+  // Runs fn(session) in a transaction: committed when it ends, aborted when it throws. As the drivers of MongoDB do
+  // (the Convenient API for Transactions), the whole transaction runs again on a TransientTransactionError (a write
+  // conflict, an election, a network error inside it), and its commit again on an UnknownTransactionCommitResult,
+  // until `timeout` (120 s) has passed since it started; fn may then run more than once.
+  async withTransaction(fn, { timeout = TRANSACTION_TIMEOUT } = {}) {
+    const start = Date.now();
+    const inTime = () => Date.now() - start < timeout;
+    for (;;) {
+      this.startTransaction();
+      let result;
+      try {
+        result = await fn(this);
+      } catch (err) {
+        // Errors inside a transaction are transient when they are of the network (the transaction can run again).
+        if (err instanceof MongoNetworkError) labelOf(err, 'TransientTransactionError');
+        if (this.transaction) await this.abortTransaction().catch(() => {});
+        if (hasLabel(err, 'TransientTransactionError') && inTime()) continue;
+        throw err;
+      }
+      // fn ended the transaction itself: nothing to commit.
+      if (!this.transaction) return result;
+      try {
+        await this.commitTransaction();
+        return result;
+      } catch (first) {
+        let err = first;
+        // The result of the commit is unknown: committed again, while there is time.
+        while (hasLabel(err, 'UnknownTransactionCommitResult') && codeOf(err) !== 'MaxTimeMSExpired' && inTime()) {
+          try {
+            await this.retryCommit();
+            return result;
+          } catch (again) {
+            err = again;
+          }
+        }
+        if (hasLabel(err, 'TransientTransactionError') && inTime()) continue;
+        throw err;
+      }
     }
-    await this.commitTransaction();
-    return result;
   }
 
   async endSession() {
     if (this.transaction) await this.abortTransaction().catch(() => {});
     await this.client.run('admin', { endSessions: [this.id] }).catch(() => {});
   }
+}
+
+// How long withTransaction() retries a transaction (as the drivers of MongoDB: 120 s).
+const TRANSACTION_TIMEOUT = 120000;
+
+// Whether an error (or its cause: an error of the ORM over one of the driver) has a label.
+function hasLabel(err, label) {
+  for (let current = err, depth = 0; current && depth < 5; current = current.cause, depth += 1) {
+    if (Array.isArray(current.errorLabels) && current.errorLabels.includes(label)) return true;
+  }
+  return false;
+}
+
+// The name of the code of an error of the server (or of its cause).
+const codeOf = (err) => (err && (err.codeName || (err.cause && err.cause.codeName))) || null;
+
+// Adds a label to an error (errors of the network have none from the server).
+function labelOf(err, label) {
+  if (!err || typeof err !== 'object') return;
+  if (!Array.isArray(err.errorLabels)) err.errorLabels = [];
+  if (!err.errorLabels.includes(label)) err.errorLabels.push(label);
 }
 
 const DEFAULT_COMPRESSORS = [];
@@ -719,4 +786,4 @@ class MongoClient {
   }
 }
 
-module.exports = { MongoClient, Db, Collection, Cursor, ClientSession, parseUrl };
+export { MongoClient, Db, Collection, Cursor, ClientSession, parseUrl };

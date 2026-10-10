@@ -1,7 +1,7 @@
 'use strict'
 
 
-const Fastify = require('@xufa/http')
+const Fastify = require('..')
 
 describe('contentTypeParser should add a custom async parser', () => {
 let fastifyServer;

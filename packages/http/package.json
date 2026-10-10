@@ -3,12 +3,12 @@
   "version": "0.1.0",
   "description": "The HTTP framework of xufa: the API of fastify, with no dependencies",
   "main": "./index.js",
-  "types": "./index.d.ts",
-  "type": "commonjs",
+  "types": "./index.d.cts",
+  "type": "module",
   "exports": {
     ".": {
-      "types": "./index.d.ts",
-      "import": "./index.mjs",
+      "types": "./index.d.cts",
+      "import": "./index.js",
       "require": "./index.js",
       "default": "./index.js"
     },
@@ -17,9 +17,8 @@
   },
   "files": [
     "index.js",
-    "index.mjs",
     "lib",
-    "index.d.ts",
+    "index.d.cts",
     "types"
   ],
   "scripts": {
@@ -60,6 +59,9 @@
     "@xufa/serializer": "workspace:*"
   },
   "devDependencies": {
+    "@xufa/session": "workspace:*",
+    "@xufa/template": "workspace:*",
+    "JSONStream": "^1.3.5",
     "abstract-logging": "^2.0.1",
     "ajv": "^8.12.0",
     "ajv-errors": "^3.0.0",
@@ -72,7 +74,6 @@
     "http-errors": "^2.0.0",
     "joi": "^18.0.1",
     "json-schema-to-ts": "^3.1.1",
-    "JSONStream": "^1.3.5",
     "node-forge": "^1.3.1",
     "proxyquire": "^2.1.3",
     "rfdc": "^1.4.1",
@@ -80,7 +81,7 @@
     "typebox": "^1.3.34",
     "undici": "^7.16.0",
     "vary": "^1.1.2",
-    "vyntra": "^0.6.0",
+    "vyntra": "^0.7.0",
     "yup": "^1.4.0"
   },
   "vyntra": {

@@ -46,4 +46,4 @@ const NAMES = [
 
 const Op = Object.fromEntries(NAMES.map((name) => [name, Symbol.for(name)]));
 
-module.exports = { Op };
+export { Op };

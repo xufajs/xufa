@@ -1,7 +1,4 @@
-'use strict'
-
-
-const FindMyWay = require('../')
+import FindMyWay from '../index.js';
 
 test('Parametric route, request.url contains dash', () => {
   expect.assertions(1)

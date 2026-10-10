@@ -1,11 +1,12 @@
 // What the ORM knows of a model, built once from its class: the fields (its own and those of its parents), the
 // primary key, the table and the options. A model is a class extending Model with `static fields` and, optionally,
 // `static options` ({ table, ordering, indexes, abstract }).
-const { IdField, ForeignKey, ManyToManyField, EncryptedField, DateTimeField } = require('./fields');
-const { prepareComputed } = require('./computed');
-const { modelRules } = require('./rules');
-const { seconds } = require('./duration');
-const { ModelError } = require('./errors');
+import { IdField, ForeignKey, ManyToManyField, EncryptedField, DateTimeField } from './fields.js';
+import { prepareComputed } from './computed.js';
+import { modelRules } from './rules.js';
+import { normalizeIndex, constraintsOf } from './constraints.js';
+import { seconds } from './duration.js';
+import { ModelError } from './errors.js';
 
 const STATE = Symbol('xufa.orm.state');
 
@@ -24,13 +25,41 @@ class State {
   }
 }
 
-const STATE_PROPERTY = { value: null, enumerable: false, writable: true };
+// The state of an object of a model is a private field stamped on it (a constructor that returns the object it is given
+// adds the fields of the class that extends it): as hidden as a property that is not enumerable (spread, keys, JSON
+// and toEqual do not see it), and ten times faster to give than Object.defineProperty, for every object read.
+// Model.prototype[STATE] reads it.
+class Given {
+  constructor(object) {
+    return object;
+  }
+}
+class StateStamp extends Given {
+  #state;
+
+  constructor(object, state) {
+    super(object);
+    this.#state = state;
+  }
+
+  static of(object) {
+    return #state in object ? object.#state : undefined;
+  }
+
+  static replace(object, state) {
+    if (#state in object) {
+      object.#state = state;
+      return true;
+    }
+    return false;
+  }
+}
 
 function defineState(instance, state) {
-  STATE_PROPERTY.value = state;
-  Object.defineProperty(instance, STATE, STATE_PROPERTY);
-  STATE_PROPERTY.value = null;
+  if (!StateStamp.replace(instance, state)) new StateStamp(instance, state); // eslint-disable-line no-new
 }
+
+const stateOf = (instance) => StateStamp.of(instance);
 
 function snakeCase(name) {
   return name
@@ -115,14 +144,35 @@ class Meta {
         if (own.indexes) options.indexes = own.indexes;
       } else if (own) Object.assign(options, own);
     }
+    // Constraints (Meta.constraints): unique ones are unique indexes, checks are rules.
+    const constraints = constraintsOf(options.constraints, model.name);
+    ruleSpecs.push(...constraints.rules);
     this.options = options;
     this.abstract = Boolean(options.abstract);
+    // Its names for people (Django's verbose_name and verbose_name_plural): 'book instance' of BookInstance.
+    this.label = options.label || snakeCase(model.name).replace(/_/g, ' ');
+    this.labelPlural = options.labelPlural || `${this.label}s`;
+    // Its permissions (Django's default ones and Meta.permissions): Book.add, .change, .delete, .view, and those of
+    // options.permissions ({ markReturned: 'Set book as returned' }), as [{ name, label }].
+    this.permissions = [
+      ...['add', 'change', 'delete', 'view'].map((action) => ({
+        name: `${model.name}.${action}`,
+        label: `Can ${action} ${this.label}`,
+      })),
+      ...Object.entries(options.permissions || {}).map(([action, label]) => ({
+        name: `${model.name}.${action}`,
+        label: String(label),
+      })),
+    ];
     this.table = options.table || snakeCase(model.name);
     // The schema of the table (PostgreSQL; SQLite names the table 'schema.table'), apart from its name.
     this.schema = options.schema || null;
     this.key = tableKey(this.table, this.schema);
     this.ordering = options.ordering ? [].concat(options.ordering) : [];
-    this.indexes = (options.indexes || []).map((index) => (Array.isArray(index) ? { fields: index } : index));
+    this.indexes = [
+      ...(options.indexes || []).map((index) => normalizeIndex(index, model.name)),
+      ...constraints.indexes,
+    ];
     // The fillfactor of the table in PostgreSQL (10 to 100): room left in its pages for the new versions of updated
     // rows (HOT updates). The other backends ignore it.
     this.fillfactor = options.fillfactor;
@@ -183,7 +233,10 @@ class Meta {
         throw new ModelError(model.name, 'it has primaryKey: false, but a field with primaryKey: true');
       }
       if (this.manyToMany.length) throw new ModelError(model.name, 'a model without a primary key has no many-to-many');
-    } else if (!keyNames && !entries.some(([, field]) => field.primaryKey)) entries.unshift(['id', new IdField()]);
+    } else if (!keyNames && !entries.some(([, field]) => field.primaryKey)) {
+      // (implicit: the key the ORM adds, not one of the model's own fields.)
+      entries.unshift(['id', Object.assign(new IdField(), { implicit: true })]);
+    }
     // Computed fields that are not stored have no column: they are kept apart, read on the objects only.
     this.computedMap = new Map();
     const bound = [];
@@ -238,6 +291,18 @@ class Meta {
     if (!this.abstract) {
       for (let i = 0; i < this.relations.length; i += 1) defineForwardAccessor(model, this.relations[i]);
       this.computedMap.forEach((field) => defineComputedAccessor(model, field));
+    }
+    // Fields unique whatever their case (unique: 'ci'): a unique index of their lower case, with their message.
+    for (let i = 0; i < this.fields.length; i += 1) {
+      const field = this.fields[i];
+      if (!field.uniqueCi) continue;
+      this.indexes.push({
+        fields: [field.name],
+        lower: [field.name],
+        unique: true,
+        name: `${snakeCase(model.name)}_${snakeCase(field.name)}_case_insensitive_unique`,
+        ...(field.messages.unique ? { message: field.messages.unique } : {}),
+      });
     }
     // TTL indexes (an index of one datetime field with expireAfter): its rows expire that many seconds after the
     // date of the field (0: at the date). `expiry` is [{ field, after }].
@@ -339,4 +404,4 @@ function takeGiven(meta, object, row) {
   }
 }
 
-module.exports = { CompositeKey, tableKey, Meta, STATE, State, defineState, snakeCase, lowerFirst, takeGiven };
+export { CompositeKey, tableKey, Meta, STATE, State, defineState, stateOf, snakeCase, lowerFirst, takeGiven };

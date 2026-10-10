@@ -17,9 +17,11 @@
 // is answered with 403, and an error it throws as itself (401...). With @xufa/auth:
 //   authorize: (request, id, reply) => app.auth.canUseTenant(request, id, reply)
 // Without authorize, any request may use any tenant it names: a warning says so, unless authorize is false (a tenant
-// taken from the user itself needs no check).
-const { ValidationError, UniqueError } = require('./errors');
-const { cancellation } = require('./context');
+// taken from the user itself needs no check). Routes with config { tenant: false } choose their tenant themselves (the
+// admin does): the plugin leaves them alone.
+import { ValidationError, UniqueError } from './errors.js';
+import { cancellation } from './context.js';
+import * as auditModule from './audit.js';
 
 async function ormPlugin(app, options = {}) {
   const {
@@ -38,7 +40,8 @@ async function ormPlugin(app, options = {}) {
   if (database) {
     app.decorate('db', database);
     if (connect) await database.connect();
-    if (migrate) await database.migrate(migrate);
+    // migrate: { dir } of the migrations, or a function of the database (the apps of a project: apps.migrate(db)).
+    if (migrate) await (typeof migrate === 'function' ? migrate(database) : database.migrate(migrate));
     if (sync) await database.sync();
     // expire: true (every minute) or { interval }: the objects of TTL indexes that expired are deleted.
     if (expire) {
@@ -68,6 +71,11 @@ async function ormPlugin(app, options = {}) {
       );
     };
     app.addHook('onRequest', (request, reply, done) => {
+      const config = request.routeOptions && request.routeOptions.config;
+      if (config && config.tenant === false) {
+        done();
+        return;
+      }
       const id = resolve(request);
       if (id === undefined || id === null || id === '') {
         if (required) reply.code(400).send({ statusCode: 400, error: 'Bad Request', message: 'No tenant' });
@@ -109,14 +117,17 @@ async function ormPlugin(app, options = {}) {
     if (typeof audit !== 'object' || (audit.actor && typeof audit.actor !== 'function')) {
       throw new TypeError('audit is { actor(request), context(request) }');
     }
-    const { enterRequest } = require('./audit'); // eslint-disable-line global-require
+    const { enterRequest } = auditModule;
     app.addHook('onRequest', (request, reply, done) => {
       enterRequest(request, audit);
       done();
     });
   }
   if (errorHandler) {
-    app.setErrorHandler((err, request, reply) => {
+    // Added under the app's own (@xufa/http's addErrorHandler: setErrorHandler stays free for the app); plain fastify
+    // has only setErrorHandler.
+    const add = typeof app.addErrorHandler === 'function' ? app.addErrorHandler : app.setErrorHandler;
+    add.call(app, (err, request, reply) => {
       if (err instanceof ValidationError) {
         reply
           .code(400)
@@ -141,4 +152,4 @@ ormPlugin[Symbol.for('skip-override')] = true;
 ormPlugin[Symbol.for('fastify.display-name')] = '@xufa/orm';
 ormPlugin[Symbol.for('plugin-meta')] = { name: '@xufa/orm' };
 
-module.exports = { ormPlugin };
+export { ormPlugin };

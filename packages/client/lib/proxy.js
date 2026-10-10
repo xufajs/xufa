@@ -79,4 +79,4 @@ function proxyOf(option, env = process.env) {
   return () => fixed;
 }
 
-module.exports = { proxyOf, envProxy };
+export { proxyOf, envProxy };

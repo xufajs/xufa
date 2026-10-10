@@ -3,12 +3,13 @@
 // triggers, cancel, validation, a step whose job runs twice, a late step after its timeout, pools of nodes, recover()
 // and workers on several queues. On the memory backend and SQLite (PostgreSQL with XUFA_PG_URL, MongoDB with
 // XUFA_MONGO_URL).
-const os = require('node:os');
-const path = require('node:path');
-const fs = require('node:fs');
-const { Database } = require('@xufa/orm');
-const { Bus, Pool } = require('@xufa/cluster');
-const { Queue, Pipelines, PipelineError } = require('..');
+import os from 'node:os';
+import path from 'node:path';
+import fs from 'node:fs';
+import { Database } from '@xufa/orm';
+import { Bus, Pool } from '@xufa/cluster';
+import { Scheduler } from '@xufa/scheduler';
+import { Queue, Pipelines, PipelineError } from '../index.js';
 
 const dirs = [];
 afterAll(() => dirs.forEach((dir) => fs.rmSync(dir, { recursive: true, force: true })));
@@ -57,6 +58,150 @@ for (const [name, options] of BACKENDS) {
       await queue.stop();
       await db.drop();
       await db.close();
+    });
+
+    it('task(): a block and a pipeline of one step by one name; its run kept, failed and retried', async () => {
+      let calls = 0;
+      pipelines.task(
+        'monthly-report',
+        async ({ month }) => {
+          calls += 1;
+          if (calls === 1) throw new Error('the storage is full');
+          return { file: `report-${month}.csv` };
+        },
+        { attempts: 1, description: 'The report of a month' }
+      );
+      expect(pipelines.pipelines.get('monthly-report')).toMatchObject({
+        description: 'The report of a month',
+        steps: [{ id: 'monthly-report', block: 'monthly-report', result: true }],
+      });
+      const run = await pipelines.start('monthly-report', { month: 10 });
+      await queue.runDue();
+      let state = await pipelines.get(run.pk);
+      expect([state.run.status, state.run.error]).toEqual([
+        'failed',
+        'The step monthly-report failed: the storage is full',
+      ]);
+      await pipelines.retry(run.pk);
+      await queue.runDue();
+      state = await pipelines.get(run.pk);
+      expect([state.run.status, state.run.result]).toEqual(['done', { file: 'report-10.csv' }]);
+      expect(() => pipelines.task('', () => 1)).toThrow(PipelineError);
+      expect(() => pipelines.task('x', 'not a function')).toThrow('run(input, ctx) is a function');
+    });
+
+    it('schedule(): a scheduler starts runs of a task at its times, each time once; kept and run as any run', async () => {
+      // A clock of the test: its timers fire when it is moved on.
+      let now = Date.UTC(2026, 9, 8, 5, 30);
+      const timers = new Map();
+      let seq = 0;
+      const clock = {
+        now: () => now,
+        setTimeout: (fn, ms) => {
+          seq += 1;
+          timers.set(seq, { at: now + ms, fn });
+          return seq;
+        },
+        clearTimeout: (id) => timers.delete(id),
+      };
+      const advanceTo = (time) => {
+        now = time;
+        for (const [id, timer] of [...timers]) {
+          if (timer.at <= now) {
+            timers.delete(id);
+            timer.fn();
+          }
+        }
+      };
+      const scheduler = new Scheduler({ clock });
+      pipelines.task('hourly-report', async ({ hour }) => ({ file: `report-${hour}.csv` }), { attempts: 1 });
+      const info = pipelines.schedule(scheduler, 'hourly-report', {
+        every: '1h',
+        priority: 2,
+        input: ({ scheduledAt }) => ({ hour: scheduledAt.getUTCHours() }),
+      });
+      expect([info.name, info.schedule]).toEqual(['hourly-report', 'every 1h']);
+      expect(pipelines.schedules.get('hourly-report')).toMatchObject({
+        pipeline: 'hourly-report',
+        trigger: 'schedule:hourly-report',
+      });
+      const done = [];
+      scheduler.on('done', (event) => done.push(event));
+      scheduler.start();
+      advanceTo(Date.UTC(2026, 9, 8, 6, 0));
+      await until(() => done.length === 1);
+      expect(done[0].result).toEqual({ run: expect.any(String) });
+      const runs = await pipelines.runs.filter({ trigger: 'schedule:hourly-report' });
+      expect(runs.map((run) => [run.key, run.priority, run.input])).toEqual([
+        ['schedule:hourly-report:2026-10-08T06:00:00.000Z', 2, { hour: 6 }],
+      ]);
+      await queue.runDue();
+      expect((await pipelines.get(runs[0].pk)).run.result).toEqual({ file: 'report-6.csv' });
+
+      // The time scheduled again (another machine without a lock, a retry): the run started, not another.
+      expect(await scheduler.runNow('hourly-report')).toEqual({ run: runs[0].pk.toString(), again: true });
+      // Run now, a minute later: a run of its own; and that time again, the same.
+      now += 60000;
+      expect(await scheduler.runNow('hourly-report')).toEqual({ run: expect.any(String) });
+      expect(await scheduler.runNow('hourly-report')).toEqual({ run: expect.any(String), again: true });
+      expect(await pipelines.runs.filter({ trigger: 'schedule:hourly-report' }).count()).toBe(2);
+      await scheduler.stop();
+
+      expect(() => pipelines.schedule({}, 'hourly-report', { every: '1h' })).toThrow('a Scheduler');
+      expect(() => pipelines.schedule(scheduler, 'nope', { every: '1h' })).toThrow('no pipeline named nope');
+      expect(() => pipelines.schedule(scheduler, 'hourly-report', { name: 'x', every: '1h', run: () => 1 })).toThrow(
+        'no run'
+      );
+      expect(() => pipelines.schedule(scheduler, 'hourly-report', { every: '1h' })).toThrow('already a job');
+    });
+
+    it('start(): priority and queue of the jobs of its steps (a step keeps its own), delay or at of its first steps', async () => {
+      pipelines.block('echo', (input) => input);
+      pipelines.define({
+        name: 'later',
+        steps: [
+          { id: 'first', block: 'echo' },
+          { id: 'second', block: 'echo', after: 'first' },
+          { id: 'urgent', block: 'echo', after: 'first', priority: 9 },
+        ],
+      });
+      const run = await pipelines.start('later', 1, { delay: '1h', priority: 3, queue: 'reports' });
+      expect([run.priority, run.queue, Math.round((run.runAt.getTime() - Date.now()) / 60000)]).toEqual([
+        3,
+        'reports',
+        60,
+      ]);
+      const first = await queue.jobs.filter({ name: 'xufa:block:echo' }).get();
+      expect([first.priority, first.queue, first.runAt.getTime() > Date.now() + 59 * 60000]).toEqual([
+        3,
+        'reports',
+        true,
+      ]);
+      // Not due yet: nothing runs.
+      await queue.runDue({ queues: ['reports'] });
+      expect(statusesOf(await pipelines.get(run.pk)).first).toBe('queued');
+      // Due (an hour later): the steps after it are queued at once, with the priority of the run or their own.
+      const enqueued = [];
+      const enqueue = queue.enqueue.bind(queue);
+      queue.enqueue = (jobName, payload, jobOptions) => {
+        enqueued.push([payload.step, jobOptions.priority, jobOptions.queue, jobOptions.at === undefined]);
+        return enqueue(jobName, payload, jobOptions);
+      };
+      await queue.jobs.filter({ pk: first.pk }).update({ runAt: new Date(Date.now() - 1000) });
+      await queue.runDue({ queues: ['reports'] });
+      expect(enqueued).toEqual([
+        ['second', 3, 'reports', true],
+        ['urgent', 9, 'reports', true],
+      ]);
+      expect((await pipelines.get(run.pk)).run.status).toBe('done');
+      queue.enqueue = enqueue;
+
+      const at = new Date(Date.now() + 5 * 60000);
+      const scheduled = await pipelines.start('later', 2, { at });
+      expect(scheduled.runAt.getTime()).toBe(at.getTime());
+      await expect(pipelines.start('later', 3, { at, delay: '1m' })).rejects.toThrow('delay or at, not both');
+      await expect(pipelines.start('later', 3, { at: 'someday' })).rejects.toThrow('Not a date: someday');
+      await expect(pipelines.start('later', 3, { priority: 1.5 })).rejects.toThrow('an integer');
     });
 
     it('runs steps in order, in parallel and joined, and keeps each step and the result', async () => {

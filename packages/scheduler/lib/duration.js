@@ -1,7 +1,5 @@
-'use strict';
-
 // Durations: milliseconds as numbers, or text: '500ms', '30s', '10m', '2h', '1d', '1w', and sums ('1h30m').
-const { SchedulerError } = require('./errors');
+import { SchedulerError } from './errors.js';
 
 const UNITS = { ms: 1, s: 1000, m: 60000, h: 3600000, d: 86400000, w: 604800000 };
 const PART = /(\d+(?:\.\d+)?)\s*(ms|s|m|h|d|w)/gy;
@@ -29,4 +27,4 @@ function toMs(value, what = 'duration') {
   return total;
 }
 
-module.exports = { toMs };
+export { toMs };

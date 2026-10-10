@@ -2,9 +2,9 @@
 // in the process, the class is at hand), getters left out as structuredClone does, symbols that are global or not,
 // and functions (by reference). Shared objects and cycles are kept. Registered classes with encode/decode are copied
 // through them (for state in private fields).
-const { registry: defaultRegistry } = require('./registry');
-const { MarshalError, guard } = require('./errors');
-const { types } = require('node:util');
+import { registry as defaultRegistry } from './registry.js';
+import { MarshalError, guard } from './errors.js';
+import { types } from 'node:util';
 
 // An error: native (Error.isError, or util.types before Node 24), or of a class that extends Error.
 const isNative = typeof Error.isError === 'function' ? Error.isError : types.isNativeError;
@@ -98,4 +98,6 @@ function clone(value, options = {}) {
   return copy(value, 0);
 }
 
-module.exports = { clone: guard(clone) };
+const __clone = guard(clone);
+
+export { __clone as clone };

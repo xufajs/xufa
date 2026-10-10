@@ -6,12 +6,12 @@
   "bin": {
     "xufa": "./bin/xufa.js"
   },
-  "types": "./index.d.ts",
-  "type": "commonjs",
+  "types": "./index.d.cts",
+  "type": "module",
   "exports": {
     ".": {
-      "types": "./index.d.ts",
-      "import": "./index.mjs",
+      "types": "./index.d.cts",
+      "import": "./index.js",
       "require": "./index.js",
       "default": "./index.js"
     },
@@ -39,13 +39,21 @@
       "types": "./template.d.ts",
       "default": "./template.js"
     },
+    "./mail": {
+      "types": "./mail.d.ts",
+      "default": "./mail.js"
+    },
+    "./i18n": {
+      "types": "./i18n.d.ts",
+      "default": "./i18n.js"
+    },
     "./package.json": "./package.json",
     "./openapi": {
-      "types": "./openapi.d.ts",
+      "types": "./openapi.d.cts",
       "default": "./openapi.js"
     },
     "./openapi/ui": {
-      "types": "./openapi-ui.d.ts",
+      "types": "./openapi-ui.d.cts",
       "default": "./openapi-ui.js"
     },
     "./client": {
@@ -79,12 +87,31 @@
     "./faults/register-strict": {
       "types": "./faults-register-strict.d.ts",
       "default": "./faults-register-strict.js"
+    },
+    "./forms": {
+      "types": "./forms.d.ts",
+      "default": "./forms.js"
+    },
+    "./views": {
+      "types": "./views.d.ts",
+      "default": "./views.js"
+    },
+    "./apps": {
+      "types": "./apps.d.ts",
+      "default": "./apps.js"
+    },
+    "./project": {
+      "types": "./project.d.ts",
+      "default": "./project.js"
+    },
+    "./testing": {
+      "types": "./testing.d.ts",
+      "default": "./testing.js"
     }
   },
   "files": [
     "index.js",
-    "index.mjs",
-    "index.d.ts",
+    "index.d.cts",
     "orm.js",
     "orm.d.ts",
     "auth.js",
@@ -96,11 +123,25 @@
     "expression.js",
     "expression.d.ts",
     "template.js",
+    "mail.js",
+    "mail.d.ts",
+    "forms.js",
+    "forms.d.ts",
+    "views.js",
+    "views.d.ts",
+    "apps.js",
+    "apps.d.ts",
+    "project.js",
+    "project.d.ts",
+    "testing.js",
+    "testing.d.ts",
+    "i18n.js",
+    "i18n.d.ts",
     "template.d.ts",
     "openapi.js",
-    "openapi.d.ts",
+    "openapi.d.cts",
     "openapi-ui.js",
-    "openapi-ui.d.ts",
+    "openapi-ui.d.cts",
     "client.js",
     "client.d.ts",
     "scheduler.js",
@@ -153,7 +194,12 @@
     "@xufa/config": "workspace:*",
     "@xufa/expression": "workspace:*",
     "@xufa/faults": "workspace:*",
+    "@xufa/forms": "workspace:*",
+    "@xufa/views": "workspace:*",
+    "@xufa/yaml": "workspace:*",
     "@xufa/http": "workspace:*",
+    "@xufa/i18n": "workspace:*",
+    "@xufa/mail": "workspace:*",
     "@xufa/openapi": "workspace:*",
     "@xufa/orm": "workspace:*",
     "@xufa/queue": "workspace:*",
@@ -163,7 +209,7 @@
     "@xufa/template": "workspace:*"
   },
   "devDependencies": {
-    "vyntra": "^0.6.0"
+    "vyntra": "^0.7.0"
   },
   "publishConfig": {
     "access": "public"

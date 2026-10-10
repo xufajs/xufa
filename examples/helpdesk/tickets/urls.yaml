@@ -1,0 +1,4 @@
+# The pages of the tickets: the tickets of the organization of the subdomain, or the organizations without one.
+prefix: /
+routes:
+  - { path: /, name: home, view: home }

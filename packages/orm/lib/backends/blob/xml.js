@@ -23,4 +23,4 @@ const tags = (xml, name) =>
 const escapeXml = (text) =>
   text.replace(/[&<>"']/g, (c) => `&${{ '&': 'amp', '<': 'lt', '>': 'gt', '"': 'quot', "'": 'apos' }[c]};`);
 
-module.exports = { tag, tags, escapeXml, unescapeXml };
+export { tag, tags, escapeXml, unescapeXml };

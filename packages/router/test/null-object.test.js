@@ -1,7 +1,4 @@
-'use strict'
-
-
-const { NullObject } = require('..')
+import { NullObject } from '../index.js';
 
 test('NullObject', () => {
   expect.assertions(2)

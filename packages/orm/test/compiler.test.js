@@ -1,8 +1,8 @@
 // The SQL compiler keeps the queries it compiles by shape and then only makes their parameters: for queries of every
 // kind, with other values, it gives the SQL and parameters of a new compile.
-const { Database, Model, fields, or, F } = require('..');
-const { SqlCompiler } = require('../lib/backends/sql/compiler');
-const { sqlite, postgres } = require('../lib/backends/sql/dialects');
+import { Database, Model, fields, or, F } from '../index.js';
+import { SqlCompiler } from '../lib/backends/sql/compiler.js';
+import { sqlite, postgres } from '../lib/backends/sql/dialects.js';
 
 class Publisher extends Model {
   static fields = { name: fields.string() };
@@ -76,6 +76,12 @@ const QUERIES = {
       .filter({ pages__gte: n })
       .orderBy('-rating', 'author__name')
       .slice(n, n + 5),
+  'deep page (its keys first, PostgreSQL)': (n) =>
+    Book.objects
+      .selectRelated('author')
+      .filter({ pages__gte: n })
+      .orderBy('title')
+      .slice(n * 100, n * 100 + 10),
   'offset only': (n) => Book.objects.all().offset(n + 1),
   'limit only': (n) => Book.objects.all().limit(n + 1),
   only: (n) => Book.objects.only('title').filter({ pages: n }),
@@ -119,6 +125,53 @@ describe.each([
     );
     if (dialect === postgres) expect(sql).toMatch(/ FOR UPDATE OF t0 SKIP LOCKED$/);
     else expect(sql).not.toMatch(/FOR UPDATE/);
+  });
+
+  it('orders columns that cannot be NULL without NULLS (an index orders them), the others with NULLs first', () => {
+    const { sql } = new SqlCompiler(dialect).select(
+      Book.objects.orderBy('title', '-pages', '-rating', 'author__name', 'author__publisher').toQuery()
+    );
+    // title and pages: NOT NULL columns of the table; rating: NULL allowed; author__name: across a LEFT JOIN.
+    expect(sql).toMatch(
+      / ORDER BY t0\."title" ASC, t0\."pages" DESC, t0\."rating" DESC NULLS LAST, t1\."name" ASC NULLS FIRST, t1\."publisherId" ASC NULLS FIRST$/
+    );
+  });
+
+  it("asks for no order when the primary key is equal to a value (one row at most), as Django's get()", () => {
+    const sqlOf = (qs) => new SqlCompiler(dialect).select(qs.toQuery()).sql;
+    // Book is ordered by title.
+    expect(sqlOf(Book.objects.filter({ pk: 1 }))).not.toMatch(/ORDER BY/);
+    expect(sqlOf(Book.objects.filter({ id: 1, pages__gt: 2 }).orderBy('-pages'))).not.toMatch(/ORDER BY/);
+    // More rows may match: the order stays.
+    expect(sqlOf(Book.objects.filter({ pk: F('pages') }))).toMatch(/ORDER BY/);
+    expect(sqlOf(Book.objects.filter(or({ pk: 1 }, { pages: 2 })))).toMatch(/ORDER BY/);
+    expect(sqlOf(Book.objects.filter({ pk__in: [1, 2] }))).toMatch(/ORDER BY/);
+    expect(sqlOf(Book.objects.all())).toMatch(/ORDER BY/);
+  });
+
+  it('indexes columns that can be NULL with their NULLs first in PostgreSQL, as the ORM orders them', () => {
+    class Shelf extends Model {
+      static fields = { title: fields.string(), rating: fields.float({ null: true }) };
+
+      static options = { table: 'cc_shelf', indexes: [{ fields: ['title', 'rating'] }] };
+    }
+    new Database({ backend: 'memory' }).register(Shelf);
+    const statements = new SqlCompiler(dialect).createTable(Shelf.meta, new Set());
+    const index = statements.find((sql) => sql.startsWith('CREATE INDEX'));
+    if (dialect === postgres) expect(index).toMatch(/\("title", "rating" NULLS FIRST\)$/);
+    else expect(index).toMatch(/\("title", "rating"\)$/);
+  });
+
+  it('asks a page far into the rows for its keys first (PostgreSQL), and its rows with their relations then', () => {
+    const sqlOf = (qs) => new SqlCompiler(dialect).select(qs.toQuery()).sql;
+    const deep = sqlOf(Book.objects.selectRelated('author').orderBy('title').slice(200, 210));
+    const near = sqlOf(Book.objects.selectRelated('author').orderBy('title').slice(20, 30));
+    if (dialect === postgres) {
+      expect(deep).toMatch(
+        /WHERE t0\."id" IN \(SELECT s1_t0\."id" FROM "cc_book" AS s1_t0 ORDER BY s1_t0\."title" ASC LIMIT \$1 OFFSET \$2\) ORDER BY t0\."title" ASC$/
+      );
+    } else expect(deep).not.toMatch(/IN \(SELECT/);
+    expect(near).not.toMatch(/IN \(SELECT/);
   });
 
   it('writes ON DELETE and ON UPDATE of foreign keys', () => {

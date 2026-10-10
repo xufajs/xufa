@@ -19,8 +19,8 @@
 //
 // Without rules, the operations are as they were (the check of an empty list). Objects of the cache of models (get()
 // of a cached model) do not reach the database: no fault of the database happens to them.
-const { Faults } = require('@xufa/faults');
-const { BackendError } = require('./errors');
+import { Faults } from '@xufa/faults';
+import { BackendError } from './errors.js';
 
 const READS = ['select', 'count', 'aggregate'];
 const WRITES = ['insert', 'update', 'delete'];
@@ -73,8 +73,8 @@ function install(faults, backend, tenant = null) {
 }
 
 // instanceof FaultError of the ORM: of the database, and of every fault injected (caches too).
-const { isFault } = require('@xufa/faults');
+import { isFault } from '@xufa/faults';
 
 Object.defineProperty(FaultError, Symbol.hasInstance, { value: isFault });
 
-module.exports = { databaseFaults, install, FaultError, OPERATIONS };
+export { databaseFaults, install, FaultError, OPERATIONS };

@@ -32,4 +32,4 @@ function parseURL(url, query) {
   return result;
 }
 
-module.exports = { parseURL };
+export { parseURL };

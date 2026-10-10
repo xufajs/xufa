@@ -1,6 +1,6 @@
 // Resources: the routes of the objects of a model, in an app of @xufa/http.
-const xufa = require('@xufa/http');
-const { Database, Model, fields, plugin, resource } = require('..');
+import xufa from '@xufa/http';
+import { Database, Model, fields, plugin, resource } from '../index.js';
 
 function makeModels() {
   class Author extends Model {

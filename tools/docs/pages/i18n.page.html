@@ -1,0 +1,88 @@
+<!--{
+  "file": "i18n.html",
+  "name": "@xufa/i18n",
+  "title": "@xufa/i18n",
+  "description": "@xufa/i18n: the messages of an app in its languages: catalogs, plurals by the rules of each language, fallbacks, the locale of each request in its async context, and the validation messages of @xufa/orm translated. No dependencies.",
+  "groups": [
+    ["Using it", [["start", "Quick start"], ["catalogs", "Catalogs"], ["plurals", "Plurals"], ["context", "The locale of a request"], ["orm", "The messages of the ORM"], ["templates", "In templates"]]]
+  ]
+}-->
+        <h1>@xufa/i18n</h1>
+        <p class="intro">
+          The messages of an app in its languages: catalogs by locale, plurals by the rules of each language
+          (<code>Intl.PluralRules</code>), parameters, and the locales a locale falls back to. The locale of each request
+          is kept in its async context, so code far from the request speaks it too: the validation messages of
+          <a href="orm.html">@xufa/orm</a>, translated into Spanish, French, German, Portuguese and Italian. No dependencies.
+        </p>
+
+        <h2 id="start">Quick start</h2>
+        <pre data-run><code class="language-js">import { I18n } from '@xufa/i18n';
+
+const i18n = new I18n({
+  fallback: 'en',
+  locales: {
+    en: { hello: 'Hello, {name}!', cart: { items: { zero: 'Your cart is empty', one: '{count} item', other: '{count} items' } } },
+    es: { hello: '¡Hola, {name}!', cart: { items: { one: '{count} artículo', other: '{count} artículos' } } },
+    'es-AR': { hello: '¡Hola, {name}! ¿Todo bien?' },
+  },
+});
+
+console.log(i18n.t('hello', { name: 'Ada' }, 'es-AR'));
+console.log(i18n.t('cart.items', { count: 0 }, 'en'), '|', i18n.t('cart.items', { count: 3 }, 'es-MX'));
+i18n.run('es', () =&gt; console.log(i18n.t('cart.items', { count: 1 }), i18n.number(12345.5)));</code></pre>
+        <pre data-output><code class="language-plaintext">¡Hola, Ada! ¿Todo bien?
+Your cart is empty | 3 artículos
+1 artículo 12.345,5</code></pre>
+
+        <h2 id="catalogs">Catalogs</h2>
+        <ul>
+          <li>A catalog is an object of messages by key, nested (<code>{ cart: { title } }</code>) or with dots (<code>{ 'cart.title': ... }</code>); <code>i18n.add(locale, catalog)</code> adds more (from JSON files, say).</li>
+          <li><code>t(key, params, locale)</code>: <code>{name}</code> are the parameters. A locale looks in itself, then in its language, then in the <code>fallback</code>: <code>es-AR</code>, <code>es</code>, <code>en</code>. A key without a message gives the key (or <code>missing(key, locale)</code>).</li>
+          <li><code>number()</code>, <code>date()</code> and <code>list()</code> format in the locale of the context, with the options of <code>Intl</code>.</li>
+        </ul>
+
+        <h2 id="plurals">Plurals</h2>
+        <p>
+          A message in the plural is an object of the forms of each language (<code>zero</code>, <code>one</code>,
+          <code>two</code>, <code>few</code>, <code>many</code>, <code>other</code>): <code>params.count</code> chooses one
+          by the rules of the language (Russian has <code>one</code>, <code>few</code> and <code>many</code>; English
+          <code>one</code> and <code>other</code>), and <code>zero</code>, when the message has it, is for 0.
+        </p>
+
+        <h2 id="context">The locale of a request</h2>
+        <pre><code class="language-js">app.register(i18nPlugin, { i18n, detect: ['query', 'cookie', 'user', 'header'] }); // import { plugin as i18nPlugin } from '@xufa/i18n'
+app.get('/cart', (request) =&gt; ({ title: request.t('cart.title'), locale: request.locale }));</code></pre>
+        <ul>
+          <li>The locale of each request is the first of <code>detect</code> that matches a locale with a catalog: <code>?lang=es</code> (<code>query</code>), the cookie <code>lang</code> (<code>cookie</code>), <code>request.user.locale</code> (<code>user</code>, or <code>user(request)</code>), <code>Accept-Language</code> (<code>header</code>, by its q), or functions of the request; else the fallback.</li>
+          <li>It is <code>request.locale</code>, and the locale of the async context of the request: <code>i18n.t()</code> without a locale speaks it in whatever the handler calls, after awaits too. <code>i18n.run(locale, fn)</code> does the same out of requests (jobs, emails).</li>
+          <li>The answers say <code>Content-Language</code> (and <code>Vary: Accept-Language</code> when the header chose it); <code>contentLanguage: false</code> leaves them alone.</li>
+        </ul>
+
+        <h2 id="orm">The messages of the ORM</h2>
+        <pre><code class="language-js">import * as orm from '@xufa/orm';
+i18n.translateOrm(orm); // the validation of the ORM speaks the locale of each request
+
+// POST /books with Accept-Language: es
+// 400 { errors: { title: ['Este campo es obligatorio.'], pages: ['Asegúrate de que este valor sea mayor o igual que 1.'] } }</code></pre>
+        <ul>
+          <li>xufa translates the messages of the ORM into <code>es</code>, <code>fr</code>, <code>de</code>, <code>pt</code> and <code>it</code>, under <code>orm.*</code> (<code>orm.required</code>, <code>orm.maxLength</code>...); a catalog of the app goes over them, and other languages get English.</li>
+          <li>The messages of rules of your own can be keys of the catalogs: <code>validate: { rule: 'value &gt; 0', message: 'books.pages.positive' }</code> is translated; any other text stays as it is.</li>
+        </ul>
+
+        <h2 id="auth-admin">Logins, accounts and the admin</h2>
+        <pre><code class="language-js">import * as auth from '@xufa/auth';
+import * as admin from '@xufa/admin';
+i18n.translateAuth(auth).translateAdmin(admin);
+
+// POST /account/login with Accept-Language: es and a wrong password
+// 401 { error: 'Email o contraseña incorrectos' }</code></pre>
+        <ul>
+          <li><code>translateAuth(auth)</code>: what users read of <a href="auth-guide.html#credentials">@xufa/auth</a>, under <code>auth.*</code>: the answers of logins (<code>auth.invalid</code>, <code>auth.throttled</code>, <code>auth.code</code>...), the policy of passwords (<code>auth.tooShort</code> with <code>{min}</code>), authenticator apps and recovery codes, the routes of <code>auth.accounts</code>, and the emails of its links (<code>auth.resetSubject</code>, <code>auth.resetBody</code>...), in the language of the request that asked for them.</li>
+          <li><code>translateAdmin(admin)</code>: the errors of the API of <a href="admin.html">the admin</a> that its page shows, under <code>admin.*</code> (<code>admin.readOnly</code> with <code>{model}</code>, <code>admin.forbidden</code> with <code>{permission}</code>...); its login and account page are those of <code>translateAuth</code>.</li>
+          <li>Both bundle <code>es</code>, <code>fr</code>, <code>de</code>, <code>pt</code> and <code>it</code>; the app's catalogs go over them (<code>{ de: { auth: { invalidEmail: '...' } } }</code>), and other languages get English. The keys and their English are <code>auth.AUTH_MESSAGES</code> and <code>admin.ADMIN_MESSAGES</code>. The errors of a wrong setup stay in English: they are for the developer.</li>
+          <li>Each module has one translator (<code>setTranslator(fn | null)</code>), as the ORM: <code>i18n.install(module, namespace, catalogs)</code> does the same for a module of your own.</li>
+        </ul>
+
+        <h2 id="templates">In templates</h2>
+        <pre><code class="language-js">const engine = new TemplateEngine({ filters: { t: i18n.filter } });
+engine.render("&lt;h1&gt;{{ 'cart.title' | t }}&lt;/h1&gt;&lt;p&gt;{{ 'cart.items' | t({ count: items.length }) }}&lt;/p&gt;", { items });</code></pre>

@@ -1,7 +1,4 @@
-'use strict'
-
-
-const build = require('..')
+import build from '../index.js';
 
 function buildTest (schema, toStringify, expected) {
   test(`render a ${schema.title} with default as JSON`, () => {

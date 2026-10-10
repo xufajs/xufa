@@ -1,15 +1,15 @@
-
-const FindMyWay = require('..')
-const HandlerStorage = require('../lib/constraints').HandlerStorage
-const Constrainer = require('../lib/constraints').Constrainer
-const { safeDecodeURIComponent } = require('..')
-const acceptVersionStrategy = require('../lib/strategies').version
-const httpMethodStrategy = require('../lib/strategies').httpMethod
+import FindMyWay from '../index.js';
+import { HandlerStorage } from '../lib/constraints.js';
+import { Constrainer } from '../lib/constraints.js';
+import { safeDecodeURIComponent } from '../index.js';
+import { version as acceptVersionStrategy } from '../lib/strategies.js';
+import { httpMethod as httpMethodStrategy } from '../lib/strategies.js';
+import indexModule from '../index.js';
 
 test('OPTIONAL_PARAM_REGEXP should be considered safe', () => {
   expect.assertions(1)
 
-  expect(() => require('..')).not.toThrow()
+  expect(() => indexModule).not.toThrow()
 })
 
 test('double colon does not define parametric node', () => {
