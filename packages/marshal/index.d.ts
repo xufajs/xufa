@@ -1,7 +1,7 @@
 // Type definitions for @xufa/marshal.
 
-/** The nodes marshal() writes: plain JSON data. */
-export type Marshalled = unknown[];
+/** What marshal() writes: plain JSON data. */
+export type Marshalled = string | number | boolean | null | Marshalled[] | { [key: string]: Marshalled };
 
 export interface MarshalOptions {
   /** The classes whose instances come back as themselves (the default registry when not given). */
@@ -19,7 +19,7 @@ export interface MarshalOptions {
 export interface UnmarshalOptions {
   registry?: Registry;
   maxDepth?: number;
-  /** More nodes are a MarshalError (10,000,000). */
+  /** More values are a MarshalError (10,000,000). */
   maxNodes?: number;
   /** A class that is not registered: a plain object ('object', the default), or an error. */
   unknown?: 'object' | 'error';
@@ -55,7 +55,7 @@ export declare const ENCODE: unique symbol;
 export declare const DECODE: unique symbol;
 
 export declare function marshal(value: unknown, options?: MarshalOptions): Marshalled;
-export declare function unmarshal<T = unknown>(nodes: Marshalled, options?: UnmarshalOptions): T;
+export declare function unmarshal<T = unknown>(data: Marshalled, options?: UnmarshalOptions): T;
 export declare function stringify(value: unknown, options?: MarshalOptions): string;
 export declare function parse<T = unknown>(text: string, options?: UnmarshalOptions): T;
 /** A deep copy that keeps classes, references and cycles. */

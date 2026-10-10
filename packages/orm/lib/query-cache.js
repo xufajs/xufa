@@ -67,7 +67,7 @@ function describe(value, models, seen = new Set()) {
     // A queryset given as a value (a subquery): its model and its state.
     if (isModel(value.model) && value.state && typeof value.state === 'object') {
       models.add(value.model);
-      return `Q:${value.model.meta.key}${describe(stateOf(value.state), models, seen)}`;
+      return `Q:${value.model.meta.key}${describeState(value.state, models, seen)}`;
     }
     if (value instanceof Map) {
       const entries = [...value].map(
@@ -88,7 +88,19 @@ function describe(value, models, seen = new Set()) {
   }
 }
 
-const hash = (text) => crypto.createHash('sha256').update(text).digest('base64url');
+// The hashes of the texts seen last (the keys of the same querysets come again and again): a hash of SHA-256 made
+// once for each, not for every read.
+const HASHES_MAX = 2000;
+const hashes = new Map();
+function hash(text) {
+  let known = hashes.get(text);
+  if (known === undefined) {
+    known = crypto.createHash('sha256').update(text).digest('base64url');
+    if (hashes.size >= HASHES_MAX) hashes.clear();
+    hashes.set(text, known);
+  }
+  return known;
+}
 
 // The models of the paths of names a queryset keeps as text (orderBy('writer__name'), values(), only(), selectRelated()):
 // conditions are kept resolved (their fields name their models), these are not.
@@ -104,12 +116,39 @@ function addPathModels(model, names, models) {
 }
 
 // What of the state of a queryset makes its results (not where it runs, nor how it is cached or cancelled).
-function stateOf(state) {
-  const rest = { ...state };
-  delete rest.db;
-  delete rest.cached;
-  delete rest.signal;
-  return rest;
+const NOT_OF_RESULTS = new Set(['db', 'cached', 'signal']);
+
+// The text of the state of a queryset, as describe() of it would be but in one pass, with no copy: the states of
+// querysets have their fields in the same order always (those of a new queryset, changed), so they are not sorted;
+// fields that are null, false or empty lists are left out.
+function describeState(state, models, seen) {
+  let text = '{';
+  for (const key of Object.keys(state)) {
+    if (NOT_OF_RESULTS.has(key)) continue;
+    const value = state[key];
+    if (value === null || value === false || (Array.isArray(value) && value.length === 0)) continue;
+    text += `${key}:${describe(value, models, seen)},`;
+  }
+  return `${text}}`;
+}
+
+// A MemoryCache as it is (no faults, which wrap its methods): read and written at once, with no promise.
+const atOnce = (store) =>
+  store instanceof MemoryCache && store.get === MemoryCache.prototype.get && store.set === MemoryCache.prototype.set;
+
+// The versions of models in a MemoryCache, at once.
+function versionsNow(db, store, models) {
+  const versions = new Array(models.length);
+  for (let i = 0; i < models.length; i += 1) {
+    const key = versionKey(db, models[i].meta);
+    let version = store.getNow(key);
+    if (version === undefined) {
+      version = newVersion();
+      store.setNow(key, version);
+    }
+    versions[i] = version;
+  }
+  return versions;
 }
 
 // --- Versions of models.
@@ -192,14 +231,23 @@ async function cachedQuery(qs, kind, compute, { raw = (value) => value, make = (
   for (const names of [state.orderBy, state.values, state.only, state.related, state.prefetch]) {
     addPathModels(qs.model, names, models);
   }
-  const description = `${kind}|${describe(extra, models)}|${describe(stateOf(qs.state), models)}`;
-  const list = [...models].sort((a, b) => (a.meta.key < b.meta.key ? -1 : 1));
+  const description = `${kind}|${describe(extra, models)}|${describeState(qs.state, models, new Set())}`;
+  const list = models.size === 1 ? [qs.model] : [...models].sort((a, b) => (a.meta.key < b.meta.key ? -1 : 1));
   const without = list.filter((model) => !model.meta.options.cache);
   if (without.length) {
     const names = without.map((model) => model.name).join(', ');
     throw new TypeError(`cached() reads ${names}, which has no option cache: its writes would not be followed`);
   }
   const store = storeOf(db);
+  if (atOnce(store)) {
+    // In the process: the versions and what is kept, read at once.
+    const key = `${db.name}:${qs.model.meta.key}:q:${hash(`${description}|${versionsNow(db, store, list).join(',')}`)}`;
+    const kept = store.getNow(key);
+    if (kept !== undefined) return make(kept.value);
+    const result = await compute();
+    store.setNow(key, { value: raw(result) }, qs.state.cached.ttl);
+    return result;
+  }
   // A cache that fails to read is a miss, and one that fails to keep keeps nothing: the database answers.
   let key;
   try {

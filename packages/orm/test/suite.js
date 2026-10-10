@@ -917,6 +917,10 @@ function defineSuite(name, makeDatabase, options = {}) {
         const nested = await Book.objects.orderBy('title').prefetchRelated('author__books', 'author');
         const loaded = nested.find((book) => book.author && book.author.name === 'Ada');
         expect(titles([...loaded.author.books]).sort()).toEqual(['Notes on the Engine', 'The Analytical Engine']);
+        // all() of a relation prefetched gives what was loaded (as Django's: no query more); filter() asks again.
+        await Book.objects.filter({ author: authors[0] }).delete();
+        expect(titles(await authors[0].books.all()).sort()).toEqual(['Notes on the Engine', 'The Analytical Engine']);
+        expect(await authors[0].books.filter({})).toEqual([]);
       });
 
       it('follows reverse relations', async () => {

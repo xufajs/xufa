@@ -68,8 +68,8 @@ as `{ registry }`) keep apart the classes of different parts of an app.
 | --------------------------- | --------------------------------------------------------------------------------- |
 | `stringify(value, options)` | JSON text.                                                                        |
 | `parse(text, options)`      | The value again.                                                                  |
-| `marshal(value, options)`   | The same as plain JSON data (an array of nodes), for channels that carry objects. |
-| `unmarshal(nodes, options)` | The value again.                                                                  |
+| `marshal(value, options)`   | The same as plain JSON data, for channels that carry objects.                     |
+| `unmarshal(data, options)`  | The value again.                                                                  |
 | `clone(value, options)`     | A deep copy, in the process: every class keeps its prototype, functions are kept. |
 
 | Option      | Default    | What it does                                                                           |
@@ -79,15 +79,27 @@ as `{ registry }`) keep apart the classes of different parts of an app.
 | `functions` | `'throw'`  | A function as a value: an error, or `'skip'` (a field left out, `undefined` in lists). |
 | `stack`     | `true`     | Whether the stacks of errors are written (`false` for what goes to clients).           |
 | `maxDepth`  | `1000`     | Deeper values are an error (`XUFA_MARSHAL_ERR_DEPTH`).                                 |
-| `maxNodes`  | 10,000,000 | Larger input is an error when parsing (`XUFA_MARSHAL_ERR_SIZE`).                       |
+| `maxNodes`  | 10,000,000 | More values is an error when parsing (`XUFA_MARSHAL_ERR_SIZE`).                        |
 
 ## The format
 
-`stringify({ a: shared, b: shared, at: new Date(0) })` is
-`[{"a":1,"b":1,"at":3},{"n":2},1,["Date",0]]`: a flat list of nodes (after [devalue](https://github.com/sveltejs/devalue)), the
-first one the value. A node is a JSON primitive, an array of indexes, an object of indexes, or a tagged array
-(`["Date", ms]`, `["Map", k, v, ...]`, `["Class", "Point", {fields}]`). Arrays of values hold only numbers, so a string
-first is always a tag: no string of your data is ever taken for something else.
+The value as JSON writes it, with what JSON cannot say written so that `JSON.parse` makes as few objects as it can:
+`stringify({ a: shared, b: shared, at: new Date(0), tags: ['x'] })` is
+`{"a":{"n":2},"b":"¤R1","at":"¤D0","tags":["x"]}`, and an instance of a registered class is
+`{"@":"Point","x":1,"y":2}`.
+
+- Marked strings (starting with `¤`): `"¤D" + ms` (a Date), `"¤R" + n` (the object numbered n, in the order they are
+  written: shared objects and cycles), `"¤B" + digits` (BigInt), `"¤u"` (undefined), `"¤h"` (a hole), `"¤N"`, `"¤I"`,
+  `"¤i"`, `"¤z"` (NaN, ±Infinity, -0).
+- An array of plain objects, or of instances of one registered class, all with the same fields, is a table:
+  `["¤Table", "Point", ["x", "y"], 1, 2, 3, 4]` (`null` for plain objects), the keys written once and no copy of each
+  row made.
+- Tagged arrays, whose first item is a marked string: `["¤Map", k, v, ...]`, `["¤Set", ...]`,
+  `["¤RegExp", source, flags]`, `["¤Error", ...]`, `["¤@Money", data, 1]` (written by the class's `encode()`)...
+- Data that would look like them is escaped: a string starting with `¤` is `"¤S" + the string`, an object with a field
+  `"@"` is `["¤Object", {...}]`, and an array whose first item is written marked is `["¤Array", ...items]`. Nothing of
+  your data is ever taken for something else.
+- Long strings (64 characters or more) are written once, and then as references.
 
 ## Safe for input from outside
 
@@ -103,9 +115,10 @@ a field like any other, and has limits of depth and size. Malformed input is alw
 
 ## Performance
 
-`stringify` + `parse` (`node bench/micro/marshal.js`): about JSON on small objects (and faster than `v8.serialize`),
-0.7x to 0.8x of `v8.serialize` on rows of a database, 0.5x on many class instances (`v8.serialize` writes binary and
-loses the classes), and twice as fast as the serializer it replaces.
+`stringify` + `parse` (`node bench/micro/marshal.js`, `bench/results/marshal-4.md`): 2.4x of `v8.serialize` on small
+objects (and faster than JSON), 1.2x to 1.6x on rows of a database with Dates, 2x on arrays of class instances
+(`v8.serialize` writes binary and loses the classes), 0.92x on Maps and Sets. On Linux
+(`bench/results/marshal-linux-5.md`): 2x on small objects, 1.1x on rows, 1.8x on instances, 1x on Maps and Sets.
 
 ## License
 

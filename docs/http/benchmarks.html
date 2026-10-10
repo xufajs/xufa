@@ -296,29 +296,35 @@
         </details>
         <h3>On Windows</h3>
         <p>
-          The same runs on Windows 11, on the same machine (<code>bench/results/inproc-6.md</code> and
-          <code>full-5.md</code>). Its loopback is slower, so the socket is most of the cost of a small
+          The same runs on Windows 11, on the same machine (<code>bench/results/inproc-7.md</code> and
+          <code>full-6.md</code>). Its loopback is slower, so the socket is most of the cost of a small
           response there, and the frameworks come closer.
         </p>
           <div class="table-wrap">
             <table class="numbers">
               <thead><tr><th>Scenario</th><th>In the process: xufa / fastify</th><th>Over the loopback: xufa / fastify</th></tr></thead>
               <tbody>
-                <tr><td>big-json</td><td><strong>1.66&times;</strong></td><td><strong>1.39&times;</strong></td></tr>
-                <tr><td>headers</td><td><strong>1.24&times;</strong></td><td>1.05&times;</td></tr>
-                <tr><td>params</td><td><strong>1.20&times;</strong></td><td>1.02&times;</td></tr>
-                <tr><td>async</td><td><strong>1.20&times;</strong> ⚠</td><td>0.99&times;</td></tr>
-                <tr><td>plugins</td><td><strong>1.19&times;</strong></td><td>1.01&times;</td></tr>
-                <tr><td>many-routes</td><td><strong>1.18&times;</strong></td><td>0.98&times;</td></tr>
-                <tr><td>text</td><td><strong>1.17&times;</strong></td><td>1.01&times; ⚠</td></tr>
-                <tr><td>hooks</td><td><strong>1.17&times;</strong></td><td>0.97&times;</td></tr>
-                <tr><td>post-validate</td><td><strong>1.16&times;</strong></td><td><strong>2.05&times;</strong> ⚠</td></tr>
-                <tr><td>post-json</td><td><strong>1.15&times;</strong> ⚠</td><td>1.00&times;</td></tr>
-                <tr><td>hello-schema</td><td><strong>1.15&times;</strong></td><td>1.02&times;</td></tr>
-                <tr><td>hello</td><td><strong>1.13&times;</strong></td><td>1.02&times;</td></tr>
-                <tr><td>query</td><td><strong>1.11&times;</strong></td><td>0.80&times; ⚠</td></tr>
-                <tr><td>not-found</td><td><strong>1.10&times;</strong></td><td>1.03&times;</td></tr>
-                <tr><td>error</td><td>0.98&times;</td><td>0.92&times;</td></tr>
+                <tr><td>openapi-invalid</td><td><strong>5.30&times;</strong></td><td><strong>1.87&times;</strong></td></tr>
+                <tr><td>big-json</td><td><strong>1.63&times;</strong></td><td><strong>1.28&times;</strong></td></tr>
+                <tr><td>openapi-list</td><td><strong>1.32&times;</strong></td><td>1.04&times;</td></tr>
+                <tr><td>headers</td><td><strong>1.23&times;</strong> ⚠</td><td>1.05&times;</td></tr>
+                <tr><td>many-routes</td><td><strong>1.20&times;</strong></td><td>1.01&times;</td></tr>
+                <tr><td>openapi-list-validated</td><td><strong>1.19&times;</strong></td><td>1.05&times;</td></tr>
+                <tr><td>post-json</td><td><strong>1.19&times;</strong></td><td>1.06&times;</td></tr>
+                <tr><td>post-validate</td><td><strong>1.18&times;</strong></td><td>1.08&times;</td></tr>
+                <tr><td>params</td><td><strong>1.18&times;</strong></td><td>1.02&times;</td></tr>
+                <tr><td>openapi-post-validated</td><td><strong>1.18&times;</strong></td><td>1.03&times;</td></tr>
+                <tr><td>plugins</td><td><strong>1.18&times;</strong></td><td>0.99&times;</td></tr>
+                <tr><td>async</td><td><strong>1.16&times;</strong> ⚠</td><td>1.02&times;</td></tr>
+                <tr><td>text</td><td><strong>1.15&times;</strong></td><td>1.03&times;</td></tr>
+                <tr><td>hooks</td><td><strong>1.15&times;</strong></td><td>1.00&times;</td></tr>
+                <tr><td>hello-schema</td><td><strong>1.15&times;</strong></td><td>1.05&times;</td></tr>
+                <tr><td>hello</td><td><strong>1.13&times;</strong></td><td>1.04&times;</td></tr>
+                <tr><td>openapi-post</td><td><strong>1.13&times;</strong></td><td>1.00&times;</td></tr>
+                <tr><td>not-found</td><td><strong>1.12&times;</strong></td><td>1.02&times;</td></tr>
+                <tr><td>query</td><td><strong>1.10&times;</strong></td><td>1.03&times;</td></tr>
+                <tr><td>error</td><td>1.08&times;</td><td>0.99&times; ⚠</td></tr>
+                <tr><td>openapi-get</td><td>1.02&times;</td><td>0.97&times;</td></tr>
               </tbody>
             </table>
           </div>

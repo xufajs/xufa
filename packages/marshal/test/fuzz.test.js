@@ -21,7 +21,7 @@ function valueOf(rand, depth, pool) {
       () => Math.floor(rand() * 2000) - 1000,
       () => rand() * 1e6,
       () => pick([NaN, Infinity, -Infinity, -0, 0, Number.MAX_VALUE, Number.MIN_VALUE]),
-      () => pick(['', 'a', 'héllo', '\u0000', '😀', '@@ref:0', '__proto__', 'x'.repeat(50)]),
+      () => pick(['', 'a', 'héllo', '\u0000', '😀', '@@ref:0', '__proto__', 'x'.repeat(50), '¤', '¤R0', '¤Array']),
       () => BigInt(Math.floor(rand() * 1e9)) * (rand() < 0.5 ? -1n : 1n) * 10n ** 20n,
       () => new Date(Math.floor(rand() * 4e12)),
       () => pick([/a/g, /[\u0000-\u001f]+/imsu, /^(?:x|y)*$/y]),
@@ -46,7 +46,7 @@ function valueOf(rand, depth, pool) {
       else container.push(item);
     } else if (kind === 'object') {
       // '__proto__' as an own field (as JSON.parse makes it), not a change of prototype.
-      const key = pick(['a', 'b', '__proto__', 'constructor', String(i), 'k k']);
+      const key = pick(['a', 'b', '__proto__', 'constructor', String(i), 'k k', '@']);
       Object.defineProperty(container, key, { value: item, enumerable: true, writable: true, configurable: true });
     }
     else if (kind === 'map') container.set(rand() < 0.3 ? valueOf(rand, depth + 1, pool) : i, item);

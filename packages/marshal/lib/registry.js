@@ -12,6 +12,7 @@ class Registry {
   constructor() {
     this.byName = new Map();
     this.byClass = new Map();
+    this.byProto = new Map(); // the prototype of a class => its entry (how marshal finds it)
   }
 
   // register(Class, { name, encode, decode }), or register(ClassA, ClassB, ...).
@@ -40,9 +41,12 @@ class Registry {
     if (Boolean(encode) !== Boolean(decode)) {
       throw new MarshalError(`${name}: encode and decode go together`, 'XUFA_MARSHAL_ERR_REGISTER');
     }
-    const entry = { Class, name, encode, decode };
+    // (error: errors are written with their message, stack and cause, as errors.)
+    const error = Class === Error || Class.prototype instanceof Error;
+    const entry = { Class, name, encode, decode, error };
     this.byName.set(name, entry);
     this.byClass.set(Class, entry);
+    this.byProto.set(Class.prototype, entry);
     return this;
   }
 
@@ -50,6 +54,7 @@ class Registry {
     const entry = this.byClass.get(Class);
     if (entry) {
       this.byClass.delete(Class);
+      this.byProto.delete(Class.prototype);
       this.byName.delete(entry.name);
     }
     return this;

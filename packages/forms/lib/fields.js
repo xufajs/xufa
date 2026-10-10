@@ -286,6 +286,11 @@ class BooleanField extends Field {
   }
 }
 
+const DAY = /^(\d{4})-(\d{2})-(\d{2})$/;
+const MONTH_DAYS = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
+const daysIn = (year, month) =>
+  month === 2 && year % 4 === 0 && (year % 100 !== 0 || year % 400 === 0) ? 29 : MONTH_DAYS[month - 1];
+
 // A date (YYYY-MM-DD, as its input gives it), or a date and time (datetime-local: a Date).
 class DateField extends Field {
   constructor(options = {}, kind = 'date') {
@@ -300,11 +305,13 @@ class DateField extends Field {
     if (text === null) return null;
     const trimmed = text.trim();
     if (this.kind === 'date') {
-      if (!/^\d{4}-\d{2}-\d{2}$/.test(trimmed) || Number.isNaN(Date.parse(trimmed))) {
-        throw new ValidationError(message('date'), 'invalid');
-      }
-      // A day that is not there (2026-02-30) is not one.
-      if (new Date(`${trimmed}T00:00:00Z`).toISOString().slice(0, 10) !== trimmed) {
+      // YYYY-MM-DD of a day that is there (not 2026-02-30), by its numbers (no Date made).
+      const parts = DAY.exec(trimmed);
+      if (!parts) throw new ValidationError(message('date'), 'invalid');
+      const year = Number(parts[1]);
+      const month = Number(parts[2]);
+      const day = Number(parts[3]);
+      if (month < 1 || month > 12 || day < 1 || day > daysIn(year, month)) {
         throw new ValidationError(message('date'), 'invalid');
       }
       return trimmed;

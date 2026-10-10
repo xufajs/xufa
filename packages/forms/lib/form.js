@@ -15,8 +15,19 @@ import { Field, ValidationError, escape, attributes, ModelChoiceField, isEmpty }
 
 const ALL = '__all__';
 
-// The label of a name of a field: dateOfBirth is 'Date of birth'.
+// The label of a name of a field: dateOfBirth is 'Date of birth' (made once for each name: forms ask at every request).
+const HUMANIZED_MAX = 2000;
+const humanized = new Map();
 function humanize(name) {
+  let label = humanized.get(name);
+  if (label === undefined) {
+    label = humanizeNow(name);
+    if (humanized.size >= HUMANIZED_MAX) humanized.clear();
+    humanized.set(name, label);
+  }
+  return label;
+}
+function humanizeNow(name) {
   const text = String(name)
     .replace(/([a-z0-9])([A-Z])/g, '$1 $2')
     .replace(/[_-]+/g, ' ')

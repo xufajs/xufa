@@ -347,8 +347,7 @@ const ModelFormMixin = (Base) =>
       if (!this.fields) {
         throw new ImproperlyConfigured(`${this.constructor.name} has no fields: a ModelForm needs them (or '__all__')`);
       }
-      const { modelFormOf } = formsModule;
-      return modelFormOf(this.getModel(), { fields: this.fields });
+      return formClassOf(this.getModel(), this.fields);
     }
 
     getFormKwargs() {
@@ -496,6 +495,26 @@ class DeleteView extends FormMixin(SingleObjectMixin(TemplateView)) {
     this.object = await this.getObject();
     return this.formValid(this.getForm());
   }
+}
+
+// The ModelForm of a model and its fields, made once (a class made at every request is a new shape for V8 at every
+// request, and its fields described again).
+const formClasses = new WeakMap();
+function formClassOf(model, fields) {
+  let byFields = formClasses.get(model);
+  if (!byFields) {
+    byFields = new Map();
+    formClasses.set(model, byFields);
+  }
+  // (The fields of a view are a static list, or '__all__': the same value at every request.)
+  let made = byFields.get(fields);
+  if (!made) {
+    made = formsModule.modelFormOf(model, { fields });
+    // (A view that gave new lists every time would fill it: kept to a few.)
+    if (byFields.size >= 64) byFields.clear();
+    byFields.set(fields, made);
+  }
+  return made;
 }
 
 export {

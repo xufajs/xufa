@@ -8,6 +8,9 @@
 //
 //   node django.js [--rounds 3] [--duration 10] [--warmup 3] [--connections 64] [--clients 4] [--processes 4]
 //                  [--servers xufa,gunicorn-sync,...] [--scenarios hello,json,...] [--out results/django-1]
+//                  [--semi-space 32] (the young generation of V8 in xufa's workers, MB)
+//                  [--heap-log 1] (each xufa worker writes its memory to ~/bench-django/heap-<pid>.json)
+//                  [--xufa-flags --max-old-space-size=96,...] (more flags of node for xufa's workers)
 const { spawn, execFileSync } = require('node:child_process');
 const crypto = require('node:crypto');
 const fs = require('node:fs');
@@ -152,19 +155,30 @@ function parseArgs(argv) {
     connections: 64,
     clients: 4,
     processes: 4,
+    // The young generation of V8 in xufa's workers, MB (@xufa/cluster's default: 32).
+    semiSpace: 32,
+    // 1: each xufa worker writes its memory (process.memoryUsage, V8's spaces) to ~/bench-django/heap-<pid>.json.
+    heapLog: 0,
+    // More flags of node for xufa's workers ('--max-old-space-size=96,--optimize-for-size').
+    xufaFlags: '',
     servers: Object.keys(SERVERS),
     scenarios: Object.keys(SCENARIOS),
     out: null,
   };
   for (let i = 0; i < argv.length; i += 2) {
-    const name = argv[i].replace(/^--/, '');
+    // (--semi-space: semiSpace)
+    const name = argv[i].replace(/^--/, '').replace(/-(\w)/g, (_, letter) => letter.toUpperCase());
     const value = argv[i + 1];
     if (name === 'servers' || name === 'scenarios') args[name] = value.split(',');
-    else if (name === 'out') args.out = value;
+    else if (name === 'out' || name === 'xufaFlags') args[name] = value;
     else if (name in args) args[name] = Number(value);
     else throw new Error(`Unknown option --${name}`);
   }
   for (const name of args.servers) if (!SERVERS[name]) throw new Error(`No server ${name}`);
+  // (Read by django/xufa-server.mjs, which the servers inherit the environment of.)
+  process.env.BENCH_SEMI_SPACE = String(args.semiSpace);
+  process.env.BENCH_XUFA_FLAGS = args.xufaFlags;
+  if (args.heapLog) process.env.BENCH_HEAP_LOG = path.join(os.homedir(), 'bench-django');
   for (const name of args.scenarios) if (!SCENARIOS[name]) throw new Error(`No scenario ${name}`);
   return args;
 }
@@ -491,15 +505,25 @@ function load(scenario, setup, args, duration) {
   });
 }
 
-// The memory of a server: the resident size of every process of its group, in MB.
+// The memory of a server, in MB, of every process of its group: rss, the resident size of each added up (the pages
+// of files they share, the binary of Node.js or Python and their libraries, counted once by process), and pss, each
+// shared page divided among the processes that map it (/proc/<pid>/smaps_rollup): what the server takes of the machine.
 function memoryOf(server) {
   try {
-    const lines = run('ps', ['-eo', 'pgid=,rss=']).split('\n');
-    const kb = lines
+    const lines = run('ps', ['-eo', 'pid=,pgid=,rss=']).split('\n');
+    const processes = lines
       .map((line) => line.trim().split(/\s+/).map(Number))
-      .filter(([pgid]) => pgid === server.child.pid)
-      .reduce((sum, [, rss]) => sum + rss, 0);
-    return Math.round(kb / 1024);
+      .filter(([, pgid]) => pgid === server.child.pid);
+    const rss = processes.reduce((sum, [, , kb]) => sum + kb, 0);
+    let pss = 0;
+    for (const [pid] of processes) {
+      try {
+        pss += Number(/^Pss:\s+(\d+)/m.exec(fs.readFileSync(`/proc/${pid}/smaps_rollup`, 'utf8'))[1]);
+      } catch {
+        pss = NaN; // (A process that ended meanwhile, or no smaps_rollup: no pss rather than a part of it.)
+      }
+    }
+    return { rss: Math.round(rss / 1024), pss: Number.isNaN(pss) ? null : Math.round(pss / 1024) };
   } catch {
     return null;
   }
@@ -568,11 +592,15 @@ function report(args, results, meta) {
     });
     lines.push(`| ${row.scenario} | ${cells.join(' | ')} |`);
   }
-  lines.push('', '## Memory (resident, all processes, MB, after the scenarios)', '');
-  lines.push(`| ${args.servers.join(' | ')} |`, `|${args.servers.map(() => ' ---: |').join('')}`);
+  lines.push('', '## Memory (all processes, MB, after the scenarios)', '');
   lines.push(
-    `| ${args.servers.map((name) => (meta.memory[name] && meta.memory[name].length ? median(meta.memory[name]) : '—')).join(' | ')} |`
+    'rss: the resident size of each process added up (the pages of files they share counted once by process); pss: each shared page divided among the processes that map it, what the server takes of the machine.',
+    ''
   );
+  lines.push(`| | ${args.servers.join(' | ')} |`, `| --- |${args.servers.map(() => ' ---: |').join('')}`);
+  const cellsOf = (values) =>
+    args.servers.map((name) => (values && values[name] && values[name].length ? median(values[name]) : '—'));
+  lines.push(`| rss | ${cellsOf(meta.memory).join(' | ')} |`, `| pss | ${cellsOf(meta.pss).join(' | ')} |`);
   lines.push(
     '',
     '## How',
@@ -607,6 +635,7 @@ async function main() {
 
   const results = Object.fromEntries(args.servers.map((name) => [name, {}]));
   const memory = Object.fromEntries(args.servers.map((name) => [name, []]));
+  const pss = Object.fromEntries(args.servers.map((name) => [name, []]));
   for (let round = 0; round < args.rounds; round += 1) {
     // Turns: each round starts from another server.
     const order = args.servers.map((_, i) => args.servers[(i + round) % args.servers.length]);
@@ -633,7 +662,8 @@ async function main() {
           );
         }
         const mb = memoryOf(server);
-        if (mb) memory[name].push(mb);
+        if (mb) memory[name].push(mb.rss);
+        if (mb && mb.pss !== null) pss[name].push(mb.pss);
       } catch (err) {
         console.error(`  ${name}: ${err.message}`);
       } finally {
@@ -651,6 +681,7 @@ async function main() {
     pg: pg.version,
     versions,
     memory,
+    pss,
   };
   const { text, rows } = report(args, results, meta);
   console.log(`\n${text}`);
@@ -669,4 +700,4 @@ if (require.main === module) {
   });
 }
 
-module.exports = { setUp, check, load, formOf, SCENARIOS, PORT };
+module.exports = { setUp, check, load, formOf, postgres, dbUrl, SCENARIOS, PORT };

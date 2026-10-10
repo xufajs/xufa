@@ -30,9 +30,18 @@ class Session {
     // made in this request, for the plugin to send in that cookie.
     this.cookieCsrf = null;
     this.cookieCsrfMade = false;
-    this.flashed = this.data.__flash || {};
-    delete this.data.__flash;
-    if (Object.keys(this.flashed).length) this.changed = true;
+    const flash = this.data.__flash;
+    this.flashed = flash || {};
+    // (Read once: gone in the next request. Most sessions have none, and nothing to delete.)
+    if (flash !== undefined) {
+      delete this.data.__flash;
+      for (const key in flash) {
+        if (Object.hasOwn(flash, key)) {
+          this.changed = true;
+          break;
+        }
+      }
+    }
     this.nextFlash = {};
   }
 

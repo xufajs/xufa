@@ -93,13 +93,13 @@
           </li>
           <li>
             Linux in WSL 2 shares the machine with Windows: ⚠ marks rounds more than 10% apart. Even so, in every scenario
-            the slowest round of xufa answered at least six times as many requests as the fastest round of any server of
+            the slowest round of xufa answered at least seven times as many requests as the fastest round of any server of
             Django.
           </li>
         </ul>
 
         <h2 id="run">Run them yourself</h2>
-        <pre><code class="language-sh">pnpm bench:linux django --out results/django-5       # from Windows, in WSL
+        <pre><code class="language-sh">pnpm bench:linux django --out results/django-7       # from Windows, in WSL
 node bench/django.js --rounds 3 --duration 10          # on Linux
 node bench/django.js --servers xufa,granian-wsgi --scenarios hello,json,book</code></pre>
         <p>

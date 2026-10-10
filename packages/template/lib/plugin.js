@@ -39,6 +39,28 @@ const RENDERS = diagnostics.channel('xufa:template:render');
 // The most names whose files (and sources, with cache) are kept.
 const MAX_NAMES = 1000;
 
+// The builtins made when a template reads them (getters): copied as getters, not read (spreading a context reads
+// them: a CSRF token, and its cookie, made for every page).
+const LAZY_NAMES = new Set(['csrfToken', 'messages']);
+function copyNames(target, source) {
+  if (!source) return target;
+  for (const key of Object.keys(source)) {
+    if (LAZY_NAMES.has(key) || key === '__proto__') {
+      const { get, value } = Object.getOwnPropertyDescriptor(source, key);
+      Object.defineProperty(
+        target,
+        key,
+        get
+          ? { get, enumerable: true, configurable: true }
+          : { value, enumerable: true, writable: true, configurable: true }
+      );
+    } else target[key] = source[key];
+  }
+  return target;
+}
+// A context with more names, as { ...context, ...names } (its getters kept).
+const withNames = (context, names) => copyNames(copyNames({}, context), names);
+
 function templatePlugin(app, options, done) {
   // The engine is required here: index.js requires this file.
   const { TemplateEngine } = indexModule;
@@ -153,14 +175,30 @@ function templatePlugin(app, options, done) {
     }
   }
   // The values every view of a request has (builtins).
+  // url() and staticUrl() of a server, made once for it (not for every request).
+  const helpers = new WeakMap();
+  function helpersOf(server) {
+    let made = helpers.get(server);
+    if (!made) {
+      made = {
+        url: typeof server.reverse === 'function' ? (name, ...params) => server.reverse(name, params) : undefined,
+        staticUrl: typeof server.staticUrl === 'function' ? (file) => server.staticUrl(file) : undefined,
+      };
+      helpers.set(server, made);
+    }
+    return made;
+  }
   function builtinsOf(request) {
     const server = request.server;
     const session = request.session;
+    const { url } = request;
+    const at = url.indexOf('?');
     const values = {
-      request: { path: request.url.split('?')[0], url: request.url, query: request.query, method: request.method },
+      request: { path: at === -1 ? url : url.slice(0, at), url, query: request.query, method: request.method },
     };
-    if (typeof server.reverse === 'function') values.url = (name, ...params) => server.reverse(name, params);
-    if (typeof server.staticUrl === 'function') values.staticUrl = (file) => server.staticUrl(file);
+    const { url: reverse, staticUrl } = helpersOf(server);
+    if (reverse) values.url = reverse;
+    if (staticUrl) values.staticUrl = staticUrl;
     if (session && typeof session.csrfToken === 'function') {
       // Made when a template writes it (a session made for nothing is not saved).
       Object.defineProperty(values, 'csrfToken', { enumerable: true, get: () => session.csrfToken() });
@@ -192,7 +230,7 @@ function templatePlugin(app, options, done) {
   // A view ready to render: its template, its layout's (or null) and its context; the files are read and compiled
   // here, so a view that is not there fails before anything is sent.
   async function prepare(name, data, callOptions = {}, locals, reply = null) {
-    const context = { ...defaultContext, ...locals, ...data };
+    const context = copyNames(copyNames({ ...defaultContext }, locals), data);
     // Each view of a reply, for those who listen (a test client: the templates and context of a response).
     if (reply && RENDERS.hasSubscribers) RENDERS.publish({ request: reply.request, reply, name, context });
     const page = engine.compile(await read(name), { name });
@@ -205,7 +243,7 @@ function templatePlugin(app, options, done) {
   async function render(name, data, callOptions, locals, reply) {
     const { page, frame, context } = await prepare(name, data, callOptions, locals, reply);
     if (!frame) return page(context);
-    return frame({ ...context, body: new SafeString(page(context)) });
+    return frame(withNames(context, { body: new SafeString(page(context)) }));
   }
 
   // The text of a view in chunks, made as they are read: the layout is rendered with a marker as its body and cut
@@ -217,10 +255,10 @@ function templatePlugin(app, options, done) {
       return;
     }
     const marker = `\u0000xufa-body-${randomUUID()}\u0000`;
-    const outer = frame({ ...context, body: new SafeString(marker) });
+    const outer = frame(withNames(context, { body: new SafeString(marker) }));
     const at = outer.indexOf(marker);
     if (at === -1 || outer.indexOf(marker, at + 1) !== -1) {
-      yield frame({ ...context, body: new SafeString(page(context)) });
+      yield frame(withNames(context, { body: new SafeString(page(context)) }));
       return;
     }
     yield outer.slice(0, at);

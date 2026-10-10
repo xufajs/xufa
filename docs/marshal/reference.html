@@ -106,7 +106,7 @@
         <pre><code class="language-ts">export declare function marshal(value: unknown, options?: MarshalOptions): Marshalled;</code></pre>
 
         <h3 id="ref-unmarshal"><code>unmarshal</code></h3>
-        <pre><code class="language-ts">export declare function unmarshal&lt;T = unknown&gt;(nodes: Marshalled, options?: UnmarshalOptions): T;</code></pre>
+        <pre><code class="language-ts">export declare function unmarshal&lt;T = unknown&gt;(data: Marshalled, options?: UnmarshalOptions): T;</code></pre>
 
         <h3 id="ref-stringify"><code>stringify</code></h3>
         <pre><code class="language-ts">export declare function stringify(value: unknown, options?: MarshalOptions): string;</code></pre>
@@ -188,7 +188,7 @@
               <tbody>
                 <tr><td><code>registry?</code></td><td><code><a href="#ref-Registry">Registry</a></code></td><td></td></tr>
                 <tr><td><code>maxDepth?</code></td><td><code>number</code></td><td></td></tr>
-                <tr><td><code>maxNodes?</code></td><td><code>number</code></td><td><p>More nodes are a MarshalError (10,000,000).</p></td></tr>
+                <tr><td><code>maxNodes?</code></td><td><code>number</code></td><td><p>More values are a MarshalError (10,000,000).</p></td></tr>
                 <tr><td><code>unknown?</code></td><td><code>'object' | 'error'</code></td><td><p>A class that is not registered: a plain object ('object', the default), or an error.</p></td></tr>
               </tbody>
             </table>
@@ -223,8 +223,8 @@
         <p class="ref-index"><a href="#ref-Marshalled"><code>Marshalled</code></a></p>
 
         <h3 id="ref-Marshalled"><code>Marshalled</code></h3>
-        <pre><code class="language-ts">export type Marshalled = unknown[];</code></pre>
-        <p>The nodes marshal() writes: plain JSON data.</p>
+        <pre><code class="language-ts">export type Marshalled = string | number | boolean | null | Marshalled[] | { [key: string]: Marshalled };</code></pre>
+        <p>What marshal() writes: plain JSON data.</p>
       </article>
     </div>
 

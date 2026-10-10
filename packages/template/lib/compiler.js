@@ -50,6 +50,35 @@ function entriesOf(value) {
   return [];
 }
 
+// Whether nodes may read a name (`block` for block.super, `loop` in an each): any expression that names it, and
+// any partial or block inside (which could; told apart no further).
+const BLOCK = /\bblock\b/;
+const LOOP = /\bloop\b/;
+function mayRead(nodes, name) {
+  return nodes.some((node) => {
+    switch (node.type) {
+      case 'text':
+        return false;
+      case 'output':
+        return name.test(node.source);
+      case 'if':
+        return (
+          node.branches.some((branch) => name.test(branch.source) || mayRead(branch.nodes, name)) ||
+          Boolean(node.otherwise && mayRead(node.otherwise, name))
+        );
+      case 'each':
+      case 'with':
+        return (
+          name.test(node.source) ||
+          mayRead(node.nodes, name) ||
+          Boolean(node.otherwise && mayRead(node.otherwise, name))
+        );
+      default:
+        return true;
+    }
+  });
+}
+
 // A context over another, with names of its own (as own properties: a name __proto__, of data given to a partial,
 // does not set its prototype).
 function child(context, names) {
@@ -285,7 +314,7 @@ class TemplateCompiler {
     }
     if (keyword === 'if') {
       const node = { type: 'if', position: part.position, branches: [], otherwise: null };
-      node.branches.push({ test: this.expression(expression, restOffset), nodes: [] });
+      node.branches.push({ test: this.expression(expression, restOffset), source: expression, nodes: [] });
       node.current = node.branches[0].nodes;
       target.push(node);
       return node;
@@ -304,6 +333,7 @@ class TemplateCompiler {
         type: keyword,
         position: part.position,
         value: this.expression(source, restOffset),
+        source,
         item,
         key,
         nodes: [],
@@ -322,7 +352,7 @@ class TemplateCompiler {
       if (block.otherwise) throw this.error('{{else}} after {{else}}', part.position);
       if (match[1]) {
         const offset = part.start + part.body.indexOf(match[1]);
-        const branch = { test: this.expression(match[1], offset), nodes: [] };
+        const branch = { test: this.expression(match[1], offset), source: match[1], nodes: [] };
         block.branches.push(branch);
         block.current = branch.nodes;
       } else block.otherwise = [];
@@ -335,9 +365,13 @@ class TemplateCompiler {
     throw this.error('{{else}} out of {{#if}} or {{#each}}', part.position);
   }
 
-  // The closure of the contents of a block (made once).
+  // The closure of the contents of a block (made once), and whether they may read `block` (block.super): those that
+  // do not are rendered on the context as it is, with no block of their own.
   contentOf(node) {
-    if (!node.content) node.content = this.render(node.nodes);
+    if (!node.content) {
+      node.content = this.render(node.nodes);
+      node.content.readsBlock = mayRead(node.nodes, BLOCK);
+    }
     return node.content;
   }
 
@@ -418,6 +452,7 @@ class TemplateCompiler {
         const body = this.render(node.nodes);
         const otherwise = node.otherwise ? this.render(node.otherwise) : null;
         const { value, item, key } = node;
+        const readsLoop = mayRead(node.nodes, LOOP);
         return (context, depth) => {
           const list = value(context);
           // Lists as they are; the rest as [key, value] entries.
@@ -426,11 +461,20 @@ class TemplateCompiler {
           const { length } = entries;
           if (length === 0) return otherwise ? otherwise(context, depth) : '';
           let text = '';
+          // One scope for the items, each in turn (rendering is synchronous: nothing keeps it), and `loop` when the
+          // body may read it. The names were checked when it was compiled (none is __proto__); those given go over loop.
+          const scope = Object.create(context);
+          const loop = readsLoop ? { index: 0, number: 1, first: true, last: false, length, key: null } : null;
+          if (loop) scope.loop = loop;
           for (let i = 0; i < length; i += 1) {
             const entryKey = isList ? i : entries[i][0];
-            // The names were checked when it was compiled (none is __proto__); those given go over loop.
-            const scope = Object.create(context);
-            scope.loop = { index: i, number: i + 1, first: i === 0, last: i === length - 1, length, key: entryKey };
+            if (loop) {
+              loop.index = i;
+              loop.number = i + 1;
+              loop.first = i === 0;
+              loop.last = i === length - 1;
+              loop.key = entryKey;
+            }
             scope[item] = isList ? entries[i] : entries[i][1];
             if (key) scope[key] = entryKey;
             text += body(scope, depth);
@@ -450,7 +494,10 @@ class TemplateCompiler {
         const { name } = node;
         return (context, depth) => {
           const given = context[BLOCKS] && context[BLOCKS][name];
+          // Its own contents, which do not read block.super: no block to make.
+          if (!given && !own.readsBlock) return own(context, depth);
           const chain = given ? (given.includes(own) ? given : [...given, own]) : [own];
+          if (!chain[0].readsBlock) return chain[0](context, depth);
           const at = (index) => {
             const block = {
               get super() {

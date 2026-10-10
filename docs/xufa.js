@@ -1882,12 +1882,38 @@ var import_node_util = require("node:util");
 var import_registry = require("./registry.js");
 const isNative = typeof Error.isError === "function" ? Error.isError : import_node_util.types.isNativeError;
 const isError = (value) => isNative(value) || value instanceof Error;
-const UNDEFINED = -1;
-const HOLE = -2;
-const NAN = -3;
-const POSITIVE_INFINITY = -4;
-const NEGATIVE_INFINITY = -5;
-const NEGATIVE_ZERO = -6;
+const MARK = "\xA4";
+const MARK_CODE = 164;
+const UNDEFINED = "\xA4u";
+const HOLE = "\xA4h";
+const NAN = "\xA4N";
+const POSITIVE_INFINITY = "\xA4I";
+const NEGATIVE_INFINITY = "\xA4i";
+const NEGATIVE_ZERO = "\xA4z";
+const DATE = "\xA4D";
+const REF = "\xA4R";
+const BIGINT = "\xA4B";
+const STRING = "\xA4S";
+const T = {
+  Array: "\xA4Array",
+  Object: "\xA4Object",
+  Map: "\xA4Map",
+  Set: "\xA4Set",
+  Null: "\xA4Null",
+  RegExp: "\xA4RegExp",
+  Symbol: "\xA4Symbol",
+  Buffer: "\xA4Buffer",
+  ArrayBuffer: "\xA4ArrayBuffer",
+  DataView: "\xA4DataView",
+  TypedArray: "\xA4TypedArray",
+  URL: "\xA4URL",
+  URLSearchParams: "\xA4URLSearchParams",
+  Boxed: "\xA4Boxed",
+  Error: "\xA4Error",
+  Table: "\xA4Table"
+};
+const marked = (item) => typeof item === "string" && item.charCodeAt(0) === MARK_CODE;
+const LONG = 64;
 const TYPED_ARRAYS = {
   Int8Array,
   Uint8Array,
@@ -1907,6 +1933,7 @@ const fail = (message, code = "XUFA_MARSHAL_ERR_INPUT") => {
   throw new import_errors.MarshalError(message, code);
 };
 const DEFAULTS = { maxDepth: 1e3, maxNodes: 1e7, unknown: "object", functions: "throw", stack: true };
+const optionsOf = (options) => options === void 0 ? DEFAULTS : { ...DEFAULTS, ...options };
 const tagOf = Object.getOwnPropertyDescriptor(Object.getPrototypeOf(Uint8Array.prototype), Symbol.toStringTag).get;
 const typedArrayName = (view) => {
   const name = tagOf.call(view);
@@ -1928,6 +1955,16 @@ function assignable(Class) {
   }
   return known;
 }
+const getTime = Date.prototype.getTime;
+const setValues = Set.prototype.values;
+const mapEntries = Map.prototype.entries;
+function iterated(object, method) {
+  try {
+    return method.call(object);
+  } catch {
+    return null;
+  }
+}
 const HAS_BUFFER = typeof Buffer === "function";
 const isBuffer = (value) => HAS_BUFFER && Buffer.isBuffer(value);
 function bytesOf(view) {
@@ -1944,31 +1981,43 @@ function bytesFrom(text) {
   for (let i = 0; i < binary.length; i += 1) bytes[i] = binary.charCodeAt(i);
   return bytes;
 }
-function marshal(value, options = {}) {
-  const { registry = import_registry.registry, maxDepth, unknown, functions, stack } = { ...DEFAULTS, ...options };
-  const nodes = [];
-  const indexes = /* @__PURE__ */ new Map();
+const defineOwn = (object, key, item) => Object.defineProperty(object, key, { value: item, enumerable: true, writable: true, configurable: true });
+const put = (object, key, item) => {
+  if (key === "__proto__") defineOwn(object, key, item);
+  else object[key] = item;
+};
+const SKIP = /* @__PURE__ */ Symbol("skip");
+function encode(value, options, share) {
+  const { registry = import_registry.registry, maxDepth, unknown, functions, stack } = optionsOf(options);
+  const numbers = /* @__PURE__ */ new Map();
+  let count = 0;
   function add(input, depth) {
     switch (typeof input) {
-      case "undefined":
-        return UNDEFINED;
+      case "string":
+        if (input.length >= LONG) {
+          const known2 = numbers.get(input);
+          if (known2 !== void 0) return REF + known2;
+          numbers.set(input, count);
+          count += 1;
+        }
+        return input.charCodeAt(0) === MARK_CODE ? STRING + input : input;
       case "number":
+        if (input - input === 0 && (input !== 0 || 1 / input > 0)) return input;
         if (Number.isNaN(input)) return NAN;
         if (input === Infinity) return POSITIVE_INFINITY;
         if (input === -Infinity) return NEGATIVE_INFINITY;
-        if (input === 0 && 1 / input < 0) return NEGATIVE_ZERO;
-        return push(input);
+        return NEGATIVE_ZERO;
       case "boolean":
-        return push(input);
-      case "string":
-        return shared(input, input);
+        return input;
+      case "undefined":
+        return UNDEFINED;
       case "bigint":
-        return shared(input, ["BigInt", input.toString()]);
+        return BIGINT + input.toString();
       case "symbol": {
         const key = Symbol.keyFor(input);
         if (key === void 0)
           fail("A symbol that is not global (Symbol.for) cannot be written", "XUFA_MARSHAL_ERR_TYPE");
-        return shared(input, ["Symbol", key]);
+        return [T.Symbol, key];
       }
       case "function":
         if (functions === "skip") return SKIP;
@@ -1976,90 +2025,158 @@ function marshal(value, options = {}) {
       default:
         break;
     }
-    if (input === null) return push(null);
-    const known = indexes.get(input);
-    if (known !== void 0) return known;
+    if (input === null) return null;
+    const known = numbers.get(input);
+    if (known !== void 0) return REF + known;
     if (depth > maxDepth) fail(`Deeper than maxDepth (${maxDepth})`, "XUFA_MARSHAL_ERR_DEPTH");
-    const index = nodes.length;
-    nodes.push(null);
-    indexes.set(input, index);
-    nodes[index] = nodeOf(input, depth + 1);
-    return index;
+    numbers.set(input, count);
+    count += 1;
+    if (Array.isArray(input)) return arrayOf(input, depth + 1);
+    const proto = Object.getPrototypeOf(input);
+    if (proto === Object.prototype) return objectOf(input, depth + 1, share);
+    return nodeOf(input, proto, depth + 1);
   }
   function val(input, depth) {
-    const index = add(input, depth);
-    return index === SKIP ? UNDEFINED : index;
+    const written = add(input, depth);
+    return written === SKIP ? UNDEFINED : written;
   }
-  function push(node) {
-    nodes.push(node);
-    return nodes.length - 1;
-  }
-  function shared(key, node) {
-    const known = indexes.get(key);
-    if (known !== void 0) return known;
-    const index = push(node);
-    indexes.set(key, index);
-    return index;
-  }
-  function fieldsOf(object, depth) {
-    const fields = {};
-    for (const key of Object.keys(object)) {
-      const index = add(object[key], depth);
-      if (index === SKIP) continue;
-      if (key === "__proto__") Object.defineProperty(fields, key, { value: index, enumerable: true, writable: true });
-      else fields[key] = index;
-    }
-    return fields;
-  }
-  function nodeOf(input, depth) {
-    if (Array.isArray(input)) {
-      const items = new Array(input.length);
-      for (let i = 0; i < input.length; i += 1) {
-        items[i] = i in input ? val(input[i], depth) : HOLE;
+  function fieldsOf(object, depth, same, fields = same ? null : {}) {
+    const keys = Object.keys(object);
+    for (let i = 0; i < keys.length; i += 1) {
+      const key = keys[i];
+      const item = object[key];
+      const written = add(item, depth);
+      if (fields === null) {
+        if (written === item) continue;
+        fields = {};
+        for (let j = 0; j < i; j += 1) put(fields, keys[j], object[keys[j]]);
       }
-      return items;
+      if (written !== SKIP) put(fields, key, written);
     }
-    const proto = Object.getPrototypeOf(input);
-    if (proto === Object.prototype) return fieldsOf(input, depth);
-    if (proto === null) return ["Null", fieldsOf(input, depth)];
-    const entry = registry.byClass.get(proto.constructor);
-    if (entry && !isError(input)) {
-      if (entry.encode) return ["Class", entry.name, val(entry.encode(input), depth), 1];
-      return ["Class", entry.name, fieldsOf(input, depth)];
+    return fields === null ? object : fields;
+  }
+  function objectOf(object, depth, same) {
+    const fields = fieldsOf(object, depth, same);
+    return Object.hasOwn(object, "@") ? [T.Object, fields] : fields;
+  }
+  function tableOf(input, depth) {
+    const { length } = input;
+    if (length < 2 || functions === "skip") return null;
+    const first = input[0];
+    if (first === null || typeof first !== "object" || Array.isArray(first)) return null;
+    const proto = Object.getPrototypeOf(first);
+    let name = null;
+    if (proto !== Object.prototype) {
+      const entry = proto === null ? void 0 : registry.byProto.get(proto);
+      if (entry === void 0 || entry.error || entry.encode) return null;
+      name = entry.name;
     }
-    if (import_node_util.types.isDate(input)) {
-      const time = input.getTime();
-      return ["Date", Number.isNaN(time) ? null : time];
+    const keys = Object.keys(first);
+    const width = keys.length;
+    if (width === 0) return null;
+    for (let i = 0; i < length; i += 1) {
+      const item = input[i];
+      if (!rowOf(item, proto, keys) || numbers.has(item)) {
+        for (let j = 0; j < i; j += 1) numbers.delete(input[j]);
+        return null;
+      }
+      numbers.set(item, count + i);
     }
-    if (import_node_util.types.isRegExp(input)) return ["RegExp", input.source, input.flags];
-    if (import_node_util.types.isMap(input)) {
-      const node = ["Map"];
-      for (const [key, item] of input) node.push(val(key, depth), val(item, depth));
-      return node;
+    count += length;
+    const table = new Array(3 + length * width);
+    table[0] = T.Table;
+    table[1] = name;
+    table[2] = keys;
+    let k = 3;
+    for (let i = 0; i < length; i += 1) {
+      const item = input[i];
+      for (let j = 0; j < width; j += 1) {
+        table[k] = val(item[keys[j]], depth + 1);
+        k += 1;
+      }
     }
-    if (import_node_util.types.isSet(input)) {
-      const node = ["Set"];
-      for (const item of input) node.push(val(item, depth));
-      return node;
+    return table;
+  }
+  function rowOf(item, proto, keys) {
+    if (item === null || typeof item !== "object" || Object.getPrototypeOf(item) !== proto) return false;
+    const own = Object.keys(item);
+    if (own.length !== keys.length) return false;
+    for (let j = 0; j < keys.length; j += 1) if (own[j] !== keys[j]) return false;
+    return true;
+  }
+  function arrayOf(input, depth) {
+    const table = tableOf(input, depth);
+    if (table !== null) return table;
+    const { length } = input;
+    let items = share ? null : new Array(length);
+    for (let i = 0; i < length; i += 1) {
+      const item = input[i];
+      const written = item === void 0 && !(i in input) ? HOLE : val(item, depth);
+      if (items === null) {
+        if (written === item) continue;
+        items = input.slice(0, i);
+        items.length = length;
+      }
+      items[i] = written;
     }
-    if (isBuffer(input)) return ["Buffer", bytesOf(input)];
+    const array = items === null ? input : items;
+    return length > 0 && marked(array[0]) ? [T.Array, ...array] : array;
+  }
+  function nodeOf(input, proto, depth) {
+    if (proto === Date.prototype) {
+      try {
+        return dateOf(input);
+      } catch {
+      }
+    }
+    if (proto === Set.prototype) {
+      const values = iterated(input, setValues);
+      if (values !== null) return setOf(values, depth);
+    } else if (proto === Map.prototype) {
+      const entries = iterated(input, mapEntries);
+      if (entries !== null) return mapOf(entries, depth);
+    }
+    if (proto === null) return [T.Null, fieldsOf(input, depth, false)];
+    const entry = registry.byProto.get(proto);
+    if (entry !== void 0 && !entry.error) {
+      if (entry.encode) return [`${MARK}@${entry.name}`, val(entry.encode(input), depth), 1];
+      if (Object.hasOwn(input, "@")) return [`${MARK}@${entry.name}`, fieldsOf(input, depth, false)];
+      return fieldsOf(input, depth, false, { "@": entry.name });
+    }
+    if (import_node_util.types.isDate(input)) return dateOf(input);
+    if (import_node_util.types.isRegExp(input)) return [T.RegExp, input.source, input.flags];
+    if (import_node_util.types.isMap(input)) return mapOf(mapEntries.call(input), depth);
+    if (import_node_util.types.isSet(input)) return setOf(setValues.call(input), depth);
+    if (isBuffer(input)) return [T.Buffer, bytesOf(input)];
     if (ArrayBuffer.isView(input)) {
-      if (import_node_util.types.isDataView(input)) return ["DataView", bytesOf(input)];
+      if (import_node_util.types.isDataView(input)) return [T.DataView, bytesOf(input)];
       const name2 = typedArrayName(input);
-      if (name2) return ["TypedArray", name2, bytesOf(input)];
+      if (name2) return [T.TypedArray, name2, bytesOf(input)];
     }
-    if (import_node_util.types.isArrayBuffer(input)) return ["ArrayBuffer", bytesOf(new Uint8Array(input))];
+    if (import_node_util.types.isArrayBuffer(input)) return [T.ArrayBuffer, bytesOf(new Uint8Array(input))];
     if (isError(input)) return errorNode(input, entry, depth);
-    if (input instanceof URL) return ["URL", input.href];
-    if (input instanceof URLSearchParams) return ["URLSearchParams", input.toString()];
-    if (import_node_util.types.isBoxedPrimitive(input)) {
-      return ["Boxed", val(input.valueOf(), depth)];
-    }
+    if (input instanceof URL) return [T.URL, input.href];
+    if (input instanceof URLSearchParams) return [T.URLSearchParams, input.toString()];
+    if (import_node_util.types.isBoxedPrimitive(input)) return [T.Boxed, val(input.valueOf(), depth)];
     const name = proto && proto.constructor && proto.constructor.name || "an object";
     if (unknown === "error" || isOpaque(input)) {
       return fail(`${name} is not a registered class (registry.register(${name}))`, "XUFA_MARSHAL_ERR_CLASS");
     }
-    return fieldsOf(input, depth);
+    return objectOf(input, depth, share && typeof input.toJSON !== "function");
+  }
+  function mapOf(entries, depth) {
+    const node = [T.Map];
+    for (const [key, item] of entries) node.push(val(key, depth), val(item, depth));
+    return node;
+  }
+  function setOf(values, depth) {
+    const node = [T.Set];
+    for (const item of values) node.push(val(item, depth));
+    return node;
+  }
+  function dateOf(date) {
+    const time = getTime.call(date);
+    return time === time ? DATE + time : DATE;
   }
   function errorNode(error, entry, depth) {
     let kind = "Error";
@@ -2068,46 +2185,86 @@ function marshal(value, options = {}) {
       const builtin = Object.keys(ERRORS).find((key) => Object.getPrototypeOf(error) === ERRORS[key].prototype);
       if (builtin) kind = builtin;
     }
-    const fields = fieldsOf(error, depth);
+    const message = val(error.message, depth);
+    const trace = stack && typeof error.stack === "string" ? val(error.stack, depth) : UNDEFINED;
+    const fields = fieldsOf(error, depth, false);
     if (kind === "Error" && error.name !== "Error" && !("name" in fields)) fields.name = val(error.name, depth);
     return [
-      "Error",
+      T.Error,
       kind,
-      val(error.message, depth),
-      stack && typeof error.stack === "string" ? val(error.stack, depth) : UNDEFINED,
+      message,
+      trace,
       fields,
       "cause" in error ? val(error.cause, depth) : HOLE,
       error instanceof AggregateError ? val(error.errors, depth) : HOLE
     ];
   }
-  const root = val(value, 0);
-  return root < 0 ? [["Value", root]] : nodes;
+  return val(value, 0);
 }
-const SKIP = /* @__PURE__ */ Symbol("skip");
 function isOpaque(input) {
   return import_node_util.types.isPromise(input) || import_node_util.types.isWeakMap(input) || import_node_util.types.isWeakSet(input) || typeof WeakRef === "function" && input instanceof WeakRef || typeof input.then === "function";
 }
-function unmarshal(nodes, options = {}) {
-  const { registry = import_registry.registry, maxDepth, maxNodes, unknown } = { ...DEFAULTS, ...options };
-  if (!Array.isArray(nodes) || nodes.length === 0) fail("Not marshalled data: an array of nodes is expected");
-  if (nodes.length > maxNodes) fail(`More nodes than maxNodes (${maxNodes})`, "XUFA_MARSHAL_ERR_SIZE");
-  const values = new Array(nodes.length);
-  const state = new Uint8Array(nodes.length);
-  const set = (object, key, item) => {
-    if (key === "__proto__")
-      Object.defineProperty(object, key, { value: item, enumerable: true, writable: true, configurable: true });
-    else object[key] = item;
-  };
-  const define = (object, key, item) => Object.defineProperty(object, key, { value: item, enumerable: true, writable: true, configurable: true });
-  function fill(target, fields, depth, put) {
+const PENDING = /* @__PURE__ */ Symbol("pending");
+function integerAt(text) {
+  let i = 2;
+  let sign = 1;
+  if (text.charCodeAt(2) === 45) {
+    sign = -1;
+    i = 3;
+  }
+  if (i >= text.length || text.length - i > 15) return NaN;
+  let value = 0;
+  for (; i < text.length; i += 1) {
+    const digit = text.charCodeAt(i) - 48;
+    if (digit < 0 || digit > 9) return NaN;
+    value = value * 10 + digit;
+  }
+  return sign * value;
+}
+const PLAIN = { entry: null, set: put };
+function decode(data, options, own) {
+  const { registry = import_registry.registry, maxDepth, maxNodes, unknown } = optionsOf(options);
+  const made = [];
+  const entries = /* @__PURE__ */ new Map();
+  let size = 0;
+  function fill(target, fields, depth, set) {
     if (fields === null || typeof fields !== "object" || Array.isArray(fields)) fail("Fields must be an object");
-    for (const key of Object.keys(fields)) put(target, key, get(fields[key], depth));
+    const keys = Object.keys(fields);
+    for (let i = 0; i < keys.length; i += 1) {
+      const key = keys[i];
+      set(target, key, get(fields[key], depth));
+    }
     return target;
   }
-  function get(index, depth) {
-    if (typeof index !== "number" || !Number.isInteger(index)) fail(`Not an index: ${JSON.stringify(index)}`);
-    if (index < 0) {
-      switch (index) {
+  function get(node, depth) {
+    size += 1;
+    if (size > maxNodes) fail(`More values than maxNodes (${maxNodes})`, "XUFA_MARSHAL_ERR_SIZE");
+    if (typeof node !== "object") {
+      if (typeof node === "string") {
+        if (node.charCodeAt(0) === MARK_CODE) return special(node);
+        if (node.length >= LONG) made.push(node);
+        return node;
+      }
+      if (typeof node === "number") {
+        if (node - node !== 0) fail("A number that is not finite");
+        return node;
+      }
+      if (typeof node === "boolean") return node;
+      return fail(`Not data: ${typeof node}`);
+    }
+    if (node === null) return null;
+    if (depth > maxDepth) fail(`Deeper than maxDepth (${maxDepth})`, "XUFA_MARSHAL_ERR_DEPTH");
+    if (Array.isArray(node)) {
+      if (node.length > 0 && marked(node[0])) return tagged(node, depth + 1);
+      return items(node, 0, depth + 1);
+    }
+    const name = node["@"];
+    if (name !== void 0 && Object.hasOwn(node, "@")) return instance(node, name, depth + 1);
+    return plain(node, depth + 1);
+  }
+  function special(node) {
+    if (node.length === 2) {
+      switch (node) {
         case UNDEFINED:
           return void 0;
         case NAN:
@@ -2118,160 +2275,249 @@ function unmarshal(nodes, options = {}) {
           return -Infinity;
         case NEGATIVE_ZERO:
           return -0;
+        case DATE:
+          return keep(/* @__PURE__ */ new Date(NaN));
+        case HOLE:
+          return fail("A hole out of an array");
         default:
-          return fail(`Not a constant: ${index}`);
+          return fail(`Not a tag: ${JSON.stringify(node)}`);
       }
     }
-    if (index >= nodes.length) fail(`An index out of the nodes: ${index}`);
-    if (state[index] === 2) return values[index];
-    if (state[index] === 1) fail("A cycle through an instance made by decode()", "XUFA_MARSHAL_ERR_CYCLE");
-    if (depth > maxDepth) fail(`Deeper than maxDepth (${maxDepth})`, "XUFA_MARSHAL_ERR_DEPTH");
-    const node = nodes[index];
-    if (node === null || typeof node !== "object") {
-      if (typeof node === "number" && !Number.isFinite(node)) fail("A number that is not finite");
-      return made(index, node);
+    switch (node.charCodeAt(1)) {
+      case 68: {
+        let time = integerAt(node);
+        if (time !== time) time = Number(node.slice(2));
+        if (!Number.isFinite(time)) fail(`Not a date: ${JSON.stringify(node.slice(2))}`);
+        return keep(new Date(time));
+      }
+      case 82: {
+        const number = integerAt(node);
+        if (!Number.isInteger(number) || number < 0 || number >= made.length) {
+          fail(`Not a reference: ${JSON.stringify(node.slice(2))}`);
+        }
+        const value = made[number];
+        if (value === PENDING) fail("A cycle through an instance made by decode()", "XUFA_MARSHAL_ERR_CYCLE");
+        return value;
+      }
+      case 66: {
+        const digits = node.slice(2);
+        if (!/^-?\d+$/.test(digits)) fail("Not a BigInt");
+        return BigInt(digits);
+      }
+      case 83: {
+        const text = node.slice(2);
+        if (text.length >= LONG) made.push(text);
+        return text;
+      }
+      default:
+        return fail(`Not a tag: ${JSON.stringify(node)}`);
     }
-    if (!Array.isArray(node)) return fill(made(index, {}), node, depth + 1, set);
-    if (typeof node[0] !== "string") {
-      const array = made(index, new Array(node.length));
-      for (let i = 0; i < node.length; i += 1) if (node[i] !== HOLE) array[i] = get(node[i], depth + 1);
-      return array;
-    }
-    return tagged(index, node, depth + 1);
   }
-  function made(index, value) {
-    values[index] = value;
-    state[index] = 2;
-    return value;
+  function plain(node, depth) {
+    if (own) {
+      made.push(node);
+      const keys = Object.keys(node);
+      for (let i = 0; i < keys.length; i += 1) {
+        const key = keys[i];
+        const item = node[key];
+        const value = get(item, depth);
+        if (value !== item) put(node, key, value);
+      }
+      return node;
+    }
+    return fill(keep({}), node, depth, put);
+  }
+  function items(node, first, depth) {
+    const length = node.length - first;
+    const array = own && first === 0 ? node : new Array(length);
+    made.push(array);
+    for (let i = 0; i < length; i += 1) {
+      const item = node[i + first];
+      if (item === HOLE) {
+        if (array === node) delete array[i];
+        continue;
+      }
+      const value = get(item, depth);
+      if (value !== item || array !== node) array[i] = value;
+    }
+    return array;
   }
   const bytes = (text) => {
     if (typeof text !== "string") fail("Bytes must be base64 text");
     return bytesFrom(text);
   };
-  function tagged(index, node, depth) {
+  function tagged(node, depth) {
     const [tag] = node;
+    if (tag.charCodeAt(1) === 64) return encoded(node, depth);
     switch (tag) {
-      case "Date":
-        return made(index, new Date(node[1] === null ? NaN : Number(node[1])));
-      case "RegExp":
+      case T.Array:
+        return items(node, 1, depth);
+      case T.Table: {
+        const [, name, keys] = node;
+        if (!Array.isArray(keys) || keys.length === 0 || !keys.every((key) => typeof key === "string")) {
+          fail("A table needs its keys");
+        }
+        if ((node.length - 3) % keys.length !== 0) fail("A table needs a value for each key");
+        const { entry, set } = name === null ? PLAIN : classNamed(name);
+        const count = (node.length - 3) / keys.length;
+        const array = keep(new Array(count));
+        for (let i = 0; i < count; i += 1) array[i] = entry === null ? keep({}) : made_(entry, name);
+        for (let i = 0, k = 3; i < count; i += 1) {
+          const target = array[i];
+          for (let j = 0; j < keys.length; j += 1, k += 1) set(target, keys[j], get(node[k], depth));
+        }
+        return array;
+      }
+      case T.Object:
+        if (node[1] === null || typeof node[1] !== "object" || Array.isArray(node[1])) fail("Fields must be an object");
+        if (own) return plain(node[1], depth);
+        return fill(keep({}), node[1], depth, put);
+      case T.RegExp:
         if (typeof node[1] !== "string" || typeof node[2] !== "string") fail("A RegExp needs its source and flags");
         try {
-          return made(index, new RegExp(node[1], node[2]));
+          return keep(new RegExp(node[1], node[2]));
         } catch (err) {
           return fail(`Not a RegExp: ${err.message}`);
         }
-      case "BigInt":
-        if (typeof node[1] !== "string" || !/^-?\d+$/.test(node[1])) fail("Not a BigInt");
-        return made(index, BigInt(node[1]));
-      case "Symbol":
+      case T.Symbol:
         if (typeof node[1] !== "string") fail("Not a symbol");
-        return made(index, Symbol.for(node[1]));
-      case "Map": {
+        return Symbol.for(node[1]);
+      case T.Map: {
         if (node.length % 2 === 0) fail("A Map needs a value for each key");
-        const map = made(index, /* @__PURE__ */ new Map());
+        const map = keep(/* @__PURE__ */ new Map());
         for (let i = 1; i + 1 < node.length; i += 2) map.set(get(node[i], depth), get(node[i + 1], depth));
         return map;
       }
-      case "Set": {
-        const set_ = made(index, /* @__PURE__ */ new Set());
+      case T.Set: {
+        const set_ = keep(/* @__PURE__ */ new Set());
         for (let i = 1; i < node.length; i += 1) set_.add(get(node[i], depth));
         return set_;
       }
-      case "Null":
-        return fill(made(index, /* @__PURE__ */ Object.create(null)), node[1], depth, define);
-      case "Buffer":
-        return made(index, bytes(node[1]));
-      case "ArrayBuffer": {
+      case T.Null:
+        return fill(keep(/* @__PURE__ */ Object.create(null)), node[1], depth, defineOwn);
+      case T.Buffer:
+        return keep(bytes(node[1]));
+      case T.ArrayBuffer: {
         const buffer = bytes(node[1]);
-        return made(index, buffer.buffer.slice(buffer.byteOffset, buffer.byteOffset + buffer.byteLength));
+        return keep(buffer.buffer.slice(buffer.byteOffset, buffer.byteOffset + buffer.byteLength));
       }
-      case "DataView": {
+      case T.DataView: {
         const buffer = bytes(node[1]);
-        return made(index, new DataView(buffer.buffer.slice(buffer.byteOffset, buffer.byteOffset + buffer.byteLength)));
+        return keep(new DataView(buffer.buffer.slice(buffer.byteOffset, buffer.byteOffset + buffer.byteLength)));
       }
-      case "TypedArray": {
+      case T.TypedArray: {
         const Type = Object.hasOwn(TYPED_ARRAYS, node[1]) ? TYPED_ARRAYS[node[1]] : null;
         if (!Type) fail(`Not a typed array: ${node[1]}`);
         const buffer = bytes(node[2]);
         if (buffer.byteLength % Type.BYTES_PER_ELEMENT !== 0) fail(`Bytes that are no ${node[1]}`);
         const copy = buffer.buffer.slice(buffer.byteOffset, buffer.byteOffset + buffer.byteLength);
-        return made(index, new Type(copy));
+        return keep(new Type(copy));
       }
-      case "URL":
+      case T.URL:
         try {
-          return made(index, new URL(node[1]));
+          return keep(new URL(node[1]));
         } catch {
           return fail("Not a URL");
         }
-      case "URLSearchParams":
+      case T.URLSearchParams:
         if (typeof node[1] !== "string") fail("Not URLSearchParams");
-        return made(index, new URLSearchParams(node[1]));
-      case "Boxed": {
+        return keep(new URLSearchParams(node[1]));
+      case T.Boxed: {
+        const number = reserve();
         const primitive = get(node[1], depth);
         if (primitive === null || primitive === void 0 || typeof primitive === "object") fail("Not a primitive");
-        return made(index, Object(primitive));
+        made[number] = Object(primitive);
+        return made[number];
       }
-      case "Value":
-        if (index !== 0 || !(node[1] < 0)) fail("A constant node that is not the root");
-        return get(node[1], depth);
-      case "Class":
-        return instance(index, node, depth);
-      case "Error":
-        return error(index, node, depth);
+      case T.Error:
+        return error(node, depth);
       default:
         return fail(`Not a tag: ${JSON.stringify(tag)}`);
     }
   }
-  function classOf(name) {
+  function keep(value) {
+    made.push(value);
+    return value;
+  }
+  function reserve() {
+    made.push(PENDING);
+    return made.length - 1;
+  }
+  function classNamed(name) {
     if (typeof name !== "string") fail("A class needs a name");
-    const entry = registry.byName.get(name);
-    if (!entry && unknown === "error") fail(`${name} is not a registered class`, "XUFA_MARSHAL_ERR_CLASS");
-    return entry;
-  }
-  function instance(index, [, name, data, hooked], depth) {
-    const entry = classOf(name);
-    if (hooked) {
-      state[index] = 1;
-      const decoded = get(data, depth);
-      state[index] = 0;
-      if (!entry) return made(index, decoded);
-      if (!entry.decode) fail(`${name} was written by its encode(), and has no decode()`, "XUFA_MARSHAL_ERR_CLASS");
-      return made(index, entry.decode(decoded));
+    let known = entries.get(name);
+    if (known === void 0) {
+      const entry = registry.byName.get(name) || null;
+      if (!entry && unknown === "error") fail(`${name} is not a registered class`, "XUFA_MARSHAL_ERR_CLASS");
+      known = { entry, set: entry && !assignable(entry.Class) ? defineOwn : put };
+      entries.set(name, known);
     }
-    if (entry && entry.decode) fail(`${name} has a decode(), but was written without it`, "XUFA_MARSHAL_ERR_CLASS");
-    const target = made(index, entry ? Object.create(entry.Class.prototype) : {});
-    return fill(target, data, depth, entry ? assignable(entry.Class) ? set : define : set);
+    return known;
   }
-  function error(index, [, kind, message, stack, fields, cause, errors], depth) {
+  const entryOf = (name) => classNamed(name).entry;
+  function made_(entry, name) {
+    if (entry && entry.decode) fail(`${name} has a decode(), but was written without it`, "XUFA_MARSHAL_ERR_CLASS");
+    return keep(entry ? Object.create(entry.Class.prototype) : {});
+  }
+  function instance(node, name, depth) {
+    const { entry, set } = classNamed(name);
+    const target = made_(entry, name);
+    const keys = Object.keys(node);
+    for (let i = 0; i < keys.length; i += 1) {
+      const key = keys[i];
+      if (key !== "@") set(target, key, get(node[key], depth));
+    }
+    return target;
+  }
+  function encoded([tag, data2, hooked], depth) {
+    const name = tag.slice(2);
+    const { entry, set } = classNamed(name);
+    if (hooked) {
+      const number = reserve();
+      const decoded = get(data2, depth);
+      if (!entry) return made[number] = decoded;
+      if (!entry.decode) fail(`${name} was written by its encode(), and has no decode()`, "XUFA_MARSHAL_ERR_CLASS");
+      return made[number] = entry.decode(decoded);
+    }
+    return fill(made_(entry, name), data2, depth, set);
+  }
+  function error([, kind, message, stack, fields, cause, errors], depth) {
     let proto = Error.prototype;
     if (typeof kind === "string" && kind.startsWith("Class:")) {
-      const entry = classOf(kind.slice(6));
+      const entry = entryOf(kind.slice(6));
       if (entry) proto = entry.Class.prototype;
     } else if (typeof kind === "string" && Object.hasOwn(ERRORS, kind)) {
       proto = ERRORS[kind].prototype;
     }
-    const target = made(index, Object.create(proto));
+    const target = keep(Object.create(proto));
     const hidden = (key, value) => Object.defineProperty(target, key, { value, enumerable: false, writable: true, configurable: true });
     hidden("message", String(get(message, depth)));
     const trace = get(stack, depth);
     if (trace !== void 0) hidden("stack", String(trace));
+    fill(target, fields, depth, defineOwn);
     if (cause !== HOLE) hidden("cause", get(cause, depth));
     if (errors !== HOLE) hidden("errors", get(errors, depth));
-    return fill(target, fields, depth, define);
+    return target;
   }
-  return get(0, 0);
+  return get(data, 0);
+}
+function marshal(value, options) {
+  return encode(value, options, false);
+}
+function unmarshal(data, options) {
+  return decode(data, options, false);
 }
 function stringify(value, options) {
-  return JSON.stringify(marshal(value, options));
+  return JSON.stringify(encode(value, options, true));
 }
 function parse(text, options) {
-  let nodes;
+  let data;
   try {
-    nodes = JSON.parse(text);
+    data = JSON.parse(text);
   } catch (err) {
     return fail(`Not JSON: ${err.message}`);
   }
-  return unmarshal(nodes, options);
+  return decode(data, options, true);
 }
 const __marshal = (0, import_errors.guard)(marshal);
 const __unmarshal = (0, import_errors.guard)(unmarshal);
@@ -2312,6 +2558,7 @@ class Registry {
   constructor() {
     this.byName = /* @__PURE__ */ new Map();
     this.byClass = /* @__PURE__ */ new Map();
+    this.byProto = /* @__PURE__ */ new Map();
   }
   // register(Class, { name, encode, decode }), or register(ClassA, ClassB, ...).
   register(Class, ...rest) {
@@ -2339,15 +2586,18 @@ class Registry {
     if (Boolean(encode) !== Boolean(decode)) {
       throw new import_errors.MarshalError(`${name}: encode and decode go together`, "XUFA_MARSHAL_ERR_REGISTER");
     }
-    const entry = { Class, name, encode, decode };
+    const error = Class === Error || Class.prototype instanceof Error;
+    const entry = { Class, name, encode, decode, error };
     this.byName.set(name, entry);
     this.byClass.set(Class, entry);
+    this.byProto.set(Class.prototype, entry);
     return this;
   }
   unregister(Class) {
     const entry = this.byClass.get(Class);
     if (entry) {
       this.byClass.delete(Class);
+      this.byProto.delete(Class.prototype);
       this.byName.delete(entry.name);
     }
     return this;
@@ -14720,6 +14970,25 @@ function entriesOf(value) {
   if (typeof value === "object") return Object.entries(value);
   return [];
 }
+const BLOCK = /\bblock\b/;
+const LOOP = /\bloop\b/;
+function mayRead(nodes, name) {
+  return nodes.some((node) => {
+    switch (node.type) {
+      case "text":
+        return false;
+      case "output":
+        return name.test(node.source);
+      case "if":
+        return node.branches.some((branch) => name.test(branch.source) || mayRead(branch.nodes, name)) || Boolean(node.otherwise && mayRead(node.otherwise, name));
+      case "each":
+      case "with":
+        return name.test(node.source) || mayRead(node.nodes, name) || Boolean(node.otherwise && mayRead(node.otherwise, name));
+      default:
+        return true;
+    }
+  });
+}
 function child(context, names) {
   const scope = Object.create(context);
   const keys = Object.keys(names);
@@ -14936,7 +15205,7 @@ class TemplateCompiler {
     }
     if (keyword === "if") {
       const node = { type: "if", position: part.position, branches: [], otherwise: null };
-      node.branches.push({ test: this.expression(expression, restOffset), nodes: [] });
+      node.branches.push({ test: this.expression(expression, restOffset), source: expression, nodes: [] });
       node.current = node.branches[0].nodes;
       target.push(node);
       return node;
@@ -14954,6 +15223,7 @@ class TemplateCompiler {
         type: keyword,
         position: part.position,
         value: this.expression(source, restOffset),
+        source,
         item,
         key,
         nodes: [],
@@ -14971,7 +15241,7 @@ class TemplateCompiler {
       if (block.otherwise) throw this.error("{{else}} after {{else}}", part.position);
       if (match[1]) {
         const offset = part.start + part.body.indexOf(match[1]);
-        const branch = { test: this.expression(match[1], offset), nodes: [] };
+        const branch = { test: this.expression(match[1], offset), source: match[1], nodes: [] };
         block.branches.push(branch);
         block.current = branch.nodes;
       } else block.otherwise = [];
@@ -14983,9 +15253,13 @@ class TemplateCompiler {
     }
     throw this.error("{{else}} out of {{#if}} or {{#each}}", part.position);
   }
-  // The closure of the contents of a block (made once).
+  // The closure of the contents of a block (made once), and whether they may read `block` (block.super): those that
+  // do not are rendered on the context as it is, with no block of their own.
   contentOf(node) {
-    if (!node.content) node.content = this.render(node.nodes);
+    if (!node.content) {
+      node.content = this.render(node.nodes);
+      node.content.readsBlock = mayRead(node.nodes, BLOCK);
+    }
     return node.content;
   }
   partial(part) {
@@ -15060,6 +15334,7 @@ class TemplateCompiler {
         const body = this.render(node.nodes);
         const otherwise = node.otherwise ? this.render(node.otherwise) : null;
         const { value, item, key } = node;
+        const readsLoop = mayRead(node.nodes, LOOP);
         return (context, depth) => {
           const list = value(context);
           const isList = Array.isArray(list);
@@ -15067,10 +15342,18 @@ class TemplateCompiler {
           const { length } = entries;
           if (length === 0) return otherwise ? otherwise(context, depth) : "";
           let text = "";
+          const scope = Object.create(context);
+          const loop = readsLoop ? { index: 0, number: 1, first: true, last: false, length, key: null } : null;
+          if (loop) scope.loop = loop;
           for (let i = 0; i < length; i += 1) {
             const entryKey = isList ? i : entries[i][0];
-            const scope = Object.create(context);
-            scope.loop = { index: i, number: i + 1, first: i === 0, last: i === length - 1, length, key: entryKey };
+            if (loop) {
+              loop.index = i;
+              loop.number = i + 1;
+              loop.first = i === 0;
+              loop.last = i === length - 1;
+              loop.key = entryKey;
+            }
             scope[item] = isList ? entries[i] : entries[i][1];
             if (key) scope[key] = entryKey;
             text += body(scope, depth);
@@ -15088,7 +15371,9 @@ class TemplateCompiler {
         const { name } = node;
         return (context, depth) => {
           const given = context[BLOCKS] && context[BLOCKS][name];
+          if (!given && !own.readsBlock) return own(context, depth);
           const chain = given ? given.includes(own) ? given : [...given, own] : [own];
+          if (!chain[0].readsBlock) return chain[0](context, depth);
           const at = (index) => {
             const block = {
               get super() {
@@ -15498,6 +15783,22 @@ var import_filters = require("./filters.js");
 var indexModule = __toESM(require("../index.js"));
 const RENDERS = import_node_diagnostics_channel.default.channel("xufa:template:render");
 const MAX_NAMES = 1e3;
+const LAZY_NAMES = /* @__PURE__ */ new Set(["csrfToken", "messages"]);
+function copyNames(target, source) {
+  if (!source) return target;
+  for (const key of Object.keys(source)) {
+    if (LAZY_NAMES.has(key) || key === "__proto__") {
+      const { get, value } = Object.getOwnPropertyDescriptor(source, key);
+      Object.defineProperty(
+        target,
+        key,
+        get ? { get, enumerable: true, configurable: true } : { value, enumerable: true, writable: true, configurable: true }
+      );
+    } else target[key] = source[key];
+  }
+  return target;
+}
+const withNames = (context, names) => copyNames(copyNames({}, context), names);
 function templatePlugin(app, options, done) {
   const { TemplateEngine } = indexModule;
   const {
@@ -15595,14 +15896,29 @@ function templatePlugin(app, options, done) {
       return;
     }
   }
+  const helpers = /* @__PURE__ */ new WeakMap();
+  function helpersOf(server) {
+    let made = helpers.get(server);
+    if (!made) {
+      made = {
+        url: typeof server.reverse === "function" ? (name, ...params) => server.reverse(name, params) : void 0,
+        staticUrl: typeof server.staticUrl === "function" ? (file) => server.staticUrl(file) : void 0
+      };
+      helpers.set(server, made);
+    }
+    return made;
+  }
   function builtinsOf(request) {
     const server = request.server;
     const session = request.session;
+    const { url } = request;
+    const at = url.indexOf("?");
     const values = {
-      request: { path: request.url.split("?")[0], url: request.url, query: request.query, method: request.method }
+      request: { path: at === -1 ? url : url.slice(0, at), url, query: request.query, method: request.method }
     };
-    if (typeof server.reverse === "function") values.url = (name, ...params) => server.reverse(name, params);
-    if (typeof server.staticUrl === "function") values.staticUrl = (file) => server.staticUrl(file);
+    const { url: reverse, staticUrl } = helpersOf(server);
+    if (reverse) values.url = reverse;
+    if (staticUrl) values.staticUrl = staticUrl;
     if (session && typeof session.csrfToken === "function") {
       Object.defineProperty(values, "csrfToken", { enumerable: true, get: () => session.csrfToken() });
     }
@@ -15628,7 +15944,7 @@ function templatePlugin(app, options, done) {
   const engine = given || new TemplateEngine({ ...engineOptions, loadPartial: readPartial });
   if (given && !given.loadPartial) given.loadPartial = readPartial;
   async function prepare(name, data, callOptions = {}, locals, reply = null) {
-    const context2 = { ...defaultContext, ...locals, ...data };
+    const context2 = copyNames(copyNames({ ...defaultContext }, locals), data);
     if (reply && RENDERS.hasSubscribers) RENDERS.publish({ request: reply.request, reply, name, context: context2 });
     const page = engine.compile(await read(name), { name });
     const outer = callOptions.layout === void 0 ? layout : callOptions.layout;
@@ -15638,7 +15954,7 @@ function templatePlugin(app, options, done) {
   async function render(name, data, callOptions, locals, reply) {
     const { page, frame, context: context2 } = await prepare(name, data, callOptions, locals, reply);
     if (!frame) return page(context2);
-    return frame({ ...context2, body: new import_filters.SafeString(page(context2)) });
+    return frame(withNames(context2, { body: new import_filters.SafeString(page(context2)) }));
   }
   function* chunks({ page, frame, context: context2 }) {
     if (!frame) {
@@ -15646,10 +15962,10 @@ function templatePlugin(app, options, done) {
       return;
     }
     const marker = `\0xufa-body-${(0, import_node_crypto.randomUUID)()}\0`;
-    const outer = frame({ ...context2, body: new import_filters.SafeString(marker) });
+    const outer = frame(withNames(context2, { body: new import_filters.SafeString(marker) }));
     const at = outer.indexOf(marker);
     if (at === -1 || outer.indexOf(marker, at + 1) !== -1) {
-      yield frame({ ...context2, body: new import_filters.SafeString(page(context2)) });
+      yield frame(withNames(context2, { body: new import_filters.SafeString(page(context2)) }));
       return;
     }
     yield outer.slice(0, at);

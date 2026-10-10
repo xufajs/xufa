@@ -114,11 +114,12 @@ class Bus {
   }
 
   // Sends data written by @xufa/marshal, with `registry` (its default one when not given). The processes that
-  // receive must know the same classes (they run the same code).
+  // receive must know the same classes (they run the same code). (As its text: one string is cheaper for the IPC
+  // to copy than the objects of the data.)
   useMarshal(registry) {
-    const { marshal, unmarshal, registry: fallback } = marshalModule;
+    const { stringify, parse, registry: fallback } = marshalModule;
     const options = { registry: registry || fallback };
-    this.marshaller = { write: (value) => marshal(value, options), read: (nodes) => unmarshal(nodes, options) };
+    this.marshaller = { write: (value) => stringify(value, options), read: (text) => parse(text, options) };
     return this;
   }
 

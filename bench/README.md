@@ -124,6 +124,32 @@ node bench/orm.js [--dialects postgres,sqlite] [--rounds 5] [--orms xufa,sequeli
 its speed on the suite and on payloads, compile time, and the features beyond validating. Each measurement runs in a
 process of its own. `pnpm run schema:all` runs them all; see [schema/README.md](schema/README.md).
 
+## The Django app: `django.js`
+
+```sh
+pnpm bench:linux django [--rounds 3] [--duration 10] [--servers xufa,granian-wsgi,...] [--scenarios json,books,...]
+                        [--semi-space 32] [--heap-log 1] [--xufa-flags --max-old-space-size=96,...] [--out results/django-6]
+pnpm bench:linux django-alloc [--scenarios index,books] [--requests 2000] [--cpu 1] [--queries 1] [--survivors 1]
+pnpm bench:linux django-footprint [--requests 500]
+```
+
+The MDN LocalLibrary tutorial in Django (each server that serves it well) and its port to xufa, on the same PostgreSQL
+and data (Linux only: it makes its own cluster and venv in `~/bench-django`). `--semi-space` and `--xufa-flags` change
+the V8 of xufa's workers; `--heap-log 1` makes each worker write its memory to `~/bench-django/heap-<pid>.json`. The
+memory of each server is of all its processes after the scenarios, as rss (the resident size of each added up: the
+pages of files they share, the binary of Node.js or Python and their libraries, counted once by process) and pss (each
+shared page divided among the processes that map it: what the server takes of the machine).
+
+`django-alloc.js` (after a run of `django.js`, on its data) serves the xufa app in its process and loads it from
+another: what each page allocates and where (V8's sampling heap profiler, collected objects too), `--cpu 1` where
+its processor time goes, `--queries 1` the SQL of one request of each page, `--survivors 1` only what outlives a
+collection of the young generation (what a request keeps while it waits on the database: what makes V8 grow the young
+generation and fills the old one, the memory of the workers under load).
+
+`django-footprint.js` is what a worker holds at rest: the modules it loaded by package, and its memory after a full
+collection (the heap and its spaces; on Linux what is its own and what is of files it maps, shared with the other
+processes, and its threads), once built and after some requests of every page.
+
 ## Results
 
 `results/` keeps the reports of runs (`--out`): a `.md` table and a `.json` with every round and the machine.
@@ -136,28 +162,28 @@ on WSL2). The pages of the documentation show them as charts (`docs/benchmarks.h
 ### HTTP: xufa / fastify
 
 Requests a second of xufa over those of fastify 5.12.5 (more than 1: xufa is faster). In the process: `inproc.js`,
-5 rounds of 2 s; over the loopback: `run.js`, 3 rounds of 6 s, 100 connections, pipelining 10. ⚠: rounds more than
+5 rounds of 2 s (Windows, inproc-7: 3 rounds of 3 s); over the loopback: `run.js`, 3 rounds of 6 s, 100 connections, pipelining 10. ⚠: rounds more than
 10% apart.
 
 | Scenario      | Linux, in the process | Linux, loopback | Windows, in the process | Windows, loopback |
 | ------------- | --------------------: | --------------: | ----------------------: | ----------------: |
-| big-json      |               1.96x ⚠ |           1.66x |                   1.66x |             1.39x |
-| hello-schema  |               1.12x ⚠ |           1.19x |                   1.15x |             1.02x |
-| hooks         |                 1.17x |           1.19x |                   1.17x |             0.97x |
-| headers       |               1.24x ⚠ |           1.17x |                   1.24x |             1.05x |
-| params        |               1.17x ⚠ |           1.16x |                   1.20x |             1.02x |
-| post-json     |                 1.18x |           1.16x |                 1.15x ⚠ |             1.00x |
-| text          |                 1.17x |           1.14x |                   1.17x |           1.01x ⚠ |
-| async         |               1.12x ⚠ |           1.13x |                 1.20x ⚠ |             0.99x |
-| many-routes   |                 1.18x |           1.13x |                   1.18x |             0.98x |
-| hello         |                 1.18x |           1.11x |                   1.13x |             1.02x |
-| plugins       |               1.16x ⚠ |           1.09x |                   1.19x |             1.01x |
-| post-validate |                 1.21x |           1.09x |                   1.16x |           2.05x ⚠ |
-| query         |                 1.12x |           1.09x |                   1.11x |           0.80x ⚠ |
-| not-found     |               1.16x ⚠ |           1.06x |                   1.10x |             1.03x |
-| error         |                 1.06x |           1.02x |                   0.98x |             0.92x |
+| big-json      |               1.96x ⚠ |           1.66x |                   1.63x |             1.28x |
+| hello-schema  |               1.12x ⚠ |           1.19x |                   1.15x |             1.05x |
+| hooks         |                 1.17x |           1.19x |                   1.15x |             1.00x |
+| headers       |               1.24x ⚠ |           1.17x |                 1.23x ⚠ |             1.05x |
+| params        |               1.17x ⚠ |           1.16x |                   1.18x |             1.02x |
+| post-json     |                 1.18x |           1.16x |                   1.19x |             1.06x |
+| text          |                 1.17x |           1.14x |                   1.15x |             1.03x |
+| async         |               1.12x ⚠ |           1.13x |                 1.16x ⚠ |             1.02x |
+| many-routes   |                 1.18x |           1.13x |                   1.20x |             1.01x |
+| hello         |                 1.18x |           1.11x |                   1.13x |             1.04x |
+| plugins       |               1.16x ⚠ |           1.09x |                   1.18x |             0.99x |
+| post-validate |                 1.21x |           1.09x |                   1.18x |             1.08x |
+| query         |                 1.12x |           1.09x |                   1.10x |             1.03x |
+| not-found     |               1.16x ⚠ |           1.06x |                   1.12x |             1.02x |
+| error         |                 1.06x |           1.02x |                   1.08x |           0.99x ⚠ |
 
-Reports: `results/inproc-linux-2`, `results/full-linux-2` (Linux), `results/inproc-6`, `results/full-5` (Windows).
+Reports: `results/inproc-linux-2`, `results/full-linux-2` (Linux), `results/inproc-7`, `results/full-6` (Windows).
 
 - **In the process**, xufa is ahead in every scenario on Linux and in all but `error` on Windows, where both spend
   most of the time in the stack trace that the handler's `new Error()` captures. Most of the lead on small responses
@@ -182,8 +208,8 @@ pnpm bench:linux run --duration 6 --warmup 2 --out results/full-linux-3
 
 The latest report of each benchmark: `results/router-2` (@xufa/router and find-my-way), `results/logger-2` (@xufa/logger
 and pino), `results/serializer-1` (@xufa/serializer, fast-json-stringify and `JSON.stringify`), `results/postgres-7`
-(@xufa/pg and pg), `results/mongo-7` (@xufa/mongo and mongodb), `results/orm-8` (@xufa/orm and Sequelize),
-`results/expression-4`, `results/template-5`, `results/view-1` (large pages) and `results/marshal-1` (@xufa/marshal, JSON, v8.serialize and the serializer of Agentic), `results/jwt-2` and `results/jwt-linux-2` (@xufa/jwt and
+(@xufa/pg and pg), `results/mongo-8` (@xufa/mongo and mongodb), `results/orm-8` (@xufa/orm and Sequelize),
+`results/expression-4`, `results/template-5`, `results/view-1` (large pages), `results/marshal-1` (@xufa/marshal, JSON, v8.serialize and the serializer of Agentic), `results/marshal-2` and `results/marshal-linux-2` (its format of 2026-10-10: Dates, references and instances that JSON.parse reads with fewer objects), `results/marshal-3` and `results/marshal-linux-3` (arrays of instances as tables), `results/marshal-4` and `results/marshal-linux-4` (tables of plain rows too), `results/marshal-linux-5` (Maps and Sets without util.types), `results/jwt-2` and `results/jwt-linux-2` (@xufa/jwt and
 jsonwebtoken), `results/websocket-4` (@xufa/websocket and ws).
 
 ### JWT: @xufa/jwt / jsonwebtoken

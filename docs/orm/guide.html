@@ -557,7 +557,9 @@ for (const data of [
           <code>relatedName</code> (<code>&lt;model&gt;Set</code> by default): <code>author.books</code> is a QuerySet,
           and <code>author.books.create()</code> sets the key. <code>prefetchRelated('books', 'books__publisher')</code>
           follows paths, and a loaded QuerySet is read without waiting (<code>[...author.books]</code>, or
-          <code>{{#each author.books as book}}</code> in a template); one that is not loaded says how to load it. A delete
+          <code>{{#each author.books as book}}</code> in a template); one that is not loaded says how to load it. As
+          Django's, <code>author.books.all()</code> of a relation loaded by <code>prefetchRelated</code> gives the objects
+          loaded (no query more), and <code>filter()</code> and the rest ask the database again. A delete
           refused by <code>protect</code> throws a <code>ProtectedError</code> with <code>protectedObjects</code> (a
           QuerySet of what keeps it, Django's <code>protected_objects</code>) and <code>relation</code>.
         </p>

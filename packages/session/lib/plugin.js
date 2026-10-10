@@ -240,9 +240,13 @@ function sessionPlugin(app, options, done) {
   app.addHook('onSend', async (request, reply, payload) => {
     const { session } = request;
     if (!session) return payload;
-    const secure = cookie.secure === undefined ? request.protocol === 'https' : cookie.secure;
-    const cookieOptions = { path: '/', httpOnly: true, sameSite: 'lax', ...cookie, secure };
+    // (Made when a cookie is written: most responses write none.)
+    const optionsOf = () => {
+      const secure = cookie.secure === undefined ? request.protocol === 'https' : cookie.secure;
+      return { path: '/', httpOnly: true, sameSite: 'lax', ...cookie, secure };
+    };
     if (session.destroyed) {
+      const cookieOptions = optionsOf();
       if (!session.fresh) await store.delete(session.previousId || session.id);
       if (!session.fresh || session.previousId) {
         reply.header(
@@ -288,7 +292,7 @@ function sessionPlugin(app, options, done) {
     if (session.cookieCsrfMade) {
       reply.header(
         'set-cookie',
-        serializeCookie(csrfCookieName, sign(session.cookieCsrf, secrets[0]), { ...cookieOptions, maxAge: life })
+        serializeCookie(csrfCookieName, sign(session.cookieCsrf, secrets[0]), { ...optionsOf(), maxAge: life })
       );
     }
     const save = session.changed || seen || touch;
@@ -299,7 +303,7 @@ function sessionPlugin(app, options, done) {
     await store.set(session.id, session.toStore(), expiresAt);
     reply.header(
       'set-cookie',
-      serializeCookie(cookieName, sign(session.id, secrets[0]), { ...cookieOptions, maxAge: life })
+      serializeCookie(cookieName, sign(session.id, secrets[0]), { ...optionsOf(), maxAge: life })
     );
     return payload;
   });

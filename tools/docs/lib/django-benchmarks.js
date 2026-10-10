@@ -5,7 +5,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { pair, fmt, esc, raw } from './benchmarks.js';
 
-const REPORT = 'django-5';
+const REPORT = 'django-7';
 const RESULTS = path.join(import.meta.dirname, '../../../bench/results/');
 
 const NAMES = {

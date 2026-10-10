@@ -14,7 +14,7 @@
 // Every refusal is a CredentialError: its reason (missing, invalid, code, wrongCode, locked, throttled,
 // wrongPassword, weak, pending, unsupported, noTotp), statusCode, message (options.messages changes them), errors by
 // field, needsCode and recovery (the code of an app is asked for, and a recovery code works too), and retryAfter.
-import { hashPassword, verifyPassword, needsRehash } from './password.js';
+import { hashPassword, verifyPassword, needsRehash, dummyHash } from './password.js';
 import { generateSecret, verifyTotp, totpUri, generateRecoveryCodes, hashRecoveryCode } from './totp.js';
 import { Lockout } from './lockout.js';
 import { qrSvg } from './qr.js';
@@ -83,16 +83,13 @@ class Credentials {
     // from one address is locked, without locking out an office behind one address for a few typing errors.
     this.lockout = lockoutOf(options.lockout, 5);
     this.ipLockout = lockoutOf(options.ipLockout, 20);
-    // A hash to verify when there is no user, so that the answer takes the same time (made now, not at the first
-    // login of a user that does not exist).
+    // A hash to verify when there is no user, so that the answer takes the same time (see dummyHash(): nothing is
+    // hashed to make it).
     this.dummy = null;
-    this.dummyHash().catch(() => {
-      this.dummy = null;
-    });
   }
 
   dummyHash() {
-    if (!this.dummy) this.dummy = hashPassword('xufa-no-user', this.options.passwordOptions);
+    if (!this.dummy) this.dummy = dummyHash(this.options.passwordOptions);
     return this.dummy;
   }
 

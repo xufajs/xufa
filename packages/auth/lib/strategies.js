@@ -13,7 +13,7 @@
 //   null                      no credentials of this kind: the next strategy is tried
 // A strategy of Passport is one with passport(strategy) (lib/passport.js).
 import crypto from 'node:crypto';
-import { hashPassword, verifyPassword } from './password.js';
+import { verifyPassword, dummyHash } from './password.js';
 import { Lockout } from './lockout.js';
 import { seconds } from './duration.js';
 import { Unauthorized, Locked } from './errors.js';
@@ -192,8 +192,8 @@ function basic(options = {}) {
         }
       }
       // An answer that takes as long without a user (a hash is verified anyway).
-      if (!dummy) dummy = hashPassword('xufa-no-user', passwordOptions);
-      const valid = await verifyPassword(password, hash || (await dummy));
+      if (!dummy) dummy = dummyHash(passwordOptions);
+      const valid = await verifyPassword(password, hash || dummy);
       if (!user || !hash || !valid) {
         if (lockout) await lockout.fail(username);
         return fail('The credentials are not valid');

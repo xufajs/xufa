@@ -501,7 +501,10 @@ function defineReverseAccessor(field) {
       const qs = field.model.objects.using(this[STATE].db).filter({ [field.attname]: this.pk });
       qs.state = { ...qs.state, defaults: { [field.attname]: this.pk } };
       const cached = this[STATE].related.get(field.relatedName);
-      if (cached) qs.cache = cached;
+      if (cached) {
+        qs.cache = cached;
+        qs.prefetched = cached;
+      }
       return qs;
     },
   });
@@ -524,7 +527,10 @@ function defineManyToManyAccessor(owner, name, field, from, to, otherName) {
       const base = other.objects.using(this[STATE].db).filter({ [otherName]: this.pk });
       const set = new RelatedSet(other, base.state, { owner: this, through: field.through, from, to });
       const cached = this[STATE].related.get(name);
-      if (cached) set.cache = cached;
+      if (cached) {
+        set.cache = cached;
+        set.prefetched = cached;
+      }
       return set;
     },
   });

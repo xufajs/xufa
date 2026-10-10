@@ -170,6 +170,136 @@ describe('the graph', () => {
   it('strings are written once', () => {
     const long = 'x'.repeat(1000);
     expect(stringify([long, long, long]).length).toBeLessThan(1100);
+    expect(roundTrip({ a: long, b: [long], c: '¤'.repeat(100), d: '¤'.repeat(100) })).toEqual({
+      a: long,
+      b: [long],
+      c: '¤'.repeat(100),
+      d: '¤'.repeat(100),
+    });
+  });
+
+  it('the format: JSON, with what JSON cannot say as marked strings and tagged arrays', () => {
+    const shared = { n: 2 };
+    expect(stringify({ a: shared, b: shared, at: new Date(0), tags: ['x', 'y'] })).toBe(
+      '{"a":{"n":2},"b":"¤R1","at":"¤D0","tags":["x","y"]}'
+    );
+    expect(stringify(new Point(1, 2), opts)).toBe('{"@":"Point","x":1,"y":2}');
+    expect(stringify([new Map([[1, undefined]]), -0, NaN, 2n])).toBe('[["¤Map",1,"¤u"],"¤z","¤N","¤B2"]');
+  });
+
+  it('data that looks like the format is data', () => {
+    const values = [
+      '¤',
+      '¤D0',
+      '¤R0',
+      ['¤Map', 1],
+      ['¤u'],
+      { '@': 'Point', x: 1 },
+      { '@': 1 },
+      [{ '@': 'Point' }],
+      Object.assign(new Point(1, 2), { '@': 'other' }),
+      // Arrays whose first item is written as a marked string.
+      [new Date(0), 1],
+      [undefined, 1],
+      [-0],
+      [10n],
+      [, 1], // eslint-disable-line no-sparse-arrays
+    ];
+    for (const value of values) {
+      const back = roundTrip(value, opts);
+      expect(back).toEqual(value);
+      expect(Object.getPrototypeOf(back)).toBe(Object.getPrototypeOf(value));
+    }
+    const twice = { a: 1 };
+    const back = roundTrip([twice, [twice, 2]]);
+    expect(back[1][0]).toBe(back[0]);
+  });
+
+  it('arrays of instances of one class with the same fields are tables', () => {
+    const points = [new Point(1, 2), new Point(3, 4)];
+    expect(stringify(points, opts)).toBe('["¤Table","Point",["x","y"],1,2,3,4]');
+    const back = roundTrip(points, opts);
+    expect(back).toEqual(points);
+    expect(back.every((point) => point instanceof Point)).toBe(true);
+    expect(back[1].norm()).toBe(5);
+    // Values that are no objects but Dates; a Date twice, long strings twice, constants.
+    const at = new Date(7);
+    const long = 'l'.repeat(80);
+    const rows = [Object.assign(new Point(at, long), { z: undefined }), Object.assign(new Point(at, long), { z: NaN })];
+    const rowsBack = roundTrip(rows, opts);
+    expect(stringify(rows, opts).startsWith('["¤Table"')).toBe(true);
+    expect(rowsBack).toEqual(rows);
+    expect(rowsBack[1].x).toBe(rowsBack[0].x);
+    // The table and what refers to it after.
+    const both = roundTrip({ list: points, first: points[0], again: points }, opts);
+    expect(both.first).toBe(both.list[0]);
+    expect(both.again).toBe(both.list);
+  });
+
+  it('tables of plain objects, and rows whose values are objects (even the rows)', () => {
+    const rows = [
+      { id: 1, at: new Date(1), tags: ['a'] },
+      { id: 2, at: new Date(2), tags: ['b'] },
+    ];
+    expect(stringify(rows)).toBe('["¤Table",null,["id","at","tags"],1,"¤D1",["a"],2,"¤D2",["b"]]');
+    expect(roundTrip(rows)).toEqual(rows);
+    // A row that refers to a later row, to itself and to the array.
+    const list = [{ name: 'a' }, { name: 'b' }];
+    list[0].next = list[1];
+    list[1].next = list[0];
+    list[0].list = list;
+    list[1].list = list;
+    const back = roundTrip(list);
+    expect(back[0].next).toBe(back[1]);
+    expect(back[1].next).toBe(back[0]);
+    expect(back[0].list).toBe(back);
+    // Instances whose fields are objects, shared between rows.
+    const shared = { n: 1 };
+    const points = roundTrip([new Point(shared, 1), new Point(shared, 2)], opts);
+    expect(points[1].x).toBe(points[0].x);
+    expect(points[0]).toBeInstanceOf(Point);
+  });
+
+  it('arrays that cannot be tables are written as arrays', () => {
+    const p = new Point(1, 2);
+    const cases = [
+      [p, new Point(3, 4), p], // an instance twice
+      [new Point(1, 2), Object.assign(new Point(3, 4), { z: 1 })], // other fields
+      [new Point(1, 2), new Point3(1, 2, 3)], // another class
+      [new Point(1, 2), null],
+    ];
+    for (const value of cases) {
+      expect(stringify(value, opts).startsWith('["¤Table"')).toBe(false);
+      const back = roundTrip(value, opts);
+      expect(back).toEqual(value);
+    }
+    const twice = roundTrip([p, new Point(3, 4), p], opts);
+    expect(twice[2]).toBe(twice[0]);
+    // An instance written before the array: a reference in it.
+    const before = roundTrip({ p, list: [p, new Point(3, 4)] }, opts);
+    expect(before.list[0]).toBe(before.p);
+    // Tables with setters on the prototype: fields defined, no setter runs.
+    const calls = [];
+    class Guarded {
+      set role(value) {
+        calls.push(value);
+      }
+    }
+    const local = { registry: new Registry().register(Guarded) };
+    const guarded = parse('["¤Table","Guarded",["role"],"a","b"]', local);
+    expect(guarded.map((item) => Object.getOwnPropertyDescriptor(item, 'role').value)).toEqual(['a', 'b']);
+    expect(calls).toEqual([]);
+  });
+
+  it('neither stringify() nor unmarshal() change what they are given', () => {
+    const value = { at: new Date(5), list: ['¤x', { y: undefined }], n: 1n };
+    const before = structuredClone(value);
+    const text = stringify(value);
+    expect(value).toEqual(before);
+    const data = JSON.parse(text);
+    const copy = JSON.parse(text);
+    unmarshal(data);
+    expect(data).toEqual(copy);
   });
 });
 
@@ -233,16 +363,17 @@ describe('input from outside', () => {
     // 3. Constructors are not called (Point throws when called without arguments).
     expect(roundTrip(new Point(1, 1), opts)).toBeInstanceOf(Point);
     // 4. "__proto__" in the input is a field, not the prototype.
-    const polluted = parse('[{"__proto__":1},{"polluted":2},true]');
+    const polluted = parse('{"__proto__":{"polluted":2}}');
     expect(Object.getPrototypeOf(polluted)).toBe(Object.prototype);
     expect(polluted.polluted).toBeUndefined();
     expect(Object.hasOwn(polluted, '__proto__')).toBe(true);
     expect({}.polluted).toBeUndefined();
     // 5. No global is looked up by a name of the input.
-    expect(() => parse('[["TypedArray","Function","cmV0dXJuIDQy"]]')).toThrow(/Not a typed array: Function/);
-    expect(() => parse('[["Function","return 42"]]')).toThrow(/Not a tag/);
-    expect(() => parse('[["Error","Function",1,-1,{},-2,-2],"m"]')).not.toThrow();
-    expect(parse('[["Error","Function",1,-1,{},-2,-2],"m"]')).toBeInstanceOf(Error);
+    expect(() => parse('["¤TypedArray","Function","cmV0dXJuIDQy"]')).toThrow(/Not a typed array: Function/);
+    expect(() => parse('["¤Function","return 42"]')).toThrow(/Not a tag/);
+    expect(() => parse('["¤Error","Function","m","¤u",{},"¤h","¤h"]')).not.toThrow();
+    expect(parse('["¤Error","Function","m","¤u",{},"¤h","¤h"]')).toBeInstanceOf(Error);
+    expect(parse('{"@":"Function","x":1}')).toEqual({ x: 1 });
     // 6. BigInt, errors and undefined survive.
     expect(roundTrip({ n: 10n }).n).toBe(10n);
     expect(roundTrip(Object.assign(new Error('boom'), { code: 'E1' })).message).toBe('boom');
@@ -252,32 +383,42 @@ describe('input from outside', () => {
   it('malformed input is a MarshalError, never something else', () => {
     const bad = [
       'nope',
-      '{}',
-      '[]',
-      '[[0]]'.replace('0', '"x"'),
-      '[{"a":5}]',
-      '[{"a":"1"}]',
-      '[{"a":-99}]',
-      '[["Map",1]]',
-      '[["Date"]]'.replace(']]', ',"x"]]'),
-      '[["BigInt","1e5"]]',
-      '[["RegExp","(","g"]]',
-      '[["URL","not a url"]]',
-      '[["TypedArray","Uint32Array","AAA="]]',
-      '[["Boxed",1],null]',
-      '[["Value",3]]',
-      '[["Class",1,{}]]',
+      '"¤Q"',
+      '"¤Qx"',
+      '"¤h"',
+      '["¤Nope"]',
+      '{"a":"¤R1"}',
+      '{"a":"¤R-1"}',
+      '"¤Dx"',
+      '"¤B1e5"',
+      '["¤Map",1]',
+      '["¤RegExp","(","g"]',
+      '["¤URL","not a url"]',
+      '["¤TypedArray","Uint32Array","AAA="]',
+      '["¤Boxed",null]',
+      '["¤Object",5]',
+      '["¤Null",[]]',
+      '["¤Error","Error","m","¤u",5,"¤h","¤h"]',
+      '{"@":1}',
+      '["¤@Point"]',
+      '["¤Table","Point",[],1]',
+      '["¤Table","Point",["x",1],1,2]',
+      '["¤Table","Point",["x","y"],1,2,3]',
+      '["¤Table","Money",["x"],1]',
+      '["¤Table",null,["x"],"¤R9"]',
+      '["¤Table",5,["x"],1]',
     ];
     for (const text of bad) {
       let error;
       try {
-        parse(text);
+        parse(text, opts);
       } catch (err) {
         error = err;
       }
-      if (text === '[["Date","x"]]') continue; // an invalid date is a date
-      expect(error).toBeInstanceOf(MarshalError);
+      expect([text, error]).toEqual([text, expect.any(MarshalError)]);
     }
+    // An invalid date is a date.
+    expect(Number.isNaN(parse('"¤D"').getTime())).toBe(true);
   });
 
   it('limits: depth and size', () => {
@@ -287,8 +428,9 @@ describe('input from outside', () => {
     expect(stringify(deep, { maxDepth: 2000 }).length).toBeGreaterThan(1500);
     for (let i = 0; i < 100000; i += 1) deep = [deep];
     expect(() => stringify(deep, { maxDepth: Infinity })).toThrow(expect.objectContaining({ code: 'XUFA_MARSHAL_ERR_DEPTH' }));
-    const nodes = Array.from({ length: 1500 }, (_, i) => (i === 1499 ? [] : [i + 1]));
-    expect(() => unmarshal(nodes)).toThrow(expect.objectContaining({ code: 'XUFA_MARSHAL_ERR_DEPTH' }));
+    expect(() => parse(`${'['.repeat(1500)}${']'.repeat(1500)}`)).toThrow(
+      expect.objectContaining({ code: 'XUFA_MARSHAL_ERR_DEPTH' })
+    );
     expect(() => unmarshal([1, 2, 3], { maxNodes: 2 })).toThrow(expect.objectContaining({ code: 'XUFA_MARSHAL_ERR_SIZE' }));
   });
 
@@ -300,19 +442,20 @@ describe('input from outside', () => {
       }
     }
     const local = { registry: new Registry().register(Guarded) };
-    const back = parse('[["Class","Guarded",{"role":1}],"admin"]', local);
+    const back = parse('{"@":"Guarded","role":"admin"}', local);
     expect(back).toBeInstanceOf(Guarded);
     expect(Object.getOwnPropertyDescriptor(back, 'role').value).toBe('admin');
     expect(calls).toEqual([]);
   });
 
   it('a cycle through an instance made by decode() is refused, not looped', () => {
-    expect(() => parse('[["Class","Money",0,1]]', opts)).toThrow(expect.objectContaining({ code: 'XUFA_MARSHAL_ERR_CYCLE' }));
+    expect(() => parse('["¤@Money","¤R0",1]', opts)).toThrow(expect.objectContaining({ code: 'XUFA_MARSHAL_ERR_CYCLE' }));
   });
 
   it('marshal() gives plain JSON data', () => {
-    const nodes = marshal({ d: new Date(0), n: 1n }, opts);
-    expect(JSON.parse(JSON.stringify(nodes))).toEqual(nodes);
+    const data = marshal({ d: new Date(0), n: 1n, p: new Point(1, 2) }, opts);
+    expect(JSON.parse(JSON.stringify(data))).toEqual(data);
+    expect(unmarshal(data, opts).p).toBeInstanceOf(Point);
   });
 });
 

@@ -79,7 +79,7 @@ registry.register(Money); // or register(Money, { name: 'money', encode, decode 
             <thead><tr><th>Function</th><th>What it does</th></tr></thead>
             <tbody>
               <tr><td><code>stringify(value, options)</code>, <code>parse(text, options)</code></td><td>JSON text, and the value again.</td></tr>
-              <tr><td><code>marshal(value, options)</code>, <code>unmarshal(nodes, options)</code></td><td>The same as plain JSON data (an array of nodes), for channels that carry objects (IPC).</td></tr>
+              <tr><td><code>marshal(value, options)</code>, <code>unmarshal(data, options)</code></td><td>The same as plain JSON data, for channels that carry objects.</td></tr>
               <tr><td><code>clone(value, options)</code></td><td>A deep copy in the process: every class keeps its prototype (registered or not), functions are kept by reference.</td></tr>
             </tbody>
           </table>
@@ -109,13 +109,29 @@ registry.register(Money); // or register(Money, { name: 'money', encode, decode 
 
         <h2 id="format">The format</h2>
         <p>
-          <code>stringify({ a: shared, b: shared, at: new Date(0) })</code> is
-          <code>[{"a":1,"b":1,"at":3},{"n":2},1,["Date",0]]</code>: a flat list of nodes (after devalue), the first one the
-          value. A node is a JSON primitive, an array of indexes, an object of indexes, or a tagged array
-          (<code>["Date", ms]</code>, <code>["Map", k, v, ...]</code>, <code>["Class", "Point", {fields}]</code>). Arrays
-          of values hold only numbers, so a string first is always a tag: no string of the data is ever taken for
-          something else.
+          The value as JSON writes it, with what JSON cannot say written so that <code>JSON.parse</code> makes as few
+          objects as it can: <code>stringify({ a: shared, b: shared, at: new Date(0), tags: ['x'] })</code> is
+          <code>{"a":{"n":2},"b":"¤R1","at":"¤D0","tags":["x"]}</code>, and an instance of a registered class is
+          <code>{"@":"Point","x":1,"y":2}</code>.
         </p>
+        <ul>
+          <li>Marked strings (starting with <code>¤</code>): <code>"¤D" + ms</code> (a Date), <code>"¤R" + n</code> (the
+            object numbered n, in the order they are written: shared objects and cycles), <code>"¤B" + digits</code>
+            (BigInt), <code>"¤u"</code> (undefined), <code>"¤h"</code> (a hole), <code>"¤N"</code>, <code>"¤I"</code>,
+            <code>"¤i"</code>, <code>"¤z"</code> (NaN, ±Infinity, -0).</li>
+          <li>An array of plain objects, or of instances of one registered class, all with the same fields, is a
+            table: <code>["¤Table", "Point", ["x", "y"], 1, 2, 3, 4]</code> (<code>null</code> for plain objects), the
+            keys written once and no copy of each row made. The rows of a database, the common case, are read and
+            written about twice as fast so.</li>
+          <li>Tagged arrays, whose first item is a marked string: <code>["¤Map", k, v, ...]</code>,
+            <code>["¤Set", ...]</code>, <code>["¤RegExp", source, flags]</code>, <code>["¤Error", ...]</code>,
+            <code>["¤@Money", data, 1]</code> (written by the class's <code>encode()</code>)...</li>
+          <li>Data that would look like them is escaped: a string starting with <code>¤</code> is
+            <code>"¤S" + the string</code>, an object with a field <code>"@"</code> is <code>["¤Object", {...}]</code>,
+            and an array whose first item is written marked is <code>["¤Array", ...items]</code>. Nothing of the data is
+            ever taken for something else.</li>
+          <li>Long strings (64 characters or more) are written once, and then as references.</li>
+        </ul>
 
         <h2 id="safety">Input from outside</h2>
         <p>
@@ -135,19 +151,24 @@ registry.register(Money); // or register(Money, { name: 'money', encode, decode 
 
         <h2 id="performance">Performance</h2>
         <p>
-          <code>stringify</code> and <code>parse</code>, operations a second, best of 3 rounds
-          (<code>node bench/micro/marshal.js</code>, <code>bench/results/marshal-1.md</code>). JSON loses the Dates, Maps
-          and classes; <code>v8.serialize</code> writes binary (the IPC of node:cluster) and loses the classes.
+          <code>stringify</code> and <code>parse</code>, operations a second, best of 5 rounds
+          (<code>node bench/micro/marshal.js</code>, <code>bench/results/marshal-4.md</code>). JSON loses the Dates, Maps
+          and classes; <code>v8.serialize</code> writes binary (the IPC of node:cluster) and loses the classes. The
+          format of <code>bench/results/marshal-1.md</code> (a flat list of nodes, every number and string a node of its
+          own) was 0.5x to 0.75x of <code>v8.serialize</code>; this one is 1.2x to 1.6x of it on rows of a database, 2x on
+          class instances, 2.4x on small objects, and about even on Maps and Sets. On Linux
+          (<code>bench/results/marshal-linux-5.md</code>): 1.1x on rows, 1.8x on instances, 2x on small objects, 1x on
+          Maps and Sets.
         </p>
         <div class="table-wrap">
           <table>
-            <thead><tr><th>Case</th><th>JSON</th><th>v8.serialize</th><th>@xufa/marshal</th><th>The serializer replaced</th></tr></thead>
+            <thead><tr><th>Case</th><th>JSON</th><th>v8.serialize</th><th>@xufa/marshal</th><th>marshal / v8</th></tr></thead>
             <tbody>
-              <tr><td>a small object</td><td>367,974</td><td>204,618</td><td>347,820</td><td>183,088</td></tr>
-              <tr><td>100 rows with Dates</td><td>4,399</td><td>4,729</td><td>3,892</td><td>1,737</td></tr>
-              <tr><td>1000 rows with Dates</td><td>436</td><td>508</td><td>363</td><td>171</td></tr>
-              <tr><td>Map, Set, BigInt</td><td>n/a</td><td>36,081</td><td>27,365</td><td>n/a</td></tr>
-              <tr><td>100 class instances</td><td>53,961</td><td>22,438</td><td>12,292</td><td>6,078</td></tr>
+              <tr><td>a small object</td><td>438,616</td><td>234,336</td><td>568,171</td><td>2.42x</td></tr>
+              <tr><td>100 rows with Dates</td><td>4,930</td><td>6,022</td><td>7,153</td><td>1.19x</td></tr>
+              <tr><td>1000 rows with Dates</td><td>346</td><td>451</td><td>733</td><td>1.63x</td></tr>
+              <tr><td>Map, Set, BigInt</td><td>n/a</td><td>42,181</td><td>38,652</td><td>0.92x</td></tr>
+              <tr><td>100 class instances</td><td>69,151</td><td>26,554</td><td>51,998</td><td>1.96x</td></tr>
             </tbody>
           </table>
         </div>

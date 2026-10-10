@@ -54,7 +54,7 @@ function chart(title, subtitle, rows, attributes = '') {
 const raw = (summary, html) =>
   `        <details class="raw">\n          <summary>${summary}</summary>\n${html}\n        </details>`;
 
-// --- Data, from bench/results (postgres-7, mongo-7, inproc-3, full-3, expression-4, template-5, view-1).
+// --- Data, from bench/results (postgres-7, mongo-8, inproc-3, full-3, expression-4, template-5, view-1).
 
 const pg = [
   ['select $1, one at a time', 13895, 10837, 'ops/s', true],
@@ -75,17 +75,17 @@ const pgServer = [
   ['update many (5k of 10k rows)', 72, 66, 'ops/s', true],
 ];
 const mongo = [
-  ['BSON serialize', 1208548, 630979, 'docs/s', true],
-  ['BSON deserialize', 1064190, 452513, 'docs/s', true],
-  ['insertOne, one at a time', 8156, 3982, 'ops/s', true],
-  ['findOne by _id, one at a time', 8672, 4480, 'ops/s', true],
-  ['findOne by _id, 64 at once', 50483, 11735, 'ops/s', true],
-  ['insertMany, 1000 per batch', 193908, 167400, 'docs/s', true],
-  ['insertMany, 50k in one call, ordered', 202117, 135052, 'docs/s', true],
-  ['insertMany, 50k in one call, unordered', 534804, 136775, 'docs/s', true],
-  ['find toArray, all docs', 350276, 171309, 'docs/s', true],
-  ['aggregate $group (server-bound)', 92, 93, 'ops/s', true],
-  ['updateMany $inc (server-bound)', 12, 13, 'ops/s', true],
+  ['BSON serialize', 1221242, 671890, 'docs/s', false],
+  ['BSON deserialize', 1200957, 526476, 'docs/s', false],
+  ['insertOne, one at a time', 9583, 5721, 'ops/s', true],
+  ['findOne by _id, one at a time', 9438, 5293, 'ops/s', true],
+  ['findOne by _id, 64 at once', 51877, 12794, 'ops/s', false],
+  ['insertMany, 1000 per batch', 225780, 179204, 'docs/s', true],
+  ['insertMany, 50k in one call, ordered', 214502, 141729, 'docs/s', true],
+  ['insertMany, 50k in one call, unordered', 524144, 143933, 'docs/s', false],
+  ['find toArray, all docs', 550008, 263292, 'docs/s', true],
+  ['aggregate $group (server-bound)', 106, 109, 'ops/s', true],
+  ['updateMany $inc (server-bound)', 15, 15, 'ops/s', true],
 ];
 // [scenario, xufa, fastify, node | null] requests a second.
 // HTTP, from the reports of bench/inproc.js and bench/run.js: [scenario, xufa, fastify, node:http or null, noisy],
@@ -93,8 +93,8 @@ const mongo = [
 // Linux (the charts) and Windows (a table), on the same machine.
 const INPROC = 'inproc-linux-2';
 const LOOPBACK = 'full-linux-2';
-const INPROC_WINDOWS = 'inproc-6';
-const LOOPBACK_WINDOWS = 'full-5';
+const INPROC_WINDOWS = 'inproc-7';
+const LOOPBACK_WINDOWS = 'full-6';
 function httpResults(report, spreadOf) {
   const { results } = JSON.parse(fs.readFileSync(RESULTS + report + '.json', 'utf8'));
   return results
@@ -682,7 +682,7 @@ ${raw('All numbers (bench/results/postgres-7.md)', `${twoWayTable('Driver-bound 
           drivers wait for it.
         </p>
 ${pairsOf(mongo, '@xufa/mongo', 'mongodb')}
-${raw('All numbers (bench/results/mongo-7.md)', twoWayTable('Workload', 'mongodb', mongo))}
+${raw('All numbers (bench/results/mongo-8.md)', twoWayTable('Workload', 'mongodb', mongo))}
 
 ${httpSection()}
 ${partsSections}        <h2 id="expressions">Expressions</h2>

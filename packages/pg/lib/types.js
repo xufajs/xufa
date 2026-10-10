@@ -5,9 +5,11 @@
 
 const MINUS = 0x2d;
 
+// (Very short texts by their bytes: faster than a call into C++. Longer ones in one call: a string built a character
+// at a time is a chain of strings, slower from 10 characters on and more garbage.)
 function text(buffer, start, end) {
   const length = end - start;
-  if (length <= 48) {
+  if (length <= 8) {
     let result = '';
     for (let i = start; i < end; i += 1) {
       const byte = buffer[i];

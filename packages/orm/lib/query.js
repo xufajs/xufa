@@ -340,6 +340,8 @@ function resolveJsonLeaf(fields, path, lookup, value, key) {
 // A condition on a composite primary key (pk, pk__exact, pk__in, pk__isnull): conditions on its fields.
 function compositeLeaf(model, key, value) {
   const { pk } = model.meta;
+  // (Most keys are of models whose primary key is one field: nothing to split.)
+  if (!pk || !pk.composite) return null;
   const [name, lookup = 'exact', ...more] = key.split(SEPARATOR);
   if (name !== 'pk' || !pk || !pk.composite || more.length) return null;
   const leavesOf = (item) => {
@@ -377,6 +379,10 @@ function expandPkOrder(model, names) {
   });
 }
 
+// The lookups of the types compared only for equality, and those that compare with an F expression.
+const EQUALITY_LOOKUPS = new Set(['exact', 'in', 'isnull']);
+const F_LOOKUPS = new Set(['exact', 'gt', 'gte', 'lt', 'lte']);
+
 function resolveLeaf(model, key, value) {
   const composite = compositeLeaf(model, key, value);
   if (composite) return composite;
@@ -395,13 +401,13 @@ function resolveLeaf(model, key, value) {
   if (
     !LOOKUPS.has(lookup) ||
     (TEXT_LOOKUPS.includes(lookup) && !TEXT_TYPES.has(type)) ||
-    (EQUALITY_TYPES.has(type) && !['exact', 'in', 'isnull'].includes(lookup)) ||
+    (EQUALITY_TYPES.has(type) && !EQUALITY_LOOKUPS.has(lookup)) ||
     (type === 'json' && lookup === 'in')
   ) {
     throw new LookupError(lookup, field.name, field.model.name);
   }
   if (value instanceof F) {
-    if (!['exact', 'gt', 'gte', 'lt', 'lte'].includes(lookup)) {
+    if (!F_LOOKUPS.has(lookup)) {
       throw new QueryError(`The lookup ${lookup} of ${key} cannot compare with an F expression`);
     }
     return { fields, lookup, value: resolveF(model, value) };
@@ -448,7 +454,7 @@ function resolveWhere(model, item) {
   if (!item || typeof item !== 'object' || Array.isArray(item)) throw new QueryError('Conditions must be objects or Q');
   const children = [];
   // The conditions of one object across the same reverse relation are of the same related object (as in Django).
-  const groups = new Map();
+  let groups = null;
   Object.keys(item).forEach((key) => {
     const dated = dateCondition(model, key, item[key]);
     if (dated) {
@@ -462,6 +468,7 @@ function resolveWhere(model, item) {
     }
     const { through, relation, rest } = reverse;
     const id = `${pathKey(through)}>${relation.model.name}.${relation.name}`;
+    if (!groups) groups = new Map();
     let group = groups.get(id);
     if (!group) {
       group = { through, relation, conditions: {}, isnull: undefined };
@@ -472,14 +479,16 @@ function resolveWhere(model, item) {
     else if (rest === '' || LOOKUPS.has(rest)) group.conditions[rest ? `pk${SEPARATOR}${rest}` : 'pk'] = item[key];
     else group.conditions[rest] = item[key];
   });
-  const nodes = children.map((child) => {
-    if (!child.relation) return child;
-    const { through, relation, conditions, isnull } = child;
-    const where = Object.keys(conditions).length ? resolveWhere(relation.model, conditions) : null;
-    const exists = { op: 'exists', through, relation, where };
-    // books__isnull: true is the objects without books.
-    return isnull === true ? { op: 'not', children: [exists] } : exists;
-  });
+  const nodes = !groups
+    ? children
+    : children.map((child) => {
+        if (!child.relation) return child;
+        const { through, relation, conditions, isnull } = child;
+        const where = Object.keys(conditions).length ? resolveWhere(relation.model, conditions) : null;
+        const exists = { op: 'exists', through, relation, where };
+        // books__isnull: true is the objects without books.
+        return isnull === true ? { op: 'not', children: [exists] } : exists;
+      });
   if (nodes.length === 0) return null;
   return nodes.length === 1 ? nodes[0] : { op: 'and', children: nodes };
 }
@@ -507,6 +516,8 @@ const DATE_LOOKUPS = new Set(['exact', 'gt', 'gte', 'lt', 'lte', 'in', 'range', 
 const DAY = 86400000;
 
 function dateCondition(model, key, value) {
+  // (A name with no separator is no part of a date: most keys.)
+  if (!key.includes(SEPARATOR)) return null;
   const parts = key.split(SEPARATOR);
   let lookup = 'exact';
   if (parts.length > 2 && DATE_LOOKUPS.has(parts[parts.length - 1]) && DATE_PARTS.has(parts[parts.length - 2])) {
@@ -933,6 +944,7 @@ export {
   pathKey,
   eachLeaf,
   eachExists,
+  eachF,
   hasExists,
   collectJoins,
   lastOf,

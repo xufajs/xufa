@@ -10,6 +10,26 @@
 
 import * as faultsModule from '@xufa/faults';
 
+// A copy of a value, as structuredClone makes it, without its cost for what needs none: primitives as they are, and
+// plain objects of primitives copied field by field (as the results of counts, { value: 5 }, and the versions of
+// models are).
+function copyOf(value) {
+  if (value === null) return value;
+  const type = typeof value;
+  if (type !== 'object') return type === 'symbol' || type === 'function' ? structuredClone(value) : value;
+  if (Object.getPrototypeOf(value) !== Object.prototype) return structuredClone(value);
+  const copy = {};
+  for (const key of Object.keys(value)) {
+    const item = value[key];
+    const kind = typeof item;
+    if ((item !== null && kind === 'object') || kind === 'function' || kind === 'symbol') return structuredClone(value);
+    if (key === '__proto__') {
+      Object.defineProperty(copy, key, { value: item, enumerable: true, writable: true, configurable: true });
+    } else copy[key] = item;
+  }
+  return copy;
+}
+
 class MemoryCache {
   // Its faults (lib/faults.js): get, set, delete and clear made to fail, wait or hang, for tests of resilience.
   get faults() {
@@ -44,7 +64,7 @@ class MemoryCache {
     // Most recently used last (the first ones are evicted).
     this.entries.delete(key);
     this.entries.set(key, entry);
-    return structuredClone(entry.value);
+    return copyOf(entry.value);
   }
 
   async set(key, value, ttl = this.ttl) {
@@ -53,7 +73,7 @@ class MemoryCache {
 
   setNow(key, value, ttl = this.ttl) {
     this.entries.delete(key);
-    this.entries.set(key, { value: structuredClone(value), expires: ttl ? Date.now() + ttl : 0 });
+    this.entries.set(key, { value: copyOf(value), expires: ttl ? Date.now() + ttl : 0 });
     if (this.entries.size > this.max) this.entries.delete(this.entries.keys().next().value);
   }
 

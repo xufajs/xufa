@@ -22,8 +22,9 @@ import {
   pathKey,
   lastOf,
   SEPARATOR,
-  collectJoins,
+  eachLeaf,
   eachExists,
+  eachF,
   Extract,
   Trunc,
   resolveDateValue,
@@ -128,6 +129,8 @@ class QuerySet {
     this.model = model;
     this.state = state;
     this.cache = undefined;
+    // The objects of a relation loaded by prefetchRelated() (all() gives them).
+    this.prefetched = undefined;
   }
 
   clone(changes) {
@@ -172,8 +175,15 @@ class QuerySet {
 
   // Refining
 
+  // A copy. Of the objects of a relation loaded by prefetchRelated(): those objects, as Django's (book.genre.all()
+  // asks the database nothing more); filter() and the rest ask it again.
   all() {
-    return this.clone({});
+    const copy = this.clone({});
+    if (this.prefetched) {
+      copy.cache = this.prefetched;
+      copy.prefetched = this.prefetched;
+    }
+    return copy;
   }
 
   filter(...conditions) {
@@ -1087,6 +1097,7 @@ class RelatedSet extends QuerySet {
         .bulkCreate(missing.map((key) => ({ [from.attname]: owner.pk, [to.attname]: key })));
     }
     this.cache = undefined;
+    this.prefetched = undefined;
   }
 
   async remove(...items) {
@@ -1096,11 +1107,13 @@ class RelatedSet extends QuerySet {
         .filter({ [`${this.link.to.attname}__in`]: keys })
         .delete();
     this.cache = undefined;
+    this.prefetched = undefined;
   }
 
   async clear() {
     await this.links().delete();
     this.cache = undefined;
+    this.prefetched = undefined;
   }
 
   // Links exactly the objects given: those not given are unlinked, and the new ones linked.
@@ -1119,36 +1132,54 @@ class RelatedSet extends QuerySet {
 
 // A query joins the tables of its relations (or $lookup them): they have to be in the database of the model. Across
 // databases, relations are followed with more queries (prefetchRelated, load(), the reverse accessors).
+// (The fields joined are those of collectJoins(): every field of the chains of selectRelated and of reverse
+// relations, all but the last of the paths of conditions, order and values; looked at where they are, without making
+// the joins.)
 function checkDatabases(query) {
-  // The databases where the code runs: those of its tenant, when it runs in one.
-  const dbOf = (model) => {
-    try {
-      return model.db;
-    } catch {
-      return null;
-    }
-  };
   const db = dbOf(query.model);
   if (!db) return;
-  const fail = (model) => {
+  const check = (fields, all) => {
+    if (!fields) return;
+    const end = all ? fields.length : fields.length - 1;
+    for (let i = 0; i < end; i += 1) {
+      const { target } = fields[i];
+      if (target) sameDatabase(query, db, target);
+    }
+  };
+  eachLeaf(query.where, (leaf) => {
+    check(leaf.fields, false);
+    eachF(leaf.value, (ref) => check(ref.fields, false));
+  });
+  const { orderBy, values, related } = query;
+  if (orderBy) for (let i = 0; i < orderBy.length; i += 1) check(orderBy[i].fields, false);
+  if (values) for (let i = 0; i < values.length; i += 1) check(values[i].fields, false);
+  if (related) for (let i = 0; i < related.length; i += 1) check(related[i], true);
+  const visit = (where) =>
+    eachExists(where, (node) => {
+      check(node.through, true);
+      sameDatabase(query, db, node.relation.model);
+      visit(node.where);
+    });
+  visit(query.where);
+}
+
+// The database where the code runs for a model: that of its tenant, when it runs in one (null: none).
+function dbOf(model) {
+  try {
+    return model.db;
+  } catch {
+    return null;
+  }
+}
+
+function sameDatabase(query, db, model) {
+  const other = dbOf(model);
+  if (other && other !== db) {
     throw new QueryError(
       `${query.model.name} and ${model.name} are in different databases: a query cannot join them ` +
         '(use prefetchRelated or load())'
     );
-  };
-  collectJoins(query).forEach((chain) => {
-    chain.forEach((field) => {
-      const other = dbOf(field.target);
-      if (other && other !== db) fail(field.target);
-    });
-  });
-  const visit = (where) =>
-    eachExists(where, (node) => {
-      const other = dbOf(node.relation.model);
-      if (other && other !== db) fail(node.relation.model);
-      visit(node.where);
-    });
-  visit(query.where);
+  }
 }
 
 function equalities(model, conditions) {

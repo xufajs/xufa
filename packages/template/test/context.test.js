@@ -59,4 +59,19 @@ describe('the context of views', () => {
     expect((await bare.inject('/')).body).toBe('undefined|undefined');
     await expect(xufa().register(plugin, { root, context: 'nope' }).ready()).rejects.toThrow('context of the templates');
   });
+
+  it('the CSRF token is made only by a page that writes it (no cookie for the others), with a layout too', async () => {
+    fs.writeFileSync(path.join(root, 'layout.html'), '<main>{{ body }}</main>');
+    const app = xufa();
+    app.register(sessionPlugin, { secret: 'a secret of thirty two characters or more', csrf: true });
+    app.register(plugin, { root });
+    app.get('/page', async (request, reply) => reply.view('page'));
+    app.get('/framed', async (request, reply) => reply.view('page', {}, { layout: 'layout' }));
+    app.get('/form', async (request, reply) => reply.view('form', {}, { layout: 'layout' }));
+    expect((await app.inject('/page')).headers['set-cookie']).toBeUndefined();
+    expect((await app.inject('/framed')).headers['set-cookie']).toBeUndefined();
+    const form = await app.inject('/form');
+    expect(form.body).toBe('<main>true|</main>');
+    expect(form.headers['set-cookie']).toMatch(/^sid_csrf=/);
+  });
 });

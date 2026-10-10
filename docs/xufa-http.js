@@ -6899,14 +6899,19 @@ class RouteNames {
     if (!route) throw new XufaError("NAME_UNKNOWN", `No route named ${name}`);
     if (route.fixed !== null && !query && !(Array.isArray(params) && params.length)) return route.fixed;
     const given = params === null || params === void 0 ? {} : params;
-    const list = Array.isArray(given) ? [...given] : null;
+    const list = Array.isArray(given) ? given : null;
+    let next = 0;
     let address = "";
     for (const part of route.parts) {
       if (typeof part === "string") {
         address += part;
         continue;
       }
-      let value = list ? list.shift() : given[part.name];
+      let value;
+      if (list) {
+        value = list[next];
+        next += 1;
+      } else value = given[part.name];
       if (value === void 0 || value === null || value === "") {
         if (part.optional) {
           if (address.endsWith("/") && !part.wildcard) address = address.slice(0, -1);
@@ -6914,13 +6919,17 @@ class RouteNames {
         }
         throw new XufaError("PARAM_MISSING", `The route ${name} (${route.url}) needs ${part.name}`);
       }
+      if (typeof value === "number" && part.regex === null && !part.wildcard) {
+        address += String(value);
+        continue;
+      }
       value = String(value instanceof Date ? value.toISOString() : value);
       if (part.regex !== null && !(part.matcher || (part.matcher = new RegExp(`^(?:${part.regex})$`))).test(value)) {
         throw new XufaError("PARAM_INVALID", `${part.name} of the route ${name} is not ${part.regex}: ${value}`);
       }
       address += part.wildcard ? value.split("/").map(encodeURIComponent).join("/") : encodeURIComponent(value);
     }
-    if (list && list.length) {
+    if (list && next < list.length) {
       throw new XufaError(
         "PARAM_EXTRA",
         `The route ${name} (${route.url}) takes ${route.parts.filter((p) => typeof p !== "string").length} parameters`

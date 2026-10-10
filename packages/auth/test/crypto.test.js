@@ -35,6 +35,16 @@ describe('passwords', () => {
     expect(await verifyPassword('x', null)).toBe(false);
     await expect(hashPassword('', FAST)).rejects.toThrow('must be a text');
   });
+
+  it('the hash verified when there is no user: of the same parameters as a real one, made without hashing', async () => {
+    const { dummyHash } = await import('../lib/password.js');
+    const dummy = dummyHash(FAST);
+    expect(dummy).toMatch(/^\$scrypt\$ln=10,r=8,p=1\$[A-Za-z0-9+/]{22}\$[A-Za-z0-9+/]{43}$/);
+    expect(dummyHash(FAST)).not.toBe(dummy);
+    expect(needsRehash(dummy, FAST)).toBe(false);
+    expect(await verifyPassword('xufa-no-user', dummy)).toBe(false);
+    expect(dummyHash().startsWith('$scrypt$ln=17,r=8,p=1$')).toBe(true);
+  });
 });
 
 describe('JSON Web Tokens', () => {

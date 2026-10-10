@@ -43,6 +43,14 @@ async function hashPassword(password, options) {
   return `$scrypt$ln=${ln},r=${r},p=${p}$${b64(salt)}$${b64(hash)}`;
 }
 
+// A hash of no password, to verify when there is no user, so that the answer takes as long as with one: verifying runs
+// scrypt with the parameters of the hash (these settings), whatever its bytes, so random ones do and nothing is hashed
+// to make it (scrypt takes 128 MiB and a third of a second with the defaults: every process made one as it started).
+function dummyHash(options) {
+  const { ln, r, p, saltLength, keyLength } = settingsOf(options);
+  return `$scrypt$ln=${ln},r=${r},p=${p}$${b64(crypto.randomBytes(saltLength))}$${b64(crypto.randomBytes(keyLength))}`;
+}
+
 // The parts of a PHC string of scrypt, or null when it is not one.
 function parse(phc) {
   if (typeof phc !== 'string') return null;
@@ -82,4 +90,4 @@ function needsRehash(phc, options) {
   );
 }
 
-export { hashPassword, verifyPassword, needsRehash, DEFAULTS as PASSWORD_DEFAULTS };
+export { hashPassword, verifyPassword, needsRehash, dummyHash, DEFAULTS as PASSWORD_DEFAULTS };

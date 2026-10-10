@@ -29,4 +29,26 @@ async function buildApp({ databaseUrl, migrate = false }) {
   return { app, project };
 }
 
-export { buildApp, ROOT };
+// The two pages of the benchmark that are not of the tutorial: a text, and a book as JSON.
+function addBenchRoutes(app, project) {
+  const Book = project.model('Book');
+  app.get('/bench/hello', async (request, reply) => reply.type('text/plain; charset=utf-8').send('Hello, World!'));
+  app.get('/bench/book/:pk.json', async (request, reply) => {
+    const book = await Book.objects
+      .selectRelated('author', 'language')
+      .prefetchRelated('genre')
+      .filter({ pk: Number(request.params.pk) })
+      .first();
+    if (!book) return reply.code(404).send({ error: 'Not found' });
+    return {
+      id: book.pk,
+      title: book.title,
+      isbn: book.isbn,
+      author: { id: book.author.pk, firstName: book.author.firstName, lastName: book.author.lastName },
+      language: book.language ? book.language.name : null,
+      genres: (await book.genre.all()).map((genre) => genre.name),
+    };
+  });
+}
+
+export { buildApp, addBenchRoutes, ROOT };

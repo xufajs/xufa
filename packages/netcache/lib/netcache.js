@@ -70,7 +70,7 @@ class NetCache extends EventEmitter {
     this.clock = new Clock(this.id);
     // Values as v8 writes them (the structured clone), or with `marshal` (true, or a Registry of @xufa/marshal) as
     // marshal writes them, so the instances of registered classes come back as themselves. Each value says which
-    // (v8 starts with 0xff, marshal with "["): nodes of either kind read the values of the others.
+    // (v8 starts with 0xff, which no JSON text has): nodes of either kind read the values of the others.
     this.encode = v8.serialize;
     let readMarshal = null;
     if (marshal) {
@@ -80,7 +80,7 @@ class NetCache extends EventEmitter {
       readMarshal = (bytes) => parse(bytes.toString(), options);
     }
     const decode = (bytes) => {
-      if (bytes[0] !== 0x5b) return v8.deserialize(bytes);
+      if (bytes[0] === 0xff) return v8.deserialize(bytes);
       if (!readMarshal) {
         const { parse } = marshalModule;
         readMarshal = (written) => parse(written.toString());

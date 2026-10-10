@@ -104,14 +104,19 @@ class RouteNames {
     if (!route) throw new XufaError('NAME_UNKNOWN', `No route named ${name}`);
     if (route.fixed !== null && !query && !(Array.isArray(params) && params.length)) return route.fixed;
     const given = params === null || params === undefined ? {} : params;
-    const list = Array.isArray(given) ? [...given] : null;
+    const list = Array.isArray(given) ? given : null;
+    let next = 0; // (the parameters of a list, taken in order)
     let address = '';
     for (const part of route.parts) {
       if (typeof part === 'string') {
         address += part;
         continue;
       }
-      let value = list ? list.shift() : given[part.name];
+      let value;
+      if (list) {
+        value = list[next];
+        next += 1;
+      } else value = given[part.name];
       if (value === undefined || value === null || value === '') {
         if (part.optional) {
           // An optional parameter left out takes its slash with it (/books/:page? is /books).
@@ -120,6 +125,11 @@ class RouteNames {
         }
         throw new XufaError('PARAM_MISSING', `The route ${name} (${route.url}) needs ${part.name}`);
       }
+      // (A number needs no encoding: its text is digits, a point and a sign.)
+      if (typeof value === 'number' && part.regex === null && !part.wildcard) {
+        address += String(value);
+        continue;
+      }
       value = String(value instanceof Date ? value.toISOString() : value);
       // (compiled once for each part, not at every reverse)
       if (part.regex !== null && !(part.matcher ||= new RegExp(`^(?:${part.regex})$`)).test(value)) {
@@ -127,7 +137,7 @@ class RouteNames {
       }
       address += part.wildcard ? value.split('/').map(encodeURIComponent).join('/') : encodeURIComponent(value);
     }
-    if (list && list.length) {
+    if (list && next < list.length) {
       throw new XufaError(
         'PARAM_EXTRA',
         `The route ${name} (${route.url}) takes ${route.parts.filter((p) => typeof p !== 'string').length} parameters`

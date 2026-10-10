@@ -89,15 +89,19 @@ function dateText(buffer, start) {
   return `${year < 1000 ? String(year).padStart(4, '0') : year}-${pad2(month)}-${pad2(day)}`;
 }
 
-const HEX = Array.from({ length: 256 }, (_, i) => i.toString(16).padStart(2, '0'));
-
+// A uuid as its text: its digits written in a buffer of 36 bytes (the dashes in place), then one string of it (a
+// string joined of 20 parts is a chain, flattened later: slower, and more garbage).
+const UUID_DIGITS = Buffer.from('0123456789abcdef');
+const UUID_TEXT = Buffer.alloc(36, 0x2d);
+const UUID_AT = [0, 2, 4, 6, 9, 11, 14, 16, 19, 21, 24, 26, 28, 30, 32, 34];
 function uuid(buffer, start) {
-  let result = '';
   for (let i = 0; i < 16; i += 1) {
-    if (i === 4 || i === 6 || i === 8 || i === 10) result += '-';
-    result += HEX[buffer[start + i]];
+    const byte = buffer[start + i];
+    const at = UUID_AT[i];
+    UUID_TEXT[at] = UUID_DIGITS[byte >> 4];
+    UUID_TEXT[at + 1] = UUID_DIGITS[byte & 15];
   }
-  return result;
+  return UUID_TEXT.latin1Slice(0, 36);
 }
 
 const resultParsers = new Map([

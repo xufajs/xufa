@@ -36,7 +36,24 @@ function serializeCookie(name, value, options = {}) {
   return text;
 }
 
-const hmac = (secret, value) => crypto.createHmac('sha256', secret).update(value).digest('base64url');
+// The signatures made last, by secret: a visitor sends the same id at every request, and its HMAC is made once (the
+// comparison with the one given stays timing-safe; a hit tells only that an id was seen, not its signature).
+const SIGNED_MAX = 5000;
+const signed = new Map(); // secret => Map(value => signature)
+function hmac(secret, value) {
+  let bySecret = signed.get(secret);
+  if (!bySecret) {
+    bySecret = new Map();
+    signed.set(secret, bySecret);
+  }
+  let mac = bySecret.get(value);
+  if (mac === undefined) {
+    mac = crypto.createHmac('sha256', secret).update(value).digest('base64url');
+    if (bySecret.size >= SIGNED_MAX) bySecret.clear();
+    bySecret.set(value, mac);
+  }
+  return mac;
+}
 
 function sign(value, secret) {
   return `${value}.${hmac(secret, value)}`;
