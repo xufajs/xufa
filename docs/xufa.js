@@ -43,7 +43,6 @@
   })();
   var modules = {
 "@xufa/expression/index.js": function (module, exports, require) {
-"use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.parse = exports.CONSTRUCTORS = exports.FORBIDDEN = exports.GLOBALS = exports.locate = exports.ExpressionError = exports.Engine = exports.evaluate = exports.compile = void 0;
 // @xufa/expression: expressions of JavaScript (a safe part of it) compiled once and run many times, on data of their
@@ -296,7 +295,6 @@ exports.evaluate = evaluate;
 
 },
 "@xufa/expression/lib/async.js": function (module, exports, require) {
-"use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.asyncStatements = void 0;
 exports.containsAwait = containsAwait;
@@ -1292,7 +1290,6 @@ function asyncIterable(compiler, value, node) {
 
 },
 "@xufa/expression/lib/classes.js": function (module, exports, require) {
-"use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.isProgramClass = exports.makePrivates = void 0;
 exports.makeClass = makeClass;
@@ -1584,7 +1581,6 @@ function constructOf(compiler, Class, args, node) {
 
 },
 "@xufa/expression/lib/codegen-statements.js": function (module, exports, require) {
-"use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.statementMethods = void 0;
 // A program as one function of JavaScript (see generate in codegen.js): its statements those of JavaScript, its names
@@ -2005,7 +2001,6 @@ exports.statementMethods = statementMethods;
 
 },
 "@xufa/expression/lib/codegen.js": function (module, exports, require) {
-"use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.generate = generate;
 exports.generateProgram = generateProgram;
@@ -2636,7 +2631,6 @@ function generateProgram(tree, compiler, options, SHORT) {
 
 },
 "@xufa/expression/lib/compiler.js": function (module, exports, require) {
-"use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.FORBIDDEN = void 0;
 exports.compileTree = compileTree;
@@ -3696,7 +3690,6 @@ function checkForeignTree(tree, source, options) {
 
 },
 "@xufa/expression/lib/errors.js": function (module, exports, require) {
-"use strict";
 // The errors of expressions: of their syntax (XUFA_EXPR_ERR_SYNTAX), of what they cannot reach (XUFA_EXPR_ERR_FORBIDDEN)
 // and of what fails while they run (XUFA_EXPR_ERR_RUNTIME), with where in the source they are.
 Object.defineProperty(exports, "__esModule", { value: true });
@@ -3733,7 +3726,6 @@ exports.ExpressionError = ExpressionError;
 
 },
 "@xufa/expression/lib/forbidden.js": function (module, exports, require) {
-"use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.FORBIDDEN = void 0;
 // The names of properties that cannot be reached (by name, computed, destructured or copied): what leads to prototypes
@@ -3754,7 +3746,6 @@ exports.FORBIDDEN = FORBIDDEN;
 
 },
 "@xufa/expression/lib/globals.js": function (module, exports, require) {
-"use strict";
 // The globals expressions have by default: functions and values that compute, and nothing that reaches the process,
 // modules, timers, prototypes or constructors. Number, String and Boolean convert (Number('5')) and have their static
 // helpers; Object, Array, JSON and Date have only what reads. Programs have more (PROGRAM_GLOBALS): BigInt,
@@ -3854,7 +3845,6 @@ exports.PROGRAM_GLOBALS = PROGRAM_GLOBALS;
 
 },
 "@xufa/expression/lib/intrinsics.js": function (module, exports, require) {
-"use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.INTRINSICS = void 0;
 exports.intrinsicsOf = intrinsicsOf;
@@ -3937,7 +3927,6 @@ function templateStrings(node) {
 
 },
 "@xufa/expression/lib/objects.js": function (module, exports, require) {
-"use strict";
 // The properties of objects made by expressions and programs (by the closures and by the function of JavaScript).
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.define = define;
@@ -3964,7 +3953,6 @@ function defineAccessor(object, key, kind, fn) {
 
 },
 "@xufa/expression/lib/parser.js": function (module, exports, require) {
-"use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.Parser = void 0;
 exports.parse = parse;
@@ -5967,7 +5955,6 @@ function parse(source, options = {}) {
 
 },
 "@xufa/expression/lib/patterns.js": function (module, exports, require) {
-"use strict";
 // Destructuring and default values of programs, lowered by the parser into what the compilers have (so with their
 // checks): names, members, conditionals and intrinsics (destructurable, arrayOf, arrayRest, objectRest), with names of
 // their own for the values in between (#d1, #d2...: names no source can write, as # is no character of a name).
@@ -6130,7 +6117,6 @@ function patternNames(pattern, out = []) {
 
 },
 "@xufa/expression/lib/short.js": function (module, exports, require) {
-"use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.SHORT = void 0;
 // What a ?. that met null or undefined gives to the rest of its chain: the chain is undefined.
@@ -6139,7 +6125,6 @@ exports.SHORT = SHORT;
 
 },
 "@xufa/expression/lib/statements.js": function (module, exports, require) {
-"use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.NO_LABELS = exports.Jump = exports.CONTINUE = exports.BREAK = exports.Return = exports.isLimit = exports.statements = void 0;
 exports.guardedOf = guardedOf;
@@ -7067,7 +7052,6 @@ exports.statements = statements;
 
 },
 "@xufa/expression/lib/tokenizer.js": function (module, exports, require) {
-"use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.tokenize = tokenize;
 // The tokens of an expression: numbers, strings, template literals (their parts and the tokens of their ${}),
@@ -7465,7 +7449,6 @@ function readTemplate(source, i, options) {
 module.exports = {"name":"@xufa/expression","version":"0.1.0"};
 },
 "@xufa/marshal/index.js": function (module, exports, require) {
-"use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.MarshalError = exports.DECODE = exports.ENCODE = exports.registry = exports.Registry = exports.clone = exports.parse = exports.stringify = exports.unmarshal = exports.marshal = void 0;
 // @xufa/marshal: values as JSON that keeps classes, references, cycles and the types JSON does not have.
@@ -7486,7 +7469,6 @@ Object.defineProperty(exports, "MarshalError", { enumerable: true, get: function
 
 },
 "@xufa/marshal/lib/clone.js": function (module, exports, require) {
-"use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.clone = void 0;
 // A deep copy that keeps what structuredClone loses: the class of every instance (its prototype, registered or not:
@@ -7600,7 +7582,6 @@ exports.clone = __clone;
 
 },
 "@xufa/marshal/lib/errors.js": function (module, exports, require) {
-"use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.MarshalError = void 0;
 exports.guard = guard;
@@ -7629,7 +7610,6 @@ function guard(fn) {
 
 },
 "@xufa/marshal/lib/marshal.js": function (module, exports, require) {
-"use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.parse = exports.stringify = exports.unmarshal = exports.marshal = void 0;
 // marshal(value) writes a value as JSON-safe data, unmarshal(data) makes it again; stringify() and parse() are the
@@ -8488,7 +8468,6 @@ exports.parse = __parse;
 
 },
 "@xufa/marshal/lib/registry.js": function (module, exports, require) {
-"use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.DECODE = exports.ENCODE = exports.registry = exports.Registry = void 0;
 // The classes whose instances come back as themselves. A class is known by a name (its own, or one given) and can
@@ -8561,7 +8540,6 @@ exports.registry = registry;
 module.exports = {"name":"@xufa/marshal","version":"0.1.0"};
 },
 "@xufa/router/index.js": function (module, exports, require) {
-"use strict";
 var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
     if (k2 === undefined) k2 = k;
     var desc = Object.getOwnPropertyDescriptor(m, k);
@@ -9428,7 +9406,6 @@ createRouter.NullObject = constraints_js_1.NullObject;
 
 },
 "@xufa/router/lib/compile.js": function (module, exports, require) {
-"use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.compileTree = compileTree;
 // Compiles the tree of a method into code that finds a route: the walk of index.js (match), with the nodes written
@@ -9572,7 +9549,6 @@ function compileTree(root, maxParamLength) {
 
 },
 "@xufa/router/lib/constraints.js": function (module, exports, require) {
-"use strict";
 var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
     if (k2 === undefined) k2 = k;
     var desc = Object.getOwnPropertyDescriptor(m, k);
@@ -9846,7 +9822,6 @@ exports.HandlerStorage = HandlerStorage;
 
 },
 "@xufa/router/lib/node.js": function (module, exports, require) {
-"use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.NODE_TYPES = exports.WildcardNode = exports.ParametricNode = exports.StaticNode = void 0;
 // Nodes of the radix tree: static prefixes, parameters (plain or with a regular expression) and wildcards.
@@ -10042,7 +10017,6 @@ exports.WildcardNode = WildcardNode;
 
 },
 "@xufa/router/lib/pretty-print.js": function (module, exports, require) {
-"use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.prettyPrintTree = prettyPrintTree;
 // The tree of routes as text, in the format of find-my-way.
@@ -10171,7 +10145,6 @@ function prettyPrintTree(root, options) {
 
 },
 "@xufa/router/lib/safe-regex.js": function (module, exports, require) {
-"use strict";
 // Whether a regular expression can backtrack catastrophically: a quantified group holding another quantifier, like
 // (a+)+ or (x*)*, has a star height above one. What safe-regex checks, without its limit on repetitions.
 Object.defineProperty(exports, "__esModule", { value: true });
@@ -10235,7 +10208,6 @@ function isSafeRegex(regex) {
 
 },
 "@xufa/router/lib/strategies.js": function (module, exports, require) {
-"use strict";
 // Built-in constraint strategies: version (semver, from the Accept-Version header) and host.
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.httpMethod = exports.host = exports.version = void 0;
@@ -10370,7 +10342,6 @@ function deepEqualConstraints(a, b) {
 
 },
 "@xufa/router/lib/url.js": function (module, exports, require) {
-"use strict";
 // Splitting the path from the query string, and decoding the path.
 //
 // The path is decoded with decodeURI, which keeps the reserved characters (# $ & + , / : ; = ? @) encoded, so that an
@@ -10550,7 +10521,6 @@ function trimLastSlash(path) {
 module.exports = {"name":"@xufa/router","version":"0.1.0"};
 },
 "@xufa/schema/index.js": function (module, exports, require) {
-"use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.oint = exports.int = exports.Integer = exports.IntegerType = exports.onum = exports.num = exports.ofloat = exports.float = exports.Float = exports.FloatType = exports.oenum = exports.oenumt = exports.enumt = exports.Enum = exports.EnumType = exports.Conditional = exports.ConditionalType = exports.obool = exports.bool = exports.Boolean = exports.BooleanType = exports.oarrOf = exports.arrOf = exports.ArrayOf = exports.ArrayOfType = exports.oanyOf = exports.anyOf = exports.AnyOf = exports.AnyOfType = exports.oany = exports.any = exports.Any = exports.AnyType = exports.oallOf = exports.allOf = exports.AllOf = exports.AllOfType = exports.Schema = exports.loadJsonSchemas = exports.compileJsonSchemaAsync = exports.compileJsonSchema = exports.fromJsonSchema = exports.compileType = exports.compileIsValid = exports.compileFirstError = exports.compileErrors = exports.ClosedSchema = exports.OPTIONAL = exports.isOptional = exports.s = void 0;
 exports.inferSchemaCode = exports.inferJsonSchema = exports.builtInFormats = exports.ajvKeywords = exports.KeywordType = exports.standaloneJsonSchema = exports.standaloneModule = exports.standaloneCode = exports.isJsonType = exports.When = exports.WhenType = exports.Const = exports.Values = exports.ValuesType = exports.toErrors = exports.hasErrors = exports.ValidateType = exports.ostr = exports.str = exports.String = exports.StringType = exports.Ref = exports.RefType = exports.ooneOf = exports.oneOf = exports.OneOf = exports.OneOfType = exports.oobj = exports.obj = exports.Obj = exports.ObjType = exports.onot = exports.not = exports.Not = exports.NotType = exports.never = exports.Never = exports.NeverType = void 0;
@@ -10664,7 +10634,6 @@ Object.defineProperty(exports, "KeywordType", { enumerable: true, get: function 
 
 },
 "@xufa/schema/lib/ajv-keywords.js": function (module, exports, require) {
-"use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.ajvKeywords = ajvKeywords;
 // The keywords of ajv-keywords (https://github.com/ajv-validator/ajv-keywords), as definitions for the option "keywords"
@@ -10929,7 +10898,6 @@ function ajvKeywords(names = Object.keys(DEFINITIONS)) {
 
 },
 "@xufa/schema/lib/builder.js": function (module, exports, require) {
-"use strict";
 // @xufa/schema: JSON Schemas written as code, with their types in TypeScript. What it makes are plain JSON Schemas
 // (draft-07, the ones of fastify): routes of @xufa/http and fastify validate and serialize with them, @xufa/openapi
 // documents them; in TypeScript, Infer<typeof schema> is the type of the values, and SchemaTypeProvider types the
@@ -11133,7 +11101,6 @@ exports.isOptional = isOptional;
 
 },
 "@xufa/schema/lib/closed-schema.js": function (module, exports, require) {
-"use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.ClosedSchema = void 0;
 const schema_js_1 = require("./schema.js");
@@ -11146,7 +11113,6 @@ exports.ClosedSchema = ClosedSchema;
 
 },
 "@xufa/schema/lib/coerce.js": function (module, exports, require) {
-"use strict";
 var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
     if (k2 === undefined) k2 = k;
     var desc = Object.getOwnPropertyDescriptor(m, k);
@@ -11311,7 +11277,6 @@ exports.CoerceType = CoerceType;
 
 },
 "@xufa/schema/lib/compile.js": function (module, exports, require) {
-"use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.generateSource = generateSource;
 exports.compileErrors = compileErrors;
@@ -13052,7 +13017,6 @@ function compileType(type, options = {}) {
 
 },
 "@xufa/schema/lib/deep-equal.js": function (module, exports, require) {
-"use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.deepEqual = deepEqual;
 function deepEqual(a, b) {
@@ -13133,7 +13097,6 @@ function deepEqual(a, b) {
 
 },
 "@xufa/schema/lib/defaults.js": function (module, exports, require) {
-"use strict";
 // The option useDefaults: values of "default" assigned to missing properties and tuple elements before they are
 // checked, as ajv does. Each validation assigns a new copy, so the data never shares objects with the schema.
 Object.defineProperty(exports, "__esModule", { value: true });
@@ -13173,7 +13136,6 @@ function assignDefaults(target, defaults) {
 
 },
 "@xufa/schema/lib/error-objects.js": function (module, exports, require) {
-"use strict";
 // Error objects of compile({ errors: 'objects' }). The generated code keeps the path of each value as an array of keys
 // and indexes; these functions name it as the messages do and build the objects. Standalone code writes them out by
 // their source (see standalone-helpers.js), so they call no other function.
@@ -13220,7 +13182,6 @@ function errorObject(path, keyword, params, message) {
 
 },
 "@xufa/schema/lib/formats.js": function (module, exports, require) {
-"use strict";
 // Checks of the "format" keyword (JSON Schema) and of the `format` option of String, all of them for strings. Each
 // check is a self-contained function, or one calling others of this file by name, as standalone code writes them
 // out by their source (see standalone-helpers.js).
@@ -13779,7 +13740,6 @@ function matchesFormat(check, value) {
 
 },
 "@xufa/schema/lib/infer.js": function (module, exports, require) {
-"use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.inferJsonSchema = inferJsonSchema;
 exports.inferSchemaCode = inferSchemaCode;
@@ -14006,7 +13966,6 @@ function inferSchemaCode(samples, options = {}) {
 
 },
 "@xufa/schema/lib/json-schema-refs.js": function (module, exports, require) {
-"use strict";
 // Resolution of JSON Schema references: JSON pointers ("#/definitions/a"), "$id" base URI changes, and anchors ("#foo":
 // "$id" fragments, and from draft 2019-09 on "$anchor" and "$dynamicAnchor"), within the schema and within other
 // documents registered by URI. Nothing is loaded from the network: a reference to a document that is not registered
@@ -14461,7 +14420,6 @@ exports.RefIndex = RefIndex;
 
 },
 "@xufa/schema/lib/json-schema.js": function (module, exports, require) {
-"use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.fromJsonSchema = fromJsonSchema;
 exports.compileJsonSchema = compileJsonSchema;
@@ -15874,7 +15832,6 @@ async function compileJsonSchemaAsync(json, options = {}) {
 
 },
 "@xufa/schema/lib/merge-patch.js": function (module, exports, require) {
-"use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.mergePatch = mergePatch;
 exports.applyPatch = applyPatch;
@@ -15990,7 +15947,6 @@ function applyPatch(document, operations, what) {
 
 },
 "@xufa/schema/lib/schema.js": function (module, exports, require) {
-"use strict";
 var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
     if (k2 === undefined) k2 = k;
     var desc = Object.getOwnPropertyDescriptor(m, k);
@@ -16305,7 +16261,6 @@ exports.Schema = Schema;
 
 },
 "@xufa/schema/lib/standalone-helpers.js": function (module, exports, require) {
-"use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.HELPER_SOURCES = void 0;
 // Generated by scripts/generate-standalone-helpers.js (npm run build:helpers): do not edit.
@@ -16993,7 +16948,6 @@ exports.HELPER_SOURCES = HELPER_SOURCES;
 
 },
 "@xufa/schema/lib/standalone.js": function (module, exports, require) {
-"use strict";
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
@@ -17162,7 +17116,6 @@ function standaloneJsonSchema(json, options = {}) {
 
 },
 "@xufa/schema/lib/types/all-of.js": function (module, exports, require) {
-"use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.AllOfType = void 0;
 exports.AllOf = AllOf;
@@ -17223,7 +17176,6 @@ function oallOf(types, isMandatory = false, isNullable = false) {
 
 },
 "@xufa/schema/lib/types/any-of.js": function (module, exports, require) {
-"use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.AnyOfType = void 0;
 exports.AnyOf = AnyOf;
@@ -17284,7 +17236,6 @@ function oanyOf(types, isMandatory = false, isNullable = false) {
 
 },
 "@xufa/schema/lib/types/any.js": function (module, exports, require) {
-"use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.AnyType = void 0;
 exports.Any = Any;
@@ -17315,7 +17266,6 @@ function oany(isMandatory = false, isNullable = false) {
 
 },
 "@xufa/schema/lib/types/array-of.js": function (module, exports, require) {
-"use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.ArrayOfType = void 0;
 exports.ArrayOf = ArrayOf;
@@ -17511,7 +17461,6 @@ function oarrOf(type, min, max, isMandatory = false, isNullable = false) {
 
 },
 "@xufa/schema/lib/types/boolean.js": function (module, exports, require) {
-"use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.BooleanType = void 0;
 exports.Boolean = Boolean;
@@ -17552,7 +17501,6 @@ function obool(isMandatory = false, isNullable = false) {
 
 },
 "@xufa/schema/lib/types/code-point-length.js": function (module, exports, require) {
-"use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.codePointLength = codePointLength;
 exports.hasFewerCodePoints = hasFewerCodePoints;
@@ -17584,7 +17532,6 @@ function hasMoreCodePoints(value, max) {
 
 },
 "@xufa/schema/lib/types/conditional.js": function (module, exports, require) {
-"use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.ConditionalType = void 0;
 exports.Conditional = Conditional;
@@ -17631,7 +17578,6 @@ function Conditional(options) {
 
 },
 "@xufa/schema/lib/types/enum.js": function (module, exports, require) {
-"use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.EnumType = void 0;
 exports.Enum = Enum;
@@ -17679,7 +17625,6 @@ function oenumt(options, isMandatory = false, isNullable = false) {
 
 },
 "@xufa/schema/lib/types/float.js": function (module, exports, require) {
-"use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.FloatType = void 0;
 exports.Float = Float;
@@ -17768,7 +17713,6 @@ function ofloat(min, max, isMandatory = false, isNullable = false) {
 
 },
 "@xufa/schema/lib/types/has-duplicates.js": function (module, exports, require) {
-"use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.hasDuplicates = hasDuplicates;
 const deep_equal_js_1 = require("../deep-equal.js");
@@ -17790,7 +17734,6 @@ function hasDuplicates(value) {
 
 },
 "@xufa/schema/lib/types/index.js": function (module, exports, require) {
-"use strict";
 var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
     if (k2 === undefined) k2 = k;
     var desc = Object.getOwnPropertyDescriptor(m, k);
@@ -17828,7 +17771,6 @@ __exportStar(require("./when.js"), exports);
 
 },
 "@xufa/schema/lib/types/integer.js": function (module, exports, require) {
-"use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.IntegerType = void 0;
 exports.Integer = Integer;
@@ -17871,7 +17813,6 @@ function oint(min, max, isMandatory = false, isNullable = false) {
 
 },
 "@xufa/schema/lib/types/keyword.js": function (module, exports, require) {
-"use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.KEYWORD_TYPE_TESTS = exports.KeywordType = void 0;
 const validate_type_js_1 = require("./validate-type.js");
@@ -17930,7 +17871,6 @@ exports.KeywordType = KeywordType;
 
 },
 "@xufa/schema/lib/types/never.js": function (module, exports, require) {
-"use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.NeverType = void 0;
 exports.Never = Never;
@@ -17965,7 +17905,6 @@ function never(isMandatory = false, isNullable = false) {
 
 },
 "@xufa/schema/lib/types/not.js": function (module, exports, require) {
-"use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.NotType = void 0;
 exports.Not = Not;
@@ -18011,7 +17950,6 @@ function onot(type, isMandatory = false, isNullable = false) {
 
 },
 "@xufa/schema/lib/types/obj.js": function (module, exports, require) {
-"use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.ObjType = void 0;
 exports.Obj = Obj;
@@ -18080,7 +18018,6 @@ function oobj(schema, isMandatory = false, isNullable = false) {
 
 },
 "@xufa/schema/lib/types/one-of.js": function (module, exports, require) {
-"use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.EVERY_TYPE = exports.NO_TYPE = exports.OneOfType = void 0;
 exports.OneOf = OneOf;
@@ -18200,7 +18137,6 @@ function ooneOf(types, isMandatory = false, isNullable = false) {
 
 },
 "@xufa/schema/lib/types/ref.js": function (module, exports, require) {
-"use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.RefType = void 0;
 exports.Ref = Ref;
@@ -18246,7 +18182,6 @@ function Ref(options) {
 
 },
 "@xufa/schema/lib/types/string.js": function (module, exports, require) {
-"use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.StringType = exports.FORMAT_LIMITS = void 0;
 exports.String = String;
@@ -18364,7 +18299,6 @@ function ostr(min, max, isMandatory = false, isNullable = false) {
 
 },
 "@xufa/schema/lib/types/validate-type.js": function (module, exports, require) {
-"use strict";
 // A validate() result is undefined (valid), a string (one error) or a possibly empty array of errors.
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.ValidateType = void 0;
@@ -18495,7 +18429,6 @@ function toTypes(values, name) {
 
 },
 "@xufa/schema/lib/types/values.js": function (module, exports, require) {
-"use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.ValuesType = void 0;
 exports.Values = Values;
@@ -18538,7 +18471,6 @@ function Const(value, options = {}) {
 
 },
 "@xufa/schema/lib/types/when.js": function (module, exports, require) {
-"use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.WhenType = void 0;
 exports.When = When;
@@ -18597,7 +18529,6 @@ function When(options) {
 
 },
 "@xufa/schema/lib/unevaluated.js": function (module, exports, require) {
-"use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.UnevaluatedType = exports.JSON_TYPES = void 0;
 exports.staticEvaluatedBy = staticEvaluatedBy;
@@ -18861,7 +18792,6 @@ function staticEvaluatedBy(kind, type) {
 module.exports = {"name":"@xufa/schema","version":"0.1.0"};
 },
 "@xufa/serializer/index.js": function (module, exports, require) {
-"use strict";
 var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
     if (k2 === undefined) k2 = k;
     var desc = Object.getOwnPropertyDescriptor(m, k);
@@ -19583,7 +19513,6 @@ build.validLargeArrayMechanisms = LARGE_ARRAY_MECHANISMS;
 
 },
 "@xufa/serializer/lib/deep-equal.js": function (module, exports, require) {
-"use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.deepEqual = deepEqual;
 // Structural equality of JSON values (and of Dates and RegExps).
@@ -19619,7 +19548,6 @@ function deepEqual(a, b) {
 
 },
 "@xufa/serializer/lib/match.js": function (module, exports, require) {
-"use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.createMatcher = createMatcher;
 // Predicates compiled from JSON schemas: whether a value matches a schema. Used to choose the branch of anyOf, oneOf
@@ -19902,7 +19830,6 @@ function createMatcher(resolver, options = {}) {
 
 },
 "@xufa/serializer/lib/merge.js": function (module, exports, require) {
-"use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.MergeError = void 0;
 exports.mergeSchemas = mergeAll;
@@ -20182,7 +20109,6 @@ function mergeAll(schemas, options = {}) {
 
 },
 "@xufa/serializer/lib/meta.js": function (module, exports, require) {
-"use strict";
 // Validation of schemas against the meta-schema of draft-07, reporting the first error the way ajv does
 // ("data/properties/claws/type must be equal to one of the allowed values"). Keywords are checked in the order of the
 // meta-schema, as ajv checks them.
@@ -20369,7 +20295,6 @@ function validateSchema(value, name) {
 
 },
 "@xufa/serializer/lib/resolver.js": function (module, exports, require) {
-"use strict";
 // Resolution of $ref: schemas are registered by their $id (or a key), with the $id and anchors they hold inside.
 // A reference is resolved against the base URI of the schema holding it.
 Object.defineProperty(exports, "__esModule", { value: true });
@@ -20517,7 +20442,6 @@ exports.RefResolver = RefResolver;
 
 },
 "@xufa/serializer/lib/runtime.js": function (module, exports, require) {
-"use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.createRuntime = createRuntime;
 exports.asString = asString;
@@ -20672,7 +20596,6 @@ function createRuntime(options = {}) {
 
 },
 "@xufa/serializer/lib/writer.js": function (module, exports, require) {
-"use strict";
 // The output of the generated serializers: UTF-8 bytes written to one buffer, read back as a string at the end.
 //
 // Joining strings with + makes a tree of them that V8 copies into a flat string when the result is used (written to a
@@ -20893,7 +20816,6 @@ function bytesOf(text) {
 module.exports = {"name":"@xufa/serializer","version":"0.1.0"};
 },
 "@xufa/template/index.js": function (module, exports, require) {
-"use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.FILTERS = exports.escapeHtml = exports.SafeString = exports.plugin = exports.TemplateError = exports.TemplateEngine = exports.fill = exports.render = exports.compile = void 0;
 // @xufa/template: templates of text and HTML with the expressions of @xufa/expression, compiled once and rendered
@@ -21092,7 +21014,6 @@ exports.fill = fill;
 
 },
 "@xufa/template/lib/compiler.js": function (module, exports, require) {
-"use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.TemplateCompiler = void 0;
 exports.stringify = stringify;
@@ -21818,7 +21739,6 @@ function* chunksOf(streamer, context, chunkSize) {
 
 },
 "@xufa/template/lib/errors.js": function (module, exports, require) {
-"use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.TemplateError = void 0;
 // The errors of templates: their syntax (XUFA_TEMPLATE_ERR_SYNTAX, also for expressions in them), what fails while they
@@ -21845,7 +21765,6 @@ exports.TemplateError = TemplateError;
 
 },
 "@xufa/template/lib/filters.js": function (module, exports, require) {
-"use strict";
 // HTML escaping, strings that are HTML already (SafeString), and the filters templates have by default:
 // {{ name | upper }}, {{ price | number('es-ES', { style: 'currency', currency: 'EUR' }) }}...
 Object.defineProperty(exports, "__esModule", { value: true });
@@ -21969,7 +21888,6 @@ exports.FILTERS = FILTERS;
 
 },
 "@xufa/template/lib/plugin.js": function (module, exports, require) {
-"use strict";
 var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
     if (k2 === undefined) k2 = k;
     var desc = Object.getOwnPropertyDescriptor(m, k);
@@ -22321,7 +22239,6 @@ templatePlugin[Symbol.for('fastify.display-name')] = '@xufa/template';
 
 },
 "@xufa/template/lib/scanner.js": function (module, exports, require) {
-"use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.scan = scan;
 // The parts of a template: texts and tags. A tag is {{ expression }} (escaped), {{{ expression }}} (as it is),
@@ -22470,7 +22387,6 @@ module.exports = {"name":"@xufa/template","version":"0.1.0"};
 },
 "@xufa/yaml/index.js": function (module, exports, require) {
 // @xufa/yaml: js-yaml 4.1.0 (MIT, LICENSE.js-yaml), with no dependencies: YAML 1.2 load and dump.
-'use strict';
 
 
 var loader = require('./lib/loader');
@@ -22520,7 +22436,6 @@ module.exports.safeDump            = renamed('safeDump', 'dump');
 
 },
 "@xufa/yaml/lib/common.js": function (module, exports, require) {
-'use strict';
 
 
 function isNothing(subject) {
@@ -22582,7 +22497,6 @@ module.exports.extend         = extend;
 
 },
 "@xufa/yaml/lib/dumper.js": function (module, exports, require) {
-'use strict';
 
 /*eslint-disable no-use-before-define*/
 
@@ -23552,7 +23466,6 @@ module.exports.dump = dump;
 "@xufa/yaml/lib/exception.js": function (module, exports, require) {
 // YAML error class. http://stackoverflow.com/questions/8458984
 //
-'use strict';
 
 
 function formatError(exception, compact) {
@@ -23608,7 +23521,6 @@ module.exports = YAMLException;
 
 },
 "@xufa/yaml/lib/loader.js": function (module, exports, require) {
-'use strict';
 
 /*eslint-disable max-len,no-use-before-define*/
 
@@ -25338,7 +25250,6 @@ module.exports.load    = load;
 
 },
 "@xufa/yaml/lib/schema.js": function (module, exports, require) {
-'use strict';
 
 /*eslint-disable max-len*/
 
@@ -25469,7 +25380,6 @@ module.exports = Schema;
 // So, Core schema has no distinctions from JSON schema is JS-YAML.
 
 
-'use strict';
 
 
 module.exports = require('./json');
@@ -25483,7 +25393,6 @@ module.exports = require('./json');
 // extra types described at YAML tag repository. (http://yaml.org/type/)
 
 
-'use strict';
 
 
 module.exports = require('./core').extend({
@@ -25505,7 +25414,6 @@ module.exports = require('./core').extend({
 // http://www.yaml.org/spec/1.2/spec.html#id2802346
 
 
-'use strict';
 
 
 var Schema = require('../schema');
@@ -25529,7 +25437,6 @@ module.exports = new Schema({
 // It allows numbers in binary notaion, use `Null` and `NULL` as `null`, etc.
 
 
-'use strict';
 
 
 module.exports = require('./failsafe').extend({
@@ -25543,7 +25450,6 @@ module.exports = require('./failsafe').extend({
 
 },
 "@xufa/yaml/lib/snippet.js": function (module, exports, require) {
-'use strict';
 
 
 var common = require('./common');
@@ -25647,7 +25553,6 @@ module.exports = makeSnippet;
 
 },
 "@xufa/yaml/lib/type.js": function (module, exports, require) {
-'use strict';
 
 var YAMLException = require('./exception');
 
@@ -25716,7 +25621,6 @@ module.exports = Type;
 
 },
 "@xufa/yaml/lib/type/binary.js": function (module, exports, require) {
-'use strict';
 
 /*eslint-disable no-bitwise*/
 
@@ -25844,7 +25748,6 @@ module.exports = new Type('tag:yaml.org,2002:binary', {
 
 },
 "@xufa/yaml/lib/type/bool.js": function (module, exports, require) {
-'use strict';
 
 var Type = require('../type');
 
@@ -25882,7 +25785,6 @@ module.exports = new Type('tag:yaml.org,2002:bool', {
 
 },
 "@xufa/yaml/lib/type/float.js": function (module, exports, require) {
-'use strict';
 
 var common = require('../common');
 var Type   = require('../type');
@@ -25982,7 +25884,6 @@ module.exports = new Type('tag:yaml.org,2002:float', {
 
 },
 "@xufa/yaml/lib/type/int.js": function (module, exports, require) {
-'use strict';
 
 var common = require('../common');
 var Type   = require('../type');
@@ -26141,7 +26042,6 @@ module.exports = new Type('tag:yaml.org,2002:int', {
 
 },
 "@xufa/yaml/lib/type/map.js": function (module, exports, require) {
-'use strict';
 
 var Type = require('../type');
 
@@ -26152,7 +26052,6 @@ module.exports = new Type('tag:yaml.org,2002:map', {
 
 },
 "@xufa/yaml/lib/type/merge.js": function (module, exports, require) {
-'use strict';
 
 var Type = require('../type');
 
@@ -26167,7 +26066,6 @@ module.exports = new Type('tag:yaml.org,2002:merge', {
 
 },
 "@xufa/yaml/lib/type/null.js": function (module, exports, require) {
-'use strict';
 
 var Type = require('../type');
 
@@ -26205,7 +26103,6 @@ module.exports = new Type('tag:yaml.org,2002:null', {
 
 },
 "@xufa/yaml/lib/type/omap.js": function (module, exports, require) {
-'use strict';
 
 var Type = require('../type');
 
@@ -26252,7 +26149,6 @@ module.exports = new Type('tag:yaml.org,2002:omap', {
 
 },
 "@xufa/yaml/lib/type/pairs.js": function (module, exports, require) {
-'use strict';
 
 var Type = require('../type');
 
@@ -26308,7 +26204,6 @@ module.exports = new Type('tag:yaml.org,2002:pairs', {
 
 },
 "@xufa/yaml/lib/type/seq.js": function (module, exports, require) {
-'use strict';
 
 var Type = require('../type');
 
@@ -26319,7 +26214,6 @@ module.exports = new Type('tag:yaml.org,2002:seq', {
 
 },
 "@xufa/yaml/lib/type/set.js": function (module, exports, require) {
-'use strict';
 
 var Type = require('../type');
 
@@ -26351,7 +26245,6 @@ module.exports = new Type('tag:yaml.org,2002:set', {
 
 },
 "@xufa/yaml/lib/type/str.js": function (module, exports, require) {
-'use strict';
 
 var Type = require('../type');
 
@@ -26362,7 +26255,6 @@ module.exports = new Type('tag:yaml.org,2002:str', {
 
 },
 "@xufa/yaml/lib/type/timestamp.js": function (module, exports, require) {
-'use strict';
 
 var Type = require('../type');
 

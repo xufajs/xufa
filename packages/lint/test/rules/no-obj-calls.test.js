@@ -3,15 +3,13 @@
  * @author James Allardice
  */
 
-"use strict";
-
 //------------------------------------------------------------------------------
 // Requirements
 //------------------------------------------------------------------------------
 
-const rule = require("../../lib/eslint/lib/rules/no-obj-calls"),
-	RuleTester = require("../rule-tester"),
-	globals = require("../../lib/globals");
+import * as rule from '../../lib/rules/no-obj-calls.js';
+import RuleTester from '../rule-tester.js';
+import globals from '../../lib/globals.js';
 
 //------------------------------------------------------------------------------
 // Tests

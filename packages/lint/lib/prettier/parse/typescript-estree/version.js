@@ -4,7 +4,7 @@
 // They are set by loadTypeScript(), which parse() calls first: nothing of TypeScript is loaded until a file is parsed
 // with it (formatting markdown, package.json or, with its own parser, JSON never loads it). Modules import them as
 // bindings, which are read as variables.
-import ts from '../typescript.cjs';
+import ts from '#typescript';
 
 /** @type {typeof ts.SyntaxKind} */
 export let SyntaxKind;

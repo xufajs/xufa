@@ -2,14 +2,13 @@
  * @fileoverview disallow using an async function as a Promise executor
  * @author Teddy Katz
  */
-"use strict";
 
 //------------------------------------------------------------------------------
 // Requirements
 //------------------------------------------------------------------------------
 
-const rule = require("../../lib/eslint/lib/rules/no-async-promise-executor");
-const RuleTester = require("../rule-tester");
+import * as rule from '../../lib/rules/no-async-promise-executor.js';
+import RuleTester from '../rule-tester.js';
 
 //------------------------------------------------------------------------------
 // Tests

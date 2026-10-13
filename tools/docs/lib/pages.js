@@ -3,7 +3,7 @@
 // <article>. A package with several pages (SECTIONS) has tabs above each of them; the pages after its first one say
 // whose they are with `package` (the file of its first page). `layout: 'tool'` is a page without sidebar, in all the
 // width (a playground), `layout: 'home'` a page of full-width sections (as the home page), and `scripts` are the
-// scripts it loads; `fullTitle` is the title as it is (not '<title> · xufa'). `nav` is the link of the header the page is
+// scripts it loads (then `modules`, those that are ES modules); `fullTitle` is the title as it is (not '<title> · xufa'). `nav` is the link of the header the page is
 // (guide, playground, http, orm, auth, sequelize, or home: none of them; Packages without it), `og` its { title,
 // description } of Open Graph (for links shared), and `packages: false` leaves the list of the packages out of its
 // sidebar (the pages of the header). An item of the sidebar is an id of the page, or a page of the site
@@ -215,7 +215,10 @@ function tabsOf(meta) {
 function page(meta, body) {
   const tool = meta.layout === 'tool';
   const home = meta.layout === 'home';
-  const scripts = (meta.scripts || []).map((src) => `\n    <script src="${src}?v=0.1.0" defer></script>`).join('');
+  const scripts = [
+    ...(meta.scripts || []).map((src) => `\n    <script src="${src}?v=0.1.0" defer></script>`),
+    ...(meta.modules || []).map((src) => `\n    <script type="module" src="${src}?v=0.1.0"></script>`),
+  ].join('');
   const groups = meta.groups
     .map(
       ([group, items]) =>

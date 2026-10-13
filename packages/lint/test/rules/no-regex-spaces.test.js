@@ -3,14 +3,12 @@
  * @author Matt DuVall <http://www.mattduvall.com/>
  */
 
-"use strict";
-
 //------------------------------------------------------------------------------
 // Requirements
 //------------------------------------------------------------------------------
 
-const rule = require("../../lib/eslint/lib/rules/no-regex-spaces"),
-	RuleTester = require("../rule-tester");
+import * as rule from '../../lib/rules/no-regex-spaces.js';
+import RuleTester from '../rule-tester.js';
 
 //------------------------------------------------------------------------------
 // Tests

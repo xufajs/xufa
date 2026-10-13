@@ -3,15 +3,13 @@
  * @author Ilya Volodin
  */
 
-"use strict";
-
 //------------------------------------------------------------------------------
 // Requirements
 //------------------------------------------------------------------------------
 
-const rule = require("../../lib/eslint/lib/rules/no-global-assign"),
-	RuleTester = require("../rule-tester"),
-	globals = require("../../lib/globals");
+import * as rule from '../../lib/rules/no-global-assign.js';
+import RuleTester from '../rule-tester.js';
+import globals from '../../lib/globals.js';
 
 //------------------------------------------------------------------------------
 // Tests

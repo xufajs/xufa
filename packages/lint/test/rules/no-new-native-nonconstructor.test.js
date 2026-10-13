@@ -3,14 +3,12 @@
  * @author Sosuke Suzuki
  */
 
-"use strict";
-
 //------------------------------------------------------------------------------
 // Requirements
 //------------------------------------------------------------------------------
 
-const rule = require("../../lib/eslint/lib/rules/no-new-native-nonconstructor"),
-	RuleTester = require("../rule-tester");
+import * as rule from '../../lib/rules/no-new-native-nonconstructor.js';
+import RuleTester from '../rule-tester.js';
 
 //------------------------------------------------------------------------------
 // Tests

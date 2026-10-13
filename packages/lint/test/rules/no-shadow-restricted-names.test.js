@@ -3,14 +3,12 @@
  * @author Michael Ficarra
  */
 
-"use strict";
-
 //------------------------------------------------------------------------------
 // Requirements
 //------------------------------------------------------------------------------
 
-const rule = require("../../lib/eslint/lib/rules/no-shadow-restricted-names"),
-	RuleTester = require("../rule-tester");
+import * as rule from '../../lib/rules/no-shadow-restricted-names.js';
+import RuleTester from '../rule-tester.js';
 
 //------------------------------------------------------------------------------
 // Tests

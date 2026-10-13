@@ -3,14 +3,12 @@
  * @author Ilya Volodin
  */
 
-"use strict";
-
 //------------------------------------------------------------------------------
 // Requirements
 //------------------------------------------------------------------------------
 
-const rule = require("../../lib/eslint/lib/rules/no-delete-var"),
-	RuleTester = require("../rule-tester");
+import * as rule from '../../lib/rules/no-delete-var.js';
+import RuleTester from '../rule-tester.js';
 
 //------------------------------------------------------------------------------
 // Tests

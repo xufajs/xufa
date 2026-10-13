@@ -3,14 +3,13 @@
  * @author Toru Nagashima
  */
 
-"use strict";
-
 //------------------------------------------------------------------------------
 // Requirements
 //------------------------------------------------------------------------------
 
-const rule = require("../../lib/eslint/lib/rules/no-dupe-class-members");
-const RuleTester = require("../rule-tester");
+import * as rule from '../../lib/rules/no-dupe-class-members.js';
+import RuleTester from '../rule-tester.js';
+import * as unsupportedParser from '../unsupported-parser.js';
 
 //------------------------------------------------------------------------------
 // Tests
@@ -442,7 +441,7 @@ ruleTester.run("no-dupe-class-members", rule, {
 
 const ruleTesterTypeScript = new RuleTester({
 	languageOptions: {
-		parser: require("../unsupported-parser"),
+		parser: unsupportedParser,
 	},
 });
 

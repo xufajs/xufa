@@ -3,14 +3,12 @@
  * @author Milos Djermanovic
  */
 
-"use strict";
-
 //------------------------------------------------------------------------------
 // Requirements
 //------------------------------------------------------------------------------
 
-const rule = require("../../lib/eslint/lib/rules/no-useless-backreference");
-const RuleTester = require("../rule-tester");
+import * as rule from '../../lib/rules/no-useless-backreference.js';
+import RuleTester from '../rule-tester.js';
 
 //------------------------------------------------------------------------------
 // Tests

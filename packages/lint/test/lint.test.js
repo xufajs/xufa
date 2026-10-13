@@ -1,14 +1,12 @@
-'use strict';
-
 // @xufa/lint beyond the rules (whose tests are ESLint's, in test/rules): the parser's tree and tokens, globs, configs
 // and how they merge, comments that disable and configure, fixes, and the command line.
 
-const fs = require('node:fs');
-const os = require('node:os');
-const path = require('node:path');
-const { Linter, ConfigArray, parse, tokenize, configs, globals } = require('..');
-const { matches, ignored } = require('../lib/glob');
-const { main } = require('../lib/cli');
+import fs from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
+import { Linter, ConfigArray, parse, tokenize, configs, globals } from '../index.js';
+import { matches, ignored } from '../lib/glob.js';
+import { main } from '../lib/cli.js';
 
 function project(files) {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'xufa-lint-'));
@@ -160,7 +158,7 @@ describe('xufa-lint', () => {
   };
   const CONFIG = `module.exports = [
   { ignores: ['vendor/**'] },
-  require(${JSON.stringify(path.join(__dirname, '..'))}).configs.recommended,
+  require(${JSON.stringify(path.join(import.meta.dirname, '..'))}).configs.recommended,
 ];
 `;
 

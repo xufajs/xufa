@@ -1,5 +1,3 @@
-'use strict';
-
 // Glob patterns of configs, as ESLint's flat config reads them (minimatch's syntax, with dot files matched): ** for
 // any folders, * and ? within a name, {a,b} for either, [abc] for a character; a pattern that ends with / matches a
 // folder and what it has; ! makes an ignore pattern take back what one before it ignored.
@@ -102,4 +100,4 @@ function ignored(patterns, file) {
   return result;
 }
 
-module.exports = { matches, ignored, compile };
+export { matches, ignored, compile };

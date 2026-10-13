@@ -2,8 +2,6 @@
 // of it, Readable (flowing with 'data', or read() with 'readable'), Writable, Duplex, PassThrough, Transform,
 // finished(), pipeline() and addAbortSignal(). Functions, not classes: the modules call them on objects of their own
 // (Readable.call(this)). No backpressure: everything pushed is kept until it is read.
-'use strict';
-
 var EventEmitter = require('node:events');
 var util = require('node:util');
 

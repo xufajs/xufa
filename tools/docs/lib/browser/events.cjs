@@ -1,7 +1,5 @@
 // node:events in the browser bundle of @xufa/http (docs/xufa-http.js): EventEmitter, as a function (the modules call it
 // on objects of their own: EventEmitter.call(this)).
-'use strict';
-
 function EventEmitter() {
   this._events = Object.create(null);
 }

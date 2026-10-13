@@ -1,6 +1,6 @@
 // From typescript-estree 8.70.0 (src/convert.ts, BSD-2-Clause: see NOTICE.md), as @xufa/lint's code.
 // There's lots of funny stuff due to the typing of ts.Node
-import ts from '../typescript.cjs';
+import ts from '#typescript';
 import { checkSyntaxError } from './check-syntax-errors.js';
 import { getImportClausePhaseModifier } from './get-import-clause-phase-modifier.js';
 import { getDecorators, getModifiers } from './get-modifiers.js';

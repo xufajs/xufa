@@ -3,14 +3,12 @@
  * @author Jonathan Kingston
  */
 
-"use strict";
-
 //------------------------------------------------------------------------------
 // Requirements
 //------------------------------------------------------------------------------
 
-const rule = require("../../lib/eslint/lib/rules/no-irregular-whitespace"),
-	RuleTester = require("../rule-tester");
+import * as rule from '../../lib/rules/no-irregular-whitespace.js';
+import RuleTester from '../rule-tester.js';
 
 //------------------------------------------------------------------------------
 // Tests

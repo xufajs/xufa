@@ -1,11 +1,8 @@
 #!/usr/bin/env node
-'use strict';
+import { enableCompileCache } from 'node:module';
 
-// Compiled code is kept on disk between runs (TypeScript's parser is most of the start).
-require('node:module').enableCompileCache?.();
+// Compiled code is kept on disk between runs (TypeScript's parser is most of the start): before the rest loads.
+enableCompileCache?.();
 
-require('../lib/format/cli')
-  .main()
-  .then((code) => {
-    process.exitCode = code;
-  });
+const { main } = await import('../lib/format/cli.js');
+process.exitCode = await main();

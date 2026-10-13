@@ -1,5 +1,5 @@
 // From typescript-estree 8.70.0 (src/check-syntax-errors.ts, BSD-2-Clause: see NOTICE.md), as @xufa/lint's code.
-import ts from '../typescript.cjs';
+import ts from '#typescript';
 import { checkModifiers } from './check-modifiers.js';
 import { getImportClausePhaseModifier } from './get-import-clause-phase-modifier.js';
 import {

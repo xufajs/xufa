@@ -3,14 +3,13 @@
  *@author Jacob Moore
  */
 
-"use strict";
-
 //------------------------------------------------------------------------------
 // Requirements
 //------------------------------------------------------------------------------
 
-const rule = require("../../lib/eslint/lib/rules/no-loss-of-precision"),
-	RuleTester = require("../rule-tester");
+import * as rule from '../../lib/rules/no-loss-of-precision.js';
+import RuleTester from '../rule-tester.js';
+import * as unsupportedParser from '../unsupported-parser.js';
 
 //------------------------------------------------------------------------------
 // Tests
@@ -345,7 +344,7 @@ ruleTester.run("no-loss-of-precision", rule, {
 
 const ruleTesterTypeScript = new RuleTester({
 	languageOptions: {
-		parser: require("../unsupported-parser"),
+		parser: unsupportedParser,
 	},
 });
 

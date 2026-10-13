@@ -415,8 +415,6 @@ describe('the configuration', () => {
     const c = config();
     expect(Object.isFrozen(c) && Object.isFrozen(c.db) && Object.isFrozen(c.list[0])).toBe(true);
     expect(() => {
-      'use strict';
-
       c.name = 'other';
     }).toThrow(TypeError);
     expect(c.get('db.url')).toBe('u');

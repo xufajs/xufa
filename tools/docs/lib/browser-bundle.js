@@ -79,6 +79,9 @@ function filesOf(dir) {
     });
 }
 
+// A module without its "use strict": the bundle is strict, and so is every function of it.
+const unstrict = (code) => code.replace(/^((?:\s|\/\/[^\n]*|\/\*[\s\S]*?\*\/)*)(['"])use strict\2;?[ \t]*\n?/, '$1');
+
 // An ES module as CommonJS, for the bundle.
 function commonjsOf(id, text) {
   const source = text.replace(/\bimport\.meta\.url\b/g, JSON.stringify(id));
@@ -98,7 +101,7 @@ function modulesOf(name, modules) {
       const id = `${prefix}/${path.relative(dir, file).split(path.sep).join('/')}`;
       const text = fs.readFileSync(file, 'utf8').replace(/\r\n/g, '\n');
       if (file.endsWith('.json')) modules[id] = `module.exports = ${text.trim()};`;
-      else modules[id] = esm ? commonjsOf(id, text) : text;
+      else modules[id] = unstrict(esm ? commonjsOf(id, text) : text);
     }
   }
   modules[`${prefix}/package.json`] = `module.exports = ${JSON.stringify({ name: pkg.name, version: pkg.version })};`;
@@ -230,7 +233,7 @@ function xufaBundle() {
 // streams, the request and response of @xufa/inject, and no server (app.inject() calls the routes without one).
 const HTTP_PACKAGES = ['http', 'boot', 'errors', 'inject', 'logger', 'router', 'schema', 'serializer'];
 const BROWSER = path.join(import.meta.dirname, 'browser');
-// (CommonJS, .cjs: they are modules of the bundle, as they are written.)
+// (CommonJS, .cjs: they are modules of the bundle, as they are written; strict, as the whole bundle is.)
 const browserModule = (name) => fs.readFileSync(path.join(BROWSER, `${name}.cjs`), 'utf8').replace(/\r\n/g, '\n');
 
 const HTTP_SHIMS = {

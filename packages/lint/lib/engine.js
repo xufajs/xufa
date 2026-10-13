@@ -1,12 +1,10 @@
-'use strict';
-
 // Linting files: those of the given paths that the config lints (folders walked, ignored ones skipped), each with
 // its config; with fix, what rules fix is written back. The results are ESLint's: [{ filePath, messages, errorCount,
 // warningCount, fixableErrorCount, fixableWarningCount, output, source }].
 
-const fs = require('node:fs');
-const path = require('node:path');
-const { Linter } = require('./linter');
+import fs from 'node:fs';
+import path from 'node:path';
+import { Linter } from './linter.js';
 
 // The files to lint under the given paths (files given by name are linted when the config does not ignore them).
 function filesOf(paths, configs) {
@@ -91,16 +89,17 @@ function lintText(text, config, file, { fix = false } = {}) {
   return result;
 }
 
-/** Lints the files of `paths`; with fix, writes what is fixed. */
-function lintFiles(paths, configs, { fix = false } = {}) {
-  const results = [];
-  for (const file of filesOf(paths, configs)) {
-    const text = fs.readFileSync(file, 'utf8');
-    const result = lintText(text, configs.configFor(file), file, { fix });
-    if (fix && result.output !== undefined && result.output !== text) fs.writeFileSync(file, result.output);
-    results.push(result);
-  }
-  return results;
+/** Lints a file; with fix, writes what is fixed. */
+function lintFile(file, configs, { fix = false } = {}) {
+  const text = fs.readFileSync(file, 'utf8');
+  const result = lintText(text, configs.configFor(file), file, { fix });
+  if (fix && result.output !== undefined && result.output !== text) fs.writeFileSync(file, result.output);
+  return result;
 }
 
-module.exports = { lintFiles, lintText, filesOf, linterConfig };
+/** Lints the files of `paths`; with fix, writes what is fixed. */
+function lintFiles(paths, configs, { fix = false } = {}) {
+  return filesOf(paths, configs).map((file) => lintFile(file, configs, { fix }));
+}
+
+export { lintFiles, lintFile, lintText, filesOf, linterConfig };

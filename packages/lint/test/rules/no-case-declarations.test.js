@@ -3,14 +3,12 @@
  * @author Erik Arvidsson
  */
 
-"use strict";
-
 //------------------------------------------------------------------------------
 // Requirements
 //------------------------------------------------------------------------------
 
-const rule = require("../../lib/eslint/lib/rules/no-case-declarations"),
-	RuleTester = require("../rule-tester");
+import * as rule from '../../lib/rules/no-case-declarations.js';
+import RuleTester from '../rule-tester.js';
 
 //------------------------------------------------------------------------------
 // Tests

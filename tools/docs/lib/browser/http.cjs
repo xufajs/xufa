@@ -2,8 +2,6 @@
 // IncomingMessage and ServerResponse that @xufa/inject builds its requests and replies on (the response keeps its
 // headers as Node does, and writes the head Node would write into _header). There is no server: createServer() gives
 // one whose listen() throws, as app.inject() needs no socket.
-'use strict';
-
 var EventEmitter = require('node:events');
 var stream = require('node:stream');
 var util = require('node:util');

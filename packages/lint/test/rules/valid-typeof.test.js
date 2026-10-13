@@ -2,14 +2,13 @@
  * @fileoverview Ensures that the results of typeof are compared against a valid string
  * @author Ian Christian Myers
  */
-"use strict";
 
 //------------------------------------------------------------------------------
 // Requirements
 //------------------------------------------------------------------------------
 
-const rule = require("../../lib/eslint/lib/rules/valid-typeof"),
-	RuleTester = require("../rule-tester");
+import * as rule from '../../lib/rules/valid-typeof.js';
+import RuleTester from '../rule-tester.js';
 
 //------------------------------------------------------------------------------
 // Tests

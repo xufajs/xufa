@@ -1,7 +1,5 @@
 // node:util in the browser bundle of @xufa/http (docs/xufa-http.js): inherits, promisify, deprecate, format, inspect
 // and the checks of types the modules use.
-'use strict';
-
 function tag(value) {
   return Object.prototype.toString.call(value).slice(8, -1);
 }

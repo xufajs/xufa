@@ -1,7 +1,7 @@
-// TypeScript's parser for the formatter (lib/prettier/parse/typescript.cjs): what lib/prettier/parse uses of the
-// installed TypeScript (createSourceFile, forEachChild, SyntaxKind...) and what that needs, out of its 9 MB. The
-// formatter loads it instead of TypeScript: in about a third of the time, and without TypeScript installed (the
-// linter's parser is the project's TypeScript still).
+// TypeScript's parser for @xufa/lint (lib/typescript/typescript.cjs, imported as #typescript): what the linter's parser
+// (lib/parser.js) and the formatter's (lib/prettier/parse) use of the installed TypeScript (createSourceFile,
+// createScanner, forEachChild, SyntaxKind...) and what that needs, out of its 9 MB. Both load it instead of
+// TypeScript: in about a third of the time, and without TypeScript installed.
 //
 // typescript.js is one function whose statements declare everything (functions, vars, namespaces filled by the
 // statements after them); a statement is kept when what it declares is reached from what the formatter uses. Kept
@@ -10,30 +10,29 @@
 // methods would keep most of the services: completions, refactors...). The rest of what is not a declaration
 // (refactors registered, settings from environment variables) goes.
 //
-//   node scripts/build-typescript.mjs          writes lib/prettier/parse/typescript.cjs
+//   node scripts/build-typescript.mjs          writes lib/typescript/typescript.cjs
 //   node scripts/build-typescript.mjs --check  fails when it is not the build of the installed TypeScript
 import fs from 'node:fs';
 import path from 'node:path';
 import { createRequire } from 'node:module';
 
 const ROOT = path.join(import.meta.dirname, '..');
-const OUT = path.join(ROOT, 'lib/prettier/parse/typescript.cjs');
+const OUT = path.join(ROOT, 'lib/typescript/typescript.cjs');
 const require = createRequire(path.join(ROOT, 'package.json'));
 const ts = require('typescript');
 const source = require.resolve('typescript');
 const text = fs.readFileSync(source, 'utf8');
 
-// What the formatter uses of TypeScript: ts.name in the code (not the comments) of its parser's modules.
+// What the parsers use of TypeScript: ts.name in the code (not the comments) of the linter's and the formatter's.
 const parserDir = path.join(ROOT, 'lib/prettier/parse/typescript-estree');
+const parsers = [
+  path.join(ROOT, 'lib/parser.js'),
+  ...fs.readdirSync(parserDir).map((name) => path.join(parserDir, name)),
+];
 const used = new Set(['versionMajorMinor', 'version']);
-for (const name of fs.readdirSync(parserDir)) {
-  if (!name.endsWith('.js')) continue;
-  const module = ts.createSourceFile(
-    name,
-    fs.readFileSync(path.join(parserDir, name), 'utf8'),
-    ts.ScriptTarget.Latest,
-    true
-  );
+for (const file of parsers) {
+  if (!file.endsWith('.js')) continue;
+  const module = ts.createSourceFile(path.basename(file), fs.readFileSync(file, 'utf8'), ts.ScriptTarget.Latest, true);
   const visit = (node) => {
     if (ts.isPropertyAccessExpression(node) && ts.isIdentifier(node.expression) && node.expression.text === 'ts') {
       used.add(node.name.text);
@@ -222,14 +221,14 @@ module.exports = { ${exported.join(', ')} };
 if (process.argv.includes('--check')) {
   if (!fs.existsSync(OUT) || fs.readFileSync(OUT, 'utf8') !== out) {
     console.error(
-      'lib/prettier/parse/typescript.cjs is not the build of the installed TypeScript: node scripts/build-typescript.mjs'
+      'lib/typescript/typescript.cjs is not the build of the installed TypeScript: node scripts/build-typescript.mjs'
     );
     process.exit(1);
   }
-  console.log('lib/prettier/parse/typescript.cjs is up to date');
+  console.log('lib/typescript/typescript.cjs is up to date');
 } else {
   fs.writeFileSync(OUT, out);
   console.log(
-    `lib/prettier/parse/typescript.cjs: TypeScript ${ts.version}, ${kept.size} of ${statements.length} statements, ${(out.length / 1024).toFixed(0)} KB (of ${(text.length / 1024).toFixed(0)})`
+    `lib/typescript/typescript.cjs: TypeScript ${ts.version}, ${kept.size} of ${statements.length} statements, ${(out.length / 1024).toFixed(0)} KB (of ${(text.length / 1024).toFixed(0)})`
   );
 }
