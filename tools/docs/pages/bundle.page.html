@@ -1,0 +1,153 @@
+<!--{
+  "file": "bundle.html",
+  "name": "@xufa/bundle",
+  "title": "@xufa/bundle",
+  "description": "@xufa/bundle: ES modules, JSX, TypeScript and CommonJS packages as one script for browsers, with their stylesheets, tree shaking and minifying, on TypeScript's transpiler.",
+  "groups": [
+    ["Using it", [["start", "Quick start"], ["options", "Options"], ["resolution", "Resolution"], ["define", "define"]]],
+    ["More", [["shaking", "Tree shaking"], ["css", "Stylesheets"], ["minify", "Minifying"], ["node", "Modules of Node.js"], ["transform", "transform()"]]],
+    ["About it", [["from-esbuild", "Coming from esbuild"], ["how", "How it works"], ["typescript", "TypeScript"]]]
+  ]
+}-->
+        <h1>@xufa/bundle</h1>
+        <p class="intro">
+          ES modules, JSX, TypeScript and the CommonJS packages they import, as one script for browsers, with their
+          stylesheets. Syntax goes through TypeScript's transpiler, the one dependency (a peer: your project's);
+          resolution, tree shaking, minifying and the registry of modules are its own. The page of
+          <a href="admin.html">@xufa/admin</a>, with React and React Flow, is built with it, and so are the scripts of
+          these docs' playgrounds.
+        </p>
+
+        <h2 id="start">Quick start</h2>
+        <pre><code class="language-sh">npm install --save-dev @xufa/bundle typescript</code></pre>
+        <pre><code class="language-js">import fs from 'node:fs';
+import { bundle } from '@xufa/bundle';
+
+const { js, css } = bundle('client/src/main.jsx', {
+  jsx: 'automatic',
+  define: { 'process.env.NODE_ENV': '"production"' },
+  minify: true,
+});
+fs.writeFileSync('dist/app.js', js);
+fs.writeFileSync('dist/app.css', css);</code></pre>
+        <p>
+          <code>bundle()</code> is synchronous and gives <code>{ js, css, inputs, legal }</code>: the script, the
+          stylesheet, the files in them, and their legal comments.
+        </p>
+
+        <h2 id="options">Options</h2>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Option</th><th>What it is</th></tr></thead>
+            <tbody>
+              <tr><td><code>jsx</code></td><td><code>'automatic'</code> (react/jsx-runtime, the default) or <code>'classic'</code> (React.createElement).</td></tr>
+              <tr><td><code>jsxImportSource</code></td><td>Where the automatic runtime comes from (<code>react</code>).</td></tr>
+              <tr><td><code>define</code></td><td>Values put in for names, as JSON or an identifier.</td></tr>
+              <tr><td><code>browser</code></td><td>The <code>browser</code> condition and field (<code>true</code>).</td></tr>
+              <tr><td><code>treeShaking</code></td><td>What ES modules do not use of each other left out (<code>true</code>).</td></tr>
+              <tr><td><code>minify</code>, <code>mangle</code></td><td>Comments and white space out (<code>false</code>); with it, local names made short (<code>true</code>).</td></tr>
+              <tr><td><code>globalName</code></td><td>The exports of the entry as a global variable.</td></tr>
+              <tr><td><code>shims</code>, <code>external</code></td><td>Modules given as CommonJS source; names left to a <code>require()</code> of the page.</td></tr>
+              <tr><td><code>banner</code>, <code>legalComments</code></td><td>Text before the script; legal comments at the end (<code>'eof'</code>) or out (<code>'none'</code>).</td></tr>
+              <tr><td><code>target</code></td><td>The syntax kept (<code>'es2022'</code>).</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h2 id="resolution">Resolution</h2>
+        <p>
+          Relative files with their extensions (<code>.js</code>, <code>.jsx</code>, <code>.mjs</code>,
+          <code>.cjs</code>, <code>.ts</code>, <code>.tsx</code>, <code>.json</code>, <code>.css</code>), index files,
+          and <code>./a.js</code> written for <code>./a.ts</code>. Packages by <code>exports</code> (patterns too) with
+          the conditions <code>browser</code>, <code>import</code> or <code>require</code> (as the module asks) and
+          <code>module</code>; without <code>exports</code>, by the fields <code>browser</code>, <code>module</code> and
+          <code>main</code>. A package's <code>browser</code> map replaces its files and modules, and
+          <code>false</code> makes one empty. <code>resolve(request, from)</code> gives where an import goes.
+        </p>
+
+        <h2 id="define">define</h2>
+        <pre><code class="language-js">// node_modules/react/index.js, with define: { 'process.env.NODE_ENV': '"production"' }
+if (process.env.NODE_ENV === 'production') {
+  module.exports = require('./cjs/react.production.js'); // the one bundled
+} else {
+  module.exports = require('./cjs/react.development.js'); // left out, and what it requires
+}</code></pre>
+        <p>
+          The values of <code>define</code> are put in, and the branches they decide are left out: <code>if</code>,
+          <code>?:</code>, <code>&amp;&amp;</code> and <code>||</code> whose conditions compare literals.
+          <code>import.meta</code> is an empty object, as esbuild makes it in CommonJS.
+        </p>
+
+        <h2 id="shaking">Tree shaking</h2>
+        <p>
+          The top-level statements of an ES module that nothing needs are left out: declarations of functions,
+          classes and values made without running code (literals, functions, objects and arrays of them,
+          <code>/* @__PURE__ */</code> calls) that no kept statement uses and no importer imports. Statements with side
+          effects always stay. Modules nothing uses are not bundled when their package says
+          <code>"sideEffects": false</code> (or does not list them), or when they only declare. What modules use of
+          each other grows until it stops changing, through <code>export ... from</code> and <code>export *</code>.
+          <code>treeShaking: false</code> keeps it all.
+        </p>
+
+        <h2 id="css">Stylesheets</h2>
+        <p>
+          <code>import './styles.css'</code> adds the stylesheet (with what it <code>@import</code>s, each once) to
+          <code>css</code>, in the order the modules run: a package's styles before yours when it is imported first.
+        </p>
+
+        <h2 id="minify">Minifying</h2>
+        <p>
+          The code is parsed again and written token by token: comments and white space out, a space only where two
+          tokens would join, and a semicolon wherever a statement relied on a line break, so nothing depends on
+          automatic semicolon insertion. <code>true</code> and <code>false</code> become <code>!0</code> and
+          <code>!1</code>, and trailing commas go. Local names are made short by their scopes: a name no outer name used
+          inside the scope has, nor any global; nothing is renamed where a direct <code>eval</code> or
+          <code>with</code> could reach it. <code>/*! ... */</code> and <code>@license</code> comments are kept at the
+          end.
+        </p>
+        <p>
+          The admin's page (React 19, React Flow and the admin) is 677 KB, 165 KB with brotli; esbuild makes it 603 KB
+          and 159 KB. Every file of xufa's packages minifies to code V8 parses, and the suites of @xufa/expression,
+          @xufa/yaml, @xufa/router and @xufa/marshal pass on their minified code.
+        </p>
+
+        <h2 id="node">Modules of Node.js</h2>
+        <pre><code class="language-js">bundle('src/main.js', {
+  shims: { 'node:util': "module.exports = { inspect: (value) =&gt; JSON.stringify(value) };" },
+});</code></pre>
+        <p>A module of Node.js without a shim is an error that says which one, and from where.</p>
+
+        <h2 id="transform">transform()</h2>
+        <pre><code class="language-js">import { transform } from '@xufa/bundle';
+
+const { code, imports, requires, legal } = transform(source, { file: 'view.tsx' });</code></pre>
+        <p>
+          One module as CommonJS: ES modules, JSX and TypeScript; CommonJS stays as written (not made strict). A
+          module's own <code>require</code>, <code>module</code> or <code>exports</code> at its top level is renamed, so
+          it does not clash with those of CommonJS. A syntax error says the file, line and column.
+        </p>
+
+        <h2 id="from-esbuild">Coming from esbuild</h2>
+        <p>
+          <code>esbuild.build({ entryPoints, bundle: true, format: 'iife', jsx: 'automatic', define, minify })</code>
+          becomes <code>bundle(entry, { jsx: 'automatic', define, minify: true })</code>, and
+          <code>esbuild.transformSync(code, { format: 'cjs' })</code> becomes <code>transform(code)</code>. Not there:
+          code splitting and ES module output, source maps, watch and serve, plugins, CSS modules, and syntax lowering
+          below ES2020. It is slower (about 2 seconds for the admin, where esbuild takes a fraction of one).
+        </p>
+
+        <h2 id="how">How it works</h2>
+        <p>
+          Every module reachable from the entry is read and made CommonJS by <code>ts.transpileModule</code>, with a
+          transformer that puts in <code>define</code> and folds the branches it decides, and another that collects
+          what each module requires. ES modules are parsed once more for tree shaking: what each top-level statement
+          declares and uses (from the scopes of the module) and whether it is pure. The modules that stay are
+          functions in a list, required by number on first use, with TypeScript's helpers once for all.
+        </p>
+
+        <h2 id="typescript">TypeScript</h2>
+        <p>
+          Declarations in the package: <code>bundle</code>, <code>transform</code>, <code>minifyJs</code>,
+          <code>minifyCss</code>, <code>resolve</code>, and <code>BundleOptions</code>, <code>BundleResult</code>,
+          <code>TransformOptions</code>, <code>TransformResult</code>.
+        </p>

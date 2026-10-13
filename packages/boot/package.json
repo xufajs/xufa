@@ -18,7 +18,7 @@
     "index.d.cts"
   ],
   "scripts": {
-    "test": "vyntra",
+    "test": "xufa-test",
     "test:types": "tsc --project ./test/types/tsconfig.json"
   },
   "keywords": [
@@ -46,7 +46,7 @@
     "@xufa/errors": "workspace:*"
   },
   "devDependencies": {
-    "vyntra": "^0.7.0"
+    "@xufa/test": "workspace:^"
   },
   "publishConfig": {
     "access": "public"

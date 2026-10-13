@@ -79,6 +79,9 @@
           <li><a href="../discovery/index.html">@xufa/discovery</a></li>
           <li><a href="../netcache/index.html">@xufa/netcache</a></li>
           <li><a href="index.html" aria-current="page">@xufa/faults</a></li>
+          <li><a href="../browser/index.html">@xufa/browser</a></li>
+          <li><a href="../bundle/index.html">@xufa/bundle</a></li>
+          <li><a href="../lint/index.html">@xufa/lint</a></li>
           <li><a href="../marshal/index.html">@xufa/marshal</a></li>
           <li><a href="../yaml/index.html">@xufa/yaml</a></li>
           <li><a href="../jwt/index.html">@xufa/jwt</a></li>
@@ -140,7 +143,7 @@ const hung = netcache.faults.hang({ keys: 'session:' }); // until hung.release()
         </ul>
 
         <h2 id="tests">In tests</h2>
-        <pre><code class="language-js">// In the setup files of the runner (setupFiles of Jest, Vitest or vyntra; --require of Mocha):
+        <pre><code class="language-js">// In the setup files of the runner (setupFiles of Jest, Vitest or @xufa/test; --require of Mocha):
 import 'xufa/faults/register'; // or '@xufa/faults/register'
 
 // Or in a test file:

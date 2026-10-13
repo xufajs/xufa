@@ -97,12 +97,32 @@ describe('many-to-many fields', () => {
     const odes = await Book.objects.get({ title: 'Odes' });
     expect((await odes.genre.all()).map(String)).toEqual(['Poetry', 'Drama']);
     // An update sets them; one without them leaves them.
-    await app.inject({ method: 'PATCH', url: `/admin/api/Book/${book.pk}`, headers: WRITE, payload: { genre: [drama.pk] } });
-    await app.inject({ method: 'PATCH', url: `/admin/api/Book/${book.pk}`, headers: WRITE, payload: { title: 'Earthsea I' } });
+    await app.inject({
+      method: 'PATCH',
+      url: `/admin/api/Book/${book.pk}`,
+      headers: WRITE,
+      payload: { genre: [drama.pk] },
+    });
+    await app.inject({
+      method: 'PATCH',
+      url: `/admin/api/Book/${book.pk}`,
+      headers: WRITE,
+      payload: { title: 'Earthsea I' },
+    });
     expect((await book.genre.all()).map(String)).toEqual(['Drama']);
-    const empty = await app.inject({ method: 'PATCH', url: `/admin/api/Book/${book.pk}`, headers: WRITE, payload: { genre: [] } });
+    const empty = await app.inject({
+      method: 'PATCH',
+      url: `/admin/api/Book/${book.pk}`,
+      headers: WRITE,
+      payload: { genre: [] },
+    });
     expect(empty.statusCode).toBe(400);
-    const bad = await app.inject({ method: 'PATCH', url: `/admin/api/Book/${book.pk}`, headers: WRITE, payload: { genre: ['x'] } });
+    const bad = await app.inject({
+      method: 'PATCH',
+      url: `/admin/api/Book/${book.pk}`,
+      headers: WRITE,
+      payload: { genre: ['x'] },
+    });
     expect(bad.statusCode).toBe(400);
     // The choices of their models.
     expect((await app.inject('/admin/api/Genre/choices')).json().map((item) => item.label)).toEqual([
@@ -212,7 +232,14 @@ describe('inlines edited in rows (TabularInline)', () => {
     const { app } = await setUpInline({ relation: 'bookSet', fields: ['title'], extra: 2 });
     const meta = (await app.inject('/admin/api/models')).json();
     expect(meta.models.find((item) => item.name === 'Author').related).toEqual([
-      expect.objectContaining({ name: 'bookSet', model: 'Book', field: 'author', editable: true, fields: ['title'], extra: 2 }),
+      expect.objectContaining({
+        name: 'bookSet',
+        model: 'Book',
+        field: 'author',
+        editable: true,
+        fields: ['title'],
+        extra: 2,
+      }),
     ]);
     await expect(setUpInline({ relation: 'bookSet', fields: ['author'] })).rejects.toThrow('cannot edit author');
     await expect(setUpInline({ relation: 'nope' })).rejects.toThrow('has no relation nope');
@@ -264,8 +291,15 @@ describe('a new object with its inlines (the add page of Django with TabularInli
     });
     await app.ready();
     const create = (payload) => app.inject({ method: 'POST', url: '/admin/api/Author', headers: WRITE, payload });
-    const bad = await create({ lastName: 'Le Guin', inlines: { bookSet: [{ values: { title: 'Earthsea' } }, { values: { title: null } }] } });
-    expect([bad.statusCode, Object.keys(bad.json().inlines.bookSet), bad.json().errors]).toEqual([400, ['1'], { firstName: expect.any(Array) }]);
+    const bad = await create({
+      lastName: 'Le Guin',
+      inlines: { bookSet: [{ values: { title: 'Earthsea' } }, { values: { title: null } }] },
+    });
+    expect([bad.statusCode, Object.keys(bad.json().inlines.bookSet), bad.json().errors]).toEqual([
+      400,
+      ['1'],
+      { firstName: expect.any(Array) },
+    ]);
     expect([await Author.objects.count(), await Book.objects.count()]).toEqual([0, 0]);
     const good = await create({
       lastName: 'Le Guin',
@@ -297,8 +331,8 @@ describe('list_editable', () => {
     expect(() => describeModel(Item, { list: ['name', 'notes'], editable: ['notes'] })).toThrow(
       'edits booleans and choices in its list, not notes'
     );
-    expect(() =>
-      describeModel(Item, { list: ['name', 'done'], editable: ['done'], fields: ['name'] })
-    ).toThrow('its form has not that field');
+    expect(() => describeModel(Item, { list: ['name', 'done'], editable: ['done'], fields: ['name'] })).toThrow(
+      'its form has not that field'
+    );
   });
 });

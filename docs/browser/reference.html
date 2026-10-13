@@ -1,0 +1,519 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>@xufa/browser: Reference · xufa</title>
+    <meta
+      name="description"
+      content="The reference of @xufa/browser: every function, class, interface and type it declares, made from its TypeScript declarations."
+    />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%23d9502b'/%3E%3Ctext x='16' y='22.5' font-family='monospace' font-size='18' font-weight='700' fill='white' text-anchor='middle'%3Ex%3C/text%3E%3C/svg%3E"
+    />
+    <link rel="stylesheet" href="../style.css?v=0.1.0" />
+    <script src="../main.js?v=0.1.0"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js" defer></script>
+  </head>
+  <body>
+    <header class="header">
+      <div class="header-inner">
+        <a class="logo" href="../index.html"><span class="logo-mark">x</span>xufa</a>
+        <nav class="nav">
+          <a href="../guide.html">Guide</a>
+          <a href="../playground.html">Playground</a>
+          <a href="../http/index.html">HTTP</a>
+          <a href="../orm/index.html">ORM</a>
+          <a class="hide-small" href="../auth/index.html">Auth</a>
+          <a class="hide-small" href="../sequelize/index.html">Sequelize</a>
+          <a class="hide-small" href="../packages.html" aria-current="page">Packages</a>
+          <a class="hide-small" href="../benchmarks.html">Benchmarks</a>
+          <a href="https://github.com/xufajs/xufa">GitHub</a>
+          <button class="theme-toggle" type="button" aria-label="Switch between light and dark theme">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+              <path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z" />
+            </svg>
+          </button>
+        </nav>
+      </div>
+    </header>
+
+    <div class="docs">
+      <button class="menu-toggle" type="button" aria-expanded="false">☰ Contents</button>
+      <aside class="sidebar">
+        <h4>Reference</h4>
+        <ul>
+          <li><a href="#functions">Functions (2)</a></li>
+          <li><a href="#classes">Classes (12)</a></li>
+          <li><a href="#constants">Constants (1)</a></li>
+          <li><a href="#interfaces">Interfaces (12)</a></li>
+          <li><a href="#types">Types (1)</a></li>
+        </ul>
+        <h4>Packages</h4>
+        <ul>
+          <li><a href="../websocket/index.html">@xufa/websocket</a></li>
+          <li><a href="../admin/index.html">@xufa/admin</a></li>
+          <li><a href="../session/index.html">@xufa/session</a></li>
+          <li><a href="../forms/index.html">@xufa/forms</a></li>
+          <li><a href="../views/index.html">@xufa/views</a></li>
+          <li><a href="../mail/index.html">@xufa/mail</a></li>
+          <li><a href="../i18n/index.html">@xufa/i18n</a></li>
+          <li><a href="../openapi/index.html">@xufa/openapi</a></li>
+          <li><a href="../client/index.html">@xufa/client</a></li>
+          <li><a href="../schema/index.html">@xufa/schema</a></li>
+          <li><a href="../pg/index.html">@xufa/pg</a></li>
+          <li><a href="../mongo/index.html">@xufa/mongo</a></li>
+          <li><a href="../expression/index.html">@xufa/expression</a></li>
+          <li><a href="../template/index.html">@xufa/template</a></li>
+          <li><a href="../cluster/index.html">@xufa/cluster</a></li>
+          <li><a href="../scheduler/index.html">@xufa/scheduler</a></li>
+          <li><a href="../queue/index.html">@xufa/queue</a></li>
+          <li><a href="../config/index.html">@xufa/config</a></li>
+          <li><a href="../discovery/index.html">@xufa/discovery</a></li>
+          <li><a href="../netcache/index.html">@xufa/netcache</a></li>
+          <li><a href="../faults/index.html">@xufa/faults</a></li>
+          <li><a href="index.html" aria-current="page">@xufa/browser</a></li>
+          <li><a href="../bundle/index.html">@xufa/bundle</a></li>
+          <li><a href="../lint/index.html">@xufa/lint</a></li>
+          <li><a href="../marshal/index.html">@xufa/marshal</a></li>
+          <li><a href="../yaml/index.html">@xufa/yaml</a></li>
+          <li><a href="../jwt/index.html">@xufa/jwt</a></li>
+          <li><a href="../logger/index.html">@xufa/logger</a></li>
+          <li><a href="../router/index.html">@xufa/router</a></li>
+          <li><a href="../serializer/index.html">@xufa/serializer</a></li>
+          <li><a href="../inject/index.html">@xufa/inject</a></li>
+          <li><a href="../boot/index.html">@xufa/boot</a></li>
+          <li><a href="../errors/index.html">@xufa/errors</a></li>
+          <li><a href="../packages.html">All the packages</a></li>
+        </ul>
+      </aside>
+
+      <article class="content">
+        <nav class="package-tabs" aria-label="@xufa/browser">
+          <a href="index.html">Overview</a>
+          <a href="reference.html" aria-current="page">Reference</a>
+        </nav>
+        <h1>Reference</h1>
+        <p class="intro">
+          Chrome and Edge driven through the DevTools Protocol for tests of pages, with the API of Playwright for what it has, and no dependencies. Every declaration of its TypeScript declarations
+          (<code>packages/browser/index.d.ts</code> or <code>index.d.cts</code>), as they are written, with their comments: made from them each time
+          the docs are built. How to use them is in <a href="index.html">the overview</a>.
+        </p>
+
+        <h2 id="functions">Functions</h2>
+        <p class="ref-index"><a href="#ref-launch"><code>launch</code></a>, <a href="#ref-findBrowser"><code>findBrowser</code></a></p>
+
+        <h3 id="ref-launch"><code>launch</code></h3>
+        <pre><code class="language-ts">export declare function launch(options?: LaunchOptions): Promise&lt;Browser&gt;;</code></pre>
+        <p>Starts Chrome or Edge in a profile of its own (removed when it closes).</p>
+
+        <h3 id="ref-findBrowser"><code>findBrowser</code></h3>
+        <pre><code class="language-ts">export declare function findBrowser(): string | null;</code></pre>
+        <p>The Chrome (or Chromium, or Edge) of this machine: CHROME, else where they install themselves; null when none.</p>
+
+        <h2 id="classes">Classes</h2>
+        <p class="ref-index"><a href="#ref-TimeoutError"><code>TimeoutError</code></a>, <a href="#ref-TargetClosedError"><code>TargetClosedError</code></a>, <a href="#ref-ProtocolError"><code>ProtocolError</code></a>, <a href="#ref-ConsoleMessage"><code>ConsoleMessage</code></a>, <a href="#ref-Dialog"><code>Dialog</code></a>, <a href="#ref-Request"><code>Request</code></a>, <a href="#ref-Response"><code>Response</code></a>, <a href="#ref-Locator"><code>Locator</code></a>, <a href="#ref-ElementHandle"><code>ElementHandle</code></a>, <a href="#ref-Page"><code>Page</code></a>, <a href="#ref-BrowserContext"><code>BrowserContext</code></a>, <a href="#ref-Browser"><code>Browser</code></a></p>
+
+        <h3 id="ref-TimeoutError"><code>TimeoutError</code></h3>
+        <pre><code class="language-ts">export declare class TimeoutError extends Error { ... }</code></pre>
+
+        <h3 id="ref-TargetClosedError"><code>TargetClosedError</code></h3>
+        <pre><code class="language-ts">export declare class TargetClosedError extends Error { ... }</code></pre>
+
+        <h3 id="ref-ProtocolError"><code>ProtocolError</code></h3>
+        <pre><code class="language-ts">export declare class ProtocolError extends Error { ... }</code></pre>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>code</code></td><td><code>number</code></td><td></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-ConsoleMessage"><code>ConsoleMessage</code></h3>
+        <pre><code class="language-ts">export declare class ConsoleMessage { ... }</code></pre>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>type()</code></td><td><code>string</code></td><td><p>'log', 'debug', 'info', 'error', 'warning'...</p></td></tr>
+                <tr><td><code>text()</code></td><td><code>string</code></td><td></td></tr>
+                <tr><td><code>location()</code></td><td><code>{ url?: string; lineNumber?: number; columnNumber?: number }</code></td><td></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-Dialog"><code>Dialog</code></h3>
+        <pre><code class="language-ts">export declare class Dialog { ... }</code></pre>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>type()</code></td><td><code>'alert' | 'confirm' | 'prompt' | 'beforeunload'</code></td><td></td></tr>
+                <tr><td><code>message()</code></td><td><code>string</code></td><td></td></tr>
+                <tr><td><code>defaultValue()</code></td><td><code>string</code></td><td></td></tr>
+                <tr><td><code>accept(promptText?: string)</code></td><td><code>Promise&lt;void&gt;</code></td><td></td></tr>
+                <tr><td><code>dismiss()</code></td><td><code>Promise&lt;void&gt;</code></td><td></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-Request"><code>Request</code></h3>
+        <pre><code class="language-ts">export declare class Request { ... }</code></pre>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>url()</code></td><td><code>string</code></td><td></td></tr>
+                <tr><td><code>method()</code></td><td><code>string</code></td><td></td></tr>
+                <tr><td><code>headers()</code></td><td><code>Record&lt;string, string&gt;</code></td><td></td></tr>
+                <tr><td><code>postData()</code></td><td><code>string | null</code></td><td></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-Response"><code>Response</code></h3>
+        <pre><code class="language-ts">export declare class Response { ... }</code></pre>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>url()</code></td><td><code>string</code></td><td></td></tr>
+                <tr><td><code>status()</code></td><td><code>number</code></td><td></td></tr>
+                <tr><td><code>ok()</code></td><td><code>boolean</code></td><td></td></tr>
+                <tr><td><code>headers()</code></td><td><code>Record&lt;string, string&gt;</code></td><td></td></tr>
+                <tr><td><code>request()</code></td><td><code><a href="#ref-Request">Request</a> | null</code></td><td></td></tr>
+                <tr><td><code>body()</code></td><td><code>Promise&lt;Buffer&gt;</code></td><td><p>Once the request has finished loading.</p></td></tr>
+                <tr><td><code>text()</code></td><td><code>Promise&lt;string&gt;</code></td><td></td></tr>
+                <tr><td><code>json()</code></td><td><code>Promise&lt;any&gt;</code></td><td></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-Locator"><code>Locator</code></h3>
+        <pre><code class="language-ts">export declare class Locator { ... }</code></pre>
+        <p>Elements found again by their selectors each time; actions on them wait for one, and fail on more (strict).</p>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>locator(selector: string, options?: LocatorOptions)</code></td><td><code><a href="#ref-Locator">Locator</a></code></td><td></td></tr>
+                <tr><td><code>filter(options: LocatorOptions)</code></td><td><code><a href="#ref-Locator">Locator</a></code></td><td></td></tr>
+                <tr><td><code>nth(index: number)</code></td><td><code><a href="#ref-Locator">Locator</a></code></td><td></td></tr>
+                <tr><td><code>first()</code></td><td><code><a href="#ref-Locator">Locator</a></code></td><td></td></tr>
+                <tr><td><code>last()</code></td><td><code><a href="#ref-Locator">Locator</a></code></td><td></td></tr>
+                <tr><td><code>count()</code></td><td><code>Promise&lt;number&gt;</code></td><td></td></tr>
+                <tr><td><code>all()</code></td><td><code>Promise&lt;<a href="#ref-Locator">Locator</a>[]&gt;</code></td><td></td></tr>
+                <tr><td><code>click(options?: ClickOptions)</code></td><td><code>Promise&lt;void&gt;</code></td><td></td></tr>
+                <tr><td><code>dblclick(options?: ClickOptions)</code></td><td><code>Promise&lt;void&gt;</code></td><td></td></tr>
+                <tr><td><code>fill(value: string, options?: TimeoutOptions)</code></td><td><code>Promise&lt;void&gt;</code></td><td></td></tr>
+                <tr><td><code>press(key: string, options?: TimeoutOptions &amp; { delay?: number })</code></td><td><code>Promise&lt;void&gt;</code></td><td></td></tr>
+                <tr><td><code>check(options?: ClickOptions)</code></td><td><code>Promise&lt;void&gt;</code></td><td></td></tr>
+                <tr><td><code>uncheck(options?: ClickOptions)</code></td><td><code>Promise&lt;void&gt;</code></td><td></td></tr>
+                <tr><td><code>selectOption(values: SelectOptionValue | SelectOptionValue[], options?: TimeoutOptions)</code></td><td><code>Promise&lt;string[]&gt;</code></td><td></td></tr>
+                <tr><td><code>textContent(options?: TimeoutOptions)</code></td><td><code>Promise&lt;string | null&gt;</code></td><td></td></tr>
+                <tr><td><code>innerText(options?: TimeoutOptions)</code></td><td><code>Promise&lt;string&gt;</code></td><td></td></tr>
+                <tr><td><code>getAttribute(name: string, options?: TimeoutOptions)</code></td><td><code>Promise&lt;string | null&gt;</code></td><td></td></tr>
+                <tr><td><code>inputValue(options?: TimeoutOptions)</code></td><td><code>Promise&lt;string&gt;</code></td><td></td></tr>
+                <tr><td><code>isChecked(options?: TimeoutOptions)</code></td><td><code>Promise&lt;boolean&gt;</code></td><td></td></tr>
+                <tr><td><code>boundingBox(options?: TimeoutOptions)</code></td><td><code>Promise&lt;<a href="#ref-Box">Box</a> | null&gt;</code></td><td><p>null when it is not visible.</p></td></tr>
+                <tr><td><code>isVisible()</code></td><td><code>Promise&lt;boolean&gt;</code></td><td></td></tr>
+                <tr><td><code>isHidden()</code></td><td><code>Promise&lt;boolean&gt;</code></td><td></td></tr>
+                <tr><td><code>waitFor(options?: WaitForSelectorOptions)</code></td><td><code>Promise&lt;void&gt;</code></td><td></td></tr>
+                <tr><td><code>hover(options?: ClickOptions)</code></td><td><code>Promise&lt;void&gt;</code></td><td></td></tr>
+                <tr><td><code>screenshot(options?: ScreenshotOptions)</code></td><td><code>Promise&lt;Buffer&gt;</code></td><td></td></tr>
+                <tr><td><code>evaluate&lt;R, A = undefined&gt;(fn: (element: Element, arg: A) =&gt; R | Promise&lt;R&gt;, arg?: A)</code></td><td><code>Promise&lt;R&gt;</code></td><td></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-ElementHandle"><code>ElementHandle</code></h3>
+        <pre><code class="language-ts">export declare class ElementHandle extends Locator { ... }</code></pre>
+        <p>An element of $ and waitForSelector: found again by its selector and index.</p>
+
+        <h3 id="ref-Page"><code>Page</code></h3>
+        <pre><code class="language-ts">export declare class Page { ... }</code></pre>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>keyboard</code></td><td><code><a href="#ref-Keyboard">Keyboard</a></code></td><td></td></tr>
+                <tr><td><code>mouse</code></td><td><code><a href="#ref-Mouse">Mouse</a></code></td><td></td></tr>
+                <tr><td><code>on&lt;E extends keyof PageEvents&gt;(event: E, listener: PageEvents[E])</code></td><td><code>this</code></td><td></td></tr>
+                <tr><td><code>once&lt;E extends keyof PageEvents&gt;(event: E, listener: PageEvents[E])</code></td><td><code>this</code></td><td></td></tr>
+                <tr><td><code>off&lt;E extends keyof PageEvents&gt;(event: E, listener: PageEvents[E])</code></td><td><code>this</code></td><td></td></tr>
+                <tr><td><code>context()</code></td><td><code><a href="#ref-BrowserContext">BrowserContext</a></code></td><td></td></tr>
+                <tr><td><code>url()</code></td><td><code>string</code></td><td></td></tr>
+                <tr><td><code>isClosed()</code></td><td><code>boolean</code></td><td></td></tr>
+                <tr><td><code>setDefaultTimeout(timeout: number)</code></td><td><code>void</code></td><td></td></tr>
+                <tr><td><code>goto(url: string, options?: NavigationOptions)</code></td><td><code>Promise&lt;<a href="#ref-Response">Response</a> | null&gt;</code></td><td><p>The response of its document; null in the same document (a new #hash) or for a file.</p></td></tr>
+                <tr><td><code>reload(options?: NavigationOptions)</code></td><td><code>Promise&lt;<a href="#ref-Response">Response</a> | null&gt;</code></td><td></td></tr>
+                <tr><td><code>title()</code></td><td><code>Promise&lt;string&gt;</code></td><td></td></tr>
+                <tr><td><code>content()</code></td><td><code>Promise&lt;string&gt;</code></td><td></td></tr>
+                <tr><td><code>setContent(html: string, options?: NavigationOptions)</code></td><td><code>Promise&lt;void&gt;</code></td><td></td></tr>
+                <tr><td><code>setViewportSize(size: { width: number; height: number })</code></td><td><code>Promise&lt;void&gt;</code></td><td></td></tr>
+                <tr><td><code>close()</code></td><td><code>Promise&lt;void&gt;</code></td><td></td></tr>
+                <tr><td><code>evaluate&lt;R, A = undefined&gt;(fn: (arg: A) =&gt; R | Promise&lt;R&gt;, arg?: A)</code></td><td><code>Promise&lt;R&gt;</code></td><td></td></tr>
+                <tr><td><code>waitForTimeout(ms: number)</code></td><td><code>Promise&lt;void&gt;</code></td><td></td></tr>
+                <tr><td><code>waitForFunction&lt;R, A = undefined&gt;(fn: (arg: A) =&gt; R | Promise&lt;R&gt;, arg?: A, options?: TimeoutOptions &amp; { polling?: number })</code></td><td><code>Promise&lt;{ jsonValue(): Promise&lt;R&gt; }&gt;</code></td><td><p>Until the function is truthy in the page (an error in it fails the wait).</p></td></tr>
+                <tr><td><code>waitForSelector(selector: string, options?: WaitForSelectorOptions)</code></td><td><code>Promise&lt;<a href="#ref-ElementHandle">ElementHandle</a> | null&gt;</code></td><td></td></tr>
+                <tr><td><code>waitForResponse(match: string | RegExp | ((response: Response) =&gt; boolean | Promise&lt;boolean&gt;), options?: TimeoutOptions)</code></td><td><code>Promise&lt;<a href="#ref-Response">Response</a>&gt;</code></td><td></td></tr>
+                <tr><td><code>waitForRequest(match: string | RegExp | ((request: Request) =&gt; boolean | Promise&lt;boolean&gt;), options?: TimeoutOptions)</code></td><td><code>Promise&lt;<a href="#ref-Request">Request</a>&gt;</code></td><td></td></tr>
+                <tr><td><code>waitForEvent&lt;E extends keyof PageEvents&gt;(event: E, options?: TimeoutOptions &amp; { predicate?: (value: Parameters&lt;PageEvents[E]&gt;[0]) =&gt; boolean | Promise&lt;boolean&gt; })</code></td><td><code>Promise&lt;Parameters&lt;<a href="#ref-PageEvents">PageEvents</a>[E]&gt;[0]&gt;</code></td><td></td></tr>
+                <tr><td><code>waitForURL(match: string | RegExp | ((url: URL) =&gt; boolean), options?: TimeoutOptions)</code></td><td><code>Promise&lt;void&gt;</code></td><td></td></tr>
+                <tr><td><code>$(selector: string)</code></td><td><code>Promise&lt;<a href="#ref-ElementHandle">ElementHandle</a> | null&gt;</code></td><td></td></tr>
+                <tr><td><code>$$(selector: string)</code></td><td><code>Promise&lt;<a href="#ref-ElementHandle">ElementHandle</a>[]&gt;</code></td><td></td></tr>
+                <tr><td><code>$eval&lt;R, A = undefined&gt;(selector: string, fn: (element: Element, arg: A) =&gt; R | Promise&lt;R&gt;, arg?: A)</code></td><td><code>Promise&lt;R&gt;</code></td><td></td></tr>
+                <tr><td><code>$$eval&lt;R, A = undefined&gt;(selector: string, fn: (elements: Element[], arg: A) =&gt; R | Promise&lt;R&gt;, arg?: A)</code></td><td><code>Promise&lt;R&gt;</code></td><td></td></tr>
+                <tr><td><code>locator(selector: string, options?: LocatorOptions)</code></td><td><code><a href="#ref-Locator">Locator</a></code></td><td></td></tr>
+                <tr><td><code>getByText(text: string, options?: { exact?: boolean })</code></td><td><code><a href="#ref-Locator">Locator</a></code></td><td></td></tr>
+                <tr><td><code>getByRole(role: string, options?: { name?: string; exact?: boolean })</code></td><td><code><a href="#ref-Locator">Locator</a></code></td><td></td></tr>
+                <tr><td><code>click(selector: string, options?: ClickOptions)</code></td><td><code>Promise&lt;void&gt;</code></td><td></td></tr>
+                <tr><td><code>dblclick(selector: string, options?: ClickOptions)</code></td><td><code>Promise&lt;void&gt;</code></td><td></td></tr>
+                <tr><td><code>fill(selector: string, value: string, options?: TimeoutOptions)</code></td><td><code>Promise&lt;void&gt;</code></td><td></td></tr>
+                <tr><td><code>type(selector: string, text: string, options?: TimeoutOptions &amp; { delay?: number })</code></td><td><code>Promise&lt;void&gt;</code></td><td></td></tr>
+                <tr><td><code>press(selector: string, key: string, options?: TimeoutOptions &amp; { delay?: number })</code></td><td><code>Promise&lt;void&gt;</code></td><td></td></tr>
+                <tr><td><code>check(selector: string, options?: ClickOptions)</code></td><td><code>Promise&lt;void&gt;</code></td><td></td></tr>
+                <tr><td><code>uncheck(selector: string, options?: ClickOptions)</code></td><td><code>Promise&lt;void&gt;</code></td><td></td></tr>
+                <tr><td><code>selectOption(selector: string, values: SelectOptionValue | SelectOptionValue[], options?: TimeoutOptions)</code></td><td><code>Promise&lt;string[]&gt;</code></td><td></td></tr>
+                <tr><td><code>textContent(selector: string, options?: TimeoutOptions)</code></td><td><code>Promise&lt;string | null&gt;</code></td><td></td></tr>
+                <tr><td><code>innerText(selector: string, options?: TimeoutOptions)</code></td><td><code>Promise&lt;string&gt;</code></td><td></td></tr>
+                <tr><td><code>innerHTML(selector: string, options?: TimeoutOptions)</code></td><td><code>Promise&lt;string&gt;</code></td><td></td></tr>
+                <tr><td><code>getAttribute(selector: string, name: string, options?: TimeoutOptions)</code></td><td><code>Promise&lt;string | null&gt;</code></td><td></td></tr>
+                <tr><td><code>inputValue(selector: string, options?: TimeoutOptions)</code></td><td><code>Promise&lt;string&gt;</code></td><td></td></tr>
+                <tr><td><code>isChecked(selector: string, options?: TimeoutOptions)</code></td><td><code>Promise&lt;boolean&gt;</code></td><td></td></tr>
+                <tr><td><code>isVisible(selector: string)</code></td><td><code>Promise&lt;boolean&gt;</code></td><td><p>Now, without waiting.</p></td></tr>
+                <tr><td><code>isHidden(selector: string)</code></td><td><code>Promise&lt;boolean&gt;</code></td><td></td></tr>
+                <tr><td><code>focus(selector: string, options?: TimeoutOptions)</code></td><td><code>Promise&lt;void&gt;</code></td><td></td></tr>
+                <tr><td><code>hover(selector: string, options?: ClickOptions)</code></td><td><code>Promise&lt;void&gt;</code></td><td></td></tr>
+                <tr><td><code>screenshot(options?: ScreenshotOptions)</code></td><td><code>Promise&lt;Buffer&gt;</code></td><td></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-BrowserContext"><code>BrowserContext</code></h3>
+        <pre><code class="language-ts">export declare class BrowserContext { ... }</code></pre>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>pages()</code></td><td><code><a href="#ref-Page">Page</a>[]</code></td><td></td></tr>
+                <tr><td><code>newPage()</code></td><td><code>Promise&lt;<a href="#ref-Page">Page</a>&gt;</code></td><td></td></tr>
+                <tr><td><code>setDefaultTimeout(timeout: number)</code></td><td><code>void</code></td><td></td></tr>
+                <tr><td><code>close()</code></td><td><code>Promise&lt;void&gt;</code></td><td></td></tr>
+                <tr><td><code>readonly closed</code></td><td><code>boolean</code></td><td></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-Browser"><code>Browser</code></h3>
+        <pre><code class="language-ts">export declare class Browser { ... }</code></pre>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>version()</code></td><td><code>string</code></td><td><p>Chrome/155.0.8059.40, Edge/...</p></td></tr>
+                <tr><td><code>isConnected()</code></td><td><code>boolean</code></td><td></td></tr>
+                <tr><td><code>newContext(options?: ContextOptions)</code></td><td><code>Promise&lt;<a href="#ref-BrowserContext">BrowserContext</a>&gt;</code></td><td></td></tr>
+                <tr><td><code>newPage(options?: ContextOptions)</code></td><td><code>Promise&lt;<a href="#ref-Page">Page</a>&gt;</code></td><td><p>A page in a context of its own, closed with it.</p></td></tr>
+                <tr><td><code>close()</code></td><td><code>Promise&lt;void&gt;</code></td><td></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h2 id="constants">Constants</h2>
+        <p class="ref-index"><a href="#ref-chromium"><code>chromium</code></a></p>
+
+        <h3 id="ref-chromium"><code>chromium</code></h3>
+        <pre><code class="language-ts">export declare const chromium: { launch: typeof launch; executablePath: typeof findBrowser };</code></pre>
+        <p>As Playwright's chromium: launch(), and executablePath() (findBrowser()).</p>
+
+        <h2 id="interfaces">Interfaces</h2>
+        <p class="ref-index"><a href="#ref-LaunchOptions"><code>LaunchOptions</code></a>, <a href="#ref-ContextOptions"><code>ContextOptions</code></a>, <a href="#ref-TimeoutOptions"><code>TimeoutOptions</code></a>, <a href="#ref-ClickOptions"><code>ClickOptions</code></a>, <a href="#ref-Box"><code>Box</code></a>, <a href="#ref-WaitForSelectorOptions"><code>WaitForSelectorOptions</code></a>, <a href="#ref-NavigationOptions"><code>NavigationOptions</code></a>, <a href="#ref-ScreenshotOptions"><code>ScreenshotOptions</code></a>, <a href="#ref-LocatorOptions"><code>LocatorOptions</code></a>, <a href="#ref-Keyboard"><code>Keyboard</code></a>, <a href="#ref-Mouse"><code>Mouse</code></a>, <a href="#ref-PageEvents"><code>PageEvents</code></a></p>
+
+        <h3 id="ref-LaunchOptions"><code>LaunchOptions</code></h3>
+        <pre><code class="language-ts">export interface LaunchOptions { ... }</code></pre>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>executablePath?</code></td><td><code>string | null</code></td><td><p>The browser to start: Chrome, Chromium or Edge (findBrowser() by default).</p></td></tr>
+                <tr><td><code>headless?</code></td><td><code>boolean</code></td><td><p>Without a window (true by default).</p></td></tr>
+                <tr><td><code>args?</code></td><td><code>string[]</code></td><td><p>More arguments of the browser.</p></td></tr>
+                <tr><td><code>timeout?</code></td><td><code>number</code></td><td><p>Ms the browser has to answer once started (30000).</p></td></tr>
+                <tr><td><code>env?</code></td><td><code>NodeJS.ProcessEnv</code></td><td></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-ContextOptions"><code>ContextOptions</code></h3>
+        <pre><code class="language-ts">export interface ContextOptions { ... }</code></pre>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>locale?</code></td><td><code>string</code></td><td><p>The language of the pages: navigator.language, Intl and the Accept-Language header.</p></td></tr>
+                <tr><td><code>viewport?</code></td><td><code>{ width: number; height: number }</code></td><td><p>The size of the pages (1280 x 720 by default).</p></td></tr>
+                <tr><td><code>timeout?</code></td><td><code>number</code></td><td><p>Ms actions and waits of its pages wait (30000 by default).</p></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-TimeoutOptions"><code>TimeoutOptions</code></h3>
+        <pre><code class="language-ts">export interface TimeoutOptions { ... }</code></pre>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>timeout?</code></td><td><code>number</code></td><td></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-ClickOptions"><code>ClickOptions</code></h3>
+        <pre><code class="language-ts">export interface ClickOptions extends TimeoutOptions { ... }</code></pre>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>button?</code></td><td><code>'left' | 'right' | 'middle'</code></td><td></td></tr>
+                <tr><td><code>clickCount?</code></td><td><code>number</code></td><td></td></tr>
+                <tr><td><code>delay?</code></td><td><code>number</code></td><td></td></tr>
+                <tr><td><code>force?</code></td><td><code>boolean</code></td><td><p>Without the checks of actions (visible, enabled, still, the element a click would hit).</p></td></tr>
+                <tr><td><code>position?</code></td><td><code>{ x: number; y: number }</code></td><td><p>Where, from the top left of the element (its center by default).</p></td></tr>
+                <tr><td><code>modifiers?</code></td><td><code>Array&lt;'Alt' | 'Control' | 'Meta' | 'Shift'&gt;</code></td><td></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-Box"><code>Box</code></h3>
+        <pre><code class="language-ts">export interface Box { ... }</code></pre>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>x</code></td><td><code>number</code></td><td></td></tr>
+                <tr><td><code>y</code></td><td><code>number</code></td><td></td></tr>
+                <tr><td><code>width</code></td><td><code>number</code></td><td></td></tr>
+                <tr><td><code>height</code></td><td><code>number</code></td><td></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-WaitForSelectorOptions"><code>WaitForSelectorOptions</code></h3>
+        <pre><code class="language-ts">export interface WaitForSelectorOptions extends TimeoutOptions { ... }</code></pre>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>state?</code></td><td><code>'attached' | 'detached' | 'visible' | 'hidden'</code></td><td></td></tr>
+                <tr><td><code>strict?</code></td><td><code>boolean</code></td><td><p>An error when the selector has more than one element.</p></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-NavigationOptions"><code>NavigationOptions</code></h3>
+        <pre><code class="language-ts">export interface NavigationOptions extends TimeoutOptions { ... }</code></pre>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>waitUntil?</code></td><td><code>'load' | 'domcontentloaded' | 'networkidle' | 'commit'</code></td><td></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-ScreenshotOptions"><code>ScreenshotOptions</code></h3>
+        <pre><code class="language-ts">export interface ScreenshotOptions { ... }</code></pre>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>path?</code></td><td><code>string</code></td><td><p>Written there too.</p></td></tr>
+                <tr><td><code>fullPage?</code></td><td><code>boolean</code></td><td><p>The whole page, not only what the viewport shows.</p></td></tr>
+                <tr><td><code>clip?</code></td><td><code><a href="#ref-Box">Box</a></code></td><td></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-LocatorOptions"><code>LocatorOptions</code></h3>
+        <pre><code class="language-ts">export interface LocatorOptions { ... }</code></pre>
+        <p>Options of the elements of a locator: those with this text (part of it, in any case), or that match this.</p>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>hasText?</code></td><td><code>string | RegExp</code></td><td></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-Keyboard"><code>Keyboard</code></h3>
+        <pre><code class="language-ts">export interface Keyboard { ... }</code></pre>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>down(key: string)</code></td><td><code>Promise&lt;void&gt;</code></td><td></td></tr>
+                <tr><td><code>up(key: string)</code></td><td><code>Promise&lt;void&gt;</code></td><td></td></tr>
+                <tr><td><code>press(key: string, options?: { delay?: number })</code></td><td><code>Promise&lt;void&gt;</code></td><td><p>A key, or keys held together: 'Enter', 'Shift+Tab', 'Control+a'.</p></td></tr>
+                <tr><td><code>type(text: string, options?: { delay?: number })</code></td><td><code>Promise&lt;void&gt;</code></td><td><p>Characters, one key each.</p></td></tr>
+                <tr><td><code>insertText(text: string)</code></td><td><code>Promise&lt;void&gt;</code></td><td></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-Mouse"><code>Mouse</code></h3>
+        <pre><code class="language-ts">export interface Mouse { ... }</code></pre>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>move(x: number, y: number, options?: { steps?: number })</code></td><td><code>Promise&lt;void&gt;</code></td><td></td></tr>
+                <tr><td><code>down(options?: { button?: 'left' | 'right' | 'middle'; clickCount?: number })</code></td><td><code>Promise&lt;void&gt;</code></td><td></td></tr>
+                <tr><td><code>up(options?: { button?: 'left' | 'right' | 'middle'; clickCount?: number })</code></td><td><code>Promise&lt;void&gt;</code></td><td></td></tr>
+                <tr><td><code>click(x: number, y: number, options?: { button?: 'left' | 'right' | 'middle'; clickCount?: number; delay?: number })</code></td><td><code>Promise&lt;void&gt;</code></td><td></td></tr>
+                <tr><td><code>dblclick(x: number, y: number, options?: { button?: 'left' | 'right' | 'middle'; delay?: number })</code></td><td><code>Promise&lt;void&gt;</code></td><td></td></tr>
+                <tr><td><code>wheel(deltaX: number, deltaY: number)</code></td><td><code>Promise&lt;void&gt;</code></td><td></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-PageEvents"><code>PageEvents</code></h3>
+        <pre><code class="language-ts">export interface PageEvents { ... }</code></pre>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>console</code></td><td><code>(message: <a href="#ref-ConsoleMessage">ConsoleMessage</a>) =&gt; void</code></td><td></td></tr>
+                <tr><td><code>pageerror</code></td><td><code>(error: Error) =&gt; void</code></td><td></td></tr>
+                <tr><td><code>dialog</code></td><td><code>(dialog: <a href="#ref-Dialog">Dialog</a>) =&gt; void</code></td><td></td></tr>
+                <tr><td><code>request</code></td><td><code>(request: <a href="#ref-Request">Request</a>) =&gt; void</code></td><td></td></tr>
+                <tr><td><code>response</code></td><td><code>(response: <a href="#ref-Response">Response</a>) =&gt; void</code></td><td></td></tr>
+                <tr><td><code>close</code></td><td><code>(page: <a href="#ref-Page">Page</a>) =&gt; void</code></td><td></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h2 id="types">Types</h2>
+        <p class="ref-index"><a href="#ref-SelectOptionValue"><code>SelectOptionValue</code></a></p>
+
+        <h3 id="ref-SelectOptionValue"><code>SelectOptionValue</code></h3>
+        <pre><code class="language-ts">export type SelectOptionValue = string | { value?: string; label?: string; index?: number };</code></pre>
+      </article>
+    </div>
+
+    <footer class="footer">
+      <div class="container">
+        <span>xufa is MIT licensed. &copy; Jes&uacute;s Seijas</span>
+        <span>
+          <a href="../guide.html">Guide</a> &middot; <a href="../playground.html">Playground</a> &middot; <a href="../http/index.html">HTTP</a> &middot; <a href="../orm/index.html">ORM</a> &middot; <a href="../auth/index.html">Auth</a> &middot;
+          <a href="../sequelize/index.html">Sequelize</a> &middot; <a href="../packages.html">Packages</a> &middot;
+          <a href="../benchmarks.html">Benchmarks</a> &middot; <a href="https://github.com/xufajs/xufa">GitHub</a>
+        </span>
+      </div>
+    </footer>
+  </body>
+</html>

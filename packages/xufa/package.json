@@ -35,6 +35,10 @@
       "types": "./expression.d.ts",
       "default": "./expression.js"
     },
+    "./rules": {
+      "types": "./rules.d.ts",
+      "default": "./rules.js"
+    },
     "./template": {
       "types": "./template.d.ts",
       "default": "./template.js"
@@ -122,6 +126,8 @@
     "session.d.ts",
     "expression.js",
     "expression.d.ts",
+    "rules.js",
+    "rules.d.ts",
     "template.js",
     "mail.js",
     "mail.d.ts",
@@ -162,7 +168,7 @@
     "lib"
   ],
   "scripts": {
-    "test": "vyntra"
+    "test": "xufa-test"
   },
   "keywords": [
     "framework",
@@ -195,26 +201,27 @@
     "@xufa/expression": "workspace:*",
     "@xufa/faults": "workspace:*",
     "@xufa/forms": "workspace:*",
-    "@xufa/views": "workspace:*",
-    "@xufa/yaml": "workspace:*",
     "@xufa/http": "workspace:*",
     "@xufa/i18n": "workspace:*",
     "@xufa/mail": "workspace:*",
     "@xufa/openapi": "workspace:*",
     "@xufa/orm": "workspace:*",
     "@xufa/queue": "workspace:*",
+    "@xufa/rules": "workspace:*",
     "@xufa/scheduler": "workspace:*",
     "@xufa/schema": "workspace:*",
     "@xufa/session": "workspace:*",
-    "@xufa/template": "workspace:*"
+    "@xufa/template": "workspace:*",
+    "@xufa/views": "workspace:*",
+    "@xufa/yaml": "workspace:*"
   },
   "devDependencies": {
-    "vyntra": "^0.7.0"
+    "@xufa/test": "workspace:^"
   },
   "publishConfig": {
     "access": "public"
   },
-  "vyntra": {
+  "xufaTest": {
     "setupFiles": [
       "@xufa/faults/register-strict"
     ]

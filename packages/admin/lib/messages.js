@@ -38,6 +38,9 @@ const MESSAGES = {
   workStatus: 'Not a status of work: {status}',
   noSchedule: 'No schedule {name}',
   scheduleRunning: 'The schedule {name} is running: it does not run twice at once',
+  // Books of rules.
+  noRules: 'No book of rules {name}',
+  rulesBody: 'A book is { sheets } (the sheets edited) or { xlsx } (a workbook of Excel in base64)',
   noJob: 'No job {id}',
   jobStatus: 'Not a status of jobs: {status}',
   jobOfStep: 'A job of the step {step} of the run {run}: retry its run',

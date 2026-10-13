@@ -1028,7 +1028,7 @@ before(async () =&gt; {
   await factory(Author, { name: (n) =&gt; `Author ${n}` }).createMany(3); // for every test
 });
 after(() =&gt; app.close());
-rollbackEach(() =&gt; app.db, { beforeEach, afterEach }); // with vyntra, jest or mocha: rollbackEach(db)
+rollbackEach(() =&gt; app.db, { beforeEach, afterEach }); // with @xufa/test, jest or mocha: rollbackEach(db)
 
 test('POST /books makes a book', async () =&gt; {
   await app.inject({ method: 'POST', url: '/books', payload: { title: 'Notes' } });

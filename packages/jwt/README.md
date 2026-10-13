@@ -77,7 +77,7 @@ free.
 
 ## Tests
 
-`test/jsonwebtoken`, `test/jws` and `test/jwa` are the suites of those packages, ported to vyntra by
+`test/jsonwebtoken`, `test/jws` and `test/jwa` are the suites of those packages, ported to @xufa/test by
 `tools/port-jwt/port.js` from checkouts of their repositories (the requires and mocha's hooks are rewritten; the tests
 are not changed). `test/security.test.js` tries forged tokens: algorithm confusion (HMAC with an RSA public key),
 `none`, signatures taken off or of other tokens, headers and payloads changed, all-zero ECDSA signatures

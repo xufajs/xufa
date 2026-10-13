@@ -7,6 +7,20 @@ import { execFileSync } from 'node:child_process';
 import { parseArgs } from '../lib/cli/index.js';
 import { modelFile, resourceFile, parseField, plural } from '../lib/cli/generate.js';
 
+// A new app's packages, as npm install would give them: xufa (this package) and @xufa/test, of this repository.
+const linkPackages = (root) => {
+  fs.mkdirSync(path.join(root, 'node_modules', '@xufa'), { recursive: true });
+  fs.symlinkSync(path.join(import.meta.dirname, '..'), path.join(root, 'node_modules', 'xufa'), 'junction');
+  fs.symlinkSync(
+    path.join(import.meta.dirname, '..', '..', 'test'),
+    path.join(root, 'node_modules', '@xufa', 'test'),
+    'junction'
+  );
+};
+
+// Output without the colors of a terminal.
+const plain = (text) => text.replace(/\x1b\[[0-9;]*m/g, ''); // eslint-disable-line no-control-regex
+
 describe('xufa generate: the files', () => {
   it('a model: types, modifiers, references (to itself too), timestamps', () => {
     const code = modelFile('Book', ['title:string', 'pages:integer:null', 'isbn:string:unique', 'author:references', 'parent:references:Book', 'price:decimal:index']);
@@ -49,9 +63,11 @@ describe('xufa: an app from new to its routes', () => {
   it('new, generate, makemigrations, migrate, showmigrations, seed, routes; and the test of the app passes', () => {
     execFileSync(process.execPath, [BIN, 'new', root, '--api'], { encoding: 'utf8' });
     expect(fs.existsSync(path.join(root, 'app.js'))).toBe(true);
-    // The app requires xufa: this package.
-    fs.mkdirSync(path.join(root, 'node_modules'));
-    fs.symlinkSync(path.join(import.meta.dirname, '..'), path.join(root, 'node_modules', 'xufa'), 'junction');
+    // The app requires xufa, and its tests @xufa/test: the packages of this repository.
+    expect(JSON.parse(fs.readFileSync(path.join(root, 'package.json'), 'utf8')).devDependencies).toEqual({
+      '@xufa/test': '*',
+    });
+    linkPackages(root);
     expect(xufaCommand('generate', 'model', 'Author', 'name:string')).toContain('0001_create_author.js');
     expect(xufaCommand('g', 'resource', 'Book', 'title:string', 'author:references')).toContain('routes');
     expect(fs.readdirSync(path.join(root, 'migrations')).filter((file) => file.endsWith('.js'))).toEqual([
@@ -94,15 +110,11 @@ describe('xufa: an app from new to its routes', () => {
     expect(() => xufaCommand('generate', 'model', 'Author')).toThrow(/is there already/);
     expect(() => xufaCommand('nope')).toThrow();
     expect(xufaCommand('help')).toContain('xufa generate resource');
-    // The test of the app (node --test), with its migrations applied to a database in memory. TAP, as Node 24 reports
-    // with spec even when the output is not a terminal.
-    const output = execFileSync(process.execPath, ['--test', '--test-reporter=tap'], { cwd: root, encoding: 'utf8' });
-    expect(output).toMatch(/# pass 1/);
-    // xufa test: the same, by its command (NODE_ENV=test; node --test, the app has no vyntra).
-    // (No --runner: the app does not depend on vyntra, even when one is installed above it, as in this repository.)
-    const tested = xufaCommand('test');
-    expect(tested).toContain('xufa test: node --test');
-    expect(tested).toMatch(/pass 1/);
+    // The test of the app, with its migrations applied to a database in memory: by xufa test (NODE_ENV=test), with
+    // @xufa/test, which the app depends on.
+    const tested = plain(xufaCommand('test'));
+    expect(tested).toContain('xufa test: xufa-test');
+    expect(tested).toMatch(/Tests\s+1 passed \(1\)/);
   }, 120000);
 
   it('health; down and up, on this machine (a file) and on every one (the database)', () => {
@@ -174,8 +186,10 @@ describe('xufa: a project from new to its apps', () => {
     expect(fs.readFileSync(path.join(root, 'xufa.yaml'), 'utf8')).toContain('name: Book Shop\napps: [home]');
     // Sessions written without waiting for the disk (PostgreSQL), said in the file.
     expect(fs.readFileSync(path.join(root, 'xufa.yaml'), 'utf8')).toContain('sessions: { asyncCommit: true }');
-    fs.mkdirSync(path.join(root, 'node_modules'));
-    fs.symlinkSync(path.join(import.meta.dirname, '..'), path.join(root, 'node_modules', 'xufa'), 'junction');
+    expect(JSON.parse(fs.readFileSync(path.join(root, 'package.json'), 'utf8')).devDependencies).toEqual({
+      '@xufa/test': '*',
+    });
+    linkPackages(root);
 
     expect(xufaCommand('startapp', 'catalog')).toContain('added catalog to the apps of xufa.yaml');
     expect(fs.readFileSync(path.join(root, 'xufa.yaml'), 'utf8')).toContain('apps: [home, catalog]');
@@ -199,20 +213,20 @@ describe('xufa: a project from new to its apps', () => {
     fs.writeFileSync(
       path.join(root, 'test', 'books.test.js'),
       [
-        "import { test } from 'node:test';",
-        "import assert from 'node:assert/strict';",
+        "import { test, expect } from '@xufa/test';",
         "import { useTestApp } from 'xufa/testing';",
         'const app = useTestApp();',
         "test('a book made by its form', async () => {",
         '  const client = app.client();',
         "  const res = await client.post(app.reverse('book-create'), { title: 'Dune' });",
-        '  assert.equal(res.statusCode, 302);',
-        "  assert.match((await client.get(res.headers.location)).textContent, /Book: Dune/);",
+        '  expect(res.statusCode).toBe(302);',
+        "  expect((await client.get(res.headers.location)).textContent).toMatch(/Book: Dune/);",
         '});',
         '',
       ].join('\n')
     );
-    const tested = xufaCommand('test');
-    expect(tested).toMatch(/pass 2/);
+    const tested = plain(xufaCommand('test'));
+    expect(tested).toContain('xufa test: xufa-test');
+    expect(tested).toMatch(/Tests\s+2 passed \(2\)/);
   }, 120000);
 });

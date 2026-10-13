@@ -55,6 +55,7 @@ node bench/micro/logger.js      # @xufa/logger against pino
 node bench/micro/router.js      # @xufa/router against find-my-way
 node bench/micro/serializer.js  # @xufa/serializer against fast-json-stringify and JSON.stringify
 node bench/micro/expression.js  # @xufa/expression against jexl, expr-eval, filtrex, SandboxJS and new Function
+node bench/micro/expression-programs.js # its programs (statements: true) against SandboxJS, node:vm and new Function
 node bench/micro/template.js    # @xufa/template against Handlebars, Mustache, Nunjucks, Eta and EJS
 node bench/micro/jwt.js         # @xufa/jwt against jsonwebtoken
 node bench/micro/jwt-async.js   # node:crypto signing and verifying, synchronous against in the thread pool
@@ -63,10 +64,10 @@ node bench/micro/websocket.js   # @xufa/websocket against ws, each without and w
 node bench/micro/s3.js          # the s3 backend of @xufa/orm against the AWS SDK v3 (XUFA_S3_URL: a store of your own)
 ```
 
-`expression.js` and `template.js` take `[ms per measure] [rounds]` (1000 and 3) and run each engine and case in a process
+`expression.js`, `expression-programs.js` and `template.js` take `[ms per measure] [rounds]` (1000 and 3) and run each engine and case in a process
 of its own, the median of the rounds shown; each result is checked (against JavaScript, or against the output of
 @xufa/template) before it is measured. Two measures: compiled once and run, and compiled and run each time (a one-off
-expression or template). `new Function` is no sandbox: the bound of what can be done. Expressions and templates run on four contexts of different values in turn,
+expression or template). `new Function` is no sandbox: the bound of what can be done. Nor is `node:vm` (a function compiled in another context: vm is no security boundary); SandboxJS is, as @xufa/expression. Expressions and templates run on four contexts of different values in turn,
 so that V8 does not fold them on values that never change. Eta
 and EJS run the JavaScript of their templates (no sandbox either); Handlebars, Mustache and Nunjucks, as
 @xufa/template, do not.
@@ -209,7 +210,7 @@ pnpm bench:linux run --duration 6 --warmup 2 --out results/full-linux-3
 The latest report of each benchmark: `results/router-2` (@xufa/router and find-my-way), `results/logger-2` (@xufa/logger
 and pino), `results/serializer-1` (@xufa/serializer, fast-json-stringify and `JSON.stringify`), `results/postgres-7`
 (@xufa/pg and pg), `results/mongo-8` (@xufa/mongo and mongodb), `results/orm-8` (@xufa/orm and Sequelize),
-`results/expression-4`, `results/template-5`, `results/view-1` (large pages), `results/marshal-1` (@xufa/marshal, JSON, v8.serialize and the serializer of Agentic), `results/marshal-2` and `results/marshal-linux-2` (its format of 2026-10-10: Dates, references and instances that JSON.parse reads with fewer objects), `results/marshal-3` and `results/marshal-linux-3` (arrays of instances as tables), `results/marshal-4` and `results/marshal-linux-4` (tables of plain rows too), `results/marshal-linux-5` (Maps and Sets without util.types), `results/jwt-2` and `results/jwt-linux-2` (@xufa/jwt and
+`results/expression-4`, `results/expression-5` (after the tokenizer of 2026-10-11), `results/expression-programs-1` (programs: loops, branches, functions, try; as closures), `results/expression-programs-2` (programs as one function of JavaScript), `results/expression-programs-3` (with classes, generators, modules and tdz; one walk of the tree when it compiles), `results/template-5`, `results/view-1` (large pages), `results/marshal-1` (@xufa/marshal, JSON, v8.serialize and the serializer of Agentic), `results/marshal-2` and `results/marshal-linux-2` (its format of 2026-10-10: Dates, references and instances that JSON.parse reads with fewer objects), `results/marshal-3` and `results/marshal-linux-3` (arrays of instances as tables), `results/marshal-4` and `results/marshal-linux-4` (tables of plain rows too), `results/marshal-linux-5` (Maps and Sets without util.types), `results/jwt-2` and `results/jwt-linux-2` (@xufa/jwt and
 jsonwebtoken), `results/websocket-4` (@xufa/websocket and ws).
 
 ### JWT: @xufa/jwt / jsonwebtoken

@@ -64,7 +64,10 @@ describe('the layout of the graph of a run', () => {
     expect(crossingsOf(steps, drawn)).toBe(drawn.crossings);
     expect(drawn.crossings).toBe(0);
     // A column with fewer places than the tallest is centered.
-    const rowsOf = (column) => Object.values(drawn.at).filter((place) => place.column === column).map((place) => place.row);
+    const rowsOf = (column) =>
+      Object.values(drawn.at)
+        .filter((place) => place.column === column)
+        .map((place) => place.row);
     expect(Math.min(...rowsOf(0))).toBe(0);
     expect(rowsOf(3)).toEqual([(drawn.rows - 1) / 2]);
   });

@@ -1,4 +1,4 @@
-import { expectType, expectError, expectAssignable, expectNotAssignable } from 'tsd';
+import { assertType, expectTypeOf } from '@xufa/test';
 import {
   Lower,
   Paginator,
@@ -84,57 +84,58 @@ interface Book extends Fields<typeof bookFields> {}
 
 async function main() {
   const db = new Database({ backend: 'sqlite', filename: ':memory:' }).register(Author, Book, Tag);
-  expectType<Database>(await db.connect());
+  expectTypeOf(await db.connect()).toEqualTypeOf<Database>();
 
   const authors = await Author.query().filter({ age__gte: 18 }).orderBy('-name').limit(10);
-  expectType<Author[]>(authors);
-  expectType<string>(authors[0].name);
-  expectType<string | null>(authors[0].email);
-  expectType<number | null>(authors[0].age);
-  expectType<boolean>(authors[0].active);
-  expectType<Date>(authors[0].createdAt);
+  expectTypeOf(authors).toEqualTypeOf<Author[]>();
+  expectTypeOf(authors[0].name).toEqualTypeOf<string>();
+  expectTypeOf(authors[0].email).toEqualTypeOf<string | null>();
+  expectTypeOf(authors[0].age).toEqualTypeOf<number | null>();
+  expectTypeOf(authors[0].active).toEqualTypeOf<boolean>();
+  expectTypeOf(authors[0].createdAt).toEqualTypeOf<Date>();
 
   const book = await Book.query().selectRelated('author').get({ pk: 1 });
-  expectType<Book>(book);
-  expectType<string>(book.title);
-  expectType<{ pages: number }>(book.data);
-  expectType<number | string>(book.authorId);
-  expectType<Author | undefined>(book.author);
-  expectType<number | string | null>(book.editorId);
-  expectType<Author | null | undefined>(book.editor);
-  expectType<RelatedSet<Tag>>(book.tags);
-  expectType<void>(await book.tags.add(1, 2));
-  expectType<Tag[]>(await book.tags);
+  expectTypeOf(book).toEqualTypeOf<Book>();
+  expectTypeOf(book.title).toEqualTypeOf<string>();
+  expectTypeOf(book.data).toEqualTypeOf<{ pages: number }>();
+  expectTypeOf(book.authorId).toEqualTypeOf<number | string>();
+  expectTypeOf(book.author).toEqualTypeOf<Author | undefined>();
+  expectTypeOf(book.editorId).toEqualTypeOf<number | string | null>();
+  expectTypeOf(book.editor).toEqualTypeOf<Author | null | undefined>();
+  expectTypeOf(book.tags).toEqualTypeOf<RelatedSet<Tag>>();
+  expectTypeOf(await book.tags.add(1, 2)).toEqualTypeOf<void>();
+  expectTypeOf(await book.tags).toEqualTypeOf<Tag[]>();
 
-  expectType<QuerySet<Author>>(Author.query().filter(or({ name: 'a' }, new Q({ age: 1 }).not())));
-  expectType<number>(
-    await Book.query()
+  expectTypeOf(Author.query().filter(or({ name: 'a' }, new Q({ age: 1 }).not()))).toEqualTypeOf<QuerySet<Author>>();
+  expectTypeOf(await Book.query()
       .filter({ author__name: 'Ada' })
-      .update({ title: F('title') })
-  );
-  expectType<{ n: number; total: number | null }>(await Book.query().aggregate({ n: Count(), total: Sum('pages') }));
-  expectType<[Author, boolean]>(await Author.query().getOrCreate({ name: 'Ada' }));
-  expectType<number>(await Book.query().recompute());
+      .update({ title: F('title') })).toEqualTypeOf<number>();
+  expectTypeOf(await Book.query().aggregate({ n: Count(), total: Sum('pages') })).toEqualTypeOf<{ n: number; total: number | null }>();
+  expectTypeOf(await Author.query().getOrCreate({ name: 'Ada' })).toEqualTypeOf<[Author, boolean]>();
+  expectTypeOf(await Book.query().recompute()).toEqualTypeOf<number>();
   // Computed fields: an expression or a function, stored or not.
   fields.decimal({ precision: 12, scale: 2, computed: 'price * quantity', stored: true });
   // Validation rules: expressions, functions, with messages.
   fields.integer({ validate: 'value >= 0' });
   fields.string({ validate: [{ rule: 'value.length >= 3', message: 'Too short.' }, (value: string) => value !== 'x'] });
-  expectError(fields.integer({ validate: 3 }));
+  // @ts-expect-error
+  fields.integer({ validate: 3 });
   const ruled: import('../../index').ModelOptions = {
     rules: ['end > start', { rule: 'seats <= 10', field: 'seats', message: 'Too many.' }, () => true],
   };
-  expectType<number>(ruled.rules!.length);
+  expectTypeOf(ruled.rules!.length).toEqualTypeOf<number>();
   fields.string({ computed: (line: { product: string }) => line.product.toUpperCase(), uses: ['product'] });
-  expectError(fields.integer({ computed: 1 }));
-  for await (const item of Author.query()) expectType<Author>(item);
-  expectType<Author>(await Author.create({ name: 'Ada' }));
-  expectType<Promise<string[]>>(db.migrate({ dir: 'migrations' }));
-  expectType<Promise<Record<string, number>>>(db.migrateDecimals());
-  expectType<number>(await db.transaction(async () => 1));
-  expectError(Author.query().limit('ten'));
-  expectType<Record<string, string[]>>(new ValidationError('x', {}).errors);
-  expectType<Promise<void>>(plugin({}, { database: db }));
+  // @ts-expect-error
+  fields.integer({ computed: 1 });
+  for await (const item of Author.query()) expectTypeOf(item).toEqualTypeOf<Author>();
+  expectTypeOf(await Author.create({ name: 'Ada' })).toEqualTypeOf<Author>();
+  expectTypeOf(db.migrate({ dir: 'migrations' })).toEqualTypeOf<Promise<string[]>>();
+  expectTypeOf(db.migrateDecimals()).toEqualTypeOf<Promise<Record<string, number>>>();
+  expectTypeOf(await db.transaction(async () => 1)).toEqualTypeOf<number>();
+  // @ts-expect-error
+  Author.query().limit('ten');
+  expectTypeOf(new ValidationError('x', {}).errors).toEqualTypeOf<Record<string, string[]>>();
+  expectTypeOf(plugin({}, { database: db })).toEqualTypeOf<Promise<void>>();
 }
 
 void main;
@@ -145,7 +146,7 @@ class Keyless extends Model {
 
   static options = { primaryKey: false as const };
 }
-expectType<typeof Keyless>(Keyless);
+expectTypeOf(Keyless).toEqualTypeOf<typeof Keyless>();
 
 // Encrypted fields: the values of their base field.
 const secretFields = {
@@ -159,14 +160,13 @@ class Secret extends Model {
 }
 interface Secret extends Fields<typeof secretFields> {}
 declare const secret: Secret;
-expectType<string>(secret.ssn);
-expectType<string | null>(secret.email);
-expectType<{ languages: string[] }>(secret.profile);
-expectError(fields.encrypted(fields.string(), { primaryKey: true }));
-expectType<Keyring | null>(
-  setEncryptionKeys({ current: 'k2', keys: { k2: generateEncryptionKey(), k1: Buffer.alloc(32) } })
-);
-expectType<Promise<number>>(reencrypt(Secret, { batchSize: 100 }));
+expectTypeOf(secret.ssn).toEqualTypeOf<string>();
+expectTypeOf(secret.email).toEqualTypeOf<string | null>();
+expectTypeOf(secret.profile).toEqualTypeOf<{ languages: string[] }>();
+// @ts-expect-error
+fields.encrypted(fields.string(), { primaryKey: true });
+expectTypeOf(setEncryptionKeys({ current: 'k2', keys: { k2: generateEncryptionKey(), k1: Buffer.alloc(32) } })).toEqualTypeOf<Keyring | null>();
+expectTypeOf(reencrypt(Secret, { batchSize: 100 })).toEqualTypeOf<Promise<number>>();
 
 // TTL indexes.
 class Event extends Model {
@@ -175,15 +175,15 @@ class Event extends Model {
   static options = { indexes: [{ fields: ['at'], expireAfter: '30d' }] };
 }
 declare const eventsDb: Database;
-expectType<Promise<Record<string, number>>>(eventsDb.expire({ now: new Date() }));
-expectType<Database>(eventsDb.startExpiry({ interval: '5m', onError: (err) => console.error(err.message) }));
-expectType<Promise<void>>(plugin({}, { database: eventsDb, expire: { interval: 60 } }));
-expectError(eventsDb.startExpiry({ interval: true }));
+expectTypeOf(eventsDb.expire({ now: new Date() })).toEqualTypeOf<Promise<Record<string, number>>>();
+expectTypeOf(eventsDb.startExpiry({ interval: '5m', onError: (err) => console.error(err.message) })).toEqualTypeOf<Database>();
+expectTypeOf(plugin({}, { database: eventsDb, expire: { interval: 60 } })).toEqualTypeOf<Promise<void>>();
+// @ts-expect-error
+eventsDb.startExpiry({ interval: true });
 void Event;
 
 // Resources.
-expectType<(app: any) => Promise<void>>(
-  resource(Author, {
+expectTypeOf(resource(Author, {
     actions: ['list', 'get', 'create'],
     queryset: () => Author.query().filter({ active: true }),
     filters: { age: ['gte', 'lte'], name: 'icontains' },
@@ -192,24 +192,28 @@ expectType<(app: any) => Promise<void>>(
     auth: { create: 'admin' },
     hooks: { beforeCreate: (values) => ({ ...values, active: true }) },
     serialize: (author) => ({ name: author.name }),
-  })
-);
-expectError(resource(Author, { actions: ['destroy'] }));
+  })).toEqualTypeOf<(app: any) => Promise<void>>();
+// @ts-expect-error
+resource(Author, { actions: ['destroy'] });
 resource(Author, { permissions: true, auth: { list: false } });
 resource(Author, { permissions: 'authors' });
-expectError(resource(Author, { permissions: 3 }));
-expectType<string[]>(new UniqueError('x').fields);
+// @ts-expect-error
+resource(Author, { permissions: 3 });
+expectTypeOf(new UniqueError('x').fields).toEqualTypeOf<string[]>();
 
 // Paths inside json fields as lists of keys and indexes.
-expectType<JsonPath>(jsonPath('data', ['in', 0], 1));
-expectType<JsonPath>(jsonPath('data', ['a__b'], 2, 'gte'));
-expectError(jsonPath('data', [true], 1));
+expectTypeOf(jsonPath('data', ['in', 0], 1)).toEqualTypeOf<JsonPath>();
+expectTypeOf(jsonPath('data', ['a__b'], 2, 'gte')).toEqualTypeOf<JsonPath>();
+// @ts-expect-error
+jsonPath('data', [true], 1);
 
 // The modes of bigints.
-expectType<Field<number | bigint, false>>(fields.bigint());
-expectType<Field<bigint, false, { mode: 'bigint' }>>(fields.bigint({ mode: 'bigint' }));
-expectAssignable<Field<bigint, false>>(fields.bigint({ mode: 'bigint' }));
-expectAssignable<Field<string, true>>(fields.bigint({ mode: 'string', null: true }));
+expectTypeOf(fields.bigint()).toEqualTypeOf<
+  Field<number | bigint, false, import('../..').FieldOptions<number | bigint> & { mode?: 'number' }>
+>();
+expectTypeOf(fields.bigint({ mode: 'bigint' })).toEqualTypeOf<Field<bigint, false, { mode: 'bigint' }>>();
+assertType<Field<bigint, false>>(fields.bigint({ mode: 'bigint' }));
+assertType<Field<string, true>>(fields.bigint({ mode: 'string', null: true }));
 
 // Tenants with several databases (a provider for each collection).
 const tenants = new Tenants({
@@ -220,41 +224,44 @@ const tenants = new Tenants({
     routes: id === 'a' ? {} : { Event: 'default' },
   }),
 });
-expectType<Promise<number>>(tenants.run('acme', async () => 1));
-expectType<Databases>(new Databases({ default: { backend: 'memory' } }, { routes: { Event: 'events' } }));
+expectTypeOf(tenants.run('acme', async () => 1)).toEqualTypeOf<Promise<number>>();
+expectTypeOf(new Databases({ default: { backend: 'memory' } }, { routes: { Event: 'events' } })).toEqualTypeOf<Databases>();
 
 // The fs backend and its options.
-expectType<Database>(new Database({ backend: 'fs', dir: 'data', layout: 'files', pretty: true, lock: false }));
-expectError(new Database({ backend: 'fs', dir: 'data', layout: 'rows' }));
-expectType<Database>(
-  new Database({
+expectTypeOf(new Database({ backend: 'fs', dir: 'data', layout: 'files', pretty: true, lock: false })).toEqualTypeOf<Database>();
+// @ts-expect-error
+new Database({ backend: 'fs', dir: 'data', layout: 'rows' });
+expectTypeOf(new Database({
     backend: 'fs',
     dir: 'content',
     watch: { delay: 100 },
-    onChange: (tables) => expectType<string[]>(tables),
-    onError: (err) => expectType<Error>(err),
-  })
-);
-expectError(new Database({ backend: 'fs', dir: 'content', watch: 'yes' }));
+    onChange: (tables) => expectTypeOf(tables).toEqualTypeOf<string[]>(),
+    onError: (err) => expectTypeOf(err).toEqualTypeOf<Error>(),
+  })).toEqualTypeOf<Database>();
+// @ts-expect-error
+new Database({ backend: 'fs', dir: 'content', watch: 'yes' });
 
 // Caches: of a Database (`cache`, `name`), and of models (`cache`: true or { ttl, indexes }).
 const memory = new MemoryCache({ max: 1000, ttl: 60000 });
-expectAssignable<Cache>(memory);
-expectType<number>(memory.size);
-expectType<Promise<unknown>>(memory.get('key'));
-expectType<unknown>(memory.getNow('key'));
-expectType<Promise<void>>(memory.set('key', { a: 1 }, 1000));
-expectType<Promise<void>>(memory.delete(['a', 'b']));
-expectType<Promise<void>>(memory.clear('db1:'));
-expectError(new MemoryCache({ max: '10' }));
+assertType<Cache>(memory);
+expectTypeOf(memory.size).toEqualTypeOf<number>();
+expectTypeOf(memory.get('key')).toEqualTypeOf<Promise<unknown>>();
+expectTypeOf(memory.getNow('key')).toEqualTypeOf<unknown>();
+expectTypeOf(memory.set('key', { a: 1 }, 1000)).toEqualTypeOf<Promise<void>>();
+expectTypeOf(memory.delete(['a', 'b'])).toEqualTypeOf<Promise<void>>();
+expectTypeOf(memory.clear('db1:')).toEqualTypeOf<Promise<void>>();
+// @ts-expect-error
+new MemoryCache({ max: '10' });
 
 declare const bus: CacheBus;
-expectAssignable<Cache>(new SharedCache({ bus }));
-expectAssignable<Cache>(new SharedCache({ bus, name: 'sessions', store: memory }));
-expectAssignable<Cache>(new LocalCache({ bus, max: 100, ttl: 5000 }));
-expectType<void>(new LocalCache({ bus }).deleteNow('key'));
-expectError(new SharedCache({}));
-expectError(new LocalCache());
+assertType<Cache>(new SharedCache({ bus }));
+assertType<Cache>(new SharedCache({ bus, name: 'sessions', store: memory }));
+assertType<Cache>(new LocalCache({ bus, max: 100, ttl: 5000 }));
+expectTypeOf(new LocalCache({ bus }).deleteNow('key')).toEqualTypeOf<void>();
+// @ts-expect-error
+new SharedCache({});
+// @ts-expect-error
+new LocalCache();
 
 // Any object of the four methods is a cache (the NetCache of @xufa/netcache: its own type tests).
 const custom = {
@@ -265,55 +272,66 @@ const custom = {
   async delete(keys: string | string[]) {},
   async clear(prefix?: string) {},
 };
-expectAssignable<Cache>(custom);
-expectNotAssignable<Cache>({ get: async (key: string) => undefined });
+assertType<Cache>(custom);
+// @ts-expect-error
+assertType<Cache>({ get: async (key: string) => undefined });
 
 const cached = new Database({ backend: 'memory', name: 'main', cache: new SharedCache({ bus }) });
-expectType<Cache | null>(cached.cache);
-expectType<string>(cached.name);
-expectError(new Database({ backend: 'memory', cache: 'memory' }));
+expectTypeOf(cached.cache).toEqualTypeOf<Cache | null>();
+expectTypeOf(cached.name).toEqualTypeOf<string>();
+// @ts-expect-error
+new Database({ backend: 'memory', cache: 'memory' });
 
-expectAssignable<ModelOptions>({ cache: true });
-expectAssignable<ModelOptions>({ cache: { ttl: 60000, indexes: ['email'] }, database: 'cache' });
-expectNotAssignable<ModelOptions>({ cache: { indexes: 'email' } });
-expectNotAssignable<ModelOptions>({ cache: 'yes' });
+assertType<ModelOptions>({ cache: true });
+assertType<ModelOptions>({ cache: { ttl: 60000, indexes: ['email'] }, database: 'cache' });
+// @ts-expect-error
+assertType<ModelOptions>({ cache: { indexes: 'email' } });
+// @ts-expect-error
+assertType<ModelOptions>({ cache: 'yes' });
 class CachedUser extends Model {
   static fields = { email: fields.string({ unique: true }) };
   static options: ModelOptions = { cache: { ttl: 30000, indexes: ['email'] } };
 }
-expectAssignable<ModelOptions>(CachedUser.options);
+assertType<ModelOptions>(CachedUser.options);
 
 // The documentation of resources for @xufa/openapi.
 resource(Tag, { openapi: { tag: 'Tags' } });
 resource(Tag, { strict: true, readOnly: ['name'] });
-expectError(resource(Tag, { strict: 'yes' }));
+// @ts-expect-error
+resource(Tag, { strict: 'yes' });
 resource(Tag, { openapi: false });
-expectError(resource(Tag, { openapi: 'yes' }));
+// @ts-expect-error
+resource(Tag, { openapi: 'yes' });
 
 // Reads that stop with a signal.
 const controller = new AbortController();
-expectType<QuerySet<Tag>>(Tag.query().signal(controller.signal));
-expectType<QuerySet<Tag>>(Tag.query().filter({ name: 'a' }).signal(null));
-expectType<Promise<number>>(withSignal(controller.signal, () => Tag.objects.count()));
-expectError(Tag.objects.signal('abort'));
-expectType<Promise<void>>(plugin({}, { database: new Database(), cancel: true }));
-expectType<Promise<void>>(plugin({}, { tenants: { tenants, resolve: (request) => request.headers.tenant } }));
+expectTypeOf(Tag.query().signal(controller.signal)).toEqualTypeOf<QuerySet<Tag>>();
+expectTypeOf(Tag.query().filter({ name: 'a' }).signal(null)).toEqualTypeOf<QuerySet<Tag>>();
+expectTypeOf(withSignal(controller.signal, () => Tag.objects.count())).toEqualTypeOf<Promise<number>>();
+// @ts-expect-error
+Tag.objects.signal('abort');
+expectTypeOf(plugin({}, { database: new Database(), cancel: true })).toEqualTypeOf<Promise<void>>();
+expectTypeOf(plugin({}, { tenants: { tenants, resolve: (request) => request.headers.tenant } })).toEqualTypeOf<Promise<void>>();
 plugin({}, { tenants: { tenants, resolve: () => 'x', authorize: async (request, id, reply) => id === 'x' } });
 plugin({}, { tenants: { tenants, resolve: () => 'x', authorize: false } });
-expectError(plugin({}, { tenants: { tenants, resolve: () => 'x', authorize: true } }));
-expectError(plugin({}, { database: new Database(), cancel: 'yes' }));
+// @ts-expect-error
+plugin({}, { tenants: { tenants, resolve: () => 'x', authorize: true } });
+// @ts-expect-error
+plugin({}, { database: new Database(), cancel: 'yes' });
 
 // Results kept in caches.
-expectType<QuerySet<Tag>>(Tag.query().filter({ name: 'a' }).cached({ ttl: 60000 }));
-expectError(Tag.query().cached({ ttl: '1m' }));
+expectTypeOf(Tag.query().filter({ name: 'a' }).cached({ ttl: 60000 })).toEqualTypeOf<QuerySet<Tag>>();
+// @ts-expect-error
+Tag.query().cached({ ttl: '1m' });
 const rates = keep(async (currency: string, day: Date) => ({ currency, rate: 1 }), {
   ttl: 1000,
   key: (currency) => currency,
 });
-expectType<Promise<{ currency: string; rate: number }>>(rates('EUR', new Date()));
-expectType<Promise<void>>(rates.invalidate('EUR', new Date()));
-expectType<Promise<void>>(rates.clear());
-expectError(rates(1, new Date()));
+expectTypeOf(rates('EUR', new Date())).toEqualTypeOf<Promise<{ currency: string; rate: number }>>();
+expectTypeOf(rates.invalidate('EUR', new Date())).toEqualTypeOf<Promise<void>>();
+expectTypeOf(rates.clear()).toEqualTypeOf<Promise<void>>();
+// @ts-expect-error
+rates(1, new Date());
 keep(async () => 1, { cache: new MemoryCache(), name: 'one' });
 
 // Blob backends.
@@ -327,11 +345,12 @@ class Upload extends Model {
   };
 }
 declare const upload: Upload & { content: BlobValueType; size: number | null; updatedAt: Date | null };
-expectType<Promise<Buffer>>(upload.content.buffer());
-expectType<Promise<string>>(upload.content.url({ expiresIn: '10m' }));
+expectTypeOf(upload.content.buffer()).toEqualTypeOf<Promise<Buffer>>();
+expectTypeOf(upload.content.url({ expiresIn: '10m' })).toEqualTypeOf<Promise<string>>();
 new Database({ backend: 'disk', dir: 'files', url: (table, key) => `/files/${table}/${key}` });
 new Database({ backend: 'memory-blob' });
-expectError(fields.blobInfo('owner'));
+// @ts-expect-error
+fields.blobInfo('owner');
 new Database({
   backend: 's3',
   bucket: 'uploads',
@@ -350,15 +369,17 @@ new Database({
 // Faults.
 import { Faults as FaultsType, FaultRule, FaultError as FaultErrorType } from '../..';
 declare const faultDb: Database;
-expectType<FaultsType>(faultDb.faults);
+expectTypeOf(faultDb.faults).toEqualTypeOf<FaultsType>();
 const rule: FaultRule = faultDb.faults.fail({ operations: 'write', models: ['Order'], rate: 0.2, times: 3 });
-expectType<number>(rule.hits);
+expectTypeOf(rule.hits).toEqualTypeOf<number>();
 faultDb.faults.delay({ operations: ['select', 'count'], ms: 200, jitter: 50 });
 faultDb.faults.hang({ tenants: 'acme' }).release();
 faultDb.faults.down().remove();
-expectError(faultDb.faults.fail({ operations: 'drop' }));
-expectError(faultDb.faults.delay({}));
-expectType<503>({} as FaultErrorType['statusCode']);
+// @ts-expect-error
+faultDb.faults.fail({ operations: 'drop' });
+// @ts-expect-error
+faultDb.faults.delay({});
+expectTypeOf({} as FaultErrorType['statusCode']).toEqualTypeOf<503>();
 
 // Faults of caches; onCacheError.
 import { MemoryCache as MemoryCacheType } from '../..';
@@ -367,7 +388,7 @@ faultyCache.faults.fail({ operations: 'read', keys: 'db1:user:', rate: 0.1 });
 new Database({
   backend: 'memory',
   cache: faultyCache,
-  onCacheError: (err, { operation }) => expectType<'get' | 'set'>(operation),
+  onCacheError: (err, { operation }) => expectTypeOf(operation).toEqualTypeOf<'get' | 'set'>(),
 });
 
 // Model.schema(): typed from the fields, as JSON.
@@ -394,7 +415,7 @@ class SchemaBook extends Model {
   static fields = schemaBookFields;
 }
 const BookOut = SchemaBook.schema();
-expectType<{
+expectTypeOf({} as Infer<typeof BookOut>).toEqualTypeOf<{
   title: string;
   writerId: number | string;
   id?: number | string;
@@ -406,27 +427,28 @@ expectType<{
   createdAt?: string;
   cover?: string | null;
   total?: number;
-}>({} as Infer<typeof BookOut>);
+}>();
 const NewBook = SchemaBook.schema({ input: true, additionalProperties: false });
-expectNotAssignable<keyof Infer<typeof NewBook>>('total');
+// @ts-expect-error
+assertType<keyof Infer<typeof NewBook>>('total');
 const BookPatch = s.partial(s.omit(NewBook, ['id', 'createdAt']));
-expectType<string | undefined>(({} as Infer<typeof BookPatch>).title);
+expectTypeOf(({} as Infer<typeof BookPatch>).title).toEqualTypeOf<string | undefined>();
 // A primary key of its own: no id.
 class Isbn extends Model {
   static fields = { isbn: fields.string({ primaryKey: true }), uid: fields.uuid() };
 }
 const isbnSchema = Isbn.schema();
-expectType<{ isbn: string; uid: string }>({} as Infer<typeof isbnSchema>);
+expectTypeOf({} as Infer<typeof isbnSchema>).toEqualTypeOf<{ isbn: string; uid: string }>();
 class Keyed extends Model {
   static fields = { key: fields.uuid({ primaryKey: true }) };
 }
 const keyedSchema = Keyed.schema();
-expectType<{ key?: string }>({} as Infer<typeof keyedSchema>);
+expectTypeOf({} as Infer<typeof keyedSchema>).toEqualTypeOf<{ key?: string }>();
 // Routes typed by it.
 xufaHttp()
   .withTypeProvider<SchemaTypeProvider>()
   .post('/books', { schema: { body: NewBook, response: { 201: BookOut } } }, async (request) => {
-    expectType<string>(request.body.title);
+    expectTypeOf(request.body.title).toEqualTypeOf<string>();
     return { title: request.body.title, writerId: 1 };
   });
 
@@ -449,17 +471,19 @@ class Post extends Owned {
   static fields = fields.extend(Owned, { title: fields.string({ maxLength: 80 }) });
 }
 const postSchema = Post.schema();
-expectType<{
+expectTypeOf({} as Infer<typeof postSchema>).toEqualTypeOf<{
   title: string;
   id?: number | string;
   createdAt?: string;
   updatedAt?: string;
   ownerId?: number | string | null;
-}>({} as Infer<typeof postSchema>);
-expectType<Date>(({} as Article).createdAt);
-expectType<string>(({} as Article).title);
-expectNotAssignable<keyof typeof articleFields>('updatedAt');
-expectError(fields.extend({ fields: {} }, 1));
+}>();
+expectTypeOf(({} as Article).createdAt).toEqualTypeOf<Date>();
+expectTypeOf(({} as Article).title).toEqualTypeOf<string>();
+// @ts-expect-error
+assertType<keyof typeof articleFields>('updatedAt');
+// @ts-expect-error
+fields.extend({ fields: {} }, 1);
 // Without fields.extend(), the fields of a child are not those of its parent (and its types would miss them).
 // @ts-expect-error the static side of the child is not that of its parent
 class PlainChild extends Timestamped {
@@ -472,56 +496,60 @@ class LogLine extends Model {
   static fields = { line: fields.string() };
 }
 const logSchema = LogLine.schema();
-expectType<{ line: string }>({} as Infer<typeof logSchema>);
+expectTypeOf({} as Infer<typeof logSchema>).toEqualTypeOf<{ line: string }>();
 class Pair extends Model {
   static options = { primaryKey: ['a', 'b'] } satisfies ModelOptions;
   static fields = { a: fields.integer(), b: fields.integer() };
 }
 const pairSchema = Pair.schema();
-expectType<{ a: number; b: number }>({} as Infer<typeof pairSchema>);
+expectTypeOf({} as Infer<typeof pairSchema>).toEqualTypeOf<{ a: number; b: number }>();
 class KeylessLine extends Model {
   static options = { primaryKey: false } satisfies ModelOptions;
   static fields = { line: fields.string() };
 }
 const keylessSchema = KeylessLine.schema();
-expectType<{ line: string }>({} as Infer<typeof keylessSchema>);
+expectTypeOf({} as Infer<typeof keylessSchema>).toEqualTypeOf<{ line: string }>();
 // Written without as const, primaryKey is a boolean: the id stays (not required).
 class Widened extends Model {
   static options = { primaryKey: false };
   static fields = { line: fields.string() };
 }
 const widenedSchema = Widened.schema();
-expectType<{ line: string; id?: number | string }>({} as Infer<typeof widenedSchema>);
+expectTypeOf({} as Infer<typeof widenedSchema>).toEqualTypeOf<{ line: string; id?: number | string }>();
 // Other options do not change it.
 class Ordered extends Model {
   static options = { ordering: ['-at'], table: 'events' };
   static fields = { at: fields.datetime() };
 }
 const orderedSchema = Ordered.schema({ input: true });
-expectType<{ at: string; id?: number | string }>({} as Infer<typeof orderedSchema>);
+expectTypeOf({} as Infer<typeof orderedSchema>).toEqualTypeOf<{ at: string; id?: number | string }>();
 // modelOptions(): the values kept without as const, the names checked.
 class KeptPair extends Model {
   static options = modelOptions({ primaryKey: ['a', 'b'] });
   static fields = { a: fields.integer(), b: fields.integer() };
 }
 const keptPairSchema = KeptPair.schema();
-expectType<{ a: number; b: number }>({} as Infer<typeof keptPairSchema>);
+expectTypeOf({} as Infer<typeof keptPairSchema>).toEqualTypeOf<{ a: number; b: number }>();
 class KeptKeyless extends Model {
   static options = modelOptions({ primaryKey: false, table: 'log_lines', ordering: ['-line'] });
   static fields = { line: fields.string() };
 }
 const keptKeylessSchema = KeptKeyless.schema();
-expectType<{ line: string }>({} as Infer<typeof keptKeylessSchema>);
+expectTypeOf({} as Infer<typeof keptKeylessSchema>).toEqualTypeOf<{ line: string }>();
 class KeptOrdered extends Model {
   static options = modelOptions({ ordering: '-at', cache: { ttl: 1000 } });
   static fields = { at: fields.datetime() };
 }
 const keptOrderedSchema = KeptOrdered.schema({ input: true });
-expectType<{ at: string; id?: number | string }>({} as Infer<typeof keptOrderedSchema>);
-expectError(modelOptions({ primarykey: false }));
-expectError(modelOptions({ table: 'books', ordring: ['title'] }));
-expectError(modelOptions({ primaryKey: 'id' }));
-expectError(modelOptions({ cache: { ttl: '1s' } }));
+expectTypeOf({} as Infer<typeof keptOrderedSchema>).toEqualTypeOf<{ at: string; id?: number | string }>();
+// @ts-expect-error
+modelOptions({ primarykey: false });
+// @ts-expect-error
+modelOptions({ table: 'books', ordring: ['title'] });
+// @ts-expect-error
+modelOptions({ primaryKey: 'id' });
+// @ts-expect-error
+modelOptions({ cache: { ttl: '1s' } });
 // Every option, the lists too (rules, indexes).
 class KeptAll extends Model {
   static options = modelOptions({
@@ -537,31 +565,34 @@ class KeptAll extends Model {
   });
   static fields = { at: fields.datetime() };
 }
-expectAssignable<ModelOptions>(KeptAll.options);
+assertType<ModelOptions>(KeptAll.options);
 // The audit log.
 const audited = new Database({
   backend: 'memory',
   audit: { redact: ['password'], retain: '365d', exclude: ['Session'] },
 });
-expectType<number | null>(new Database({ backend: 'memory', audit: true }).audit!.retain);
+expectTypeOf(new Database({ backend: 'memory', audit: true }).audit!.retain).toEqualTypeOf<number | null>();
 if (audited.audit) {
   const log = audited.audit;
-  expectType<Promise<number>>(log.with({ actor: 'u1', requestId: 'r1' }, async () => 1));
-  expectType<Promise<void>>(log.log('export', { rows: 3 }));
+  expectTypeOf(log.with({ actor: 'u1', requestId: 'r1' }, async () => 1)).toEqualTypeOf<Promise<number>>();
+  expectTypeOf(log.log('export', { rows: 3 })).toEqualTypeOf<Promise<void>>();
   const entries = await log.entries({ model: 'Book', action: 'update', since: new Date() });
-  expectType<AuditEntry[]>(entries);
-  expectType<AuditChange[] | null>(entries[0].changes);
-  expectType<string | null>(entries[0].actor);
+  expectTypeOf(entries).toEqualTypeOf<AuditEntry[]>();
+  expectTypeOf(entries[0].changes).toEqualTypeOf<AuditChange[] | null>();
+  expectTypeOf(entries[0].actor).toEqualTypeOf<string | null>();
 }
-expectError(new Database({ audit: { retain: true } }));
-expectError(fields.string({ audit: 'hide' }));
-expectAssignable<ModelOptions>({ audit: false });
+// @ts-expect-error
+new Database({ audit: { retain: true } });
+// @ts-expect-error
+fields.string({ audit: 'hide' });
+assertType<ModelOptions>({ audit: false });
 
 // The audit log over HTTP: auth is required.
 import { auditResource } from '../..';
-expectType<(app: any) => Promise<void>>(auditResource({ auth: 'admin' }));
-expectType<(app: any) => Promise<void>>(auditResource({ auth: false, pageSize: 20 }));
-expectError(auditResource({}));
+expectTypeOf(auditResource({ auth: 'admin' })).toEqualTypeOf<(app: any) => Promise<void>>();
+expectTypeOf(auditResource({ auth: false, pageSize: 20 })).toEqualTypeOf<(app: any) => Promise<void>>();
+// @ts-expect-error
+auditResource({});
 
 // Factories, soft deletes, defer and inBulk.
 {
@@ -573,21 +604,21 @@ expectError(auditResource({}));
     { name: (n: number) => `Pet ${n}`, color: sequence(['red', 'green']) },
     { states: { red: { color: 'red' } } }
   );
-  expectType<Promise<Pet>>(Pets.state('red').create());
-  expectType<Promise<Pet[]>>(Pets.createMany(2));
-  expectType<Promise<Pet>>(Pets.make());
-  expectType<Promise<number>>(Pet.query().withDeleted().restore());
-  expectType<Promise<number>>(new Pet().forceDelete());
-  expectType<boolean>(new Pet().isDeleted);
-  expectType<Promise<Map<unknown, Pet>>>(Pet.query().defer('color').inBulk([1]));
+  expectTypeOf(Pets.state('red').create()).toEqualTypeOf<Promise<Pet>>();
+  expectTypeOf(Pets.createMany(2)).toEqualTypeOf<Promise<Pet[]>>();
+  expectTypeOf(Pets.make()).toEqualTypeOf<Promise<Pet>>();
+  expectTypeOf(Pet.query().withDeleted().restore()).toEqualTypeOf<Promise<number>>();
+  expectTypeOf(new Pet().forceDelete()).toEqualTypeOf<Promise<number>>();
+  expectTypeOf(new Pet().isDeleted).toEqualTypeOf<boolean>();
+  expectTypeOf(Pet.query().defer('color').inBulk([1])).toEqualTypeOf<Promise<Map<unknown, Pet>>>();
 }
 
 // ping() and the store of the maintenance mode.
 {
   const db = new Database({ backend: 'memory' });
-  expectType<Promise<number>>(db.ping());
+  expectTypeOf(db.ping()).toEqualTypeOf<Promise<number>>();
   const store = maintenance(db, { key: 'app' });
-  expectType<Promise<MaintenanceState | null>>(store.get());
+  expectTypeOf(store.get()).toEqualTypeOf<Promise<MaintenanceState | null>>();
   store.set({ message: 'soon', retryAfter: 60, allow: ['10.0.0.1'] });
 }
 
@@ -595,7 +626,7 @@ expectError(auditResource({}));
 {
   class Post extends Model {}
   const genres = Post.objects.values<{ genre: string }>('genre').distinct();
-  expectType<QuerySet<{ genre: string }>>(genres);
+  expectTypeOf(genres).toEqualTypeOf<QuerySet<{ genre: string }>>();
   Post.objects.orderBy('author', '-at').distinct('author');
   const both = Post.objects
     .filter({ at__month: 12, at__week_day__in: [1, 7] })
@@ -618,8 +649,10 @@ expectError(auditResource({}));
     .annotate({ n: Count() });
   Sale.objects.values('region', { week: Trunc('createdAt', 'week') });
   Sale.objects.valuesList({ y: new Extract('createdAt', 'year') }, { flat: true });
-  expectError(Extract('createdAt', 'decade'));
-  expectError(Trunc('createdAt', 'week_day'));
+  // @ts-expect-error
+  Extract('createdAt', 'decade');
+  // @ts-expect-error
+  Trunc('createdAt', 'week_day');
   void monthly;
 }
 
@@ -627,16 +660,16 @@ expectError(auditResource({}));
   const db = new Database({ backend: 'memory' });
   db.health({ slow: 100 })
     .check()
-    .then((result) => expectType<number | undefined>(result.latency));
+    .then((result) => expectTypeOf(result.latency).toEqualTypeOf<number | undefined>());
 }
 
 // Raw: fragments of SQL in conditions, orders, values, extra(), update() and aggregates.
 {
   class Order extends Model {}
   const raw = Raw(`length(${Raw.TABLE}.title) > ?`, [10]);
-  expectType<string>(raw.sql);
-  expectType<unknown[]>(raw.params);
-  expectType<RawSql>(new Raw('random()'));
+  expectTypeOf(raw.sql).toEqualTypeOf<string>();
+  expectTypeOf(raw.params).toEqualTypeOf<unknown[]>();
+  expectTypeOf(new Raw('random()')).toEqualTypeOf<RawSql>();
   Order.objects
     .filter(raw, { paid: true })
     .exclude(Raw('total < ?', [5]))
@@ -646,11 +679,13 @@ expectError(auditResource({}));
   Order.objects.extra({ items: Raw('(SELECT COUNT(*) FROM line WHERE line.order_id = order.id)') });
   Order.objects.update({ total: Raw('price * ?', [2]) });
   Order.objects.aggregate({ paid: Raw('SUM(CASE WHEN paid THEN 1 ELSE 0 END)'), orders: Count() }).then((result) => {
-    expectType<unknown>(result.paid);
-    expectType<number>(result.orders);
+    expectTypeOf(result.paid).toEqualTypeOf<unknown>();
+    expectTypeOf(result.orders).toEqualTypeOf<number>();
   });
-  expectError(Raw(42));
-  expectError(Order.objects.extra({ items: 'SELECT 1' }));
+  // @ts-expect-error
+  Raw(42);
+  // @ts-expect-error
+  Order.objects.extra({ items: 'SELECT 1' });
 }
 
 // Plain values() ordered by their Extract and Trunc keys.
@@ -659,7 +694,7 @@ expectError(auditResource({}));
   const months = Visit.objects
     .values<{ title: string; month: number }>('title', { month: Extract('at', 'month') })
     .orderBy('-month', 'title');
-  expectType<QuerySet<{ title: string; month: number }>>(months);
+  expectTypeOf(months).toEqualTypeOf<QuerySet<{ title: string; month: number }>>();
   Visit.objects
     .valuesList<number>({ day: Trunc('at', 'day') }, { flat: true })
     .orderBy('day')
@@ -679,40 +714,45 @@ expectError(auditResource({}));
   }
   interface Shelf extends Fields<typeof shelfFields> {}
   const books = Shelf.query().published().orderBy('title').longerThan(100).limit(5);
-  expectType<ScopedQuerySet<Shelf, typeof Shelf.scopes>>(books);
-  books.then((rows) => expectType<Shelf[]>(rows));
+  expectTypeOf(books).toEqualTypeOf<ScopedQuerySet<Shelf, typeof Shelf.scopes>>();
+  books.then((rows) => expectTypeOf(rows).toEqualTypeOf<Shelf[]>());
   Shelf.query()
     .filter({ title__startswith: 'A' })
     .published()
     .first()
-    .then((one) => expectType<Shelf | null>(one));
-  expectError(Shelf.query().longerThan('many'));
-  expectError(Shelf.query().unpublished());
+    .then((one) => expectTypeOf(one).toEqualTypeOf<Shelf | null>());
+  // @ts-expect-error
+  Shelf.query().longerThan('many');
+  // @ts-expect-error
+  Shelf.query().unpublished();
   // values() leaves the objects: no scopes after it.
-  expectError(Shelf.query().values('title').published());
+  // @ts-expect-error
+  Shelf.query().values('title').published();
   // A model without scopes: a QuerySet.
   class Plain extends Model {}
-  expectAssignable<QuerySet<Plain>>(Plain.query().filter({}).limit(1));
+  assertType<QuerySet<Plain>>(Plain.query().filter({}).limit(1));
 }
 
 // Transactions: the options of SQLite and MongoDB.
 {
   const txdb = new Database({ backend: 'memory' });
-  txdb.transaction(async () => 1, { retry: false, timeout: 5000 }).then((n) => expectType<number>(n));
+  txdb.transaction(async () => 1, { retry: false, timeout: 5000 }).then((n) => expectTypeOf(n).toEqualTypeOf<number>());
   txdb.transaction(() => 'x', { mode: 'immediate' });
-  expectError(txdb.transaction(() => 1, { mode: 'later' }));
+  // @ts-expect-error
+  txdb.transaction(() => 1, { mode: 'later' });
 }
 
 // Tests in transactions.
 {
   const testDb = new Database({ backend: 'sqlite', filename: ':memory:' });
   testDb.beginTest().then(() => testDb.rollbackTest());
-  expectType<boolean>(testDb.canRollbackTests);
-  expectType<Promise<void>>(testDb.flush());
+  expectTypeOf(testDb.canRollbackTests).toEqualTypeOf<boolean>();
+  expectTypeOf(testDb.flush()).toEqualTypeOf<Promise<void>>();
   const hooks = { beforeEach: (fn: () => Promise<void>) => fn, afterEach: (fn: () => Promise<void>) => fn };
   rollbackEach(testDb, hooks);
   rollbackEach(() => testDb, { ...hooks, mode: 'flush' });
-  expectError(rollbackEach(testDb, { mode: 'never' }));
+  // @ts-expect-error
+  rollbackEach(testDb, { mode: 'never' });
 }
 
 // Paginator.
@@ -722,13 +762,14 @@ expectError(auditResource({}));
   }
   const paginator = new Paginator(Paged.query().orderBy('title'), 10, { orphans: 2 });
   paginator.page('2').then((page) => {
-    expectType<Paged[]>(page.objectList);
-    expectType<boolean>(page.hasNext);
-    for (const item of page) expectType<Paged>(item);
+    expectTypeOf(page.objectList).toEqualTypeOf<Paged[]>();
+    expectTypeOf(page.hasNext).toEqualTypeOf<boolean>();
+    for (const item of page) expectTypeOf(item).toEqualTypeOf<Paged>();
   });
-  expectType<Promise<(number | '…')[]>>(paginator.elidedPageRange(5));
-  expectType<Promise<Page<number>>>(new Paginator([1, 2, 3], 2).getPage(9));
-  expectError(new Paginator(Paged.objects.all(), '10'));
+  expectTypeOf(paginator.elidedPageRange(5)).toEqualTypeOf<Promise<(number | '…')[]>>();
+  expectTypeOf(new Paginator([1, 2, 3], 2).getPage(9)).toEqualTypeOf<Promise<Page<number>>>();
+  // @ts-expect-error
+  new Paginator(Paged.objects.all(), '10');
 }
 
 // Choices with labels, labels and help of fields.
@@ -739,8 +780,9 @@ expectError(auditResource({}));
       format: fields.string({ choices: { hb: 'Hardback' }, blank: false }),
     };
   }
-  expectType<string | null | undefined>(new Copy().display('status'));
-  expectError(fields.string({ label: 7 }));
+  expectTypeOf(new Copy().display('status')).toEqualTypeOf<string | null | undefined>();
+  // @ts-expect-error
+  fields.string({ label: 7 });
 }
 
 // Constraints and Lower().
@@ -756,7 +798,8 @@ expectError(auditResource({}));
       indexes: [[Lower('name')]],
     };
   }
-  expectType<'lower'>(Lower('name').kind);
-  expectError(Lower(7));
-  expectType<typeof Genre>(Genre);
+  expectTypeOf(Lower('name').kind).toEqualTypeOf<'lower'>();
+  // @ts-expect-error
+  Lower(7);
+  expectTypeOf(Genre).toEqualTypeOf<typeof Genre>();
 }

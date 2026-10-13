@@ -524,7 +524,7 @@ export declare function specOf(model: ModelClass<any>): ModelSpec;
 
 /**
  * Each test in a transaction rolled back at its end (or the models emptied, when the database cannot roll back): the
- * hooks of node:test (rollbackEach(db, { beforeEach, afterEach })), or the globals of vyntra, jest and mocha. A
+ * hooks of node:test (rollbackEach(db, { beforeEach, afterEach })), or the globals of @xufa/test, jest and mocha. A
  * function gives the databases when the tests run (made in a before()). A Tenants: the databases of its tenants open
  * when a test starts, and those the test opens.
  */

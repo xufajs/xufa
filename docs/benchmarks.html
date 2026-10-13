@@ -46,6 +46,7 @@
         <ul>
           <li><a href="#how">How they are measured</a></li>
           <li><a href="#orm">ORM and Sequelize</a></li>
+          <li><a href="#formatter">Formatter</a></li>
           <li><a href="#pg">PostgreSQL driver</a></li>
           <li><a href="#mongo">MongoDB driver</a></li>
           <li><a href="#http">HTTP</a></li>
@@ -166,6 +167,90 @@
           ORM's own API at <code>findByPk</code>: it reads one row, where the ORM's <code>get()</code> asks for a few to
           make sure only one matches (as Django does).
         </p>
+
+        <h2 id="formatter">Formatter</h2>
+        <p>
+          <code>@xufa/lint</code>'s formatter against prettier 3.9.9 on the files of this repository that
+          <code>xufa-format</code> formats (1,594), each in a process of its own (<code>node bench/format.js</code>),
+          with the same output for every file. In kilobytes formatted a second, more is better. Warm is the median of 9
+          passes after the first (an editor, a watcher); the first pass is what a command does, loading included.
+        </p>
+        <h3>Warm</h3>
+        <p class="legend"><span class="us">@xufa/lint</span><span>prettier</span></p>
+        <div class="pairs">
+          <div class="pair win">
+            <div class="head"><span>JavaScript, 1,326 files</span><span class="times">1.78&times;</span></div>
+            <div class="chart-row us"><span class="name">@xufa/lint</span><span class="track"><span class="fill" style="width: 100.0%"></span></span><span class="value">1.48k KB/s</span></div>
+            <div class="chart-row"><span class="name">prettier</span><span class="track"><span class="fill" style="width: 56.1%"></span></span><span class="value">829 KB/s</span></div>
+          </div>
+          <div class="pair win">
+            <div class="head"><span>TypeScript, 144 files</span><span class="times">1.87&times;</span></div>
+            <div class="chart-row us"><span class="name">@xufa/lint</span><span class="track"><span class="fill" style="width: 100.0%"></span></span><span class="value">2.89k KB/s</span></div>
+            <div class="chart-row"><span class="name">prettier</span><span class="track"><span class="fill" style="width: 53.4%"></span></span><span class="value">1.55k KB/s</span></div>
+          </div>
+          <div class="pair win">
+            <div class="head"><span>JSON, 67 files</span><span class="times">3.29&times;</span></div>
+            <div class="chart-row us"><span class="name">@xufa/lint</span><span class="track"><span class="fill" style="width: 100.0%"></span></span><span class="value">23.7k KB/s</span></div>
+            <div class="chart-row"><span class="name">prettier</span><span class="track"><span class="fill" style="width: 30.4%"></span></span><span class="value">7.20k KB/s</span></div>
+          </div>
+          <div class="pair win">
+            <div class="head"><span>markdown, 59 files</span><span class="times">2.26&times;</span></div>
+            <div class="chart-row us"><span class="name">@xufa/lint</span><span class="track"><span class="fill" style="width: 100.0%"></span></span><span class="value">963 KB/s</span></div>
+            <div class="chart-row"><span class="name">prettier</span><span class="track"><span class="fill" style="width: 44.3%"></span></span><span class="value">426 KB/s</span></div>
+          </div>
+        </div>
+        <h3>Cold: the first pass</h3>
+        <div class="pairs">
+          <div class="pair win">
+            <div class="head"><span>JavaScript, 1,326 files</span><span class="times">1.37&times;</span></div>
+            <div class="chart-row us"><span class="name">@xufa/lint</span><span class="track"><span class="fill" style="width: 100.0%"></span></span><span class="value">1.12k KB/s</span></div>
+            <div class="chart-row"><span class="name">prettier</span><span class="track"><span class="fill" style="width: 73.1%"></span></span><span class="value">819 KB/s</span></div>
+          </div>
+          <div class="pair win">
+            <div class="head"><span>TypeScript, 144 files</span><span class="times">1.47&times;</span></div>
+            <div class="chart-row us"><span class="name">@xufa/lint</span><span class="track"><span class="fill" style="width: 100.0%"></span></span><span class="value">1.36k KB/s</span></div>
+            <div class="chart-row"><span class="name">prettier</span><span class="track"><span class="fill" style="width: 68.2%"></span></span><span class="value">930 KB/s</span></div>
+          </div>
+          <div class="pair win">
+            <div class="head"><span>JSON, 67 files</span><span class="times">1.94&times;</span></div>
+            <div class="chart-row us"><span class="name">@xufa/lint</span><span class="track"><span class="fill" style="width: 100.0%"></span></span><span class="value">5.34k KB/s</span></div>
+            <div class="chart-row"><span class="name">prettier</span><span class="track"><span class="fill" style="width: 51.7%"></span></span><span class="value">2.76k KB/s</span></div>
+          </div>
+          <div class="pair win">
+            <div class="head"><span>markdown, 59 files</span><span class="times">1.34&times;</span></div>
+            <div class="chart-row us"><span class="name">@xufa/lint</span><span class="track"><span class="fill" style="width: 100.0%"></span></span><span class="value">567 KB/s</span></div>
+            <div class="chart-row"><span class="name">prettier</span><span class="track"><span class="fill" style="width: 74.7%"></span></span><span class="value">423 KB/s</span></div>
+          </div>
+        </div>
+        <h3>The command</h3>
+        <table>
+          <thead>
+            <tr><th><code>--check</code> on</th><th>prettier</th><th>@xufa/lint</th><th>Speed</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>The whole repository (1,594 files)</td><td>20.5 s</td><td>10.7 s</td><td>1.92&times;</td></tr>
+            <tr><td>One JavaScript file (280 lines)</td><td>215 ms</td><td>184 ms</td><td>1.17&times;</td></tr>
+            <tr><td>One TypeScript file (index.d.ts)</td><td>187 ms</td><td>145 ms</td><td>1.29&times;</td></tr>
+            <tr><td>One README.md with code blocks of JavaScript</td><td>221 ms</td><td>191 ms</td><td>1.16&times;</td></tr>
+            <tr><td>One package.json</td><td>132 ms</td><td>91 ms</td><td>1.45&times;</td></tr>
+          </tbody>
+        </table>
+        <p>
+          The machine was busy in these runs (prettier's TypeScript took 0.7 to 1.2 s warm from one run to another):
+          read the ratios as ranges. The formatter parses JavaScript and TypeScript with its own copy of TypeScript's
+          parser, what the parser needs of typescript.js (973 KB of 8.9 MB): it loads in 8 ms, against 45 ms for
+          TypeScript, which is why one file is faster too; JSON has a parser of its own and loads none of it.
+          All numbers, and what made it faster: <code>bench/results/format-1.md</code> to <code>format-4.md</code>.
+        </p>
+        <details class="raw">
+          <summary>All numbers (bench/results/format-3.md)</summary>
+          <pre><code>| Language | Files | KB | prettier cold | xufa cold | speed | prettier warm | xufa warm | speed |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| JavaScript | 1,326 | 8,327 | 10,171 ms | 7,436 ms | 1.37x | 10,039 ms | 5,632 ms | 1.78x |
+| TypeScript | 144 | 1,088 | 1,170 ms | 798 ms | 1.47x | 704 ms | 376 ms | 1.87x |
+| JSON | 67 | 497 | 180 ms | 93 ms | 1.93x | 69 ms | 21 ms | 3.37x |
+| markdown | 59 | 569 | 1,344 ms | 1,004 ms | 1.34x | 1,335 ms | 591 ms | 2.26x |</code></pre>
+        </details>
 
         <h2 id="pg">PostgreSQL driver</h2>
         <p>
@@ -1321,104 +1406,232 @@ Server processor time per request (lower is better):
         <div class="charts">
           <div class="chart">
             <h3><code>a + b * 2</code></h3>
-            <p class="subtitle">Runs a second. JavaScript itself (new Function, no sandbox): 379M.</p>
-            <div class="chart-row us win"><span class="name">@xufa/expression</span><span class="track"><span class="fill" style="width: 100.0%"></span></span><span class="value">131M</span></div>
-            <div class="chart-row"><span class="name">jexl</span><span class="track"><span class="fill" style="width: 0.8%"></span></span><span class="value">1.0M</span></div>
-            <div class="chart-row"><span class="name">expr-eval</span><span class="track"><span class="fill" style="width: 4.4%"></span></span><span class="value">5.8M</span></div>
-            <div class="chart-row"><span class="name">filtrex</span><span class="track"><span class="fill" style="width: 14.2%"></span></span><span class="value">18.6M</span></div>
-            <div class="chart-row"><span class="name">SandboxJS</span><span class="track"><span class="fill" style="width: 0.5%"></span></span><span class="value">307k</span></div>
+            <p class="subtitle">Runs a second. JavaScript itself (new Function, no sandbox): 392M.</p>
+            <div class="chart-row us win"><span class="name">@xufa/expression</span><span class="track"><span class="fill" style="width: 100.0%"></span></span><span class="value">138M</span></div>
+            <div class="chart-row"><span class="name">jexl</span><span class="track"><span class="fill" style="width: 0.8%"></span></span><span class="value">1.1M</span></div>
+            <div class="chart-row"><span class="name">expr-eval</span><span class="track"><span class="fill" style="width: 4.0%"></span></span><span class="value">5.5M</span></div>
+            <div class="chart-row"><span class="name">filtrex</span><span class="track"><span class="fill" style="width: 13.2%"></span></span><span class="value">18.3M</span></div>
+            <div class="chart-row"><span class="name">SandboxJS</span><span class="track"><span class="fill" style="width: 0.5%"></span></span><span class="value">236k</span></div>
           </div>
           <div class="chart">
             <h3><code>user.address.city</code></h3>
-            <p class="subtitle">Runs a second. JavaScript itself (new Function, no sandbox): 394M.</p>
-            <div class="chart-row us win"><span class="name">@xufa/expression</span><span class="track"><span class="fill" style="width: 100.0%"></span></span><span class="value">130M</span></div>
-            <div class="chart-row"><span class="name">jexl</span><span class="track"><span class="fill" style="width: 1.9%"></span></span><span class="value">2.5M</span></div>
-            <div class="chart-row"><span class="name">expr-eval</span><span class="track"><span class="fill" style="width: 12.9%"></span></span><span class="value">16.8M</span></div>
-            <div class="chart-row"><span class="name">filtrex</span><span class="track"><span class="fill" style="width: 11.9%"></span></span><span class="value">15.5M</span></div>
-            <div class="chart-row"><span class="name">SandboxJS</span><span class="track"><span class="fill" style="width: 0.5%"></span></span><span class="value">347k</span></div>
+            <p class="subtitle">Runs a second. JavaScript itself (new Function, no sandbox): 502M.</p>
+            <div class="chart-row us win"><span class="name">@xufa/expression</span><span class="track"><span class="fill" style="width: 100.0%"></span></span><span class="value">140M</span></div>
+            <div class="chart-row"><span class="name">jexl</span><span class="track"><span class="fill" style="width: 1.9%"></span></span><span class="value">2.6M</span></div>
+            <div class="chart-row"><span class="name">expr-eval</span><span class="track"><span class="fill" style="width: 11.9%"></span></span><span class="value">16.7M</span></div>
+            <div class="chart-row"><span class="name">filtrex</span><span class="track"><span class="fill" style="width: 11.0%"></span></span><span class="value">15.4M</span></div>
+            <div class="chart-row"><span class="name">SandboxJS</span><span class="track"><span class="fill" style="width: 0.5%"></span></span><span class="value">264k</span></div>
           </div>
           <div class="chart">
             <h3><code>a &gt; 2 &amp;&amp; b == 4 ? 'big' : 'small'</code></h3>
-            <p class="subtitle">Runs a second. JavaScript itself (new Function, no sandbox): 385M.</p>
-            <div class="chart-row us win"><span class="name">@xufa/expression</span><span class="track"><span class="fill" style="width: 100.0%"></span></span><span class="value">124M</span></div>
-            <div class="chart-row"><span class="name">jexl</span><span class="track"><span class="fill" style="width: 0.5%"></span></span><span class="value">651k</span></div>
-            <div class="chart-row"><span class="name">expr-eval</span><span class="track"><span class="fill" style="width: 1.8%"></span></span><span class="value">2.2M</span></div>
-            <div class="chart-row"><span class="name">filtrex</span><span class="track"><span class="fill" style="width: 11.7%"></span></span><span class="value">14.4M</span></div>
-            <div class="chart-row"><span class="name">SandboxJS</span><span class="track"><span class="fill" style="width: 0.5%"></span></span><span class="value">253k</span></div>
+            <p class="subtitle">Runs a second. JavaScript itself (new Function, no sandbox): 414M.</p>
+            <div class="chart-row us win"><span class="name">@xufa/expression</span><span class="track"><span class="fill" style="width: 100.0%"></span></span><span class="value">131M</span></div>
+            <div class="chart-row"><span class="name">jexl</span><span class="track"><span class="fill" style="width: 0.6%"></span></span><span class="value">752k</span></div>
+            <div class="chart-row"><span class="name">expr-eval</span><span class="track"><span class="fill" style="width: 1.7%"></span></span><span class="value">2.2M</span></div>
+            <div class="chart-row"><span class="name">filtrex</span><span class="track"><span class="fill" style="width: 10.8%"></span></span><span class="value">14.2M</span></div>
+            <div class="chart-row"><span class="name">SandboxJS</span><span class="track"><span class="fill" style="width: 0.5%"></span></span><span class="value">205k</span></div>
           </div>
           <div class="chart">
             <h3><code>user.name.toUpperCase()</code></h3>
-            <p class="subtitle">Runs a second. JavaScript itself (new Function, no sandbox): 26.7M. jexl, expr-eval and filtrex cannot write it.</p>
-            <div class="chart-row us win"><span class="name">@xufa/expression</span><span class="track"><span class="fill" style="width: 100.0%"></span></span><span class="value">24.8M</span></div>
-            <div class="chart-row"><span class="name">SandboxJS</span><span class="track"><span class="fill" style="width: 1.0%"></span></span><span class="value">252k</span></div>
+            <p class="subtitle">Runs a second. JavaScript itself (new Function, no sandbox): 29.3M. jexl, expr-eval and filtrex cannot write it.</p>
+            <div class="chart-row us win"><span class="name">@xufa/expression</span><span class="track"><span class="fill" style="width: 100.0%"></span></span><span class="value">25.9M</span></div>
+            <div class="chart-row"><span class="name">SandboxJS</span><span class="track"><span class="fill" style="width: 0.8%"></span></span><span class="value">209k</span></div>
           </div>
           <div class="chart">
             <h3><code>items.map(i =&gt; i.price * i.quantity).reduce(...)</code></h3>
-            <p class="subtitle">Runs a second. JavaScript itself (new Function, no sandbox): 46.9M. jexl, expr-eval and filtrex cannot write it.</p>
-            <div class="chart-row us win"><span class="name">@xufa/expression</span><span class="track"><span class="fill" style="width: 100.0%"></span></span><span class="value">32.9M</span></div>
-            <div class="chart-row"><span class="name">SandboxJS</span><span class="track"><span class="fill" style="width: 0.5%"></span></span><span class="value">46k</span></div>
+            <p class="subtitle">Runs a second. JavaScript itself (new Function, no sandbox): 52.4M. jexl, expr-eval and filtrex cannot write it.</p>
+            <div class="chart-row us win"><span class="name">@xufa/expression</span><span class="track"><span class="fill" style="width: 100.0%"></span></span><span class="value">37.4M</span></div>
+            <div class="chart-row"><span class="name">SandboxJS</span><span class="track"><span class="fill" style="width: 0.5%"></span></span><span class="value">44k</span></div>
           </div>
           <div class="chart">
             <h3><code>`${user.name} lives in ${user.address.city}`</code></h3>
-            <p class="subtitle">Runs a second. JavaScript itself (new Function, no sandbox): 58.0M. jexl, expr-eval and filtrex cannot write it.</p>
-            <div class="chart-row us win"><span class="name">@xufa/expression</span><span class="track"><span class="fill" style="width: 100.0%"></span></span><span class="value">43.2M</span></div>
-            <div class="chart-row"><span class="name">SandboxJS</span><span class="track"><span class="fill" style="width: 0.5%"></span></span><span class="value">192k</span></div>
+            <p class="subtitle">Runs a second. JavaScript itself (new Function, no sandbox): 60.6M. jexl, expr-eval and filtrex cannot write it.</p>
+            <div class="chart-row us win"><span class="name">@xufa/expression</span><span class="track"><span class="fill" style="width: 100.0%"></span></span><span class="value">49.8M</span></div>
+            <div class="chart-row"><span class="name">SandboxJS</span><span class="track"><span class="fill" style="width: 0.5%"></span></span><span class="value">156k</span></div>
           </div>
         </div>
         <p>
-          Method calls run at 93% of the speed of JavaScript, <code>map</code> and <code>reduce</code> with arrow functions
-          at 70%; for the smallest expressions, a third, where the call of the function is most of the cost. Compiled and
+          Method calls run at 88% of the speed of JavaScript, <code>map</code> and <code>reduce</code> with arrow functions
+          at 71%; for the smallest expressions, about a third, where the call of the function is most of the cost. Compiled and
           run each time (one-off expressions), it is ahead of the other sandboxes too:
         </p>
         <div class="charts">
           <div class="chart">
             <h3><code>a + b * 2</code>, compiled each time</h3>
             <p class="subtitle">Runs a second. JavaScript itself: 1.6M.</p>
-            <div class="chart-row us win"><span class="name">@xufa/expression</span><span class="track"><span class="fill" style="width: 100.0%"></span></span><span class="value">725k</span></div>
-            <div class="chart-row"><span class="name">jexl</span><span class="track"><span class="fill" style="width: 9.4%"></span></span><span class="value">68k</span></div>
-            <div class="chart-row"><span class="name">expr-eval</span><span class="track"><span class="fill" style="width: 88.9%"></span></span><span class="value">644k</span></div>
-            <div class="chart-row"><span class="name">filtrex</span><span class="track"><span class="fill" style="width: 14.1%"></span></span><span class="value">102k</span></div>
-            <div class="chart-row"><span class="name">SandboxJS</span><span class="track"><span class="fill" style="width: 0.5%"></span></span><span class="value">3.6k</span></div>
+            <div class="chart-row us win"><span class="name">@xufa/expression</span><span class="track"><span class="fill" style="width: 100.0%"></span></span><span class="value">706k</span></div>
+            <div class="chart-row"><span class="name">jexl</span><span class="track"><span class="fill" style="width: 11.9%"></span></span><span class="value">84k</span></div>
+            <div class="chart-row"><span class="name">expr-eval</span><span class="track"><span class="fill" style="width: 92.9%"></span></span><span class="value">657k</span></div>
+            <div class="chart-row"><span class="name">filtrex</span><span class="track"><span class="fill" style="width: 14.9%"></span></span><span class="value">106k</span></div>
+            <div class="chart-row"><span class="name">SandboxJS</span><span class="track"><span class="fill" style="width: 0.7%"></span></span><span class="value">4.6k</span></div>
           </div>
           <div class="chart">
             <h3><code>user.address.city</code>, compiled each time</h3>
             <p class="subtitle">Runs a second. JavaScript itself: 1.5M.</p>
-            <div class="chart-row us win"><span class="name">@xufa/expression</span><span class="track"><span class="fill" style="width: 100.0%"></span></span><span class="value">603k</span></div>
-            <div class="chart-row"><span class="name">jexl</span><span class="track"><span class="fill" style="width: 12.9%"></span></span><span class="value">78k</span></div>
-            <div class="chart-row"><span class="name">expr-eval</span><span class="track"><span class="fill" style="width: 37.2%"></span></span><span class="value">224k</span></div>
-            <div class="chart-row"><span class="name">filtrex</span><span class="track"><span class="fill" style="width: 17.4%"></span></span><span class="value">105k</span></div>
-            <div class="chart-row"><span class="name">SandboxJS</span><span class="track"><span class="fill" style="width: 0.6%"></span></span><span class="value">3.5k</span></div>
+            <div class="chart-row us win"><span class="name">@xufa/expression</span><span class="track"><span class="fill" style="width: 100.0%"></span></span><span class="value">734k</span></div>
+            <div class="chart-row"><span class="name">jexl</span><span class="track"><span class="fill" style="width: 12.9%"></span></span><span class="value">95k</span></div>
+            <div class="chart-row"><span class="name">expr-eval</span><span class="track"><span class="fill" style="width: 34.3%"></span></span><span class="value">252k</span></div>
+            <div class="chart-row"><span class="name">filtrex</span><span class="track"><span class="fill" style="width: 15.3%"></span></span><span class="value">113k</span></div>
+            <div class="chart-row"><span class="name">SandboxJS</span><span class="track"><span class="fill" style="width: 0.6%"></span></span><span class="value">4.5k</span></div>
           </div>
           <div class="chart">
             <h3><code>map and reduce</code>, compiled each time</h3>
             <p class="subtitle">Runs a second. JavaScript itself: 1.2M.</p>
-            <div class="chart-row us win"><span class="name">@xufa/expression</span><span class="track"><span class="fill" style="width: 100.0%"></span></span><span class="value">140k</span></div>
-            <div class="chart-row"><span class="name">SandboxJS</span><span class="track"><span class="fill" style="width: 1.9%"></span></span><span class="value">2.6k</span></div>
+            <div class="chart-row us win"><span class="name">@xufa/expression</span><span class="track"><span class="fill" style="width: 100.0%"></span></span><span class="value">179k</span></div>
+            <div class="chart-row"><span class="name">SandboxJS</span><span class="track"><span class="fill" style="width: 1.7%"></span></span><span class="value">3.1k</span></div>
           </div>
         </div>
         <details class="raw">
-          <summary>All numbers (bench/results/expression-4.md)</summary>
+          <summary>All numbers (bench/results/expression-5.md)</summary>
           <pre><code>Compiled once, then run (runs a second):
 
 | Case | xufa | jexl | expr-eval | filtrex | sandboxjs | new Function (no sandbox) |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: |
-| arithmetic | 131.10M | 1.04M | 5.75M | 18.58M | 306.9k | 379.19M |
-| member | 130.00M | 2.47M | 16.77M | 15.52M | 347.0k | 394.42M |
-| condition | 123.61M | 650.6k | 2.23M | 14.43M | 252.5k | 385.40M |
-| method call | 24.77M | – | – | – | 251.8k | 26.69M |
-| map and reduce | 32.88M | – | – | – | 45.7k | 46.91M |
-| template literal | 43.23M | – | – | – | 191.7k | 58.05M |
+| arithmetic | 138.38M | 1.09M | 5.49M | 18.28M | 235.7k | 391.67M |
+| member | 140.03M | 2.65M | 16.71M | 15.37M | 263.5k | 502.06M |
+| condition | 131.47M | 752.0k | 2.20M | 14.18M | 204.7k | 413.90M |
+| method call | 25.91M | – | – | – | 208.5k | 29.33M |
+| map and reduce | 37.39M | – | – | – | 43.8k | 52.35M |
+| template literal | 49.79M | – | – | – | 156.4k | 60.60M |
 
 Compiled and run each time (runs a second):
 
 | Case | xufa | jexl | expr-eval | filtrex | sandboxjs | new Function (no sandbox) |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: |
-| arithmetic | 725.2k | 68.2k | 644.4k | 102.2k | 3.6k | 1.63M |
-| member | 603.3k | 77.8k | 224.3k | 105.0k | 3.5k | 1.54M |
-| condition | 384.3k | 54.1k | 326.0k | 44.7k | 3.3k | 1.48M |
-| method call | 540.9k | – | – | – | 3.5k | 1.41M |
-| map and reduce | 139.9k | – | – | – | 2.6k | 1.18M |
-| template literal | 341.8k | – | – | – | 3.4k | 1.45M |</code></pre>
+| arithmetic | 706.4k | 84.1k | 656.5k | 105.6k | 4.6k | 1.58M |
+| member | 734.3k | 94.7k | 251.6k | 112.5k | 4.5k | 1.48M |
+| condition | 372.3k | 63.4k | 345.2k | 48.1k | 4.3k | 1.47M |
+| method call | 671.2k | – | – | – | 4.5k | 1.41M |
+| map and reduce | 178.7k | – | – | – | 3.1k | 1.22M |
+| template literal | 432.9k | – | – | – | 4.5k | 1.42M |</code></pre>
+        </details>
+
+        <h3 id="expression-programs">Programs</h3>
+        <p>
+          An engine with <code>statements: true</code> runs programs: branches, loops, functions, objects built and
+          exceptions. Its rival is SandboxJS 0.9, the other sandbox that runs statements; <code>node:vm</code> (a function
+          compiled in another context, not a security boundary) and <code>new Function</code> are JavaScript without a
+          sandbox, the bound. Programs also become one function of JavaScript, with their checks (members changed,
+          steps of loops and calls, depth) in it. Compiled once, they run 140 to 2,200 times as fast as SandboxJS (5 times
+          with exceptions thrown), from a third of the speed of JavaScript to as fast:
+        </p>
+        <p class="legend"><span class="us">@xufa/expression</span><span>SandboxJS</span></p>
+        <div class="charts">
+          <div class="chart">
+            <h3><code>if / else if</code></h3>
+            <p class="subtitle">Runs a second. Without a sandbox: node:vm 44.0M, new Function 51.5M.</p>
+            <div class="chart-row us win"><span class="name">@xufa/expression</span><span class="track"><span class="fill" style="width: 100.0%"></span></span><span class="value">44.5M</span></div>
+            <div class="chart-row"><span class="name">SandboxJS</span><span class="track"><span class="fill" style="width: 0.5%"></span></span><span class="value">107k</span></div>
+          </div>
+          <div class="chart">
+            <h3><code>switch</code></h3>
+            <p class="subtitle">Runs a second. Without a sandbox: node:vm 146M, new Function 373M.</p>
+            <div class="chart-row us win"><span class="name">@xufa/expression</span><span class="track"><span class="fill" style="width: 100.0%"></span></span><span class="value">134M</span></div>
+            <div class="chart-row"><span class="name">SandboxJS</span><span class="track"><span class="fill" style="width: 0.5%"></span></span><span class="value">144k</span></div>
+          </div>
+          <div class="chart">
+            <h3><code>for...of (4 turns)</code></h3>
+            <p class="subtitle">Runs a second. Without a sandbox: node:vm 16.3M, new Function 113M.</p>
+            <div class="chart-row us win"><span class="name">@xufa/expression</span><span class="track"><span class="fill" style="width: 100.0%"></span></span><span class="value">65.5M</span></div>
+            <div class="chart-row"><span class="name">SandboxJS</span><span class="track"><span class="fill" style="width: 0.5%"></span></span><span class="value">30k</span></div>
+          </div>
+          <div class="chart">
+            <h3><code>for (100 turns)</code></h3>
+            <p class="subtitle">Runs a second. Without a sandbox: node:vm 16.1M, new Function 17.3M.</p>
+            <div class="chart-row us win"><span class="name">@xufa/expression</span><span class="track"><span class="fill" style="width: 100.0%"></span></span><span class="value">8.0M</span></div>
+            <div class="chart-row"><span class="name">SandboxJS</span><span class="track"><span class="fill" style="width: 0.5%"></span></span><span class="value">3.8k</span></div>
+          </div>
+          <div class="chart">
+            <h3><code>function and while</code></h3>
+            <p class="subtitle">Runs a second. Without a sandbox: node:vm 67.5M, new Function 87.7M.</p>
+            <div class="chart-row us win"><span class="name">@xufa/expression</span><span class="track"><span class="fill" style="width: 100.0%"></span></span><span class="value">42.3M</span></div>
+            <div class="chart-row"><span class="name">SandboxJS</span><span class="track"><span class="fill" style="width: 0.5%"></span></span><span class="value">35k</span></div>
+          </div>
+          <div class="chart">
+            <h3><code>object built</code></h3>
+            <p class="subtitle">Runs a second. Without a sandbox: node:vm 5.7M, new Function 7.3M.</p>
+            <div class="chart-row us win"><span class="name">@xufa/expression</span><span class="track"><span class="fill" style="width: 100.0%"></span></span><span class="value">4.4M</span></div>
+            <div class="chart-row"><span class="name">SandboxJS</span><span class="track"><span class="fill" style="width: 0.7%"></span></span><span class="value">31k</span></div>
+          </div>
+          <div class="chart">
+            <h3><code>try / throw</code></h3>
+            <p class="subtitle">Runs a second. Without a sandbox: node:vm 233k, new Function 198k.</p>
+            <div class="chart-row us win"><span class="name">@xufa/expression</span><span class="track"><span class="fill" style="width: 100.0%"></span></span><span class="value">234k</span></div>
+            <div class="chart-row"><span class="name">SandboxJS</span><span class="track"><span class="fill" style="width: 18.6%"></span></span><span class="value">44k</span></div>
+          </div>
+        </div>
+        <p>
+          Compiled and run each time, 28 to 57 times as fast as SandboxJS; compiling one takes about 10 microseconds.
+        </p>
+        <div class="charts">
+          <div class="chart">
+            <h3><code>if / else if</code>, compiled each time</h3>
+            <p class="subtitle">Runs a second. Without a sandbox: node:vm 737k, new Function 1.2M.</p>
+            <div class="chart-row us win"><span class="name">@xufa/expression</span><span class="track"><span class="fill" style="width: 100.0%"></span></span><span class="value">120k</span></div>
+            <div class="chart-row"><span class="name">SandboxJS</span><span class="track"><span class="fill" style="width: 2.3%"></span></span><span class="value">2.8k</span></div>
+          </div>
+          <div class="chart">
+            <h3><code>switch</code>, compiled each time</h3>
+            <p class="subtitle">Runs a second. Without a sandbox: node:vm 752k, new Function 1.2M.</p>
+            <div class="chart-row us win"><span class="name">@xufa/expression</span><span class="track"><span class="fill" style="width: 100.0%"></span></span><span class="value">142k</span></div>
+            <div class="chart-row"><span class="name">SandboxJS</span><span class="track"><span class="fill" style="width: 2.2%"></span></span><span class="value">3.1k</span></div>
+          </div>
+          <div class="chart">
+            <h3><code>for...of (4 turns)</code>, compiled each time</h3>
+            <p class="subtitle">Runs a second. Without a sandbox: node:vm 601k, new Function 1.3M.</p>
+            <div class="chart-row us win"><span class="name">@xufa/expression</span><span class="track"><span class="fill" style="width: 100.0%"></span></span><span class="value">137k</span></div>
+            <div class="chart-row"><span class="name">SandboxJS</span><span class="track"><span class="fill" style="width: 2.0%"></span></span><span class="value">2.7k</span></div>
+          </div>
+          <div class="chart">
+            <h3><code>for (100 turns)</code>, compiled each time</h3>
+            <p class="subtitle">Runs a second. Without a sandbox: node:vm 491k, new Function 1.2M.</p>
+            <div class="chart-row us win"><span class="name">@xufa/expression</span><span class="track"><span class="fill" style="width: 100.0%"></span></span><span class="value">98k</span></div>
+            <div class="chart-row"><span class="name">SandboxJS</span><span class="track"><span class="fill" style="width: 1.7%"></span></span><span class="value">1.7k</span></div>
+          </div>
+          <div class="chart">
+            <h3><code>function and while</code>, compiled each time</h3>
+            <p class="subtitle">Runs a second. Without a sandbox: node:vm 587k, new Function 1.1M.</p>
+            <div class="chart-row us win"><span class="name">@xufa/expression</span><span class="track"><span class="fill" style="width: 100.0%"></span></span><span class="value">98k</span></div>
+            <div class="chart-row"><span class="name">SandboxJS</span><span class="track"><span class="fill" style="width: 2.6%"></span></span><span class="value">2.6k</span></div>
+          </div>
+          <div class="chart">
+            <h3><code>object built</code>, compiled each time</h3>
+            <p class="subtitle">Runs a second. Without a sandbox: node:vm 491k, new Function 1.0M.</p>
+            <div class="chart-row us win"><span class="name">@xufa/expression</span><span class="track"><span class="fill" style="width: 100.0%"></span></span><span class="value">126k</span></div>
+            <div class="chart-row"><span class="name">SandboxJS</span><span class="track"><span class="fill" style="width: 2.1%"></span></span><span class="value">2.7k</span></div>
+          </div>
+          <div class="chart">
+            <h3><code>try / throw</code>, compiled each time</h3>
+            <p class="subtitle">Runs a second. Without a sandbox: node:vm 219k, new Function 168k.</p>
+            <div class="chart-row us win"><span class="name">@xufa/expression</span><span class="track"><span class="fill" style="width: 100.0%"></span></span><span class="value">76k</span></div>
+            <div class="chart-row"><span class="name">SandboxJS</span><span class="track"><span class="fill" style="width: 3.5%"></span></span><span class="value">2.7k</span></div>
+          </div>
+        </div>
+        <details class="raw">
+          <summary>All numbers (bench/results/expression-programs-3.md)</summary>
+          <pre><code>Compiled once, then run (runs a second):
+
+| Case | xufa | sandboxjs | node:vm (no sandbox) | new Function (no sandbox) |
+| --- | ---: | ---: | ---: | ---: |
+| if / else if | 44.45M | 106.9k | 44.04M | 51.47M |
+| switch | 133.93M | 144.4k | 145.57M | 373.06M |
+| for...of (4 turns) | 65.52M | 30.3k | 16.25M | 112.70M |
+| for (100 turns) | 7.95M | 3.8k | 16.08M | 17.29M |
+| function and while | 42.29M | 34.8k | 67.54M | 87.73M |
+| object built | 4.36M | 31.2k | 5.67M | 7.26M |
+| try / throw | 234.2k | 43.5k | 232.5k | 198.0k |
+
+Compiled and run each time (runs a second):
+
+| Case | xufa | sandboxjs | node:vm (no sandbox) | new Function (no sandbox) |
+| --- | ---: | ---: | ---: | ---: |
+| if / else if | 120.2k | 2.8k | 736.8k | 1.16M |
+| switch | 142.3k | 3.1k | 751.9k | 1.18M |
+| for...of (4 turns) | 136.6k | 2.7k | 600.8k | 1.25M |
+| for (100 turns) | 97.5k | 1.7k | 490.8k | 1.23M |
+| function and while | 98.3k | 2.6k | 587.0k | 1.15M |
+| object built | 125.9k | 2.7k | 490.9k | 1.03M |
+| try / throw | 76.3k | 2.7k | 218.5k | 168.2k |</code></pre>
         </details>
 
         <h2 id="templates">Templates</h2>
@@ -1561,6 +1774,7 @@ node bench/micro/logger.js       # @xufa/logger and pino
 node bench/micro/serializer.js   # @xufa/serializer, fast-json-stringify and JSON.stringify
 node bench/micro/expression.js   # @xufa/expression and the evaluators of expressions
 node bench/micro/template.js     # @xufa/template and the template engines
+node bench/format.js            # the formatter of @xufa/lint and prettier
 node bench/micro/websocket.js    # @xufa/websocket and ws, without and with bufferutil
 node bench/view.js               # large pages, whole and streamed</code></pre>
         <p>

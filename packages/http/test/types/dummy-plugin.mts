@@ -1,5 +1,5 @@
 // Ported from fastify (test/types/dummy-plugin.mts, MIT License) by tools/port-types/port.js: do not edit, change the tool.
-import { XufaPluginAsync } from '../..'
+import type { XufaPluginAsync } from '../../index.cjs'
 
 export interface DummyPluginOptions {
   foo?: number

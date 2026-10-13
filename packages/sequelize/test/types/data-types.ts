@@ -1,5 +1,5 @@
 // Ported from sequelize (test/types/data-types.ts, MIT License) by tools/port-types/port.js: do not edit, change the tool.
-import { expectTypeOf } from 'expect-type';
+import { expectTypeOf } from '@xufa/test';
 import { DataTypes } from 'sequelize';
 
 const { TINYINT, SMALLINT, MEDIUMINT, BIGINT, INTEGER, JSON, JSONB, CITEXT, MACADDR, TSVECTOR, CIDR, INET } = DataTypes;

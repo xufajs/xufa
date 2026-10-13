@@ -38,7 +38,7 @@ function copy(from, to, transform = (text) => text, rename = (name) => name) {
   return count;
 }
 
-const mochaToVyntra = (text) =>
+const mochaToXufaTest = (text) =>
   text.replace(/(^|[^\w.])before\(/g, '$1beforeAll(').replace(/(^|[^\w.])after\(/g, '$1afterAll(');
 
 fs.rmSync(path.join(PACKAGE, 'lib'), { recursive: true, force: true });
@@ -55,7 +55,7 @@ const tests = path.join(PACKAGE, 'test');
 for (const entry of fs.existsSync(tests) ? fs.readdirSync(tests) : []) {
   if (entry !== 'types' && entry !== 'xufa') fs.rmSync(path.join(tests, entry), { recursive: true, force: true });
 }
-const count = copy(path.join(jsYaml, 'test'), tests, mochaToVyntra, (name) =>
+const count = copy(path.join(jsYaml, 'test'), tests, mochaToXufaTest, (name) =>
   /^\d\d-[\w-]+\.js$/.test(name) ? name.replace(/\.js$/, '.test.js') : name
 );
 console.log(`js-yaml ${version}: ${lib} files of lib, ${count} files of tests`);

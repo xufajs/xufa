@@ -1,7 +1,10 @@
 node_modules
 coverage
 bench/results/*.json
-.vyntra
+.xufa-test
+# The node_modules of the fixtures of @xufa/test are part of them.
+!packages/test*/test/fixtures/**/node_modules/
+packages/test*/test/fixtures/**/node_modules/.cache/
 *.log
 
 # The MongoDB replica set of the tests (tools/mongo-rs.js).

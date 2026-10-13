@@ -1,0 +1,63 @@
+# What must hold for every change.
+#
+# checks: the code linted and formatted, and the files built from others up to date with them (each build's --check
+# fails when they are not; `pnpm build:check` runs them all):
+# - @xufa/admin: the page of the admin (lib/client/dist), built from client/;
+# - @xufa/lint: TypeScript's parser for the formatter (lib/prettier/parse/typescript.cjs), built from the installed
+#   TypeScript, and the formatter as one file (lib/prettier/dist/format.mjs): after an upgrade of TypeScript, run
+#   `pnpm --filter @xufa/lint build:format` and commit what it writes;
+# - @xufa/test: its docs in Markdown (docs/), built from the site's pages.
+#
+# tests: the tests of every package, the type tests and the checks of the docs (their examples run, their links).
+# - No databases or storage here: the tests of PostgreSQL, MongoDB, S3 and Azure skip when theirs cannot be reached
+#   (XUFA_PG_URL, XUFA_MONGO_URL, XUFA_S3_URL, XUFA_AZURE_CONNECTION_STRING name them; the drivers' own tests try
+#   127.0.0.1 first). Everything else runs as on a laptop.
+# - Browsers: @xufa/test-web, test-ai and test-mcp drive Playwright's Chromium (installed below, with the libraries it
+#   needs); @xufa/browser, the admin's browser tests and the crawl of the docs use the runner's Google Chrome.
+name: checks
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: checks-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm lint
+      - run: pnpm format:check
+      - run: pnpm build:check
+
+  tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      # Ubuntu 24.04 keeps programs from making the user namespaces Chrome's sandbox uses.
+      - name: Let Chrome's sandbox run
+        run: sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0
+      - name: Install Playwright's Chromium
+        run: pnpm --filter @xufa/test-web exec playwright install --with-deps chromium
+      - run: pnpm test
+      - run: pnpm test:types
+      - run: pnpm docs:check

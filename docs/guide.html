@@ -757,7 +757,7 @@ npm run dev                           # http://127.0.0.1:3000/books, restarted o
               <tr><td><code>xufa work</code></td><td>Workers of the queue (<code>--concurrency 4 --queues mail,reports</code>)</td></tr>
               <tr><td><code>xufa down</code></td><td>The <a href="http/guide.html#maintenance">maintenance mode</a> on: a 503 for every request but <code>/health</code> (<code>--message</code>, <code>--retry 60</code>, <code>--allow ip,ip</code>, <code>--secret [path]</code>: a path that lets a browser through). This machine (<code>.xufa/down.json</code>), or every one with <code>--everywhere</code> (in the database)</td></tr>
               <tr><td><code>xufa up</code></td><td>The maintenance mode off (<code>--everywhere</code>: in the database too)</td></tr>
-              <tr><td><code>xufa test [files...]</code></td><td>The tests of the app with <code>NODE_ENV=test</code>: by vyntra when the app has it (<code>--runner node</code> or <code>vyntra</code> to choose), else <code>node --test</code>. Each test in a transaction rolled back: <a href="orm/guide.html#testing">rollbackEach</a></td></tr>
+              <tr><td><code>xufa test [files...]</code></td><td>The tests of the app with <code>NODE_ENV=test</code>: by <a href="test/index.html">@xufa/test</a> when the app has it, as the apps of <code>xufa new</code> do (<code>--runner node</code> or <code>xufa-test</code> to choose), else <code>node --test</code>. Each test in a transaction rolled back: <a href="orm/guide.html#testing">rollbackEach</a></td></tr>
               <tr><td><code>xufa health</code></td><td>The checks of <a href="http/guide.html#health">GET /health</a>, run once: their status, time and errors (exit code 1 when the app is down)</td></tr>
             </tbody>
           </table>
@@ -813,10 +813,9 @@ describe('books', () =&gt; {
           <code>TestCase</code>: it builds the app of <code>xufa.yaml</code> once for the file (SQLite in memory,
           migrated, light password hashes, the emails kept), rolls back each test, and loads the fixtures it is given
           before each one. Each <a href="#tenants">tenant</a> gets a database in memory too (<code>tenantsUrl</code>),
-          made the first time a test uses it and rolled back after each test as that of the project. It works with the hooks of the runner, globals or those of <code>node:test</code>.
+          made the first time a test uses it and rolled back after each test as that of the project. It works with the hooks of the runner: those of <a href="test/index.html">@xufa/test</a>, which <code>xufa new</code> gives the app, of Jest or Vitest, or those of <code>node:test</code>.
         </p>
-        <pre><code class="language-js">import { test } from 'node:test';
-import assert from 'node:assert/strict';
+        <pre><code class="language-js">import { test, expect } from '@xufa/test';
 import { useTestApp } from 'xufa/testing';
 
 const app = useTestApp({ fixtures: ['library'] }); // fixtures/library.yaml (or seeds/)
@@ -826,8 +825,8 @@ test('a reader sees what they borrowed', async () =&gt; {
   const client = app.client(); // Django's self.client
   await client.login({ username: 'rita', password: 'a-password' });
   const res = await client.get(app.reverse('my-borrowed'));
-  assert.equal(res.statusCode, 200);
-  assert.equal(app.mails.length, 0); // Django's mail.outbox
+  expect(res.statusCode).toBe(200);
+  expect(app.mails).toHaveLength(0); // Django's mail.outbox
 });</code></pre>
         <p>
           Fixtures are data files (Django's <code>loaddata</code>): objects by model, in order. <code>$key</code> names
@@ -847,7 +846,7 @@ Book:
 BookInstance:
   - { book: $earthsea, status: o, borrower: $rita, dueBack: +14d }</code></pre>
         <p>
-          xufa's own tests run with <a href="https://www.npmjs.com/package/vyntra">vyntra</a>, but any runner with the
+          xufa's own tests run with <a href="test/index.html">@xufa/test</a>, but any runner with the
           API of Jest or Vitest works.
         </p>
         <p>

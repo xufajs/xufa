@@ -46,7 +46,7 @@ A test that fails before its `faults.clear()` would leave its faults to the test
 every rule of every faults (the database, its caches, the clients, the bus...) and lets go what they hold:
 
 ```js
-// In the setup files of the runner (setupFiles of Jest, Vitest or vyntra; --require of Mocha):
+// In the setup files of the runner (setupFiles of Jest, Vitest or @xufa/test; --require of Mocha):
 import '@xufa/faults/register'; // or 'xufa/faults/register'
 
 // Or in a test file, with the hooks of the runner:
@@ -58,8 +58,8 @@ useFaults(); // afterEach of the runner (a global); useFaults(await import('node
   cleared all the same, so the next test is not the one that fails for it. `useFaults({ strict: true })`,
   `useFaults(await import('node:test'), { strict: true })`, or `@xufa/faults/register-strict` in the setup files. A
   test that clears its faults in an `afterEach` of its own is fine: those run before the one of the setup files.
-  xufa's own suites that use faults (faults, orm, client, cluster, netcache, xufa) run strict: with vyntra,
-  `"vyntra": { "setupFiles": ["@xufa/faults/register-strict"] }` in package.json.
+  xufa's own suites that use faults (faults, orm, client, cluster, netcache, xufa) run strict: with @xufa/test,
+  `"xufaTest": { "setupFiles": ["@xufa/faults/register-strict"] }` in package.json.
 - `clearFaults()` gives the number of rules it removed; `activeFaults()` the faults that have rules now.
 - They reach every copy of this package in the process (the registry is global), so the faults of every part of xufa
   are cleared, whichever one they came from.
@@ -170,7 +170,7 @@ kind: 'down', for: '5m' }] } }`: steps name targets), checked when the plugin is
   and sets every value as text. Scenarios are started and stopped with their steps shown as they go, and one can be
   written there, as JSON (`{ name, steps, duration }`, an example given with the first target): the server checks it
   (its message shown) and starts it; the text is kept in the browser.
-  `test/ui.browser.test.js` drives it in Chrome or Edge as installed (with playwright-core; skipped without one): the
+  `test/ui.browser.test.js` drives it in Chrome or Edge as installed (with @xufa/browser; skipped without one): the
   form, rules refused by the server, the buttons, scenarios, and no error of a script or of the policy.
 
 ## Errors

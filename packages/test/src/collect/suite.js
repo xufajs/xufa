@@ -1,0 +1,95 @@
+// A describe() block, or the root of a file. mode is 'run', 'only', 'skip' or 'todo'.
+class Suite {
+  constructor(name = '', parent = null, mode = 'run', options = {}) {
+    this.type = 'suite';
+    this.name = name;
+    this.parent = parent;
+    this.mode = mode;
+    this.options = options;
+    this.children = [];
+    this.hooks = { beforeAll: [], afterAll: [], beforeEach: [], afterEach: [] };
+    this.concurrent = options.concurrent ?? parent?.concurrent ?? false;
+    this.fullName = parent?.fullName ? `${parent.fullName} ${name}` : name;
+    // Tags the tests inside it carry, with those of the blocks around it.
+    this.tags = [...new Set([...(parent?.tags ?? []), ...[options.tags ?? []].flat()])];
+    this.collectError = null;
+  }
+
+  // Suites from the root down to this one.
+  get path() {
+    const suites = [];
+    for (let suite = this; suite; suite = suite.parent) {
+      suites.unshift(suite);
+    }
+    return suites;
+  }
+
+  hasOnly() {
+    return this.children.some((child) => child.mode === 'only' || (child.type === 'suite' && child.hasOnly()));
+  }
+
+  hasRunnable() {
+    return this.children.some((child) => (child.type === 'test' ? child.mode === 'run' : child.hasRunnable()));
+  }
+
+  // Keeps only the tests keep() accepts, and the suites that still have tests: what a shard of a split file runs.
+  retainTests(keep) {
+    this.children = this.children.filter((child) => {
+      if (child.type === 'test') {
+        return keep(child);
+      }
+      child.retainTests(keep);
+      return child.children.length > 0;
+    });
+  }
+
+  // Marks every test that would run as skipped (a skipped or todo describe).
+  skipAll() {
+    this.children.forEach((child) => {
+      if (child.mode === 'run' || child.mode === 'only') {
+        child.mode = 'skip';
+      }
+      if (child.type === 'suite') {
+        child.skipAll();
+      }
+    });
+  }
+
+  // A failing beforeAll fails every test that would run.
+  failAll(error) {
+    this.children.forEach((child) => {
+      if (child.type === 'suite') {
+        child.failAll(error);
+      } else if (child.mode === 'run') {
+        child.failError = error;
+      }
+    });
+  }
+
+  // Applies .only and the test name pattern: what is left out is marked as skipped. Mirrors vitest's rules.
+  // selected(test): whether a test the modes would run is wanted by this run (-t, --last-failed).
+  interpretModes(hasOnly, selected, parentIsOnly = false) {
+    const isOnly = parentIsOnly || this.mode === 'only';
+    this.children.forEach((child) => {
+      const included = isOnly || child.mode === 'only';
+      if (hasOnly && !(child.type === 'suite' && (included || child.hasOnly())) && child.mode === 'run' && !included) {
+        child.mode = 'skip';
+      }
+      if (child.mode === 'only') {
+        child.mode = 'run';
+      }
+      if (child.type === 'test') {
+        if (selected && child.mode === 'run' && !selected(child)) {
+          child.mode = 'skip';
+          child.filtered = true;
+        }
+      } else if (child.mode === 'skip' || child.mode === 'todo') {
+        child.skipAll();
+      } else {
+        child.interpretModes(hasOnly, selected, included && hasOnly);
+      }
+    });
+  }
+}
+
+module.exports = { Suite };

@@ -19,9 +19,9 @@
     "LICENSE"
   ],
   "scripts": {
-    "test": "vyntra",
-    "test:types": "tsd && tsc -p test/types-dsl",
-    "build:helpers": "node scripts/generate-standalone-helpers.js && prettier --write lib/standalone-helpers.js && eslint lib/standalone-helpers.js"
+    "test": "xufa-test",
+    "test:types": "xufa-test --typecheck.only && tsc -p test/types-dsl",
+    "build:helpers": "node scripts/generate-standalone-helpers.js && xufa-format --write lib/standalone-helpers.js && xufa-lint lib/standalone-helpers.js"
   },
   "keywords": [
     "json-schema",
@@ -58,18 +58,15 @@
   },
   "devDependencies": {
     "@xufa/http": "workspace:*",
+    "@xufa/lint": "workspace:^",
+    "@xufa/test": "workspace:^",
     "ajv": "^8.20.0",
     "ajv-draft-04": "^1.0.0",
     "fastify": "^5.12.5",
     "json-schema-test-suite": "github:json-schema-org/JSON-Schema-Test-Suite#5b0ee1613e45fcc2bddac00e07c19cd49b00d8a8",
-    "tsd": "^0.33.0",
-    "typescript": "~6.0.3",
-    "vyntra": "^0.7.0"
+    "typescript": "~6.0.3"
   },
   "publishConfig": {
     "access": "public"
-  },
-  "tsd": {
-    "directory": "test/types"
   }
 }

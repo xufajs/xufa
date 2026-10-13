@@ -216,6 +216,14 @@ const books = await Book.findAll({
               <tbody>
                 <tr><td><a href="guide.html"><code>xufa</code></a></td><td></td><td>The framework: <code>@xufa/http</code>, and the rest by its paths (<code>xufa/orm</code>, <code>xufa/auth</code>, <code>xufa/schema</code>, <code>xufa/config</code>, <code>xufa/scheduler</code>, <code>xufa/queue</code>, <code>xufa/admin</code>, <code>xufa/session</code>, <code>xufa/client</code>, <code>xufa/openapi</code>, <code>xufa/faults</code>, <code>xufa/expression</code>, <code>xufa/template</code>)</td></tr>
                 <!--generated: packages-table-->
+                <tr class="group"><th colspan="3"><a href="packages.html#testing">Testing</a></th></tr>
+                <tr><td><a href="test/index.html"><code>@xufa/test</code></a></td><td>Jest, Vitest</td><td>A test runner with the API of Jest and Vitest: their suites run as they are, several times faster, with no dependencies.</td></tr>
+                <tr><td><a href="test/guide.html#e2e"><code>@xufa/test-web</code></a></td><td>Playwright Test</td><td>End-to-end tests in a browser on Playwright: fixtures, web-first assertions and failure pages that show what the page did.</td></tr>
+                <tr><td><a href="browser/index.html"><code>@xufa/browser</code></a></td><td>playwright-core</td><td>Chrome and Edge driven by the DevTools Protocol, with the API of Playwright for pages, locators, the keyboard and the mouse.</td></tr>
+                <tr><td><a href="bundle/index.html"><code>@xufa/bundle</code></a></td><td>esbuild</td><td>ES modules, JSX, TypeScript and CommonJS packages as one script for browsers, with tree shaking, minifying and their stylesheets.</td></tr>
+                <tr><td><a href="lint/index.html"><code>@xufa/lint</code></a></td><td>ESLint, prettier</td><td>ESLint's recommended rules and prettier's formatter, ported, on TypeScript's parser: the same problems as ESLint, the same output as prettier.</td></tr>
+                <tr><td><a href="test/guide.html#ai"><code>@xufa/test-ai</code></a></td><td></td><td>AI steps: an agent that drives a page toward a goal, and toSatisfy(claim), replayed from a cache so CI makes no model calls.</td></tr>
+                <tr><td><a href="test/guide.html#agents"><code>@xufa/test-mcp</code></a></td><td></td><td>An MCP server: coding agents run the tests, read what failed and why, and try locators on pages.</td></tr>
                 <tr class="group"><th colspan="3"><a href="packages.html#framework">The framework</a></th></tr>
                 <tr><td><a href="http/index.html"><code>@xufa/http</code></a></td><td>fastify</td><td>The HTTP framework: routes, schemas, hooks, plugins and decorators, with the API of fastify.</td></tr>
                 <tr><td><a href="websocket/index.html"><code>@xufa/websocket</code></a></td><td>ws, @fastify/websocket</td><td>WebSockets: the client and server of ws, WebSocket routes, and rooms across workers and machines.</td></tr>
@@ -237,6 +245,7 @@ const books = await Book.findAll({
                 <tr class="group"><th colspan="3"><a href="packages.html#templates">Expressions and templates</a></th></tr>
                 <tr><td><a href="expression/index.html"><code>@xufa/expression</code></a></td><td>eval, expr-eval</td><td>JavaScript expressions evaluated safely, compiled to closures and to code once they are hot.</td></tr>
                 <tr><td><a href="template/index.html"><code>@xufa/template</code></a></td><td>Handlebars, Mustache</td><td>Templates with expressions, partials, layouts and streaming, and reply.view() for @xufa/http.</td></tr>
+                <tr><td><a href="rules/index.html"><code>@xufa/rules</code></a></td><td>OpenL Tablets, Drools decision tables</td><td>Business rules in Excel workbooks: decision tables, calculations in steps and their tests, run as functions; kept in versions and edited in the admin.</td></tr>
                 <tr class="group"><th colspan="3"><a href="packages.html#security">Security</a></th></tr>
                 <tr><td><a href="jwt/index.html"><code>@xufa/jwt</code></a></td><td>jsonwebtoken</td><td>JSON Web Tokens with the API and the tests of jsonwebtoken, jws and jwa, with EdDSA. @xufa/auth signs with it.</td></tr>
                 <tr class="group"><th colspan="3"><a href="packages.html#running">Running</a></th></tr>

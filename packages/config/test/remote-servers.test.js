@@ -2,7 +2,7 @@
 // Consul (XUFA_CONSUL_URL, as `consul agent -dev`) and Vault (XUFA_VAULT_URL and XUFA_VAULT_TOKEN, as
 // `vault server -dev -dev-root-token-id=<token>`). Without them, these tests are skipped.
 //
-//   XUFA_CONSUL_URL=http://127.0.0.1:8500 XUFA_VAULT_URL=http://127.0.0.1:8200 XUFA_VAULT_TOKEN=root npx vyntra test/remote-servers.test.js
+//   XUFA_CONSUL_URL=http://127.0.0.1:8500 XUFA_VAULT_URL=http://127.0.0.1:8200 XUFA_VAULT_TOKEN=root npx xufa-test test/remote-servers.test.js
 import crypto from 'node:crypto';
 import fs from 'node:fs';
 import os from 'node:os';

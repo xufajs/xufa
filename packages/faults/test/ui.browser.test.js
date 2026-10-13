@@ -1,4 +1,4 @@
-// The page of the faults plugin (/_faults/ui) in a browser (Chrome or Edge as installed, driven by playwright-core;
+// The page of the faults plugin (/_faults/ui) in a browser (Chrome or Edge as installed, driven by @xufa/browser;
 // skipped without one): the token asked, the targets listed, rules made by the form (filters of names and regular
 // expressions), a rule refused by the server, removed, a hang released, a scenario started and stopped, one written on
 // the page (not JSON, refused, started), every rule cleared, a wrong token asked again; and no error of a script nor of
@@ -6,28 +6,12 @@
 import fs from 'node:fs';
 import xufa from '@xufa/http';
 import { Faults, cacheFaults, plugin } from '../index.js';
-import { createRequire } from 'node:module';
-
-const require = createRequire(import.meta.url);
+import { chromium, findBrowser } from '@xufa/browser';
 
 const TOKEN = 'a-token-of-the-staging-admin';
 
-const CHROME = [
-  process.env.CHROME,
-  'C:/Program Files/Google/Chrome/Application/chrome.exe',
-  'C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe',
-  '/usr/bin/google-chrome',
-  '/usr/bin/chromium',
-  '/usr/bin/chromium-browser',
-  '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',
-].find((file) => file && fs.existsSync(file));
-
-let playwright = null;
-try {
-  playwright = require('playwright-core'); // eslint-disable-line global-require
-} catch {
-  playwright = null;
-}
+// Chrome or Edge as installed (CHROME gives another), driven by @xufa/browser.
+const CHROME = findBrowser();
 
 function targets() {
   const db = new Faults({
@@ -55,7 +39,7 @@ function targets() {
   return { db, cache };
 }
 
-describe.skipIf(!CHROME || !playwright)('the page of the faults, in a browser', () => {
+describe.skipIf(!CHROME)('the page of the faults, in a browser', () => {
   let app;
   let browser;
   let page;
@@ -81,7 +65,7 @@ describe.skipIf(!CHROME || !playwright)('the page of the faults, in a browser', 
     });
     await app.listen({ port: 0, host: '127.0.0.1' });
     base = `http://127.0.0.1:${app.server.address().port}/_faults`;
-    browser = await playwright.chromium.launch({ executablePath: CHROME });
+    browser = await chromium.launch({ executablePath: CHROME });
     page = await browser.newPage();
     page.on('pageerror', (err) => problems.push(err.message));
     page.on('console', (message) => {
@@ -174,7 +158,7 @@ describe.skipIf(!CHROME || !playwright)('the page of the faults, in a browser', 
       JSON.stringify({ name: 'mine', steps: [{ target, kind: 'delay', options: { ms: 5 } }], duration: '1m' });
     await page.fill('#scenario-json', written('nowhere'));
     await page.click('#scenario-start');
-    await page.waitForFunction(() => /no target nowhere/.test(document.querySelector('#scenario-error').textContent));
+    await page.waitForFunction(() => /no target nowhere/.test(document.querySelector('#scenario-error')?.textContent ?? ''));
     await page.fill('#scenario-json', written('cache'));
     await page.click('#scenario-start');
     await page.waitForFunction(() =>

@@ -72,6 +72,9 @@
           <li><a href="../discovery/index.html">@xufa/discovery</a></li>
           <li><a href="../netcache/index.html">@xufa/netcache</a></li>
           <li><a href="../faults/index.html">@xufa/faults</a></li>
+          <li><a href="../browser/index.html">@xufa/browser</a></li>
+          <li><a href="../bundle/index.html">@xufa/bundle</a></li>
+          <li><a href="../lint/index.html">@xufa/lint</a></li>
           <li><a href="../marshal/index.html">@xufa/marshal</a></li>
           <li><a href="../yaml/index.html">@xufa/yaml</a></li>
           <li><a href="../jwt/index.html">@xufa/jwt</a></li>
@@ -147,7 +150,10 @@
       setTranslator(fn: ((key: string, params: Record&lt;string, unknown&gt;, english: string) =&gt; string) | null): void;
       ADMIN_MESSAGES: Readonly&lt;Record&lt;string, string&gt;&gt;;
     }, options?: { messages?: boolean })</code></td><td><code>this</code></td><td><p>The messages of the API of</p></td></tr>
-                <tr><td><code>translateForms(forms: { setTranslator(fn: ((key: string, params: Record&lt;string, unknown&gt;, english: string) =&gt; string) | null): void; FORMS_MESSAGES: Readonly&lt;Record&lt;string, string&gt;&gt; }, options?: { messages?: boolean })</code></td><td><code>this</code></td><td><p>The messages of the forms of</p></td></tr>
+                <tr><td><code>translateForms(forms: {
+      setTranslator(fn: ((key: string, params: Record&lt;string, unknown&gt;, english: string) =&gt; string) | null): void;
+      FORMS_MESSAGES: Readonly&lt;Record&lt;string, string&gt;&gt;;
+    }, options?: { messages?: boolean })</code></td><td><code>this</code></td><td><p>The messages of the forms of</p></td></tr>
                 <tr><td><code>install(module: {
       setTranslator(fn: ((key: string, params: Record&lt;string, unknown&gt;, english: string) =&gt; string) | null): void;
     }, namespace: string, bundled: Record&lt;string, Record&lt;string, unknown&gt;&gt; | null)</code></td><td><code>this</code></td><td><p>Installs the translator of a module and xufa's catalogs of it (by locale) under a namespace.</p></td></tr>

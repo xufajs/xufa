@@ -20,8 +20,8 @@
     "LICENSE"
   ],
   "scripts": {
-    "test": "vyntra",
-    "test:types": "tsd"
+    "test": "xufa-test",
+    "test:types": "xufa-test --typecheck.only"
   },
   "keywords": [
     "views",
@@ -48,19 +48,15 @@
     "@xufa/forms": "workspace:*"
   },
   "devDependencies": {
-    "@xufa/orm": "workspace:*",
-    "@xufa/http": "workspace:*",
-    "@xufa/template": "workspace:*",
-    "@xufa/session": "workspace:*",
     "@xufa/auth": "workspace:*",
-    "tsd": "^0.33.0",
-    "vyntra": "^0.7.0"
+    "@xufa/http": "workspace:*",
+    "@xufa/orm": "workspace:*",
+    "@xufa/session": "workspace:*",
+    "@xufa/template": "workspace:*",
+    "@xufa/test": "workspace:^"
   },
   "publishConfig": {
     "access": "public"
-  },
-  "tsd": {
-    "directory": "test/types"
   },
   "peerDependencies": {
     "@xufa/orm": "workspace:*"

@@ -19,8 +19,8 @@
     "LICENSE"
   ],
   "scripts": {
-    "test": "vyntra",
-    "test:types": "tsd"
+    "test": "xufa-test",
+    "test:types": "xufa-test --typecheck.only"
   },
   "keywords": [
     "http",
@@ -47,19 +47,15 @@
   "devDependencies": {
     "@xufa/http": "workspace:*",
     "@xufa/logger": "workspace:*",
-    "tsd": "^0.33.0",
-    "vyntra": "^0.7.0"
+    "@xufa/test": "workspace:^"
   },
   "publishConfig": {
     "access": "public"
   },
-  "tsd": {
-    "directory": "test/types"
-  },
   "dependencies": {
     "@xufa/faults": "workspace:*"
   },
-  "vyntra": {
+  "xufaTest": {
     "setupFiles": [
       "@xufa/faults/register-strict"
     ]

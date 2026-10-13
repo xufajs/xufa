@@ -83,10 +83,10 @@ augments is imported for it); `<!--run-before: code-->` adds declarations it tak
 The crawl (`crawl.js`) opens every page in a browser from the disk (`file://`, as the docs are read), following the
 links from `index.html`: a link to a page or file that is not there, to a folder, or to an anchor that is not in its
 page, a page without the style of the site, and an error of a script fail it. It drives Chrome or Edge as installed
-(`CHROME` gives another) with playwright-core, and is skipped without one.
+(`CHROME` gives another) with @xufa/browser, and is skipped without one.
 
 Edit the sources here, not the generated pages: `docs:check` fails on a generated page edited by hand. `docs/` is not
-formatted by prettier (`.prettierignore`), so the pages are written as the generators make them.
+formatted (the global ignores of `xufa.lint.config.js`), so the pages are written as the generators make them.
 
 After a new run of a benchmark, update the name of its report in the generator (`router-2.md`, `logger-2.md`...) and
 run `pnpm docs`.

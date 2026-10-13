@@ -1,23 +1,25 @@
-import { expectType, expectError } from 'tsd';
+import { expectTypeOf } from '@xufa/test';
 import { Discovery, DiscoveryError, createDiscovery, type Peer } from '../..';
 
 type Meta = { url: string; role: 'api' | 'worker' };
 const discovery = createDiscovery<Meta>({ service: 'shop', meta: { url: 'http://10.0.0.5:3000', role: 'api' } });
-expectType<Discovery<Meta>>(discovery);
-expectType<Promise<Discovery<Meta>>>(discovery.start());
-expectType<Peer<Meta>[]>(discovery.peers);
-expectType<Peer<Meta> | undefined>(discovery.get('id'));
+expectTypeOf(discovery).toEqualTypeOf<Discovery<Meta>>();
+expectTypeOf(discovery.start()).toEqualTypeOf<Promise<Discovery<Meta>>>();
+expectTypeOf(discovery.peers).toEqualTypeOf<Peer<Meta>[]>();
+expectTypeOf(discovery.get('id')).toEqualTypeOf<Peer<Meta> | undefined>();
 
-discovery.on('up', (peer) => expectType<string>(peer.meta.url));
-discovery.on('down', (peer, reason) => expectType<'bye' | 'timeout'>(reason));
-discovery.on('update', (peer, previous) => expectType<Meta>(previous));
-discovery.on('message', (event, data, peer) => expectType<string>(event));
+discovery.on('up', (peer) => expectTypeOf(peer.meta.url).toEqualTypeOf<string>());
+discovery.on('down', (peer, reason) => expectTypeOf(reason).toEqualTypeOf<'bye' | 'timeout'>());
+discovery.on('update', (peer, previous) => expectTypeOf(previous).toEqualTypeOf<Meta>());
+discovery.on('message', (event, data, peer) => expectTypeOf(event).toEqualTypeOf<string>());
 
-expectType<Promise<Peer<Meta>[]>>(discovery.waitFor((peers) => peers.length >= 2, { timeout: 5000 }));
-expectType<Promise<void>>(discovery.send('hi', { n: 1 }, { to: 'id' }));
+expectTypeOf(discovery.waitFor((peers) => peers.length >= 2, { timeout: 5000 })).toEqualTypeOf<Promise<Peer<Meta>[]>>();
+expectTypeOf(discovery.send('hi', { n: 1 }, { to: 'id' })).toEqualTypeOf<Promise<void>>();
 new Discovery({ transport: 'unicast', seeds: ['10.0.0.2:29050', ['10.0.0.3', 29050]], secret: Buffer.alloc(32) });
 
-expectError(new Discovery({ transport: 'tcp' }));
-expectError(discovery.send(1));
+// @ts-expect-error
+new Discovery({ transport: 'tcp' });
+// @ts-expect-error
+discovery.send(1);
 const err = new DiscoveryError();
-expectType<DiscoveryError["code"]>(err.code);
+expectTypeOf(err.code).toEqualTypeOf<DiscoveryError["code"]>();

@@ -73,7 +73,10 @@ export declare class I18n {
   ): this;
   /** The messages of the forms of @xufa/forms in the locale of each request, as forms.*. */
   translateForms(
-    forms: { setTranslator(fn: ((key: string, params: Record<string, unknown>, english: string) => string) | null): void; FORMS_MESSAGES: Readonly<Record<string, string>> },
+    forms: {
+      setTranslator(fn: ((key: string, params: Record<string, unknown>, english: string) => string) | null): void;
+      FORMS_MESSAGES: Readonly<Record<string, string>>;
+    },
     options?: { messages?: boolean }
   ): this;
   /** Installs the translator of a module and xufa's catalogs of it (by locale) under a namespace. */

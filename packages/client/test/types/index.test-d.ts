@@ -1,4 +1,4 @@
-import { expectType, expectError } from 'tsd';
+import { expectTypeOf } from '@xufa/test';
 import { createClient, retry, HTTPError, RetryError, Client } from '../..';
 
 const api = createClient({
@@ -6,30 +6,35 @@ const api = createClient({
   timeout: 5000,
   retry: { attempts: 5, statuses: [503] },
 });
-expectType<Client>(api);
-expectType<Promise<{ id: number }[]>>(api.get<{ id: number }[]>('/books', { query: { page: 2, tags: ['a'] } }));
-expectType<Promise<any>>(api.post('/books', { json: { title: 'Dune' }, retry: false }));
-expectType<Client>(api.extend({ headers: { authorization: 'Bearer t' } }));
-expectType<Client>(api.for({ id: 'req-1', signal: new AbortController().signal }));
-expectError(createClient({ responseType: 'xml' }));
-expectError(createClient({ retry: 'yes' }));
-expectError(createClient({ transport: 'undici' }));
+expectTypeOf(api).toEqualTypeOf<Client>();
+expectTypeOf(api.get<{ id: number }[]>('/books', { query: { page: 2, tags: ['a'] } })).toEqualTypeOf<Promise<{ id: number }[]>>();
+expectTypeOf(api.post('/books', { json: { title: 'Dune' }, retry: false })).toEqualTypeOf<Promise<any>>();
+expectTypeOf(api.extend({ headers: { authorization: 'Bearer t' } })).toEqualTypeOf<Client>();
+expectTypeOf(api.for({ id: 'req-1', signal: new AbortController().signal })).toEqualTypeOf<Client>();
+// @ts-expect-error
+createClient({ responseType: 'xml' });
+// @ts-expect-error
+createClient({ retry: 'yes' });
+// @ts-expect-error
+createClient({ transport: 'undici' });
 createClient({ transport: 'http' }).close();
 createClient({ proxy: 'http://user:pass@proxy:3128', tls: { ca: 'PEM', rejectUnauthorized: true } });
 createClient({ proxy: 'env' });
 createClient({ proxy: false });
-expectError(createClient({ proxy: 3128 }));
+// @ts-expect-error
+createClient({ proxy: 3128 });
 
-expectType<Promise<string>>(retry(async () => 'done', { until: (value) => value === 'done', attempts: 3 }));
+expectTypeOf(retry(async () => 'done', { until: (value) => value === 'done', attempts: 3 })).toEqualTypeOf<Promise<string>>();
 
 const err = new HTTPError<{ message: string }>();
-expectType<number>(err.status);
-expectType<{ message: string }>(err.body);
-expectType<number>(new RetryError().attempts);
+expectTypeOf(err.status).toEqualTypeOf<number>();
+expectTypeOf(err.body).toEqualTypeOf<{ message: string }>();
+expectTypeOf(new RetryError().attempts).toEqualTypeOf<number>();
 
 // Faults.
 const flaky = createClient({ baseUrl: 'https://api.example.com' });
 flaky.faults.fail({ operations: 'write', paths: [/^\/orders/], times: 2 });
 flaky.faults.respond({ status: 503, headers: { 'retry-after': '1' }, json: { error: 'busy' } });
 flaky.faults.hang({ urls: 'https://api.example.com/slow' }).release();
-expectError(flaky.faults.fail({ operations: 'connect' }));
+// @ts-expect-error
+flaky.faults.fail({ operations: 'connect' });

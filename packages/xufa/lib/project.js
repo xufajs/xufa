@@ -13,6 +13,8 @@
 //   redirects: { /: index }
 //   queue: { work: { concurrency: 2 } }          # jobs of @xufa/queue: those of <app>/jobs.js, in the admin
 //   pipelines: true                              # blocks of <app>/blocks.js, pipelines of <app>/pipelines.yaml
+//   rules: true                                  # books of rules (@xufa/rules) in the database, in the admin;
+//                                                # those of <app>/rules/*.xlsx kept as their first version
 //   tenants:                                     # a database for each tenant: the models of these apps
 //     apps: [catalog]
 //     database: { url: 'sqlite:data/tenants/{id}.db' }
@@ -43,6 +45,7 @@ import * as templateModule from '@xufa/template';
 import * as viewsModule from '@xufa/views';
 import * as adminModule from '@xufa/admin';
 import * as queueModule from '@xufa/queue';
+import * as rulesModule from '@xufa/rules';
 
 const require = createRequire(import.meta.url);
 
@@ -385,7 +388,34 @@ function createProject(config, { root = process.cwd(), modelSpecs = {}, version 
       db.sessions = sessionModule.ormStore(db, { asyncCommit });
     }
     if (config.queue || config.pipelines) workOf(db);
+    // rules: true or the options of the RuleStore of @xufa/rules (bookOptions, refresh...).
+    if (config.rules) db.rules = new rulesModule.RuleStore(db, config.rules === true ? {} : config.rules);
     return db;
+  }
+
+  // The books of rules of the apps (<app>/rules/<name>.xlsx), kept as the first version of their name when the store
+  // has none of it: books that start with the project, changed then in the admin. [names kept].
+  async function seedRules(db) {
+    if (!db.rules) return [];
+    const kept = [];
+    for (const item of APPS.list) {
+      const folder = path.join(item.dir, 'rules');
+      if (!exists(folder)) continue;
+      for (const file of fs
+        .readdirSync(folder)
+        .filter((one) => /\.xlsx$/i.test(one))
+        .sort()) {
+        const bookName = file.replace(/\.xlsx$/i, '');
+        if ((await db.rules.versions(bookName)).length) continue;
+        await db.rules.save(bookName, fs.readFileSync(path.join(folder, file)), {
+          fileName: file,
+          comment: `${item.label}/rules/${file}`,
+          force: true,
+        });
+        kept.push(bookName);
+      }
+    }
+    return kept;
   }
 
   // queue: true or the options of the Queue of @xufa/queue (and work: its workers in this process, true by default,
@@ -644,6 +674,19 @@ function createProject(config, { root = process.cwd(), modelSpecs = {}, version 
     }
     app.register(APPS.plugin);
     app.addHook('onReady', async () => linkModels(app, APPS.models));
+    // The books of rules of the apps, kept when the store has none of their names (its table made by the migrations);
+    // app.rules is the store (app.rules.call('fines', 'Fine', loan)).
+    if (db.rules) {
+      app.decorate('rules', db.rules);
+      app.addHook('onReady', async () => {
+        try {
+          const kept = await seedRules(db);
+          if (kept.length) app.log.info(`rules: ${kept.join(', ')} kept as their first version`);
+        } catch (err) {
+          app.log.warn(`rules: the books of the apps were not kept (${err.message}): migrate the database first`);
+        }
+      });
+    }
     if (auth && pages) {
       const { prefix, ...options } = typeof pages === 'string' ? { prefix: pages } : pages;
       // The templates of registration/ (login.html...) when the project has them; else the pages of @xufa/auth.
@@ -704,6 +747,7 @@ function createProject(config, { root = process.cwd(), modelSpecs = {}, version 
         ...(rbacOf() ? { rbac: rbacOf() } : {}),
         ...(db.queue ? { queue: db.queue } : {}),
         ...(db.pipelines ? { pipelines: db.pipelines } : {}),
+        ...(db.rules ? { rules: db.rules } : {}),
         ...(projectTenants
           ? { tenants: { tenants: projectTenants, list: projectTenants.list, label: projectTenants.label } }
           : {}),
@@ -714,6 +758,7 @@ function createProject(config, { root = process.cwd(), modelSpecs = {}, version 
   }
 
   const project = {
+    seedRules,
     config,
     root: dir,
     name,

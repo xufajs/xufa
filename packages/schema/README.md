@@ -924,7 +924,7 @@ Issues and pull requests are welcome at [github.com/xufajs/xufa](https://github.
 ```sh
 pnpm install
 cd packages/schema
-pnpm test               # vyntra
+pnpm test               # xufa-test
 pnpm test:types         # the declarations
 pnpm build:helpers      # after changing a function that standalone code copies
 ```

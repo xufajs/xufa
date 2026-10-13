@@ -73,6 +73,9 @@
           <li><a href="../discovery/index.html">@xufa/discovery</a></li>
           <li><a href="../netcache/index.html">@xufa/netcache</a></li>
           <li><a href="../faults/index.html">@xufa/faults</a></li>
+          <li><a href="../browser/index.html">@xufa/browser</a></li>
+          <li><a href="../bundle/index.html">@xufa/bundle</a></li>
+          <li><a href="../lint/index.html">@xufa/lint</a></li>
           <li><a href="../marshal/index.html">@xufa/marshal</a></li>
           <li><a href="../yaml/index.html">@xufa/yaml</a></li>
           <li><a href="../jwt/index.html">@xufa/jwt</a></li>
@@ -277,6 +280,7 @@
                 <tr><td><code>pipelines?</code></td><td><code>{ get(runId: unknown): Promise&lt;unknown&gt;; retry(runId: unknown): Promise&lt;boolean&gt;; cancel(runId: unknown): Promise&lt;boolean&gt;; resume(runId: unknown, stepId: string, output?: unknown): Promise&lt;unknown&gt;; }</code></td><td><p>The runs of these pipelines of</p></td></tr>
                 <tr><td><code>queue?</code></td><td><code>{ jobs: unknown; counts(): Promise&lt;Record&lt;string, number&gt;&gt;; retry(ids?: unknown[]): Promise&lt;number&gt; }</code></td><td><p>The jobs of this queue of</p></td></tr>
                 <tr><td><code>scheduler?</code></td><td><code>{ jobs(): unknown[]; runNow(name: string): Promise&lt;unknown&gt; }</code></td><td><p>The schedules of a Scheduler of</p></td></tr>
+                <tr><td><code>rules?</code></td><td><code>{ save(name: string, input: unknown, options?: object): Promise&lt;unknown&gt;; sheets(name: string, options?: object): Promise&lt;unknown&gt;; }</code></td><td><p>The books of rules (a RuleStore of</p></td></tr>
                 <tr><td><code>health?</code></td><td><code>boolean</code></td><td><p>The report of xufa.health of the app on the first page (true: when the app has it).</p></td></tr>
                 <tr><td><code>rbac?</code></td><td><code>| <a href="#ref-AdminRbac">AdminRbac</a> | { roles: Record&lt;string, string[] | { permissions?: string[]; inherits?: string | string[] }&gt;; [option: string]: unknown; }</code></td><td><p>Roles and permissions (an Rbac of</p></td></tr>
                 <tr><td><code>tenants?</code></td><td><code>{ tenants: { enter(id: string): Promise&lt;unknown&gt; }; list(request: any): Array&lt;string | number&gt; | Promise&lt;Array&lt;string | number&gt;&gt;; /** The name shown of a tenant (its id). */ label?(id: string, request: any): string | Promise&lt;string&gt;; }</code></td><td><p>The tenants of the models (the Tenants of</p></td></tr>

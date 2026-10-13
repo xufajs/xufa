@@ -23,6 +23,7 @@ import { registerWork } from './work.js';
 import { registerSessions } from './sessions.js';
 import { registerAccount } from './account.js';
 import { registerSchedules } from './schedules.js';
+import { registerRules } from './rules.js';
 import { registerSchema } from './schema.js';
 import { message as msg } from './messages.js';
 import * as ormModule from '@xufa/orm';
@@ -70,6 +71,8 @@ function configure(options) {
     appOf = null,
     // The models of the data model page edited there (xufa's designer, in development): see lib/schema.js.
     designer = null,
+    // The books of rules (a RuleStore of @xufa/rules): edited, tested and versioned in its page.
+    rules = null,
     // The language of its page (else that of each request) and texts of the page of the app's own, by language.
     language = null,
     uiMessages = {},
@@ -190,6 +193,7 @@ function configure(options) {
     schemaModels: schema && typeof schema === 'object' && typeof schema.models === 'function' ? schema.models : null,
     appOf: typeof appOf === 'function' ? appOf : null,
     designer: designer && typeof designer.preview === 'function' ? designer : null,
+    rules,
     ui: { language, uiMessages },
   };
 }
@@ -477,6 +481,7 @@ async function adminPlugin(app, options) {
     schemaModels,
     appOf,
     designer,
+    rules,
     ui,
   } = configure(options || {});
   app.decorateRequest('adminUser', null);
@@ -708,6 +713,17 @@ async function adminPlugin(app, options) {
   if (queue || pipelines)
     registerWork(app, { queue, pipelines, can: (request, permission) => can(request, permission, null) });
   if (health) registerHealth(app);
+  // The books of rules: of the tenant chosen in the page (with tenants), when the user may use it.
+  if (rules) {
+    registerRules(app, rules, {
+      tenantOf: (request) => {
+        if (!tenants) return null;
+        const asked = request.headers[TENANT_HEADER];
+        if (!asked) return null;
+        return !rbac || rbac.inTenant(request.adminAccess, asked) ? String(asked) : null;
+      },
+    });
+  }
   // The data model: the models as entities and relations.
   if (schema)
     registerSchema(app, {
@@ -742,6 +758,7 @@ async function adminPlugin(app, options) {
       jobs: Boolean(queue) && anywhere('_jobs.view'),
       health: Boolean(health && app.health && typeof app.health.check === 'function') && anywhere('_health.view'),
       schema: schema && anywhere('_schema.view'),
+      rules: Boolean(rules) && anywhere('_rules.view'),
       // The account of the user, and the sessions of the user (its own), and of others.
       account: accountPage && Boolean(request.adminUser),
       sessions:
@@ -751,6 +768,7 @@ async function adminPlugin(app, options) {
       actions: {
         runs: { change: anywhere('_runs.change') },
         jobs: { change: anywhere('_jobs.change'), delete: anywhere('_jobs.delete') },
+        ...(rules ? { rules: { change: anywhere('_rules.change'), delete: anywhere('_rules.delete') } } : {}),
       },
       models: await Promise.all(
         [...byName.values()]
@@ -793,6 +811,7 @@ async function adminPlugin(app, options) {
       [schema, ['_schema.view']],
       [schema && Boolean(designer), ['_schema.change']],
       [sessions, ['_sessions.view', '_sessions.change']],
+      [Boolean(rules), ['_rules.view', '_rules.change', '_rules.delete']],
     ];
     for (const [shown, names] of areas) if (shown) names.forEach((name) => permissions.push({ name, kind: 'area' }));
     if (rbac && typeof rbac.fresh === 'function') await rbac.fresh();

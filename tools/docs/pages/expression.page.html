@@ -2,10 +2,10 @@
   "file": "expression.html",
   "name": "@xufa/expression",
   "title": "@xufa/expression",
-  "description": "@xufa/expression: safe JavaScript expressions compiled once and run many times on data, with no dependencies. No access to the process, prototypes or constructors; up to 130 million runs a second.",
+  "description": "@xufa/expression: safe JavaScript expressions compiled once and run many times on data, with no dependencies. No access to the process, prototypes or constructors; up to 140 million runs a second.",
   "groups": [
     ["Using it", [["start", "Quick start"], ["uses", "What it is for"], ["api", "API"]]],
-    ["The language", [["language", "Expressions"], ["arrows", "Arrow functions"], ["not", "What is not there"]]],
+    ["The language", [["language", "Expressions"], ["arrows", "Arrow functions"], ["not", "What is not there"], ["programs", "Programs"], ["trees", "Trees of other languages"]]],
     ["Safety", [["reach", "What an expression can reach"], ["globals", "Globals"], ["limits", "Limits"]]],
     ["Engines", [["options", "Options"], ["filters", "Filters"], ["errors", "Errors"]]],
     ["About it", [["how", "How it runs"], ["performance", "Performance"], ["typescript", "TypeScript"]]]
@@ -16,8 +16,8 @@
           Expressions of JavaScript, a safe part of it, compiled once and run many times on data of their own: rules,
           formulas, conditions and templates that users or configuration write. They read the data they are given and
           nothing else, cannot assign, and cannot reach the process, prototypes or constructors. Compiled to closures,
-          and to JavaScript when they run often, they run at up to 130 million times a second, from 3 to 100 times
-          faster than other sandboxed evaluators. No dependencies.
+          and to JavaScript when they run often, they run at up to 140 million times a second, 8 to 850 times as fast as
+          other sandboxed evaluators (the fastest of them in each case). No dependencies.
         </p>
 
         <h2 id="start">Quick start</h2>
@@ -82,7 +82,7 @@ XUFA_EXPR_ERR_FORBIDDEN</code></pre>
           <table>
             <thead><tr><th>Kind</th><th>Examples</th></tr></thead>
             <tbody>
-              <tr><td>Literals</td><td><code>1.5e3</code>, <code>0x1f</code>, <code>0b101</code>, <code>1_000</code>, <code>10n</code>, <code>'text\n'</code>, <code>`${a} and ${b}`</code>, <code>true</code>, <code>null</code>, <code>undefined</code></td></tr>
+              <tr><td>Literals</td><td><code>1.5e3</code>, <code>0x1f</code>, <code>0b101</code>, <code>1_000</code>, <code>10n</code>, <code>'text\n'</code>, <code>`${a} and ${b}`</code>, <code>true</code>, <code>null</code>, <code>undefined</code>, <code>/\d+/g</code> (a new one each time)</td></tr>
               <tr><td>Arrays and objects</td><td><code>[a, ...rest]</code>, <code>{ a, b: 1, [key]: 2, ...other }</code></td></tr>
               <tr><td>Arithmetic</td><td><code>+ - * / % **</code>, unary <code>- + ~</code></td></tr>
               <tr><td>Comparisons</td><td><code>== != === !== &lt; &lt;= &gt; &gt;=</code>, <code>in</code></td></tr>
@@ -106,10 +106,116 @@ evaluate('[1, 2, 3].map(x =&gt; [4, 5].map(y =&gt; x * y))'); // nested, with th
 
         <h2 id="not">What is not there</h2>
         <p>
-          Statements, assignments (<code>=</code>, <code>+=</code>, <code>++</code>), <code>new</code>,
-          <code>this</code>, <code>function</code>, <code>delete</code>, <code>void</code>, <code>instanceof</code>,
-          comments, tagged templates, methods in object literals and holes in arrays. Each is a syntax error that says
-          where it is.
+          An expression is one expression. These are not allowed in it:
+        </p>
+        <ul>
+          <li>Statements: <code>let</code>, <code>const</code>, <code>if</code>, loops, <code>return</code>, labels.</li>
+          <li>Assignments: <code>=</code>, <code>+=</code> and the rest, <code>++</code>, <code>--</code>.</li>
+          <li>
+            <code>new</code>, <code>this</code>, <code>delete</code>, <code>void</code>, <code>instanceof</code> and the
+            comma operator (<code>(a, b)</code>).
+          </li>
+          <li>
+            <code>function</code>, <code>class</code>, <code>async</code> and <code>await</code>, generators,
+            <code>import</code> and <code>export</code>.
+          </li>
+          <li>Methods, getters and setters in object literals, and holes in arrays (<code>[1, , 2]</code>).</li>
+          <li>Destructuring in the parameters of arrow functions (<code>([a, b]) =&gt; a</code>).</li>
+          <li>Comments and tagged templates.</li>
+        </ul>
+        <p>
+          Each is a syntax error with its line and column. Arrow functions, spread, templates, optional chains,
+          regular expressions and <code>in</code> are allowed.
+        </p>
+        <p>
+          Engines of <a href="#programs">programs</a> (<code>statements: true</code>) allow all of this list. The one
+          exception is <code>this</code>, which works only in the methods of classes and objects.
+        </p>
+
+        <h2 id="programs">Programs</h2>
+        <p>
+          An engine with <code>statements: true</code> compiles programs: the code of rules, methods and scripts that
+          need more than one expression, with the same safety.
+        </p>
+        <pre data-run><code class="language-js">import { Engine } from '@xufa/expression';
+
+const engine = new Engine({ statements: true });
+const total = engine.compile(`
+  let total = 0;
+  for (const line of order.lines) {
+    if (line.quantity &gt; 10) total += line.price * line.quantity * 0.9; // bulk
+    else total += line.price * line.quantity;
+  }
+  return Math.round(total * 100) / 100;
+`);
+const order = { lines: [{ price: 2.5, quantity: 20 }, { price: 10, quantity: 1 }] };
+console.log(total({ order }));
+console.log(engine.evaluate('x = x + 1\nx * 2', { x: 5 })); // the value of the last statement</code></pre>
+        <pre data-output><code class="language-plaintext">55
+12</code></pre>
+        <ul>
+          <li>Statements: <code>let</code>, <code>const</code> and <code>var</code>, blocks, <code>if</code>,
+            <code>for</code>, <code>for...of</code>, <code>while</code>, <code>do...while</code>, <code>switch</code>,
+            <code>break</code>, <code>continue</code>, <code>return</code>, <code>throw</code>,
+            <code>try</code>/<code>catch</code>/<code>finally</code>, <code>function</code> declarations and
+            expressions, arrow functions with a body of statements; assignments (<code>=</code>, <code>+=</code> and the
+            others, <code>&amp;&amp;=</code>, <code>||=</code>, <code>??=</code>), <code>++</code>, <code>--</code>,
+            <code>delete</code> and comments. A line end ends a statement as in JavaScript.</li>
+          <li>Destructuring (<code>const { a, b: [c] = [], ...rest } = o</code>, <code>[x, y] = [y, x]</code>, in
+            parameters, <code>for...of</code> and <code>catch</code>), default and rest parameters, <code>for...in</code>,
+            labels, sequences (<code>a, b</code>), <code>void</code>, <code>instanceof</code> (of the types of JavaScript
+            and the constructors of the engine), tagged templates and methods in objects (without <code>this</code>).
+            Destructuring and default values are lowered by the parser to what the compilers have: a destructured
+            <code>constructor</code> is refused as <code>o.constructor</code> is.</li>
+          <li>Classes: constructors, fields, methods, getters and setters, <code>static</code> members, computed
+            keys, class expressions, <code>extends</code> of a class of the program or of <code>Error</code>,
+            <code>TypeError</code>, <code>RangeError</code>, <code>Map</code>, <code>Set</code> and <code>Date</code>,
+            <code>super(...)</code> and <code>super.method()</code>, and <code>new</code> of them. <code>this</code> is
+            that of the methods of classes and objects (and of the arrow functions in them); a <code>function</code> has
+            none. Instances of classes of programs can be changed as plain objects can; their prototypes and
+            constructors cannot be reached. Private members (<code>#count</code>, <code>#bump()</code>,
+            <code>get #total()</code>, <code>static #made</code>, <code>#count in other</code>) are those of the class
+            that declares them, read only on objects of that class (<code>node?.#next</code> too). Static blocks run
+            with the class as <code>this</code>, in their order among the static fields.</li>
+          <li><code>async</code> and <code>await</code>: async functions, arrow functions and methods, and
+            <code>await</code> in them and at the top of a program (which then gives a promise of its value);
+            <code>Promise.all</code>, <code>allSettled</code>, <code>any</code>, <code>race</code>, <code>resolve</code>,
+            <code>reject</code> and <code>new Promise(...)</code>. Steps count across awaits; no <code>catch</code>
+            stops the limit.</li>
+          <li>More globals: <code>BigInt</code>, <code>String.raw</code>, <code>Array.from</code>, <code>Array.of</code>,
+            <code>structuredClone</code>, and <code>Object.assign</code> and <code>Object.freeze</code> of what a
+            program can change. Arrays made of a length have at most 10 million items.</li>
+          <li>The value of a program is that of its <code>return</code>, or of the last expression statement it ran. A
+            program of one expression is that expression, compiled and made fast as one.</li>
+          <li>Names are variables of the program, never the context: a name assigned and declared nowhere is a variable
+            of the program that starts with the value of that name in the context. A program changes members only of
+            plain objects and arrays (those of its context too, as a function of JavaScript can), never of the globals or
+            what they reach (<code>Math.max = ...</code>), of functions, dates or instances of classes, nor by the names
+            <code>__proto__</code>, <code>constructor</code> and <code>prototype</code>.</li>
+          <li><code>new</code> makes only what <code>constructors</code> names (<code>Date</code>, <code>Map</code>,
+            <code>Set</code>, <code>Array</code>, <code>Error</code>, <code>TypeError</code>, <code>RangeError</code>).</li>
+          <li>Loop turns and calls of its functions count, those of arrow functions given to <code>map</code>,
+            <code>filter</code>, <code>sort</code>... too (in engines of expressions as well): past <code>maxSteps</code> (10 million) a program fails with
+            <code>XUFA_EXPR_ERR_LIMIT</code>, and so it does with calls nested deeper than <code>maxDepth</code> (1000).
+            No <code>catch</code> of the program stops those errors.</li>
+          <li>Generators (<code>function*</code>, <code>*method()</code>, <code>yield</code>, <code>yield*</code>),
+            async generators and <code>for await</code>; their turns count as steps.</li>
+          <li>Modules: <code>import</code> (default, named, renamed, <code>* as ns</code>) and <code>export</code> at the
+            top of programs. The <code>modules</code> option resolves a name to the source of a module (run for each
+            import, with a context of its own) or to an object the host exports (a frozen copy); cycles and exports a
+            module lacks are refused. A <code>{</code> that starts a statement is a block.</li>
+        </ul>
+
+        <h2 id="trees">Trees of other languages</h2>
+        <p>
+          <code>engine.compileTree(tree, source, { bound })</code> compiles a tree made by another parser (of another
+          language, as <a href="rules.html#openl">the language of OpenL</a> in @xufa/rules), with the nodes
+          <code>parse()</code> gives: the checks are those of the compiler, not of the parser. What the parser never makes is
+          refused first (<code>XUFA_EXPR_ERR_FORBIDDEN</code>): names, properties, keys and names of variables,
+          parameters, constructors or filters that are not strings, literals that are objects or functions, trees
+          that refer to themselves, and nodes that are not plain objects or arrays. <code>bound</code> are
+          names of that tree whose values are fixed, over the context (the option <code>bound</code> of an engine, of
+          all its trees): what the language needs (its functions, its helpers) without a context that could hide them.
         </p>
 
         <h2 id="reach">What an expression can reach</h2>
@@ -153,10 +259,16 @@ pricing.evaluate('round(tax(order.total), 2)', { order }); // the context goes o
               <tr><td><code>filters</code></td><td><code>null</code></td><td>Functions by name: <code>|</code> separates them (see <a href="#filters">Filters</a>).</td></tr>
               <tr><td><code>lenient</code></td><td><code>false</code></td><td>Members of <code>null</code> or <code>undefined</code>, and calls of what is not a function, give <code>undefined</code> instead of an error.</td></tr>
               <tr><td><code>strict</code></td><td><code>false</code></td><td>Names that are not in the context nor the globals are errors.</td></tr>
+              <tr><td><code>tdz</code></td><td><code>false</code></td><td>Programs: a <code>let</code>, <code>const</code> or class used before its declaration runs is an error, as in JavaScript (by default, <code>undefined</code>).</td></tr>
               <tr><td><code>maxLength</code></td><td><code>10000</code></td><td>The longest source (<code>XUFA_EXPR_ERR_LENGTH</code>).</td></tr>
               <tr><td><code>cacheSize</code></td><td><code>1000</code></td><td>Expressions compiled kept, by source.</td></tr>
               <tr><td><code>inline</code></td><td><code>true</code></td><td>Expressions run often become one function of JavaScript (see <a href="#how">How it runs</a>); <code>false</code>: closures always.</td></tr>
               <tr><td><code>inlineAfter</code></td><td><code>64</code></td><td>Runs before an expression becomes that function (0: at once).</td></tr>
+              <tr><td><code>bound</code></td><td><code>{}</code></td><td>Names whose values are fixed, over the context (code cannot hide them).</td></tr>
+              <tr><td><code>statements</code></td><td><code>false</code></td><td>Sources are <a href="#programs">programs</a>.</td></tr>
+              <tr><td><code>maxSteps</code></td><td><code>10000000</code></td><td>Loop turns and calls of a run of a program.</td></tr>
+              <tr><td><code>maxDepth</code></td><td><code>1000</code></td><td>Calls of a program's functions nested.</td></tr>
+              <tr><td><code>constructors</code></td><td>Date, Map, Set, errors</td><td>What <code>new</code> makes in programs, by name.</td></tr>
             </tbody>
           </table>
         </div>
@@ -178,8 +290,9 @@ engine.evaluate('(a || b) | round(1)', { a: 0, b: 2.25 }); // filters in parenth
             <tbody>
               <tr><td><code>XUFA_EXPR_ERR_SYNTAX</code></td><td>The source is not an expression of the language (or a filter is unknown).</td></tr>
               <tr><td><code>XUFA_EXPR_ERR_FORBIDDEN</code></td><td>A name that cannot be reached.</td></tr>
-              <tr><td><code>XUFA_EXPR_ERR_RUNTIME</code></td><td>A member of <code>null</code>, a call of what is not a function, a name not defined (<code>strict</code>).</td></tr>
+              <tr><td><code>XUFA_EXPR_ERR_RUNTIME</code></td><td>A member of <code>null</code>, a call of what is not a function, a name not defined (<code>strict</code>), a <code>let</code> used before its declaration (<code>tdz</code>).</td></tr>
               <tr><td><code>XUFA_EXPR_ERR_LENGTH</code></td><td>A source longer than <code>maxLength</code>.</td></tr>
+              <tr><td><code>XUFA_EXPR_ERR_LIMIT</code></td><td>A program past <code>maxSteps</code> or <code>maxDepth</code>.</td></tr>
             </tbody>
           </table>
         </div>
@@ -195,7 +308,7 @@ engine.evaluate('(a || b) | round(1)', { a: 0, b: 2.25 }); // filters in parenth
         <ol>
           <li>The source is read by a parser of its own (no <code>eval</code>, no acorn) into a tree, refused when it has what the language has not.</li>
           <li>The tree becomes closures, one for each node, made once: the names and keys that cannot be reached are refused here.</li>
-          <li>After <code>inlineAfter</code> runs, the expression becomes one function of JavaScript, whose arrow functions are arrow functions of JavaScript, and V8 compiles it as your code. Nothing of the source is code in it: strings, names and keys are JSON literals, numbers are written by <code>String()</code>, operators come from a fixed list, parameters get names of their own, and what must be checked (names, members, calls, computed keys, optional chains) is checked there as in the closures, with the same errors. With code generation off (<code>--disallow-code-generation-from-strings</code>), the closures go on.</li>
+          <li>After <code>inlineAfter</code> runs, the expression (or the program: its statements those of JavaScript, its names variables made for them, its steps, depth and changes of members checked by helpers) becomes one function of JavaScript, whose arrow functions are arrow functions of JavaScript, and V8 compiles it as your code. Nothing of the source is code in it: strings, names and keys are JSON literals, numbers are written by <code>String()</code>, operators come from a fixed list, parameters get names of their own, and what must be checked (names, members, calls, computed keys, optional chains) is checked there as in the closures, with the same errors. With code generation off (<code>--disallow-code-generation-from-strings</code>), the closures go on.</li>
         </ol>
 
         <h2 id="performance">Performance</h2>
@@ -203,23 +316,36 @@ engine.evaluate('(a || b) | round(1)', { a: 0, b: 2.25 }); // filters in parenth
         <div class="charts">
           <div class="chart">
             <h3><code>a + b * 2</code></h3>
-            <p class="subtitle">Runs a second, compiled once. JavaScript itself: 379M.</p>
-            <div class="chart-row us"><span class="name">@xufa/expression</span><span class="track"><span class="fill" style="width: 100%"></span></span><span class="value">131M</span></div>
-            <div class="chart-row"><span class="name">filtrex</span><span class="track"><span class="fill" style="width: 14.2%"></span></span><span class="value">18.6M</span></div>
-            <div class="chart-row"><span class="name">expr-eval</span><span class="track"><span class="fill" style="width: 4.4%"></span></span><span class="value">5.8M</span></div>
-            <div class="chart-row"><span class="name">jexl</span><span class="track"><span class="fill" style="width: 0.8%"></span></span><span class="value">1.0M</span></div>
+            <p class="subtitle">Runs a second, compiled once. JavaScript itself: 392M.</p>
+            <div class="chart-row us"><span class="name">@xufa/expression</span><span class="track"><span class="fill" style="width: 100%"></span></span><span class="value">138M</span></div>
+            <div class="chart-row"><span class="name">filtrex</span><span class="track"><span class="fill" style="width: 13.2%"></span></span><span class="value">18.3M</span></div>
+            <div class="chart-row"><span class="name">expr-eval</span><span class="track"><span class="fill" style="width: 4.0%"></span></span><span class="value">5.5M</span></div>
+            <div class="chart-row"><span class="name">jexl</span><span class="track"><span class="fill" style="width: 0.8%"></span></span><span class="value">1.1M</span></div>
           </div>
           <div class="chart">
             <h3><code>items.map(...).reduce(...)</code></h3>
-            <p class="subtitle">Runs a second. JavaScript itself: 46.9M; jexl, expr-eval and filtrex cannot write it.</p>
-            <div class="chart-row us"><span class="name">@xufa/expression</span><span class="track"><span class="fill" style="width: 100%"></span></span><span class="value">32.9M</span></div>
-            <div class="chart-row"><span class="name">SandboxJS</span><span class="track"><span class="fill" style="width: 0.5%"></span></span><span class="value">46k</span></div>
+            <p class="subtitle">Runs a second. JavaScript itself: 52.4M; jexl, expr-eval and filtrex cannot write it.</p>
+            <div class="chart-row us"><span class="name">@xufa/expression</span><span class="track"><span class="fill" style="width: 100%"></span></span><span class="value">37.4M</span></div>
+            <div class="chart-row"><span class="name">SandboxJS</span><span class="track"><span class="fill" style="width: 0.5%"></span></span><span class="value">44k</span></div>
           </div>
         </div>
         <p>
-          Method calls run at 93% of the speed of JavaScript, <code>map</code> and <code>reduce</code> at 70%. Every
+          Method calls run at 88% of the speed of JavaScript, <code>map</code> and <code>reduce</code> at 71%. Every
           expression is in <a href="benchmarks.html#expressions">Benchmarks</a>; <code>node bench/micro/expression.js</code>
           measures them.
+        </p>
+        <p>
+          Programs (<code>statements: true</code>) become one function of JavaScript too: 4 to 134 million runs a
+          second for branches, switches, loops and functions, from a third of the speed of JavaScript itself to as
+          fast, and 140 to 2,200 times that of SandboxJS, the other sandbox that runs statements (5 times with
+          exceptions thrown). Compiling one takes about 10 microseconds. Every program is in
+          <a href="benchmarks.html#expression-programs">Benchmarks</a>; <code>node bench/micro/expression-programs.js</code>
+          measures them.
+        </p>
+        <p>
+          The two ways are kept the same by a fuzz: random programs of every statement and feature run on the closures,
+          on the function and as JavaScript itself, with the same values and the same errors. Run it longer, with other
+          seeds, with <code>node packages/expression/test/fuzz/run.js --random --count 100000</code>.
         </p>
 
         <h2 id="typescript">TypeScript</h2>

@@ -1,0 +1,283 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>@xufa/test: Migrating from Jest or Vitest · xufa</title>
+    <meta
+      name="description"
+      content="Moving a Jest or Vitest suite to @xufa/test: what runs as it is, the options it reads, and the few differences."
+    />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%23d9502b'/%3E%3Ctext x='16' y='22.5' font-family='monospace' font-size='18' font-weight='700' fill='white' text-anchor='middle'%3Ex%3C/text%3E%3C/svg%3E"
+    />
+    <link rel="stylesheet" href="../style.css?v=0.1.0" />
+    <script src="../main.js?v=0.1.0"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js" defer></script>
+  </head>
+  <body>
+    <header class="header">
+      <div class="header-inner">
+        <a class="logo" href="../index.html"><span class="logo-mark">x</span>xufa</a>
+        <nav class="nav">
+          <a href="../guide.html">Guide</a>
+          <a href="../playground.html">Playground</a>
+          <a href="../http/index.html">HTTP</a>
+          <a href="../orm/index.html">ORM</a>
+          <a class="hide-small" href="../auth/index.html">Auth</a>
+          <a class="hide-small" href="../sequelize/index.html">Sequelize</a>
+          <a class="hide-small" href="../packages.html" aria-current="page">Packages</a>
+          <a class="hide-small" href="../benchmarks.html">Benchmarks</a>
+          <a href="https://github.com/xufajs/xufa">GitHub</a>
+          <button class="theme-toggle" type="button" aria-label="Switch between light and dark theme">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+              <path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z" />
+            </svg>
+          </button>
+        </nav>
+      </div>
+    </header>
+
+    <div class="docs">
+      <button class="menu-toggle" type="button" aria-expanded="false">☰ Contents</button>
+      <aside class="sidebar">
+        <h4>Migrating</h4>
+        <ul>
+          <li><a href="#try">Try it first</a></li>
+          <li><a href="#jest">From Jest</a></li>
+          <li><a href="#jest-config">Jest options</a></li>
+          <li><a href="#jest-differences">Differences with Jest</a></li>
+          <li><a href="#vitest">From Vitest</a></li>
+          <li><a href="#vitest-config">Vitest options</a></li>
+          <li><a href="#vitest-differences">Differences with Vitest</a></li>
+          <li><a href="#missing">Not supported yet</a></li>
+        </ul>
+        <h4>Packages</h4>
+        <ul>
+          <li><a href="../websocket/index.html">@xufa/websocket</a></li>
+          <li><a href="../admin/index.html">@xufa/admin</a></li>
+          <li><a href="../session/index.html">@xufa/session</a></li>
+          <li><a href="../forms/index.html">@xufa/forms</a></li>
+          <li><a href="../views/index.html">@xufa/views</a></li>
+          <li><a href="../mail/index.html">@xufa/mail</a></li>
+          <li><a href="../i18n/index.html">@xufa/i18n</a></li>
+          <li><a href="../openapi/index.html">@xufa/openapi</a></li>
+          <li><a href="../client/index.html">@xufa/client</a></li>
+          <li><a href="../schema/index.html">@xufa/schema</a></li>
+          <li><a href="../pg/index.html">@xufa/pg</a></li>
+          <li><a href="../mongo/index.html">@xufa/mongo</a></li>
+          <li><a href="../expression/index.html">@xufa/expression</a></li>
+          <li><a href="../template/index.html">@xufa/template</a></li>
+          <li><a href="../cluster/index.html">@xufa/cluster</a></li>
+          <li><a href="../scheduler/index.html">@xufa/scheduler</a></li>
+          <li><a href="../queue/index.html">@xufa/queue</a></li>
+          <li><a href="../config/index.html">@xufa/config</a></li>
+          <li><a href="../discovery/index.html">@xufa/discovery</a></li>
+          <li><a href="../netcache/index.html">@xufa/netcache</a></li>
+          <li><a href="../faults/index.html">@xufa/faults</a></li>
+          <li><a href="../browser/index.html">@xufa/browser</a></li>
+          <li><a href="../bundle/index.html">@xufa/bundle</a></li>
+          <li><a href="../lint/index.html">@xufa/lint</a></li>
+          <li><a href="../marshal/index.html">@xufa/marshal</a></li>
+          <li><a href="../yaml/index.html">@xufa/yaml</a></li>
+          <li><a href="../jwt/index.html">@xufa/jwt</a></li>
+          <li><a href="../logger/index.html">@xufa/logger</a></li>
+          <li><a href="../router/index.html">@xufa/router</a></li>
+          <li><a href="../serializer/index.html">@xufa/serializer</a></li>
+          <li><a href="../inject/index.html">@xufa/inject</a></li>
+          <li><a href="../boot/index.html">@xufa/boot</a></li>
+          <li><a href="../errors/index.html">@xufa/errors</a></li>
+          <li><a href="../packages.html">All the packages</a></li>
+        </ul>
+      </aside>
+
+      <article class="content">
+        <nav class="package-tabs" aria-label="@xufa/test">
+          <a href="index.html">Overview</a>
+          <a href="guide.html">Guide</a>
+          <a href="api.html">API</a>
+          <a href="reference.html">Reference</a>
+          <a href="migrating.html" aria-current="page">From Jest and Vitest</a>
+          <a href="benchmarks.html">Benchmarks</a>
+        </nav>
+        <h1>Migrating from Jest or Vitest</h1>
+        <p class="intro">
+          @xufa/test runs Jest and Vitest suites as they are. For most projects, migrating means installing it and changing
+          the <code>test</code> script. This page lists what @xufa/test reads from your configuration and the few places
+          where it behaves differently.
+        </p>
+
+        <h2 id="try">Try it first</h2>
+        <p>
+          Nothing has to change to try it, not even your dependencies: <code>npx</code> downloads @xufa/test to its cache
+          and runs it in your project, next to your current runner.
+        </p>
+        <pre><code class="language-bash">npx xufa-test</code></pre>
+        <p>
+          If every test passes, install it, so your <code>test</code> script and your imports find it and everyone runs
+          the same version, and switch the script:
+        </p>
+        <pre><code class="language-bash">npm install --save-dev @xufa/test</code></pre>
+        <p>If some fail, the sections below explain the usual reasons, from the most common to the rarest.</p>
+
+        <h2 id="jest">From Jest</h2>
+        <p>Your tests, your <code>jest.config.js</code> (or the <code>"jest"</code> key of <code>package.json</code>) and your flags keep working:</p>
+        <pre><code class="language-json">{
+  "scripts": {
+    "test": "xufa-test --silent --coverage"
+  }
+}</code></pre>
+        <ul>
+          <li>The globals: <code>describe</code>, <code>it</code>, <code>test</code>, <code>expect</code>, the hooks, <code>jest</code>, and the old <code>fail()</code>.</li>
+          <li>Imports from <code>@jest/globals</code>.</li>
+          <li><code>jest.fn</code>, <code>jest.spyOn</code>, <code>jest.mock</code> with its hoisting, <code>__mocks__</code> folders, automock, <code>jest.requireActual</code>, <code>jest.isolateModules</code>, fake timers.</li>
+          <li>Every matcher, asymmetric matchers, <code>expect.extend</code>, the <code>done</code> callback.</li>
+          <li>Your <code>.snap</code> files, read and written in Jest's format.</li>
+          <li>The flags <code>-t</code>, <code>-u</code>, <code>-i</code>, <code>--ci</code>, <code>--silent</code>, <code>--verbose</code>, <code>--coverage</code>, <code>--maxWorkers</code>, <code>--bail</code>, <code>--passWithNoTests</code>, and path patterns.</li>
+        </ul>
+
+        <h3 id="jest-config">Jest options @xufa/test reads</h3>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Jest option</th><th>In @xufa/test</th></tr></thead>
+            <tbody>
+              <tr><td><code>testTimeout</code>, <code>maxWorkers</code>, <code>bail</code>, <code>maxConcurrency</code></td><td><span class="check">✓</span> The same</td></tr>
+              <tr><td><code>testMatch</code>, <code>roots</code>, <code>testPathIgnorePatterns</code>, <code>modulePathIgnorePatterns</code></td><td><span class="check">✓</span> Which files are tests</td></tr>
+              <tr><td><code>preset</code></td><td><span class="check">✓</span> A path or a package's <code>jest-preset</code>, merged as Jest merges it</td></tr>
+              <tr><td><code>setupFiles</code>, <code>setupFilesAfterEnv</code></td><td><span class="check">✓</span> Loaded before every test file</td></tr>
+              <tr><td><code>clearMocks</code>, <code>resetMocks</code>, <code>restoreMocks</code></td><td><span class="check">✓</span> The same</td></tr>
+              <tr><td><code>collectCoverage</code>, <code>collectCoverageFrom</code>, <code>coverageDirectory</code>, <code>coverageReporters</code>, <code>coverageThreshold</code></td><td><span class="check">✓</span> V8 coverage, text and lcov reports</td></tr>
+              <tr><td><code>testEnvironment: 'node'</code>, <code>'jsdom'</code>, <code>'happy-dom'</code></td><td><span class="check">✓</span> With the jsdom or happy-dom your project has; a file can ask for its own with a <code>@jest-environment</code> comment</td></tr>
+              <tr><td><code>moduleNameMapper</code></td><td><span class="check">✓</span> The same</td></tr>
+              <tr><td><code>transform</code>, <code>transformIgnorePatterns</code></td><td><span class="check">✓</span> Your transformers (<code>babel-jest</code>, <code>ts-jest</code>, <code>@swc/jest</code>, your own) compile the files they match, with <code>process()</code>, or <code>processAsync()</code> on a helper thread</td></tr>
+              <tr><td><code>testEnvironment</code> as a module of your own (a class extending <code>NodeEnvironment</code> or <code>JSDOMEnvironment</code>), <code>testEnvironmentOptions</code></td><td><span class="check">✓</span> Set up and torn down for each file. The tests run in the worker's global, not in a VM context: what the class adds to <code>this.global</code> is copied there, over the node or jsdom environment it extends. See <a href="guide.html#environments">Test environments</a></td></tr>
+              <tr><td>Babel without a <code>transform</code> (Jest runs <code>babel-jest</code> by itself when it finds a Babel config)</td><td><span class="check">✓</span> The same: with a Babel config and <code>babel-jest</code> installed, <code>.js</code>, <code>.jsx</code>, <code>.ts</code> and <code>.tsx</code> files go through it; <code>transform: {}</code> turns it off</td></tr>
+              <tr><td><code>globalSetup</code>, <code>globalTeardown</code></td><td><span class="check">✓</span> Run once, in the main process, before and after the test files</td></tr>
+              <tr><td><code>projects</code>, <code>displayName</code></td><td><span class="check">✓</span> Each project from its own <code>rootDir</code>: folders with a <code>jest.config.*</code> or a <code>"jest"</code> key, config files, or projects written inline. As in Jest, they do not take the root config's options. See <a href="guide.html#projects">Projects</a></td></tr>
+              <tr><td><code>snapshotSerializers</code></td><td><span class="cross">✗</span> Call <code>expect.addSnapshotSerializer</code> in a setup file</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h3 id="jest-differences">Differences with Jest</h3>
+        <ul>
+          <li>
+            <strong>Worker threads, not processes.</strong> Jest runs tests in child processes. @xufa/test uses threads, which
+            start faster; <code>process.send</code> exists in them (and sends nothing), as code under test sometimes calls
+            it. For code that needs a whole process (<code>process.chdir</code>, native addons that are not thread safe),
+            use <code>--pool forks</code>. On Windows, a worker thread that loaded some native addons together (SQLite's
+            and swc's, in Strapi) can crash the whole run when it ends: <code>--pool forks</code> avoids it.
+          </li>
+          <li>
+            <strong>Dependencies are shared by the files of a worker.</strong> Every test file gets fresh copies of your
+            own modules, as in Jest, but the modules of <code>node_modules</code> are loaded once per worker. After a file
+            that mocks modules, the dependencies it loaded once it had mocks are loaded again for the next file (all of
+            them when it mocked a builtin such as <code>fs</code>). A test that changes the state of a dependency loaded
+            before (a global setting of a library) should undo it.
+          </li>
+          <li>
+            <strong><code>NODE_ENV</code> is left as it is.</strong> Jest sets it to <code>test</code> when it is not set;
+            @xufa/test does not. Code that behaves differently under <code>test</code> needs <code>NODE_ENV=test</code> in the
+            environment, or <code>env: { NODE_ENV: 'test' }</code> in <code>xufa.test.config.js</code>.
+          </li>
+          <li>
+            <strong><code>import()</code> works.</strong> Jest can not run the <code>import()</code> of an ES module from
+            CommonJS without <code>--experimental-vm-modules</code>; @xufa/test runs it, as Node.js does. A test that expects
+            it to fail sees it succeed.
+          </li>
+          <li>
+            <strong>Mock factories are not checked.</strong> Jest refuses factories that use variables whose names do not
+            start with <code>mock</code>; @xufa/test does not check them, and hoists the calls the same way.
+          </li>
+        </ul>
+
+        <h2 id="vitest">From Vitest</h2>
+        <p>Your test files run as they are, imports from <code>vitest</code> included:</p>
+        <pre><code class="language-js">import { describe, expect, it, vi } from 'vitest'; // resolved to @xufa/test</code></pre>
+        <ul>
+          <li><code>vi.fn</code>, <code>vi.spyOn</code>, <code>vi.mock</code> with <code>importOriginal</code>, <code>vi.hoisted</code>, <code>vi.doMock</code>, <code>vi.importActual</code>, fake timers, <code>vi.stubGlobal</code>, <code>vi.stubEnv</code>, <code>vi.waitFor</code>.</li>
+          <li><code>test.extend</code> fixtures, <code>test.for</code>, <code>test.concurrent</code>, <code>test.fails</code>, <code>skipIf</code> and <code>runIf</code>, the test context.</li>
+          <li><code>expect.soft</code>, <code>expect.poll</code>, <code>toBeTypeOf</code>, <code>toBeOneOf</code>, <code>toSatisfy</code>, <code>toHaveBeenCalledOnce</code>...</li>
+          <li>Your <code>.snap</code> files, read and written in Vitest's format (<code>describe &gt; test 1</code> names).</li>
+        </ul>
+
+        <h3 id="vitest-config">Vitest options</h3>
+        <p>
+          @xufa/test reads your <code>vitest.config.ts</code> (or a <code>vite.config.*</code> with a <code>test</code> section)
+          without loading Vite: <code>defineConfig</code>, <code>mergeConfig</code> and <code>configDefaults</code> from
+          <code>vitest/config</code> work even once Vitest is uninstalled. Of its options it takes:
+        </p>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Vitest (<code>test.*</code>)</th><th>@xufa/test</th></tr></thead>
+            <tbody>
+              <tr><td><code>include</code>, <code>exclude</code>, <code>setupFiles</code></td><td><span class="check">✓</span> The same</td></tr>
+              <tr><td><code>testTimeout</code>, <code>hookTimeout</code>, <code>retry</code>, <code>maxConcurrency</code></td><td><span class="check">✓</span> The same</td></tr>
+              <tr><td><code>pool</code>, <code>isolate</code>, <code>maxWorkers</code></td><td><span class="check">✓</span> <code>'threads'</code>, <code>'forks'</code> or <code>'inline'</code></td></tr>
+              <tr><td><code>clearMocks</code>, <code>mockReset</code>, <code>restoreMocks</code></td><td><span class="check">✓</span> <code>clearMocks</code>, <code>resetMocks</code>, <code>restoreMocks</code></td></tr>
+              <tr><td><code>unstubGlobals</code>, <code>unstubEnvs</code></td><td><span class="check">✓</span> Always, when a file ends</td></tr>
+              <tr><td><code>globals</code></td><td><span class="check">✓</span> Always on; imports work as well</td></tr>
+              <tr><td><code>coverage.include</code>, <code>coverage.thresholds</code></td><td><span class="check">✓</span> <code>collectCoverageFrom</code>, <code>coverageThreshold</code></td></tr>
+              <tr><td><code>environment: 'jsdom'</code>, <code>'happy-dom'</code>, <code>environmentOptions</code></td><td><span class="check">✓</span> With the jsdom or happy-dom your project has; a file can ask for its own with a <code>@vitest-environment</code> comment</td></tr>
+              <tr><td><code>test.alias</code>, <code>resolve.alias</code>, <code>test.env</code></td><td><span class="check">✓</span> The same</td></tr>
+              <tr><td><code>import.meta.env</code>, <code>envDir</code>, <code>envPrefix</code>, named JSON imports</td><td><span class="check">✓</span> As Vite provides them: Vite's values and the <code>VITE_</code> variables of <code>.env</code> files, over <code>process.env</code> (see <a href="guide.html#imports">What files can import</a>)</td></tr>
+              <tr><td>Oxc's <code>decorator</code> and esbuild's <code>tsconfigRaw</code> options</td><td><span class="check">✓</span> For the TypeScript transform</td></tr>
+              <tr><td>Vite plugins</td><td><span class="check">✓</span> Their <code>transform</code>, <code>resolveId</code> and <code>load</code> hooks, async ones too, on every project file; virtual modules work. Plugins with only synchronous transforms run in the worker; the others on a helper thread the module hooks wait for</td></tr>
+              <tr><td><code>globalSetup</code></td><td><span class="check">✓</span> Its <code>provide()</code> and the tests' <code>inject()</code> too</td></tr>
+              <tr><td><code>test.projects</code>, <code>vitest.workspace</code></td><td><span class="check">✓</span> Each project from its own folder: folders (with their own config or none), config files, or projects written inline, which take the root config's options with <code>extends: true</code>. Named by <code>test.name</code>, or their <code>package.json</code>. See <a href="guide.html#projects">Projects</a></td></tr>
+              <tr><td><code>typecheck</code>, <code>expectTypeOf</code>, <code>assertType</code></td><td><span class="check">✓</span> <code>--typecheck</code> checks the <code>*.test-d.ts</code> files with your <code>tsc</code> (or <code>vue-tsc</code>), each error on its test; <code>include</code>, <code>tsconfig</code>, <code>checker</code>, <code>ignoreSourceErrors</code> as in Vitest. At run time <code>expectTypeOf</code> and <code>assertType</code> do nothing</td></tr>
+              <tr><td><code>includeSource</code>, in-source tests (<code>if (import.meta.vitest)</code>)</td><td><span class="check">✓</span> The same: a source file is a test file when it has them, and a module another test imports keeps them to itself</td></tr>
+              <tr><td><code>bench</code>, <code>vitest bench</code>, <code>benchmark</code> options</td><td><span class="check">✓</span> <code>xufa-test bench</code> runs the <code>*.bench.*</code> files: <code>bench(name, fn, { time, iterations, warmupTime, warmupIterations, setup, teardown })</code>, tables of hz, percentiles and margin of error, <code>--outputJson</code> and <code>--compare</code></td></tr>
+              <tr><td>Browser mode (<code>browser.enabled</code>), <code>vitest/browser</code></td><td><span class="check">✓</span> With <code>@xufa/test-web</code>, on Playwright or WebdriverIO: each test file is bundled with your esbuild and runs in a page; <code>page</code>, <code>userEvent</code>, locators, <code>expect.element</code>, jest-dom's matchers, <code>vi.mock</code>, snapshots, coverage (Chromium). See <a href="guide.html#browser-mode">Browser mode</a></td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h3 id="vitest-differences">Differences with Vitest</h3>
+        <ul>
+          <li>
+            <strong>The order of <code>afterEach</code> and <code>afterAll</code> hooks</strong> follows the config: in
+            reverse, as Vitest runs them, with a Vitest config or none; in the order they were declared, as Jest runs them,
+            with a Jest config (or <code>hookOrder: 'list'</code>).
+          </li>
+          <li>
+            <strong>Globals are always there.</strong> A test that checks that <code>describe</code> is not a global
+            would notice; nothing else does.
+          </li>
+          <li>
+            <strong>Only what Node.js can not run is compiled</strong>: JSX and TypeScript-only syntax (decorators,
+            <code>enum</code>), with the esbuild, sucrase or TypeScript your project has.
+          </li>
+          <li>
+            <strong>JSON is imported as a default export only.</strong> <code>import data from './data.json'</code> works
+            without <code>with { type: 'json' }</code>, as in Vitest, but the named imports Vite adds
+            (<code>import { version } from './package.json'</code>) do not.
+          </li>
+          <li>
+            <strong><code>NODE_ENV</code> is left as it is.</strong> Vitest sets it to <code>test</code> when it is not
+            set; @xufa/test does not (see <a href="#jest-differences">the differences with Jest</a>).
+          </li>
+        </ul>
+
+        <h2 id="missing">Not supported yet</h2>
+        <ul>
+        </ul>
+        <p>
+          If your suite needs one of them, keep your current runner for now, or run the tests that need it with it.
+        </p>
+      </article>
+    </div>
+
+    <footer class="footer">
+      <div class="container">
+        <span>xufa is MIT licensed. &copy; Jes&uacute;s Seijas</span>
+        <span>
+          <a href="../guide.html">Guide</a> &middot; <a href="../playground.html">Playground</a> &middot; <a href="../http/index.html">HTTP</a> &middot; <a href="../orm/index.html">ORM</a> &middot; <a href="../auth/index.html">Auth</a> &middot;
+          <a href="../sequelize/index.html">Sequelize</a> &middot; <a href="../packages.html">Packages</a> &middot;
+          <a href="../benchmarks.html">Benchmarks</a> &middot; <a href="https://github.com/xufajs/xufa">GitHub</a>
+        </span>
+      </div>
+    </footer>
+  </body>
+</html>

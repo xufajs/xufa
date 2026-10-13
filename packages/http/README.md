@@ -45,7 +45,7 @@ await app.listen({ port: 3000 });
 Read [fastify's documentation](https://fastify.dev/docs/latest/): server options, routes, hooks, plugins and
 encapsulation, decorators, validation and serialization, content type parsers, `reply`, `request`, the logger,
 `inject()`, the type providers of TypeScript. xufa runs fastify's test suite (main branch, 6.0.0-alpha.4), ported to
-vyntra; the TypeScript declarations are fastify's, ported with their type tests.
+@xufa/test; the TypeScript declarations are fastify's, ported with their type tests.
 
 What fastify takes from other packages, xufa has in its own:
 

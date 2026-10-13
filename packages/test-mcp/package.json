@@ -1,0 +1,53 @@
+{
+  "name": "@xufa/test-mcp",
+  "version": "0.1.0",
+  "description": "MCP server for @xufa/test: coding agents run the tests, read failure pages and the docs, and try locators on pages.",
+  "type": "commonjs",
+  "main": "./src/index.js",
+  "bin": {
+    "xufa-test-mcp": "./bin/xufa-test-mcp.js"
+  },
+  "files": [
+    "bin",
+    "src"
+  ],
+  "scripts": {
+    "test": "node ../test/bin/xufa-test.js"
+  },
+  "author": "Jesús Seijas <jseijas@gmail.com>",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/xufajs/xufa.git",
+    "directory": "packages/test-mcp"
+  },
+  "homepage": "https://github.com/xufajs/xufa/tree/main/packages/test-mcp#readme",
+  "bugs": {
+    "url": "https://github.com/xufajs/xufa/issues"
+  },
+  "engines": {
+    "node": "^22.22.3 || ^24.15.0 || >=25.7.0"
+  },
+  "peerDependencies": {
+    "playwright": ">=1.49.0",
+    "@xufa/test": "workspace:^"
+  },
+  "peerDependenciesMeta": {
+    "playwright": {
+      "optional": true
+    }
+  },
+  "devDependencies": {
+    "playwright": "1.63.0",
+    "@xufa/test": "workspace:*"
+  },
+  "xufaTest": {
+    "exclude": [
+      "**/node_modules/**",
+      "test/fixtures/**"
+    ]
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}

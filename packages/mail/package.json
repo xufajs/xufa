@@ -19,8 +19,8 @@
     "LICENSE"
   ],
   "scripts": {
-    "test": "vyntra",
-    "test:types": "tsd"
+    "test": "xufa-test",
+    "test:types": "xufa-test --typecheck.only"
   },
   "keywords": [
     "mail",
@@ -50,14 +50,10 @@
   "devDependencies": {
     "@xufa/orm": "workspace:*",
     "@xufa/queue": "workspace:*",
-    "tsd": "^0.33.0",
-    "vyntra": "^0.7.0"
+    "@xufa/test": "workspace:^"
   },
   "publishConfig": {
     "access": "public"
-  },
-  "tsd": {
-    "directory": "test/types"
   },
   "peerDependencies": {
     "@xufa/orm": "workspace:*",

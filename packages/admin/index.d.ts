@@ -132,6 +132,14 @@ export interface AdminBaseOptions {
    * the pipelines (pipelines.schedule()) with their runs, and Run now (_runs.view, _runs.change).
    */
   scheduler?: { jobs(): unknown[]; runNow(name: string): Promise<unknown> };
+  /**
+   * The books of rules (a RuleStore of @xufa/rules): uploaded as workbooks, edited as their sheets (a grid of cells),
+   * tested as they change, tried, and kept in versions (_rules.view, _rules.change, _rules.delete; of the tenant chosen).
+   */
+  rules?: {
+    save(name: string, input: unknown, options?: object): Promise<unknown>;
+    sheets(name: string, options?: object): Promise<unknown>;
+  };
   /** The report of xufa.health of the app on the first page (true: when the app has it). */
   health?: boolean;
   /**

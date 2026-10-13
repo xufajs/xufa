@@ -1,5 +1,5 @@
 // Ported from pino (test/types/pino-import.test-d.cts, MIT License) by tools/port-types/port.js: do not edit, change the tool.
-import { expectType } from "tsd";
+import { expectTypeOf } from '@xufa/test';
 
 import * as pinoStar from '../..';
 import { default as P, default as pino, pino as pinoNamed } from '../..';
@@ -8,19 +8,19 @@ const pinoCjs = require('../..');
 const { P: pinoCjsNamed } = require('pino')
 
 const log = pino();
-expectType<P.LogFn>(log.info);
-expectType<P.LogFn>(log.error);
+expectTypeOf(log.info).toEqualTypeOf<P.LogFn>();
+expectTypeOf(log.error).toEqualTypeOf<P.LogFn>();
 
-expectType<pino.Logger>(pinoNamed());
-expectType<P.Logger>(pinoNamed());
-expectType<pino.Logger>(pinoStar.default());
-expectType<pino.Logger>(pinoStar.pino());
+expectTypeOf(pinoNamed()).toEqualTypeOf<pino.Logger>();
+expectTypeOf(pinoNamed()).toEqualTypeOf<P.Logger>();
+expectTypeOf(pinoStar.default()).toEqualTypeOf<pino.Logger>();
+expectTypeOf(pinoStar.pino()).toEqualTypeOf<pino.Logger>();
 // expectType<pino.Logger>(pinoCjsImport.default());
-expectType<pino.Logger>(pinoCjsImport.pino());
-expectType<any>(pinoCjsNamed());
-expectType<any>(pinoCjs());
-expectType<P.TimeFn>(pinoNamed.stdTimeFunctions.isoTimeNano)
-expectType<string>(pinoNamed.stdTimeFunctions.isoTimeNano())
+expectTypeOf(pinoCjsImport.pino()).toEqualTypeOf<pino.Logger>();
+expectTypeOf(pinoCjsNamed()).toEqualTypeOf<any>();
+expectTypeOf(pinoCjs()).toEqualTypeOf<any>();
+expectTypeOf(pinoNamed.stdTimeFunctions.isoTimeNano).toEqualTypeOf<P.TimeFn>();
+expectTypeOf(pinoNamed.stdTimeFunctions.isoTimeNano()).toEqualTypeOf<string>();
 
 const levelChangeEventListener: P.LevelChangeEventListener = (
     lvl: P.LevelWithSilent | string,
@@ -28,4 +28,4 @@ const levelChangeEventListener: P.LevelChangeEventListener = (
     prevLvl: P.LevelWithSilent | string,
     prevVal: number,
 ) => {}
-expectType<P.LevelChangeEventListener>(levelChangeEventListener)
+expectTypeOf(levelChangeEventListener).toEqualTypeOf<P.LevelChangeEventListener>();

@@ -31,8 +31,8 @@
     "register-strict.d.ts"
   ],
   "scripts": {
-    "test": "vyntra",
-    "test:types": "tsd"
+    "test": "xufa-test",
+    "test:types": "xufa-test --typecheck.only"
   },
   "keywords": [
     "faults",
@@ -56,18 +56,15 @@
     "node": "^22.22.3 || ^24.15.0 || >=25.7.0"
   },
   "devDependencies": {
-    "tsd": "^0.33.0",
-    "vyntra": "^0.7.0",
+    "@xufa/browser": "workspace:^",
     "@xufa/http": "workspace:*",
+    "@xufa/test": "workspace:^",
     "fastify": "^5.12.5"
   },
   "publishConfig": {
     "access": "public"
   },
-  "tsd": {
-    "directory": "test/types"
-  },
-  "vyntra": {
+  "xufaTest": {
     "setupFiles": [
       "./register-strict.js"
     ]

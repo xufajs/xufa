@@ -77,6 +77,19 @@ permission, confirm, danger }`) are buttons of the bar of the objects selected i
   With `scheduler` (of @xufa/scheduler), Schedules in Work: each job's next and last run, the runs of those that start
   pipelines (`pipelines.schedule()`), and Run now. With `xufa.health` of
   [@xufa/http](../http) registered, the first page shows the health of the app and its checks.
+- Rules: with `rules` (a `RuleStore` of [@xufa/rules](../rules)), its books: workbooks of Excel uploaded as new versions,
+  and each book edited as its sheets, a grid of cells as in Excel (arrows, Enter, Tab, copy and paste with Excel, undo),
+  its tables outlined by kind (with the language of their code, OpenL or JavaScript), the messages of its tests and
+  the warnings of its formulas as it changes (a table whose code both languages read gets its `language` row with a
+  click, or its whole sheet a Properties table that says it; the books it imports and those that import it linked at its top; making a version the active one, or saving one,
+  warns when the books that import it fail their tests with it; with a store of `checkImporters`, going on is told to
+  the store; the tests tell the checks of the store a book is subject to: `tdz`, which makes a `let` or `const` of a
+  Method used before its declaration an error, and `checkImporters`), tables tried with arguments (and the result of a try written as a test with a click: a row of the test of
+  the table with the same columns, or a new one), and new versions saved (tested first; kept anyway when asked).
+  Versions seen, compared (their rows lined up as a diff does: rows inserted or deleted move none of the others; the
+  cells that changed highlighted, or the two side by side, scrolled together, a gap opposite each row inserted or
+  deleted, with the tables changed, new and gone), made the active one or downloaded. `_rules.view`,
+  `_rules.change` and `_rules.delete`; with tenants, the books of the tenant chosen.
 - Jobs: with `queue` (a `Queue` of [@xufa/queue](../queue)), its jobs by status, name and queue, each with its
   payload, result and error; Retry a failed one or all failed ones (of a name), and Delete one that does not run.
 - Work: with `queue` and `pipelines`, the jobs of the app and the runs of the pipelines in one list, newest first, by

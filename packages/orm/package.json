@@ -18,8 +18,8 @@
     "lib"
   ],
   "scripts": {
-    "test": "vyntra",
-    "test:types": "tsd"
+    "test": "xufa-test",
+    "test:types": "xufa-test --typecheck.only"
   },
   "keywords": [
     "orm",
@@ -55,15 +55,12 @@
   "devDependencies": {
     "@xufa/cluster": "workspace:*",
     "@xufa/http": "workspace:*",
-    "vyntra": "^0.7.0"
+    "@xufa/test": "workspace:^"
   },
   "publishConfig": {
     "access": "public"
   },
-  "tsd": {
-    "directory": "test/types"
-  },
-  "vyntra": {
+  "xufaTest": {
     "setupFiles": [
       "@xufa/faults/register-strict"
     ]

@@ -1,0 +1,219 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>@xufa/bundle: Reference · xufa</title>
+    <meta
+      name="description"
+      content="The reference of @xufa/bundle: every function, class, interface and type it declares, made from its TypeScript declarations."
+    />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%23d9502b'/%3E%3Ctext x='16' y='22.5' font-family='monospace' font-size='18' font-weight='700' fill='white' text-anchor='middle'%3Ex%3C/text%3E%3C/svg%3E"
+    />
+    <link rel="stylesheet" href="../style.css?v=0.1.0" />
+    <script src="../main.js?v=0.1.0"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js" defer></script>
+  </head>
+  <body>
+    <header class="header">
+      <div class="header-inner">
+        <a class="logo" href="../index.html"><span class="logo-mark">x</span>xufa</a>
+        <nav class="nav">
+          <a href="../guide.html">Guide</a>
+          <a href="../playground.html">Playground</a>
+          <a href="../http/index.html">HTTP</a>
+          <a href="../orm/index.html">ORM</a>
+          <a class="hide-small" href="../auth/index.html">Auth</a>
+          <a class="hide-small" href="../sequelize/index.html">Sequelize</a>
+          <a class="hide-small" href="../packages.html" aria-current="page">Packages</a>
+          <a class="hide-small" href="../benchmarks.html">Benchmarks</a>
+          <a href="https://github.com/xufajs/xufa">GitHub</a>
+          <button class="theme-toggle" type="button" aria-label="Switch between light and dark theme">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+              <path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z" />
+            </svg>
+          </button>
+        </nav>
+      </div>
+    </header>
+
+    <div class="docs">
+      <button class="menu-toggle" type="button" aria-expanded="false">☰ Contents</button>
+      <aside class="sidebar">
+        <h4>Reference</h4>
+        <ul>
+          <li><a href="#functions">Functions (5)</a></li>
+          <li><a href="#interfaces">Interfaces (5)</a></li>
+        </ul>
+        <h4>Packages</h4>
+        <ul>
+          <li><a href="../websocket/index.html">@xufa/websocket</a></li>
+          <li><a href="../admin/index.html">@xufa/admin</a></li>
+          <li><a href="../session/index.html">@xufa/session</a></li>
+          <li><a href="../forms/index.html">@xufa/forms</a></li>
+          <li><a href="../views/index.html">@xufa/views</a></li>
+          <li><a href="../mail/index.html">@xufa/mail</a></li>
+          <li><a href="../i18n/index.html">@xufa/i18n</a></li>
+          <li><a href="../openapi/index.html">@xufa/openapi</a></li>
+          <li><a href="../client/index.html">@xufa/client</a></li>
+          <li><a href="../schema/index.html">@xufa/schema</a></li>
+          <li><a href="../pg/index.html">@xufa/pg</a></li>
+          <li><a href="../mongo/index.html">@xufa/mongo</a></li>
+          <li><a href="../expression/index.html">@xufa/expression</a></li>
+          <li><a href="../template/index.html">@xufa/template</a></li>
+          <li><a href="../cluster/index.html">@xufa/cluster</a></li>
+          <li><a href="../scheduler/index.html">@xufa/scheduler</a></li>
+          <li><a href="../queue/index.html">@xufa/queue</a></li>
+          <li><a href="../config/index.html">@xufa/config</a></li>
+          <li><a href="../discovery/index.html">@xufa/discovery</a></li>
+          <li><a href="../netcache/index.html">@xufa/netcache</a></li>
+          <li><a href="../faults/index.html">@xufa/faults</a></li>
+          <li><a href="../browser/index.html">@xufa/browser</a></li>
+          <li><a href="index.html" aria-current="page">@xufa/bundle</a></li>
+          <li><a href="../lint/index.html">@xufa/lint</a></li>
+          <li><a href="../marshal/index.html">@xufa/marshal</a></li>
+          <li><a href="../yaml/index.html">@xufa/yaml</a></li>
+          <li><a href="../jwt/index.html">@xufa/jwt</a></li>
+          <li><a href="../logger/index.html">@xufa/logger</a></li>
+          <li><a href="../router/index.html">@xufa/router</a></li>
+          <li><a href="../serializer/index.html">@xufa/serializer</a></li>
+          <li><a href="../inject/index.html">@xufa/inject</a></li>
+          <li><a href="../boot/index.html">@xufa/boot</a></li>
+          <li><a href="../errors/index.html">@xufa/errors</a></li>
+          <li><a href="../packages.html">All the packages</a></li>
+        </ul>
+      </aside>
+
+      <article class="content">
+        <nav class="package-tabs" aria-label="@xufa/bundle">
+          <a href="index.html">Overview</a>
+          <a href="reference.html" aria-current="page">Reference</a>
+        </nav>
+        <h1>Reference</h1>
+        <p class="intro">
+          Modules as one script for browsers: ES modules, JSX, TypeScript and CommonJS packages, with their stylesheets, on TypeScript's transpiler. Every declaration of its TypeScript declarations
+          (<code>packages/bundle/index.d.ts</code> or <code>index.d.cts</code>), as they are written, with their comments: made from them each time
+          the docs are built. How to use them is in <a href="index.html">the overview</a>.
+        </p>
+
+        <h2 id="functions">Functions</h2>
+        <p class="ref-index"><a href="#ref-bundle"><code>bundle</code></a>, <a href="#ref-transform"><code>transform</code></a>, <a href="#ref-minifyJs"><code>minifyJs</code></a>, <a href="#ref-minifyCss"><code>minifyCss</code></a>, <a href="#ref-resolve"><code>resolve</code></a></p>
+
+        <h3 id="ref-bundle"><code>bundle</code></h3>
+        <pre><code class="language-ts">export declare function bundle(entry: string, options?: BundleOptions): BundleResult;</code></pre>
+        <p>Bundles <code>entry</code> and what it imports, as one script for browsers.</p>
+
+        <h3 id="ref-transform"><code>transform</code></h3>
+        <pre><code class="language-ts">export declare function transform(source: string, options?: TransformOptions): TransformResult;</code></pre>
+        <p>One module (ES module, JSX, TypeScript or CommonJS) as CommonJS.</p>
+
+        <h3 id="ref-minifyJs"><code>minifyJs</code></h3>
+        <pre><code class="language-ts">export declare function minifyJs(code: string, options?: { file?: string; mangle?: boolean }): string;</code></pre>
+        <p>JavaScript without comments and white space; <code>mangle</code> (true): local names made short.</p>
+
+        <h3 id="ref-minifyCss"><code>minifyCss</code></h3>
+        <pre><code class="language-ts">export declare function minifyCss(css: string): string;</code></pre>
+        <p>CSS without comments (but /*! ones) and white space that changes nothing.</p>
+
+        <h3 id="ref-resolve"><code>resolve</code></h3>
+        <pre><code class="language-ts">export declare function resolve(request: string, from: string, options?: ResolveOptions): string | false | null;</code></pre>
+        <p>Where <code>request</code> imported from the file <code>from</code> goes: a path, false (a module left empty by "browser"), or null.</p>
+
+        <h2 id="interfaces">Interfaces</h2>
+        <p class="ref-index"><a href="#ref-TransformOptions"><code>TransformOptions</code></a>, <a href="#ref-TransformResult"><code>TransformResult</code></a>, <a href="#ref-BundleOptions"><code>BundleOptions</code></a>, <a href="#ref-BundleResult"><code>BundleResult</code></a>, <a href="#ref-ResolveOptions"><code>ResolveOptions</code></a></p>
+
+        <h3 id="ref-TransformOptions"><code>TransformOptions</code></h3>
+        <pre><code class="language-ts">export interface TransformOptions { ... }</code></pre>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>file?</code></td><td><code>string</code></td><td><p>Its name: .jsx and .tsx have JSX, .ts and .tsx TypeScript ('module.js' by default).</p></td></tr>
+                <tr><td><code>jsx?</code></td><td><code>'automatic' | 'classic'</code></td><td><p>JSX as calls of react/jsx-runtime ('automatic', the default), or of React.createElement ('classic').</p></td></tr>
+                <tr><td><code>jsxImportSource?</code></td><td><code>string</code></td><td><p>Where the automatic JSX runtime is imported from ('react').</p></td></tr>
+                <tr><td><code>define?</code></td><td><code>Record&lt;string, string&gt;</code></td><td><p>Values put in for names, as JSON or an identifier: { 'process.env.NODE_ENV': '"production"' }.</p></td></tr>
+                <tr><td><code>helpers?</code></td><td><code>'inline' | 'external'</code></td><td><p>TypeScript's helpers of modules in each module ('inline'), or left to the bundle ('external').</p></td></tr>
+                <tr><td><code>target?</code></td><td><code>string</code></td><td><p>The syntax kept ('es2022'): es2020, es2021, es2022, es2023, esnext...</p></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-TransformResult"><code>TransformResult</code></h3>
+        <pre><code class="language-ts">export interface TransformResult { ... }</code></pre>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>code</code></td><td><code>string</code></td><td><p>The module as CommonJS.</p></td></tr>
+                <tr><td><code>imports</code></td><td><code>string[]</code></td><td><p>What it imports (import, export from, import()).</p></td></tr>
+                <tr><td><code>requires</code></td><td><code>string[]</code></td><td><p>All it requires as emitted: its imports, and the require() calls of CommonJS.</p></td></tr>
+                <tr><td><code>legal</code></td><td><code>string[]</code></td><td><p>Its legal comments: /*! ... *\/, and those with</p></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-BundleOptions"><code>BundleOptions</code></h3>
+        <pre><code class="language-ts">export interface BundleOptions extends Omit&lt;TransformOptions, 'file' | 'helpers'&gt; { ... }</code></pre>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>browser?</code></td><td><code>boolean</code></td><td><p>The "browser" condition of "exports" and the "browser" field (true).</p></td></tr>
+                <tr><td><code>treeShaking?</code></td><td><code>boolean</code></td><td><p>What ES modules do not use of each other left out (true).</p></td></tr>
+                <tr><td><code>minify?</code></td><td><code>boolean</code></td><td><p>Without comments and white space (false).</p></td></tr>
+                <tr><td><code>mangle?</code></td><td><code>boolean</code></td><td><p>With minify: local names made short (true).</p></td></tr>
+                <tr><td><code>globalName?</code></td><td><code>string</code></td><td><p>The exports of the entry as this global variable.</p></td></tr>
+                <tr><td><code>shims?</code></td><td><code>Record&lt;string, string&gt;</code></td><td><p>Modules given as CommonJS source, by name: { 'node:util': 'module.exports = ...' }.</p></td></tr>
+                <tr><td><code>external?</code></td><td><code>string[]</code></td><td><p>Names left to a require() of the page.</p></td></tr>
+                <tr><td><code>banner?</code></td><td><code>string</code></td><td><p>Text before the script.</p></td></tr>
+                <tr><td><code>legalComments?</code></td><td><code>'eof' | 'none'</code></td><td><p>The legal comments of the modules at the end ('eof', the default), or left out ('none').</p></td></tr>
+                <tr><td><code>platform?</code></td><td><code>'browser' | 'node'</code></td><td><p>'browser' (the default), or 'node': the modules of Node.js (and the external ones) are loaded by Node.js, and the bundle is a module of CommonJS whose exports are the entry's (or, with format 'esm', an ES module).</p></td></tr>
+                <tr><td><code>liveBindings?</code></td><td><code>boolean</code></td><td><p>What modules export from others, read live (true, the default); false: as values, as fast to read as constants, but an exported let changed later is not seen through them.</p></td></tr>
+                <tr><td><code>format?</code></td><td><code>'iife' | 'esm'</code></td><td><p>'iife' (the default): the modules as functions, required on first use; 'esm': one ES module of them by scope hoisting (their code in one scope, imports read as variables), which exports what the entry exports.</p></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-BundleResult"><code>BundleResult</code></h3>
+        <pre><code class="language-ts">export interface BundleResult { ... }</code></pre>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>js</code></td><td><code>string</code></td><td><p>The script.</p></td></tr>
+                <tr><td><code>css</code></td><td><code>string</code></td><td><p>The stylesheets the modules import, in the order the modules run.</p></td></tr>
+                <tr><td><code>inputs</code></td><td><code>string[]</code></td><td><p>The files of the modules in it.</p></td></tr>
+                <tr><td><code>legal</code></td><td><code>Map&lt;string, string[]&gt;</code></td><td><p>The legal comments, by file.</p></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-ResolveOptions"><code>ResolveOptions</code></h3>
+        <pre><code class="language-ts">export interface ResolveOptions { ... }</code></pre>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>kind?</code></td><td><code>'import' | 'require'</code></td><td><p>The condition of the request ('import').</p></td></tr>
+                <tr><td><code>browser?</code></td><td><code>boolean</code></td><td><p>The "browser" condition and field (true).</p></td></tr>
+                <tr><td><code>conditions?</code></td><td><code>string[]</code></td><td><p>More conditions, first.</p></td></tr>
+              </tbody>
+            </table>
+          </div>
+      </article>
+    </div>
+
+    <footer class="footer">
+      <div class="container">
+        <span>xufa is MIT licensed. &copy; Jes&uacute;s Seijas</span>
+        <span>
+          <a href="../guide.html">Guide</a> &middot; <a href="../playground.html">Playground</a> &middot; <a href="../http/index.html">HTTP</a> &middot; <a href="../orm/index.html">ORM</a> &middot; <a href="../auth/index.html">Auth</a> &middot;
+          <a href="../sequelize/index.html">Sequelize</a> &middot; <a href="../packages.html">Packages</a> &middot;
+          <a href="../benchmarks.html">Benchmarks</a> &middot; <a href="https://github.com/xufajs/xufa">GitHub</a>
+        </span>
+      </div>
+    </footer>
+  </body>
+</html>

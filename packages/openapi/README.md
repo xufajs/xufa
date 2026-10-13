@@ -126,7 +126,7 @@ are not in the document.
 
 ## Tests
 
-`test/` is the suite of @fastify/swagger (290 tests, OpenAPI 3 and Swagger 2, static and dynamic), ported to vyntra by
+`test/` is the suite of @fastify/swagger (290 tests, OpenAPI 3 and Swagger 2, static and dynamic), ported to @xufa/test by
 `tools/port-swagger` from a checkout of its repository, whose documents are checked by swagger-parser; `test/xufa`
 tests what xufa adds and the explorer. The library is kept as @fastify/swagger has it (`lib/`, but `lib/xufa` and
 `lib/ui.js`), so it can be ported again: json-schema-resolver, rfdc and yaml are replaced by `lib/xufa`.

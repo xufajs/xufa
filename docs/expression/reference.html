@@ -46,9 +46,9 @@
         <ul>
           <li><a href="#functions">Functions (4)</a></li>
           <li><a href="#classes">Classes (2)</a></li>
-          <li><a href="#constants">Constants (2)</a></li>
-          <li><a href="#interfaces">Interfaces (3)</a></li>
-          <li><a href="#types">Types (3)</a></li>
+          <li><a href="#constants">Constants (3)</a></li>
+          <li><a href="#interfaces">Interfaces (4)</a></li>
+          <li><a href="#types">Types (4)</a></li>
         </ul>
         <h4>Packages</h4>
         <ul>
@@ -73,6 +73,9 @@
           <li><a href="../discovery/index.html">@xufa/discovery</a></li>
           <li><a href="../netcache/index.html">@xufa/netcache</a></li>
           <li><a href="../faults/index.html">@xufa/faults</a></li>
+          <li><a href="../browser/index.html">@xufa/browser</a></li>
+          <li><a href="../bundle/index.html">@xufa/bundle</a></li>
+          <li><a href="../lint/index.html">@xufa/lint</a></li>
           <li><a href="../marshal/index.html">@xufa/marshal</a></li>
           <li><a href="../yaml/index.html">@xufa/yaml</a></li>
           <li><a href="../jwt/index.html">@xufa/jwt</a></li>
@@ -103,7 +106,7 @@
         <p class="ref-index"><a href="#ref-parse"><code>parse</code></a>, <a href="#ref-compile"><code>compile</code></a>, <a href="#ref-evaluate"><code>evaluate</code></a>, <a href="#ref-locate"><code>locate</code></a></p>
 
         <h3 id="ref-parse"><code>parse</code></h3>
-        <pre><code class="language-ts">export declare function parse(source: string, options?: { filters?: boolean }): ExpressionNode;</code></pre>
+        <pre><code class="language-ts">export declare function parse(source: string, options?: { filters?: boolean; statements?: boolean }): ExpressionNode;</code></pre>
 
         <h3 id="ref-compile"><code>compile</code></h3>
         <pre><code class="language-ts">export declare function compile&lt;T = unknown&gt;(source: string): CompiledExpression&lt;T&gt;;</code></pre>
@@ -129,9 +132,15 @@
                 <tr><td><code>readonly filters</code></td><td><code>Readonly&lt;Record&lt;string, <a href="#ref-Filter">Filter</a>&gt;&gt; | null</code></td><td></td></tr>
                 <tr><td><code>readonly lenient</code></td><td><code>boolean</code></td><td></td></tr>
                 <tr><td><code>readonly strict</code></td><td><code>boolean</code></td><td></td></tr>
+                <tr><td><code>readonly statements</code></td><td><code>boolean</code></td><td></td></tr>
+                <tr><td><code>readonly maxSteps</code></td><td><code>number</code></td><td></td></tr>
+                <tr><td><code>readonly maxDepth</code></td><td><code>number</code></td><td></td></tr>
+                <tr><td><code>readonly constructors</code></td><td><code>Readonly&lt;Record&lt;string, new (...args: any[]) =&gt; unknown&gt;&gt;</code></td><td></td></tr>
                 <tr><td><code>parse(source: string)</code></td><td><code><a href="#ref-ExpressionNode">ExpressionNode</a></code></td><td></td></tr>
-                <tr><td><code>compile&lt;T = unknown&gt;(source: string)</code></td><td><code><a href="#ref-CompiledExpression">CompiledExpression</a>&lt;T&gt;</code></td><td></td></tr>
+                <tr><td><code>compile&lt;T = unknown&gt;(source: string, options?: { modules?: ModuleResolver })</code></td><td><code><a href="#ref-CompiledExpression">CompiledExpression</a>&lt;T&gt;</code></td><td><p><code>modules</code>: a resolver of its imports of its own (over the engine's).</p></td></tr>
+                <tr><td><code>imports(source: string)</code></td><td><code>string[]</code></td><td><p>The names of the modules a program imports.</p></td></tr>
                 <tr><td><code>evaluate&lt;T = unknown&gt;(source: string, context?: ExpressionContext)</code></td><td><code>T</code></td><td></td></tr>
+                <tr><td><code>compileTree&lt;T = unknown&gt;(tree: ExpressionNode | TreeNode, source?: string)</code></td><td><code>(context?: <a href="#ref-ExpressionContext">ExpressionContext</a>) =&gt; T</code></td><td><p>The function of a tree made by another parser (of another language), with the nodes parse() gives: compiled with the same checks as sources. <code>source</code>: the text the positions of its nodes are in.</p></td></tr>
               </tbody>
             </table>
           </div>
@@ -152,7 +161,7 @@
           </div>
 
         <h2 id="constants">Constants</h2>
-        <p class="ref-index"><a href="#ref-GLOBALS"><code>GLOBALS</code></a>, <a href="#ref-FORBIDDEN"><code>FORBIDDEN</code></a></p>
+        <p class="ref-index"><a href="#ref-GLOBALS"><code>GLOBALS</code></a>, <a href="#ref-FORBIDDEN"><code>FORBIDDEN</code></a>, <a href="#ref-CONSTRUCTORS"><code>CONSTRUCTORS</code></a></p>
 
         <h3 id="ref-GLOBALS"><code>GLOBALS</code></h3>
         <pre><code class="language-ts">export declare const GLOBALS: Readonly&lt;Record&lt;string, unknown&gt;&gt;;</code></pre>
@@ -162,8 +171,12 @@
         <pre><code class="language-ts">export declare const FORBIDDEN: ReadonlySet&lt;string&gt;;</code></pre>
         <p>The names of properties expressions cannot reach (__proto__, constructor, prototype...).</p>
 
+        <h3 id="ref-CONSTRUCTORS"><code>CONSTRUCTORS</code></h3>
+        <pre><code class="language-ts">export declare const CONSTRUCTORS: Readonly&lt;Record&lt;string, new (...args: any[]) =&gt; unknown&gt;&gt;;</code></pre>
+        <p>What <code>new</code> makes in programs by default (Date, Map, Set, Error, TypeError, RangeError).</p>
+
         <h2 id="interfaces">Interfaces</h2>
-        <p class="ref-index"><a href="#ref-CompiledExpression"><code>CompiledExpression</code></a>, <a href="#ref-EngineOptions"><code>EngineOptions</code></a>, <a href="#ref-ExpressionNode"><code>ExpressionNode</code></a></p>
+        <p class="ref-index"><a href="#ref-CompiledExpression"><code>CompiledExpression</code></a>, <a href="#ref-EngineOptions"><code>EngineOptions</code></a>, <a href="#ref-ExpressionNode"><code>ExpressionNode</code></a>, <a href="#ref-TreeNode"><code>TreeNode</code></a></p>
 
         <h3 id="ref-CompiledExpression"><code>CompiledExpression</code></h3>
         <pre><code class="language-ts">export interface CompiledExpression&lt;T = unknown&gt; { ... }</code></pre>
@@ -189,10 +202,16 @@
                 <tr><td><code>filters?</code></td><td><code>Record&lt;string, <a href="#ref-Filter">Filter</a>&gt; | null</code></td><td><p>Functions by name: <code>|</code> separates them in expressions (<code>price | round(2)</code>, the value first).</p></td></tr>
                 <tr><td><code>lenient?</code></td><td><code>boolean</code></td><td><p>Members of null or undefined, and calls of what is not a function, give undefined (not errors).</p></td></tr>
                 <tr><td><code>strict?</code></td><td><code>boolean</code></td><td><p>Names that are not in the context nor the globals are errors (not undefined).</p></td></tr>
+                <tr><td><code>tdz?</code></td><td><code>boolean</code></td><td><p>Programs: a <code>let</code>, <code>const</code> or class used before its declaration runs is an error (<code>XUFA_EXPR_ERR_RUNTIME</code>), as in JavaScript; by default it is undefined.</p></td></tr>
                 <tr><td><code>maxLength?</code></td><td><code>number</code></td><td><p>The longest source compiled (10000).</p></td></tr>
                 <tr><td><code>cacheSize?</code></td><td><code>number</code></td><td><p>How many expressions compiled are kept (1000; 0 for none).</p></td></tr>
                 <tr><td><code>inline?</code></td><td><code>boolean</code></td><td><p>false: expressions stay closures (by default, those run often become one function of JavaScript).</p></td></tr>
                 <tr><td><code>inlineAfter?</code></td><td><code>number</code></td><td><p>Runs before an expression becomes one function of JavaScript (64; 0: at once).</p></td></tr>
+                <tr><td><code>statements?</code></td><td><code>boolean</code></td><td><p>Sources are programs: statements (let, const, if, for, for...of, while, switch, return, throw, try, functions), assignments of names and of members of plain objects and arrays, ++, --, delete, new and comments. Their value is that of their return, or of the last expression statement run.</p></td></tr>
+                <tr><td><code>maxSteps?</code></td><td><code>number</code></td><td><p>The loop turns and calls of functions of a run of a program (10 million): past them, XUFA_EXPR_ERR_LIMIT.</p></td></tr>
+                <tr><td><code>maxDepth?</code></td><td><code>number</code></td><td><p>How deep calls of a program's functions can nest (1000): deeper, XUFA_EXPR_ERR_LIMIT.</p></td></tr>
+                <tr><td><code>constructors?</code></td><td><code>Record&lt;string, new (...args: any[]) =&gt; unknown&gt;</code></td><td><p>What <code>new</code> makes in programs, by name, over the default ones (Date, Map, Set, Error, TypeError, RangeError).</p></td></tr>
+                <tr><td><code>modules?</code></td><td><code><a href="#ref-ModuleResolver">ModuleResolver</a></code></td><td><p>What <code>import</code> of programs takes: the source of a module (a string: a program run for each import, with a context of its own) or what it exports (an object given by the host), or undefined (no such module).</p></td></tr>
               </tbody>
             </table>
           </div>
@@ -204,7 +223,7 @@
             <table class="ref-members">
               <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
               <tbody>
-                <tr><td><code>type</code></td><td><code>| 'Literal' | 'Identifier' | 'TemplateLiteral' | 'ArrayExpression' | 'ObjectExpression' | 'MemberExpression' | 'CallExpression' | 'ChainExpression' | 'UnaryExpression' | 'BinaryExpression' | 'LogicalExpression' | 'ConditionalExpression' | 'ArrowFunctionExpression' | '<a href="#ref-Filter">Filter</a>'</code></td><td></td></tr>
+                <tr><td><code>type</code></td><td><code>| 'Literal' | 'Identifier' | 'TemplateLiteral' | 'ArrayExpression' | 'ObjectExpression' | 'MemberExpression' | 'CallExpression' | 'ChainExpression' | 'UnaryExpression' | 'BinaryExpression' | 'LogicalExpression' | 'ConditionalExpression' | 'ArrowFunctionExpression' | '<a href="#ref-Filter">Filter</a>' | 'AssignmentExpression' | 'UpdateExpression' | 'NewExpression' | 'Program' | 'ExpressionStatement' | 'BlockStatement' | 'EmptyStatement' | 'VariableDeclaration' | 'FunctionDeclaration' | 'IfStatement' | 'ForStatement' | 'ForOfStatement' | 'WhileStatement' | 'DoWhileStatement' | 'ReturnStatement' | 'BreakStatement' | 'ContinueStatement' | 'ThrowStatement' | 'TryStatement' | 'SwitchStatement'</code></td><td></td></tr>
                 <tr><td><code>start</code></td><td><code>number</code></td><td></td></tr>
                 <tr><td><code>end</code></td><td><code>number</code></td><td></td></tr>
                 <tr><td><code>[key: string]</code></td><td><code>unknown</code></td><td></td></tr>
@@ -212,8 +231,23 @@
             </table>
           </div>
 
+        <h3 id="ref-TreeNode"><code>TreeNode</code></h3>
+        <pre><code class="language-ts">export interface TreeNode { ... }</code></pre>
+        <p>A node of a tree made by another parser: as ExpressionNode, its positions optional.</p>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>type</code></td><td><code><a href="#ref-ExpressionNode">ExpressionNode</a>['type']</code></td><td></td></tr>
+                <tr><td><code>start?</code></td><td><code>number</code></td><td></td></tr>
+                <tr><td><code>end?</code></td><td><code>number</code></td><td></td></tr>
+                <tr><td><code>[key: string]</code></td><td><code>unknown</code></td><td></td></tr>
+              </tbody>
+            </table>
+          </div>
+
         <h2 id="types">Types</h2>
-        <p class="ref-index"><a href="#ref-ExpressionContext"><code>ExpressionContext</code></a>, <a href="#ref-Filter"><code>Filter</code></a>, <a href="#ref-ExpressionErrorCode"><code>ExpressionErrorCode</code></a></p>
+        <p class="ref-index"><a href="#ref-ExpressionContext"><code>ExpressionContext</code></a>, <a href="#ref-Filter"><code>Filter</code></a>, <a href="#ref-ModuleResolver"><code>ModuleResolver</code></a>, <a href="#ref-ExpressionErrorCode"><code>ExpressionErrorCode</code></a></p>
 
         <h3 id="ref-ExpressionContext"><code>ExpressionContext</code></h3>
         <pre><code class="language-ts">export type ExpressionContext = Record&lt;string, unknown&gt; | object | null | undefined;</code></pre>
@@ -222,9 +256,17 @@
         <h3 id="ref-Filter"><code>Filter</code></h3>
         <pre><code class="language-ts">export type Filter = (value: any, ...args: any[]) =&gt; unknown;</code></pre>
 
+        <h3 id="ref-ModuleResolver"><code>ModuleResolver</code></h3>
+        <pre><code class="language-ts">export type ModuleResolver = (name: string) =&gt; string | Record&lt;string, unknown&gt; | undefined | null;</code></pre>
+        <p>A resolver of the modules programs import, by name.</p>
+
         <h3 id="ref-ExpressionErrorCode"><code>ExpressionErrorCode</code></h3>
         <pre><code class="language-ts">export type ExpressionErrorCode =
-  'XUFA_EXPR_ERR_SYNTAX' | 'XUFA_EXPR_ERR_FORBIDDEN' | 'XUFA_EXPR_ERR_RUNTIME' | 'XUFA_EXPR_ERR_LENGTH';</code></pre>
+  | 'XUFA_EXPR_ERR_SYNTAX'
+  | 'XUFA_EXPR_ERR_FORBIDDEN'
+  | 'XUFA_EXPR_ERR_RUNTIME'
+  | 'XUFA_EXPR_ERR_LENGTH'
+  | 'XUFA_EXPR_ERR_LIMIT';</code></pre>
       </article>
     </div>
 

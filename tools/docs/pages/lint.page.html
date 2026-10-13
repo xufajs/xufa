@@ -1,0 +1,260 @@
+<!--{
+  "file": "lint.html",
+  "name": "@xufa/lint",
+  "title": "@xufa/lint",
+  "description": "@xufa/lint: ESLint's recommended rules (ported, with their tests) and prettier's formatter (ported, the same output) for JavaScript, TypeScript, JSON and markdown, on TypeScript's parser.",
+  "groups": [
+    ["Using it", [["start", "Quick start"], ["configs", "Configs"], ["comments", "Comments"], ["cli", "The command"], ["format", "Formatting"]]],
+    ["More", [["rules", "The rules"], ["api", "From code"], ["how", "How it works"], ["checks", "How it is checked"], ["speed", "Speed"]]],
+    ["About it", [["from-eslint", "Coming from ESLint"], ["typescript", "TypeScript"]]]
+  ]
+}-->
+        <h1>@xufa/lint</h1>
+        <p class="intro">
+          A linter with ESLint's recommended rules and a formatter with prettier's output: ESLint 9.39.5's own code for
+          the rules and prettier 3.9.9's for formatting, ported as they are, run on TypeScript's parser. The rules pass
+          ESLint's tests; the formatter writes what prettier writes. Configs are ESLint's flat configs, in
+          <code>xufa.lint.config.js</code>. xufa lints and formats itself with it.
+        </p>
+
+        <h2 id="start">Quick start</h2>
+        <pre><code class="language-sh">npm install --save-dev @xufa/lint typescript</code></pre>
+        <pre><code class="language-js">// xufa.lint.config.js
+import { configs, globals } from '@xufa/lint';
+
+export default [
+  { ignores: ['dist/**'] },
+  configs.recommended,
+  {
+    languageOptions: { globals: { ...globals.node } },
+    rules: { 'no-unused-vars': ['error', { argsIgnorePattern: '^_' }] },
+  },
+  { files: ['**/*.cjs'], languageOptions: { sourceType: 'commonjs' } },
+];</code></pre>
+        <pre><code class="language-sh">npx xufa-lint            # the folder of the config
+npx xufa-lint src --fix  # writes what rules fix</code></pre>
+
+        <h2 id="configs">Configs</h2>
+        <p>
+          <code>xufa.lint.config.js</code> (or <code>.mjs</code>, <code>.cjs</code>) exports a list of objects, as
+          ESLint's <code>eslint.config.js</code> does; it is found from the working folder up.
+        </p>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Key</th><th>What it is</th></tr></thead>
+            <tbody>
+              <tr><td><code>files</code></td><td>Globs of the files the object applies to (all, without it). A pattern of <code>files</code> adds its files to those linted: <code>.js</code>, <code>.mjs</code> and <code>.cjs</code> by default.</td></tr>
+              <tr><td><code>ignores</code></td><td>Files the object does not apply to; alone in an object, files ignored everywhere (<code>node_modules</code> and <code>.git</code> always are). <code>!</code> takes back.</td></tr>
+              <tr><td><code>languageOptions</code></td><td><code>ecmaVersion</code> (<code>'latest'</code>), <code>sourceType</code> (<code>'module'</code>, <code>'script'</code>, <code>'commonjs'</code>), <code>globals</code>, <code>parserOptions.ecmaFeatures.jsx</code>.</td></tr>
+              <tr><td><code>rules</code></td><td><code>'off'</code>, <code>'warn'</code>, <code>'error'</code> (or 0, 1, 2), or <code>[severity, ...options]</code>.</td></tr>
+              <tr><td><code>linterOptions</code></td><td><code>noInlineConfig</code>, <code>reportUnusedDisableDirectives</code>.</td></tr>
+              <tr><td><code>settings</code></td><td>What rules read in <code>context.settings</code>.</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p>
+          The objects that apply to a file are merged in order: <code>languageOptions</code> and <code>settings</code>
+          deeply, rules by rule (a rule given only a severity keeps the options before it). Globs are minimatch's:
+          <code>**</code>, <code>*</code>, <code>?</code>, <code>{a,b}</code>, <code>[abc]</code>, and a final
+          <code>/</code> for a folder. <code>globals</code> has the environments of the package globals:
+          <code>node</code>, <code>browser</code>, <code>commonjs</code>, <code>jest</code>, <code>vitest</code>,
+          <code>mocha</code>, <code>worker</code>, the ES versions...
+        </p>
+
+        <h2 id="comments">Comments</h2>
+        <pre><code class="language-js">// eslint-disable-next-line no-undef -- given by the page
+render(app);
+/* global ajax:readonly */
+/* eslint no-console: off */</code></pre>
+        <p>
+          <code>eslint-disable</code>, <code>eslint-enable</code>, <code>eslint-disable-line</code> and
+          <code>eslint-disable-next-line</code> (with <code>-- reasons</code>), <code>/* global */</code>,
+          <code>/* exported */</code> and <code>/* eslint rule: setting */</code>, as ESLint reads them. Comments that
+          disable ESLint's other rules are not errors; one that disables nothing is a warning
+          (<code>reportUnusedDisableDirectives</code>).
+        </p>
+
+        <h2 id="cli">The command</h2>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Option</th><th>What it does</th></tr></thead>
+            <tbody>
+              <tr><td><code>--fix</code></td><td>Writes what rules fix (again until nothing changes, 10 times at most).</td></tr>
+              <tr><td><code>--format stylish|json</code></td><td>ESLint's outputs.</td></tr>
+              <tr><td><code>--config file</code></td><td>Another config.</td></tr>
+              <tr><td><code>--max-warnings n</code></td><td>Fails with more warnings.</td></tr>
+              <tr><td><code>--quiet</code></td><td>Errors only.</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p>The exit code is 0, 1 with errors (or too many warnings), and 2 when it cannot run.</p>
+
+        <h2 id="format">Formatting</h2>
+        <pre><code class="language-sh">npx xufa-format           # lists the files that are not formatted (exit 1 when any is)
+npx xufa-format --write   # formats them</code></pre>
+        <pre><code class="language-js">// xufa.lint.config.js
+export default [
+  configs.recommended,
+  { format: { singleQuote: true, trailingComma: 'es5', printWidth: 120, ignores: ['vendor/**'] } },
+];</code></pre>
+        <p>
+          JavaScript, TypeScript, JSX, JSON and markdown are written as prettier 3.9.9 writes them: its printers, ported
+          as they are, with its options (<code>printWidth</code>, <code>singleQuote</code>, <code>semi</code>,
+          <code>trailingComma</code>...) in the <code>format</code> key of configs, merged as the rest.
+          <code>format.ignores</code> are files never formatted; the ignores of all configs are not formatted either.
+          JavaScript is formatted as prettier's Babel parser has it (the parentheses of <code>/** @type */</code> casts
+          stay); package.json as JSON.stringify writes it; the code blocks of markdown in JavaScript, TypeScript and JSON
+          are formatted too. Not formatted: CSS, HTML, YAML and other languages (in files or in code blocks), and the
+          embedded languages of JavaScript (<code>css`...`</code>).
+        </p>
+        <p>
+          On this repository it writes what prettier writes for each of its 3,222 files of JavaScript, TypeScript, JSON
+          and markdown, and also when they are first printed otherwise (40 columns, other options); JSON5 and JSON with
+          comments (<code>.json5</code>, <code>.jsonc</code>, <code>.babelrc</code>...) are formatted as prettier does
+          too. It is faster than prettier in each language, and <code>xufa-format --check</code> on the whole repository
+          1.8 to 2 times as fast as <code>prettier --check</code> (<a href="../benchmarks.html#formatter">benchmarks</a>).
+          <code>format(text, { filepath, ...options })</code> formats from code.
+        </p>
+
+        <h2 id="rules">The rules</h2>
+        <p>
+          The 60 of <code>@eslint/js</code>'s recommended set: <code>configs.recommended</code> turns them all on. The
+          61st, <code>no-unexpected-multiline</code>, is left out, as with eslint-config-prettier: line breaks are the
+          formatter's. Their options, messages, fixes and suggestions are ESLint's, since their code is.
+          <code>defineRule(id, rule)</code> adds one of yours, written as ESLint's are (<code>meta</code>,
+          <code>create(context)</code>).
+        </p>
+
+        <h2 id="api">From code</h2>
+        <pre><code class="language-js">import { Linter, configs } from '@xufa/lint';
+
+const linter = new Linter();
+const messages = linter.verify('let a = 1;', configs.recommended, 'a.js');
+// [{ ruleId: 'no-unused-vars', severity: 2, message: "'a' is assigned a value but never used.", line: 1, column: 5, ... }]
+const { output } = linter.verifyAndFix('if (!!a) b();', configs.recommended, 'a.js'); // 'if (a) b();'</code></pre>
+        <p>
+          <code>loadConfig(file)</code> and <code>lintFiles(paths, configs, { fix })</code> do what the command does;
+          <code>parse(text)</code> gives the ESTree of a file.
+        </p>
+
+        <h2 id="how">How it works</h2>
+        <p>
+          The formatter (<code>lib/prettier</code>) is prettier's printers of ESTree and markdown, its comments and its
+          doc printer, made <code>@xufa/lint</code>'s own code and tuned since. JavaScript and TypeScript are read by
+          its own copy of TypeScript's parser (<code>lib/prettier/parse/typescript.cjs</code>, what the parser needs of
+          TypeScript, loaded only for them) and converted to ESTree as typescript-estree does; JSON by a parser
+          of its own, into the tree prettier's json parsers make; markdown by micromark. It is loaded as one ES module
+          (<code>lib/prettier/dist/format.mjs</code>, built by <code>@xufa/bundle</code>).
+        </p>
+        <p>
+          The parser is <code>@xufa/lint</code>'s: TypeScript's parser, its tree made the ESTree that espree makes for
+          ESLint, with espree's tokens and comments. The rest is ESLint's code for the JavaScript language, ported to
+          <code>lib/eslint</code>: scope analysis (eslint-scope), globals, the traversal with its selectors (esquery) and
+          code path events, the reports of rules, disable directives and fixes. <code>tools/port-lint</code> ports it
+          again from a checkout of ESLint; <code>NOTICE.md</code> has the licenses.
+        </p>
+
+        <h2 id="checks">How it is checked</h2>
+        <ul>
+          <li>ESLint's tests of the 60 rules: 5,249 pass; 32 need another parser (typescript-eslint's).</li>
+          <li>The parser against espree: the same tree, tokens and comments for the 2,405 files of this repository and the
+            5,248 pieces of code of those tests.</li>
+          <li>Against ESLint on 2,425 files with problems (the ported tests of this repository): the same 40,779 problems,
+            in about two thirds of the time.</li>
+          <li>The formatter against prettier: the same output for the 3,222 files of JavaScript, TypeScript, JSON and
+            markdown of this repository, also when they are first printed otherwise (40 columns, other options); and
+            for 27 cases of JSON, JSON5 and JSON with comments in five kinds of files with three sets of options.</li>
+        </ul>
+
+        <h2 id="speed">Speed</h2>
+        <p>
+          The formatter against prettier 3.9.9, on the files of this repository that
+          <code>xufa-format</code> formats (1,594), each in a process of its own (<code>node bench/format.js</code>),
+          with the same output for every file. In kilobytes formatted a second, more is better. Warm is the median of 9
+          passes after the first (an editor, a watcher); the first pass is what a command does, loading included.
+        </p>
+        <h3>Warm</h3>
+        <p class="legend"><span class="us">@xufa/lint</span><span>prettier</span></p>
+        <div class="pairs">
+          <div class="pair win">
+            <div class="head"><span>JavaScript, 1,326 files</span><span class="times">1.78&times;</span></div>
+            <div class="chart-row us"><span class="name">@xufa/lint</span><span class="track"><span class="fill" style="width: 100.0%"></span></span><span class="value">1.48k KB/s</span></div>
+            <div class="chart-row"><span class="name">prettier</span><span class="track"><span class="fill" style="width: 56.1%"></span></span><span class="value">829 KB/s</span></div>
+          </div>
+          <div class="pair win">
+            <div class="head"><span>TypeScript, 144 files</span><span class="times">1.87&times;</span></div>
+            <div class="chart-row us"><span class="name">@xufa/lint</span><span class="track"><span class="fill" style="width: 100.0%"></span></span><span class="value">2.89k KB/s</span></div>
+            <div class="chart-row"><span class="name">prettier</span><span class="track"><span class="fill" style="width: 53.4%"></span></span><span class="value">1.55k KB/s</span></div>
+          </div>
+          <div class="pair win">
+            <div class="head"><span>JSON, 67 files</span><span class="times">3.29&times;</span></div>
+            <div class="chart-row us"><span class="name">@xufa/lint</span><span class="track"><span class="fill" style="width: 100.0%"></span></span><span class="value">23.7k KB/s</span></div>
+            <div class="chart-row"><span class="name">prettier</span><span class="track"><span class="fill" style="width: 30.4%"></span></span><span class="value">7.20k KB/s</span></div>
+          </div>
+          <div class="pair win">
+            <div class="head"><span>markdown, 59 files</span><span class="times">2.26&times;</span></div>
+            <div class="chart-row us"><span class="name">@xufa/lint</span><span class="track"><span class="fill" style="width: 100.0%"></span></span><span class="value">963 KB/s</span></div>
+            <div class="chart-row"><span class="name">prettier</span><span class="track"><span class="fill" style="width: 44.3%"></span></span><span class="value">426 KB/s</span></div>
+          </div>
+        </div>
+        <h3>The first pass</h3>
+        <div class="pairs">
+          <div class="pair win">
+            <div class="head"><span>JavaScript, 1,326 files</span><span class="times">1.37&times;</span></div>
+            <div class="chart-row us"><span class="name">@xufa/lint</span><span class="track"><span class="fill" style="width: 100.0%"></span></span><span class="value">1.12k KB/s</span></div>
+            <div class="chart-row"><span class="name">prettier</span><span class="track"><span class="fill" style="width: 73.1%"></span></span><span class="value">819 KB/s</span></div>
+          </div>
+          <div class="pair win">
+            <div class="head"><span>TypeScript, 144 files</span><span class="times">1.47&times;</span></div>
+            <div class="chart-row us"><span class="name">@xufa/lint</span><span class="track"><span class="fill" style="width: 100.0%"></span></span><span class="value">1.36k KB/s</span></div>
+            <div class="chart-row"><span class="name">prettier</span><span class="track"><span class="fill" style="width: 68.2%"></span></span><span class="value">930 KB/s</span></div>
+          </div>
+          <div class="pair win">
+            <div class="head"><span>JSON, 67 files</span><span class="times">1.94&times;</span></div>
+            <div class="chart-row us"><span class="name">@xufa/lint</span><span class="track"><span class="fill" style="width: 100.0%"></span></span><span class="value">5.34k KB/s</span></div>
+            <div class="chart-row"><span class="name">prettier</span><span class="track"><span class="fill" style="width: 51.7%"></span></span><span class="value">2.76k KB/s</span></div>
+          </div>
+          <div class="pair win">
+            <div class="head"><span>markdown, 59 files</span><span class="times">1.34&times;</span></div>
+            <div class="chart-row us"><span class="name">@xufa/lint</span><span class="track"><span class="fill" style="width: 100.0%"></span></span><span class="value">567 KB/s</span></div>
+            <div class="chart-row"><span class="name">prettier</span><span class="track"><span class="fill" style="width: 74.7%"></span></span><span class="value">423 KB/s</span></div>
+          </div>
+        </div>
+        <h3>The command</h3>
+        <table>
+          <thead>
+            <tr><th><code>--check</code> on</th><th>prettier</th><th>@xufa/lint</th><th>Speed</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>The whole repository (1,594 files)</td><td>20.5 s</td><td>10.7 s</td><td>1.92&times;</td></tr>
+            <tr><td>One JavaScript file (280 lines)</td><td>215 ms</td><td>184 ms</td><td>1.17&times;</td></tr>
+            <tr><td>One TypeScript file (index.d.ts)</td><td>187 ms</td><td>145 ms</td><td>1.29&times;</td></tr>
+            <tr><td>One README.md with code blocks of JavaScript</td><td>221 ms</td><td>191 ms</td><td>1.16&times;</td></tr>
+            <tr><td>One package.json</td><td>132 ms</td><td>91 ms</td><td>1.45&times;</td></tr>
+          </tbody>
+        </table>
+        <p>
+          The machine was busy in these runs (prettier's TypeScript took 0.7 to 1.2 s warm from one run to another):
+          read the ratios as ranges. The formatter parses JavaScript and TypeScript with its own copy of TypeScript's
+          parser, what the parser needs of typescript.js (973 KB of 8.9 MB): it loads in 8 ms, against 45 ms for
+          TypeScript, which is why one file is faster too; JSON has a parser of its own and loads none of it.
+          All numbers, and what made it faster: <code>bench/results/format-1.md</code> to <code>format-4.md</code>.
+        </p>
+        <p>
+          The linter against ESLint 9.39.5, on 2,425 files with problems (the same 40,779 problems found): 19 s against
+          31 s, 1.6 times as fast. The <a href="../benchmarks.html#formatter">benchmarks</a> have the rest of xufa.
+        </p>
+
+        <h2 id="from-eslint">Coming from ESLint</h2>
+        <p>
+          <code>eslint.config.js</code> becomes <code>xufa.lint.config.js</code>, with
+          <code>import { configs, globals } from '@xufa/lint'</code> for <code>@eslint/js</code> and the package
+          globals. Not there: ESLint's other rules (configuring one is an error that says so), plugins (but rules of
+          yours), processors, caching, and TypeScript files.
+        </p>
+
+        <h2 id="typescript">TypeScript</h2>
+        <p>
+          Declarations in the package: <code>Config</code>, <code>Linter</code>, <code>LintMessage</code>,
+          <code>LintResult</code>, <code>Rule</code>, and the functions.
+        </p>

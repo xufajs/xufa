@@ -1,0 +1,12 @@
+{
+  "name": "node-test-to-xufa-test",
+  "private": true,
+  "description": "Codemod: rewrites node:test suites (t.assert, t.plan, t.after, subtests) as @xufa/test suites with expect()",
+  "bin": {
+    "node-test-to-xufa-test": "./cli.js"
+  },
+  "devDependencies": {
+    "@xufa/test": "workspace:^",
+    "acorn": "^8.15.0"
+  }
+}

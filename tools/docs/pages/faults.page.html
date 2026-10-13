@@ -51,7 +51,7 @@ const hung = netcache.faults.hang({ keys: 'session:' }); // until hung.release()
         </ul>
 
         <h2 id="tests">In tests</h2>
-        <pre><code class="language-js">// In the setup files of the runner (setupFiles of Jest, Vitest or vyntra; --require of Mocha):
+        <pre><code class="language-js">// In the setup files of the runner (setupFiles of Jest, Vitest or @xufa/test; --require of Mocha):
 import 'xufa/faults/register'; // or '@xufa/faults/register'
 
 // Or in a test file:

@@ -4,7 +4,7 @@
 // database that cannot roll back (MongoDB without a replica set, mail, storage) is emptied after each test instead.
 //
 //   import { test, beforeEach, afterEach } from 'node:test';
-//   rollbackEach(db, { beforeEach, afterEach });     // or rollbackEach(db) with the globals of vyntra, jest, mocha
+//   rollbackEach(db, { beforeEach, afterEach });     // or rollbackEach(db) with the globals of @xufa/test, jest, mocha
 //
 // mode: 'auto' (roll back when the database can, else empty it), 'rollback' or 'flush'.
 //

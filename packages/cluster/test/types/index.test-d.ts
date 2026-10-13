@@ -1,4 +1,4 @@
-import { expectType, expectError } from 'tsd';
+import { expectTypeOf } from '@xufa/test';
 import { start, bus, createPool, usePool, PoolStats, Lease, PoolError, ormSlots, PoolClient, Bus } from '../..';
 import { Database } from '@xufa/orm';
 
@@ -8,8 +8,8 @@ start({
     primaryBus.on('add', ({ a, b }) => a + b);
   },
   worker: async ({ id, onShutdown }) => {
-    expectType<number>(id);
-    expectType<number>(await bus.request<number>('add', { a: 1, b: 2 }));
+    expectTypeOf(id).toEqualTypeOf<number>();
+    expectTypeOf(await bus.request<number>('add', { a: 1, b: 2 })).toEqualTypeOf<number>();
     onShutdown(() => {});
   },
 });
@@ -25,31 +25,32 @@ const pool = createPool<Converter>('converters', {
   leaseTimeout: '5m',
   autoscale: { perNode: 2, max: 8, scale: (count) => count },
 });
-pool.on('demand', (stats) => expectType<number>(stats.waiting));
-expectType<PoolStats>(pool.stats());
+pool.on('demand', (stats) => expectTypeOf(stats.waiting).toEqualTypeOf<number>());
+expectTypeOf(pool.stats()).toEqualTypeOf<PoolStats>();
 
 const converters = usePool<Converter>('converters');
-expectType<Promise<string>>(converters.use((node, { signal, attempt }) => node.meta.url, { retries: 2 }));
-expectType<Promise<Lease<Converter>>>(converters.acquire({ priority: 1 }));
-expectError(createPool('x', { slots: 'two' }));
-expectType<number>(new PoolError().statusCode);
+expectTypeOf(converters.use((node, { signal, attempt }) => node.meta.url, { retries: 2 })).toEqualTypeOf<Promise<string>>();
+expectTypeOf(converters.acquire({ priority: 1 })).toEqualTypeOf<Promise<Lease<Converter>>>();
+// @ts-expect-error
+createPool('x', { slots: 'two' });
+expectTypeOf(new PoolError().statusCode).toEqualTypeOf<number>();
 
 const slots = ormSlots(new Database({ backend: 'memory' }), { ttl: '30s' });
 createPool('shared', { nodes: ['a'], shared: slots, pollEvery: '200ms', busyFor: '2s' }).on('busy', ({ node }) =>
-  expectType<string | number>(node.id)
+  expectTypeOf(node.id).toEqualTypeOf<string | number>()
 );
-expectType<Promise<Record<string, number>>>(slots.held('shared'));
+expectTypeOf(slots.held('shared')).toEqualTypeOf<Promise<Record<string, number>>>();
 createPool('told', { nodes: ['a'], shared: slots, notify: { publish: () => {}, subscribe: () => () => {} } });
 usePool('shared', { busy: (err) => err instanceof Error }).use(() => 1, { maxBusy: 5 });
 declare const netcache: import('@xufa/netcache').NetCache;
 declare const discovery: import('@xufa/discovery').Discovery;
 createPool('by-netcache', { nodes: ['a'], shared: slots, notify: netcache });
 createPool('by-discovery', { nodes: ['a'], shared: slots, notify: discovery });
-expectType<boolean>(pool.health({ minNodes: 2, maxWaiting: 10 }).critical);
+expectTypeOf(pool.health({ minNodes: 2, maxWaiting: 10 }).critical).toEqualTypeOf<boolean>();
 converters
   .health()
   .check()
-  .then((result) => expectType<number | undefined>(result.waiting));
+  .then((result) => expectTypeOf(result.waiting).toEqualTypeOf<number | undefined>());
 
 // use() with a fallback: a load balancer after two attempts, or when no node is free in 10 s.
 {
@@ -59,5 +60,6 @@ converters
     fallback: { after: 2, node: { id: 'lb', url: 'http://lb' } },
   });
   lbClient.use(() => 1, { fallback: { wait: '10s', node: (attempt) => ({ id: `lb${attempt}` }) } });
-  expectError(lbClient.use(() => 1, { fallback: { node: { id: 'lb' } } }));
+  // @ts-expect-error
+  lbClient.use(() => 1, { fallback: { node: { id: 'lb' } } });
 }

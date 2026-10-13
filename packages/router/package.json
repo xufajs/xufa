@@ -18,8 +18,8 @@
     "index.d.cts"
   ],
   "scripts": {
-    "test": "vyntra",
-    "test:types": "tstyche"
+    "test": "xufa-test",
+    "test:types": "xufa-test --typecheck.only"
   },
   "keywords": [
     "router",
@@ -43,7 +43,7 @@
     "node": "^22.22.3 || ^24.15.0 || >=25.7.0"
   },
   "devDependencies": {
-    "vyntra": "^0.7.0",
+    "@xufa/test": "workspace:^",
     "rfdc": "^1.4.1"
   },
   "publishConfig": {

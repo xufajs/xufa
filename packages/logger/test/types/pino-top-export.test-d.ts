@@ -1,5 +1,5 @@
 // Ported from pino (test/types/pino-top-export.test-d.ts, MIT License) by tools/port-types/port.js: do not edit, change the tool.
-import { expectType, expectAssignable } from 'tsd'
+import { assertType, expectTypeOf } from '@xufa/test';
 
 import pino, {
   destination,
@@ -16,14 +16,14 @@ import pino, {
   version,
 } from '../..'
 
-expectType<Destination>(destination(''))
-expectType<LevelMapping>(levels)
-expectType<MultiStreamRes>(multistream(process.stdout))
-expectType<SerializedError>(stdSerializers.err({} as any))
-expectType<string>(stdTimeFunctions.isoTime())
-expectType<string>(stdTimeFunctions.isoTimeNano())
-expectType<string>(version)
+expectTypeOf(destination('')).toEqualTypeOf<Destination>();
+expectTypeOf(levels).toEqualTypeOf<LevelMapping>();
+expectTypeOf(multistream(process.stdout)).toEqualTypeOf<MultiStreamRes>();
+expectTypeOf(stdSerializers.err({} as any)).toEqualTypeOf<SerializedError>();
+expectTypeOf(stdTimeFunctions.isoTime()).toEqualTypeOf<string>();
+expectTypeOf(stdTimeFunctions.isoTimeNano()).toEqualTypeOf<string>();
+expectTypeOf(version).toEqualTypeOf<string>();
 
 // Can't test against `unique symbol`, see https://github.com/SamVerschueren/tsd/issues/49
-expectAssignable<Symbol>(symbols.streamSym)
+assertType<Symbol>(symbols.streamSym);
 

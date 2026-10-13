@@ -1,5 +1,5 @@
 // Ported from sequelize (test/types/create.ts, MIT License) by tools/port-types/port.js: do not edit, change the tool.
-import { expectTypeOf } from 'expect-type';
+import { expectTypeOf } from '@xufa/test';
 import { User } from './models/User';
 import { Model } from 'sequelize';
 import { UserGroup } from './models/UserGroup.js';

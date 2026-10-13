@@ -19,8 +19,8 @@
     "LICENSE"
   ],
   "scripts": {
-    "test": "vyntra",
-    "test:types": "tsd"
+    "test": "xufa-test",
+    "test:types": "xufa-test --typecheck.only"
   },
   "keywords": [
     "queue",
@@ -51,14 +51,10 @@
     "@xufa/cluster": "workspace:*",
     "@xufa/http": "workspace:*",
     "@xufa/scheduler": "workspace:*",
-    "tsd": "^0.33.0",
-    "vyntra": "^0.7.0"
+    "@xufa/test": "workspace:^"
   },
   "publishConfig": {
     "access": "public"
-  },
-  "tsd": {
-    "directory": "test/types"
   },
   "dependencies": {
     "@xufa/expression": "workspace:*",

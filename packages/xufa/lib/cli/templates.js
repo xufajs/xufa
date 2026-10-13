@@ -8,7 +8,7 @@
 //   jobs/           functions of jobs of the queue, by name
 //   migrations/     made by xufa makemigrations, applied by xufa migrate
 //   seeds/          data for development (xufa seed)
-//   test/           tests of node:test, calling the app with inject()
+//   test/           tests of @xufa/test (the API of Jest and Vitest), calling the app with inject()
 
 const files = (name) => ({
   'package.json': `${JSON.stringify(
@@ -28,6 +28,7 @@ const files = (name) => ({
         work: 'xufa work',
       },
       dependencies: { xufa: '*' },
+      devDependencies: { '@xufa/test': '*' },
       engines: { node: '^22.22.3 || ^24.15.0 || >=25.7.0' },
     },
     null,
@@ -144,24 +145,24 @@ export async function hello({ name }) {
     '```',
     '',
   ].join('\n'),
-  'test/app.test.js': `// The tests of the app (npm test: xufa test). One app for them all; each test runs in a transaction rolled back at
-// its end (rollbackEach), so each starts with the data made in before() and leaves nothing.
-import { test, before, after, beforeEach, afterEach } from 'node:test';
-import assert from 'node:assert/strict';
+  'test/app.test.js': `// The tests of the app (npm test: xufa test, which runs them with @xufa/test). One app for them all; each test runs
+// in a transaction rolled back at its end (rollbackEach, with the hooks of the runner), so each starts with the data
+// made in beforeAll() and leaves nothing.
+import { test, expect, beforeAll, afterAll } from '@xufa/test';
 import { rollbackEach } from 'xufa/orm';
 import { build } from '../app.js';
 
 let app;
-before(async () => {
+beforeAll(async () => {
   app = await build({ databaseUrl: 'sqlite::memory:', logger: false, migrate: true });
 });
-after(() => app.close());
-rollbackEach(() => app.db, { beforeEach, afterEach });
+afterAll(() => app.close());
+rollbackEach(() => app.db);
 
 test('GET / answers', async () => {
   const res = await app.inject('/');
-  assert.equal(res.statusCode, 200);
-  assert.deepEqual(res.json(), { hello: 'world' });
+  expect(res.statusCode).toBe(200);
+  expect(res.json()).toEqual({ hello: 'world' });
 });
 `,
   '.env.example': `# The database: postgres://user:password@host:5432/name, mongodb://host/name, sqlite:data/app.db, memory:
@@ -172,6 +173,7 @@ PORT=3000
 data
 .env
 .xufa
+.xufa-test
 `,
   'README.md': `# ${name}
 

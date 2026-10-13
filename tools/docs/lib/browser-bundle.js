@@ -7,14 +7,14 @@
 //   Buffer, which browsers do not have: the bundle has a small one of its own, over Uint8Array.)
 //
 // The modules are CommonJS: each one is wrapped in a function and required on first use; `@xufa/<name>` is the main
-// module of that package. Those of packages of ES modules are made CommonJS first (esbuild, the bundler of the page
-// of @xufa/admin), their import.meta.url their id: createRequire() of node:module resolves in the bundle, and a
-// require() of an ES module gives its 'module.exports' export when it has one, as in Node.js. The few modules of Node.js they require are small stand-ins (SHIMS): what they use of them
-// in a browser (util.types, http.METHODS), and functions that throw for the rest (reading files, in the plugin of
-// templates).
+// module of that package. Those of packages of ES modules are made CommonJS first (by transform() of @xufa/bundle),
+// their import.meta.url their id: createRequire() of node:module resolves in the bundle, and a require() of an ES
+// module gives its 'module.exports' export when it has one, as in Node.js. The few modules of Node.js they require are
+// small stand-ins (SHIMS): what they use of them in a browser (util.types, http.METHODS), and functions that throw for
+// the rest (reading files, in the plugin of templates).
 import fs from 'node:fs';
 import path from 'node:path';
-import { createRequire } from 'node:module';
+import { transform } from '@xufa/bundle';
 
 const PACKAGES = path.join(import.meta.dirname, '../../../packages');
 
@@ -80,11 +80,9 @@ function filesOf(dir) {
 }
 
 // An ES module as CommonJS, for the bundle.
-let esbuild = null;
 function commonjsOf(id, text) {
-  esbuild ??= createRequire(path.join(PACKAGES, 'admin', 'package.json'))('esbuild');
   const source = text.replace(/\bimport\.meta\.url\b/g, JSON.stringify(id));
-  return esbuild.transformSync(source, { format: 'cjs', loader: 'js', target: 'es2020', sourcefile: id }).code;
+  return transform(source, { file: id, target: 'es2020' }).code;
 }
 
 // The modules of a package: { id: source }, ids as '@xufa/<name>/<path>'.

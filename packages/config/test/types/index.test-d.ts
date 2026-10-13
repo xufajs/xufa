@@ -1,4 +1,4 @@
-import { expectType, expectError } from 'tsd';
+import { expectTypeOf } from '@xufa/test';
 import { loadConfig, parseDotenv, ConfigError, Config } from '../..';
 
 const config = loadConfig({
@@ -19,34 +19,35 @@ const config = loadConfig({
     debug: { type: 'boolean', default: false },
   },
 });
-expectType<number>(config.server.port);
-expectType<string | undefined>(config.server.host);
-expectType<string>(config.db.url);
-expectType<string | null>(config.db.replica);
-expectType<number>(config.db.pool.max);
-expectType<'debug' | 'info'>(config.level);
-expectType<readonly string[]>(config.tags);
-expectType<number>(config.timeout);
-expectType<boolean>(config.debug);
-expectError((config.server.port = 1));
-expectType<readonly string[]>(config.sources);
-expectType<number>(config.get<number>('server.port'));
-expectType<boolean>(config.has(['db', 'url']));
-expectType<Record<string, unknown>>(config.redacted());
+expectTypeOf(config.server.port).toEqualTypeOf<number>();
+expectTypeOf(config.server.host).toEqualTypeOf<string | undefined>();
+expectTypeOf(config.db.url).toEqualTypeOf<string>();
+expectTypeOf(config.db.replica).toEqualTypeOf<string | null>();
+expectTypeOf(config.db.pool.max).toEqualTypeOf<number>();
+expectTypeOf(config.level).toEqualTypeOf<'debug' | 'info'>();
+expectTypeOf(config.tags).toEqualTypeOf<readonly string[]>();
+expectTypeOf(config.timeout).toEqualTypeOf<number>();
+expectTypeOf(config.debug).toEqualTypeOf<boolean>();
+// @ts-expect-error
+(config.server.port = 1);
+expectTypeOf(config.sources).toEqualTypeOf<readonly string[]>();
+expectTypeOf(config.get<number>('server.port')).toEqualTypeOf<number>();
+expectTypeOf(config.has(['db', 'url'])).toEqualTypeOf<boolean>();
+expectTypeOf(config.redacted()).toEqualTypeOf<Record<string, unknown>>();
 
 interface AppConfig {
   name: string;
   features: string[];
 }
 const typed = loadConfig<AppConfig>({ dir: 'settings', env: 'production', dotenv: ['.env'], overrides: { name: 'x' } });
-expectType<Config<AppConfig>>(typed);
-expectType<string>(typed.name);
-expectType<readonly string[]>(typed.features);
-expectType<any>(loadConfig().anything);
+expectTypeOf(typed).toEqualTypeOf<Config<AppConfig>>();
+expectTypeOf(typed.name).toEqualTypeOf<string>();
+expectTypeOf(typed.features).toEqualTypeOf<readonly string[]>();
+expectTypeOf(loadConfig().anything).toEqualTypeOf<any>();
 
-expectType<Record<string, string>>(parseDotenv('A=1'));
-expectType<{ path: string; message: string }[]>(new ConfigError('x').errors);
-expectType<'XUFA_CONFIG_ERR'>(new ConfigError('x').code);
+expectTypeOf(parseDotenv('A=1')).toEqualTypeOf<Record<string, string>>();
+expectTypeOf(new ConfigError('x').errors).toEqualTypeOf<{ path: string; message: string }[]>();
+expectTypeOf(new ConfigError('x').code).toEqualTypeOf<'XUFA_CONFIG_ERR'>();
 
 // Remote sources.
 import { loadRemoteConfig, watchConfig, sources, type RemoteSource } from '../..';
@@ -63,19 +64,21 @@ import { loadRemoteConfig, watchConfig, sources, type RemoteSource } from '../..
     ],
     cacheFile: '.config-cache.json',
   });
-  expectType<number>(remote.server.port);
+  expectTypeOf(remote.server.port).toEqualTypeOf<number>();
   const own: RemoteSource = {
     name: 'mine',
     load: async ({ env, signal }) => ({ region: env.REGION, aborted: signal.aborted }),
   };
   await loadRemoteConfig({ remote: [own] });
-  expectError(sources.consul({ prefix: 'a', key: 'b' }));
-  expectError(sources.http({ headers: {} }));
+  // @ts-expect-error
+  sources.consul({ prefix: 'a', key: 'b' });
+  // @ts-expect-error
+  sources.http({ headers: {} });
   const watcher = await watchConfig(
     { schema: { level: { type: 'string', values: ['info', 'debug'] as const, default: 'info' } }, remote: [own] },
-    { interval: '30s', onChange: (config, previous, changed) => expectType<string[]>(changed) }
+    { interval: '30s', onChange: (config, previous, changed) => expectTypeOf(changed).toEqualTypeOf<string[]>() }
   );
-  expectType<'info' | 'debug'>(watcher.current.level);
+  expectTypeOf(watcher.current.level).toEqualTypeOf<'info' | 'debug'>();
   watcher.stop();
 })();
 
@@ -85,7 +88,5 @@ import { loadRemoteConfig, watchConfig, sources, type RemoteSource } from '../..
   followed.stop();
   const consul: RemoteSource = sources.consul({ key: 'apps/doc.yaml' });
   if (consul.watch)
-    expectType<Promise<{ index: number | null }>>(
-      consul.watch({ env: {}, name: 'x', signal: new AbortController().signal, index: null })
-    );
+    expectTypeOf(consul.watch({ env: {}, name: 'x', signal: new AbortController().signal, index: null })).toEqualTypeOf<Promise<{ index: number | null }>>();
 })();

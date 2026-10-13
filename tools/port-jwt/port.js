@@ -1,5 +1,5 @@
 // Ports the test suites of jsonwebtoken (mocha, chai, sinon), jws (tape) and jwa (tap, with the vectors of RFC 7515)
-// to @xufa/jwt (vyntra). The files are copied to packages/jwt/test/<package> with their requires rewritten (the
+// to @xufa/jwt (@xufa/test). The files are copied to packages/jwt/test/<package> with their requires rewritten (the
 // package itself, and the small packages the tests use: test/shims), mocha's before/after/context/specify renamed,
 // and the keys of jws and jwa made by openssl as their Makefiles make them (once: they are kept). The tests
 // themselves are not changed.
@@ -26,7 +26,7 @@ function rewriteRequires(text, rules) {
   return out;
 }
 
-function mochaToVyntra(text) {
+function mochaToXufaTest(text) {
   return text
     .replace(/(^|[^\w.])before\(/g, '$1beforeAll(')
     .replace(/(^|[^\w.])after\(/g, '$1afterAll(')
@@ -139,7 +139,7 @@ const jsonwebtokenFiles = copyTests(
   path.join(TESTS, 'jsonwebtoken'),
   (text, name) =>
     deviate(
-      mochaToVyntra(
+      mochaToXufaTest(
         rewriteRequires(text, [
           ['../index', "require('../..')"],
           ['../', "require('../..')"],
@@ -191,7 +191,7 @@ if (jwa) {
       relative.includes('/')
         ? rewriteRequires(text, [['../../', "require('../../../lib/jwa')"], ...SHARED('../../')])
         : rewriteRequires(text, [['..', "require('../../lib/jwa')"], ...SHARED('../')]),
-    // The tests of the vectors are test.js in each folder (A.1/test.js): vyntra runs *.test.js.
+    // The tests of the vectors are test.js in each folder (A.1/test.js): @xufa/test runs *.test.js.
     (name) => (name === 'test.js' ? 'vectors.test.js' : name)
   );
   makeKeys(path.join(jwa, 'Makefile'), to);

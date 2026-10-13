@@ -1,0 +1,167 @@
+const path = require('node:path');
+
+// Read in this order when there is no @xufa/test config: a vite.config counts only when it has a `test` section.
+const VITEST_CONFIG_FILES = ['vitest.config', 'vite.config'].flatMap((name) =>
+  ['ts', 'mts', 'cts', 'js', 'mjs', 'cjs'].map((ext) => `${name}.${ext}`)
+);
+
+const isVitestConfig = (config) => config !== null && typeof config?.test === 'object';
+
+// Options of the same name and meaning in both.
+const SAME = [
+  'include',
+  'includeSource',
+  'exclude',
+  'testTimeout',
+  'hookTimeout',
+  'retry',
+  'allowOnly',
+  'passWithNoTests',
+  'maxConcurrency',
+  'isolate',
+  'silent',
+  'clearMocks',
+  'restoreMocks',
+  'environment',
+  'environmentOptions',
+  'maxWorkers',
+];
+
+const POOLS = { threads: 'threads', vmThreads: 'threads', forks: 'forks', vmForks: 'forks' };
+
+// Vite's alias, as an object ({ '@app': './src' }) or a list ([{ find, replacement }]); a relative replacement is
+// taken from the root, as vitest's test.alias is.
+function aliasesOf(alias, root) {
+  const list = Array.isArray(alias)
+    ? alias
+    : Object.entries(alias ?? {}).map(([find, replacement]) => ({ find, replacement }));
+  return list
+    .filter(({ find, replacement }) => find !== undefined && typeof replacement === 'string')
+    .map(({ find, replacement }) => ({
+      find,
+      replacement: /^\.\.?(?:[/\\]|$)/.test(replacement) ? path.resolve(root, replacement) : replacement,
+    }));
+}
+
+function coverageOf(coverage, config) {
+  if (coverage.enabled) {
+    config.coverage = true;
+  }
+  if (coverage.reportsDirectory) {
+    config.coverageDirectory = coverage.reportsDirectory;
+  }
+  if (coverage.reporter) {
+    config.coverageReporters = [coverage.reporter].flat().map((reporter) => [reporter].flat()[0]);
+  }
+  if (coverage.include || coverage.exclude) {
+    config.collectCoverageFrom = [
+      ...(coverage.include ?? ['**/*']),
+      ...(coverage.exclude ?? []).map((glob) => `!${glob}`),
+    ];
+  }
+  const { lines, functions, branches, statements } = coverage.thresholds ?? {};
+  const global = Object.fromEntries(
+    Object.entries({ lines, functions, branches, statements }).filter(([, value]) => value !== undefined)
+  );
+  if (Object.keys(global).length > 0) {
+    config.coverageThreshold = { global };
+  }
+}
+
+// The TypeScript options vitest's transformer gets from the config rather than tsconfig.json: Oxc's decorators
+// (vite 8), or esbuild's tsconfigRaw.
+function compilerOptionsOf(vite) {
+  const options = { ...vite.esbuild?.tsconfigRaw?.compilerOptions };
+  const decorator = vite.oxc?.decorator;
+  if (decorator?.legacy !== undefined) {
+    options.experimentalDecorators = decorator.legacy;
+  }
+  if (decorator?.emitDecoratorMetadata !== undefined) {
+    options.emitDecoratorMetadata = decorator.emitDecoratorMetadata;
+  }
+  const kept = ['experimentalDecorators', 'emitDecoratorMetadata', 'useDefineForClassFields'];
+  const picked = Object.fromEntries(
+    kept.filter((name) => options[name] !== undefined).map((name) => [name, options[name]])
+  );
+  return Object.keys(picked).length > 0 ? picked : undefined;
+}
+
+// What @xufa/test does not do, said once rather than silently ignored.
+// The options of a vitest (or Vite) config @xufa/test understands, so a vitest project runs without a @xufa/test config.
+function fromVitestConfig(vite, rootDir) {
+  const test = vite.test ?? {};
+  const root = path.resolve(rootDir, test.root ?? vite.root ?? '.');
+  // New snapshot files as vitest writes them: its header, and "suite > test 1" keys.
+  const config = { snapshotStyle: 'vitest' };
+  SAME.filter((key) => test[key] !== undefined).forEach((key) => {
+    config[key] = test[key];
+  });
+  if (path.relative(rootDir, root) !== '') {
+    config.roots = [root];
+  }
+  if (test.setupFiles) {
+    config.setupFiles = [test.setupFiles]
+      .flat()
+      .map((file) => (file.startsWith('.') ? path.resolve(root, file) : file));
+  }
+  if (test.globalSetup) {
+    config.globalSetup = [test.globalSetup].flat().map((file) => path.resolve(root, file));
+  }
+  // Expanded into @xufa/test projects once the config is read (see foreign-projects.js).
+  if (test.projects || test.workspace) {
+    config.foreignProjects = { kind: 'vitest', entries: test.projects ?? test.workspace };
+  }
+  if (test.browser) {
+    config.browser = test.browser;
+  }
+  if (test.benchmark) {
+    config.benchmark = test.benchmark;
+  }
+  if (test.typecheck) {
+    config.typecheck = test.typecheck;
+  }
+  if (test.mockReset !== undefined) {
+    config.resetMocks = test.mockReset;
+  }
+  if (test.bail !== undefined) {
+    config.bail = test.bail;
+  }
+  if (POOLS[test.pool]) {
+    config.pool = POOLS[test.pool];
+  }
+  if (test.sequence?.hooks === 'list') {
+    config.hookOrder = 'list';
+  }
+  if (test.env) {
+    config.env = test.env;
+  }
+  // Where Vite reads .env files from, and which of their variables reach import.meta.env.
+  if (vite.envDir !== undefined) {
+    config.envDir = path.resolve(root, vite.envDir);
+  }
+  if (vite.envPrefix !== undefined) {
+    config.envPrefix = vite.envPrefix;
+  }
+  // vitest adds test.alias to Vite's resolve.alias, its own coming first.
+  const alias = [...aliasesOf(test.alias, root), ...aliasesOf(vite.resolve?.alias, root)];
+  if (alias.length > 0) {
+    config.alias = alias;
+  }
+  if (test.reporters) {
+    // vitest's names, as strings or [name, options]; the runner's own options say where the files go.
+    const known = ['default', 'verbose', 'json', 'junit', 'github-actions'];
+    const names = [test.reporters].flat().map((reporter) => [reporter].flat()[0]);
+    config.reporter = names.filter((name) => known.includes(name));
+  }
+  coverageOf(test.coverage ?? {}, config);
+  const compilerOptions = compilerOptionsOf(vite);
+  if (compilerOptions) {
+    config.compilerOptions = compilerOptions;
+  }
+  if (vite.plugins) {
+    config.plugins = vite.plugins;
+  }
+  return config;
+}
+
+module.exports = { VITEST_CONFIG_FILES, isVitestConfig, fromVitestConfig };

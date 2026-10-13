@@ -1,18 +1,19 @@
-import { expectType, expectError } from 'tsd';
+import { expectTypeOf } from '@xufa/test';
 import { load, loadAll, dump, Schema, Type, YAMLException, JSON_SCHEMA, DEFAULT_SCHEMA, types } from '../..';
 
-expectType<unknown>(load('a: 1'));
-expectType<unknown>(load('a: 1', { schema: JSON_SCHEMA, filename: 'a.yml', json: true }));
-expectType<unknown[]>(loadAll('--- 1\n--- 2'));
-expectType<void>(loadAll('--- 1', (doc) => expectType<unknown>(doc)));
-expectType<string>(dump({ a: 1 }, { indent: 4, noRefs: true, sortKeys: true, lineWidth: -1 }));
-expectError(dump({ a: 1 }, { indent: '4' }));
+expectTypeOf(load('a: 1')).toEqualTypeOf<unknown>();
+expectTypeOf(load('a: 1', { schema: JSON_SCHEMA, filename: 'a.yml', json: true })).toEqualTypeOf<unknown>();
+expectTypeOf(loadAll('--- 1\n--- 2')).toEqualTypeOf<unknown[]>();
+expectTypeOf(loadAll('--- 1', (doc) => expectTypeOf(doc).toEqualTypeOf<unknown>())).toEqualTypeOf<void>();
+expectTypeOf(dump({ a: 1 }, { indent: 4, noRefs: true, sortKeys: true, lineWidth: -1 })).toEqualTypeOf<string>();
+// @ts-expect-error
+dump({ a: 1 }, { indent: '4' });
 
 const Point = new Type('!point', { kind: 'sequence', construct: (data: number[]) => ({ x: data[0], y: data[1] }) });
-expectType<Schema>(DEFAULT_SCHEMA.extend([Point]));
+expectTypeOf(DEFAULT_SCHEMA.extend([Point])).toEqualTypeOf<Schema>();
 try {
   load(': bad');
 } catch (err) {
-  if (err instanceof YAMLException) expectType<number>(err.mark.line);
+  if (err instanceof YAMLException) expectTypeOf(err.mark.line).toEqualTypeOf<number>();
 }
-expectType<Type>(types.timestamp);
+expectTypeOf(types.timestamp).toEqualTypeOf<Type>();

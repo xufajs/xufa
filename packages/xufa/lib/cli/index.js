@@ -42,8 +42,8 @@ const HELP = `xufa: the command line of an app of xufa
             [--everywhere]                   --everywhere: every machine, in the database, not only this one)
   xufa up [--everywhere]                     the maintenance mode off
   xufa health                                the checks of the health of the app (GET /health)
-  xufa test [files...] [--runner node|vyntra]  the tests of the app (NODE_ENV=test): vyntra when the app has it,
-                                             else node --test
+  xufa test [files...] [--runner node|xufa-test]  the tests of the app (NODE_ENV=test): @xufa/test when the app
+                                             has it, else node --test
 
 Fields are name:type[:null][:unique][:index]: string, text, integer, bigint, float, decimal, boolean, date,
 datetime, json, uuid, email, references (author:references: a foreign key to Author). The database is
@@ -719,13 +719,14 @@ Object.assign(commands, {
     }
   },
 });
-// The tests of the app, with NODE_ENV=test: by vyntra when the app has it (or --runner), else by node --test; the
+// The tests of the app, with NODE_ENV=test: by @xufa/test when the app has it (or --runner), else by node --test; the
 // files given, or those the runner finds. Its exit code is theirs.
 commands.test = async function test(files, options) {
   const root = findRoot();
   let runner = options.runner;
   let bin = null;
-  // vyntra when the app depends on it (one found above the app, as in a repository of many packages, is not its own).
+  // @xufa/test when the app depends on it (one found above the app, as in a repository of many packages, is not its
+  // own).
   let ownDeps = {};
   try {
     const own = JSON.parse(fs.readFileSync(path.join(root, 'package.json'), 'utf8'));
@@ -733,20 +734,24 @@ commands.test = async function test(files, options) {
   } catch {
     ownDeps = {};
   }
-  if (runner !== 'node' && (runner === 'vyntra' || Object.hasOwn(ownDeps, 'vyntra'))) {
+  if (runner !== 'node' && (runner === 'xufa-test' || Object.hasOwn(ownDeps, '@xufa/test'))) {
     try {
-      const pkgFile = require.resolve('vyntra/package.json', { paths: [root] });
+      const pkgFile = require.resolve('@xufa/test/package.json', { paths: [root] });
       const pkg = JSON.parse(fs.readFileSync(pkgFile, 'utf8'));
-      const entry = typeof pkg.bin === 'string' ? pkg.bin : pkg.bin && (pkg.bin.vyntra || Object.values(pkg.bin)[0]);
+      const entry = pkg.bin && pkg.bin['xufa-test'];
       if (entry) bin = path.join(path.dirname(pkgFile), entry);
     } catch {
       bin = null;
     }
-    if (runner === 'vyntra' && !bin) throw new Error('vyntra is not installed in the app (npm install -D vyntra)');
-    runner = bin ? 'vyntra' : 'node';
+    if (runner === 'xufa-test' && !bin) {
+      throw new Error('@xufa/test is not installed in the app (npm install -D @xufa/test)');
+    }
+    runner = bin ? 'xufa-test' : 'node';
   }
-  const args = runner === 'vyntra' ? [bin, ...files] : ['--test', ...files];
-  print(`xufa test: ${runner === 'vyntra' ? 'vyntra' : 'node --test'}${files.length ? ` ${files.join(' ')}` : ''}`);
+  const args = runner === 'xufa-test' ? [bin, ...files] : ['--test', ...files];
+  print(
+    `xufa test: ${runner === 'xufa-test' ? 'xufa-test' : 'node --test'}${files.length ? ` ${files.join(' ')}` : ''}`
+  );
   return new Promise((resolve, reject) => {
     const child = spawn(process.execPath, args, {
       cwd: root,

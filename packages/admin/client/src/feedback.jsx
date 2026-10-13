@@ -30,6 +30,13 @@ function Dialog({ dialog, answer }) {
           <div>
             <h2 id="dialog-title">{dialog.title}</h2>
             {dialog.message ? <p>{dialog.message}</p> : null}
+            {dialog.details && dialog.details.length ? (
+              <ul className="dialog-details">
+                {dialog.details.map((detail) => (
+                  <li key={detail}>{detail}</li>
+                ))}
+              </ul>
+            ) : null}
           </div>
         </div>
         <div className="foot">

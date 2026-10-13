@@ -17,8 +17,8 @@
     "index.d.cts"
   ],
   "scripts": {
-    "test": "vyntra",
-    "test:types": "tsd"
+    "test": "xufa-test",
+    "test:types": "xufa-test --typecheck.only"
   },
   "keywords": [
     "error",
@@ -41,12 +41,9 @@
     "node": "^22.22.3 || ^24.15.0 || >=25.7.0"
   },
   "devDependencies": {
-    "vyntra": "^0.7.0"
+    "@xufa/test": "workspace:^"
   },
   "publishConfig": {
     "access": "public"
-  },
-  "tsd": {
-    "directory": "test/types"
   }
 }

@@ -1,6 +1,6 @@
 // Type tests of what @xufa/sequelize declares differently from Sequelize 6 (written for it, not ported). The package
 // is imported by its path, so its package.json (types, exports) is tested too.
-import { expectTypeOf } from 'expect-type';
+import { expectTypeOf } from '@xufa/test';
 import {
   BaseError,
   type CreationOptional,

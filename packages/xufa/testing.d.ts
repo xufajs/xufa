@@ -15,7 +15,7 @@ export interface TestAppOptions {
   passwordOptions?: Record<string, unknown>;
   /** Each test in a transaction rolled back (true). */
   rollback?: boolean;
-  /** The hooks of the runner (globals of vyntra, jest or vitest; else those of node:test). */
+  /** The hooks of the runner (globals of @xufa/test, jest or vitest; else those of node:test). */
   hooks?: {
     before: (fn: () => unknown) => void;
     after: (fn: () => unknown) => void;

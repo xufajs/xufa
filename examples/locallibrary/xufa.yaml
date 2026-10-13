@@ -29,12 +29,16 @@ auth:
 rbac:
   groups: accounts.Group
   roles:
-    librarian: ['*.view', Author.*, Book.*, Genre.*, Language.*, BookInstance.*, BookInstance.markReturned, _jobs.view, _runs.*]
+    librarian: ['*.view', Author.*, Book.*, Genre.*, Language.*, BookInstance.*, BookInstance.markReturned, _jobs.view, _runs.*, _rules.*]
 
 # Jobs in the background (catalog/jobs.js: the report of overdue loans), kept with their results, and pipelines
 # (catalog/pipelines.yaml: new copies, approved by a librarian): the admin shows them (Work).
 queue: { keepDone: true }
 pipelines: true
+
+# Books of rules (catalog/rules/fines.xlsx: the fines of late loans), kept in the database in versions and edited in
+# the admin (Rules).
+rules: true
 
 # Sessions: their writes (the visits of the home page) do not wait for the disk (PostgreSQL): a crash of the server
 # may lose its last fraction of a second of them.

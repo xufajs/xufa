@@ -54,7 +54,8 @@ function chart(title, subtitle, rows, attributes = '') {
 const raw = (summary, html) =>
   `        <details class="raw">\n          <summary>${summary}</summary>\n${html}\n        </details>`;
 
-// --- Data, from bench/results (postgres-7, mongo-8, inproc-3, full-3, expression-4, template-5, view-1).
+// --- Data, from bench/results (postgres-7, mongo-8, inproc-3, full-3, expression-5, expression-programs-3,
+// template-5, view-1).
 
 const pg = [
   ['select $1, one at a time', 13895, 10837, 'ops/s', true],
@@ -277,18 +278,49 @@ ${OPENAPI.map((report) => rawTable(`${report}.md`)).join('\n')}
 
 // Expressions: [expression, xufa, jexl, expr-eval, filtrex, sandboxjs, new Function] (runs a second, compiled once).
 const expressions = [
-  ['a + b * 2', 131.1e6, 1.04e6, 5.75e6, 18.58e6, 306.9e3, 379.19e6],
-  ['user.address.city', 130.0e6, 2.47e6, 16.77e6, 15.52e6, 347.0e3, 394.42e6],
-  ["a &gt; 2 &amp;&amp; b == 4 ? 'big' : 'small'", 123.61e6, 650.6e3, 2.23e6, 14.43e6, 252.5e3, 385.4e6],
-  ['user.name.toUpperCase()', 24.77e6, null, null, null, 251.8e3, 26.69e6],
-  ['items.map(i =&gt; i.price * i.quantity).reduce(...)', 32.88e6, null, null, null, 45.7e3, 46.91e6],
-  ['`${user.name} lives in ${user.address.city}`', 43.23e6, null, null, null, 191.7e3, 58.05e6],
+  ['a + b * 2', 138.38e6, 1.09e6, 5.49e6, 18.28e6, 235.7e3, 391.67e6],
+  ['user.address.city', 140.03e6, 2.65e6, 16.71e6, 15.37e6, 263.5e3, 502.06e6],
+  ["a &gt; 2 &amp;&amp; b == 4 ? 'big' : 'small'", 131.47e6, 752.0e3, 2.2e6, 14.18e6, 204.7e3, 413.9e6],
+  ['user.name.toUpperCase()', 25.91e6, null, null, null, 208.5e3, 29.33e6],
+  ['items.map(i =&gt; i.price * i.quantity).reduce(...)', 37.39e6, null, null, null, 43.8e3, 52.35e6],
+  ['`${user.name} lives in ${user.address.city}`', 49.79e6, null, null, null, 156.4e3, 60.6e6],
 ];
 const expressionsOnce = [
-  ['a + b * 2', 725.2e3, 68.2e3, 644.4e3, 102.2e3, 3.6e3, 1.63e6],
-  ['user.address.city', 603.3e3, 77.8e3, 224.3e3, 105.0e3, 3.5e3, 1.54e6],
-  ['map and reduce', 139.9e3, null, null, null, 2.6e3, 1.18e6],
+  ['a + b * 2', 706.4e3, 84.1e3, 656.5e3, 105.6e3, 4.6e3, 1.58e6],
+  ['user.address.city', 734.3e3, 94.7e3, 251.6e3, 112.5e3, 4.5e3, 1.48e6],
+  ['map and reduce', 178.7e3, null, null, null, 3.1e3, 1.22e6],
 ];
+// Programs (statements: true): [case, xufa, SandboxJS, node:vm, new Function] (runs a second), compiled once and run,
+// and compiled and run each time (bench/results/expression-programs-3).
+const programs = [
+  ['if / else if', 44.45e6, 106.9e3, 44.04e6, 51.47e6],
+  ['switch', 133.93e6, 144.4e3, 145.57e6, 373.06e6],
+  ['for...of (4 turns)', 65.52e6, 30.3e3, 16.25e6, 112.7e6],
+  ['for (100 turns)', 7.95e6, 3.8e3, 16.08e6, 17.29e6],
+  ['function and while', 42.29e6, 34.8e3, 67.54e6, 87.73e6],
+  ['object built', 4.36e6, 31.2e3, 5.67e6, 7.26e6],
+  ['try / throw', 234.2e3, 43.5e3, 232.5e3, 198.0e3],
+];
+const programsEach = [
+  ['if / else if', 120.2e3, 2.8e3, 736.8e3, 1.16e6],
+  ['switch', 142.3e3, 3.1e3, 751.9e3, 1.18e6],
+  ['for...of (4 turns)', 136.6e3, 2.7e3, 600.8e3, 1.25e6],
+  ['for (100 turns)', 97.5e3, 1.7e3, 490.8e3, 1.23e6],
+  ['function and while', 98.3e3, 2.6e3, 587.0e3, 1.15e6],
+  ['object built', 125.9e3, 2.7e3, 490.9e3, 1.03e6],
+  ['try / throw', 76.3e3, 2.7e3, 218.5e3, 168.2e3],
+];
+const PROGRAM_ENGINES = [
+  ['@xufa/expression', 'us'],
+  ['SandboxJS', ''],
+];
+// A chart of a program: xufa against SandboxJS; node:vm and new Function (no sandbox) told in its subtitle.
+const programChart = (title, [name, ...values]) =>
+  chart(
+    `<code>${name}</code>${title}`,
+    `Runs a second. Without a sandbox: node:vm ${fmt(values[2])}, new Function ${fmt(values[3])}.`,
+    values.slice(0, 2).map((value, i) => ({ name: PROGRAM_ENGINES[i][0], value, kind: PROGRAM_ENGINES[i][1] }))
+  );
 const ENGINES = [
   ['@xufa/expression', 'us'],
   ['jexl', ''],
@@ -713,8 +745,8 @@ ${expressions
   .join('\n')}
         </div>
         <p>
-          Method calls run at 93% of the speed of JavaScript, <code>map</code> and <code>reduce</code> with arrow functions
-          at 70%; for the smallest expressions, a third, where the call of the function is most of the cost. Compiled and
+          Method calls run at 88% of the speed of JavaScript, <code>map</code> and <code>reduce</code> with arrow functions
+          at 71%; for the smallest expressions, about a third, where the call of the function is most of the cost. Compiled and
           run each time (one-off expressions), it is ahead of the other sandboxes too:
         </p>
         <div class="charts">
@@ -731,7 +763,28 @@ ${expressionsOnce
   )
   .join('\n')}
         </div>
-${raw('All numbers (bench/results/expression-4.md)', '          <pre><code>' + esc(fs.readFileSync(RESULTS + 'expression-4.md', 'utf8').trim()) + '</code></pre>')}
+${raw('All numbers (bench/results/expression-5.md)', '          <pre><code>' + esc(fs.readFileSync(RESULTS + 'expression-5.md', 'utf8').trim()) + '</code></pre>')}
+
+        <h3 id="expression-programs">Programs</h3>
+        <p>
+          An engine with <code>statements: true</code> runs programs: branches, loops, functions, objects built and
+          exceptions. Its rival is SandboxJS 0.9, the other sandbox that runs statements; <code>node:vm</code> (a function
+          compiled in another context, not a security boundary) and <code>new Function</code> are JavaScript without a
+          sandbox, the bound. Programs also become one function of JavaScript, with their checks (members changed,
+          steps of loops and calls, depth) in it. Compiled once, they run 140 to 2,200 times as fast as SandboxJS (5 times
+          with exceptions thrown), from a third of the speed of JavaScript to as fast:
+        </p>
+        <p class="legend"><span class="us">@xufa/expression</span><span>SandboxJS</span></p>
+        <div class="charts">
+${programs.map((row) => programChart('', row)).join('\n')}
+        </div>
+        <p>
+          Compiled and run each time, 28 to 57 times as fast as SandboxJS; compiling one takes about 10 microseconds.
+        </p>
+        <div class="charts">
+${programsEach.map((row) => programChart(', compiled each time', row)).join('\n')}
+        </div>
+${raw('All numbers (bench/results/expression-programs-3.md)', '          <pre><code>' + esc(fs.readFileSync(RESULTS + 'expression-programs-3.md', 'utf8').trim()) + '</code></pre>')}
 
         <h2 id="templates">Templates</h2>
         <p>

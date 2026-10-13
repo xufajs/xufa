@@ -1,9 +1,9 @@
-// Ports the test suite of ws (mocha and node:assert) to @xufa/websocket (vyntra). The files are copied to
+// Ports the test suite of ws (mocha and node:assert) to @xufa/websocket (@xufa/test). The files are copied to
 // packages/websocket/test/ws with their requires rewritten (the package, its lib), mocha's before/after renamed, and
-// this.skip() as done.skip() (vyntra gives the test context on the done callback); the fixtures (certificates) and
+// this.skip() as done.skip() (@xufa/test gives the test context on the done callback); the fixtures (certificates) and
 // the helpers (duplex-pair.js) are copied as they are. The tests themselves are not changed.
 //
-// With a checkout of @fastify/websocket too, its tests (node:test) are converted by tools/node-test-to-vyntra to
+// With a checkout of @fastify/websocket too, its tests (node:test) are converted by tools/node-test-to-xufa-test to
 // packages/websocket/test/fastify, with fastify as @xufa/http, the plugin as lib/plugin.js and ws as the package.
 //
 // node tools/port-ws/port.js <ws> [<fastify-websocket>]
@@ -59,7 +59,7 @@ for (const name of fs.readdirSync(path.join(ws, 'test'))) {
 console.log(`ws: ${files} files, ${skips} skips as done.skip()`);
 
 if (fastifyWebsocket) {
-  const { convert } = require('../node-test-to-vyntra/convert.js'); // eslint-disable-line global-require
+  const { convert } = require('../node-test-to-xufa-test/convert.js'); // eslint-disable-line global-require
   const to = path.join(PACKAGE, 'test/fastify');
   fs.rmSync(to, { recursive: true, force: true });
   fs.mkdirSync(to, { recursive: true });
@@ -74,7 +74,7 @@ if (fastifyWebsocket) {
       .replace(/require\((['"])\.\.\1\)/g, "require('../../lib/plugin')")
       .replace(/require\((['"])ws\1\)/g, "require('../..')")
       // t.after() left in helpers outside the tests (the converter rewrites those inside): they are given the
-      // context of vyntra, whose onTestFinished() is node:test's after().
+      // context of @xufa/test, whose onTestFinished() is node:test's after().
       .replace(/\bt\.after\(/g, 't.onTestFinished(');
     fs.writeFileSync(path.join(to, name), code);
     count += 1;

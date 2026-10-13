@@ -1,12 +1,12 @@
 // Ports @fastify/swagger (MIT) to @xufa/openapi: its library as it is (lib/, but lib/xufa and lib/ui.js, ours), with the
 // packages it needs replaced by lib/xufa (json-schema-resolver, rfdc, yaml: @xufa/yaml); its examples; and its tests
-// (node:test), converted by tools/node-test-to-vyntra with fastify as @xufa/http. index.js is ours (it marks the
+// (node:test), converted by tools/node-test-to-xufa-test with fastify as @xufa/http. index.js is ours (it marks the
 // plugin as fastify-plugin does), and so are test/xufa and test/shims.
 //
 // node tools/port-swagger/port.js <fastify-swagger>  (a checkout of github.com/fastify/fastify-swagger)
 import fs from 'node:fs';
 import path from 'node:path';
-import { convert } from '../node-test-to-vyntra/convert.js';
+import { convert } from '../node-test-to-xufa-test/convert.js';
 
 const [swagger] = process.argv.slice(2);
 if (!swagger) {
@@ -123,7 +123,7 @@ function fixups(file, code) {
   );
 }
 // Tests of mode/static.test.js replace path.join (to read a package.json of theirs) and do not put it back: each file
-// of node:test is a process, but files of vyntra share the modules of node in a thread, and a test that reads the
+// of node:test is a process, but files of @xufa/test share the modules of node in a thread, and a test that reads the
 // package.json after them (the default info of spec/*/option.test.js) got theirs. Put back after each test.
 function restorePathJoin(file, code) {
   if (!code.includes('path.join = (...args) =>')) throw new Error(`${file}: the fixup of path.join no longer applies`);

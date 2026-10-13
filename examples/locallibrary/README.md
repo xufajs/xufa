@@ -8,7 +8,9 @@ A catalog of books, authors, genres, languages and copies of books that users bo
 of pages and details, forms to create, update and delete them (for librarians), the copies a user borrowed and every
 copy on loan, the renewal of a copy, logins and password resets by email, permissions by role and by user, a counter
 of visits in the session, the admin, and the tests. And what the tutorial has not: a job in the background (the
-report of overdue loans, `catalog/jobs.js`), run by the queue of `xufa.yaml` and shown in the admin (Work).
+report of overdue loans, `catalog/jobs.js`), run by the queue of `xufa.yaml` and shown in the admin (Work). And a book of
+rules (`catalog/rules/fines.xlsx`: the fines of late loans, by the member and the days late), kept in the database in
+versions with `rules: true` and edited in the admin (Rules); `app.rules.call('fines', 'Fine', { member, daysLate })`.
 
 ## Run it
 

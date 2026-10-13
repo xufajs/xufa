@@ -23,7 +23,9 @@ async function setUp({ audit = true } = {}) {
   app.decorateRequest('user', null);
   app.addHook('onRequest', async (request) => {
     const bob = request.headers['x-user'] === 'bob@example.com';
-    request.user = bob ? { email: 'bob@example.com', roles: ['shelves'] } : { email: 'ada@example.com', isSuperuser: true };
+    request.user = bob
+      ? { email: 'bob@example.com', roles: ['shelves'] }
+      : { email: 'ada@example.com', isSuperuser: true };
   });
   app.register(admin, {
     prefix: '/admin',
@@ -41,7 +43,12 @@ describe('the history of the admin', () => {
     const { app, Shelf } = await setUp();
     const made = await app.inject({ method: 'POST', url: '/admin/api/Shelf', headers: WRITE, payload: { name: 'A' } });
     const pk = made.json().pk;
-    await app.inject({ method: 'PATCH', url: `/admin/api/Shelf/${pk}`, headers: WRITE, payload: { name: 'A1', floor: 2 } });
+    await app.inject({
+      method: 'PATCH',
+      url: `/admin/api/Shelf/${pk}`,
+      headers: WRITE,
+      payload: { name: 'A1', floor: 2 },
+    });
     // A change outside the admin: no actor of the admin.
     const shelf = await Shelf.objects.get({ pk });
     shelf.floor = 3;
@@ -65,9 +72,13 @@ describe('the history of the admin', () => {
 
   it('the recent actions: newest first, of the models one may view, with the labels of the objects still there', async () => {
     const { app } = await setUp();
-    const one = (await app.inject({ method: 'POST', url: '/admin/api/Shelf', headers: WRITE, payload: { name: 'A' } })).json();
+    const one = (
+      await app.inject({ method: 'POST', url: '/admin/api/Shelf', headers: WRITE, payload: { name: 'A' } })
+    ).json();
     await app.inject({ method: 'POST', url: '/admin/api/Secret', headers: WRITE, payload: { code: 'x' } });
-    const two = (await app.inject({ method: 'POST', url: '/admin/api/Shelf', headers: WRITE, payload: { name: 'B' } })).json();
+    const two = (
+      await app.inject({ method: 'POST', url: '/admin/api/Shelf', headers: WRITE, payload: { name: 'B' } })
+    ).json();
     await app.inject({ method: 'DELETE', url: `/admin/api/Shelf/${two.pk}`, headers: WRITE });
     const recent = (await app.inject('/admin/api/_activity')).json().results;
     expect(recent.map((entry) => [entry.action, entry.model, entry.label])).toEqual([
@@ -85,7 +96,9 @@ describe('the history of the admin', () => {
 
   it('without an audit log: no history, and no recent actions', async () => {
     const { app } = await setUp({ audit: false });
-    const made = (await app.inject({ method: 'POST', url: '/admin/api/Shelf', headers: WRITE, payload: { name: 'A' } })).json();
+    const made = (
+      await app.inject({ method: 'POST', url: '/admin/api/Shelf', headers: WRITE, payload: { name: 'A' } })
+    ).json();
     const res = await app.inject(`/admin/api/Shelf/${made.pk}/history`);
     expect([res.statusCode, res.json().error]).toEqual([404, 'Shelf has no history (its database has no audit log)']);
     expect((await app.inject('/admin/api/_activity')).json()).toEqual({ results: [] });

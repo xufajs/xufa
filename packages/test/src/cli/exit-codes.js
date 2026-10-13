@@ -1,0 +1,29 @@
+// What a run's exit code tells CI and agents: a broken test (1) from a broken setup (2, 3) or a broken @xufa/test (4).
+const EXIT = {
+  passed: 0,
+  failed: 1,
+  // A config that does not load, no test files, a file that does not load, an .only with allowOnly: false.
+  setup: 2,
+  // Something outside the project that the tests need: a server, a browser, a model provider.
+  environment: 3,
+  internal: 4,
+  interrupted: 130,
+};
+
+// File errors that come before any test runs: the file's tests never got the chance to pass or fail (a globalSetup
+// that threw is one too).
+const SETUP_PHASES = new Set(['collect', 'policy', 'setup']);
+
+// A test can report one too: a prerequisite outside the product that is not there (seed data, an account that can not
+// sign in), as an AI step's agent concludes.
+const brokeSetup = (result) =>
+  result.errors.some((error) => SETUP_PHASES.has(error.phase)) ||
+  result.tests.some((test) => test.errors?.some((error) => error.phase === 'setup'));
+
+// A file that met a problem outside the project: in its own setup (a server that did not start), or in a test (a model
+// provider that failed, an AI budget used up).
+const brokeEnvironment = (result) =>
+  result.errors.some((error) => error.phase === 'environment') ||
+  result.tests.some((test) => test.errors?.some((error) => error.phase === 'environment'));
+
+module.exports = { EXIT, brokeSetup, brokeEnvironment };

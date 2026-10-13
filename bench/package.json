@@ -14,7 +14,8 @@
     "schema:legacy": "node --no-deprecation schema/legacy.js",
     "schema:all": "node --no-deprecation schema/isolated.js && node --no-deprecation schema/features.js && node --no-deprecation schema/legacy.js && node schema/machine.js",
     "schema:compile": "node --no-deprecation schema/compile.js",
-    "schema:validate": "node --no-deprecation schema/validate.js"
+    "schema:validate": "node --no-deprecation schema/validate.js",
+    "format": "node format.js"
   },
   "devDependencies": {
     "@aws-sdk/client-s3": "^3.1147.0",
@@ -24,6 +25,7 @@
     "@xufa/expression": "workspace:*",
     "@xufa/http": "workspace:*",
     "@xufa/jwt": "workspace:*",
+    "@xufa/lint": "workspace:*",
     "@xufa/logger": "workspace:*",
     "@xufa/marshal": "workspace:*",
     "@xufa/mongo": "workspace:*",
@@ -65,6 +67,7 @@
     "pg-copy-streams": "^7.0.0",
     "pg-hstore": "^2.3.4",
     "pino": "^10.1.0",
+    "prettier": "3.9.9",
     "sequelize": "^6.37.8",
     "sqlite3": "^6.0.1",
     "tinybench": "^6.2.0",

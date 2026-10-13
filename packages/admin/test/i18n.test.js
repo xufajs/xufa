@@ -27,7 +27,8 @@ async function setUp(options = {}, hook = null) {
 }
 
 // The catalog the page got: { locale, messages }.
-const catalogOf = (html) => JSON.parse(/<script type="application\/json" id="xufa-admin-i18n">([^<]*)<\/script>/.exec(html)[1]);
+const catalogOf = (html) =>
+  JSON.parse(/<script type="application\/json" id="xufa-admin-i18n">([^<]*)<\/script>/.exec(html)[1]);
 
 describe('the languages of the page of the admin', () => {
   it('every text of the client in each language, with the same parameters', () => {
@@ -47,7 +48,11 @@ describe('the languages of the page of the admin', () => {
     expect(fr.body).toContain('<html lang="fr">');
     expect(fr.body).toContain('<noscript>L’admin a besoin de JavaScript.</noscript>');
     const { locale, messages } = catalogOf(fr.body);
-    expect([locale, messages.Save, messages['{count} of {total}']]).toEqual(['fr', 'Enregistrer', '{count} sur {total}']);
+    expect([locale, messages.Save, messages['{count} of {total}']]).toEqual([
+      'fr',
+      'Enregistrer',
+      '{count} sur {total}',
+    ]);
     // A language it has not: the next one wanted, else English (and no texts).
     const next = await app.inject({ url: '/admin/', headers: { 'accept-language': 'ja, de;q=0.8' } });
     expect(catalogOf(next.body).locale).toBe('de');
@@ -74,10 +79,16 @@ describe('the languages of the page of the admin', () => {
     expect(catalogOf(chosen.body).locale).toBe('de');
     expect(chosen.body).toContain('<html lang="de">');
     // English chosen: over a browser in Spanish.
-    const english = await app.inject({ url: '/admin/', headers: { 'accept-language': 'es', cookie: 'xufa-admin-language=en' } });
+    const english = await app.inject({
+      url: '/admin/',
+      headers: { 'accept-language': 'es', cookie: 'xufa-admin-language=en' },
+    });
     expect(catalogOf(english.body).locale).toBe('en');
     // A language it has not: that of the browser.
-    const unknown = await app.inject({ url: '/admin/', headers: { 'accept-language': 'es', cookie: 'xufa-admin-language=ja' } });
+    const unknown = await app.inject({
+      url: '/admin/',
+      headers: { 'accept-language': 'es', cookie: 'xufa-admin-language=ja' },
+    });
     expect(catalogOf(unknown.body).locale).toBe('es');
     await app.close();
   });
@@ -97,9 +108,9 @@ describe('the languages of the page of the admin', () => {
     expect(catalogOf((await located.inject('/admin/')).body).locale).toBe('pt');
     await located.close();
     const own = await setUp({ uiMessages: { es: { Save: 'Grabar' }, ca: { Save: 'Desa' } } });
-    expect(catalogOf((await own.inject({ url: '/admin/', headers: { 'accept-language': 'es' } })).body).messages.Save).toBe(
-      'Grabar'
-    );
+    expect(
+      catalogOf((await own.inject({ url: '/admin/', headers: { 'accept-language': 'es' } })).body).messages.Save
+    ).toBe('Grabar');
     const catalan = catalogOf((await own.inject({ url: '/admin/', headers: { 'accept-language': 'ca' } })).body);
     expect([catalan.locale, catalan.messages]).toEqual(['ca', { Save: 'Desa' }]);
     await own.close();

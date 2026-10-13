@@ -1,4 +1,4 @@
-// The page of the admin in a browser (Chrome or Edge as installed, driven by playwright-core; skipped without one): the
+// The page of the admin in a browser (Chrome or Edge as installed, driven by @xufa/browser; skipped without one): the
 // login (a wrong password, then in), the dashboard, a list searched, filtered and ordered (in the address), a form with
 // a required field left empty, the question before leaving it, a new object with its foreign key chosen in the
 // combobox, objects deleted at once, a user who may only view, the tenant chosen, a failed job tried again, a paused
@@ -11,26 +11,10 @@ import { sessionPlugin } from '@xufa/session';
 import { Queue, Pipelines } from '@xufa/queue';
 import { Scheduler } from '@xufa/scheduler';
 import { admin } from '../index.js';
-import { createRequire } from 'node:module';
+import { chromium, findBrowser } from '@xufa/browser';
 
-const require = createRequire(import.meta.url);
-
-const CHROME = [
-  process.env.CHROME,
-  'C:/Program Files/Google/Chrome/Application/chrome.exe',
-  'C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe',
-  '/usr/bin/google-chrome',
-  '/usr/bin/chromium',
-  '/usr/bin/chromium-browser',
-  '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',
-].find((file) => file && fs.existsSync(file));
-
-let playwright = null;
-try {
-  playwright = require('playwright-core'); // eslint-disable-line global-require
-} catch {
-  playwright = null;
-}
+// Chrome or Edge as installed (CHROME gives another), driven by @xufa/browser.
+const CHROME = findBrowser();
 
 const PASSWORD = 'right-horse-battery';
 
@@ -65,7 +49,7 @@ class User extends Model {
   };
 }
 
-describe.skipIf(!CHROME || !playwright)('the page of the admin, in a browser', () => {
+describe.skipIf(!CHROME)('the page of the admin, in a browser', () => {
   let app;
   let browser;
   let context;
@@ -171,7 +155,7 @@ describe.skipIf(!CHROME || !playwright)('the page of the admin, in a browser', (
     });
     await app.listen({ port: 0, host: '127.0.0.1' });
     base = `http://127.0.0.1:${app.server.address().port}/admin/`;
-    browser = await playwright.chromium.launch({ executablePath: CHROME });
+    browser = await chromium.launch({ executablePath: CHROME });
   }, 30000);
 
   afterAll(async () => {
@@ -299,7 +283,7 @@ describe.skipIf(!CHROME || !playwright)('the page of the admin, in a browser', (
     const before = await tenants.run('acme', () => Book.objects.filter({ published: true }).count());
     await page.click('.bulk button:has-text("Mark as published")');
     await page.waitForFunction(() =>
-      /Mark as published: \d objects?/.test(document.querySelector('.toasts').textContent)
+      /Mark as published: \d objects?/.test(document.querySelector('.toasts')?.textContent ?? '')
     );
     expect(await tenants.run('acme', () => Book.objects.filter({ published: true }).count())).toBeGreaterThan(before);
     await page.waitForFunction(() => !document.querySelector('.bulk'));
@@ -308,14 +292,14 @@ describe.skipIf(!CHROME || !playwright)('the page of the admin, in a browser', (
     expect(await page.textContent('.bulk')).toContain('2 selected');
     await page.click('.bulk button:has-text("Delete")');
     await page.click('.modal button:has-text("Delete")');
-    await page.waitForFunction(() => /Deleted 2 objects/.test(document.querySelector('.toasts').textContent));
+    await page.waitForFunction(() => /Deleted 2 objects/.test(document.querySelector('.toasts')?.textContent ?? ''));
     expect(await tenants.run('acme', () => Book.objects.count())).toBe(29);
 
     // The other tenant: its books.
     await page.click('button[aria-label^="Tenant"]');
     await page.click('.popover button:has-text("GLOBEX Inc")');
     await page.waitForFunction(() => window.location.hash === '#/');
-    await page.waitForFunction(() => document.querySelector('a.card.stat .value').textContent === '3');
+    await page.waitForFunction(() => document.querySelector('a.card.stat .value')?.textContent === '3');
 
     // A failed job tried again (it works the second time).
     // The work: the job and the run together, newest first.

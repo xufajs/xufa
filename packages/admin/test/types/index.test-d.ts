@@ -1,4 +1,4 @@
-import { expectType, expectError } from 'tsd';
+import { assertType, expectTypeOf } from '@xufa/test';
 import { Model, Tenants, fields } from '@xufa/orm';
 import { Rbac } from '@xufa/auth';
 import xufa from '@xufa/http';
@@ -16,8 +16,9 @@ app.register(admin, {
   authorize: (request) => true,
 });
 app.register(admin, { models: [Book], authorize: 'development' });
-expectError(admin(app, { models: [Book] }));
-expectType<AdminModel>(describeModel(Book, { search: ['title'] }));
+// @ts-expect-error
+admin(app, { models: [Book] });
+expectTypeOf(describeModel(Book, { search: ['title'] })).toEqualTypeOf<AdminModel>();
 
 declare const queue: Queue;
 xufa().register(admin, { authorize: 'development', models: [], pipelines: new Pipelines(queue), health: false });
@@ -29,7 +30,9 @@ xufa().register(admin, {
     allow: (user) => user.role === 'staff',
     lockout: { maxAttempts: 3 },
     reload: async (id) => (id ? { email: 'ada@example.com', password: 'x', role: 'staff' } : null),
-    setPassword: async (user, hash) => { user.password = hash; },
+    setPassword: async (user, hash) => {
+      user.password = hash;
+    },
     minPasswordLength: 12,
     setTotp: (user, secret) => (secret === null ? 'removed' : secret.length),
     recoveryCodes: (user) => (user.role ? [] : null),
@@ -37,8 +40,11 @@ xufa().register(admin, {
   },
 });
 
-// @ts-expect-error a secret is a string
-xufa().register(admin, { models: [], login: { findUser: () => null, setTotp: (user: unknown, secret: number) => secret } });
+xufa().register(admin, {
+  models: [],
+  // @ts-expect-error a secret is a string
+  login: { findUser: () => null, setTotp: (user: unknown, secret: number) => secret },
+});
 xufa().register(admin, { authorize: 'development', models: [], queue });
 xufa().register(admin, { authorize: 'development', models: [], scheduler: new Scheduler() });
 // @ts-expect-error a scheduler has jobs() and runNow()
@@ -58,13 +64,19 @@ xufa().register(admin, { authorize: 'development', models: [], scheduler: {} });
     login: { findUser: async () => null },
     rbac: { roles: { editor: { inherits: 'viewer', permissions: ['Book.change'] }, viewer: ['*.view'] } },
   });
-  expectError(xufa().register(admin, { models: [], authorize: () => true, tenants: { tenants } }));
+  // @ts-expect-error
+  xufa().register(admin, { models: [], authorize: () => true, tenants: { tenants } });
 }
 
 // Columns of methods and paths, fields on one line, fieldsets (Django's ModelAdmin).
 {
   const options: AdminModelOptions = {
-    list: ['title', 'author__name', 'displayGenre', { name: 'size', label: 'Size', value: (book) => book.title.length }],
+    list: [
+      'title',
+      'author__name',
+      'displayGenre',
+      { name: 'size', label: 'Size', value: (book) => book.title.length },
+    ],
     fields: ['title', ['isbn', 'pages']],
     inlines: ['reviewSet', { relation: 'bookInstanceSet', fields: ['imprint', 'status'], extra: 2 }],
     fieldsets: [
@@ -72,6 +84,7 @@ xufa().register(admin, { authorize: 'development', models: [], scheduler: {} });
       ['Availability', { fields: ['status', ['dueBack', 'borrower']], collapse: true }],
     ],
   };
-  expectType<AdminModelOptions>(options);
-  expectError<AdminModelOptions>({ fieldsets: [['x', { fields: 7 }]] });
+  expectTypeOf(options).toEqualTypeOf<AdminModelOptions>();
+  // @ts-expect-error
+  assertType<AdminModelOptions>({ fieldsets: [['x', { fields: 7 }]] });
 }

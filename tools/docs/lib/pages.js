@@ -93,6 +93,9 @@ const ORDER = [
   ['discovery.html', '@xufa/discovery', 'Running'],
   ['netcache.html', '@xufa/netcache', 'Running'],
   ['faults.html', '@xufa/faults', 'Running'],
+  ['browser.html', '@xufa/browser', 'Testing'],
+  ['bundle.html', '@xufa/bundle', 'Building'],
+  ['lint.html', '@xufa/lint', 'Building'],
   ['marshal.html', '@xufa/marshal', 'Running'],
   ['yaml.html', '@xufa/yaml', 'Running'],
   ['jwt.html', '@xufa/jwt', 'Security'],
@@ -139,6 +142,14 @@ const SECTIONS = {
     ['schema-infer.html', 'Schema from JSON'],
     ['schema-ajv.html', 'From ajv'],
     ['schema-benchmarks.html', 'Benchmarks'],
+  ],
+  'test.html': [
+    ['test.html', 'Overview'],
+    ['test-guide.html', 'Guide'],
+    ['test-api.html', 'API'],
+    ['test-reference.html', 'Reference'],
+    ['test-migrating.html', 'From Jest and Vitest'],
+    ['test-benchmarks.html', 'Benchmarks'],
   ],
 };
 

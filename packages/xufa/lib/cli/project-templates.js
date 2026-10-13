@@ -5,7 +5,7 @@
 //   templates/       the templates of the project (base.html, that the others extend)
 //   <app>/           models.js, urls.yaml, views.js, admin.yaml, templates/<app>/, migrations/
 //   seeds/           data for development, as YAML (xufa seed)
-//   test/            tests of node:test with useTestApp()
+//   test/            tests of @xufa/test (the API of Jest and Vitest) with useTestApp()
 
 const title = (name) => name.replace(/[-_]+/g, ' ').replace(/\b\w/g, (letter) => letter.toUpperCase());
 
@@ -27,6 +27,7 @@ const projectFiles = (name, app) => ({
         shell: 'xufa shell',
       },
       dependencies: { xufa: '*' },
+      devDependencies: { '@xufa/test': '*' },
       engines: { node: '^22.22.3 || ^24.15.0 || >=25.7.0' },
     },
     null,
@@ -84,18 +85,17 @@ sessions: { asyncCommit: true }
     '```',
     '',
   ].join('\n'),
-  [`test/${app}.test.js`]: `// The tests of the project (npm test: xufa test): useTestApp() builds the app once for the file, on SQLite in
-// memory, and rolls back each test.
-import { test } from 'node:test';
-import assert from 'node:assert/strict';
+  [`test/${app}.test.js`]: `// The tests of the project (npm test: xufa test, which runs them with @xufa/test): useTestApp() builds the app once
+// for the file, on SQLite in memory, and rolls back each test.
+import { test, expect } from '@xufa/test';
 import { useTestApp } from 'xufa/testing';
 
 const app = useTestApp();
 
 test('the home page answers', async () => {
   const res = await app.client().get('/');
-  assert.equal(res.statusCode, 200);
-  assert.match(res.textContent, /${title(name)}/);
+  expect(res.statusCode).toBe(200);
+  expect(res.textContent).toMatch(/${title(name)}/);
 });
 `,
   '.env.example': `DATABASE_URL=sqlite:data/${name}.db
@@ -107,6 +107,7 @@ PORT=8000
 data
 .env
 .xufa
+.xufa-test
 `,
   'README.md': `# ${title(name)}
 

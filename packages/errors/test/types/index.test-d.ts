@@ -1,93 +1,121 @@
 // Ported from @fastify/error (types/index.test-d.ts, MIT License) by tools/port-types/port.js: do not edit, change the tool.
 import createError, { XufaError, XufaErrorConstructor } from '../..'
-import { expectType, expectError } from 'tsd'
+import { expectTypeOf } from '@xufa/test';
 
 const CustomError = createError('ERROR_CODE', 'message')
-expectType<XufaErrorConstructor<{ code: 'ERROR_CODE' }>>(CustomError)
+expectTypeOf(CustomError).toEqualTypeOf<XufaErrorConstructor<{ code: 'ERROR_CODE' }>>();
 const err = new CustomError()
-expectType<XufaError & { code: 'ERROR_CODE' }>(err)
-expectType<'ERROR_CODE'>(err.code)
-expectType<string>(err.message)
-expectType<number | undefined>(err.statusCode)
+expectTypeOf(err).toEqualTypeOf<XufaError & { code: 'ERROR_CODE' }>();
+expectTypeOf(err.code).toEqualTypeOf<'ERROR_CODE'>();
+expectTypeOf(err.message).toEqualTypeOf<string>();
+expectTypeOf(err.statusCode).toEqualTypeOf<number | undefined>();
 
 const CustomErrorNoStackTrace = createError('ERROR_CODE', 'message', undefined, undefined, false)
-expectType<XufaErrorConstructor<{ code: 'ERROR_CODE' }>>(CustomErrorNoStackTrace)
+expectTypeOf(CustomErrorNoStackTrace).toEqualTypeOf<XufaErrorConstructor<{ code: 'ERROR_CODE' }>>();
 const errNoStackTrace = new CustomErrorNoStackTrace()
-expectType<XufaError & { code: 'ERROR_CODE' }>(errNoStackTrace)
-expectType<'ERROR_CODE'>(errNoStackTrace.code)
-expectType<string>(errNoStackTrace.message)
-expectType<number | undefined>(errNoStackTrace.statusCode)
+expectTypeOf(errNoStackTrace).toEqualTypeOf<XufaError & { code: 'ERROR_CODE' }>();
+expectTypeOf(errNoStackTrace.code).toEqualTypeOf<'ERROR_CODE'>();
+expectTypeOf(errNoStackTrace.message).toEqualTypeOf<string>();
+expectTypeOf(errNoStackTrace.statusCode).toEqualTypeOf<number | undefined>();
 
 const CustomTypedError = createError('OTHER_CODE', 'message', 400)
-expectType<XufaErrorConstructor<{ code: 'OTHER_CODE', statusCode: 400 }>>(CustomTypedError)
+expectTypeOf(CustomTypedError).toEqualTypeOf<XufaErrorConstructor<{ code: 'OTHER_CODE', statusCode: 400 }>>();
 const typed = new CustomTypedError()
-expectType<XufaError & { code: 'OTHER_CODE', statusCode: 400 }>(typed)
-expectType<'OTHER_CODE'>(typed.code)
-expectType<string>(typed.message)
-expectType<400>(typed.statusCode)
+expectTypeOf(typed).toEqualTypeOf<XufaError & { code: 'OTHER_CODE', statusCode: 400 }>();
+expectTypeOf(typed.code).toEqualTypeOf<'OTHER_CODE'>();
+expectTypeOf(typed.message).toEqualTypeOf<string>();
+expectTypeOf(typed.statusCode).toEqualTypeOf<400>();
 
 /* eslint-disable no-new */
 const CustomTypedArgError = createError<[string]>('OTHER_CODE', 'expect %s message', 400)
 CustomTypedArgError('a')
-expectError(CustomTypedArgError('a', 'b'))
-expectError(new CustomTypedArgError('a', 'b'))
-expectError(CustomTypedArgError(1))
-expectError(new CustomTypedArgError(1))
+// @ts-expect-error
+CustomTypedArgError('a', 'b');
+// @ts-expect-error
+new CustomTypedArgError('a', 'b');
+// @ts-expect-error
+CustomTypedArgError(1);
+// @ts-expect-error
+new CustomTypedArgError(1);
 
 const CustomTypedArgError2 = createError<string, number, [string]>('OTHER_CODE', 'expect %s message', 400)
 CustomTypedArgError2('a')
-expectError(CustomTypedArgError2('a', 'b'))
-expectError(new CustomTypedArgError2('a', 'b'))
-expectError(CustomTypedArgError2(1))
-expectError(new CustomTypedArgError2(1))
+// @ts-expect-error
+CustomTypedArgError2('a', 'b');
+// @ts-expect-error
+new CustomTypedArgError2('a', 'b');
+// @ts-expect-error
+CustomTypedArgError2(1);
+// @ts-expect-error
+new CustomTypedArgError2(1);
 
 const CustomTypedArgError3 = createError<string, number, [string, string]>('OTHER_CODE', 'expect %s message but got %s', 400)
-expectError(CustomTypedArgError3('a'))
+// @ts-expect-error
+CustomTypedArgError3('a');
 CustomTypedArgError3('a', 'b')
 new CustomTypedArgError3('a', 'b')
-expectError(CustomTypedArgError3(1))
-expectError(new CustomTypedArgError3(1))
-expectError(new CustomTypedArgError3(1, 2))
-expectError(new CustomTypedArgError3('1', 2))
-expectError(new CustomTypedArgError3(1, '2'))
+// @ts-expect-error
+CustomTypedArgError3(1);
+// @ts-expect-error
+new CustomTypedArgError3(1);
+// @ts-expect-error
+new CustomTypedArgError3(1, 2);
+// @ts-expect-error
+new CustomTypedArgError3('1', 2);
+// @ts-expect-error
+new CustomTypedArgError3(1, '2');
 
 const CustomTypedArgError4 = createError<string, number, [string, string]>('OTHER_CODE', 'expect %s message but got %s', 400)
-expectError(CustomTypedArgError4('a'))
+// @ts-expect-error
+CustomTypedArgError4('a');
 CustomTypedArgError4('a', 'b')
 new CustomTypedArgError4('a', 'b')
-expectError(CustomTypedArgError4(1))
-expectError(new CustomTypedArgError4(1))
-expectError(new CustomTypedArgError4(1, 2))
-expectError(new CustomTypedArgError4('1', 2))
-expectError(new CustomTypedArgError4(1, '2'))
+// @ts-expect-error
+CustomTypedArgError4(1);
+// @ts-expect-error
+new CustomTypedArgError4(1);
+// @ts-expect-error
+new CustomTypedArgError4(1, 2);
+// @ts-expect-error
+new CustomTypedArgError4('1', 2);
+// @ts-expect-error
+new CustomTypedArgError4(1, '2');
 
 const CustomTypedArgError5 = createError<[string, string, string, string]>('OTHER_CODE', 'expect %s message but got %s. Please contact %s by emailing to %s', 400)
-expectError(CustomTypedArgError5('a'))
-expectError(new CustomTypedArgError5('a', 'b'))
-expectError(new CustomTypedArgError5('a', 'b', 'c'))
+// @ts-expect-error
+CustomTypedArgError5('a');
+// @ts-expect-error
+new CustomTypedArgError5('a', 'b');
+// @ts-expect-error
+new CustomTypedArgError5('a', 'b', 'c');
 CustomTypedArgError5('a', 'b', 'c', 'd')
-expectError(new CustomTypedArgError5('a', 'b', 'c', 'd', 'e'))
+// @ts-expect-error
+new CustomTypedArgError5('a', 'b', 'c', 'd', 'e');
 
 const CustomTypedArgError6 = createError<string, number, [string, string, string, string]>('OTHER_CODE', 'expect %s message but got %s. Please contact %s by emailing to %s', 400)
-expectError(CustomTypedArgError6('a'))
-expectError(new CustomTypedArgError6('a', 'b'))
-expectError(new CustomTypedArgError6('a', 'b', 'c'))
+// @ts-expect-error
+CustomTypedArgError6('a');
+// @ts-expect-error
+new CustomTypedArgError6('a', 'b');
+// @ts-expect-error
+new CustomTypedArgError6('a', 'b', 'c');
 CustomTypedArgError6('a', 'b', 'c', 'd')
-expectError(new CustomTypedArgError6('a', 'b', 'c', 'd', 'e'))
+// @ts-expect-error
+new CustomTypedArgError6('a', 'b', 'c', 'd', 'e');
 
 const CustomErrorWithErrorConstructor = createError('ERROR_CODE', 'message', 500, TypeError)
-expectType<XufaErrorConstructor<{ code: 'ERROR_CODE', statusCode: 500 }>>(CustomErrorWithErrorConstructor)
+expectTypeOf(CustomErrorWithErrorConstructor).toEqualTypeOf<XufaErrorConstructor<{ code: 'ERROR_CODE', statusCode: 500 }>>();
 CustomErrorWithErrorConstructor({ cause: new Error('Error') })
 const customErrorWithErrorConstructor = CustomErrorWithErrorConstructor()
 if (customErrorWithErrorConstructor instanceof XufaError) {
-  expectType<'ERROR_CODE'>(customErrorWithErrorConstructor.code)
-  expectType<string>(customErrorWithErrorConstructor.message)
-  expectType<500>(customErrorWithErrorConstructor.statusCode)
+  expectTypeOf(customErrorWithErrorConstructor.code).toEqualTypeOf<'ERROR_CODE'>();
+  expectTypeOf(customErrorWithErrorConstructor.message).toEqualTypeOf<string>();
+  expectTypeOf(customErrorWithErrorConstructor.statusCode).toEqualTypeOf<500>();
 }
 
 const error = new XufaError('ERROR_CODE', 'message', 500)
 if (error instanceof XufaError) {
-  expectType<string>(error.code)
-  expectType<string>(error.message)
-  expectType<number | undefined>(error.statusCode)
+  expectTypeOf(error.code).toEqualTypeOf<string>();
+  expectTypeOf(error.message).toEqualTypeOf<string>();
+  expectTypeOf(error.statusCode).toEqualTypeOf<number | undefined>();
 }

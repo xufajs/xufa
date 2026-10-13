@@ -1,0 +1,56 @@
+{
+  "name": "@xufa/test-web",
+  "version": "0.1.0",
+  "description": "End-to-end web testing for @xufa/test, on Playwright: browser, context and page fixtures, web-first assertions, and failure pages with a screenshot, the accessibility tree, the console, the network and a trace.",
+  "type": "commonjs",
+  "main": "./src/index.js",
+  "exports": {
+    ".": "./src/index.js",
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "src"
+  ],
+  "scripts": {
+    "test": "node ../test/bin/xufa-test.js"
+  },
+  "author": "Jesús Seijas <jseijas@gmail.com>",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/xufajs/xufa.git",
+    "directory": "packages/test-web"
+  },
+  "homepage": "https://github.com/xufajs/xufa/tree/main/packages/test-web#readme",
+  "bugs": {
+    "url": "https://github.com/xufajs/xufa/issues"
+  },
+  "engines": {
+    "node": "^22.22.3 || ^24.15.0 || >=25.7.0"
+  },
+  "peerDependencies": {
+    "playwright": ">=1.49.0",
+    "@xufa/test": "workspace:^",
+    "webdriverio": ">=9.0.0"
+  },
+  "peerDependenciesMeta": {
+    "webdriverio": {
+      "optional": true
+    }
+  },
+  "devDependencies": {
+    "esbuild": "^0.28.2",
+    "playwright": "1.63.0",
+    "@xufa/test": "workspace:*",
+    "webdriverio": "10.0.0"
+  },
+  "xufaTest": {
+    "exclude": [
+      "**/node_modules/**",
+      "test/fixtures/**"
+    ]
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}

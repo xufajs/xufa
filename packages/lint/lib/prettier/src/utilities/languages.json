@@ -1,0 +1,261 @@
+[
+  {
+    "name": "JSON.stringify",
+    "aliases": ["geojson", "jsonl", "sarif", "topojson"],
+    "extensions": [".importmap"],
+    "filenames": ["package.json", "package-lock.json", "composer.json"],
+    "parsers": ["json-stringify"]
+  },
+  {
+    "name": "JSON",
+    "aliases": ["geojson", "jsonl", "sarif", "topojson"],
+    "extensions": [
+      ".json",
+      ".4DForm",
+      ".4DProject",
+      ".avsc",
+      ".geojson",
+      ".gltf",
+      ".har",
+      ".ice",
+      ".JSON-tmLanguage",
+      ".json.example",
+      ".mcmeta",
+      ".sarif",
+      ".slnlaunch",
+      ".tact",
+      ".tfstate",
+      ".tfstate.backup",
+      ".topojson",
+      ".webapp",
+      ".webmanifest",
+      ".yy",
+      ".yyp"
+    ],
+    "filenames": [
+      ".all-contributorsrc",
+      ".arcconfig",
+      ".auto-changelog",
+      ".c8rc",
+      ".htmlhintrc",
+      ".imgbotconfig",
+      ".nycrc",
+      ".tern-config",
+      ".tern-project",
+      ".watchmanconfig",
+      ".babelrc",
+      ".jscsrc",
+      ".jshintrc",
+      ".jslintrc",
+      ".swcrc"
+    ],
+    "parsers": ["json"]
+  },
+  {
+    "name": "JSON with Comments",
+    "aliases": ["jsonc"],
+    "extensions": [
+      ".jsonc",
+      ".code-snippets",
+      ".code-workspace",
+      ".sublime-build",
+      ".sublime-color-scheme",
+      ".sublime-commands",
+      ".sublime-completions",
+      ".sublime-keymap",
+      ".sublime-macro",
+      ".sublime-menu",
+      ".sublime-mousemap",
+      ".sublime-project",
+      ".sublime-settings",
+      ".sublime-theme",
+      ".sublime-workspace",
+      ".sublime_metrics",
+      ".sublime_session"
+    ],
+    "filenames": [],
+    "parsers": ["jsonc"]
+  },
+  {
+    "name": "JSON5",
+    "extensions": [".json5"],
+    "parsers": ["json5"]
+  },
+  {
+    "name": "JavaScript",
+    "aliases": ["js", "node"],
+    "extensions": [
+      ".js",
+      "._js",
+      ".bones",
+      ".cjs",
+      ".es",
+      ".es6",
+      ".gs",
+      ".jake",
+      ".javascript",
+      ".jsb",
+      ".jscad",
+      ".jsfl",
+      ".jslib",
+      ".jsm",
+      ".jspre",
+      ".jss",
+      ".mjs",
+      ".njs",
+      ".pac",
+      ".sjs",
+      ".ssjs",
+      ".xsjs",
+      ".xsjslib",
+      ".start.frag",
+      ".end.frag",
+      ".wxs"
+    ],
+    "filenames": ["Jakefile", "start.frag", "end.frag"],
+    "parsers": ["babel", "acorn", "espree", "meriyah", "babel-flow", "babel-ts", "flow", "typescript"]
+  },
+  {
+    "name": "Flow",
+    "aliases": [],
+    "extensions": [".js.flow"],
+    "filenames": [],
+    "parsers": ["flow", "babel-flow"]
+  },
+  {
+    "name": "JSX",
+    "extensions": [".jsx"],
+    "parsers": ["babel", "babel-flow", "babel-ts", "flow", "typescript", "espree", "meriyah"]
+  },
+  {
+    "name": "TypeScript",
+    "aliases": ["ts"],
+    "extensions": [".ts", ".cts", ".mts"],
+    "parsers": ["typescript", "babel-ts"]
+  },
+  {
+    "name": "TSX",
+    "aliases": ["typescriptreact"],
+    "extensions": [".tsx"],
+    "parsers": ["typescript", "babel-ts"]
+  },
+  {
+    "name": "Handlebars",
+    "aliases": ["hbs", "htmlbars"],
+    "extensions": [".handlebars", ".hbs"],
+    "parsers": ["glimmer"]
+  },
+  {
+    "name": "GraphQL",
+    "extensions": [".graphql", ".gql", ".graphqls"],
+    "parsers": ["graphql"]
+  },
+  {
+    "name": "Angular",
+    "aliases": ["xhtml"],
+    "extensions": [".component.html"],
+    "filenames": [],
+    "parsers": ["angular"]
+  },
+  {
+    "name": "HTML",
+    "aliases": ["xhtml"],
+    "extensions": [".html", ".hta", ".htm", ".html.hl", ".inc", ".xht", ".xhtml"],
+    "parsers": ["html"]
+  },
+  {
+    "name": "Lightning Web Components",
+    "aliases": ["LWC", "lwc"],
+    "extensions": [],
+    "filenames": [],
+    "parsers": ["lwc"]
+  },
+  {
+    "name": "MJML",
+    "aliases": ["MJML", "mjml"],
+    "extensions": [".mjml"],
+    "filenames": [],
+    "parsers": ["mjml"]
+  },
+  {
+    "name": "Vue",
+    "extensions": [".vue"],
+    "parsers": ["vue"]
+  },
+  {
+    "name": "Markdown",
+    "aliases": ["md", "pandoc"],
+    "extensions": [
+      ".md",
+      ".livemd",
+      ".markdown",
+      ".mdown",
+      ".mdwn",
+      ".mkd",
+      ".mkdn",
+      ".mkdown",
+      ".ronn",
+      ".scd",
+      ".workbook"
+    ],
+    "filenames": ["contents.lr", "README"],
+    "parsers": ["markdown"]
+  },
+  {
+    "name": "MDX",
+    "aliases": ["md", "pandoc"],
+    "extensions": [".mdx"],
+    "filenames": [],
+    "parsers": ["mdx"]
+  },
+  {
+    "name": "CSS",
+    "extensions": [".css", ".wxss"],
+    "parsers": ["css"]
+  },
+  {
+    "name": "PostCSS",
+    "extensions": [".pcss", ".postcss"],
+    "parsers": ["css"]
+  },
+  {
+    "name": "Less",
+    "aliases": ["less-css"],
+    "extensions": [".less"],
+    "parsers": ["less"]
+  },
+  {
+    "name": "SCSS",
+    "extensions": [".scss"],
+    "parsers": ["scss"]
+  },
+  {
+    "name": "YAML",
+    "aliases": ["yml"],
+    "extensions": [
+      ".yml",
+      ".mir",
+      ".reek",
+      ".rviz",
+      ".sublime-syntax",
+      ".syntax",
+      ".yaml",
+      ".yaml-tmlanguage",
+      ".yaml.sed",
+      ".yml.mysql"
+    ],
+    "filenames": [
+      ".clang-format",
+      ".clang-tidy",
+      ".clangd",
+      ".gemrc",
+      "CITATION.cff",
+      "glide.lock",
+      "pixi.lock",
+      ".prettierrc",
+      ".stylelintrc",
+      ".lintstagedrc"
+    ],
+    "parsers": ["yaml"]
+  }
+]

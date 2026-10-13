@@ -1,0 +1,1280 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>@xufa/test: Guide · xufa</title>
+    <meta
+      name="description"
+      content="How to run and write tests with @xufa/test: tests, assertions, mocks, module mocks, fake timers, snapshots, coverage and configuration."
+    />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%23d9502b'/%3E%3Ctext x='16' y='22.5' font-family='monospace' font-size='18' font-weight='700' fill='white' text-anchor='middle'%3Ex%3C/text%3E%3C/svg%3E"
+    />
+    <link rel="stylesheet" href="../style.css?v=0.1.0" />
+    <script src="../main.js?v=0.1.0"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js" defer></script>
+  </head>
+  <body>
+    <header class="header">
+      <div class="header-inner">
+        <a class="logo" href="../index.html"><span class="logo-mark">x</span>xufa</a>
+        <nav class="nav">
+          <a href="../guide.html">Guide</a>
+          <a href="../playground.html">Playground</a>
+          <a href="../http/index.html">HTTP</a>
+          <a href="../orm/index.html">ORM</a>
+          <a class="hide-small" href="../auth/index.html">Auth</a>
+          <a class="hide-small" href="../sequelize/index.html">Sequelize</a>
+          <a class="hide-small" href="../packages.html" aria-current="page">Packages</a>
+          <a class="hide-small" href="../benchmarks.html">Benchmarks</a>
+          <a href="https://github.com/xufajs/xufa">GitHub</a>
+          <button class="theme-toggle" type="button" aria-label="Switch between light and dark theme">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+              <path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z" />
+            </svg>
+          </button>
+        </nav>
+      </div>
+    </header>
+
+    <div class="docs">
+      <button class="menu-toggle" type="button" aria-expanded="false">☰ Contents</button>
+      <aside class="sidebar">
+        <h4>Start</h4>
+        <ul>
+          <li><a href="#getting-started">Getting started</a></li>
+          <li><a href="#running">Running tests</a></li>
+          <li><a href="#configuration">Configuration</a></li>
+        </ul>
+        <h4>Writing tests</h4>
+        <ul>
+          <li><a href="#tests">Tests and suites</a></li>
+          <li><a href="#hooks">Hooks</a></li>
+          <li><a href="#async">Async tests</a></li>
+          <li><a href="#context">Context and fixtures</a></li>
+          <li><a href="#assertions">Assertions</a></li>
+          <li><a href="#mocks">Mock functions</a></li>
+          <li><a href="#module-mocks">Module mocks</a></li>
+          <li><a href="#timers">Fake timers</a></li>
+          <li><a href="#snapshots">Snapshots</a></li>
+        </ul>
+        <h4>More</h4>
+        <ul>
+          <li><a href="#coverage">Coverage</a></li>
+          <li><a href="#isolation">Workers and isolation</a></li>
+          <li><a href="#between-files">Restored between files</a></li>
+          <li><a href="#split-files">Splitting long files</a></li>
+          <li><a href="#ci">CI and reports</a></li>
+          <li><a href="#projects">Projects</a></li>
+          <li><a href="#api-tests">API tests</a></li>
+          <li><a href="#e2e">End-to-end tests</a></li>
+          <li><a href="#ai">AI steps</a></li>
+          <li><a href="#browser-mode">Browser mode</a></li>
+          <li><a href="#typescript">TypeScript and ES modules</a></li>
+          <li><a href="#imports">What files can import</a></li>
+          <li><a href="#speed">Why it is fast</a></li>
+          <li><a href="#faq">FAQ</a></li>
+          <li><a href="api.html">API reference</a></li>
+          <li><a href="migrating.html">Migrating</a></li>
+        </ul>
+        <h4>Packages</h4>
+        <ul>
+          <li><a href="../websocket/index.html">@xufa/websocket</a></li>
+          <li><a href="../admin/index.html">@xufa/admin</a></li>
+          <li><a href="../session/index.html">@xufa/session</a></li>
+          <li><a href="../forms/index.html">@xufa/forms</a></li>
+          <li><a href="../views/index.html">@xufa/views</a></li>
+          <li><a href="../mail/index.html">@xufa/mail</a></li>
+          <li><a href="../i18n/index.html">@xufa/i18n</a></li>
+          <li><a href="../openapi/index.html">@xufa/openapi</a></li>
+          <li><a href="../client/index.html">@xufa/client</a></li>
+          <li><a href="../schema/index.html">@xufa/schema</a></li>
+          <li><a href="../pg/index.html">@xufa/pg</a></li>
+          <li><a href="../mongo/index.html">@xufa/mongo</a></li>
+          <li><a href="../expression/index.html">@xufa/expression</a></li>
+          <li><a href="../template/index.html">@xufa/template</a></li>
+          <li><a href="../cluster/index.html">@xufa/cluster</a></li>
+          <li><a href="../scheduler/index.html">@xufa/scheduler</a></li>
+          <li><a href="../queue/index.html">@xufa/queue</a></li>
+          <li><a href="../config/index.html">@xufa/config</a></li>
+          <li><a href="../discovery/index.html">@xufa/discovery</a></li>
+          <li><a href="../netcache/index.html">@xufa/netcache</a></li>
+          <li><a href="../faults/index.html">@xufa/faults</a></li>
+          <li><a href="../browser/index.html">@xufa/browser</a></li>
+          <li><a href="../bundle/index.html">@xufa/bundle</a></li>
+          <li><a href="../lint/index.html">@xufa/lint</a></li>
+          <li><a href="../marshal/index.html">@xufa/marshal</a></li>
+          <li><a href="../yaml/index.html">@xufa/yaml</a></li>
+          <li><a href="../jwt/index.html">@xufa/jwt</a></li>
+          <li><a href="../logger/index.html">@xufa/logger</a></li>
+          <li><a href="../router/index.html">@xufa/router</a></li>
+          <li><a href="../serializer/index.html">@xufa/serializer</a></li>
+          <li><a href="../inject/index.html">@xufa/inject</a></li>
+          <li><a href="../boot/index.html">@xufa/boot</a></li>
+          <li><a href="../errors/index.html">@xufa/errors</a></li>
+          <li><a href="../packages.html">All the packages</a></li>
+        </ul>
+      </aside>
+
+      <article class="content">
+        <nav class="package-tabs" aria-label="@xufa/test">
+          <a href="index.html">Overview</a>
+          <a href="guide.html" aria-current="page">Guide</a>
+          <a href="api.html">API</a>
+          <a href="reference.html">Reference</a>
+          <a href="migrating.html">From Jest and Vitest</a>
+          <a href="benchmarks.html">Benchmarks</a>
+        </nav>
+        <h1>Guide</h1>
+        <p class="intro">
+          @xufa/test is a test runner for Node.js with the API of Jest and Vitest. It runs the tests written for either of
+          them without changes, and it is built to be fast: it loads your files with Node.js itself, keeps its workers
+          warm between files and runs the slowest files first.
+        </p>
+
+        <h2 id="getting-started">Getting started</h2>
+        <p>Install it as a development dependency. It needs Node.js 22 or later, and nothing else.</p>
+        <pre><code class="language-bash">npm install --save-dev @xufa/test</code></pre>
+        <p>Write a test in any file whose name ends in <code>.test.js</code> or <code>.spec.js</code> (or <code>.ts</code>, <code>.mjs</code>, <code>.cjs</code>...):</p>
+        <pre><code class="language-js">// sum.test.js
+const { sum } = require('./sum');
+
+describe('sum', () => {
+  it('adds two numbers', () => {
+    expect(sum(1, 2)).toBe(3);
+  });
+});</code></pre>
+        <p>And run it:</p>
+        <pre><code class="language-bash">npx xufa-test</code></pre>
+        <div class="terminal">
+          <div class="terminal-bar"><span></span><span></span><span></span></div>
+          <pre><code class="nohighlight"> <span class="t-accent">XUFA TEST</span> <span class="t-dim">running 1 test files on inline</span>
+
+ <span class="t-ok">✓</span> sum.test.js <span class="t-dim">(1 tests)</span> <span class="t-dim">2ms</span>
+
+<span class="t-dim"> Test Files</span>  <span class="t-ok t-bold">1 passed</span> <span class="t-dim">(1)</span>
+<span class="t-dim">      Tests</span>  <span class="t-ok t-bold">1 passed</span> <span class="t-dim">(1)</span>
+<span class="t-dim">   Duration</span>  31ms</code></pre>
+        </div>
+        <p>
+          <code>describe</code>, <code>it</code>, <code>test</code>, <code>expect</code>, the hooks, <code>vi</code> and
+          <code>jest</code> are globals. If you prefer imports, take them from <code>@xufa/test</code>, or leave the ones from
+          <code>vitest</code> or <code>@jest/globals</code> you already have: they resolve to @xufa/test.
+        </p>
+        <pre><code class="language-js">import { describe, expect, it, vi } from '@xufa/test';</code></pre>
+        <p>Finally, point your <code>test</code> script at it:</p>
+        <pre><code class="language-json">{
+  "scripts": {
+    "test": "xufa-test"
+  }
+}</code></pre>
+
+        <h3 id="init">Setting a project up</h3>
+        <p>
+          <code>npx xufa-test init</code> sets a project up for every kind of test at once. It asks which kinds besides unit
+          tests (API, end-to-end, AI steps), how the app starts and where it answers, and which model the AI steps use;
+          then it writes <code>xufa.test.config.js</code> with a project per kind, an example test of each, the skill for coding
+          agents, the @xufa/test MCP server in <code>.mcp.json</code>, <code>.xufa-test/</code> in <code>.gitignore</code> and a
+          test script, and prints what to install. With <code>--yes</code> it asks nothing and takes <code>--kinds</code>,
+          <code>--command</code>, <code>--url</code>, <code>--provider</code> and <code>--model</code>; it replaces nothing
+          without <code>--force</code>.
+        </p>
+
+        <h2 id="running">Running tests</h2>
+        <p>
+          With no arguments, @xufa/test runs every test file of the project. Arguments filter the files by their path, as in
+          Jest; <code>-t</code> filters the tests by their full name (the names of their <code>describe</code> blocks and
+          their own).
+        </p>
+        <pre><code class="language-bash">npx xufa-test                      # every test file
+npx xufa-test src/users            # the files whose path matches src/users
+npx xufa-test -t "saves the user"  # the tests whose name matches
+npx xufa-test --coverage           # with a coverage report
+npx xufa-test -u                   # update the snapshots that changed</code></pre>
+        <p>A test file is any <code>*.test.*</code> or <code>*.spec.*</code> file, or any file in a <code>__tests__</code> folder, out of <code>node_modules</code>, <code>dist</code> and <code>coverage</code>.</p>
+
+        <h3 id="output">What it prints</h3>
+        <p>
+          A line per file as it finishes, then every failure with its diff, the line of your test where it happened, and
+          a summary. The output of <code>console.log</code> in a test is shown with the test that wrote it;
+          <code>--silent</code> hides it.
+        </p>
+        <div class="terminal">
+          <div class="terminal-bar"><span></span><span></span><span></span></div>
+          <pre><code class="nohighlight"> <span class="t-fail t-bold">FAIL</span> users.test.js &gt; users &gt; saves the profile
+<span class="t-fail t-bold">AssertionError:</span> expect(received).toEqual(expected)
+
+<span class="t-ok">- Expected  - 1</span>
+<span class="t-fail">+ Received  + 1</span>
+
+<span class="t-dim">  {</span>
+<span class="t-dim">    "name": "Ann",</span>
+<span class="t-ok">-   "role": "admin",</span>
+<span class="t-fail">+   "role": "user",</span>
+<span class="t-dim">  }</span>
+
+<span class="t-fail">&gt;</span> <span class="t-dim">12 |</span>     expect(saved).toEqual({ name: 'Ann', role: 'admin' });
+     <span class="t-dim">|</span>                   <span class="t-fail">^</span>
+
+<span class="t-dim"> ❯ users.test.js:12:19</span></code></pre>
+        </div>
+        <p>
+          <code>--verbose</code> lists every test; <code>--reporter json</code> prints the whole run as one JSON document,
+          for tools. Other reporters write the run next to it: see <a href="#reports">Reports for CI and agents</a>.
+        </p>
+
+        <h3 id="environments">Test environments of your own</h3>
+        <p>
+          <code>environment</code> (Vitest) or <code>testEnvironment</code> (Jest) can name an environment of your own,
+          by path or package (<code>jest-environment-&lt;name&gt;</code>, <code>vitest-environment-&lt;name&gt;</code>),
+          and so can a file's <code>@vitest-environment</code> or <code>@jest-environment</code> comment. It is set up
+          before each of its files and torn down after:
+        </p>
+        <ul>
+          <li>A Vitest environment, <code>{ name, setup(global, options) }</code>, gets the global object the tests run
+            in, and its options from <code>environmentOptions[name]</code>.</li>
+          <li>A Jest environment class gets <code>testEnvironmentOptions</code> and the test file's path as Jest gives
+            them. Jest runs the tests in its <code>this.global</code>; @xufa/test runs them in the worker's global, over the
+            node or jsdom environment the class extends, and copies in what the class adds to its global.</li>
+        </ul>
+
+        <h3 id="bench">Benchmarks</h3>
+        <p>
+          <code>xufa-test bench</code> runs the <code>*.bench.*</code> files (Vitest's <code>benchmark.include</code>), as
+          <code>vitest bench</code> does, one file at a time unless <code>-w</code> says otherwise, so the measures do not
+          take from each other. <code>bench(name, fn, options)</code> warms <code>fn</code> up, then times one call per
+          sample until both <code>time</code> (500 ms) and <code>iterations</code> (10) are reached; <code>setup</code>
+          and <code>teardown</code> run around it.
+        </p>
+        <pre><code class="language-js">// sort.bench.js
+describe('sorting', () => {
+  bench('Array#sort', () => {
+    [...numbers].sort((a, b) => a - b);
+  });
+  bench('Float64Array#sort', () => {
+    Float64Array.from(numbers).sort();
+  }, { time: 1000 });
+});</code></pre>
+        <p>
+          Each group prints a table (operations per second, min, max, mean, p75 to p999 in milliseconds, margin of error,
+          samples), and the summary says which is fastest and by how much. <code>--outputJson bench.json</code> saves the
+          results; <code>--compare bench.json</code> shows how each changed since.
+        </p>
+
+        <h3 id="in-source">In-source tests</h3>
+        <p>
+          As in Vitest, tests can live in the source file they test, in an <code>if (import.meta.vitest)</code> block,
+          for the files <code>includeSource</code> names. A file there that has such a block is a test file;
+          <code>import.meta.vitest</code> is the test API in it, and <code>undefined</code> anywhere else, so a module
+          another test file imports does not add its tests to that one. A build leaves the block out with Vite's
+          <code>define: { 'import.meta.vitest': 'undefined' }</code>.
+        </p>
+        <pre><code class="language-js">// src/math.js, with includeSource: ['src/**/*.js']
+export const add = (a, b) => a + b;
+
+if (import.meta.vitest) {
+  const { it, expect } = import.meta.vitest;
+  it('adds', () => {
+    expect(add(1, 2)).toBe(3);
+  });
+}</code></pre>
+
+        <h3 id="typecheck">Type tests</h3>
+        <p>
+          <code>xufa-test --typecheck</code> (or Vitest's <code>typecheck.enabled</code>) checks the types of the
+          <code>*.test-d.ts</code> files instead of running them, with your project's <code>tsc</code>, as Vitest does: a
+          type error fails the test whose call it is in, one outside every test fails the file, and one in a file the
+          tests reach fails the run unless <code>typecheck.ignoreSourceErrors</code>. The other tests run as usual;
+          <code>--typecheck.only</code> runs none of them. <code>expectTypeOf</code> and <code>assertType</code> are there
+          for the checker, and do nothing at run time. <code>typecheck.include</code>, <code>tsconfig</code> and
+          <code>checker</code> (<code>'vue-tsc'</code>) are read as Vitest reads them.
+        </p>
+        <p>
+          @xufa/test ships its types: those of its API (<code>import { test, expect, vi } from '@xufa/test'</code>), and
+          of its globals for files that use them without imports (<code>"types": ["@xufa/test/globals"]</code> in
+          <code>tsconfig.json</code>). <code>expectTypeOf(value).toEqualTypeOf&lt;T&gt;()</code> passes when the types are
+          the same, however they are written (an interface and the object type of its members, an intersection and the
+          object it makes), and tells optional from required members, readonly ones from writable ones, and
+          <code>any</code> from every other type; <code>toMatchTypeOf&lt;T&gt;()</code> when the value is assignable to
+          <code>T</code>; <code>assertType&lt;T&gt;(value)</code> types the value in the context of <code>T</code>. What
+          must fail goes under <code>// @ts-expect-error</code>. Without a <code>tsconfig.json</code>, the type tests are
+          checked strictly (<code>strict</code>, the declaration files too, Node's types when the project has
+          <code>@types/node</code>). <code>tools/type-tests</code> in the repository of xufa converts the type tests of tsd
+          and tstyche to these.
+        </p>
+        <pre><code class="language-ts">import { expectTypeOf, assertType, test } from '@xufa/test';
+import { sum } from '../src/sum.js';
+
+test('sum', () =&gt; {
+  expectTypeOf(sum(1, 2)).toEqualTypeOf&lt;number&gt;();
+  expectTypeOf(sum).parameters.toEqualTypeOf&lt;[a: number, b: number]&gt;();
+  // @ts-expect-error strings are not numbers
+  sum('1', 2);
+});</code></pre>
+
+        <h3 id="watch">Watch mode</h3>
+        <p>
+          <code>xufa-test --watch</code> (or <code>xufa-test watch</code>, or Jest's <code>--watchAll</code>) runs the tests,
+          then runs again what each change touches, until you quit: a changed test file runs again, a changed module
+          reruns the test files that loaded it, a new test file runs, and a change to the config (or
+          <code>package.json</code>, or a <code>.env</code> file) reruns everything. In a terminal, keys narrow it:
+          <kbd>Enter</kbd> runs the last ones again, <kbd>a</kbd> all, <kbd>f</kbd> the files that failed,
+          <kbd>p</kbd> and <kbd>t</kbd> filter by file and by test name, <kbd>q</kbd> quits.
+        </p>
+        <p>
+          It knows what a test file loaded by watching it load, so a module only its types reach (compiled away) does
+          not rerun anything, and with <code>isolate: false</code> a module loaded by an earlier file is only known
+          for that one.
+        </p>
+
+        <h3 id="flags">Common flags</h3>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr><th>Flag</th><th>What it does</th></tr>
+            </thead>
+            <tbody>
+              <tr><td><code>-t, --testNamePattern</code></td><td>Run only the tests whose full name matches this regular expression</td></tr>
+              <tr><td><code>-u, --update</code></td><td>Write the snapshots that changed</td></tr>
+              <tr><td><code>--coverage</code></td><td>Collect coverage and print a report</td></tr>
+              <tr><td><code>--coverageDirectory &lt;dir&gt;</code></td><td>Write the coverage reports to another directory</td></tr>
+              <tr><td><code>--silent</code></td><td>Do not print what the tests write to the console</td></tr>
+              <tr><td><code>-w, --maxWorkers</code></td><td>Number of workers, or a percentage of the cores (<code>50%</code>)</td></tr>
+              <tr><td><code>-i, --runInBand</code></td><td>Run every file in the main thread</td></tr>
+              <tr><td><code>--pool forks</code></td><td>Run the files in child processes, as Jest does</td></tr>
+              <tr><td><code>--bail &lt;n&gt;</code></td><td>Stop after <code>n</code> files failed</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p>Every flag is in the <a href="api.html#cli">API reference</a>.</p>
+
+        <h2 id="configuration">Configuration</h2>
+        <p>Most projects need none. When there is, @xufa/test takes it from the first of these that exists:</p>
+        <ol>
+          <li><code>xufa.test.config.js</code> (or <code>.cjs</code>, <code>.mjs</code>), or the file given with <code>--config</code></li>
+          <li>a <code>"xufaTest"</code> key in <code>package.json</code></li>
+          <li>your Vitest configuration: <code>vitest.config.ts</code> (or <code>.mts</code>, <code>.js</code>, <code>.mjs</code>...), or a <code>vite.config.*</code> with a <code>test</code> section</li>
+          <li>your Jest configuration: <code>jest.config.js</code> (or <code>.cjs</code>, <code>.mjs</code>, <code>.json</code>), or a <code>"jest"</code> key in <code>package.json</code></li>
+        </ol>
+        <pre><code class="language-js">// xufa.test.config.js
+module.exports = {
+  include: ['**/*.{test,spec}.?(c|m)[jt]s?(x)'],
+  exclude: ['**/node_modules/**', '**/dist/**'],
+  setupFiles: ['./test/setup.js'],
+  testTimeout: 10000,
+  restoreMocks: true,
+  coverageThreshold: { global: { lines: 90 } },
+};</code></pre>
+        <p>
+          From a Jest configuration @xufa/test takes <code>testTimeout</code>, <code>testMatch</code>,
+          <code>testPathIgnorePatterns</code>, <code>roots</code>, <code>setupFiles</code>,
+          <code>setupFilesAfterEnv</code>, <code>clearMocks</code>, <code>resetMocks</code>, <code>restoreMocks</code>,
+          <code>maxWorkers</code>, <code>bail</code> and the coverage options. Every option is in the
+          <a href="api.html#config">API reference</a>.
+        </p>
+
+        <h2 id="tests">Tests and suites</h2>
+        <p>
+          <code>test</code> (or <code>it</code>) declares a test; <code>describe</code> groups tests, and its name is
+          part of theirs. Modifiers change how they run:
+        </p>
+        <pre><code class="language-js">describe('orders', () => {
+  test('are created', () => {});
+  test.skip('are archived', () => {});       // not run
+  test.todo('are refunded');                 // a reminder
+  test.only('are paid', () => {});           // only the .only tests of the file run
+  test.fails('reject a negative total', () => {
+    expect(-1).toBeGreaterThan(0);           // passes because it fails
+  });
+  test.skipIf(process.platform === 'win32')('use symlinks', () => {});
+  test.runIf(process.env.CI)('run on CI only', () => {});
+});
+
+describe.skip('invoices', () => {});         // every test inside is skipped</code></pre>
+
+        <h3 id="each">One test per case</h3>
+        <p>
+          <code>test.each</code> declares a test for every case of a table. The name takes the values with
+          <code>printf</code>-style placeholders (<code>%s</code>, <code>%d</code>, <code>%i</code>, <code>%f</code>,
+          <code>%j</code>, <code>%o</code>, <code>%p</code>, <code>%#</code> for the index), or with
+          <code>$name</code> for the keys of object cases:
+        </p>
+        <pre><code class="language-js">test.each([
+  [1, 1, 2],
+  [2, 3, 5],
+])('%i + %i = %i', (a, b, expected) => {
+  expect(a + b).toBe(expected);
+});
+
+test.each([{ name: 'Ann', age: 30 }])('$name is $age', ({ age }) => {
+  expect(age).toBeGreaterThan(18);
+});
+
+test.each`
+  a    | b    | sum
+  ${1} | ${1} | ${2}
+`('$a + $b = $sum', ({ a, b, sum }) => {
+  expect(a + b).toBe(sum);
+});</code></pre>
+        <p>
+          <code>describe.each</code> does the same with suites. <code>test.for</code> is Vitest's variant: the case is
+          given as it is (not spread), followed by the test context.
+        </p>
+
+        <h3 id="concurrent">Concurrent tests</h3>
+        <p>
+          Tests marked <code>.concurrent</code> (or in a <code>describe.concurrent</code>) run at the same time, up to
+          <code>maxConcurrency</code> (5) at once. Use the <code>expect</code> of the test context in them, so each
+          assertion belongs to its test.
+        </p>
+        <pre><code class="language-js">test.concurrent('loads the user', async ({ expect }) => {
+  expect(await loadUser(1)).toMatchObject({ id: 1 });
+});</code></pre>
+
+        <h3 id="tags">Tags and repeats</h3>
+        <p>
+          A <code>describe</code> or a <code>test</code> takes <code>tags</code>, which the tests inside inherit;
+          <code>--tag</code> runs the tests with one of them and <code>--exclude-tag</code> leaves out those with any.
+          <code>--grep-invert</code> leaves out the tests whose name matches, as <code>-t</code> (or <code>--grep</code>)
+          keeps them. <code>--repeat-each 5</code> runs every test five times, and a test passes only when every run
+          passes: how to find a flaky test, or measure an AI step under <code>--ai live</code>.
+        </p>
+        <pre><code class="language-js">describe('billing', { tags: ['billing'] }, () => {
+  test('upgrades the plan', { tags: 'slow' }, async () => { /* ... */ });
+});</code></pre>
+
+        <h2 id="hooks">Hooks</h2>
+        <p>
+          <code>beforeAll</code> and <code>afterAll</code> run once around the tests of their <code>describe</code> (or
+          of the file, at the top level); <code>beforeEach</code> and <code>afterEach</code> around every test. They run
+          in Jest's order: the <code>beforeEach</code> hooks from the outside in, the <code>afterEach</code> hooks from
+          the inside out.
+        </p>
+        <pre><code class="language-js">let db;
+
+beforeAll(async () => {
+  db = await connect();
+});
+
+afterAll(() => db.close());
+
+beforeEach(async () => {
+  await db.seed();
+  // A function returned by beforeEach runs after the test, as in Vitest.
+  return () => db.clear();
+});</code></pre>
+        <p>
+          When a <code>beforeAll</code> fails, the tests of its suite are reported as failed with its error, and its
+          <code>afterAll</code> still runs.
+        </p>
+
+        <h2 id="async">Async tests</h2>
+        <p>
+          A test that returns a promise ends when the promise settles. A test (or hook) that takes a parameter which is
+          not the test context gets Jest's <code>done</code> callback, and ends when it is called:
+        </p>
+        <pre><code class="language-js">test('async/await', async () => {
+  expect(await fetchUser(1)).toEqual({ id: 1 });
+});
+
+test('done callback', (done) => {
+  emitter.once('ready', () => done());
+  emitter.start();
+});</code></pre>
+        <p>
+          A test fails when it takes longer than its timeout: 5 seconds, or <code>testTimeout</code> in the
+          configuration, or the number given after the test function (<code>test(name, fn, 10000)</code>). An error
+          thrown later by a timer, or a promise nobody handles, fails the test that was running.
+        </p>
+        <div class="callout">
+          <p>
+            A <code>.resolves</code> or <code>.rejects</code> assertion you forget to <code>await</code> still fails its
+            test: @xufa/test waits for it before the test ends.
+          </p>
+        </div>
+
+        <h3 id="retry">Retries</h3>
+        <p>
+          <code>retry</code> runs a failing test again, up to that many times: <code>test(name, { retry: 2 }, fn)</code>,
+          or <code>--retry 2</code> for all of them. <code>repeats</code> runs a passing test that many more times, to
+          catch flaky ones.
+        </p>
+        <p>
+          A test that passes only on a retry is <strong>flaky</strong>, not passed: it is counted apart in the summary
+          and listed with the errors of the attempts that failed, so a retry does not hide it. It does not fail the run,
+          unless <code>--fail-on-flaky</code> (or <code>failOnFlaky: true</code>) is given.
+        </p>
+
+        <h2 id="context">Test context and fixtures</h2>
+        <p>
+          Every test gets a context object, as in Vitest: its <code>task</code> (name, file), an <code>expect</code> of
+          its own, <code>skip()</code>, <code>signal</code> (aborted when the test ends), and
+          <code>onTestFinished</code> / <code>onTestFailed</code> to register clean-ups.
+        </p>
+        <pre><code class="language-js">test('writes a temporary file', ({ task, onTestFinished, skip }) => {
+  skip(!process.env.TMPDIR, 'needs TMPDIR');
+  const file = createTempFile(task.name);
+  onTestFinished(() => removeFile(file));
+});</code></pre>
+        <p>
+          <code>test.extend</code> declares fixtures: values, or functions that set something up, hand it to the test with
+          <code>use()</code> and tear it down after. A test only sets up the fixtures it destructures.
+        </p>
+        <pre><code class="language-js">const dbTest = test.extend({
+  db: async ({}, use) => {
+    const db = await connect();
+    await use(db);
+    await db.close();
+  },
+  user: async ({ db }, use) => {
+    await use(await db.users.insert({ name: 'Ann' }));
+  },
+});
+
+dbTest('finds the user', async ({ db, user }) => {
+  expect(await db.users.find(user.id)).toEqual(user);
+});</code></pre>
+        <h3 id="fixture-scopes">Shared fixtures and options</h3>
+        <p>
+          A fixture is set up for each test that uses it, unless its <code>scope</code> says otherwise:
+          <code>'file'</code> sets it up once for the tests of a file, and <code>'worker'</code> once per worker, for
+          every file it runs, torn down when the worker ends. Something slow to start (a browser, a database) goes
+          there. A shared fixture destructures what it uses, as test fixtures do, and can only use fixtures that live
+          as long as it does. One whose setup throws fails every test that uses it, at once, with that error.
+        </p>
+        <pre><code class="language-js">const test = base.extend({
+  // An option: this default, or the config's use.baseURL.
+  baseURL: ['http://localhost:3000', { option: true }],
+  db: [
+    async ({ baseURL }, use) => {
+      const db = await startDatabase(baseURL);
+      await use(db);
+      await db.stop();
+    },
+    { scope: 'worker' },
+  ],
+});</code></pre>
+        <p>
+          The config's <code>use</code> gives fixtures their options, and every value in it is a fixture any test can
+          destructure, without <code>test.extend</code>: <code>use: { baseURL: 'http://localhost:4000' }</code>.
+        </p>
+
+        <h2 id="assertions">Assertions</h2>
+        <p>
+          <code>expect(value)</code> has every matcher of Jest and the ones Vitest adds. <code>.not</code> negates them;
+          <code>.resolves</code> and <code>.rejects</code> apply them to what a promise settles to.
+        </p>
+        <pre><code class="language-js">expect(total).toBe(20);
+expect(user).toEqual({ id: 1, name: 'Ann' });        // deep equality
+expect(user).toStrictEqual(new User(1, 'Ann'));      // also checks classes and undefined properties
+expect(response).toMatchObject({ status: 200 });     // a subset
+expect(list).toContain('apple');
+expect(order).toHaveProperty('lines[0].price', 10);
+expect(() => parse('{')).toThrow(/Unexpected end/);
+await expect(save(user)).resolves.toBeUndefined();
+await expect(load(-1)).rejects.toThrow('not found');</code></pre>
+        <p>Asymmetric matchers stand for any value that passes a check, inside the expected value:</p>
+        <pre><code class="language-js">expect(created).toEqual({
+  id: expect.any(String),
+  createdAt: expect.any(Date),
+  tags: expect.arrayContaining(['new']),
+  email: expect.stringMatching(/@example\.com$/),
+});</code></pre>
+        <h3 id="assertion-helpers">More tools</h3>
+        <ul>
+          <li><code>expect.soft(value)</code> records the failure and lets the test go on, to see every failure at once.</li>
+          <li><code>expect.poll(() =&gt; value).toBe(x)</code> retries until the assertion passes or a timeout ends.</li>
+          <li><code>expect.assertions(n)</code> and <code>expect.hasAssertions()</code> check that the assertions really ran (in callbacks, for example).</li>
+          <li><code>expect.extend({ toBeWithin(received, a, b) { ... } })</code> adds matchers, usable as asymmetric matchers too.</li>
+        </ul>
+        <p>Every matcher is listed in the <a href="api.html#matchers">API reference</a>.</p>
+
+        <h2 id="mocks">Mock functions</h2>
+        <p>
+          <code>vi.fn()</code> (the same as <code>jest.fn()</code>) makes a function that records its calls. Its
+          implementation can be set, for every call or for the next ones:
+        </p>
+        <pre><code class="language-js">const send = vi.fn().mockResolvedValue({ ok: true });
+
+await notify(send, 'ann@example.com');
+
+expect(send).toHaveBeenCalledTimes(1);
+expect(send).toHaveBeenCalledWith('ann@example.com', expect.any(String));
+expect(send.mock.calls[0][0]).toBe('ann@example.com');</code></pre>
+        <p><code>vi.spyOn(object, 'method')</code> replaces a method with a mock that calls the original, until it is restored:</p>
+        <pre><code class="language-js">const spy = vi.spyOn(Math, 'random').mockReturnValue(0.5);
+expect(roll()).toBe(4);
+spy.mockRestore();</code></pre>
+        <p>
+          <code>vi.clearAllMocks()</code> forgets the calls of every mock, <code>vi.resetAllMocks()</code> also their
+          implementations, <code>vi.restoreAllMocks()</code> puts back what spies replaced. The options
+          <code>clearMocks</code>, <code>resetMocks</code> and <code>restoreMocks</code> do it before every test. Spies are
+          always restored when a file ends. <code>vi.stubGlobal</code> and <code>vi.stubEnv</code> replace a global or an
+          environment variable until the file ends.
+        </p>
+
+        <h2 id="module-mocks">Module mocks</h2>
+        <p>
+          <code>vi.mock(path, factory)</code> (or <code>jest.mock</code>) replaces a module with what the factory returns,
+          for the test file and everything it loads. The calls are moved to the top of the file, before its imports, as
+          Jest and Vitest do:
+        </p>
+        <pre><code class="language-js">import { describe, expect, it, vi } from 'vitest';
+import { sendWelcome } from './signup.js';
+import { sendMail } from './mailer.js';
+
+vi.mock('./mailer.js', () => ({ sendMail: vi.fn() }));
+
+it('sends a welcome mail', async () => {
+  await sendWelcome('ann@example.com');
+  expect(sendMail).toHaveBeenCalledWith('ann@example.com', 'Welcome!');
+});</code></pre>
+        <ul>
+          <li><strong>Keep part of the module:</strong> the factory gets <code>importOriginal</code> in ES modules; <code>jest.requireActual(path)</code> works anywhere.</li>
+          <li><strong>Values for the factory:</strong> <code>vi.hoisted(() =&gt; ...)</code> runs before the mocks, so its values can be used in factories.</li>
+          <li><strong>No factory:</strong> @xufa/test uses the file in a <code>__mocks__</code> folder next to the module (or at the root of the project, for packages), or mocks every function of the real module (automock).</li>
+          <li><strong>Modules that do not exist:</strong> <code>jest.mock('virtual', factory, { virtual: true })</code>.</li>
+          <li><strong>Not hoisted:</strong> <code>vi.doMock</code> and <code>vi.doUnmock</code> apply from where they are called.</li>
+        </ul>
+        <pre><code class="language-js">const { spy } = vi.hoisted(() =&gt; ({ spy: vi.fn() }));
+
+vi.mock('./dep.js', async (importOriginal) =&gt; ({
+  ...(await importOriginal()),
+  save: spy,
+}));</code></pre>
+        <p>Mocks are forgotten when the file ends: other files get the real modules.</p>
+
+        <h2 id="timers">Fake timers</h2>
+        <p>
+          <code>vi.useFakeTimers()</code> replaces <code>setTimeout</code>, <code>setInterval</code>,
+          <code>setImmediate</code>, <code>Date</code> and <code>performance.now</code> by a clock that only moves when the
+          test moves it:
+        </p>
+        <pre><code class="language-js">beforeEach(() => vi.useFakeTimers());
+afterEach(() => vi.useRealTimers());
+
+test('retries after a second', () => {
+  const retry = vi.fn();
+  scheduleRetry(retry);
+  vi.advanceTimersByTime(999);
+  expect(retry).not.toHaveBeenCalled();
+  vi.advanceTimersByTime(1);
+  expect(retry).toHaveBeenCalled();
+});
+
+test('uses today', () => {
+  vi.setSystemTime(new Date('2030-01-01'));
+  expect(today()).toBe('2030-01-01');
+});</code></pre>
+        <p>
+          The <code>Async</code> variants (<code>advanceTimersByTimeAsync</code>, <code>runAllTimersAsync</code>...) let
+          pending promises settle between one timer and the next. @xufa/test's own timeouts always use the real clock.
+        </p>
+
+        <h2 id="snapshots">Snapshots</h2>
+        <p>
+          <code>toMatchSnapshot()</code> saves a value the first time, in <code>__snapshots__/&lt;file&gt;.snap</code>, and
+          compares it with the saved one after. <code>toMatchInlineSnapshot()</code> writes it into the test itself:
+        </p>
+        <pre><code class="language-js">test('renders the invoice', () => {
+  expect(render(invoice)).toMatchSnapshot();
+  expect(total(invoice)).toMatchInlineSnapshot(`42`);
+});
+
+test('ids change, their type does not', () => {
+  expect(createUser()).toMatchSnapshot({ id: expect.any(String) });
+});</code></pre>
+        <p>
+          When a value changes on purpose, <code>xufa-test -u</code> updates the snapshots, and removes the ones no test uses when every test of the file ran.
+          On CI (<code>CI</code> set, or <code>--ci</code>) new snapshots are not written: a missing snapshot fails.
+          The <code>.snap</code> files of Jest and Vitest are read and written in their own format, so existing
+          snapshots keep matching.
+        </p>
+
+        <h2 id="coverage">Coverage</h2>
+        <p>
+          <code>xufa-test --coverage</code> reports which lines, functions and branches of your code the tests ran. V8 counts
+          them as the code runs; nothing is instrumented, so the tests run nearly as fast as without coverage.
+        </p>
+        <pre><code class="language-bash">npx xufa-test --coverage</code></pre>
+        <div class="terminal">
+          <div class="terminal-bar"><span></span><span></span><span></span></div>
+          <pre><code class="nohighlight">----------------|---------|----------|---------|---------|-------------------
+File            | % Stmts | % Branch | % Funcs | % Lines | Uncovered Line #s
+----------------|---------|----------|---------|---------|-------------------
+All files       |   <span class="t-ok">94.49</span> |    <span class="t-ok">92.41</span> |   <span class="t-ok">94.65</span> |   <span class="t-ok">94.49</span> |
+src/cart.js     |  <span class="t-ok">100.00</span> |   <span class="t-ok">100.00</span> |  <span class="t-ok">100.00</span> |  <span class="t-ok">100.00</span> |
+src/prices.js   |   <span class="t-warn">56.52</span> |    <span class="t-ok">83.72</span> |  <span class="t-ok">100.00</span> |   <span class="t-warn">56.52</span> | <span class="t-fail">15-25,28-34</span>
+----------------|---------|----------|---------|---------|-------------------</code></pre>
+        </div>
+        <p>
+          It also writes <code>coverage/lcov.info</code>, for editors and services. The report counts the project files the
+          tests load, not the tests themselves nor <code>node_modules</code>. The options:
+        </p>
+        <pre><code class="language-js">module.exports = {
+  collectCoverageFrom: ['src/**', '!src/generated/**'],
+  coverageDirectory: 'coverage',
+  coverageReporters: ['text', 'lcov'],
+  coverageThreshold: { global: { lines: 90, functions: 90 } },
+};</code></pre>
+        <p>
+          Lines are counted as Jest counts them: blank lines, comments and lines with only brackets are not lines of
+          code. Branches are the blocks V8 counts, which can differ a little from what istanbul reports.
+        </p>
+        <p>
+          With <code>collectCoverageFrom</code> (or Vitest's <code>coverage.include</code>), the report also lists the
+          files it matches that no test loaded, at zero, as Jest and Vitest do: an untested file lowers the totals
+          instead of going unnoticed. Test files and <code>.d.ts</code> files are left out. Without it, the report
+          shows the files the tests loaded.
+        </p>
+
+        <h2 id="isolation">Workers and isolation</h2>
+        <p>
+          @xufa/test runs the files in parallel, in worker threads that stay alive between files. Each file gets fresh copies
+          of your own modules (what it changes in them does not reach the next file), while <code>node_modules</code>
+          stays loaded, which is where most of the loading time is.
+        </p>
+        <ul>
+          <li>
+            <strong>How many workers:</strong> after the first run, @xufa/test knows how long each file takes. It starts the
+            slowest first, and uses just enough workers for the slowest file to be the whole run: more would only add
+            startup time and compete for the cores. <code>-w</code> sets the number.
+          </li>
+          <li>
+            <strong><code>--pool forks</code></strong> runs the files in child processes, as Jest does, for code that
+            needs a process of its own: <code>process.chdir</code>, native addons that are not thread safe.
+          </li>
+          <li>
+            <strong><code>-i</code></strong> runs everything in the main thread: the fastest for a few small files, and
+            the easiest to debug.
+          </li>
+          <li>
+            <strong><code>--no-isolate</code></strong> shares your modules between the files of a worker: faster still,
+            for suites whose files do not change shared state.
+          </li>
+        </ul>
+
+        <h3 id="between-files">What is restored between files</h3>
+        <p>
+          Jest gives every test file a process of its own (with its own global object), and Vitest a worker. @xufa/test runs
+          many files in the same worker, so it puts back what a file changed before the next one starts:
+        </p>
+        <ul>
+          <li><strong><code>process.env</code>:</strong> the variables a file sets, changes or deletes are as they were.</li>
+          <li>
+            <strong>Globals:</strong> what a file adds to the global object is removed, even when it was defined as not
+            configurable (<code>Object.defineProperty(global, 'app', { get })</code>), and what it replaced comes back.
+          </li>
+          <li>
+            <strong>Mocks and modules:</strong> spies are restored and module mocks forgotten. A file that mocked something leaves no module behind
+            that was built with the mocks: the dependencies loaded after its first mock are loaded again for the next file
+            (all of them, when it mocked a builtin such as <code>fs</code>).
+          </li>
+          <li><strong>Timers:</strong> fake timers are uninstalled, and <code>vi.stubGlobal</code> and <code>vi.stubEnv</code> undone.</li>
+        </ul>
+        <p>
+          Some things a process does are kept from ending the worker: <code>process.kill(process.pid, 'SIGTERM')</code>
+          reaches the file's <code>SIGTERM</code> listeners (it ends only that worker when there are none),
+          <code>process.send</code> exists (and does nothing), and child processes started with
+          <code>stdio: [process.stdin, process.stdout, process.stderr]</code> get what a worker thread can give them
+          instead of failing. A promise rejected without a handler that gets one later (a rejection awaited with
+          <code>.rejects</code> after advancing fake timers) is not a failure, as in Jest.
+        </p>
+
+        <h3 id="split-files">Splitting long files</h3>
+        <p>
+          A run is never shorter than its slowest file. When that file's tests do not depend on each other (each one sets
+          up what it needs), @xufa/test can run it in parts on several workers: every part loads the file, runs its hooks and
+          one test of every few, and the results come back as one file. Allow it for those files:
+        </p>
+        <pre><code class="language-js">// xufa.test.config.js
+module.exports = {
+  splitFiles: ['test/e2e/**'], // or true, for every file
+};</code></pre>
+        <p>
+          @xufa/test splits a file only when it is one of the long ones and when splitting pays: a part repeats the file's
+          setup (its <code>beforeAll</code>, the servers it starts), so files that spend most of their time in setup stay
+          whole. It also leaves cores free, as tests that start servers of their own compete for them.
+        </p>
+
+        <h2 id="ci">CI and reports</h2>
+        <p>
+          What a run leaves for CI and for coding agents: reports in files, the failures to rerun, slices of the suite
+          for parallel jobs, and exit codes that tell a broken test from a broken setup (see the
+          <a href="api.html#exit-codes">API reference</a>).
+        </p>
+
+        <h3 id="reports">Reports for CI and agents</h3>
+        <p>
+          <code>--reporter</code> takes a list (repeat it, or separate names with commas): one of <code>default</code>,
+          <code>verbose</code> or <code>json</code> prints the run, and these write it, in <code>.xufa-test/</code>:
+        </p>
+        <ul>
+          <li><code>junit</code>: <code>junit.xml</code>, which most CI systems read. A flaky test passes, with its failed
+            attempts as <code>flakyFailure</code> elements.</li>
+          <li><code>markdown</code>: <code>summary.md</code>, and a page per failed or flaky test in
+            <code>failures/</code> with the error, its source line, every attempt, the test's console output and the
+            command that reruns it. Written for people, and for coding agents fixing the failures.</li>
+          <li><code>github</code>: under GitHub Actions, an annotation on the line of each failure and the run's summary
+            on the job's page. With no reporter configured, it is on there by itself, as in vitest.</li>
+        </ul>
+        <pre><code class="language-sh">npx xufa-test --reporter default,junit,markdown</code></pre>
+        <p>
+          A run clears the reports of the one before, except with <code>--last-failed</code>, which updates them: the
+          pages of tests that pass now go, the others stay.
+        </p>
+
+        <h3 id="agents">Coding agents</h3>
+        <p>
+          The documentation ships in the package, as Markdown in <code>node_modules/@xufa/test/docs</code>, so an agent
+          reads the version it runs, offline: <code>npx xufa-test guide</code> lists the topics, <code>npx xufa-test guide
+          projects</code> prints one. <code>npx xufa-test init --agents</code> writes a skill
+          (<code>.agents/skills/xufa-test/SKILL.md</code>, linked from <code>.claude/skills/xufa-test</code> for Claude Code, and
+          named in <code>AGENTS.md</code> when there is one) that tells an agent how to run the tests, read a failure page,
+          fix what failed and write AI steps; <code>@xufa/test-mcp</code> gives MCP clients tools for the same, and live sessions: an agent opens the app as
+          the tests see it, acts on it, and asks which locator to write.
+        </p>
+
+        <h3 id="last-failed">Rerunning failures</h3>
+        <p>
+          Every run writes <code>.xufa-test/report.json</code>: every file and test with its result, and what still fails.
+          <code>--last-failed</code> runs only that: the tests that failed, and the whole of each file that did not load.
+        </p>
+        <pre><code class="language-sh">npx xufa-test                  # 3 tests fail
+npx xufa-test --last-failed    # runs those 3; fix them one by one
+npx xufa-test --last-failed    # "No failed tests to rerun"</code></pre>
+        <p>
+          A failure is forgotten only when its test runs again and passes, or no longer exists: a run that leaves it
+          out (a path, <code>-t</code>, <code>--shard</code>, <code>--bail</code>) keeps it for the next
+          <code>--last-failed</code>. With no report yet, <code>--last-failed</code> runs every test. Add
+          <code>.xufa-test/</code> to your <code>.gitignore</code>; <code>outputDir</code> moves it, and
+          <code>outputDir: false</code> writes no report.
+        </p>
+
+        <h3 id="sharding">Sharding</h3>
+        <p>
+          To spread a suite over several CI jobs, give each one a slice with <code>--shard &lt;index&gt;/&lt;total&gt;</code>,
+          spelled as in Jest and Vitest, with the index from 1:
+        </p>
+        <pre><code class="language-yaml">strategy:
+  matrix:
+    shard: [1, 2, 3, 4]
+steps:
+  - run: npx xufa-test --shard ${{ matrix.shard }}/4</code></pre>
+        <p>
+          Every job works out the slices on its own, from what all of them see alike: the paths and sizes of the test
+          files. Each file goes to the slice with the fewest bytes so far, biggest files first, so slices are close in
+          size and every file runs in exactly one of them. Durations of earlier runs would balance better, but each
+          machine has its own, and jobs that disagree would skip files. A slice with no files fails, unless
+          <code>--passWithNoTests</code> is given.
+        </p>
+
+        <h2 id="projects">Projects</h2>
+        <p>
+          A project is a part of the suite with options of its own: its files, environment, setup files, timeouts,
+          workers. One run runs them all, and reports them together, each file under its project's name.
+        </p>
+        <pre><code class="language-js">// xufa.test.config.js
+module.exports = {
+  setupFiles: ['./test/setup.js'], // every project's, unless one sets its own
+  projects: [
+    { name: 'unit', include: ['src/**/*.test.ts'], environment: 'happy-dom' },
+    {
+      name: 'api',
+      include: ['test/api/**/*.test.ts'],
+      globalSetup: './test/api/seed.ts',
+      use: { baseURL: 'http://localhost:4000' },
+      dependsOn: ['unit'],
+    },
+  ],
+};</code></pre>
+        <p>
+          A project takes the options of the top level and changes those it sets; <code>use</code> is merged. A file
+          belongs to the first project that includes it. Options of the whole run (reporters, coverage,
+          <code>--shard</code>, <code>bail</code>) stay at the top level. <code>--project api</code> runs only that
+          project (repeat it, or use commas), and a file stays in its project whichever are run.
+        </p>
+        <p>
+          Each project has its own workers, which share the machine: the top-level <code>maxWorkers</code> (the cores
+          less one) is shared out between the projects running at once, in proportion to their work, and a project's
+          own <code>maxWorkers</code> keeps it below that. A project waits for those in its <code>dependsOn</code> and
+          is skipped when one of them fails; projects that depend on nothing run together. A project left out of the
+          run (by <code>--project</code>) is not waited for.
+        </p>
+        <p>
+          The projects of a Vitest config (<code>test.projects</code>, or a <code>vitest.workspace</code> file) and of a
+          Jest config (<code>projects</code>) run as they are, without a @xufa/test config: each from its own folder, by
+          the name Vitest or Jest gives it, so <code>--project</code> takes the same names. As there, they do not take
+          the root config's options, except Vitest projects with <code>extends: true</code>; in a @xufa/test config,
+          <code>inherit: false</code> does the same.
+        </p>
+        <h3 id="global-setup">Global setup</h3>
+        <p>
+          <code>globalSetup</code> files run once, in the main process: at the top level around the whole run, in a
+          project around its files. As in Jest and Vitest, a file exports its setup function (or <code>setup</code>),
+          which may return its teardown; <code>teardown</code> exports and <code>globalTeardown</code> files run after.
+          What it hands to <code>provide(key, value)</code>, or returns as an object, the tests read with
+          <code>inject(key)</code>:
+        </p>
+        <pre><code class="language-js">// test/api/seed.ts
+export default async function setup({ provide }) {
+  const db = await startDatabase();
+  provide('databaseUrl', db.url);
+  return () => db.stop();
+}
+
+// test/api/users.test.ts
+import { inject } from '@xufa/test';
+const url = inject('databaseUrl');</code></pre>
+        <p>
+          A setup that throws is reported against its file, as a broken setup (exit code 2), and its project's tests
+          do not run.
+        </p>
+
+        <h3 id="server">A server for the tests</h3>
+        <p>
+          <code>server</code> starts a command before the tests (of the run, or of a project), waits until its
+          <code>url</code> answers, and stops it after them, with whatever it started:
+        </p>
+        <pre><code class="language-js">server: {
+  command: 'npm run start:test',
+  url: 'http://localhost:4000/health', // or port: 4000
+  timeout: 60_000, // how long it may take to answer (the default)
+  reuseExisting: !process.env.CI, // attach to one already running, locally
+  env: { DATABASE_URL: 'postgres://localhost/test' },
+},</code></pre>
+        <p>
+          It is up when it answers with a success, a redirect, or 400 to 403, as in Playwright. One that exits first, or
+          does not answer in time, fails the run as a problem of the environment (exit code 3), with what it printed.
+          Without <code>reuseExisting</code>, finding something already answering at the url is an error, so a test
+          never runs against a stale server by mistake. A test reaches it through the <code>server</code> fixture,
+          <code>{ url, name, reused }</code>, and the failure pages of a file that failed end with the last lines the
+          server printed.
+        </p>
+
+        <h2 id="api-tests">API tests</h2>
+        <p>
+          The <code>api</code> fixture is an HTTP client for the test. It sends and reads JSON, joins paths to
+          <code>use.baseURL</code> (or to the server's address, without one), and keeps the cookies the server sets for
+          the rest of the test. Tests check its responses with <code>toHaveStatus</code>, <code>toHaveHeader</code> and
+          <code>toMatchSchema</code>:
+        </p>
+        <pre><code class="language-js">// xufa.test.config.js: a project for the API, with the server it tests
+{
+  name: 'api',
+  include: ['test/api/**/*.test.ts'],
+  server: { command: 'npm run start:test', url: 'http://localhost:4000/health' },
+  use: { baseURL: 'http://localhost:4000/api' },
+}
+
+// test/api/users.test.ts
+test('creates a user', async ({ api }) => {
+  const response = await api.post('/users', { name: 'Bo', email: 'bo@example.com' });
+  expect(response).toHaveStatus(201);
+  expect(response).toHaveHeader('location', /^\/api\/users\/\d+$/);
+  expect(response.body).toMatchSchema(userSchema);
+});</code></pre>
+        <p>
+          It records every request and its response. When a test fails, its page in the <code>markdown</code> report
+          shows them, the last one first, with the server's last lines: what was sent, what came back, and what the
+          server said about it. Authorization headers and cookies are hidden there. API tests run in the
+          <code>node</code> environment, as fast as unit tests.
+        </p>
+
+        <h2 id="e2e">End-to-end tests</h2>
+        <p>
+          A project with <code>engine: 'web'</code> runs its tests in a browser, with
+          <a href="https://www.npmjs.com/package/@xufa/test-web"><code>@xufa/test-web</code></a> on Playwright. Tests
+          destructure <code>page</code> (or <code>context</code>, <code>browser</code>) and check it with assertions
+          that retry until the page agrees:
+        </p>
+        <pre><code class="language-sh">npm install --save-dev @xufa/test-web playwright
+npx playwright install chromium</code></pre>
+        <pre><code class="language-js">// xufa.test.config.js
+{ name: 'e2e', include: ['e2e/**/*.e2e.ts'], engine: 'web', dependsOn: ['api'] }
+
+// e2e/todos.e2e.ts
+test('adds a todo', async ({ page }) => {
+  await page.goto('/');
+  await page.getByRole('textbox', { name: 'New todo' }).fill('Buy milk');
+  await page.getByRole('button', { name: 'Add' }).click();
+  await expect(page.getByRole('listitem')).toHaveText('Buy milk');
+});</code></pre>
+        <p>
+          Each test gets a fresh context and page; the browser is set up once per worker. The project's
+          <code>use</code> sets <code>baseURL</code>, <code>browserName</code>, <code>viewport</code>,
+          <code>trace</code> and <code>screenshot</code>. A web project runs in child processes on half the cores,
+          retries a failing test once, and gives tests 30 seconds, unless it says otherwise.
+        </p>
+        <p>
+          When a test fails, its page in the <code>markdown</code> report shows a screenshot, the page's URL and
+          accessibility tree, its console and network, and the Playwright trace with the command that opens it, for
+          every attempt: what a person, or a coding agent, needs to see what went wrong without running it again.
+        </p>
+
+        <h2 id="ai">AI steps</h2>
+        <p>
+          <a href="https://www.npmjs.com/package/@xufa/test-ai"><code>@xufa/test-ai</code></a> checks what a rule can not
+          check easily. A project with <code>engine: 'ai'</code> gets <code>expect(value).toSatisfy(claim)</code>,
+          where a model judges a claim about a value (generated text, a summary, a translation); with
+          <code>engine: ['web', 'ai']</code>, tests also get an <code>agent</code> on their page that reaches goals
+          stated in words, judges claims about the page and reads values off it:
+        </p>
+        <pre><code class="language-sh">npm install --save-dev @xufa/test-ai</code></pre>
+        <pre><code class="language-js">test('the summary mentions the refund', async () => {
+  await expect(await summarize(order)).toSatisfy('mentions the refund of 12 EUR');
+});
+
+test('a member upgrades to Pro', async ({ page, agent }) => {
+  await page.goto('/settings/billing');
+  await agent.act('upgrade the workspace to the Pro plan');
+  await agent.assert('the page says the workspace is on the Pro plan');
+  expect(await agent.extract('the monthly price, in euros', { type: 'number' })).toBe(20);
+});</code></pre>
+        <p>
+          A step calls the model once. Its result is recorded in <code>xufa-test.ai-cache/</code>, one file per test, under
+          a hash of the step, its input (the value, or the page's accessibility tree), the model and the prompts, and
+          later runs reuse it until that input changes. Commit the directory: CI replays the recordings with no
+          credentials and no model calls, and a diff shows a reviewer when a verdict or an agent's actions changed. An <code>act</code> is recorded only when a later check in the test passes (an assertion on the page, or
+          <code>agent.assert</code>), with what it changed on the page. A replay checks the page ends the same way; when an
+          action no longer finds its target, or the page ends another way, the model takes over and records the step
+          again.
+        </p>
+        <p>
+          <code>--ai replay</code> (the default under <code>CI</code>) uses recordings only and fails a step that has
+          none; <code>--ai record</code> (the default elsewhere) asks the model for what is missing; <code>--ai
+          live</code> asks it every time; <code>--ai off</code> skips the tests with AI steps. The model is Claude
+          (<code>ANTHROPIC_API_KEY</code>), set in <code>use.ai</code> with the effort, a budget of calls and tokens
+          for the run (past it the run ends with exit code 3) and a provider of your own. A failed step's page shows
+          the verdict and its reasoning, or the actions taken, and the last turns with the model.
+        </p>
+        <p>
+          A password or a key goes to an agent as a <code>secret('ADMIN_PASSWORD')</code> in the step's
+          <code>params</code>: the model sees <code>&lt;secret:ADMIN_PASSWORD&gt;</code> and asks the runner to type it,
+          the value is hidden from everything the run reports and records, and the attempt keeps no screenshot or trace
+          once it was typed.
+        </p>
+
+        <p>
+          <code>npx xufa-test explore 'Check that adding todos keeps the count right'</code> runs an exploration with no test
+          file: a planner picks the steps, the agent carries them out, and a reviewer reports what is wrong, each finding
+          with its severity, what was expected and observed, the steps to reproduce it and a screenshot, in
+          <code>.xufa-test/explore.md</code>. It exits 1 when it found an issue.
+        </p>
+
+        <h2 id="browser-mode">Browser mode</h2>
+        <p>
+          With Vitest's <code>browser.enabled</code>, a project's test files run in a real browser page, as under
+          <code>vitest</code>: real layout, real events, the browser's own APIs. @xufa/test does it with
+          <code>@xufa/test-web</code> on Playwright or WebdriverIO, and with the esbuild your Vite project has: each test
+          file is bundled, its packages with it, and run in a page of its own, several at once.
+        </p>
+        <pre><code class="language-sh">npm install --save-dev @xufa/test-web playwright
+npx playwright install chromium</code></pre>
+        <pre><code class="language-js">// vitest.config.ts
+export default {
+  test: { browser: { enabled: true, provider: 'playwright', instances: [{ browser: 'chromium' }] } },
+};
+
+// Counter.test.jsx
+import { render } from '@testing-library/react';
+import { page, userEvent } from 'vitest/browser';
+
+test('counts clicks', async () => {
+  render(&lt;Counter /&gt;);
+  await userEvent.click(page.getByRole('button', { name: 'Increment' }));
+  await expect.element(page.getByRole('status')).toHaveTextContent('Count: 1');
+});</code></pre>
+        <p>
+          <code>vitest/browser</code> (or <code>@vitest/browser/context</code>) gives <code>page</code>
+          (<code>getByRole</code>, <code>getByText</code>, <code>getByLabelText</code>, <code>getByPlaceholder</code>,
+          <code>getByAltText</code>, <code>getByTitle</code>, <code>getByTestId</code>, <code>viewport</code>,
+          <code>screenshot</code>) and <code>userEvent</code> (<code>click</code>, <code>dblClick</code>,
+          <code>fill</code>, <code>type</code>, <code>clear</code>, <code>hover</code>, <code>selectOptions</code>,
+          <code>keyboard</code>, <code>tab</code>), whose actions the provider performs. <code>expect.element()</code> retries
+          for a second, and jest-dom's matchers are there (<code>toBeVisible</code>, <code>toHaveTextContent</code>,
+          <code>toHaveValue</code>...). <code>vi.mock</code> works with a factory (async, with
+          <code>importOriginal</code>) or without one. Snapshots work as in Node: <code>toMatchSnapshot</code> and
+          <code>toMatchInlineSnapshot</code>, with <code>-u</code>, elements printed as Vitest prints them. Stylesheets
+          are added to the page, images are data URLs, and failures and console output point at your files.
+        </p>
+        <p>
+          <code>--coverage</code> works in Chromium, from its V8 coverage, as in Node: the same lines, functions and
+          branches.
+        </p>
+        <p>
+          With WebdriverIO (<code>provider: 'webdriverio'</code>, or vitest 4's <code>webdriverio()</code> from
+          <code>@vitest/browser-webdriverio</code>, which @xufa/test reads without it installed), tests run in
+          <code>chrome</code>, <code>firefox</code>, <code>edge</code> or <code>safari</code> through WebDriver, each
+          worker a session whose files run one after the other, their storage and cookies cleared between them. The
+          factory's options, <code>capabilities</code> included, go to WebdriverIO's <code>remote()</code>. Locators
+          find their element in the page, which WebdriverIO then acts on. Coverage is Chromium's on Playwright only.
+        </p>
+        <p>
+          Safari, through <code>safaridriver</code>: run <code>sudo safaridriver --enable</code> once, and turn on
+          Safari's Develop → Allow Remote Automation. It runs with a window (it has no headless mode), one session, so
+          its files run one after the other. What Safari's WebDriver does not do: <code>dblclick</code> events (a
+          double click is two clicks), and full-page screenshots. On macOS, Tab skips buttons and links unless the
+          system's keyboard navigation is on.
+        </p>
+        <pre><code class="language-sh">npm install --save-dev @xufa/test-web webdriverio</code></pre>
+        <pre><code class="language-js">// vitest.config.ts
+import { webdriverio } from '@vitest/browser-webdriverio';
+
+export default {
+  test: { browser: { enabled: true, provider: webdriverio(), instances: [{ browser: 'chrome' }] } },
+};</code></pre>
+
+        <h2 id="typescript">TypeScript and ES modules</h2>
+        <p>
+          @xufa/test loads files with Node.js, so what Node.js runs, @xufa/test runs: CommonJS, ES modules (<code>.mjs</code>, or
+          <code>"type": "module"</code>), and TypeScript (<code>.ts</code>, <code>.mts</code>, <code>.cts</code>) through
+          the type stripping of Node.js 22.18 and later. There is no build step, and errors point at your lines.
+        </p>
+        <p>
+          What Node.js can not run is compiled with what your project already has: JSX, and TypeScript-only syntax
+          (<code>enum</code>, parameter properties, decorators), go through its esbuild, sucrase or TypeScript, and
+          decorator metadata (<code>emitDecoratorMetadata</code> in <code>tsconfig.json</code>) through its TypeScript. A
+          Jest <code>transform</code> in your config compiles the files it matches instead. The output is kept in
+          <code>node_modules/.cache/xufa-test</code>.
+        </p>
+        <div class="callout">
+          <p>
+            In compiled files, stack traces and code frames show the lines of your source: @xufa/test reads the source map
+            the compiler leaves (esbuild, TypeScript, or your Jest <code>transform</code>) when it reports an error.
+            Without a transformer installed, type stripping removes types but does not compile
+            <code>enum</code>, parameter properties or decorators.
+          </p>
+        </div>
+
+        <h2 id="imports">What files can import</h2>
+        <p>
+          Code written for a bundler (Vite, webpack) imports things Node.js refuses. @xufa/test accepts them as Vitest and Jest
+          do, so the tests run without changing the code:
+        </p>
+        <ul>
+          <li>
+            <strong>JSON.</strong> <code>import data from './data.json'</code> works without
+            <code>with { type: 'json' }</code>: the default export is the parsed file. <code>require('./data.json')</code>
+            returns the data, as in Node.js. Its top-level keys can be imported by name, as Vite allows:
+            <code>import { version } from './package.json'</code>.
+          </li>
+          <li>
+            <strong><code>import.meta.env</code>.</strong> As in Vitest, it reads <code>process.env</code> (so
+            <code>vi.stubEnv</code> changes both), over Vite's values (<code>MODE</code> is <code>'test'</code>,
+            <code>DEV</code> true, <code>PROD</code> false, <code>SSR</code> true but in a document environment,
+            <code>BASE_URL</code> <code>'/'</code>) and the <code>VITE_</code> variables of the project's
+            <code>.env</code>, <code>.env.local</code>, <code>.env.test</code> and <code>.env.test.local</code>
+            (Vite's <code>envDir</code> and <code>envPrefix</code> change where from and which). Those stay out of
+            <code>process.env</code>.
+          </li>
+          <li>
+            <strong>Stylesheets</strong> (<code>.css</code>, <code>.scss</code>, <code>.sass</code>, <code>.less</code>,
+            <code>.styl</code>, <code>.pcss</code>) are not read. Their default export answers every class name with the
+            name itself, as a CSS module would: <code>styles.button</code> is <code>'button'</code>.
+          </li>
+          <li>
+            <strong>Images, fonts and media</strong> (<code>.svg</code>, <code>.png</code>, <code>.jpg</code>,
+            <code>.gif</code>, <code>.webp</code>, <code>.woff2</code>, <code>.mp4</code>, <code>.pdf</code>,
+            <code>.txt</code>, <code>.md</code>...) export their path as the default, as a bundler exports their URL.
+          </li>
+          <li>
+            <strong><code>import.meta.glob</code></strong>, Vite's: <code>import.meta.glob('./pages/*.ts')</code> becomes an
+            object with a function per matching file that imports it. <code>{ eager: true }</code> gives the modules
+            themselves, <code>{ import: 'default' }</code> one export of each, and <code>{ query: '?raw' }</code> their
+            text. An array of patterns takes the files of all of them; <code>!</code> exclusions are not supported yet.
+          </li>
+          <li>
+            <strong>Imports without an extension</strong> (<code>'./utils'</code>), and of a folder's
+            <code>index</code> file, try the extensions of <code>moduleFileExtensions</code>, in ES modules too.
+          </li>
+          <li>
+            <strong><code>'./file.js'</code> naming a TypeScript file.</strong> When there is no <code>file.js</code>,
+            @xufa/test loads <code>file.ts</code> (or <code>.tsx</code>; <code>.mjs</code> gives <code>.mts</code> and
+            <code>.cjs</code> <code>.cts</code>), as TypeScript's <code>nodenext</code> resolution expects.
+          </li>
+          <li>
+            <strong>Aliases:</strong> Jest's <code>moduleNameMapper</code>, Vite's <code>resolve.alias</code> (or
+            @xufa/test's <code>alias</code>), and the <code>imports</code> of <code>package.json</code>, which Node.js
+            resolves.
+          </li>
+          <li>
+            <strong>Named imports from CommonJS packages.</strong> <code>import { join } from 'lodash'</code> gets every
+            export of the package, even those Node.js can not detect in its source.
+          </li>
+          <li>
+            <strong><code>__dirname</code>, <code>__filename</code> and <code>require</code></strong> in the ES modules
+            @xufa/test compiles (TypeScript with a transformer installed, JSX, files with <code>import.meta.glob</code>), as
+            Vitest gives them. In ES modules that Node.js runs as they are, use <code>import.meta.dirname</code> and
+            <code>import.meta.filename</code>.
+          </li>
+          <li>
+            <strong>Type-only imports.</strong> An import of a name that is only an interface or a type is dropped, as
+            TypeScript drops it, even without <code>import type</code>. Node.js's type stripping alone would keep it and
+            fail with "does not provide an export named".
+          </li>
+          <li>
+            <strong>Yarn Plug'n'Play.</strong> Projects without <code>node_modules</code> run with Yarn's loader:
+            <code>yarn xufa-test</code>.
+          </li>
+        </ul>
+        <p>
+          Packages in <code>node_modules</code> are loaded by Node.js as they are: @xufa/test does not compile them, unless a
+          Jest <code>transform</code> and its <code>transformIgnorePatterns</code> say so.
+        </p>
+
+        <h2 id="speed">Why it is fast</h2>
+        <p>Measured on real suites, most of a test run is not the tests. @xufa/test removes what it can of the rest:</p>
+        <ul>
+          <li><strong>No transform pipeline.</strong> Files are loaded by Node.js as they are, instead of going through Babel or Vite first.</li>
+          <li><strong>Warm workers.</strong> Dependencies are loaded once per worker, not once per file.</li>
+          <li><strong>Caches between runs</strong>, in <code>node_modules/.cache/xufa-test</code>: the duration of every file, where <code>require()</code> found each dependency (resolving a large dependency tree probes the file system thousands of times), and what was compiled (TypeScript, JSX, your Jest <code>transform</code>). V8's own code cache is off unless <code>compileCache: true</code>: it grew without being read back.</li>
+          <li><strong>The slowest file first</strong>, on just enough workers.</li>
+          <li><strong>Assertions that cost nothing when they pass.</strong> Messages, diffs and code frames are only built for failures.</li>
+        </ul>
+        <p>The <a href="benchmarks.html">benchmarks</a> show where the time goes, runner by runner.</p>
+
+        <h2 id="faq">FAQ</h2>
+        <h3>Do I have to change my tests?</h3>
+        <p>
+          Usually not. @xufa/test runs Jest and Vitest tests as they are, including their imports and your Jest
+          configuration. <a href="migrating.html">Migrating</a> lists the few differences.
+        </p>
+        <h3>My tests call <code>process.send</code>.</h3>
+        <p>
+          Jest runs tests in child processes, where <code>process.send</code> exists. In @xufa/test's worker threads it is
+          there too, and does nothing; with <code>--pool forks</code> it is the real one.
+        </p>
+        <h3>What is not supported yet?</h3>
+        <p>
+          In browser mode: coverage outside Chromium on Playwright.
+          <a href="migrating.html#missing">Migrating</a> has the whole list.
+        </p>
+        <h3>My tests expect <code>NODE_ENV=test</code>.</h3>
+        <p>
+          Jest and Vitest set it when it is not set; @xufa/test leaves the environment as it is, as some applications do much
+          more work under <code>test</code>. Set it for the run (<code>NODE_ENV=test npx xufa-test</code>), or in
+          <code>xufa.test.config.js</code>: <code>env: { NODE_ENV: 'test' }</code>.
+        </p>
+        <h3>Where is the cache, and can I delete it?</h3>
+        <p>
+          In <code>node_modules/.cache/xufa-test</code>. Deleting it is always safe: the next run is slower while it fills
+          it again. It is rebuilt by itself when your dependencies change.
+        </p>
+      </article>
+    </div>
+
+    <footer class="footer">
+      <div class="container">
+        <span>xufa is MIT licensed. &copy; Jes&uacute;s Seijas</span>
+        <span>
+          <a href="../guide.html">Guide</a> &middot; <a href="../playground.html">Playground</a> &middot; <a href="../http/index.html">HTTP</a> &middot; <a href="../orm/index.html">ORM</a> &middot; <a href="../auth/index.html">Auth</a> &middot;
+          <a href="../sequelize/index.html">Sequelize</a> &middot; <a href="../packages.html">Packages</a> &middot;
+          <a href="../benchmarks.html">Benchmarks</a> &middot; <a href="https://github.com/xufajs/xufa">GitHub</a>
+        </span>
+      </div>
+    </footer>
+  </body>
+</html>

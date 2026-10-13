@@ -107,7 +107,26 @@ with no dependencies outside xufa, and every library fastify depends on is repla
 Validation uses [`@xufa/schema`](packages/schema) instead of ajv, a dependency of
 `@xufa/http` (loaded when a route first has a schema).
 
+### Testing
+
+| Package                               | Replaces             | What it is                                                                          |
+| ------------------------------------- | -------------------- | ----------------------------------------------------------------------------------- |
+| [`@xufa/test`](packages/test)         | `jest`, `vitest`     | A test runner with their API: their suites run as they are, several times faster    |
+| [`@xufa/test-web`](packages/test-web) | Playwright Test      | End-to-end tests in a browser, on Playwright                                        |
+| [`@xufa/browser`](packages/browser)   | `playwright-core`    | Chrome and Edge through the DevTools Protocol, with Playwright's API for pages      |
+| [`@xufa/bundle`](packages/bundle)     | `esbuild`            | Modules, JSX and TypeScript as one script for browsers, tree-shaken and minified    |
+| [`@xufa/lint`](packages/lint)         | `eslint`, `prettier` | ESLint's recommended rules and prettier's formatter, ported, on TypeScript's parser |
+| [`@xufa/test-ai`](packages/test-ai)   |                      | AI steps: an agent that drives pages, and `toSatisfy(claim)`, replayed in CI        |
+| [`@xufa/test-mcp`](packages/test-mcp) |                      | An MCP server: coding agents run the tests and read what failed                     |
+
+`xufa new` makes apps that depend on `@xufa/test`, and `xufa test` runs their tests with it (an app without it: with
+`node --test`). Every package of this repository is tested with it too.
+
 ## Examples
+
+- [`examples/test-todo-app`](examples/test-todo-app): a small todo app tested by one `xufa.test.config.js`: unit, API,
+  end-to-end and AI tests. [`examples/test-agent-benchmark`](examples/test-agent-benchmark): pages that are hard to
+  automate, for measuring the agent of `@xufa/test-ai`.
 
 - [`examples/locallibrary`](examples/locallibrary): the LocalLibrary of the MDN Django tutorial, ported to xufa
   (models, pages and forms, logins, permissions, password resets by email, the admin, migrations, seeds and tests),
@@ -137,8 +156,8 @@ numbers: they depend on the machine, so run them on yours.
 
 ```sh
 pnpm install
-pnpm test          # the tests of every package (vyntra)
-pnpm test:types    # the TypeScript declarations (tstyche, tsd, tsc)
+pnpm test          # the tests of every package (@xufa/test)
+pnpm test:types    # the TypeScript declarations (xufa-test --typecheck, and tsc)
 pnpm lint
 pnpm bench         # HTTP benchmark of xufa, fastify and node:http (see bench/README.md)
 ```
@@ -159,9 +178,9 @@ The tests of the databases run against local servers, and are skipped when they 
 
 The tests of fastify and of the libraries it uses are ported, not rewritten:
 
-- [`tools/node-test-to-vyntra`](tools/node-test-to-vyntra) converts their `node:test` suites to
-  [vyntra](https://www.npmjs.com/package/vyntra), and `port-fastify.js` renames what fastify calls itself
-  (`node tools/node-test-to-vyntra/port-fastify.js ../fastify/test packages/http/test`). The port follows fastify's
+- [`tools/node-test-to-xufa-test`](tools/node-test-to-xufa-test) converts their `node:test` suites to
+  [@xufa/test](packages/test), and `port-fastify.js` renames what fastify calls itself
+  (`node tools/node-test-to-xufa-test/port-fastify.js ../fastify/test packages/http/test`). The port follows fastify's
   main branch (6.0.0-alpha.4, commit 19d5be0d); tests of ajv-only features are marked skipped.
 - [`tools/port-types`](tools/port-types) ports the TypeScript declarations and their type tests the same way
   (`node tools/port-types/port.js`).

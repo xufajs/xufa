@@ -3,7 +3,7 @@
 
 
 // The library with some of the modules it imports replaced (its modules are ES modules: proxyquire, which replaced
-// the requires of CommonJS, cannot reach them; vyntra's doMock and a fresh import can).
+// the requires of CommonJS, cannot reach them; @xufa/test's doMock and a fresh import can).
 async function xufaWith (mocks) {
   vi.resetModules()
   for (const [name, factory] of Object.entries(mocks)) vi.doMock(name, factory)

@@ -3,6 +3,54 @@
 
 const GROUPS = [
   [
+    'Testing',
+    'testing',
+    [
+      [
+        'test.html',
+        '@xufa/test',
+        'Jest, Vitest',
+        'A test runner with the API of Jest and Vitest: their suites run as they are, several times faster, with no dependencies.',
+      ],
+      [
+        'test-guide.html#e2e',
+        '@xufa/test-web',
+        'Playwright Test',
+        'End-to-end tests in a browser on Playwright: fixtures, web-first assertions and failure pages that show what the page did.',
+      ],
+      [
+        'browser.html',
+        '@xufa/browser',
+        'playwright-core',
+        'Chrome and Edge driven by the DevTools Protocol, with the API of Playwright for pages, locators, the keyboard and the mouse.',
+      ],
+      [
+        'bundle.html',
+        '@xufa/bundle',
+        'esbuild',
+        'ES modules, JSX, TypeScript and CommonJS packages as one script for browsers, with tree shaking, minifying and their stylesheets.',
+      ],
+      [
+        'lint.html',
+        '@xufa/lint',
+        'ESLint, prettier',
+        "ESLint's recommended rules and prettier's formatter, ported, on TypeScript's parser: the same problems as ESLint, the same output as prettier.",
+      ],
+      [
+        'test-guide.html#ai',
+        '@xufa/test-ai',
+        '',
+        'AI steps: an agent that drives a page toward a goal, and toSatisfy(claim), replayed from a cache so CI makes no model calls.',
+      ],
+      [
+        'test-guide.html#agents',
+        '@xufa/test-mcp',
+        '',
+        'An MCP server: coding agents run the tests, read what failed and why, and try locators on pages.',
+      ],
+    ],
+  ],
+  [
     'The framework',
     'framework',
     [
@@ -120,6 +168,12 @@ const GROUPS = [
         '@xufa/template',
         'Handlebars, Mustache',
         'Templates with expressions, partials, layouts and streaming, and reply.view() for @xufa/http.',
+      ],
+      [
+        'rules.html',
+        '@xufa/rules',
+        'OpenL Tablets, Drools decision tables',
+        'Business rules in Excel workbooks: decision tables, calculations in steps and their tests, run as functions; kept in versions and edited in the admin.',
       ],
     ],
   ],

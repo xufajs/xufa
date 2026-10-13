@@ -1,0 +1,15 @@
+{
+  "name": "xufa-test-example-todo-app",
+  "private": true,
+  "description": "A small todo app tested by one @xufa/test config: unit, API, end-to-end and AI tests.",
+  "scripts": {
+    "start": "node server.js",
+    "test": "xufa-test"
+  },
+  "devDependencies": {
+    "@xufa/test-ai": "workspace:*",
+    "@xufa/test-web": "workspace:*",
+    "playwright": "1.63.0",
+    "@xufa/test": "workspace:*"
+  }
+}

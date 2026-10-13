@@ -1,20 +1,20 @@
 // Ported from light-my-request (types/index.test-d.ts, MIT License) by tools/port-types/port.js: do not edit, change the tool.
 import * as http from 'node:http'
 import { inject, isInjection, Response, DispatchFunc, InjectOptions, Chain } from '../..'
-import { expectType, expectAssignable, expectNotAssignable } from 'tsd'
+import { assertType, expectTypeOf } from '@xufa/test';
 import { Readable } from 'node:stream'
 
-expectAssignable<InjectOptions>({ url: '/' })
-expectAssignable<InjectOptions>({ autoStart: true })
-expectAssignable<InjectOptions>({ autoStart: false })
-expectAssignable<InjectOptions>({ validate: true })
-expectAssignable<InjectOptions>({ validate: false })
+assertType<InjectOptions>({ url: '/' });
+assertType<InjectOptions>({ autoStart: true });
+assertType<InjectOptions>({ autoStart: false });
+assertType<InjectOptions>({ validate: true });
+assertType<InjectOptions>({ validate: false });
 
 const dispatch: http.RequestListener = function (req, res) {
-  expectAssignable<http.IncomingMessage>(req)
-  expectAssignable<http.ServerResponse>(res)
-  expectType<boolean>(isInjection(req))
-  expectType<boolean>(isInjection(res))
+  assertType<http.IncomingMessage>(req);
+  assertType<http.ServerResponse>(res);
+  expectTypeOf(isInjection(req)).toEqualTypeOf<boolean>();
+  expectTypeOf(isInjection(res)).toEqualTypeOf<boolean>();
 
   const reply = 'Hello World'
   res.writeHead(200, { 'Content-Type': 'text/plain', 'Content-Length': reply.length })
@@ -25,31 +25,31 @@ const expectResponse = function (res: Response | undefined) {
   if (!res) {
     return
   }
-  expectType<Response>(res)
+  expectTypeOf(res).toEqualTypeOf<Response>();
   console.log(res.payload)
-  expectAssignable<Function>(res.json)
-  expectAssignable<Function>(res.stream)
-  expectAssignable<http.ServerResponse>(res.raw.res)
-  expectAssignable<http.IncomingMessage>(res.raw.req)
-  expectType<Readable>(res.stream())
-  expectType<string>(res.payload)
-  expectType<string>(res.body)
-  expectAssignable<Array<any>>(res.cookies)
+  assertType<Function>(res.json);
+  assertType<Function>(res.stream);
+  assertType<http.ServerResponse>(res.raw.res);
+  assertType<http.IncomingMessage>(res.raw.req);
+  expectTypeOf(res.stream()).toEqualTypeOf<Readable>();
+  expectTypeOf(res.payload).toEqualTypeOf<string>();
+  expectTypeOf(res.body).toEqualTypeOf<string>();
+  assertType<Array<any>>(res.cookies);
   const cookie = res.cookies[0]
-  expectType<string>(cookie.name)
-  expectType<string>(cookie.value)
-  expectType<Date | undefined>(cookie.expires)
-  expectType<number | undefined>(cookie.maxAge)
-  expectType<boolean | undefined>(cookie.httpOnly)
-  expectType<boolean | undefined>(cookie.secure)
-  expectType<string | undefined>(cookie.sameSite)
-  expectType<unknown | undefined>(cookie.additional)
+  expectTypeOf(cookie.name).toEqualTypeOf<string>();
+  expectTypeOf(cookie.value).toEqualTypeOf<string>();
+  expectTypeOf(cookie.expires).toEqualTypeOf<Date | undefined>();
+  expectTypeOf(cookie.maxAge).toEqualTypeOf<number | undefined>();
+  expectTypeOf(cookie.httpOnly).toEqualTypeOf<boolean | undefined>();
+  expectTypeOf(cookie.secure).toEqualTypeOf<boolean | undefined>();
+  expectTypeOf(cookie.sameSite).toEqualTypeOf<string | undefined>();
+  expectTypeOf(cookie.additional).toEqualTypeOf<unknown | undefined>();
 }
 
-expectType<DispatchFunc>(dispatch)
+expectTypeOf(dispatch).toEqualTypeOf<DispatchFunc>();
 
 inject(dispatch, { method: 'get', url: '/' }, (err, res) => {
-  expectType<Error | undefined>(err)
+  expectTypeOf(err).toEqualTypeOf<Error | undefined>();
   expectResponse(res)
 })
 
@@ -63,76 +63,75 @@ const url = {
   }
 }
 inject(dispatch, { method: 'get', url }, (err, res) => {
-  expectType<Error | undefined>(err)
+  expectTypeOf(err).toEqualTypeOf<Error | undefined>();
   expectResponse(res)
 })
 
 inject(dispatch, { method: 'get', url: '/', cookies: { name1: 'value1', value2: 'value2' } }, (err, res) => {
-  expectType<Error | undefined>(err)
+  expectTypeOf(err).toEqualTypeOf<Error | undefined>();
   expectResponse(res)
 })
 
 inject(dispatch, { method: 'get', url: '/', query: { name1: 'value1', value2: 'value2' } }, (err, res) => {
-  expectType<Error | undefined>(err)
+  expectTypeOf(err).toEqualTypeOf<Error | undefined>();
   expectResponse(res)
 })
 
 inject(dispatch, { method: 'get', url: '/', query: { name1: ['value1', 'value2'] } }, (err, res) => {
-  expectType<Error | undefined>(err)
+  expectTypeOf(err).toEqualTypeOf<Error | undefined>();
   expectResponse(res)
 })
 
 inject(dispatch, { method: 'get', url: '/', query: 'name1=value1' }, (err, res) => {
-  expectType<Error | undefined>(err)
+  expectTypeOf(err).toEqualTypeOf<Error | undefined>();
   expectResponse(res)
 })
 
 inject(dispatch, { method: 'post', url: '/', payload: { name1: 'value1', value2: 'value2' } }, (err, res) => {
-  expectType<Error | undefined>(err)
+  expectTypeOf(err).toEqualTypeOf<Error | undefined>();
   expectResponse(res)
 })
 
 inject(dispatch, { method: 'post', url: '/', body: { name1: 'value1', value2: 'value2' } }, (err, res) => {
-  expectType<Error | undefined>(err)
+  expectTypeOf(err).toEqualTypeOf<Error | undefined>();
   expectResponse(res)
 })
 
-expectType<void>(
-  inject(dispatch)
+expectTypeOf(inject(dispatch)
     .get('/')
     .end((err, res) => {
-      expectType<Error | undefined>(err)
-      expectType<Response | undefined>(res)
+      expectTypeOf(err).toEqualTypeOf<Error | undefined>();
+      expectTypeOf(res).toEqualTypeOf<Response | undefined>();
       console.log(res?.payload)
-    })
-)
+    })).toEqualTypeOf<void>();
 
 inject(dispatch)
   .get('/')
   .then((value) => {
-    expectType<Response>(value)
+    expectTypeOf(value).toEqualTypeOf<Response>();
   })
 
-expectType<Chain>(inject(dispatch))
-expectType<Promise<Response>>(inject(dispatch).end())
-expectType<Chain>(inject(dispatch, { method: 'get', url: '/' }))
+expectTypeOf(inject(dispatch)).toEqualTypeOf<Chain>();
+expectTypeOf(inject(dispatch).end()).toEqualTypeOf<Promise<Response>>();
+expectTypeOf(inject(dispatch, { method: 'get', url: '/' })).toEqualTypeOf<Chain>();
 // @ts-ignore tsd supports top-level await, but normal ts does not so ignore
-expectType<Response>(await inject(dispatch, { method: 'get', url: '/' }))
+expectTypeOf(await inject(dispatch, { method: 'get', url: '/' })).toEqualTypeOf<Response>();
 
 type ParsedValue = { field: string }
 // @ts-ignore tsd supports top-level await, but normal ts does not so ignore
 const response: Response = await inject(dispatch)
 const parsedValue: ParsedValue = response.json()
-expectType<ParsedValue>(parsedValue)
+expectTypeOf(parsedValue).toEqualTypeOf<ParsedValue>();
 
 const parsedValueUsingGeneric = response.json<ParsedValue>()
-expectType<ParsedValue>(parsedValueUsingGeneric)
+expectTypeOf(parsedValueUsingGeneric).toEqualTypeOf<ParsedValue>();
 
-expectNotAssignable<http.ServerResponse>(response)
+// @ts-expect-error
+assertType<http.ServerResponse>(response);
 
 const httpDispatch = function (req: http.IncomingMessage, res: http.ServerResponse) {
-  expectType<boolean>(isInjection(req))
-  expectType<boolean>(isInjection(res))
+  expectTypeOf(isInjection(req)).toEqualTypeOf<boolean>();
+  expectTypeOf(isInjection(res)).toEqualTypeOf<boolean>();
 
   const reply = 'Hello World'
   res.writeHead(200, { 'Content-Type': 'text/plain', 'Content-Length': reply.length })
@@ -140,11 +139,11 @@ const httpDispatch = function (req: http.IncomingMessage, res: http.ServerRespon
 }
 
 inject(httpDispatch, { method: 'get', url: '/' }, (err, res) => {
-  expectType<Error | undefined>(err)
+  expectTypeOf(err).toEqualTypeOf<Error | undefined>();
   expectResponse(res)
 })
 
 inject(httpDispatch, { method: 'get', url: '/', payloadAsStream: true }, (err, res) => {
-  expectType<Error | undefined>(err)
+  expectTypeOf(err).toEqualTypeOf<Error | undefined>();
   expectResponse(res)
 })

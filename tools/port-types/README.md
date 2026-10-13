@@ -28,7 +28,11 @@ The ported files say so in their first line, and a new port overwrites them. Wri
 - `packages/http/test/types/tsconfig.json`;
 - `packages/sequelize/types/errors/not-supported-error.d.ts` and `packages/sequelize/test/types/tsconfig.json`.
 
-The ported files are formatted with prettier after a port (`npx prettier --write packages/<package>`).
+The ported files are formatted after a port (`npx xufa-format --write packages/<package>`).
 
-The type tests run with the tool each upstream package uses: tstyche (http, router, serializer), tsd (logger,
-inject, errors) and tsc (boot, sequelize). `pnpm test:types` runs them all.
+The type tests of tsd and tstyche (and expect-type's imports) become those of @xufa/test after a port:
+`tools/type-tests/convert.mjs` rewrites them (expectTypeOf, assertType, // @ts-expect-error) and
+`tools/type-tests/fix-directives.mjs` puts each // @ts-expect-error on the line of its error. They run with
+`xufa-test --typecheck.only`, and those of boot and sequelize with tsc; `pnpm test:types` runs them all. The
+ported type tests are not formatted (`format.ignores` of xufa.lint.config.js: packages/*/test/): the formatting their committed files have is not made
+again by the command above, so compare a port with what is committed before keeping it.

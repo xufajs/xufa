@@ -1,0 +1,71 @@
+{
+  "name": "@xufa/test",
+  "version": "0.1.0",
+  "description": "A very fast, zero-dependency test runner with a Jest/Vitest compatible API",
+  "type": "commonjs",
+  "main": "./src/index.js",
+  "types": "./index.d.ts",
+  "bin": {
+    "xufa-test": "./bin/xufa-test.js"
+  },
+  "exports": {
+    ".": {
+      "types": "./index.d.ts",
+      "import": "./src/index.mjs",
+      "require": "./src/index.js"
+    },
+    "./globals": {
+      "types": "./globals.d.ts"
+    },
+    "./engine": "./src/engine-api.js",
+    "./tooling": "./src/tooling.js",
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "bin",
+    "src",
+    "bench/compare.js",
+    "docs",
+    "agents",
+    "index.d.ts",
+    "globals.d.ts"
+  ],
+  "scripts": {
+    "test": "node bin/xufa-test.js",
+    "build-docs": "node scripts/build-docs.js",
+    "build-docs:check": "node scripts/build-docs.js --check"
+  },
+  "keywords": [
+    "test",
+    "testing",
+    "runner",
+    "jest",
+    "vitest",
+    "expect",
+    "fast"
+  ],
+  "author": "Jesús Seijas <jseijas@gmail.com>",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/xufajs/xufa.git",
+    "directory": "packages/test"
+  },
+  "homepage": "https://github.com/xufajs/xufa/tree/main/packages/test#readme",
+  "bugs": {
+    "url": "https://github.com/xufajs/xufa/issues"
+  },
+  "engines": {
+    "node": "^22.22.3 || ^24.15.0 || >=25.7.0"
+  },
+  "xufaTest": {
+    "exclude": [
+      "**/node_modules/**",
+      "**/.git/**",
+      "test/fixtures/**"
+    ]
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}

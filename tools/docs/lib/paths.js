@@ -30,6 +30,7 @@ const PACKAGE_PAGES = [
     'mongo',
     'expression',
     'template',
+    'rules',
     'jwt',
     'cluster',
     'scheduler',
@@ -46,6 +47,10 @@ const PACKAGE_PAGES = [
     'inject',
     'boot',
     'errors',
+    'test',
+    'browser',
+    'bundle',
+    'lint',
   ].map((name) => [name, `${name}/`]),
 ];
 
@@ -71,6 +76,10 @@ const PACKAGE_FILES = {
   'schema-playground.js': 'schema/playground.js',
   'schema-playground-examples.js': 'schema/playground-examples.js',
   'schema-infer.js': 'schema/infer.js',
+  'test-guide.html': 'test/guide.html',
+  'test-api.html': 'test/api.html',
+  'test-migrating.html': 'test/migrating.html',
+  'test-benchmarks.html': 'test/benchmarks.html',
 };
 
 // The files of the root.

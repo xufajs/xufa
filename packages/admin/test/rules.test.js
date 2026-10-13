@@ -79,9 +79,9 @@ describe('rules of objects in the admin', () => {
     const patch = (pk) =>
       app.inject({ method: 'PATCH', url: `/admin/api/Story/${pk}`, headers: WRITE, payload: { title: 'Changed' } });
     expect([(await patch(mine.pk)).statusCode, (await patch(theirs.pk)).statusCode]).toEqual([200, 404]);
-    expect((await app.inject({ method: 'DELETE', url: `/admin/api/Story/${theirs.pk}`, headers: WRITE })).statusCode).toBe(
-      404
-    );
+    expect(
+      (await app.inject({ method: 'DELETE', url: `/admin/api/Story/${theirs.pk}`, headers: WRITE })).statusCode
+    ).toBe(404);
     // An action runs on the objects selected it may change.
     const done = await app.inject({
       method: 'POST',
@@ -105,6 +105,11 @@ describe('rules of objects in the admin', () => {
     expect([refused.statusCode, refused.json().error]).toEqual([403, 'You cannot do this (Story.add)']);
     expect(await Story.objects.filter({ title: 'New' }).count()).toBe(1);
     const choices = await app.inject({ url: '/admin/api/Story/choices', headers: { 'x-user': '1:author' } });
-    expect(choices.json().map((choice) => choice.label).sort()).toEqual(['Mine', 'New']);
+    expect(
+      choices
+        .json()
+        .map((choice) => choice.label)
+        .sort()
+    ).toEqual(['Mine', 'New']);
   });
 });

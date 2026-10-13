@@ -18,8 +18,8 @@
     "index.d.cts"
   ],
   "scripts": {
-    "test": "vyntra",
-    "test:types": "tstyche"
+    "test": "xufa-test",
+    "test:types": "xufa-test --typecheck.only"
   },
   "keywords": [
     "json",
@@ -43,15 +43,15 @@
     "node": "^22.22.3 || ^24.15.0 || >=25.7.0"
   },
   "devDependencies": {
+    "@xufa/test": "workspace:^",
     "ajv": "^8.20.0",
     "is-my-json-valid": "^2.20.6",
-    "rfdc": "^1.4.1",
-    "vyntra": "^0.7.0"
+    "rfdc": "^1.4.1"
   },
   "publishConfig": {
     "access": "public"
   },
-  "vyntra": {
+  "xufaTest": {
     "pool": "forks"
   }
 }

@@ -18,8 +18,8 @@
     "index.d.cts"
   ],
   "scripts": {
-    "test": "vyntra",
-    "test:types": "tsd"
+    "test": "xufa-test",
+    "test:types": "xufa-test --typecheck.only"
   },
   "keywords": [
     "http",
@@ -43,19 +43,16 @@
     "node": "^22.22.3 || ^24.15.0 || >=25.7.0"
   },
   "devDependencies": {
+    "@xufa/test": "workspace:^",
     "end-of-stream": "^1.4.4",
     "express": "^5.1.0",
     "form-auto-content": "^3.2.1",
     "form-data": "^4.0.4",
     "formdata-node": "^6.0.3",
     "multer": "^2.0.2",
-    "undici": "^7.16.0",
-    "vyntra": "^0.7.0"
+    "undici": "^7.16.0"
   },
   "publishConfig": {
     "access": "public"
-  },
-  "tsd": {
-    "directory": "test/types"
   }
 }

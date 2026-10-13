@@ -1,5 +1,5 @@
 // Ported from sequelize (test/types/infer-attributes.ts, MIT License) by tools/port-types/port.js: do not edit, change the tool.
-import { expectTypeOf } from 'expect-type';
+import { expectTypeOf } from '@xufa/test';
 import {
   Attributes,
   CreationAttributes,

@@ -20,7 +20,7 @@ import {
   RouteGenericInterface,
 } from '@xufa/http';
 import { IncomingMessage, Server, ServerResponse } from 'node:http';
-import * as WebSocket from './index';
+import * as WebSocket from './index.cjs';
 
 interface WebsocketRouteOptions<
   RawServer extends RawServerBase = RawServerDefault,

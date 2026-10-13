@@ -1,5 +1,5 @@
 // Ported from sequelize (test/types/define.ts, MIT License) by tools/port-types/port.js: do not edit, change the tool.
-import { expectTypeOf } from 'expect-type';
+import { expectTypeOf } from '@xufa/test';
 import { BuildOptions, DataTypes, Model, Optional } from 'sequelize';
 import { sequelize } from './connection';
 

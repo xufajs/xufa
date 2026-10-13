@@ -38,9 +38,12 @@ import { createRequire } from 'node:module';
 
 const require = createRequire(import.meta.url);
 
+// Ports the packages (those whose target has the filter); gives the targets ported.
 function port(filter) {
+  const targets = new Set();
   for (const pkg of PACKAGES) {
     if (filter && !pkg.target.includes(filter)) continue;
+    targets.add(pkg.target);
     const source = upstream(pkg.upstream, pkg.dir);
     const files = typeof pkg.files === 'function' ? pkg.files(source) : pkg.files;
     for (const file of files) {
@@ -59,8 +62,25 @@ function port(filter) {
       process.stdout.write(`${pkg.upstream}/${file.from} -> packages/${pkg.target}/${file.to}\n`);
     }
   }
+  return targets;
 }
 
-port(process.argv[2]);
+const ported = port(process.argv[2]);
 // The packages are ES modules: their CommonJS declarations (export =) become .d.cts (tools/esm/declarations.mjs).
 execFileSync(process.execPath, [path.join(ROOT, 'tools/esm/declarations.mjs')], { stdio: 'inherit' });
+// Their type tests, of tsd and tstyche, become those of @xufa/test (tools/type-tests), and the // @ts-expect-error of
+// statements of several lines go to the line of their error.
+const typeTests = [...ported]
+  .map((target) => path.join(ROOT, 'packages', target, 'test', 'types'))
+  .filter(fs.existsSync);
+if (typeTests.length) {
+  execFileSync(process.execPath, [path.join(ROOT, 'tools/type-tests/convert.mjs'), ...typeTests], { stdio: 'inherit' });
+  execFileSync(
+    process.execPath,
+    [
+      path.join(ROOT, 'tools/type-tests/fix-directives.mjs'),
+      ...[...ported].map((target) => path.join(ROOT, 'packages', target)),
+    ],
+    { stdio: 'inherit' }
+  );
+}

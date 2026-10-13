@@ -18,6 +18,8 @@ import { Sessions } from './views/sessions.jsx';
 import { Account } from './views/account.jsx';
 import { StartRun } from './views/start-run.jsx';
 import { Schedules } from './views/schedules.jsx';
+import { Rules } from './views/rules.jsx';
+import { RuleBookView } from './views/rule-book.jsx';
 import { t, languages, locale, chooseLanguage } from './i18n.js';
 
 const Admin = createContext(null);
@@ -108,7 +110,7 @@ function Sidebar({ meta, route, narrow, onNarrow, onNavigate }) {
             <span className="count">{count(entry.count)}</span>
           )
         )}
-        {meta.jobs || meta.runs || meta.schedules || meta.schema ? (
+        {meta.jobs || meta.runs || meta.schedules || meta.schema || meta.rules ? (
           <div className="nav-section">{t('System')}</div>
         ) : null}
         {meta.jobs || meta.runs || meta.schedules
@@ -120,6 +122,7 @@ function Sidebar({ meta, route, narrow, onNarrow, onNavigate }) {
             )
           : null}
         {meta.schema ? item('#/_schema', <Icon name="database" />, t('Data model'), section === '_schema') : null}
+        {meta.rules ? item('#/_rules', <Icon name="edit" />, t('Rules'), section === '_rules') : null}
       </nav>
       <div className="sidebar-foot hide-sm">
         <Button
@@ -146,12 +149,14 @@ function Crumbs({ meta, route, leaf }) {
     crumbs.push(...(meta.jobs && meta.runs ? [[t('Work'), '#/_work']] : []), [t('Schedules'), '#/_schedules']);
   } else if (section === '_sessions') crumbs.push([t('Sessions'), '#/_sessions']);
   else if (section === '_schema') crumbs.push([t('Data model'), '#/_schema']);
+  else if (section === '_rules') crumbs.push([t('Rules'), '#/_rules']);
   else if (section === '_account') crumbs.push([t('Your account'), '#/_account']);
   else if (section) {
     const model = meta.models.find((entry) => entry.name === section);
     crumbs.push([model ? model.label : section, href([section])]);
   }
-  if (id !== undefined) crumbs.push([leaf || (id === 'new' ? t('New') : `#${id}`), null]);
+  // (A book of rules is its name.)
+  if (id !== undefined) crumbs.push([leaf || (id === 'new' ? t('New') : section === '_rules' ? id : `#${id}`), null]);
   const all = [[t('Dashboard'), '#/'], ...crumbs];
   return (
     <nav className="crumbs" aria-label={t('Breadcrumb')}>
@@ -442,6 +447,8 @@ function View({ route }) {
   if (section === '_runs' && meta.runs) return id ? <RunDetail key={id} id={id} /> : <Runs query={route.query} />;
   if (section === '_schedules' && meta.schedules) return <Schedules />;
   if (section === '_schema' && meta.schema) return <Schema />;
+  if (section === '_rules' && meta.rules)
+    return id ? <RuleBookView key={id} name={id} query={route.query} /> : <Rules />;
   if (section === '_sessions' && meta.sessions) return <Sessions key={route.query.user || ''} query={route.query} />;
   if (section === '_account' && meta.account) return <Account />;
   const model = meta.models.find((entry) => entry.name === section);
@@ -513,11 +520,13 @@ export function App() {
                 ? t('Sessions')
                 : section === '_schema'
                   ? t('Data model')
-                  : section === '_account'
-                    ? t('Your account')
-                    : model
-                      ? model.label
-                      : t('Dashboard'));
+                  : section === '_rules'
+                    ? t('Rules')
+                    : section === '_account'
+                      ? t('Your account')
+                      : model
+                        ? model.label
+                        : t('Dashboard'));
     document.title = `${place} · ${meta.title}`;
   }, [meta, route, leaf]);
 

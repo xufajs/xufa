@@ -190,13 +190,20 @@ function patchLogger(code) {
 
 // The type tests of transports and sonic-boom are left out.
 function patchLoggerTest(code) {
-  return code
-    .replace(/\n\s*transport: \{\n\s*target: 'pino-pretty',\n\s*options: \{\n\s*colorize: true,\n\s*\},\n\s*\},/g, '')
-    .replace("import type { SonicBoom } from 'sonic-boom'\n", '')
-    .replace('  transport,\n', '  Destination,\n')
-    .replace("expectType<SonicBoom>(destination(''))", "expectType<Destination>(destination(''))")
-    .replace('symbols.endSym', 'symbols.streamSym')
-    .replace(/\n\/\/ TODO: currently returns \(aliased\) `any`[\s\S]*$/, '\n');
+  return (
+    code
+      .replace(/\n\s*transport: \{\n\s*target: 'pino-pretty',\n\s*options: \{\n\s*colorize: true,\n\s*\},\n\s*\},/g, '')
+      .replace("import type { SonicBoom } from 'sonic-boom'\n", '')
+      .replace('  transport,\n', '  Destination,\n')
+      .replace("expectType<SonicBoom>(destination(''))", "expectType<Destination>(destination(''))")
+      .replace('symbols.endSym', 'symbols.streamSym')
+      // tsd typed [log.level] in the context of the tuple: assignable, as @xufa/test's assertType checks it.
+      .replace(
+        'expectType<Parameters<typeof log.isLevelEnabled>>([log.level])',
+        'expectAssignable<Parameters<typeof log.isLevelEnabled>>([log.level])'
+      )
+      .replace(/\n\/\/ TODO: currently returns \(aliased\) `any`[\s\S]*$/, '\n')
+  );
 }
 
 const LOGGER_TEST_RENAMES = [[/(['"])\.\.\/\.\.\/pino\1/g, "'../..'"]];
@@ -253,6 +260,10 @@ const XUFA_TEST_PATCHES = {
     ),
   'schema.tst.ts': (code) =>
     dropStatements(code, (s) => /Standalone(Validator|Serializer)|ajv-compiler\/issues\/95/.test(s)),
+  // An ES module of the tests (never run, only type-checked): the declarations by their file (test/ has a
+  // package.json of its own, so the package's name means nothing there, and a folder is no import of ES modules).
+  'dummy-plugin.mts': (code) =>
+    code.replace("import { XufaPluginAsync } from '../..'", "import type { XufaPluginAsync } from '../../index.cjs'"),
 };
 
 function xufaFiles(source) {
@@ -785,11 +796,34 @@ function patchSequelize(code, file) {
 }
 
 // The type tests of what @xufa/sequelize has not are left out of their files.
-const SEQUELIZE_TEST_PATCHES = {};
+const SEQUELIZE_TEST_PATCHES = {
+  // The arguments of hooks, and their members, writable (sequelize #12959). The deep check of the original
+  // (SemiDeepWritable) passed only because expect-type 0.12 does not tell readonly arrays from arrays deep in a type:
+  // the where clauses accept readonly arrays on purpose.
+  'test/types/hooks.ts': (code) =>
+    code
+      .replace(
+        "import { SemiDeepWritable } from './type-helpers/deep-writable';\n",
+        "import { SemiDeepWritable } from './type-helpers/deep-writable';\n\n" +
+          '// The arguments of hooks, and their members, writable (sequelize #12959): those the arguments have. (Deeper, the\n' +
+          '// where clauses accept readonly arrays on purpose: SemiDeepWritable, which makes them writable too, differs.)\n' +
+          'type WritableArgs<T extends readonly unknown[]> = {\n' +
+          '  -readonly [K in keyof T]: Writable<T[K]>;\n' +
+          '};\n' +
+          '// (Each member of a union: options of several kinds.)\n' +
+          'type Writable<U> = U extends Model | AbstractQuery | readonly unknown[] ? U : U extends unknown ? { -readonly [P in keyof U]: U[P] } : never;\n'
+      )
+      .replaceAll(
+        'expectTypeOf(args).toEqualTypeOf<SemiDeepWritable<typeof args>>();',
+        'expectTypeOf(args).toEqualTypeOf<WritableArgs<typeof args>>();'
+      ),
+};
 
+// expectTypeOf of expect-type is that of @xufa/test (the same API).
 function patchSequelizeTest(code, file) {
   const patch = SEQUELIZE_TEST_PATCHES[file];
-  return patch ? patch(code) : code;
+  const swapped = code.replace(/from 'expect-type'/g, "from '@xufa/test'");
+  return patch ? patch(swapped) : swapped;
 }
 
 // Every file under a directory of an upstream package, as { from, to } (the same relative path under `to`).

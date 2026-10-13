@@ -1,4 +1,4 @@
-import { expectType, expectError } from 'tsd';
+import { expectTypeOf } from '@xufa/test';
 import { Model, fields } from '@xufa/orm';
 import {
   Mailable,
@@ -30,14 +30,16 @@ class Welcome extends Mailable {
 }
 
 const mailer = new Mailer({ model: Email, views: 'views/mail', app: { name: 'Shop' } });
-mailer.render(new Welcome('Ada'), { to: 'ada@example.com' }).then((message) => expectType<Message>(message));
+mailer.render(new Welcome('Ada'), { to: 'ada@example.com' }).then((message) => expectTypeOf(message).toEqualTypeOf<Message>());
 mailer.send({ to: ['a@example.com', { name: 'Bo', address: 'bo@example.com' }], subject: 'Hi', text: 'Hello' });
 mailer.queue(new Welcome('Ada'), { to: 'ada@example.com', delay: '5m', priority: 2 });
 mailer
   .preview({ subject: 'x', html: '<p>y</p>', attachments: [{ path: 'invoice.pdf' }] })
-  .then((html) => expectType<string>(html));
-expectError(new Mailer({}));
-expectError(mailer.send({ to: 'a', subject: 's', layout: true }));
+  .then((html) => expectTypeOf(html).toEqualTypeOf<string>());
+// @ts-expect-error
+new Mailer({});
+// @ts-expect-error
+mailer.send({ to: 'a', subject: 's', layout: true });
 
 class Paid extends Notification {
   via() {
@@ -53,4 +55,4 @@ class NotificationRecord extends Model {
 }
 const notifier = new Notifier({ mailer, model: NotificationRecord, notifications: [Paid], channels: { sms: () => 1 } });
 notifier.notify(Notifier.route('mail', 'ops@example.com'), new Paid(), { now: true });
-expectType<Promise<number>>(notifier.markRead(new NotificationRecord()));
+expectTypeOf(notifier.markRead(new NotificationRecord())).toEqualTypeOf<Promise<number>>();

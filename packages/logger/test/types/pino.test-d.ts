@@ -2,7 +2,7 @@
 import { IncomingMessage, ServerResponse } from 'http'
 import { mock } from 'node:test'
 import { Socket } from 'net'
-import { expectError, expectType } from 'tsd'
+import { expectTypeOf } from '@xufa/test';
 import pino, { LogFn, LoggerOptions } from '../../'
 import Logger = pino.Logger
 
@@ -77,16 +77,17 @@ info('Symbol %o', Symbol('test'))
 info('String %o', 'hello')
 
 // placeholder messages type errors
-expectError(info('The answer is %d', 'not a number'))
-expectError(
-  info(
+// @ts-expect-error
+info('The answer is %d', 'not a number');
+info(
     'The answer is %d and the question is %s with %o',
+    // @ts-expect-error
     'unknown',
     { incorrect: 'order' },
     42
-  )
-)
-expectError(info('Extra message %s', 'after placeholder', 'not allowed'))
+  );
+// @ts-expect-error
+info('Extra message %s', 'after placeholder', 'not allowed');
 
 // object types with messages
 info({ obj: 42 }, 'hello world')
@@ -95,18 +96,22 @@ info({ obj: { aa: 'bbb' } }, 'another')
 info({ a: 1, b: '2' }, 'hello world with %s', 'extra data')
 
 // Extra message after placeholder
-expectError(info({ a: 1, b: '2' }, 'hello world with %d', 2, 'extra'))
+// @ts-expect-error
+info({ a: 1, b: '2' }, 'hello world with %d', 2, 'extra');
 
 // metadata with messages type passes, because of custom toString method
 // We can't detect if the object has a custom toString method that returns a string
 info({ a: 1, b: '2' }, 'hello world with %s', {})
 
 // metadata after message
-expectError(info('message', { a: 1, b: '2' }))
+// @ts-expect-error
+info('message', { a: 1, b: '2' });
 
 // multiple strings without placeholder
-expectError(info('string1', 'string2'))
-expectError(info('string1', 'string2', 'string3'))
+// @ts-expect-error
+info('string1', 'string2');
+// @ts-expect-error
+info('string1', 'string2', 'string3');
 
 setImmediate(info, 'after setImmediate')
 error(new Error('an error'))
@@ -175,11 +180,10 @@ pino({
   },
 })
 
-expectError(
-  pino({
+pino({
+    // @ts-expect-error
     redact: { paths: [], censor: (value: string) => value },
-  })
-)
+  });
 
 pino({
   depthLimit: 1,
@@ -228,7 +232,7 @@ pino({}, undefined)
 pino({ base: null })
 if ('pino' in log) console.log(`pino version: ${log.pino}`)
 
-expectType<void>(log.flush())
+expectTypeOf(log.flush()).toEqualTypeOf<void>();
 log.flush((err?: Error) => undefined)
 log.child({ a: 'property' }).info('hello child!')
 log.level = 'error'
@@ -331,11 +335,11 @@ const withNestedKey = pino({
 const withHooks = pino({
   hooks: {
     logMethod (args, method, level) {
-      expectType<pino.Logger>(this)
+      expectTypeOf(this).toEqualTypeOf<pino.Logger>();
       return method.apply(this, args)
     },
     streamWrite (s) {
-      expectType<string>(s)
+      expectTypeOf(s).toEqualTypeOf<string>();
       return s.replaceAll('secret-key', 'xxx')
     },
   },
@@ -448,7 +452,8 @@ const customBaseLogger: CustomBaseLogger = {
 
 // custom levels
 const log3 = pino({ customLevels: { myLevel: 100 } })
-expectError(log3.log())
+// @ts-expect-error
+log3.log();
 log3.level = 'myLevel'
 log3.myLevel('')
 log3.child({}).myLevel('')
@@ -471,7 +476,8 @@ cclog3.childLevel('')
 cclog3.childLevel2('')
 
 const ccclog3 = clog3.child({})
-expectError(ccclog3.nonLevel(''))
+// @ts-expect-error
+ccclog3.nonLevel('');
 
 const withChildCallback = pino({
   onChild: (child: Logger) => {},
@@ -496,21 +502,19 @@ const customLevelChildLogger = customLevelLogger.child({ name: 'child' })
 fn(customLevelChildLogger) // missing foo typing
 
 // unknown option
-expectError(
-  pino({
+pino({
+    // @ts-expect-error
     hello: 'world',
-  })
-)
+  });
 
 // unknown option
-expectError(
-  pino({
+pino({
+    // @ts-expect-error
     hello: 'world',
     customLevels: {
       log: 30,
     },
-  })
-)
+  });
 
 function dangerous () {
   throw Error('foo')
@@ -544,10 +548,10 @@ const [param1, param2, param3, param4]: LogParam = [
   'accepted',
 ]
 
-expectType<unknown>(param1)
-expectType<string>(param2)
-expectType<unknown>(param3)
-expectType<unknown>(param4)
+expectTypeOf(param1).toEqualTypeOf<unknown>();
+expectTypeOf(param2).toEqualTypeOf<string>();
+expectTypeOf(param3).toEqualTypeOf<unknown>();
+expectTypeOf(param4).toEqualTypeOf<unknown>();
 
 const logger = mock.fn<LogFn>()
 logger.mock.calls[0].arguments[1]?.includes('I should be able to get params')
@@ -570,14 +574,12 @@ const hooks: LoggerOptions['hooks'] = {
   },
 }
 
-expectType<Logger<'log'>>(
-  pino({
+expectTypeOf(pino({
     customLevels: {
       log: 5,
     },
     level: 'log',
-  })
-)
+  })).toEqualTypeOf<Logger<'log'>>();
 
 const parentLogger1 = pino(
   {
@@ -594,41 +596,46 @@ parentLogger1.onChild = (child) => {
 
 const childLogger1 = parentLogger1.child({})
 childLogger1.myLevel('')
-expectError(childLogger1.doesntExist(''))
+// @ts-expect-error
+childLogger1.doesntExist('');
 
 const parentLogger2 = pino({}, process.stdin)
-expectError(
-  (parentLogger2.onChild = (child) => {
+;(parentLogger2.onChild = (child) => {
+    // @ts-expect-error
     const b = child.doesntExist
-  })
-)
+  });
 
 const childLogger2 = parentLogger2.child({})
-expectError(childLogger2.doesntExist)
+// @ts-expect-error
+childLogger2.doesntExist;
 
-expectError(
-  pino(
+pino(
     {
       onChild: (child) => {
+        // @ts-expect-error
         const a = child.doesntExist
       },
     },
     process.stdout
-  )
-)
+  );
 
 const pinoWithoutLevelsSorting = pino({})
 const pinoWithDescSortingLevels = pino({ levelComparison: 'DESC' })
 const pinoWithAscSortingLevels = pino({ levelComparison: 'ASC' })
 const pinoWithCustomSortingLevels = pino({ levelComparison: () => false })
 // with wrong level comparison direction
-expectError(pino({ levelComparison: 'SOME' }), process.stdout)
+// @ts-expect-error
+pino({ levelComparison: 'SOME' });
 // with wrong level comparison type
-expectError(pino({ levelComparison: 123 }), process.stdout)
+// @ts-expect-error
+pino({ levelComparison: 123 });
 // with wrong custom level comparison return type
-expectError(pino({ levelComparison: () => null }), process.stdout)
-expectError(pino({ levelComparison: () => 1 }), process.stdout)
-expectError(pino({ levelComparison: () => 'string' }), process.stdout)
+// @ts-expect-error
+pino({ levelComparison: () => null });
+// @ts-expect-error
+pino({ levelComparison: () => 1 });
+// @ts-expect-error
+pino({ levelComparison: () => 'string' });
 
 const customLevelsOnlyOpts = {
   useOnlyCustomLevels: true,
@@ -647,11 +654,16 @@ loggerWithCustomLevelOnly.info('test4')
 loggerWithCustomLevelOnly.customError('test5')
 loggerWithCustomLevelOnly.customNetwork('test6')
 
-expectError(loggerWithCustomLevelOnly.fatal('test'))
-expectError(loggerWithCustomLevelOnly.error('test'))
-expectError(loggerWithCustomLevelOnly.warn('test'))
-expectError(loggerWithCustomLevelOnly.debug('test'))
-expectError(loggerWithCustomLevelOnly.trace('test'))
+// @ts-expect-error
+loggerWithCustomLevelOnly.fatal('test');
+// @ts-expect-error
+loggerWithCustomLevelOnly.error('test');
+// @ts-expect-error
+loggerWithCustomLevelOnly.warn('test');
+// @ts-expect-error
+loggerWithCustomLevelOnly.debug('test');
+// @ts-expect-error
+loggerWithCustomLevelOnly.trace('test');
 
 // Module extension
 declare module '../../' {
@@ -662,8 +674,10 @@ declare module '../../' {
 }
 
 info({ typeCheckedField: 'bar' })
-expectError(info({ bannedField: 'bar' }))
-expectError(info({ typeCheckedField: 123 }))
+// @ts-expect-error
+info({ bannedField: 'bar' });
+// @ts-expect-error
+info({ typeCheckedField: 123 });
 
 const someGenericFunction = <T extends string | number | symbol = never>(
   arg: Record<T, unknown>

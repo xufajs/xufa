@@ -300,7 +300,7 @@ export default plugin(
         <p>
           The tests of fastify and of the libraries it uses (find-my-way, pino, fast-json-stringify, light-my-request,
           avvio) are ported, not rewritten: a tool of the repository converts their <code>node:test</code> suites to
-          <a href="https://www.npmjs.com/package/vyntra">vyntra</a> and renames what fastify calls itself. 2,288 tests
+          <a href="../test/index.html">@xufa/test</a> and renames what fastify calls itself. 2,288 tests
           of fastify's suite pass. Of the 23 skipped, 12 are of ajv's plugins and asynchronous validation, 6 check
           fastify's documentation files, and the others need what the machine they run on may lack (Unix sockets, IPv6,
           Node.js 24). Tests of what xufa does differently are written apart, so a

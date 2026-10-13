@@ -1969,7 +1969,7 @@
 
         <h3 id="ref-TestDatabases"><code>TestDatabases</code></h3>
         <pre><code class="language-ts">export type TestDatabases = Database | Databases | Tenants | null | undefined;</code></pre>
-        <p>Each test in a transaction rolled back at its end (or the models emptied, when the database cannot roll back): the hooks of node:test (rollbackEach(db, { beforeEach, afterEach })), or the globals of vyntra, jest and mocha. A function gives the databases when the tests run (made in a before()). A Tenants: the databases of its tenants open when a test starts, and those the test opens.</p>
+        <p>Each test in a transaction rolled back at its end (or the models emptied, when the database cannot roll back): the hooks of node:test (rollbackEach(db, { beforeEach, afterEach })), or the globals of</p>
 
         <h3 id="ref-HookName"><code>HookName</code></h3>
         <pre><code class="language-ts">export type HookName = 'beforeSave' | 'afterSave' | 'beforeDelete' | 'afterDelete';</code></pre>

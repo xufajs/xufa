@@ -1,0 +1,119 @@
+# Running tests
+
+With no arguments, @xufa/test runs every test file of the project. Arguments filter the files by their path, as in Jest; `-t` filters the tests by their full name (the names of their `describe` blocks and their own).
+
+```bash
+npx xufa-test                      # every test file
+npx xufa-test src/users            # the files whose path matches src/users
+npx xufa-test -t "saves the user"  # the tests whose name matches
+npx xufa-test --coverage           # with a coverage report
+npx xufa-test -u                   # update the snapshots that changed
+```
+
+A test file is any `*.test.*` or `*.spec.*` file, or any file in a `__tests__` folder, out of `node_modules`, `dist` and `coverage`.
+
+## What it prints
+
+A line per file as it finishes, then every failure with its diff, the line of your test where it happened, and a summary. The output of `console.log` in a test is shown with the test that wrote it; `--silent` hides it.
+
+```text
+ FAIL users.test.js > users > saves the profile
+AssertionError: expect(received).toEqual(expected)
+
+- Expected  - 1
++ Received  + 1
+
+  {
+    "name": "Ann",
+-   "role": "admin",
++   "role": "user",
+  }
+
+> 12 |     expect(saved).toEqual({ name: 'Ann', role: 'admin' });
+     |                   ^
+
+ ❯ users.test.js:12:19
+```
+
+`--verbose` lists every test; `--reporter json` prints the whole run as one JSON document, for tools. Other reporters write the run next to it: see [Reports for CI and agents](ci.md).
+
+## Test environments of your own
+
+`environment` (Vitest) or `testEnvironment` (Jest) can name an environment of your own, by path or package (`jest-environment-<name>`, `vitest-environment-<name>`), and so can a file's `@vitest-environment` or `@jest-environment` comment. It is set up before each of its files and torn down after:
+
+- A Vitest environment, `{ name, setup(global, options) }`, gets the global object the tests run in, and its options from `environmentOptions[name]`.
+- A Jest environment class gets `testEnvironmentOptions` and the test file's path as Jest gives them. Jest runs the tests in its `this.global`; @xufa/test runs them in the worker's global, over the node or jsdom environment the class extends, and copies in what the class adds to its global.
+
+## Benchmarks
+
+`xufa-test bench` runs the `*.bench.*` files (Vitest's `benchmark.include`), as `vitest bench` does, one file at a time unless `-w` says otherwise, so the measures do not take from each other. `bench(name, fn, options)` warms `fn` up, then times one call per sample until both `time` (500 ms) and `iterations` (10) are reached; `setup` and `teardown` run around it.
+
+```js
+// sort.bench.js
+describe('sorting', () => {
+  bench('Array#sort', () => {
+    [...numbers].sort((a, b) => a - b);
+  });
+  bench('Float64Array#sort', () => {
+    Float64Array.from(numbers).sort();
+  }, { time: 1000 });
+});
+```
+
+Each group prints a table (operations per second, min, max, mean, p75 to p999 in milliseconds, margin of error, samples), and the summary says which is fastest and by how much. `--outputJson bench.json` saves the results; `--compare bench.json` shows how each changed since.
+
+## In-source tests
+
+As in Vitest, tests can live in the source file they test, in an `if (import.meta.vitest)` block, for the files `includeSource` names. A file there that has such a block is a test file; `import.meta.vitest` is the test API in it, and `undefined` anywhere else, so a module another test file imports does not add its tests to that one. A build leaves the block out with Vite's `define: { 'import.meta.vitest': 'undefined' }`.
+
+```js
+// src/math.js, with includeSource: ['src/**/*.js']
+export const add = (a, b) => a + b;
+
+if (import.meta.vitest) {
+  const { it, expect } = import.meta.vitest;
+  it('adds', () => {
+    expect(add(1, 2)).toBe(3);
+  });
+}
+```
+
+## Type tests
+
+`xufa-test --typecheck` (or Vitest's `typecheck.enabled`) checks the types of the `*.test-d.ts` files instead of running them, with your project's `tsc`, as Vitest does: a type error fails the test whose call it is in, one outside every test fails the file, and one in a file the tests reach fails the run unless `typecheck.ignoreSourceErrors`. The other tests run as usual; `--typecheck.only` runs none of them. `expectTypeOf` and `assertType` are there for the checker, and do nothing at run time. `typecheck.include`, `tsconfig` and `checker` (`'vue-tsc'`) are read as Vitest reads them.
+
+@xufa/test ships its types: those of its API (`import { test, expect, vi } from '@xufa/test'`), and of its globals for files that use them without imports (`"types": ["@xufa/test/globals"]` in `tsconfig.json`). `expectTypeOf(value).toEqualTypeOf<T>()` passes when the types are the same, however they are written (an interface and the object type of its members, an intersection and the object it makes), and tells optional from required members, readonly ones from writable ones, and `any` from every other type; `toMatchTypeOf<T>()` when the value is assignable to `T`; `assertType<T>(value)` types the value in the context of `T`. What must fail goes under `// @ts-expect-error`. Without a `tsconfig.json`, the type tests are checked strictly (`strict`, the declaration files too, Node's types when the project has `@types/node`). `tools/type-tests` in the repository of xufa converts the type tests of tsd and tstyche to these.
+
+```ts
+import { expectTypeOf, assertType, test } from '@xufa/test';
+import { sum } from '../src/sum.js';
+
+test('sum', () => {
+  expectTypeOf(sum(1, 2)).toEqualTypeOf<number>();
+  expectTypeOf(sum).parameters.toEqualTypeOf<[a: number, b: number]>();
+  // @ts-expect-error strings are not numbers
+  sum('1', 2);
+});
+```
+
+## Watch mode
+
+`xufa-test --watch` (or `xufa-test watch`, or Jest's `--watchAll`) runs the tests, then runs again what each change touches, until you quit: a changed test file runs again, a changed module reruns the test files that loaded it, a new test file runs, and a change to the config (or `package.json`, or a `.env` file) reruns everything. In a terminal, keys narrow it: Enter runs the last ones again, a all, f the files that failed, p and t filter by file and by test name, q quits.
+
+It knows what a test file loaded by watching it load, so a module only its types reach (compiled away) does not rerun anything, and with `isolate: false` a module loaded by an earlier file is only known for that one.
+
+## Common flags
+
+| Flag | What it does |
+| --- | --- |
+| `-t, --testNamePattern` | Run only the tests whose full name matches this regular expression |
+| `-u, --update` | Write the snapshots that changed |
+| `--coverage` | Collect coverage and print a report |
+| `--coverageDirectory <dir>` | Write the coverage reports to another directory |
+| `--silent` | Do not print what the tests write to the console |
+| `-w, --maxWorkers` | Number of workers, or a percentage of the cores (`50%`) |
+| `-i, --runInBand` | Run every file in the main thread |
+| `--pool forks` | Run the files in child processes, as Jest does |
+| `--bail <n>` | Stop after `n` files failed |
+
+Every flag is in the [API reference](../api/cli.md).

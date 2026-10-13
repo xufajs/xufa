@@ -157,7 +157,7 @@ describe('xufa/faults', () => {
     expect([db.faults.rules, cache.faults.rules, client.faults.rules]).toEqual([[], [], []]);
   });
 
-  // This package's tests run with xufa/faults/register-strict (package.json, "vyntra"): a test that ended with faults
+  // This package's tests run with xufa/faults/register-strict (package.json, "xufaTest"): a test that ended with faults
   // set would fail, so every test here clears its own.
   it('xufa/faults/register and register-strict are there', () => {
     expect(require.resolve('xufa/faults/register')).toBe(require.resolve('../faults-register.js'));

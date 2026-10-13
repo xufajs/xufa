@@ -9,7 +9,8 @@ export PATH="$HOME/node-$VERSION/bin:$PATH"
 failed=""
 for p in "$@"; do
   cd ~/xufa/packages/"$p" || exit 1
-  out=$(node node_modules/vyntra/bin/vyntra.js 2>&1)
+  # (The runner of the workspace: what node_modules/@xufa/test links to, and @xufa/test itself has no such link.)
+  out=$(node ~/xufa/packages/test/bin/xufa-test.js 2>&1)
   status=$?
   echo "== $p: $(echo "$out" | grep -E 'Tests  ' | tail -1 | sed -E 's/^ +//')"
   echo "$out" | grep -E '^ +× ' | head -20

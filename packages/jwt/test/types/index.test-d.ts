@@ -1,24 +1,26 @@
-import { expectType, expectError } from 'tsd';
+import { expectTypeOf } from '@xufa/test';
 import { sign, verify, decode, JsonWebTokenError, TokenExpiredError, Jwt, JwtPayload } from '../..';
 
 const token = sign({ sub: '42' }, 'secret', { expiresIn: '15m', algorithm: 'HS256' });
-expectType<string>(token);
+expectTypeOf(token).toEqualTypeOf<string>();
 sign({ sub: '42' }, 'private key', { algorithm: 'EdDSA', expiresIn: 60 });
-expectError(sign({ sub: '42' }, 'secret', { algorithm: 'HS999' }));
-expectError(sign({ sub: '42' }, 'secret', { expiresIn: 'soon' }));
+// @ts-expect-error
+sign({ sub: '42' }, 'secret', { algorithm: 'HS999' });
+// @ts-expect-error
+sign({ sub: '42' }, 'secret', { expiresIn: 'soon' });
 
-expectType<JwtPayload | string>(verify(token, 'secret', { algorithms: ['HS256'] }));
-expectType<Jwt>(verify(token, 'secret', { complete: true }));
+expectTypeOf(verify(token, 'secret', { algorithms: ['HS256'] })).toEqualTypeOf<JwtPayload | string>();
+expectTypeOf(verify(token, 'secret', { complete: true })).toEqualTypeOf<Jwt>();
 verify(token, 'secret', (err, payload) => {
-  if (err) expectType<string>(err.message);
+  if (err) expectTypeOf(err.message).toEqualTypeOf<string>();
 });
-expectType<null | Jwt>(decode(token, { complete: true }));
+expectTypeOf(decode(token, { complete: true })).toEqualTypeOf<null | Jwt>();
 
 const err = new TokenExpiredError('jwt expired', new Date());
-expectType<TokenExpiredError>(err);
+expectTypeOf(err).toEqualTypeOf<TokenExpiredError>();
 const base: JsonWebTokenError = err;
-expectType<Date>(err.expiredAt);
-expectType<string>(base.message);
+expectTypeOf(err.expiredAt).toEqualTypeOf<Date>();
+expectTypeOf(base.message).toEqualTypeOf<string>();
 
 // ES256K, and the typ expected.
 sign({}, 'secret', { algorithm: 'ES256K' });

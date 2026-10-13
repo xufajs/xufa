@@ -23,7 +23,7 @@ The documentation of js-yaml applies as it is.
 ## Tests
 
 `test/` is the suite of js-yaml (units, the samples of loading and of load errors, the dumper, a fuzzy dumper with
-fast-check, and its issues), ported to vyntra by `tools/port-yaml` from a checkout of its repository. The library is
+fast-check, and its issues), ported to @xufa/test by `tools/port-yaml` from a checkout of its repository. The library is
 kept as js-yaml has it, so it can be ported again.
 
 ## TypeScript

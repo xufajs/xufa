@@ -348,7 +348,7 @@ function leftOf(faults) {
   ];
 }
 
-// clearFaults() after each test: with the afterEach of the runner (a global of Jest, Vitest, vyntra or Mocha), or of
+// clearFaults() after each test: with the afterEach of the runner (a global of Jest, Vitest, @xufa/test or Mocha), or of
 // the hooks given (require('node:test')). strict: a test that ends with faults still set fails (they are cleared
 // all the same), so a test that forgets to clean up is found, not the next one that fails for it.
 //

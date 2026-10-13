@@ -4,7 +4,7 @@
 const dns = require('node:dns')
 
 // lib/server.js (and Fastify) with node:dns.lookup replaced (the library is ES modules: proxyquire, which replaced the requires of
-// CommonJS, cannot reach their imports; vyntra's doMock and a fresh import can).
+// CommonJS, cannot reach their imports; @xufa/test's doMock and a fresh import can).
 async function serverWith (lookup) {
   vi.resetModules()
   vi.doMock('node:dns', () => ({ ...dns, lookup, default: { ...dns, lookup } }))

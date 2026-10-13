@@ -1,0 +1,78 @@
+const fs = require('node:fs');
+const os = require('node:os');
+const path = require('node:path');
+const { spawnSync } = require('node:child_process');
+const { findTopic } = require('../src/cli/guide');
+
+const BIN = path.join(__dirname, '..', 'bin', 'xufa-test.js');
+const run = (args, cwd) => spawnSync(process.execPath, [BIN, ...args], { encoding: 'utf8', cwd });
+
+describe('xufa-test guide', () => {
+  it('lists the topics', () => {
+    const { status, stdout } = run(['guide']);
+    expect(status).toBe(0);
+    expect(stdout).toContain('# @xufa/test documentation');
+    expect(stdout).toContain('- [Projects](guide/projects.md) `guide/projects`: A project is a part of the suite');
+  });
+
+  it('prints a topic by its name, short or full', () => {
+    expect(run(['guide', 'projects']).stdout).toMatch(/^# Projects\n/);
+    expect(run(['guide', 'api/config']).stdout).toMatch(/^# Configuration\n\nIn `xufa.test.config.js`/);
+    expect(findTopic('matchers')).toEqual({ topic: 'api/matchers' });
+    expect(findTopic('fixture')).toEqual({ topic: 'api/api-fixture' });
+  });
+
+  it('suggests topics for one it does not have', () => {
+    const { status, stderr } = run(['guide', 'mock']);
+    expect(status).toBe(1);
+    expect(stderr).toContain('No topic "mock". Did you mean guide/mocks, guide/module-mocks, api/mock-matchers');
+  });
+
+  it('ships the docs the website has', () => {
+    const { status, stderr } = spawnSync(
+      process.execPath,
+      [path.join(__dirname, '..', 'scripts', 'build-docs.js'), '--check'],
+      {
+        encoding: 'utf8',
+      }
+    );
+    expect(stderr).toBe('');
+    expect(status).toBe(0);
+  });
+});
+
+describe('xufa-test init --agents', () => {
+  it('writes the skill for every agent, linked for Claude Code, and keeps one that is there', () => {
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'xufa-test-init-'));
+    const first = run(['init', '--agents'], dir);
+    expect(first.status).toBe(0);
+    expect(first.stdout).toContain(`Wrote ${path.join('.agents', 'skills', 'xufa-test', 'SKILL.md')}.`);
+    expect(first.stdout).toContain(`Linked ${path.join('.claude', 'skills', 'xufa-test')} to it, for Claude Code.`);
+    const skill = fs.readFileSync(path.join(dir, '.agents', 'skills', 'xufa-test', 'SKILL.md'), 'utf8');
+    expect(skill).toMatch(/^---\nname: xufa-test\ndescription: /);
+    expect(fs.readFileSync(path.join(dir, '.claude', 'skills', 'xufa-test', 'SKILL.md'), 'utf8')).toBe(skill);
+    expect(run(['init', '--agents'], dir).status).toBe(1);
+    // Replacing it unlinks the link, never what it points at.
+    expect(run(['init', '--agents', '--force'], dir).status).toBe(0);
+    expect(fs.existsSync(path.join(dir, '.agents', 'skills', 'xufa-test', 'SKILL.md'))).toBe(true);
+    expect(run(['init', '--agents', '--dir', 'skills/testing'], dir).status).toBe(0);
+    expect(fs.existsSync(path.join(dir, 'skills', 'testing', 'SKILL.md'))).toBe(true);
+  });
+
+  it('points AGENTS.md at the skill once, and leaves a folder of the project alone', () => {
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'xufa-test-init-'));
+    fs.writeFileSync(path.join(dir, 'AGENTS.md'), '# Agents\n\nUse pnpm.');
+    const own = path.join(dir, '.claude', 'skills', 'xufa-test');
+    fs.mkdirSync(own, { recursive: true });
+    fs.writeFileSync(path.join(own, 'SKILL.md'), 'mine');
+    const first = run(['init', '--agents'], dir);
+    expect(first.stdout).toContain('Pointed AGENTS.md at it.');
+    expect(first.stdout).toContain(`Left ${path.join('.claude', 'skills', 'xufa-test')} as it is`);
+    expect(fs.readFileSync(path.join(own, 'SKILL.md'), 'utf8')).toBe('mine');
+    run(['init', '--agents', '--force'], dir);
+    expect(fs.readFileSync(path.join(dir, 'AGENTS.md'), 'utf8')).toBe(
+      '# Agents\n\nUse pnpm.\n\nTests run with @xufa/test: read .agents/skills/xufa-test/SKILL.md before writing, running or fixing one.\n'
+    );
+    expect(fs.readFileSync(path.join(own, 'SKILL.md'), 'utf8')).toMatch(/^---\nname: xufa-test/);
+  });
+});

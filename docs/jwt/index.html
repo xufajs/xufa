@@ -86,6 +86,9 @@
           <li><a href="../discovery/index.html">@xufa/discovery</a></li>
           <li><a href="../netcache/index.html">@xufa/netcache</a></li>
           <li><a href="../faults/index.html">@xufa/faults</a></li>
+          <li><a href="../browser/index.html">@xufa/browser</a></li>
+          <li><a href="../bundle/index.html">@xufa/bundle</a></li>
+          <li><a href="../lint/index.html">@xufa/lint</a></li>
           <li><a href="../marshal/index.html">@xufa/marshal</a></li>
           <li><a href="../yaml/index.html">@xufa/yaml</a></li>
           <li><a href="index.html" aria-current="page">@xufa/jwt</a></li>
@@ -281,7 +284,7 @@ import jwa from '@xufa/jwt/jwa'; // jwa('ES256') is { sign(input, key), verify(i
 
         <h2 id="tests">Tests</h2>
         <p>
-          The suites of jsonwebtoken, jws and jwa, ported to vyntra by <code>tools/port-jwt</code> from checkouts of their
+          The suites of jsonwebtoken, jws and jwa, ported to @xufa/test by <code>tools/port-jwt</code> from checkouts of their
           repositories (requires and mocha's hooks rewritten, tests unchanged): the vectors of RFC 7515, and signatures
           made by <code>openssl</code> verified, and the other way. And <code>test/security.test.js</code>: algorithm
           confusion, <code>none</code>, signatures taken off or of other tokens, headers and payloads changed,

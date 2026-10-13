@@ -19,8 +19,8 @@
     "LICENSE"
   ],
   "scripts": {
-    "test": "vyntra",
-    "test:types": "tsd"
+    "test": "xufa-test",
+    "test:types": "xufa-test --typecheck.only"
   },
   "keywords": [
     "scheduler",
@@ -47,14 +47,10 @@
   "devDependencies": {
     "@xufa/http": "workspace:*",
     "@xufa/orm": "workspace:*",
-    "fastify": "^5.12.5",
-    "tsd": "^0.33.0",
-    "vyntra": "^0.7.0"
+    "@xufa/test": "workspace:^",
+    "fastify": "^5.12.5"
   },
   "publishConfig": {
     "access": "public"
-  },
-  "tsd": {
-    "directory": "test/types"
   }
 }

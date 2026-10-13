@@ -1,0 +1,873 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>@xufa/test: Reference · xufa</title>
+    <meta
+      name="description"
+      content="The reference of @xufa/test: every function, class, interface and type it declares, made from its TypeScript declarations."
+    />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%23d9502b'/%3E%3Ctext x='16' y='22.5' font-family='monospace' font-size='18' font-weight='700' fill='white' text-anchor='middle'%3Ex%3C/text%3E%3C/svg%3E"
+    />
+    <link rel="stylesheet" href="../style.css?v=0.1.0" />
+    <script src="../main.js?v=0.1.0"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js" defer></script>
+  </head>
+  <body>
+    <header class="header">
+      <div class="header-inner">
+        <a class="logo" href="../index.html"><span class="logo-mark">x</span>xufa</a>
+        <nav class="nav">
+          <a href="../guide.html">Guide</a>
+          <a href="../playground.html">Playground</a>
+          <a href="../http/index.html">HTTP</a>
+          <a href="../orm/index.html">ORM</a>
+          <a class="hide-small" href="../auth/index.html">Auth</a>
+          <a class="hide-small" href="../sequelize/index.html">Sequelize</a>
+          <a class="hide-small" href="../packages.html" aria-current="page">Packages</a>
+          <a class="hide-small" href="../benchmarks.html">Benchmarks</a>
+          <a href="https://github.com/xufajs/xufa">GitHub</a>
+          <button class="theme-toggle" type="button" aria-label="Switch between light and dark theme">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+              <path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z" />
+            </svg>
+          </button>
+        </nav>
+      </div>
+    </header>
+
+    <div class="docs">
+      <button class="menu-toggle" type="button" aria-expanded="false">☰ Contents</button>
+      <aside class="sidebar">
+        <h4>Reference</h4>
+        <ul>
+          <li><a href="#functions">Functions (10)</a></li>
+          <li><a href="#constants">Constants (10)</a></li>
+          <li><a href="#interfaces">Interfaces (23)</a></li>
+          <li><a href="#types">Types (28)</a></li>
+        </ul>
+        <h4>Packages</h4>
+        <ul>
+          <li><a href="../websocket/index.html">@xufa/websocket</a></li>
+          <li><a href="../admin/index.html">@xufa/admin</a></li>
+          <li><a href="../session/index.html">@xufa/session</a></li>
+          <li><a href="../forms/index.html">@xufa/forms</a></li>
+          <li><a href="../views/index.html">@xufa/views</a></li>
+          <li><a href="../mail/index.html">@xufa/mail</a></li>
+          <li><a href="../i18n/index.html">@xufa/i18n</a></li>
+          <li><a href="../openapi/index.html">@xufa/openapi</a></li>
+          <li><a href="../client/index.html">@xufa/client</a></li>
+          <li><a href="../schema/index.html">@xufa/schema</a></li>
+          <li><a href="../pg/index.html">@xufa/pg</a></li>
+          <li><a href="../mongo/index.html">@xufa/mongo</a></li>
+          <li><a href="../expression/index.html">@xufa/expression</a></li>
+          <li><a href="../template/index.html">@xufa/template</a></li>
+          <li><a href="../cluster/index.html">@xufa/cluster</a></li>
+          <li><a href="../scheduler/index.html">@xufa/scheduler</a></li>
+          <li><a href="../queue/index.html">@xufa/queue</a></li>
+          <li><a href="../config/index.html">@xufa/config</a></li>
+          <li><a href="../discovery/index.html">@xufa/discovery</a></li>
+          <li><a href="../netcache/index.html">@xufa/netcache</a></li>
+          <li><a href="../faults/index.html">@xufa/faults</a></li>
+          <li><a href="../browser/index.html">@xufa/browser</a></li>
+          <li><a href="../bundle/index.html">@xufa/bundle</a></li>
+          <li><a href="../lint/index.html">@xufa/lint</a></li>
+          <li><a href="../marshal/index.html">@xufa/marshal</a></li>
+          <li><a href="../yaml/index.html">@xufa/yaml</a></li>
+          <li><a href="../jwt/index.html">@xufa/jwt</a></li>
+          <li><a href="../logger/index.html">@xufa/logger</a></li>
+          <li><a href="../router/index.html">@xufa/router</a></li>
+          <li><a href="../serializer/index.html">@xufa/serializer</a></li>
+          <li><a href="../inject/index.html">@xufa/inject</a></li>
+          <li><a href="../boot/index.html">@xufa/boot</a></li>
+          <li><a href="../errors/index.html">@xufa/errors</a></li>
+          <li><a href="../packages.html">All the packages</a></li>
+        </ul>
+      </aside>
+
+      <article class="content">
+        <nav class="package-tabs" aria-label="@xufa/test">
+          <a href="index.html">Overview</a>
+          <a href="guide.html">Guide</a>
+          <a href="api.html">API</a>
+          <a href="reference.html" aria-current="page">Reference</a>
+          <a href="migrating.html">From Jest and Vitest</a>
+          <a href="benchmarks.html">Benchmarks</a>
+        </nav>
+        <h1>Reference</h1>
+        <p class="intro">
+          A very fast, zero-dependency test runner with a Jest/Vitest compatible API. Every declaration of its TypeScript declarations
+          (<code>packages/test/index.d.ts</code> or <code>index.d.cts</code>), as they are written, with their comments: made from them each time
+          the docs are built. How to use them is in <a href="index.html">the overview</a>.
+        </p>
+
+        <h2 id="functions">Functions</h2>
+        <p class="ref-index"><a href="#ref-beforeAll"><code>beforeAll</code></a>, <a href="#ref-afterAll"><code>afterAll</code></a>, <a href="#ref-beforeEach"><code>beforeEach</code></a>, <a href="#ref-afterEach"><code>afterEach</code></a>, <a href="#ref-onTestFinished"><code>onTestFinished</code></a>, <a href="#ref-onTestFailed"><code>onTestFailed</code></a>, <a href="#ref-inject"><code>inject</code></a>, <a href="#ref-expectTypeOf"><code>expectTypeOf</code></a>, <a href="#ref-assertType"><code>assertType</code></a>, <a href="#ref-installGlobals"><code>installGlobals</code></a></p>
+
+        <h3 id="ref-beforeAll"><code>beforeAll</code></h3>
+        <pre><code class="language-ts">export declare function beforeAll(fn: () =&gt; Awaitable&lt;unknown | HookCleanup&gt;, timeout?: number): void;</code></pre>
+
+        <h3 id="ref-afterAll"><code>afterAll</code></h3>
+        <pre><code class="language-ts">export declare function afterAll(fn: () =&gt; Awaitable&lt;unknown&gt;, timeout?: number): void;</code></pre>
+
+        <h3 id="ref-beforeEach"><code>beforeEach</code></h3>
+        <pre><code class="language-ts">export declare function beforeEach(
+  fn: (context: TestContext) =&gt; Awaitable&lt;unknown | HookCleanup&gt;,
+  timeout?: number
+): void;</code></pre>
+
+        <h3 id="ref-afterEach"><code>afterEach</code></h3>
+        <pre><code class="language-ts">export declare function afterEach(fn: (context: TestContext) =&gt; Awaitable&lt;unknown&gt;, timeout?: number): void;</code></pre>
+
+        <h3 id="ref-onTestFinished"><code>onTestFinished</code></h3>
+        <pre><code class="language-ts">export declare function onTestFinished(fn: (context: TestContext) =&gt; Awaitable&lt;unknown&gt;, timeout?: number): void;</code></pre>
+
+        <h3 id="ref-onTestFailed"><code>onTestFailed</code></h3>
+        <pre><code class="language-ts">export declare function onTestFailed(fn: (context: TestContext) =&gt; Awaitable&lt;unknown&gt;, timeout?: number): void;</code></pre>
+
+        <h3 id="ref-inject"><code>inject</code></h3>
+        <pre><code class="language-ts">export declare function inject&lt;K extends keyof ProvidedContext&gt;(key: K): ProvidedContext[K];</code></pre>
+
+        <h3 id="ref-expectTypeOf"><code>expectTypeOf</code></h3>
+        <pre><code class="language-ts">export declare function expectTypeOf&lt;Actual&gt;(actual: Actual): ExpectTypeOf&lt;Actual&gt;;
+
+export declare function expectTypeOf&lt;Actual&gt;(): ExpectTypeOf&lt;Actual&gt;;</code></pre>
+        <p>expectTypeOf(value), or expectTypeOf&lt;Type&gt;(): checks of types, for tsc (at run time it does nothing).</p>
+
+        <h3 id="ref-assertType"><code>assertType</code></h3>
+        <pre><code class="language-ts">export declare function assertType&lt;T&gt;(value: T): void;</code></pre>
+        <p>The value is assignable to the type: assertType&lt;string&gt;(value).</p>
+
+        <h3 id="ref-installGlobals"><code>installGlobals</code></h3>
+        <pre><code class="language-ts">export declare function installGlobals(target?: object): void;</code></pre>
+        <p>Makes the API globals (describe, it, expect, vi...) of this object: the runner does it for test files.</p>
+
+        <h2 id="constants">Constants</h2>
+        <p class="ref-index"><a href="#ref-test"><code>test</code></a>, <a href="#ref-it"><code>it</code></a>, <a href="#ref-describe"><code>describe</code></a>, <a href="#ref-suite"><code>suite</code></a>, <a href="#ref-bench"><code>bench</code></a>, <a href="#ref-expect"><code>expect</code></a>, <a href="#ref-vi"><code>vi</code></a>, <a href="#ref-vitest"><code>vitest</code></a>, <a href="#ref-jest"><code>jest</code></a>, <a href="#ref-xufaTest"><code>xufaTest</code></a></p>
+
+        <h3 id="ref-test"><code>test</code></h3>
+        <pre><code class="language-ts">export declare const test: TestAPI;</code></pre>
+
+        <h3 id="ref-it"><code>it</code></h3>
+        <pre><code class="language-ts">export declare const it: TestAPI;</code></pre>
+
+        <h3 id="ref-describe"><code>describe</code></h3>
+        <pre><code class="language-ts">export declare const describe: SuiteAPI;</code></pre>
+
+        <h3 id="ref-suite"><code>suite</code></h3>
+        <pre><code class="language-ts">export declare const suite: SuiteAPI;</code></pre>
+
+        <h3 id="ref-bench"><code>bench</code></h3>
+        <pre><code class="language-ts">export declare const bench: BenchAPI;</code></pre>
+
+        <h3 id="ref-expect"><code>expect</code></h3>
+        <pre><code class="language-ts">export declare const expect: ExpectStatic;</code></pre>
+
+        <h3 id="ref-vi"><code>vi</code></h3>
+        <pre><code class="language-ts">export declare const vi: VitestUtils;</code></pre>
+
+        <h3 id="ref-vitest"><code>vitest</code></h3>
+        <pre><code class="language-ts">export declare const vitest: VitestUtils;</code></pre>
+
+        <h3 id="ref-jest"><code>jest</code></h3>
+        <pre><code class="language-ts">export declare const jest: VitestUtils;</code></pre>
+
+        <h3 id="ref-xufaTest"><code>xufaTest</code></h3>
+        <pre><code class="language-ts">declare const xufaTest: {
+  test: TestAPI;
+  it: TestAPI;
+  describe: SuiteAPI;
+  suite: SuiteAPI;
+  beforeAll: typeof beforeAll;
+  afterAll: typeof afterAll;
+  beforeEach: typeof beforeEach;
+  afterEach: typeof afterEach;
+  onTestFinished: typeof onTestFinished;
+  onTestFailed: typeof onTestFailed;
+  bench: BenchAPI;
+  expect: ExpectStatic;
+  vi: VitestUtils;
+  vitest: VitestUtils;
+  jest: VitestUtils;
+  inject: typeof inject;
+  expectTypeOf: typeof expectTypeOf;
+  assertType: typeof assertType;
+  installGlobals: typeof installGlobals;
+};</code></pre>
+
+        <h2 id="interfaces">Interfaces</h2>
+        <p class="ref-index"><a href="#ref-ProvidedContext"><code>ProvidedContext</code></a>, <a href="#ref-TestContext"><code>TestContext</code></a>, <a href="#ref-TestOptions"><code>TestOptions</code></a>, <a href="#ref-Each"><code>Each</code></a>, <a href="#ref-TestAPI"><code>TestAPI</code></a>, <a href="#ref-SuiteAPI"><code>SuiteAPI</code></a>, <a href="#ref-BenchOptions"><code>BenchOptions</code></a>, <a href="#ref-BenchAPI"><code>BenchAPI</code></a>, <a href="#ref-Matchers"><code>Matchers</code></a>, <a href="#ref-MatcherState"><code>MatcherState</code></a>, <a href="#ref-ExpectationResult"><code>ExpectationResult</code></a>, <a href="#ref-SnapshotSerializer"><code>SnapshotSerializer</code></a>, <a href="#ref-AsymmetricMatchersContaining"><code>AsymmetricMatchersContaining</code></a>, <a href="#ref-ExpectPollOptions"><code>ExpectPollOptions</code></a>, <a href="#ref-ExpectStatic"><code>ExpectStatic</code></a>, <a href="#ref-MockContext"><code>MockContext</code></a>, <a href="#ref-MockInstance"><code>MockInstance</code></a>, <a href="#ref-Mock"><code>Mock</code></a>, <a href="#ref-FakeTimersConfig"><code>FakeTimersConfig</code></a>, <a href="#ref-WaitForOptions"><code>WaitForOptions</code></a>, <a href="#ref-VitestUtils"><code>VitestUtils</code></a>, <a href="#ref-Mismatch"><code>Mismatch</code></a>, <a href="#ref-ExpectTypeOf"><code>ExpectTypeOf</code></a></p>
+
+        <h3 id="ref-ProvidedContext"><code>ProvidedContext</code></h3>
+        <pre><code class="language-ts">export interface ProvidedContext { ... }</code></pre>
+        <p>What <code>inject(key)</code> gives: what a globalSetup provided. Declared by the project: <code>declare module '@xufa/test' { interface ProvidedContext { url: string } }</code>.</p>
+
+        <h3 id="ref-TestContext"><code>TestContext</code></h3>
+        <pre><code class="language-ts">export interface TestContext { ... }</code></pre>
+        <p>The context of a test: its first parameter, also the <code>done</code> callback of Jest's tests that take one.</p>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>(error?: unknown)</code></td><td><code>void</code></td><td><p>Ends a test that takes a callback (with an error: fails it).</p></td></tr>
+                <tr><td><code>task</code></td><td><code>{ name: string; id?: string; file?: { name: string } }</code></td><td></td></tr>
+                <tr><td><code>expect</code></td><td><code><a href="#ref-ExpectStatic">ExpectStatic</a></code></td><td><p>The expect of this test (for concurrent tests).</p></td></tr>
+                <tr><td><code>skip(note?: string)</code></td><td><code>never</code></td><td><p>Skips the test from inside it.</p></td></tr>
+                <tr><td><code>signal</code></td><td><code>AbortSignal</code></td><td></td></tr>
+                <tr><td><code>onTestFinished(fn: () =&gt; Awaitable&lt;unknown&gt;)</code></td><td><code>void</code></td><td></td></tr>
+                <tr><td><code>onTestFailed(fn: (context: TestContext) =&gt; Awaitable&lt;unknown&gt;)</code></td><td><code>void</code></td><td></td></tr>
+                <tr><td><code>fail(error?: unknown)</code></td><td><code>void</code></td><td><p>Jest's done.fail().</p></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-TestOptions"><code>TestOptions</code></h3>
+        <pre><code class="language-ts">export interface TestOptions { ... }</code></pre>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>timeout?</code></td><td><code>number</code></td><td></td></tr>
+                <tr><td><code>retry?</code></td><td><code>number</code></td><td></td></tr>
+                <tr><td><code>repeats?</code></td><td><code>number</code></td><td></td></tr>
+                <tr><td><code>concurrent?</code></td><td><code>boolean</code></td><td></td></tr>
+                <tr><td><code>sequential?</code></td><td><code>boolean</code></td><td></td></tr>
+                <tr><td><code>skip?</code></td><td><code>boolean</code></td><td></td></tr>
+                <tr><td><code>only?</code></td><td><code>boolean</code></td><td></td></tr>
+                <tr><td><code>todo?</code></td><td><code>boolean</code></td><td></td></tr>
+                <tr><td><code>fails?</code></td><td><code>boolean</code></td><td></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-Each"><code>Each</code></h3>
+        <pre><code class="language-ts">interface Each&lt;Callback extends (...args: any[]) =&gt; any&gt; { ... }</code></pre>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>(strings: TemplateStringsArray, ...values: any[])</code></td><td><code>(name: <a href="#ref-EachTitle">EachTitle</a>, fn: (row: any) =&gt; ReturnType&lt;Callback&gt;, options?: number | <a href="#ref-TestOptions">TestOptions</a>) =&gt; void</code></td><td><p>test.each<code>a | b ${1} | ${2}</code>: one test of each row, its values by the names of the header.</p></td></tr>
+                <tr><td><code>(cases: readonly T[])</code></td><td><code>(name: <a href="#ref-EachTitle">EachTitle</a>, fn: (...args: T) =&gt; ReturnType&lt;Callback&gt;, options?: number | <a href="#ref-TestOptions">TestOptions</a>) =&gt; void</code></td><td><p>Rows that are arrays: their items are the arguments.</p></td></tr>
+                <tr><td><code>(cases: readonly T[])</code></td><td><code>(name: <a href="#ref-EachTitle">EachTitle</a>, fn: (arg: T) =&gt; ReturnType&lt;Callback&gt;, options?: number | <a href="#ref-TestOptions">TestOptions</a>) =&gt; void</code></td><td><p>Rows of other values: each is the argument.</p></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-TestAPI"><code>TestAPI</code></h3>
+        <pre><code class="language-ts">export interface TestAPI&lt;ExtraContext = { ... }</code></pre>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>(name: EachTitle, fn?: TestFunction&lt;ExtraContext&gt;, options?: number | TestOptions)</code></td><td><code>void</code></td><td></td></tr>
+                <tr><td><code>(name: EachTitle, options: TestOptions, fn?: TestFunction&lt;ExtraContext&gt;)</code></td><td><code>void</code></td><td></td></tr>
+                <tr><td><code>skip</code></td><td><code><a href="#ref-TestAPI">TestAPI</a>&lt;ExtraContext&gt;</code></td><td></td></tr>
+                <tr><td><code>only</code></td><td><code><a href="#ref-TestAPI">TestAPI</a>&lt;ExtraContext&gt;</code></td><td></td></tr>
+                <tr><td><code>concurrent</code></td><td><code><a href="#ref-TestAPI">TestAPI</a>&lt;ExtraContext&gt;</code></td><td></td></tr>
+                <tr><td><code>sequential</code></td><td><code><a href="#ref-TestAPI">TestAPI</a>&lt;ExtraContext&gt;</code></td><td></td></tr>
+                <tr><td><code>fails</code></td><td><code><a href="#ref-TestAPI">TestAPI</a>&lt;ExtraContext&gt;</code></td><td><p>A test that must fail.</p></td></tr>
+                <tr><td><code>todo</code></td><td><code>(name: <a href="#ref-EachTitle">EachTitle</a>, fn?: <a href="#ref-TestFunction">TestFunction</a>&lt;ExtraContext&gt;) =&gt; void</code></td><td></td></tr>
+                <tr><td><code>skipIf(condition: unknown)</code></td><td><code><a href="#ref-TestAPI">TestAPI</a>&lt;ExtraContext&gt;</code></td><td></td></tr>
+                <tr><td><code>runIf(condition: unknown)</code></td><td><code><a href="#ref-TestAPI">TestAPI</a>&lt;ExtraContext&gt;</code></td><td></td></tr>
+                <tr><td><code>each</code></td><td><code><a href="#ref-Each">Each</a>&lt;<a href="#ref-TestFunction">TestFunction</a>&lt;ExtraContext&gt;&gt;</code></td><td></td></tr>
+                <tr><td><code>for&lt;T&gt;(cases: readonly T[])</code></td><td><code>( name: <a href="#ref-EachTitle">EachTitle</a>, fn: (arg: T, context: ExtraContext &amp; <a href="#ref-TestContext">TestContext</a>) =&gt; <a href="#ref-Awaitable">Awaitable</a>&lt;unknown&gt;, options?: number | <a href="#ref-TestOptions">TestOptions</a> ) =&gt; void</code></td><td><p>As each, with the context of the test as the second argument (rows are never spread).</p></td></tr>
+                <tr><td><code>extend&lt;T extends Record&lt;string, any&gt;&gt;(fixtures: Fixtures&lt;T, ExtraContext&gt;)</code></td><td><code><a href="#ref-TestAPI">TestAPI</a>&lt;ExtraContext &amp; T&gt;</code></td><td><p>Tests whose context has these fixtures.</p></td></tr>
+                <tr><td><code>scoped(fixtures: Partial&lt;Fixtures&lt;ExtraContext&gt;&gt;)</code></td><td><code>void</code></td><td><p>Fixtures of the tests of the suite around, over those of extend.</p></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-SuiteAPI"><code>SuiteAPI</code></h3>
+        <pre><code class="language-ts">export interface SuiteAPI { ... }</code></pre>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>(name: EachTitle, fn?: SuiteFactory, options?: number | TestOptions)</code></td><td><code>void</code></td><td></td></tr>
+                <tr><td><code>(name: EachTitle, options: TestOptions, fn?: SuiteFactory)</code></td><td><code>void</code></td><td></td></tr>
+                <tr><td><code>skip</code></td><td><code><a href="#ref-SuiteAPI">SuiteAPI</a></code></td><td></td></tr>
+                <tr><td><code>only</code></td><td><code><a href="#ref-SuiteAPI">SuiteAPI</a></code></td><td></td></tr>
+                <tr><td><code>concurrent</code></td><td><code><a href="#ref-SuiteAPI">SuiteAPI</a></code></td><td></td></tr>
+                <tr><td><code>sequential</code></td><td><code><a href="#ref-SuiteAPI">SuiteAPI</a></code></td><td></td></tr>
+                <tr><td><code>fails</code></td><td><code><a href="#ref-SuiteAPI">SuiteAPI</a></code></td><td></td></tr>
+                <tr><td><code>todo</code></td><td><code>(name: <a href="#ref-EachTitle">EachTitle</a>, fn?: <a href="#ref-SuiteFactory">SuiteFactory</a>) =&gt; void</code></td><td></td></tr>
+                <tr><td><code>skipIf(condition: unknown)</code></td><td><code><a href="#ref-SuiteAPI">SuiteAPI</a></code></td><td></td></tr>
+                <tr><td><code>runIf(condition: unknown)</code></td><td><code><a href="#ref-SuiteAPI">SuiteAPI</a></code></td><td></td></tr>
+                <tr><td><code>each</code></td><td><code><a href="#ref-Each">Each</a>&lt;<a href="#ref-SuiteFactory">SuiteFactory</a>&gt;</code></td><td></td></tr>
+                <tr><td><code>for&lt;T&gt;(cases: readonly T[])</code></td><td><code>(name: <a href="#ref-EachTitle">EachTitle</a>, fn: (arg: T) =&gt; <a href="#ref-Awaitable">Awaitable</a>&lt;unknown&gt;, options?: number | <a href="#ref-TestOptions">TestOptions</a>) =&gt; void</code></td><td></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-BenchOptions"><code>BenchOptions</code></h3>
+        <pre><code class="language-ts">export interface BenchOptions { ... }</code></pre>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>time?</code></td><td><code>number</code></td><td></td></tr>
+                <tr><td><code>iterations?</code></td><td><code>number</code></td><td></td></tr>
+                <tr><td><code>warmupTime?</code></td><td><code>number</code></td><td></td></tr>
+                <tr><td><code>warmupIterations?</code></td><td><code>number</code></td><td></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-BenchAPI"><code>BenchAPI</code></h3>
+        <pre><code class="language-ts">export interface BenchAPI { ... }</code></pre>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>(name: EachTitle, fn: () =&gt; Awaitable&lt;unknown&gt;, options?: BenchOptions)</code></td><td><code>void</code></td><td></td></tr>
+                <tr><td><code>skip</code></td><td><code><a href="#ref-BenchAPI">BenchAPI</a></code></td><td></td></tr>
+                <tr><td><code>only</code></td><td><code><a href="#ref-BenchAPI">BenchAPI</a></code></td><td></td></tr>
+                <tr><td><code>todo</code></td><td><code>(name: <a href="#ref-EachTitle">EachTitle</a>) =&gt; void</code></td><td></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-Matchers"><code>Matchers</code></h3>
+        <pre><code class="language-ts">export interface Matchers&lt;R = void, T = unknown&gt; { ... }</code></pre>
+        <p>The matchers of expect(value): R is what each gives (void, or a promise after resolves and rejects). Matchers of the project (expect.extend) are declared by merging: <code>declare module '@xufa/test' { interface Matchers&lt;R, T&gt; { toBeEven(): R } }</code>.</p>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>toBe(expected: unknown)</code></td><td><code>R</code></td><td></td></tr>
+                <tr><td><code>toEqual(expected: unknown)</code></td><td><code>R</code></td><td></td></tr>
+                <tr><td><code>toStrictEqual(expected: unknown)</code></td><td><code>R</code></td><td></td></tr>
+                <tr><td><code>toMatchObject(expected: object | readonly object[])</code></td><td><code>R</code></td><td></td></tr>
+                <tr><td><code>toContain(item: unknown)</code></td><td><code>R</code></td><td></td></tr>
+                <tr><td><code>toContainEqual(item: unknown)</code></td><td><code>R</code></td><td></td></tr>
+                <tr><td><code>toHaveLength(length: number)</code></td><td><code>R</code></td><td></td></tr>
+                <tr><td><code>toHaveProperty(path: string | readonly (string | number)[], value?: unknown)</code></td><td><code>R</code></td><td></td></tr>
+                <tr><td><code>toBeCloseTo(expected: number, digits?: number)</code></td><td><code>R</code></td><td></td></tr>
+                <tr><td><code>toBeDefined()</code></td><td><code>R</code></td><td></td></tr>
+                <tr><td><code>toBeUndefined()</code></td><td><code>R</code></td><td></td></tr>
+                <tr><td><code>toBeNull()</code></td><td><code>R</code></td><td></td></tr>
+                <tr><td><code>toBeNaN()</code></td><td><code>R</code></td><td></td></tr>
+                <tr><td><code>toBeTruthy()</code></td><td><code>R</code></td><td></td></tr>
+                <tr><td><code>toBeFalsy()</code></td><td><code>R</code></td><td></td></tr>
+                <tr><td><code>toBeGreaterThan(expected: number | bigint)</code></td><td><code>R</code></td><td></td></tr>
+                <tr><td><code>toBeGreaterThanOrEqual(expected: number | bigint)</code></td><td><code>R</code></td><td></td></tr>
+                <tr><td><code>toBeLessThan(expected: number | bigint)</code></td><td><code>R</code></td><td></td></tr>
+                <tr><td><code>toBeLessThanOrEqual(expected: number | bigint)</code></td><td><code>R</code></td><td></td></tr>
+                <tr><td><code>toBeInstanceOf(expected: Function)</code></td><td><code>R</code></td><td></td></tr>
+                <tr><td><code>toBeTypeOf(type: 'bigint' | 'boolean' | 'function' | 'number' | 'object' | 'string' | 'symbol' | 'undefined')</code></td><td><code>R</code></td><td></td></tr>
+                <tr><td><code>toBeOneOf(expected: readonly unknown[])</code></td><td><code>R</code></td><td></td></tr>
+                <tr><td><code>toMatch(expected: string | RegExp)</code></td><td><code>R</code></td><td></td></tr>
+                <tr><td><code>toSatisfy(predicate: ((value: T) =&gt; boolean) | string, message?: string)</code></td><td><code>R</code></td><td><p>A predicate the value satisfies (with</p></td></tr>
+                <tr><td><code>toThrow(expected?: string | RegExp | Error | Constructable | object)</code></td><td><code>R</code></td><td></td></tr>
+                <tr><td><code>toThrowError(expected?: string | RegExp | Error | Constructable | object)</code></td><td><code>R</code></td><td></td></tr>
+                <tr><td><code>toMatchSnapshot(hint?: string)</code></td><td><code>R</code></td><td></td></tr>
+                <tr><td><code>toMatchSnapshot(properties: object, hint?: string)</code></td><td><code>R</code></td><td></td></tr>
+                <tr><td><code>toMatchInlineSnapshot(snapshot?: string)</code></td><td><code>R</code></td><td></td></tr>
+                <tr><td><code>toMatchInlineSnapshot(properties: object, snapshot?: string)</code></td><td><code>R</code></td><td></td></tr>
+                <tr><td><code>toThrowErrorMatchingSnapshot(hint?: string)</code></td><td><code>R</code></td><td></td></tr>
+                <tr><td><code>toThrowErrorMatchingInlineSnapshot(snapshot?: string)</code></td><td><code>R</code></td><td></td></tr>
+                <tr><td><code>toHaveBeenCalled()</code></td><td><code>R</code></td><td><p>Mocks.</p></td></tr>
+                <tr><td><code>toHaveBeenCalledOnce()</code></td><td><code>R</code></td><td></td></tr>
+                <tr><td><code>toHaveBeenCalledTimes(times: number)</code></td><td><code>R</code></td><td></td></tr>
+                <tr><td><code>toHaveBeenCalledWith(...args: unknown[])</code></td><td><code>R</code></td><td></td></tr>
+                <tr><td><code>toHaveBeenCalledExactlyOnceWith(...args: unknown[])</code></td><td><code>R</code></td><td></td></tr>
+                <tr><td><code>toHaveBeenLastCalledWith(...args: unknown[])</code></td><td><code>R</code></td><td></td></tr>
+                <tr><td><code>toHaveBeenNthCalledWith(n: number, ...args: unknown[])</code></td><td><code>R</code></td><td></td></tr>
+                <tr><td><code>toHaveReturned()</code></td><td><code>R</code></td><td></td></tr>
+                <tr><td><code>toHaveReturnedTimes(times: number)</code></td><td><code>R</code></td><td></td></tr>
+                <tr><td><code>toHaveReturnedWith(value: unknown)</code></td><td><code>R</code></td><td></td></tr>
+                <tr><td><code>toHaveLastReturnedWith(value: unknown)</code></td><td><code>R</code></td><td></td></tr>
+                <tr><td><code>toHaveNthReturnedWith(n: number, value: unknown)</code></td><td><code>R</code></td><td></td></tr>
+                <tr><td><code>toBeCalled()</code></td><td><code>R</code></td><td></td></tr>
+                <tr><td><code>toBeCalledOnce()</code></td><td><code>R</code></td><td></td></tr>
+                <tr><td><code>toBeCalledTimes(times: number)</code></td><td><code>R</code></td><td></td></tr>
+                <tr><td><code>toBeCalledWith(...args: unknown[])</code></td><td><code>R</code></td><td></td></tr>
+                <tr><td><code>lastCalledWith(...args: unknown[])</code></td><td><code>R</code></td><td></td></tr>
+                <tr><td><code>nthCalledWith(n: number, ...args: unknown[])</code></td><td><code>R</code></td><td></td></tr>
+                <tr><td><code>toReturn()</code></td><td><code>R</code></td><td></td></tr>
+                <tr><td><code>toReturnTimes(times: number)</code></td><td><code>R</code></td><td></td></tr>
+                <tr><td><code>toReturnWith(value: unknown)</code></td><td><code>R</code></td><td></td></tr>
+                <tr><td><code>lastReturnedWith(value: unknown)</code></td><td><code>R</code></td><td></td></tr>
+                <tr><td><code>nthReturnedWith(n: number, value: unknown)</code></td><td><code>R</code></td><td></td></tr>
+                <tr><td><code>toHaveStatus(status: number)</code></td><td><code>R</code></td><td><p>Responses of API tests.</p></td></tr>
+                <tr><td><code>toHaveHeader(name: string, value?: string | RegExp)</code></td><td><code>R</code></td><td></td></tr>
+                <tr><td><code>toMatchSchema(schema: object)</code></td><td><code>R</code></td><td><p>Valid by a JSON Schema.</p></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-MatcherState"><code>MatcherState</code></h3>
+        <pre><code class="language-ts">export interface MatcherState { ... }</code></pre>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>isNot</code></td><td><code>boolean</code></td><td></td></tr>
+                <tr><td><code>promise</code></td><td><code>string</code></td><td></td></tr>
+                <tr><td><code>equals(a: unknown, b: unknown, testers?: Tester[], strict?: boolean)</code></td><td><code>boolean</code></td><td></td></tr>
+                <tr><td><code>utils</code></td><td><code>Record&lt;string, (...args: any[]) =&gt; any&gt;</code></td><td></td></tr>
+                <tr><td><code>assertionCalls?</code></td><td><code>number</code></td><td></td></tr>
+                <tr><td><code>expectedAssertionsNumber?</code></td><td><code>number | null</code></td><td></td></tr>
+                <tr><td><code>currentTestName?</code></td><td><code>string</code></td><td></td></tr>
+                <tr><td><code>testPath?</code></td><td><code>string</code></td><td></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-ExpectationResult"><code>ExpectationResult</code></h3>
+        <pre><code class="language-ts">export interface ExpectationResult { ... }</code></pre>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>pass</code></td><td><code>boolean</code></td><td></td></tr>
+                <tr><td><code>message</code></td><td><code>() =&gt; string</code></td><td></td></tr>
+                <tr><td><code>actual?</code></td><td><code>unknown</code></td><td></td></tr>
+                <tr><td><code>expected?</code></td><td><code>unknown</code></td><td></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-SnapshotSerializer"><code>SnapshotSerializer</code></h3>
+        <pre><code class="language-ts">export interface SnapshotSerializer { ... }</code></pre>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>test(value: unknown)</code></td><td><code>boolean</code></td><td></td></tr>
+                <tr><td><code>serialize?(value: unknown, config: unknown, indentation: string, depth: number, refs: unknown, printer: Function)</code></td><td><code>string</code></td><td></td></tr>
+                <tr><td><code>print?(value: unknown, serialize: (value: unknown) =&gt; string, indent: (text: string) =&gt; string)</code></td><td><code>string</code></td><td></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-AsymmetricMatchersContaining"><code>AsymmetricMatchersContaining</code></h3>
+        <pre><code class="language-ts">export interface AsymmetricMatchersContaining { ... }</code></pre>
+        <p>expect.any(String), expect.objectContaining({ ... })...: values that match what they describe.</p>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>any(constructor: unknown)</code></td><td><code>any</code></td><td></td></tr>
+                <tr><td><code>anything()</code></td><td><code>any</code></td><td></td></tr>
+                <tr><td><code>objectContaining&lt;T = any&gt;(expected: T)</code></td><td><code>any</code></td><td></td></tr>
+                <tr><td><code>arrayContaining&lt;T = unknown&gt;(expected: readonly T[])</code></td><td><code>any</code></td><td></td></tr>
+                <tr><td><code>stringContaining(expected: string)</code></td><td><code>any</code></td><td></td></tr>
+                <tr><td><code>stringMatching(expected: string | RegExp)</code></td><td><code>any</code></td><td></td></tr>
+                <tr><td><code>closeTo(expected: number, digits?: number)</code></td><td><code>any</code></td><td></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-ExpectPollOptions"><code>ExpectPollOptions</code></h3>
+        <pre><code class="language-ts">export interface ExpectPollOptions { ... }</code></pre>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>interval?</code></td><td><code>number</code></td><td></td></tr>
+                <tr><td><code>timeout?</code></td><td><code>number</code></td><td></td></tr>
+                <tr><td><code>message?</code></td><td><code>string</code></td><td></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-ExpectStatic"><code>ExpectStatic</code></h3>
+        <pre><code class="language-ts">export interface ExpectStatic extends AsymmetricMatchersContaining { ... }</code></pre>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>(actual: T, message?: string)</code></td><td><code><a href="#ref-Assertion">Assertion</a>&lt;T&gt;</code></td><td></td></tr>
+                <tr><td><code>soft&lt;T&gt;(actual: T, message?: string)</code></td><td><code><a href="#ref-Assertion">Assertion</a>&lt;T&gt;</code></td><td><p>Fails the test at its end, not at once.</p></td></tr>
+                <tr><td><code>poll&lt;T&gt;(fn: () =&gt; T, options?: number | ExpectPollOptions)</code></td><td><code><a href="#ref-PromisifyAssertion">PromisifyAssertion</a>&lt;Awaited&lt;T&gt;&gt;</code></td><td><p>Asserts again until the matcher passes or the time is up.</p></td></tr>
+                <tr><td><code>not</code></td><td><code><a href="#ref-AsymmetricMatchersContaining">AsymmetricMatchersContaining</a></code></td><td></td></tr>
+                <tr><td><code>extend(matchers: Record&lt;string, (this: MatcherState, received: any, ...expected: any[]) =&gt; Awaitable&lt;ExpectationResult&gt;&gt;)</code></td><td><code>void</code></td><td></td></tr>
+                <tr><td><code>assertions(count: number)</code></td><td><code>void</code></td><td></td></tr>
+                <tr><td><code>hasAssertions()</code></td><td><code>void</code></td><td></td></tr>
+                <tr><td><code>fail(message?: string)</code></td><td><code>never</code></td><td></td></tr>
+                <tr><td><code>unreachable(message?: string)</code></td><td><code>never</code></td><td></td></tr>
+                <tr><td><code>getState()</code></td><td><code><a href="#ref-MatcherState">MatcherState</a></code></td><td></td></tr>
+                <tr><td><code>setState(state: Partial&lt;MatcherState&gt;)</code></td><td><code>void</code></td><td></td></tr>
+                <tr><td><code>addEqualityTesters(testers: Tester[])</code></td><td><code>void</code></td><td></td></tr>
+                <tr><td><code>addSnapshotSerializer(serializer: SnapshotSerializer)</code></td><td><code>void</code></td><td></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-MockContext"><code>MockContext</code></h3>
+        <pre><code class="language-ts">export interface MockContext&lt;T extends Procedure = Procedure&gt; { ... }</code></pre>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>calls</code></td><td><code>Parameters&lt;T&gt;[]</code></td><td></td></tr>
+                <tr><td><code>results</code></td><td><code><a href="#ref-MockResult">MockResult</a>&lt;ReturnType&lt;T&gt;&gt;[]</code></td><td></td></tr>
+                <tr><td><code>settledResults</code></td><td><code>({ type: 'fulfilled'; value: Awaited&lt;ReturnType&lt;T&gt;&gt; } | { type: 'rejected'; value: unknown })[]</code></td><td></td></tr>
+                <tr><td><code>instances</code></td><td><code>ReturnType&lt;T&gt;[]</code></td><td></td></tr>
+                <tr><td><code>contexts</code></td><td><code>unknown[]</code></td><td></td></tr>
+                <tr><td><code>invocationCallOrder</code></td><td><code>number[]</code></td><td></td></tr>
+                <tr><td><code>lastCall</code></td><td><code>Parameters&lt;T&gt; | undefined</code></td><td></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-MockInstance"><code>MockInstance</code></h3>
+        <pre><code class="language-ts">export interface MockInstance&lt;T extends Procedure = Procedure&gt; { ... }</code></pre>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>mock</code></td><td><code><a href="#ref-MockContext">MockContext</a>&lt;T&gt;</code></td><td></td></tr>
+                <tr><td><code>_isMockFunction</code></td><td><code>true</code></td><td></td></tr>
+                <tr><td><code>getMockName()</code></td><td><code>string</code></td><td></td></tr>
+                <tr><td><code>mockName(name: string)</code></td><td><code>this</code></td><td></td></tr>
+                <tr><td><code>getMockImplementation()</code></td><td><code>T | undefined</code></td><td></td></tr>
+                <tr><td><code>mockClear()</code></td><td><code>this</code></td><td></td></tr>
+                <tr><td><code>mockReset()</code></td><td><code>this</code></td><td></td></tr>
+                <tr><td><code>mockRestore()</code></td><td><code>void</code></td><td></td></tr>
+                <tr><td><code>mockImplementation(fn: T)</code></td><td><code>this</code></td><td></td></tr>
+                <tr><td><code>mockImplementationOnce(fn: T)</code></td><td><code>this</code></td><td></td></tr>
+                <tr><td><code>withImplementation(fn: T, callback: () =&gt; void)</code></td><td><code>this</code></td><td><p>The implementation while the callback runs, the one before it after.</p></td></tr>
+                <tr><td><code>withImplementation(fn: T, callback: () =&gt; Promise&lt;void&gt;)</code></td><td><code>Promise&lt;this&gt;</code></td><td></td></tr>
+                <tr><td><code>mockReturnValue(value: ReturnType&lt;T&gt;)</code></td><td><code>this</code></td><td></td></tr>
+                <tr><td><code>mockReturnValueOnce(value: ReturnType&lt;T&gt;)</code></td><td><code>this</code></td><td></td></tr>
+                <tr><td><code>mockResolvedValue(value: Awaited&lt;ReturnType&lt;T&gt;&gt;)</code></td><td><code>this</code></td><td></td></tr>
+                <tr><td><code>mockResolvedValueOnce(value: Awaited&lt;ReturnType&lt;T&gt;&gt;)</code></td><td><code>this</code></td><td></td></tr>
+                <tr><td><code>mockRejectedValue(error: unknown)</code></td><td><code>this</code></td><td></td></tr>
+                <tr><td><code>mockRejectedValueOnce(error: unknown)</code></td><td><code>this</code></td><td></td></tr>
+                <tr><td><code>mockReturnThis()</code></td><td><code>this</code></td><td></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-Mock"><code>Mock</code></h3>
+        <pre><code class="language-ts">export interface Mock&lt;T extends Procedure = Procedure&gt; extends MockInstance&lt;T&gt; { ... }</code></pre>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>(...args: Parameters&lt;T&gt;)</code></td><td><code>ReturnType&lt;T&gt;</code></td><td></td></tr>
+                <tr><td><code>new (...args: Parameters&lt;T&gt;)</code></td><td><code>ReturnType&lt;T&gt;</code></td><td></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-FakeTimersConfig"><code>FakeTimersConfig</code></h3>
+        <pre><code class="language-ts">export interface FakeTimersConfig { ... }</code></pre>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>now?</code></td><td><code>number | Date</code></td><td></td></tr>
+                <tr><td><code>toFake?</code></td><td><code>readonly string[]</code></td><td></td></tr>
+                <tr><td><code>loopLimit?</code></td><td><code>number</code></td><td></td></tr>
+                <tr><td><code>shouldAdvanceTime?</code></td><td><code>boolean</code></td><td></td></tr>
+                <tr><td><code>advanceTimeDelta?</code></td><td><code>number</code></td><td></td></tr>
+                <tr><td><code>shouldClearNativeTimers?</code></td><td><code>boolean</code></td><td></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-WaitForOptions"><code>WaitForOptions</code></h3>
+        <pre><code class="language-ts">export interface WaitForOptions { ... }</code></pre>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>timeout?</code></td><td><code>number</code></td><td></td></tr>
+                <tr><td><code>interval?</code></td><td><code>number</code></td><td></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-VitestUtils"><code>VitestUtils</code></h3>
+        <pre><code class="language-ts">export interface VitestUtils { ... }</code></pre>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>fn&lt;T extends Procedure = Procedure&gt;(implementation?: T)</code></td><td><code><a href="#ref-Mock">Mock</a>&lt;T&gt;</code></td><td></td></tr>
+                <tr><td><code>spyOn&lt;T, K extends Properties&lt;Required&lt;T&gt;&gt;&gt;(object: T, property: K, accessType: 'get')</code></td><td><code><a href="#ref-Mock">Mock</a>&lt;() =&gt; T[K]&gt;</code></td><td></td></tr>
+                <tr><td><code>spyOn&lt;T, K extends Properties&lt;Required&lt;T&gt;&gt;&gt;(object: T, property: K, accessType: 'set')</code></td><td><code><a href="#ref-Mock">Mock</a>&lt;(value: T[K]) =&gt; void&gt;</code></td><td></td></tr>
+                <tr><td><code>spyOn&lt;T, K extends Methods&lt;Required&lt;T&gt;&gt;&gt;(object: T, method: K)</code></td><td><code>Required&lt;T&gt;[K] extends <a href="#ref-Procedure">Procedure</a> ? <a href="#ref-Mock">Mock</a>&lt;Required&lt;T&gt;[K]&gt; : never</code></td><td></td></tr>
+                <tr><td><code>isMockFunction(fn: unknown)</code></td><td><code>fn is <a href="#ref-Mock">Mock</a></code></td><td></td></tr>
+                <tr><td><code>mocked&lt;T&gt;(item: T, deep?: boolean | { partial?: boolean; deep?: boolean })</code></td><td><code><a href="#ref-Mocked">Mocked</a>&lt;T&gt;</code></td><td></td></tr>
+                <tr><td><code>clearAllMocks()</code></td><td><code><a href="#ref-VitestUtils">VitestUtils</a></code></td><td></td></tr>
+                <tr><td><code>resetAllMocks()</code></td><td><code><a href="#ref-VitestUtils">VitestUtils</a></code></td><td></td></tr>
+                <tr><td><code>restoreAllMocks()</code></td><td><code><a href="#ref-VitestUtils">VitestUtils</a></code></td><td></td></tr>
+                <tr><td><code>mock(path: string, factory?: (importOriginal: &lt;T = any&gt;() =&gt; Promise&lt;T&gt;) =&gt; any)</code></td><td><code>void</code></td><td><p>Modules.</p></td></tr>
+                <tr><td><code>doMock(path: string, factory?: (importOriginal: &lt;T = any&gt;() =&gt; Promise&lt;T&gt;) =&gt; any)</code></td><td><code>void</code></td><td></td></tr>
+                <tr><td><code>unmock(path: string)</code></td><td><code>void</code></td><td></td></tr>
+                <tr><td><code>doUnmock(path: string)</code></td><td><code>void</code></td><td></td></tr>
+                <tr><td><code>dontMock(path: string)</code></td><td><code><a href="#ref-VitestUtils">VitestUtils</a></code></td><td></td></tr>
+                <tr><td><code>deepUnmock(path: string)</code></td><td><code><a href="#ref-VitestUtils">VitestUtils</a></code></td><td></td></tr>
+                <tr><td><code>enableAutomock()</code></td><td><code><a href="#ref-VitestUtils">VitestUtils</a></code></td><td></td></tr>
+                <tr><td><code>disableAutomock()</code></td><td><code><a href="#ref-VitestUtils">VitestUtils</a></code></td><td></td></tr>
+                <tr><td><code>hoisted&lt;T&gt;(factory: () =&gt; T)</code></td><td><code>T</code></td><td></td></tr>
+                <tr><td><code>importActual&lt;T = any&gt;(path: string)</code></td><td><code>Promise&lt;T&gt;</code></td><td></td></tr>
+                <tr><td><code>importMock&lt;T = any&gt;(path: string)</code></td><td><code>Promise&lt;<a href="#ref-Mocked">Mocked</a>&lt;T&gt;&gt;</code></td><td></td></tr>
+                <tr><td><code>requireActual&lt;T = any&gt;(path: string)</code></td><td><code>T</code></td><td></td></tr>
+                <tr><td><code>requireMock&lt;T = any&gt;(path: string)</code></td><td><code><a href="#ref-Mocked">Mocked</a>&lt;T&gt;</code></td><td></td></tr>
+                <tr><td><code>resetModules()</code></td><td><code><a href="#ref-VitestUtils">VitestUtils</a></code></td><td></td></tr>
+                <tr><td><code>isolateModules(fn: () =&gt; void)</code></td><td><code>void</code></td><td></td></tr>
+                <tr><td><code>isolateModulesAsync(fn: () =&gt; Promise&lt;void&gt;)</code></td><td><code>Promise&lt;void&gt;</code></td><td></td></tr>
+                <tr><td><code>dynamicImportSettled()</code></td><td><code>Promise&lt;void&gt;</code></td><td></td></tr>
+                <tr><td><code>useFakeTimers(config?: FakeTimersConfig)</code></td><td><code><a href="#ref-VitestUtils">VitestUtils</a></code></td><td><p>Timers.</p></td></tr>
+                <tr><td><code>useRealTimers()</code></td><td><code><a href="#ref-VitestUtils">VitestUtils</a></code></td><td></td></tr>
+                <tr><td><code>isFakeTimers()</code></td><td><code>boolean</code></td><td></td></tr>
+                <tr><td><code>advanceTimersByTime(ms: number)</code></td><td><code><a href="#ref-VitestUtils">VitestUtils</a></code></td><td></td></tr>
+                <tr><td><code>advanceTimersByTimeAsync(ms: number)</code></td><td><code>Promise&lt;<a href="#ref-VitestUtils">VitestUtils</a>&gt;</code></td><td></td></tr>
+                <tr><td><code>advanceTimersToNextTimer(steps?: number)</code></td><td><code><a href="#ref-VitestUtils">VitestUtils</a></code></td><td></td></tr>
+                <tr><td><code>advanceTimersToNextTimerAsync(steps?: number)</code></td><td><code>Promise&lt;<a href="#ref-VitestUtils">VitestUtils</a>&gt;</code></td><td></td></tr>
+                <tr><td><code>runAllTimers()</code></td><td><code><a href="#ref-VitestUtils">VitestUtils</a></code></td><td></td></tr>
+                <tr><td><code>runAllTimersAsync()</code></td><td><code>Promise&lt;<a href="#ref-VitestUtils">VitestUtils</a>&gt;</code></td><td></td></tr>
+                <tr><td><code>runOnlyPendingTimers()</code></td><td><code><a href="#ref-VitestUtils">VitestUtils</a></code></td><td></td></tr>
+                <tr><td><code>runOnlyPendingTimersAsync()</code></td><td><code>Promise&lt;<a href="#ref-VitestUtils">VitestUtils</a>&gt;</code></td><td></td></tr>
+                <tr><td><code>runAllTicks()</code></td><td><code><a href="#ref-VitestUtils">VitestUtils</a></code></td><td></td></tr>
+                <tr><td><code>clearAllTimers()</code></td><td><code><a href="#ref-VitestUtils">VitestUtils</a></code></td><td></td></tr>
+                <tr><td><code>getTimerCount()</code></td><td><code>number</code></td><td></td></tr>
+                <tr><td><code>setSystemTime(time: number | string | Date)</code></td><td><code><a href="#ref-VitestUtils">VitestUtils</a></code></td><td></td></tr>
+                <tr><td><code>getMockedSystemTime()</code></td><td><code>Date | null</code></td><td></td></tr>
+                <tr><td><code>getRealSystemTime()</code></td><td><code>number</code></td><td></td></tr>
+                <tr><td><code>stubEnv(name: string, value: string | boolean | undefined)</code></td><td><code><a href="#ref-VitestUtils">VitestUtils</a></code></td><td><p>Environment and globals.</p></td></tr>
+                <tr><td><code>unstubAllEnvs()</code></td><td><code><a href="#ref-VitestUtils">VitestUtils</a></code></td><td></td></tr>
+                <tr><td><code>stubGlobal(name: string | symbol | number, value: unknown)</code></td><td><code><a href="#ref-VitestUtils">VitestUtils</a></code></td><td></td></tr>
+                <tr><td><code>unstubAllGlobals()</code></td><td><code><a href="#ref-VitestUtils">VitestUtils</a></code></td><td></td></tr>
+                <tr><td><code>waitFor&lt;T&gt;(callback: () =&gt; T, options?: number | WaitForOptions)</code></td><td><code>Promise&lt;Awaited&lt;T&gt;&gt;</code></td><td><p>Waiting.</p></td></tr>
+                <tr><td><code>waitUntil&lt;T&gt;(callback: () =&gt; T, options?: number | WaitForOptions)</code></td><td><code>Promise&lt;Exclude&lt;Awaited&lt;T&gt;, false | 0 | '' | null | undefined&gt;&gt;</code></td><td></td></tr>
+                <tr><td><code>setTimeout(ms: number)</code></td><td><code><a href="#ref-VitestUtils">VitestUtils</a></code></td><td><p>Jest's.</p></td></tr>
+                <tr><td><code>retryTimes(times: number, options?: { logErrorsBeforeRetry?: boolean })</code></td><td><code><a href="#ref-VitestUtils">VitestUtils</a></code></td><td></td></tr>
+                <tr><td><code>setConfig(config: Record&lt;string, unknown&gt;)</code></td><td><code>void</code></td><td></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-Mismatch"><code>Mismatch</code></h3>
+        <pre><code class="language-ts">export interface Mismatch&lt;Actual, Expected&gt; { ... }</code></pre>
+        <p>What a type check that fails shows in its error: the two types.</p>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>'the types differ'</code></td><td><code>{ actual: Actual; expected: Expected }</code></td><td></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-ExpectTypeOf"><code>ExpectTypeOf</code></h3>
+        <pre><code class="language-ts">export interface ExpectTypeOf&lt;Actual, Positive extends boolean = true&gt; { ... }</code></pre>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>toEqualTypeOf&lt;Expected extends EqualHint&lt;Actual, Expected, Positive&gt;&gt;(...check: CheckArgs&lt;IsEqual&lt;Actual, Expected&gt;, Positive&gt;)</code></td><td><code>void</code></td><td><p>The type is exactly this one.</p></td></tr>
+                <tr><td><code>toEqualTypeOf&lt;Expected extends EqualHint&lt;Actual, Expected, Positive&gt;&gt;(expected: Expected, ...check: CheckArgs&lt;IsEqual&lt;Actual, Expected&gt;, Positive&gt;)</code></td><td><code>void</code></td><td></td></tr>
+                <tr><td><code>toMatchTypeOf&lt;Expected extends Expecting&lt;Extends&lt;Actual, Expected&gt;, Positive, Actual, Expected&gt;&gt;(...check: CheckArgs&lt;Extends&lt;Actual, Expected&gt;, Positive&gt;)</code></td><td><code>void</code></td><td><p>The type is assignable to this one.</p></td></tr>
+                <tr><td><code>toMatchTypeOf&lt;Expected extends Expecting&lt;Extends&lt;Actual, Expected&gt;, Positive, Actual, Expected&gt;&gt;(expected: Expected, ...check: CheckArgs&lt;Extends&lt;Actual, Expected&gt;, Positive&gt;)</code></td><td><code>void</code></td><td></td></tr>
+                <tr><td><code>toExtend&lt;Expected extends Expecting&lt;Extends&lt;Actual, Expected&gt;, Positive, Actual, Expected&gt;&gt;(...check: CheckArgs&lt;Extends&lt;Actual, Expected&gt;, Positive&gt;)</code></td><td><code>void</code></td><td><p>Another name of toMatchTypeOf.</p></td></tr>
+                <tr><td><code>toHaveProperty&lt;K extends PropertyKey&gt;(key: K, ...check: CheckArgs&lt;K extends keyof Actual ? true : false, Positive&gt;)</code></td><td><code>K extends keyof Actual ? <a href="#ref-ExpectTypeOf">ExpectTypeOf</a>&lt;Actual[K], Positive&gt; : void</code></td><td></td></tr>
+                <tr><td><code>toBeAny(...check: CheckArgs&lt;IsAny&lt;Actual&gt;, Positive&gt;)</code></td><td><code>void</code></td><td></td></tr>
+                <tr><td><code>toBeUnknown(...check: CheckArgs&lt;IsUnknown&lt;Actual&gt;, Positive&gt;)</code></td><td><code>void</code></td><td></td></tr>
+                <tr><td><code>toBeNever(...check: CheckArgs&lt;IsNever&lt;Actual&gt;, Positive&gt;)</code></td><td><code>void</code></td><td></td></tr>
+                <tr><td><code>toBeFunction(...check: CheckArgs&lt;Extends&lt;Actual, Procedure&gt;, Positive&gt;)</code></td><td><code>void</code></td><td></td></tr>
+                <tr><td><code>toBeObject(...check: CheckArgs&lt;Extends&lt;Actual, object&gt;, Positive&gt;)</code></td><td><code>void</code></td><td></td></tr>
+                <tr><td><code>toBeArray(...check: CheckArgs&lt;Extends&lt;Actual, readonly any[]&gt;, Positive&gt;)</code></td><td><code>void</code></td><td></td></tr>
+                <tr><td><code>toBeString(...check: CheckArgs&lt;Extends&lt;Actual, string&gt;, Positive&gt;)</code></td><td><code>void</code></td><td></td></tr>
+                <tr><td><code>toBeNumber(...check: CheckArgs&lt;Extends&lt;Actual, number&gt;, Positive&gt;)</code></td><td><code>void</code></td><td></td></tr>
+                <tr><td><code>toBeBoolean(...check: CheckArgs&lt;Extends&lt;Actual, boolean&gt;, Positive&gt;)</code></td><td><code>void</code></td><td></td></tr>
+                <tr><td><code>toBeBigInt(...check: CheckArgs&lt;Extends&lt;Actual, bigint&gt;, Positive&gt;)</code></td><td><code>void</code></td><td></td></tr>
+                <tr><td><code>toBeSymbol(...check: CheckArgs&lt;Extends&lt;Actual, symbol&gt;, Positive&gt;)</code></td><td><code>void</code></td><td></td></tr>
+                <tr><td><code>toBeVoid(...check: CheckArgs&lt;Extends&lt;Actual, void&gt;, Positive&gt;)</code></td><td><code>void</code></td><td></td></tr>
+                <tr><td><code>toBeNull(...check: CheckArgs&lt;Extends&lt;Actual, null&gt;, Positive&gt;)</code></td><td><code>void</code></td><td></td></tr>
+                <tr><td><code>toBeUndefined(...check: CheckArgs&lt;Extends&lt;Actual, undefined&gt;, Positive&gt;)</code></td><td><code>void</code></td><td></td></tr>
+                <tr><td><code>toBeNullable(...check: CheckArgs&lt;Not&lt;IsEqual&lt;Actual, NonNullable&lt;Actual&gt;&gt;&gt;, Positive&gt;)</code></td><td><code>void</code></td><td></td></tr>
+                <tr><td><code>toBeCallableWith(...args: Actual extends (...args: infer A) =&gt; any ? A : never)</code></td><td><code>void</code></td><td><p>Calls with these arguments type-check (of the last signature, for overloads: a call itself checks them all).</p></td></tr>
+                <tr><td><code>toBeConstructibleWith(...args: Actual extends abstract new (...args: infer A) =&gt; any ? A : never)</code></td><td><code>void</code></td><td></td></tr>
+                <tr><td><code>parameters</code></td><td><code><a href="#ref-ExpectTypeOf">ExpectTypeOf</a>&lt;Actual extends (...args: infer A) =&gt; any ? A : never, Positive&gt;</code></td><td></td></tr>
+                <tr><td><code>parameter&lt;N extends number&gt;(n: N)</code></td><td><code><a href="#ref-ExpectTypeOf">ExpectTypeOf</a>&lt;Actual extends (...args: infer A) =&gt; any ? A[N] : never, Positive&gt;</code></td><td></td></tr>
+                <tr><td><code>returns</code></td><td><code><a href="#ref-ExpectTypeOf">ExpectTypeOf</a>&lt;Actual extends (...args: any[]) =&gt; infer R ? R : never, Positive&gt;</code></td><td></td></tr>
+                <tr><td><code>resolves</code></td><td><code><a href="#ref-ExpectTypeOf">ExpectTypeOf</a>&lt;Awaited&lt;Actual&gt;, Positive&gt;</code></td><td></td></tr>
+                <tr><td><code>items</code></td><td><code><a href="#ref-ExpectTypeOf">ExpectTypeOf</a>&lt;Actual extends readonly (infer I)[] ? I : never, Positive&gt;</code></td><td></td></tr>
+                <tr><td><code>instance</code></td><td><code><a href="#ref-ExpectTypeOf">ExpectTypeOf</a>&lt;Actual extends abstract new (...args: any[]) =&gt; infer I ? I : never, Positive&gt;</code></td><td></td></tr>
+                <tr><td><code>constructorParameters</code></td><td><code><a href="#ref-ExpectTypeOf">ExpectTypeOf</a>&lt;Actual extends abstract new (...args: infer A) =&gt; any ? A : never, Positive&gt;</code></td><td></td></tr>
+                <tr><td><code>exclude&lt;U&gt;()</code></td><td><code><a href="#ref-ExpectTypeOf">ExpectTypeOf</a>&lt;Exclude&lt;Actual, U&gt;, Positive&gt;</code></td><td></td></tr>
+                <tr><td><code>extract&lt;U&gt;()</code></td><td><code><a href="#ref-ExpectTypeOf">ExpectTypeOf</a>&lt;Extract&lt;Actual, U&gt;, Positive&gt;</code></td><td></td></tr>
+                <tr><td><code>pick&lt;K extends keyof Actual&gt;()</code></td><td><code><a href="#ref-ExpectTypeOf">ExpectTypeOf</a>&lt;Pick&lt;Actual, K&gt;, Positive&gt;</code></td><td></td></tr>
+                <tr><td><code>omit&lt;K extends PropertyKey&gt;()</code></td><td><code><a href="#ref-ExpectTypeOf">ExpectTypeOf</a>&lt;Omit&lt;Actual, K&gt;, Positive&gt;</code></td><td></td></tr>
+                <tr><td><code>not</code></td><td><code><a href="#ref-ExpectTypeOf">ExpectTypeOf</a>&lt;Actual, <a href="#ref-Not">Not</a>&lt;Positive&gt;&gt;</code></td><td><p>The checks reversed.</p></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h2 id="types">Types</h2>
+        <p class="ref-index"><a href="#ref-Awaitable"><code>Awaitable</code></a>, <a href="#ref-Procedure"><code>Procedure</code></a>, <a href="#ref-Constructable"><code>Constructable</code></a>, <a href="#ref-TestFunction"><code>TestFunction</code></a>, <a href="#ref-Fixtures"><code>Fixtures</code></a>, <a href="#ref-EachTitle"><code>EachTitle</code></a>, <a href="#ref-SuiteFactory"><code>SuiteFactory</code></a>, <a href="#ref-HookCleanup"><code>HookCleanup</code></a>, <a href="#ref-Assertion"><code>Assertion</code></a>, <a href="#ref-PromisifyAssertion"><code>PromisifyAssertion</code></a>, <a href="#ref-Tester"><code>Tester</code></a>, <a href="#ref-MockResult"><code>MockResult</code></a>, <a href="#ref-Methods"><code>Methods</code></a>, <a href="#ref-Properties"><code>Properties</code></a>, <a href="#ref-Mocked"><code>Mocked</code></a>, <a href="#ref-IsIdentical"><code>IsIdentical</code></a>, <a href="#ref-IsAny"><code>IsAny</code></a>, <a href="#ref-IsNever"><code>IsNever</code></a>, <a href="#ref-IsUnknown"><code>IsUnknown</code></a>, <a href="#ref-Extends"><code>Extends</code></a>, <a href="#ref-Not"><code>Not</code></a>, <a href="#ref-OptionalKeys"><code>OptionalKeys</code></a>, <a href="#ref-ReadonlyKeys"><code>ReadonlyKeys</code></a>, <a href="#ref-Shape"><code>Shape</code></a>, <a href="#ref-IsEqual"><code>IsEqual</code></a>, <a href="#ref-CheckArgs"><code>CheckArgs</code></a>, <a href="#ref-Expecting"><code>Expecting</code></a>, <a href="#ref-EqualHint"><code>EqualHint</code></a></p>
+
+        <h3 id="ref-Awaitable"><code>Awaitable</code></h3>
+        <pre><code class="language-ts">export type Awaitable&lt;T&gt; = T | PromiseLike&lt;T&gt;;</code></pre>
+
+        <h3 id="ref-Procedure"><code>Procedure</code></h3>
+        <pre><code class="language-ts">type Procedure = (...args: any[]) =&gt; any;</code></pre>
+
+        <h3 id="ref-Constructable"><code>Constructable</code></h3>
+        <pre><code class="language-ts">type Constructable = abstract new (...args: any[]) =&gt; any;</code></pre>
+
+        <h3 id="ref-TestFunction"><code>TestFunction</code></h3>
+        <pre><code class="language-ts">export type TestFunction&lt;ExtraContext = {}&gt; = (context: ExtraContext &amp; TestContext) =&gt; Awaitable&lt;unknown&gt;;</code></pre>
+
+        <h3 id="ref-Fixtures"><code>Fixtures</code></h3>
+        <pre><code class="language-ts">export type Fixtures&lt;T, ExtraContext = {}&gt; = {
+  [K in keyof T]:
+    | T[K]
+    | ((context: Omit&lt;T, K&gt; &amp; ExtraContext &amp; TestContext, use: (value: T[K]) =&gt; Promise&lt;void&gt;) =&gt; Promise&lt;void&gt;)
+    | [
+        (context: Omit&lt;T, K&gt; &amp; ExtraContext &amp; TestContext, use: (value: T[K]) =&gt; Promise&lt;void&gt;) =&gt; Promise&lt;void&gt;,
+        { auto?: boolean; scope?: 'test' | 'file' | 'worker' },
+      ];
+};</code></pre>
+        <p>Fixtures of test.extend: values, or functions that give them to <code>use</code> (and clean up after it).</p>
+
+        <h3 id="ref-EachTitle"><code>EachTitle</code></h3>
+        <pre><code class="language-ts">type EachTitle = string | Function;</code></pre>
+
+        <h3 id="ref-SuiteFactory"><code>SuiteFactory</code></h3>
+        <pre><code class="language-ts">export type SuiteFactory = () =&gt; Awaitable&lt;unknown&gt;;</code></pre>
+
+        <h3 id="ref-HookCleanup"><code>HookCleanup</code></h3>
+        <pre><code class="language-ts">export type HookCleanup = () =&gt; Awaitable&lt;unknown&gt;;</code></pre>
+
+        <h3 id="ref-Assertion"><code>Assertion</code></h3>
+        <pre><code class="language-ts">export type Assertion&lt;T = any&gt; = Matchers&lt;void, T&gt; &amp; {
+  not: Assertion&lt;T&gt;;
+  resolves: PromisifyAssertion&lt;Awaited&lt;T&gt;&gt;;
+  rejects: PromisifyAssertion&lt;any&gt;;
+};</code></pre>
+
+        <h3 id="ref-PromisifyAssertion"><code>PromisifyAssertion</code></h3>
+        <pre><code class="language-ts">export type PromisifyAssertion&lt;T&gt; = Matchers&lt;Promise&lt;void&gt;, T&gt; &amp; { not: PromisifyAssertion&lt;T&gt; };</code></pre>
+
+        <h3 id="ref-Tester"><code>Tester</code></h3>
+        <pre><code class="language-ts">export type Tester = (a: unknown, b: unknown, testers: Tester[]) =&gt; boolean | undefined;</code></pre>
+
+        <h3 id="ref-MockResult"><code>MockResult</code></h3>
+        <pre><code class="language-ts">export type MockResult&lt;T&gt; =
+  { type: 'return'; value: T } | { type: 'throw'; value: unknown } | { type: 'incomplete'; value: undefined };</code></pre>
+
+        <h3 id="ref-Methods"><code>Methods</code></h3>
+        <pre><code class="language-ts">type Methods&lt;T&gt; = { [K in keyof T]-?: T[K] extends Procedure ? K : never }[keyof T];</code></pre>
+
+        <h3 id="ref-Properties"><code>Properties</code></h3>
+        <pre><code class="language-ts">type Properties&lt;T&gt; = { [K in keyof T]-?: T[K] extends Procedure ? never : K }[keyof T];</code></pre>
+
+        <h3 id="ref-Mocked"><code>Mocked</code></h3>
+        <pre><code class="language-ts">export type Mocked&lt;T&gt; = (T extends Procedure ? Mock&lt;T&gt; : {}) &amp; {
+  [K in keyof T]: T[K] extends Procedure ? Mock&lt;T[K]&gt; &amp; T[K] : T[K];
+} &amp; T;</code></pre>
+        <p>vi.mocked(value): the type of what was mocked, its functions as mocks.</p>
+
+        <h3 id="ref-IsIdentical"><code>IsIdentical</code></h3>
+        <pre><code class="language-ts">export type IsIdentical&lt;A, B&gt; = (&lt;T&gt;() =&gt; T extends A ? 1 : 2) extends &lt;T&gt;() =&gt; T extends B ? 1 : 2 ? true : false;</code></pre>
+        <p>The same type, to TypeScript itself: true or false (any is only any).</p>
+
+        <h3 id="ref-IsAny"><code>IsAny</code></h3>
+        <pre><code class="language-ts">type IsAny&lt;T&gt; = 0 extends 1 &amp; T ? true : false;</code></pre>
+
+        <h3 id="ref-IsNever"><code>IsNever</code></h3>
+        <pre><code class="language-ts">type IsNever&lt;T&gt; = [T] extends [never] ? true : false;</code></pre>
+
+        <h3 id="ref-IsUnknown"><code>IsUnknown</code></h3>
+        <pre><code class="language-ts">type IsUnknown&lt;T&gt; = IsAny&lt;T&gt; extends true ? false : unknown extends T ? true : false;</code></pre>
+
+        <h3 id="ref-Extends"><code>Extends</code></h3>
+        <pre><code class="language-ts">type Extends&lt;A, B&gt; = IsNever&lt;A&gt; extends true ? IsNever&lt;B&gt; : [A] extends [B] ? true : false;</code></pre>
+
+        <h3 id="ref-Not"><code>Not</code></h3>
+        <pre><code class="language-ts">type Not&lt;B extends boolean&gt; = B extends true ? false : true;</code></pre>
+
+        <h3 id="ref-OptionalKeys"><code>OptionalKeys</code></h3>
+        <pre><code class="language-ts">type OptionalKeys&lt;T&gt; = { [K in keyof T]-?: {} extends Pick&lt;T, K&gt; ? K : never }[keyof T];</code></pre>
+        <p>The keys of an object by kind: optional ones ({} has them), and readonly ones (a copy without readonly differs).</p>
+
+        <h3 id="ref-ReadonlyKeys"><code>ReadonlyKeys</code></h3>
+        <pre><code class="language-ts">type ReadonlyKeys&lt;T&gt; = {
+  [K in keyof T]-?: IsIdentical&lt;{ [Q in K]: T[K] }, { -readonly [Q in K]: T[K] }&gt; extends true ? never : K;
+}[keyof T];</code></pre>
+
+        <h3 id="ref-Shape"><code>Shape</code></h3>
+        <pre><code class="language-ts">export type Shape&lt;T&gt; =
+  IsNever&lt;T&gt; extends true
+    ? { kind: 'never' }
+    : IsAny&lt;T&gt; extends true
+      ? { kind: 'any' }
+      : IsUnknown&lt;T&gt; extends true
+        ? { kind: 'unknown' }
+        : T extends string | number | boolean | bigint | symbol | null | undefined | void
+          ? { kind: 'primitive'; type: T }
+          : T extends abstract new (...args: infer P) =&gt; infer I
+            ? { kind: 'constructor'; params: Shape&lt;P&gt;; instance: Shape&lt;I&gt; }
+            : T extends (...args: infer P) =&gt; infer R
+              ? { kind: 'function'; params: Shape&lt;P&gt;; result: Shape&lt;R&gt;; this: Shape&lt;ThisParameterType&lt;T&gt;&gt; }
+              : T extends readonly any[]
+                ? { kind: 'array'; readonly: T extends any[] ? false : true; items: { [K in keyof T]: Shape&lt;T[K]&gt; } }
+                : {
+                    kind: 'object';
+                    members: { [K in keyof T]-?: Shape&lt;T[K]&gt; };
+                    optional: OptionalKeys&lt;T&gt;;
+                    readonly: ReadonlyKeys&lt;T&gt;;
+                  };</code></pre>
+        <p>What a type is made of, in one form: two types that are the same in it have the same members (each of the same type, with the same optional and readonly keys), parameters, results and items, whatever their names (an interface and the object type of its members; an intersection and the object it makes). Unions are compared member by member.</p>
+
+        <h3 id="ref-IsEqual"><code>IsEqual</code></h3>
+        <pre><code class="language-ts">export type IsEqual&lt;A, B&gt; =
+  IsIdentical&lt;A, B&gt; extends true
+    ? true
+    : IsAny&lt;A&gt; extends true
+      ? false
+      : IsAny&lt;B&gt; extends true
+        ? false
+        : [Shape&lt;A&gt;] extends [Shape&lt;B&gt;]
+          ? [Shape&lt;B&gt;] extends [Shape&lt;A&gt;]
+            ? true
+            : false
+          : false;</code></pre>
+        <p>The same type: identical, else the same in Shape (as Vitest's expectTypeOf tells them; tsd and tstyche only take identical ones).</p>
+
+        <h3 id="ref-CheckArgs"><code>CheckArgs</code></h3>
+        <pre><code class="language-ts">type CheckArgs&lt;Result extends boolean, Positive extends boolean&gt; = Result extends Positive ? [] : [never];</code></pre>
+        <p>A check passes with no argument; one that fails asks for an argument, which makes tsc report it.</p>
+
+        <h3 id="ref-Expecting"><code>Expecting</code></h3>
+        <pre><code class="language-ts">type Expecting&lt;Result extends boolean, Positive extends boolean, Actual, Expected&gt; = Result extends Positive
+  ? unknown
+  : Mismatch&lt;Actual, Expected&gt;;</code></pre>
+        <p>For a check given its type argument (&lt;T&gt;): one that fails, by its constraint, says what the types are.</p>
+
+        <h3 id="ref-EqualHint"><code>EqualHint</code></h3>
+        <pre><code class="language-ts">type EqualHint&lt;Actual, Expected, Positive extends boolean&gt; = Positive extends true
+  ? [Actual] extends [Expected]
+    ? [Expected] extends [Actual]
+      ? unknown
+      : Mismatch&lt;Actual, Expected&gt;
+    : Mismatch&lt;Actual, Expected&gt;
+  : IsIdentical&lt;Actual, Expected&gt; extends true
+    ? Mismatch&lt;Actual, Expected&gt;
+    : unknown;</code></pre>
+        <p>The constraint of toEqualTypeOf&lt;T&gt; (a cheap check: a deep one there would be circular), which says what the types are when it fails: they must be assignable both ways (to be equal), or, with not, not identical.</p>
+      </article>
+    </div>
+
+    <footer class="footer">
+      <div class="container">
+        <span>xufa is MIT licensed. &copy; Jes&uacute;s Seijas</span>
+        <span>
+          <a href="../guide.html">Guide</a> &middot; <a href="../playground.html">Playground</a> &middot; <a href="../http/index.html">HTTP</a> &middot; <a href="../orm/index.html">ORM</a> &middot; <a href="../auth/index.html">Auth</a> &middot;
+          <a href="../sequelize/index.html">Sequelize</a> &middot; <a href="../packages.html">Packages</a> &middot;
+          <a href="../benchmarks.html">Benchmarks</a> &middot; <a href="https://github.com/xufajs/xufa">GitHub</a>
+        </span>
+      </div>
+    </footer>
+  </body>
+</html>

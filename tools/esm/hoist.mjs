@@ -1,7 +1,7 @@
 // The lazy require()s of the ES modules of the repository, made imports: require('@xufa/orm') inside a function
 // becomes ormModule, a namespace imported at the top (import * as ormModule from '@xufa/orm'). In ES modules a cycle
 // needs no lazy require when the import is used once the modules run, and require() of an ES module gives another
-// instance of it under a test runner that isolates files (vyntra's fresh copies). Left lazy: builtins and packages
+// instance of it under a test runner that isolates files (@xufa/test's fresh copies). Left lazy: builtins and packages
 // outside the repository (optional ones: bufferutil, esbuild), CommonJS ones, and requires for their effects.
 // node tools/esm/hoist.mjs <files...>
 import fs from 'node:fs';

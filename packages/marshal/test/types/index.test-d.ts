@@ -1,4 +1,4 @@
-import { expectType, expectError } from 'tsd';
+import { expectTypeOf } from '@xufa/test';
 import { stringify, parse, marshal, unmarshal, clone, Registry, registry, ENCODE, DECODE, MarshalError, type Marshalled } from '../..';
 
 class Point {
@@ -22,10 +22,11 @@ class Money {
 
 const local = new Registry().register(Point).register(Money, { name: 'money', encode: (m) => m.cents, decode: (c) => new Money(c as number) });
 registry.register(Point, Money);
-expectType<string>(stringify({ p: new Point(1, 2) }, { registry: local, functions: 'skip' }));
-expectType<Point>(parse<Point>('[1]', { registry: local, unknown: 'error' }));
-expectType<Marshalled>(marshal(1n));
-expectType<Map<string, number>>(unmarshal<Map<string, number>>([]));
-expectType<Point>(clone(new Point(1, 2)));
-expectError(stringify(1, { unknown: 'drop' }));
-expectType<MarshalError['code']>(new MarshalError().code);
+expectTypeOf(stringify({ p: new Point(1, 2) }, { registry: local, functions: 'skip' })).toEqualTypeOf<string>();
+expectTypeOf(parse<Point>('[1]', { registry: local, unknown: 'error' })).toEqualTypeOf<Point>();
+expectTypeOf(marshal(1n)).toEqualTypeOf<Marshalled>();
+expectTypeOf(unmarshal<Map<string, number>>([])).toEqualTypeOf<Map<string, number>>();
+expectTypeOf(clone(new Point(1, 2))).toEqualTypeOf<Point>();
+// @ts-expect-error
+stringify(1, { unknown: 'drop' });
+expectTypeOf(new MarshalError().code).toEqualTypeOf<MarshalError['code']>();

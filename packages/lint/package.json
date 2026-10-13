@@ -1,0 +1,66 @@
+{
+  "name": "@xufa/lint",
+  "version": "0.1.0",
+  "description": "A linter with ESLint's recommended rules (ported, with their tests) and a formatter with prettier's output, on TypeScript's parser",
+  "type": "commonjs",
+  "main": "./index.js",
+  "types": "./index.d.ts",
+  "bin": {
+    "xufa-lint": "./bin/xufa-lint.js",
+    "xufa-format": "./bin/xufa-format.js"
+  },
+  "exports": {
+    ".": {
+      "types": "./index.d.ts",
+      "import": "./index.mjs",
+      "default": "./index.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "index.js",
+    "index.mjs",
+    "index.d.ts",
+    "bin",
+    "lib",
+    "NOTICE.md"
+  ],
+  "scripts": {
+    "test": "xufa-test",
+    "test:types": "xufa-test --typecheck.only",
+    "build:format": "node scripts/build-typescript.mjs && node scripts/build-format.mjs",
+    "build:format:check": "node scripts/build-typescript.mjs --check && node scripts/build-format.mjs --check"
+  },
+  "keywords": [
+    "lint",
+    "eslint",
+    "format",
+    "prettier",
+    "javascript"
+  ],
+  "author": "Jesús Seijas <jseijas@gmail.com>",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/xufajs/xufa.git",
+    "directory": "packages/lint"
+  },
+  "homepage": "https://github.com/xufajs/xufa/tree/main/packages/lint#readme",
+  "bugs": {
+    "url": "https://github.com/xufajs/xufa/issues"
+  },
+  "engines": {
+    "node": "^22.22.3 || ^24.15.0 || >=25.7.0"
+  },
+  "peerDependencies": {
+    "typescript": ">=5.5"
+  },
+  "devDependencies": {
+    "@xufa/bundle": "workspace:^",
+    "@xufa/test": "workspace:^",
+    "typescript": "~6.0.3"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}

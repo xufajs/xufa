@@ -1,0 +1,17 @@
+{
+  "name": "xufa-test-agent-benchmark",
+  "private": true,
+  "description": "Scenarios that are hard to automate, solved by deterministic tests (the floor) and by the runner's agent (the score).",
+  "scripts": {
+    "start": "node server.js",
+    "test": "xufa-test --project deterministic",
+    "agent": "xufa-test --project agent --ai live",
+    "scorecard": "node scorecard.js"
+  },
+  "devDependencies": {
+    "@xufa/test-ai": "workspace:*",
+    "@xufa/test-web": "workspace:*",
+    "playwright": "1.63.0",
+    "@xufa/test": "workspace:*"
+  }
+}

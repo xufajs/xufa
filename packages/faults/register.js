@@ -1,5 +1,5 @@
 import * as indexModule from './index.js';
 
-// require('@xufa/faults/register') in the setup files of a runner (setupFiles of Jest, Vitest, vyntra; --require of
+// require('@xufa/faults/register') in the setup files of a runner (setupFiles of Jest, Vitest, @xufa/test; --require of
 // Mocha): every fault is cleared after each test.
 indexModule.useFaults();

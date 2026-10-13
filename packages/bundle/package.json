@@ -1,0 +1,56 @@
+{
+  "name": "@xufa/bundle",
+  "version": "0.1.0",
+  "description": "Modules as one script for browsers: ES modules, JSX, TypeScript and CommonJS packages, with their stylesheets, on TypeScript's transpiler",
+  "type": "module",
+  "main": "./index.js",
+  "types": "./index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./index.d.ts",
+      "default": "./index.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "index.js",
+    "index.d.ts",
+    "lib"
+  ],
+  "scripts": {
+    "test": "xufa-test",
+    "test:types": "xufa-test --typecheck.only"
+  },
+  "keywords": [
+    "bundler",
+    "bundle",
+    "jsx",
+    "esbuild",
+    "browser",
+    "commonjs"
+  ],
+  "author": "Jesús Seijas <jseijas@gmail.com>",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/xufajs/xufa.git",
+    "directory": "packages/bundle"
+  },
+  "homepage": "https://github.com/xufajs/xufa/tree/main/packages/bundle#readme",
+  "bugs": {
+    "url": "https://github.com/xufajs/xufa/issues"
+  },
+  "engines": {
+    "node": "^22.22.3 || ^24.15.0 || >=25.7.0"
+  },
+  "devDependencies": {
+    "@xufa/test": "workspace:^",
+    "typescript": "~6.0.3"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "peerDependencies": {
+    "typescript": ">=5.5"
+  }
+}

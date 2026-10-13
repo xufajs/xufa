@@ -15,8 +15,11 @@
   "author": "Jesús Seijas <jseijas@gmail.com>",
   "scripts": {
     "test": "pnpm -r --filter ./packages/** test",
-    "lint": "eslint .",
-    "lintfix": "eslint --fix .",
+    "lint": "xufa-lint",
+    "lintfix": "xufa-lint --fix",
+    "format": "xufa-format --write",
+    "format:check": "xufa-format --check",
+    "build:check": "pnpm --filter @xufa/admin build:check && pnpm --filter @xufa/lint build:format:check && pnpm --filter @xufa/test build-docs:check",
     "bench": "node bench/run.js",
     "bench:quick": "node bench/run.js --duration 3 --warmup 1 --rounds 1",
     "docs": "node tools/docs/build.js",
@@ -33,17 +36,11 @@
     "node": "^22.22.3 || ^24.15.0 || >=25.7.0"
   },
   "devDependencies": {
-    "@eslint/js": "^9.39.2",
     "@types/node": "^22.20.5",
-    "eslint": "^9.39.2",
-    "eslint-config-prettier": "^10.1.8",
-    "eslint-plugin-prettier": "^5.5.5",
+    "@xufa/browser": "workspace:^",
+    "@xufa/bundle": "workspace:^",
+    "@xufa/lint": "workspace:^",
     "fastify-plugin": "^5.1.0",
-    "globals": "^17.0.0",
-    "playwright-core": "^1.63.0",
-    "prettier": "^3.8.0",
-    "tsd": "^0.33.0",
-    "tstyche": "^7.2.5",
     "typescript": "~6.0.3"
   },
   "packageManager": "pnpm@10.32.1"

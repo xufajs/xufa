@@ -44,7 +44,15 @@ export async function api(path, { method = 'GET', body, signal } = {}) {
     throw new ApiError(0, null);
   }
   if (response.status === 204) return null;
-  const data = await response.json().catch(() => ({ error: response.statusText }));
+  // A body that is not JSON is the error of its status; one aborted while it is read (a reload over this one) is
+  // the abort, not the data of the request.
+  let data;
+  try {
+    data = await response.json();
+  } catch (err) {
+    if (err.name === 'AbortError') throw err;
+    data = { error: response.statusText };
+  }
   if (response.status === 401 && data && data.login) {
     // Logged out, or the session ended: to the login page (and nothing more here).
     window.location.href = 'login';
@@ -89,4 +97,23 @@ export function useInterval(callback, every, on = true) {
     const timer = setInterval(() => saved.current(), every);
     return () => clearInterval(timer);
   }, [every, on]);
+}
+
+// Downloads a file of the API (under api/) with the tenant chosen: saved as fileName.
+export async function download(path, fileName) {
+  const headers = {};
+  if (settings.tenant) headers['x-xufa-tenant'] = settings.tenant;
+  const response = await fetch(`api/${path}`, { headers, credentials: 'same-origin' });
+  if (!response.ok) {
+    const data = await response.json().catch(() => ({ error: response.statusText }));
+    throw new ApiError(response.status, data);
+  }
+  const url = URL.createObjectURL(await response.blob());
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = fileName;
+  document.body.append(link);
+  link.click();
+  link.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
 }

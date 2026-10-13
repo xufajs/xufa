@@ -1,0 +1,46 @@
+# Browser mode
+
+With Vitest's `browser.enabled`, a project's test files run in a real browser page, as under `vitest`: real layout, real events, the browser's own APIs. @xufa/test does it with `@xufa/test-web` on Playwright or WebdriverIO, and with the esbuild your Vite project has: each test file is bundled, its packages with it, and run in a page of its own, several at once.
+
+```sh
+npm install --save-dev @xufa/test-web playwright
+npx playwright install chromium
+```
+
+```js
+// vitest.config.ts
+export default {
+  test: { browser: { enabled: true, provider: 'playwright', instances: [{ browser: 'chromium' }] } },
+};
+
+// Counter.test.jsx
+import { render } from '@testing-library/react';
+import { page, userEvent } from 'vitest/browser';
+
+test('counts clicks', async () => {
+  render(<Counter />);
+  await userEvent.click(page.getByRole('button', { name: 'Increment' }));
+  await expect.element(page.getByRole('status')).toHaveTextContent('Count: 1');
+});
+```
+
+`vitest/browser` (or `@vitest/browser/context`) gives `page` (`getByRole`, `getByText`, `getByLabelText`, `getByPlaceholder`, `getByAltText`, `getByTitle`, `getByTestId`, `viewport`, `screenshot`) and `userEvent` (`click`, `dblClick`, `fill`, `type`, `clear`, `hover`, `selectOptions`, `keyboard`, `tab`), whose actions the provider performs. `expect.element()` retries for a second, and jest-dom's matchers are there (`toBeVisible`, `toHaveTextContent`, `toHaveValue`...). `vi.mock` works with a factory (async, with `importOriginal`) or without one. Snapshots work as in Node: `toMatchSnapshot` and `toMatchInlineSnapshot`, with `-u`, elements printed as Vitest prints them. Stylesheets are added to the page, images are data URLs, and failures and console output point at your files.
+
+`--coverage` works in Chromium, from its V8 coverage, as in Node: the same lines, functions and branches.
+
+With WebdriverIO (`provider: 'webdriverio'`, or vitest 4's `webdriverio()` from `@vitest/browser-webdriverio`, which @xufa/test reads without it installed), tests run in `chrome`, `firefox`, `edge` or `safari` through WebDriver, each worker a session whose files run one after the other, their storage and cookies cleared between them. The factory's options, `capabilities` included, go to WebdriverIO's `remote()`. Locators find their element in the page, which WebdriverIO then acts on. Coverage is Chromium's on Playwright only.
+
+Safari, through `safaridriver`: run `sudo safaridriver --enable` once, and turn on Safari's Develop → Allow Remote Automation. It runs with a window (it has no headless mode), one session, so its files run one after the other. What Safari's WebDriver does not do: `dblclick` events (a double click is two clicks), and full-page screenshots. On macOS, Tab skips buttons and links unless the system's keyboard navigation is on.
+
+```sh
+npm install --save-dev @xufa/test-web webdriverio
+```
+
+```js
+// vitest.config.ts
+import { webdriverio } from '@vitest/browser-webdriverio';
+
+export default {
+  test: { browser: { enabled: true, provider: webdriverio(), instances: [{ browser: 'chrome' }] } },
+};
+```

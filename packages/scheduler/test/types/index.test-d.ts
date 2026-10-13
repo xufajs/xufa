@@ -1,4 +1,4 @@
-import { expectType, expectError } from 'tsd';
+import { expectTypeOf } from '@xufa/test';
 import {
   Scheduler,
   createScheduler,
@@ -21,9 +21,9 @@ import {
 } from '../..';
 
 const scheduler = new Scheduler({ timezone: 'Europe/Madrid', lock: memoryLock(), onError: (err, job) => job.failures });
-expectType<Scheduler>(createScheduler());
+expectTypeOf(createScheduler()).toEqualTypeOf<Scheduler>();
 
-expectType<JobInfo>(scheduler.add({ name: 'cleanup', every: '10m', run: async ({ signal }) => signal.aborted }));
+expectTypeOf(scheduler.add({ name: 'cleanup', every: '10m', run: async ({ signal }) => signal.aborted })).toEqualTypeOf<JobInfo>();
 scheduler.add({
   name: 'report',
   cron: '0 8 * * mon-fri',
@@ -39,38 +39,40 @@ scheduler.add({
   every: 1000,
   data: { table: 'sessions' },
   run: (context) => {
-    expectType<RunContext<{ table: string }>>(context);
-    expectType<string>(context.data.table);
-    expectType<Date>(context.scheduledAt);
+    expectTypeOf(context).toEqualTypeOf<RunContext<{ table: string }>>();
+    expectTypeOf(context.data.table).toEqualTypeOf<string>();
+    expectTypeOf(context.scheduledAt).toEqualTypeOf<Date>();
   },
 });
-expectError(scheduler.add({ name: 'x', every: '1m', overlap: 'queue', run: () => {} }));
-expectError(scheduler.add({ name: 'x', every: '1m' }));
+// @ts-expect-error
+scheduler.add({ name: 'x', every: '1m', overlap: 'queue', run: () => {} });
+// @ts-expect-error
+scheduler.add({ name: 'x', every: '1m' });
 
-expectType<JobInfo | null>(scheduler.job('cleanup'));
-expectType<Date | null>(scheduler.jobs()[0].next);
-expectType<boolean>(scheduler.remove('cleanup'));
-expectType<Scheduler>(scheduler.start());
-expectType<Promise<void>>(scheduler.stop({ timeout: '5s' }));
-expectType<Promise<number | undefined>>(scheduler.runNow<number>('report'));
+expectTypeOf(scheduler.job('cleanup')).toEqualTypeOf<JobInfo | null>();
+expectTypeOf(scheduler.jobs()[0].next).toEqualTypeOf<Date | null>();
+expectTypeOf(scheduler.remove('cleanup')).toEqualTypeOf<boolean>();
+expectTypeOf(scheduler.start()).toEqualTypeOf<Scheduler>();
+expectTypeOf(scheduler.stop({ timeout: '5s' })).toEqualTypeOf<Promise<void>>();
+expectTypeOf(scheduler.runNow<number>('report')).toEqualTypeOf<Promise<number | undefined>>();
 
 scheduler.on('failure', (event) => {
-  expectType<string>(event.name);
-  expectType<unknown>(event.error);
+  expectTypeOf(event.name).toEqualTypeOf<string>();
+  expectTypeOf(event.error).toEqualTypeOf<unknown>();
 });
 scheduler.on('skip', (event) => {
-  expectType<'running' | 'locked'>(event.why);
+  expectTypeOf(event.why).toEqualTypeOf<'running' | 'locked'>();
 });
 
-expectType<Lock>(memoryLock());
+expectTypeOf(memoryLock()).toEqualTypeOf<Lock>();
 const lock = ormLock({}, { table: 'locks' });
-expectType<OrmLock>(lock);
-expectType<Promise<void>>(lock.sync());
-expectType<Date[]>(nextRuns('@daily', 3, { timezone: 'UTC' }));
-expectType<number>(toMs('1h30m'));
-expectType<'XUFA_SCHEDULER_ERR'>(new SchedulerError('x').code);
-expectType<'XUFA_SCHEDULER_TIMEOUT'>(new TimeoutError('x').code);
-expectType<void>(schedulerPlugin({}, { jobs: [{ name: 'x', every: '1m', run: () => {} }], start: false }, () => {}));
+expectTypeOf(lock).toEqualTypeOf<OrmLock>();
+expectTypeOf(lock.sync()).toEqualTypeOf<Promise<void>>();
+expectTypeOf(nextRuns('@daily', 3, { timezone: 'UTC' })).toEqualTypeOf<Date[]>();
+expectTypeOf(toMs('1h30m')).toEqualTypeOf<number>();
+expectTypeOf(new SchedulerError('x').code).toEqualTypeOf<'XUFA_SCHEDULER_ERR'>();
+expectTypeOf(new TimeoutError('x').code).toEqualTypeOf<'XUFA_SCHEDULER_TIMEOUT'>();
+expectTypeOf(schedulerPlugin({}, { jobs: [{ name: 'x', every: '1m', run: () => {} }], start: false }, () => {})).toEqualTypeOf<void>();
 
 // Retries, history, catchUp.
 const recorded = new Scheduler({ history: memoryHistory({ keep: 10 }) });
@@ -82,28 +84,30 @@ recorded.add({
   retryDelay: '2s',
   retryFactor: 3,
   maxRetryDelay: '1m',
-  run: ({ attempt }) => expectType<number>(attempt),
+  run: ({ attempt }) => expectTypeOf(attempt).toEqualTypeOf<number>(),
 });
-expectError(recorded.add({ name: 'x', in: '1m', catchUp: true, run: () => {} }));
-expectType<Promise<HistoryEntry[]>>(recorded.history('retried', { limit: 5 }));
-recorded.on('retry', (event) => expectType<number>(event.delay));
-recorded.on('catchUp', (event) => expectType<Date>(event.scheduledAt));
-recorded.on('done', (event) => expectType<number>(event.attempts));
-expectType<History>(memoryHistory());
+// @ts-expect-error
+recorded.add({ name: 'x', in: '1m', catchUp: true, run: () => {} });
+expectTypeOf(recorded.history('retried', { limit: 5 })).toEqualTypeOf<Promise<HistoryEntry[]>>();
+recorded.on('retry', (event) => expectTypeOf(event.delay).toEqualTypeOf<number>());
+recorded.on('catchUp', (event) => expectTypeOf(event.scheduledAt).toEqualTypeOf<Date>());
+recorded.on('done', (event) => expectTypeOf(event.attempts).toEqualTypeOf<number>());
+expectTypeOf(memoryHistory()).toEqualTypeOf<History>();
 const runs = ormHistory({}, { maxAge: null });
-expectType<OrmHistory>(runs);
-expectType<Promise<number>>(runs.prune(new Date()));
-expectType<Promise<HistoryEntry | null>>(runs.last('x'));
-expectType<'done' | 'failed' | 'timeout'>({} as HistoryEntry['status']);
-expectType<number>(scheduler.job('x')!.retries);
+expectTypeOf(runs).toEqualTypeOf<OrmHistory>();
+expectTypeOf(runs.prune(new Date())).toEqualTypeOf<Promise<number>>();
+expectTypeOf(runs.last('x')).toEqualTypeOf<Promise<HistoryEntry | null>>();
+expectTypeOf({} as HistoryEntry['status']).toEqualTypeOf<'done' | 'failed' | 'timeout'>();
+expectTypeOf(scheduler.job('x')!.retries).toEqualTypeOf<number>();
 
 // health(): a check of xufa.health.
 {
   const watched = new Scheduler();
   const health = watched.health({ late: '30s', failures: 2, maxRun: '10m', jobs: ['report'], critical: true });
   health.check().then((report) => {
-    expectType<'up' | 'degraded' | 'down'>(report.status);
-    expectType<number>(report.jobs.report.failuresInRow);
+    expectTypeOf(report.status).toEqualTypeOf<'up' | 'degraded' | 'down'>();
+    expectTypeOf(report.jobs.report.failuresInRow).toEqualTypeOf<number>();
   });
-  expectError(watched.health({ failures: 'two' }));
+  // @ts-expect-error
+  watched.health({ failures: 'two' });
 }

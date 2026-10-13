@@ -1,4 +1,4 @@
-import { expectType, expectError, expectAssignable } from 'tsd';
+import { assertType, expectTypeOf } from '@xufa/test';
 import { generateKeyPairSync } from 'node:crypto';
 import xufa, { type XufaInstance } from '@xufa/http';
 import {
@@ -41,10 +41,11 @@ import {
 import * as auth from '../..';
 
 // Passwords
-expectType<Promise<string>>(hashPassword('secret', { ln: 16 }));
-expectType<Promise<boolean>>(verifyPassword('secret', '$scrypt$...'));
-expectType<boolean>(needsRehash('$scrypt$...'));
-expectError(hashPassword('secret', { cost: 2 }));
+expectTypeOf(hashPassword('secret', { ln: 16 })).toEqualTypeOf<Promise<string>>();
+expectTypeOf(verifyPassword('secret', '$scrypt$...')).toEqualTypeOf<Promise<boolean>>();
+expectTypeOf(needsRehash('$scrypt$...')).toEqualTypeOf<boolean>();
+// @ts-expect-error
+hashPassword('secret', { cost: 2 });
 
 // JWTs
 const keys = new KeySet({
@@ -54,38 +55,41 @@ const keys = new KeySet({
 const { privateKey } = generateKeyPairSync('ed25519');
 new KeySet({ keys: { ed: privateKey } });
 const token = signJwt({ sub: '1', role: 'admin' }, keys, { expiresIn: '15m', audience: ['api'], jwtId: true });
-expectType<string>(token);
+expectTypeOf(token).toEqualTypeOf<string>();
 const claims = verifyJwt<Claims & { role: string }>(token, keys, { issuer: /app/, clockTolerance: 5 });
-expectType<string>(claims.role);
-expectType<string | undefined>(claims.sub);
-expectType<Claims | undefined>(decodeJwt(token)?.payload);
-expectError(signJwt({}, keys, { expiresIn: true }));
-expectError(new KeySet({ keys: { a: { key: 'x', algorithm: 'HS999' } } }));
+expectTypeOf(claims.role).toEqualTypeOf<string>();
+expectTypeOf(claims.sub).toEqualTypeOf<string | undefined>();
+expectTypeOf(decodeJwt(token)?.payload).toEqualTypeOf<Claims | undefined>();
+// @ts-expect-error
+signJwt({}, keys, { expiresIn: true });
+// @ts-expect-error
+new KeySet({ keys: { a: { key: 'x', algorithm: 'HS999' } } });
 
 // One-time codes
 const secret = generateSecret();
-expectType<string>(totp(secret, { digits: 8, algorithm: 'SHA256' }));
-expectType<number | null>(verifyTotp('123456', secret, { window: 1, after: 10 }));
-expectType<string>(totpUri({ secret, label: 'ada@example.com', issuer: 'App' }));
-expectError(totp(secret, { algorithm: 'MD5' }));
+expectTypeOf(totp(secret, { digits: 8, algorithm: 'SHA256' })).toEqualTypeOf<string>();
+expectTypeOf(verifyTotp('123456', secret, { window: 1, after: 10 })).toEqualTypeOf<number | null>();
+expectTypeOf(totpUri({ secret, label: 'ada@example.com', issuer: 'App' })).toEqualTypeOf<string>();
+// @ts-expect-error
+totp(secret, { algorithm: 'MD5' });
 
 // Lockout and refresh tokens
 const lockout = new Lockout({ maxAttempts: 5, window: '15m', lockFor: 900 });
-expectType<Promise<{ locked: boolean; retryAfter: number; failures: number }>>(lockout.fail('ada'));
+expectTypeOf(lockout.fail('ada')).toEqualTypeOf<Promise<{ locked: boolean; retryAfter: number; failures: number }>>();
 const refresh = new RefreshTokens<{ role: string }>({ ttl: '30d', reuseInterval: '2s' });
 (async () => {
   const issued = await refresh.issue(42, { role: 'admin' });
-  expectType<string>(issued.token);
-  expectType<RefreshTokenRecord<{ role: string }>>((await refresh.rotate(issued.token)).record);
-  expectType<boolean>(await refresh.revoke(issued.token));
+  expectTypeOf(issued.token).toEqualTypeOf<string>();
+  expectTypeOf((await refresh.rotate(issued.token)).record).toEqualTypeOf<RefreshTokenRecord<{ role: string }>>();
+  expectTypeOf(await refresh.revoke(issued.token)).toEqualTypeOf<boolean>();
 })();
 
 // Errors
 const err = new TokenError('expired');
-expectType<'XUFA_AUTH_INVALID_TOKEN'>(err.code);
-expectType<401>(err.statusCode);
-expectType<string | undefined>(err.reason);
-expectType<number | undefined>(new Locked('locked').retryAfter);
+expectTypeOf(err.code).toEqualTypeOf<'XUFA_AUTH_INVALID_TOKEN'>();
+expectTypeOf(err.statusCode).toEqualTypeOf<401>();
+expectTypeOf(err.reason).toEqualTypeOf<string | undefined>();
+expectTypeOf(new Locked('locked').retryAfter).toEqualTypeOf<number | undefined>();
 
 // The plugin, with its decorations typed by the app.
 interface User {
@@ -123,38 +127,41 @@ app.register(plugin, {
   refreshCookie: { sameSite: 'Lax' },
 });
 app.get('/me', { onRequest: app.authenticate }, async (request) => {
-  expectType<User | null>(request.user);
+  expectTypeOf(request.user).toEqualTypeOf<User | null>();
   return request.user;
 });
 app.get('/admin', { config: { auth: ['admin'] } }, async () => 'ok');
 app.get('/own', { config: { auth: (user: User) => user.role === 'admin' } }, async () => 'ok');
 app.get('/check', { preHandler: app.authorize('admin', 'staff') }, async () => 'ok');
-expectError(app.get('/bad', { config: { auth: 42 } }, async () => 'ok'));
+// @ts-expect-error
+app.get('/bad', { config: { auth: 42 } }, async () => 'ok');
 
 // The async versions of signJwt and verifyJwt.
-expectType<Promise<string>>(signJwtAsync({ sub: '1' }, keys, { expiresIn: '15m' }));
-expectType<Promise<{ sub: string }>>(verifyJwtAsync<{ sub: string }>('token', keys));
+expectTypeOf(signJwtAsync({ sub: '1' }, keys, { expiresIn: '15m' })).toEqualTypeOf<Promise<string>>();
+expectTypeOf(verifyJwtAsync<{ sub: string }>('token', keys)).toEqualTypeOf<Promise<{ sub: string }>>();
 
 // The KeyVault, and encrypted keys in a KeySet.
 const vault = new KeyVault({ secret: 'a secret of 32 bytes or more, at least!', algorithm: 'EdDSA', keep: '7d' });
-expectType<Promise<KeySet>>(vault.keys('acme'));
-expectType<Promise<KeySet>>(vault.rotate('acme', { immediate: true }));
-expectType<Promise<void>>(vault.revoke('acme', 'k1'));
+expectTypeOf(vault.keys('acme')).toEqualTypeOf<Promise<KeySet>>();
+expectTypeOf(vault.rotate('acme', { immediate: true })).toEqualTypeOf<Promise<KeySet>>();
+expectTypeOf(vault.revoke('acme', 'k1')).toEqualTypeOf<Promise<void>>();
 new KeySet({ keys: { k: { key: '-----BEGIN ENCRYPTED PRIVATE KEY-----', passphrase: 'pw' } } });
-expectError(new KeyVault({}));
+// @ts-expect-error
+new KeyVault({});
 
 // Strategies: API keys, HTTP Basic, Passport, and routes that ask for some of them.
 const { key, id, hash } = generateApiKey({ prefix: 'live_' });
-expectType<string>(key);
-expectType<boolean>(verifyApiKey('secret', hash));
-expectType<{ id: string; secret: string } | null>(parseApiKey(key));
+expectTypeOf(key).toEqualTypeOf<string>();
+expectTypeOf(verifyApiKey('secret', hash)).toEqualTypeOf<boolean>();
+expectTypeOf(parseApiKey(key)).toEqualTypeOf<{ id: string; secret: string } | null>();
 const keyStrategy = apiKey<User>({
   header: 'x-api-key',
   find: async (given) => (given === id ? { hash, subject: '1' } : null),
   user: (record) => ({ id: Number(record.subject), email: 'a@b.c', password: '', role: 'user' }),
 });
-expectAssignable<Strategy<User>>(keyStrategy);
-expectError(apiKey({ header: 'x-api-key' }));
+assertType<Strategy<User>>(keyStrategy);
+// @ts-expect-error
+apiKey({ header: 'x-api-key' });
 const basicStrategy = basic<User>({ findUser: async () => null, cache: '1m', lockout: false });
 
 // A strategy of Passport (structurally: what passport-http-bearer and the others are).
@@ -165,22 +172,25 @@ class FakeStrategy {
   }
 }
 const fake = passport<User>(new FakeStrategy());
-expectType<PassportAdapter<User>>(fake);
-expectError(passport({ name: 'x' }));
+expectTypeOf(fake).toEqualTypeOf<PassportAdapter<User>>();
+// @ts-expect-error
+passport({ name: 'x' });
 const github = passport(new FakeStrategy(), { name: 'github' });
 const login = github.login({
   scope: ['user:email'],
   claims: (user) => ({ sub: '1' }),
-  onFailure: (failure, request, reply) => expectType<string | undefined>(failure.message),
+  onFailure: (failure, request, reply) => expectTypeOf(failure.message).toEqualTypeOf<string | undefined>(),
 });
-expectType<(request: any, reply: any) => Promise<unknown>>(login);
+expectTypeOf(login).toEqualTypeOf<(request: any, reply: any) => Promise<unknown>>();
 const state = oauthState({ secret: 'a secret for the state', maxAge: 300, sameSite: 'Lax' });
-expectError(oauthState({}));
+// @ts-expect-error
+oauthState({});
 
 const withStrategies = xufa();
 withStrategies.register(plugin, { strategies: [keyStrategy, basicStrategy, fake] });
 withStrategies.register(plugin, { keys: 'secret', strategies: ['jwt', keyStrategy], refresh: true });
-expectError(withStrategies.register(plugin, { strategies: ['session'] }));
+// @ts-expect-error
+withStrategies.register(plugin, { strategies: ['session'] });
 withStrategies.get('/keys', { config: { auth: { strategy: 'apiKey' } } }, async () => 'ok');
 withStrategies.get(
   '/admins',
@@ -188,7 +198,8 @@ withStrategies.get(
   async () => 'ok'
 );
 withStrategies.get('/mine', { config: { auth: { check: (user: User) => user.id === 1 } } }, async () => 'ok');
-expectError(withStrategies.get('/none', { config: { auth: {} } }, async () => 'ok'));
+// @ts-expect-error
+withStrategies.get('/none', { config: { auth: {} } }, async () => 'ok');
 withStrategies.get('/github/callback', login);
 withStrategies.get(
   '/either',
@@ -197,28 +208,30 @@ withStrategies.get(
 );
 withStrategies.get('/token', async (request, reply) => {
   const tokens = await withStrategies.auth.issue({ sub: '1' }, request, reply);
-  expectType<string>(tokens.accessToken);
-  expectType<string | undefined>(tokens.refreshToken);
+  expectTypeOf(tokens.accessToken).toEqualTypeOf<string>();
+  expectTypeOf(tokens.refreshToken).toEqualTypeOf<string | undefined>();
   return tokens;
 });
 
 // Security schemes of OpenAPI of the strategies.
-expectType<Record<string, unknown> | undefined>(keyStrategy.openapi);
+expectTypeOf(keyStrategy.openapi).toEqualTypeOf<Record<string, unknown> | undefined>();
 apiKey({ find: () => null, openapi: { type: 'apiKey', in: 'header', name: 'x-key' } });
 passport(new FakeStrategy(), { openapi: false });
-expectError(passport(new FakeStrategy(), { openapi: 'bearer' }));
+// @ts-expect-error
+passport(new FakeStrategy(), { openapi: 'bearer' });
 
 // Tenants.
-expectType<string[]>(tenantsOf({ tenants: ['a'] }));
-expectType<'*'>(ALL_TENANTS);
+expectTypeOf(tenantsOf({ tenants: ['a'] })).toEqualTypeOf<string[]>();
+expectTypeOf(ALL_TENANTS).toEqualTypeOf<'*'>();
 const tenantRules: AuthRule[] = [
   { tenant: true },
   { tenant: '*', roles: 'admin' },
   { strategy: 'apiKey', tenant: true },
 ];
-expectError<AuthRule>({ tenant: 'acme' });
+// @ts-expect-error
+assertType<AuthRule>({ tenant: 'acme' });
 declare const tenantApi: AuthApi;
-expectType<Promise<boolean>>(tenantApi.canUseTenant({}, 'acme', {}));
+expectTypeOf(tenantApi.canUseTenant({}, 'acme', {})).toEqualTypeOf<Promise<boolean>>();
 const withTenants: AuthPluginOptions = {
   keys: 'k'.repeat(32),
   tenants: { of: (request) => request.params.tenant, claim: (user) => user.orgs },
@@ -235,25 +248,26 @@ const withTenants: AuthPluginOptions = {
     grants: async (user) => (user.id === 1 ? { acme: 'editor', '*': ['viewer'] } : [{ role: 'owner', tenant: 'acme' }]),
     superuser: (user) => user.admin === true,
   });
-  expectType<Promise<boolean>>(rbac.can({ id: 1 }, 'Book.change', { tenant: 'acme' }));
+  expectTypeOf(rbac.can({ id: 1 }, 'Book.change', { tenant: 'acme' })).toEqualTypeOf<Promise<boolean>>();
   rbac.access({ id: 1 }).then((access) => {
-    expectType<boolean>(access.superuser);
-    expectType<string>(access.grants[0].tenant);
-    expectType<boolean>(rbac.allows(access, ['Book.view', 'Book.add'], 'acme'));
-    expectType<string[]>(rbac.tenantsIn(access));
-    expectType<string[]>(rbac.permissionsIn(access, 'acme'));
+    expectTypeOf(access.superuser).toEqualTypeOf<boolean>();
+    expectTypeOf(access.grants[0].tenant).toEqualTypeOf<string>();
+    expectTypeOf(rbac.allows(access, ['Book.view', 'Book.add'], 'acme')).toEqualTypeOf<boolean>();
+    expectTypeOf(rbac.tenantsIn(access)).toEqualTypeOf<string[]>();
+    expectTypeOf(rbac.permissionsIn(access, 'acme')).toEqualTypeOf<string[]>();
   });
-  expectError(new auth.Rbac({ roles: { viewer: 'Book.view' } }));
+  // @ts-expect-error
+  new auth.Rbac({ roles: { viewer: 'Book.view' } });
   new auth.Rbac({ roles: {}, superuser: false });
   const rule: auth.AuthRule = { can: ['Book.view', 'Book.add'], tenant: true };
   const ruleOfCan: auth.AuthRule = { can: 'Book.delete' };
-  expectAssignable<auth.AuthRule>(rule);
-  expectAssignable<auth.AuthRule>(ruleOfCan);
+  assertType<auth.AuthRule>(rule);
+  assertType<auth.AuthRule>(ruleOfCan);
   const options: auth.PluginOptions = { keys: 'secret', rbac: { roles: { viewer: ['*.view'] } } };
-  expectType<auth.PluginOptions>(options);
+  expectTypeOf(options).toEqualTypeOf<auth.PluginOptions>();
   const api = {} as auth.AuthApi;
-  expectType<Promise<boolean>>(api.can({}, 'Book.view'));
-  expectType<Promise<auth.Access>>(api.access({}));
+  expectTypeOf(api.can({}, 'Book.view')).toEqualTypeOf<Promise<boolean>>();
+  expectTypeOf(api.access({})).toEqualTypeOf<Promise<auth.Access>>();
 }
 
 // The accounts of an app with sessions.
@@ -277,18 +291,21 @@ const withTenants: AuthPluginOptions = {
     lockout: { maxAttempts: 3 },
   });
   const api = {} as auth.AccountsApi<Member>;
-  api.user({}).then((user) => expectType<Member | null>(user));
-  expectType<(request: any, reply: any) => Promise<unknown>>(api.permissionRequired('Book.add', 'Book.change'));
-  api.can({} as Member, 'Book.add').then((yes) => expectType<boolean>(yes));
-  api.perms({}).then((perms) => expectType<boolean>(perms.has('Book.add')));
-  expectError(api.permissionRequired(7));
-  expectType<string | null>(auth.emailOf(' Ada@Example.com '));
-  expectError(app.register(auth.accounts, { users: {} }));
-  api.checkResetToken('t').then((user) => expectType<Member | null>(user));
-  api.authenticate({ username: 'ada', password: 'x' }).then((user) => expectType<Member>(user));
-  expectType<Promise<void>>(api.requestReset('ada@example.com', {}, { link: (token) => `/reset/${token}/` }));
+  api.user({}).then((user) => expectTypeOf(user).toEqualTypeOf<Member | null>());
+  expectTypeOf(api.permissionRequired('Book.add', 'Book.change')).toEqualTypeOf<(request: any, reply: any) => Promise<unknown>>();
+  api.can({} as Member, 'Book.add').then((yes) => expectTypeOf(yes).toEqualTypeOf<boolean>());
+  api.perms({}).then((perms) => expectTypeOf(perms.has('Book.add')).toEqualTypeOf<boolean>());
+  // @ts-expect-error
+  api.permissionRequired(7);
+  expectTypeOf(auth.emailOf(' Ada@Example.com ')).toEqualTypeOf<string | null>();
+  // @ts-expect-error
+  app.register(auth.accounts, { users: {} });
+  api.checkResetToken('t').then((user) => expectTypeOf(user).toEqualTypeOf<Member | null>());
+  api.authenticate({ username: 'ada', password: 'x' }).then((user) => expectTypeOf(user).toEqualTypeOf<Member>());
+  expectTypeOf(api.requestReset('ada@example.com', {}, { link: (token) => `/reset/${token}/` })).toEqualTypeOf<Promise<void>>();
   app.register(auth.pages, { prefix: '/accounts', views: 'registration', siteUrl: 'https://library.example' });
-  expectError(app.register(auth.pages, { views: 7 }));
+  // @ts-expect-error
+  app.register(auth.pages, { views: 7 });
 }
 
 // Credentials: the logins and accounts of @xufa/auth and @xufa/admin.
@@ -308,14 +325,12 @@ const withTenants: AuthPluginOptions = {
     lockout: { maxAttempts: 3 },
     messages: { invalid: 'Wrong email or password' },
   });
-  expectType<Promise<Member>>(credentials.login({ identifier: 'ada@example.com', password: 'p', ip: '10.0.0.1' }));
-  expectType<string | null>(credentials.validatePassword('short'));
+  expectTypeOf(credentials.login({ identifier: 'ada@example.com', password: 'p', ip: '10.0.0.1' })).toEqualTypeOf<Promise<Member>>();
+  expectTypeOf(credentials.validatePassword('short')).toEqualTypeOf<string | null>();
   const session = { get: (key: string) => key, set: () => undefined, delete: () => true };
-  expectType<Promise<{ secret: string; uri: string; svg: string }>>(
-    credentials.startTotp({ email: 'a', password: 'x', totpSecret: null, codes: [] }, { password: 'p', label: 'a', session })
-  );
+  expectTypeOf(credentials.startTotp({ email: 'a', password: 'x', totpSecret: null, codes: [] }, { password: 'p', label: 'a', session })).toEqualTypeOf<Promise<{ secret: string; uri: string; svg: string }>>();
   const err = new Error() as auth.CredentialError;
-  expectType<auth.CredentialReason>(err.reason);
+  expectTypeOf(err.reason).toEqualTypeOf<auth.CredentialReason>();
   // @ts-expect-error a reason of its own is not a reason
   const wrong: auth.CredentialReason = 'nope';
 }
@@ -326,11 +341,11 @@ const withTenants: AuthPluginOptions = {
   const orm = require('@xufa/orm');
   class Member extends auth.AbstractUser(orm.Model as abstract new (...args: any[]) => { pk: unknown }, orm.fields) {}
   Member.createSuperuser({ username: 'admin', password: 'secret' }).then((user) => {
-    expectType<boolean>(user.isSuperuser);
-    expectType<boolean>(user.hasPerm('Book.add'));
-    user.checkPassword('x').then((ok) => expectType<boolean>(ok));
+    expectTypeOf(user.isSuperuser).toEqualTypeOf<boolean>();
+    expectTypeOf(user.hasPerm('Book.add')).toEqualTypeOf<boolean>();
+    user.checkPassword('x').then((ok) => expectTypeOf(ok).toEqualTypeOf<boolean>());
   });
-  expectType<true>(Member.userModel);
+  expectTypeOf(Member.userModel).toEqualTypeOf<true>();
 }
 
 // Groups in the database (Django's Group), roles of an Rbac.
@@ -339,12 +354,12 @@ const withTenants: AuthPluginOptions = {
   const orm = require('@xufa/orm');
   class Group extends auth.AbstractGroup(orm.Model as abstract new (...args: any[]) => { pk: unknown }, orm.fields) {}
   const rbac = new auth.Rbac({ model: Group, refresh: 30000 });
-  rbac.fresh().then((loaded) => expectType<auth.Rbac>(loaded));
-  expectType<string[]>(new Group().permissions);
+  rbac.fresh().then((loaded) => expectTypeOf(loaded).toEqualTypeOf<auth.Rbac>());
+  expectTypeOf(new Group().permissions).toEqualTypeOf<string[]>();
   class Member extends auth.AbstractUser(orm.Model as abstract new (...args: any[]) => { pk: unknown }, orm.fields, {
     groups: () => Group,
   }) {}
-  expectType<string>(new Member().username);
+  expectTypeOf(new Member().username).toEqualTypeOf<string>();
 }
 
 // Rules of objects (where).
@@ -352,6 +367,7 @@ const withTenants: AuthPluginOptions = {
   const rbac = new auth.Rbac({
     roles: { editor: { permissions: ['Book.change'], where: { 'Book.change': (user) => ({ ownerId: user.id }) } } },
   });
-  expectType<auth.Scope>(rbac.scopeOf({ superuser: false, grants: [] }, { id: 1 }, 'Book.change'));
-  expectError(new auth.Rbac({ roles: { editor: { where: { 'Book.change': 7 } } } }));
+  expectTypeOf(rbac.scopeOf({ superuser: false, grants: [] }, { id: 1 }, 'Book.change')).toEqualTypeOf<auth.Scope>();
+  // @ts-expect-error
+  new auth.Rbac({ roles: { editor: { where: { 'Book.change': 7 } } } });
 }

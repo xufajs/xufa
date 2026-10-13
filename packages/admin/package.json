@@ -21,8 +21,8 @@
   "scripts": {
     "build": "node client/build.js",
     "build:check": "node client/build.js --check",
-    "test": "vyntra",
-    "test:types": "tsd"
+    "test": "xufa-test",
+    "test:types": "xufa-test --typecheck.only"
   },
   "keywords": [
     "admin",
@@ -47,22 +47,20 @@
   },
   "devDependencies": {
     "@xufa/auth": "workspace:*",
+    "@xufa/browser": "workspace:^",
+    "@xufa/bundle": "workspace:^",
     "@xufa/http": "workspace:*",
     "@xufa/queue": "workspace:*",
+    "@xufa/rules": "workspace:*",
     "@xufa/scheduler": "workspace:*",
     "@xufa/session": "workspace:*",
+    "@xufa/test": "workspace:^",
     "@xyflow/react": "^12.12.0",
-    "esbuild": "^0.28.2",
     "react": "^19.3.0",
-    "react-dom": "^19.3.0",
-    "tsd": "^0.33.0",
-    "vyntra": "^0.7.0"
+    "react-dom": "^19.3.0"
   },
   "publishConfig": {
     "access": "public"
-  },
-  "tsd": {
-    "directory": "test/types"
   },
   "dependencies": {
     "@xufa/orm": "workspace:*"

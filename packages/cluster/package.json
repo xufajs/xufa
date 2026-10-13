@@ -18,8 +18,8 @@
     "lib"
   ],
   "scripts": {
-    "test": "vyntra",
-    "test:types": "tsd"
+    "test": "xufa-test",
+    "test:types": "xufa-test --typecheck.only"
   },
   "keywords": [
     "cluster",
@@ -47,8 +47,7 @@
     "@xufa/discovery": "workspace:*",
     "@xufa/netcache": "workspace:*",
     "@xufa/orm": "workspace:*",
-    "tsd": "^0.33.0",
-    "vyntra": "^0.7.0"
+    "@xufa/test": "workspace:^"
   },
   "publishConfig": {
     "access": "public"
@@ -57,13 +56,10 @@
     "@xufa/faults": "workspace:*",
     "@xufa/marshal": "workspace:*"
   },
-  "vyntra": {
+  "xufaTest": {
     "setupFiles": [
       "@xufa/faults/register-strict"
     ]
-  },
-  "tsd": {
-    "directory": "test/types"
   },
   "peerDependencies": {
     "@xufa/orm": "workspace:*"

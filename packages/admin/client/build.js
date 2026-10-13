@@ -1,4 +1,4 @@
-// Builds the page of the admin: client/src (React) bundled with esbuild into lib/client/dist (admin.js and admin.css,
+// Builds the page of the admin: client/src (React) bundled with @xufa/bundle into lib/client/dist (admin.js and admin.css,
 // with their brotli and gzip copies). The bundle is what is published: the admin needs no dependencies to run.
 //
 //   node client/build.js           writes lib/client/dist
@@ -6,38 +6,26 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import zlib from 'node:zlib';
-import { createRequire } from 'node:module';
-
-const require = createRequire(import.meta.url);
+import { bundle } from '@xufa/bundle';
 
 const SRC = path.join(import.meta.dirname, 'src');
 const OUT = path.join(import.meta.dirname, '..', 'lib', 'client', 'dist');
 
 async function build() {
-  const esbuild = require('esbuild'); // eslint-disable-line global-require
-  const result = await esbuild.build({
-    entryPoints: { admin: path.join(SRC, 'main.jsx') },
-    bundle: true,
-    minify: true,
-    format: 'iife',
-    target: ['es2020', 'chrome100', 'firefox100', 'safari15'],
+  const result = bundle(path.join(SRC, 'main.jsx'), {
     jsx: 'automatic',
     define: { 'process.env.NODE_ENV': '"production"' },
-    // The licenses of what the bundle has (React's), at its end.
-    legalComments: 'eof',
-    outdir: OUT,
-    write: false,
-    metafile: true,
-    logLevel: 'silent',
+    minify: true,
   });
   const notices = licenses(result);
   const files = {};
-  for (const file of result.outputFiles) {
-    const name = path.basename(file.path);
-    let text = Buffer.from(file.contents);
-    if (name === 'admin.js' && notices) text = Buffer.concat([text, Buffer.from(notices)]);
+  for (const [name, content] of [
+    ['admin.js', result.js + notices],
+    ['admin.css', result.css],
+  ]) {
+    const text = Buffer.from(content);
     files[name] = text;
-    files[`${name}.gz`] = zlib.gzipSync(text, { level: 9 });
+    files[`${name}.gz`] = sameOnEverySystem(zlib.gzipSync(text, { level: 9 }));
     files[`${name}.br`] = zlib.brotliCompressSync(text, {
       params: { [zlib.constants.BROTLI_PARAM_QUALITY]: 11, [zlib.constants.BROTLI_PARAM_SIZE_HINT]: text.length },
     });
@@ -45,19 +33,25 @@ async function build() {
   return files;
 }
 
+// A gzip file with "unknown" as the system that made it (byte 9 of its header: zlib writes 10 on Windows, 3 on
+// Linux), so that the build is the same on every system and --check passes on all of them. Readers ignore it.
+function sameOnEverySystem(gzip) {
+  gzip[9] = 255;
+  return gzip;
+}
+
 // The licenses of the packages in the bundle whose code has none to keep (React Flow, zustand, d3...), after those
-// that esbuild keeps: each package's LICENSE file, read from its folder.
+// the bundle keeps: each package's LICENSE file, read from its folder.
 function licenses(result) {
-  const legal = result.outputFiles.find((file) => path.basename(file.path) === 'admin.js').text;
   const folders = new Map();
-  for (const input of Object.keys(result.metafile.inputs)) {
-    // esbuild's paths (with /), from the working directory: the package is what follows the last node_modules.
-    const match = /^(.*node_modules\/)((?:@[^/]+\/)?[^/]+)/.exec(input);
+  for (const input of result.inputs) {
+    // The package is what follows the last node_modules.
+    const match = /^(.*node_modules\/)((?:@[^/]+\/)?[^/]+)/.exec(input.split(path.sep).join('/'));
     if (match) folders.set(match[2], path.resolve(match[1] + match[2]));
   }
   let text = '';
   for (const [name, folder] of [...folders].sort(([a], [b]) => a.localeCompare(b))) {
-    if (legal.includes(`${name}/`)) continue;
+    if (result.js.includes(`\n${name}/`)) continue;
     const file = fs.readdirSync(folder).find((entry) => /^licen[cs]e/i.test(entry));
     if (!file) throw new Error(`admin: ${name} has no license file to bundle`);
     const license = fs.readFileSync(path.join(folder, file), 'utf8').trim().replace(/\*\//g, '* /');

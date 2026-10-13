@@ -14,7 +14,7 @@
 //     assert.equal(app.mails.length, 0);                  // the emails sent (Django's mail.outbox)
 //   });
 //
-// The hooks are those of the runner: globals (vyntra, jest, vitest) or those of node:test.
+// The hooks are those of the runner: globals (@xufa/test, jest, vitest) or those of node:test.
 import fs from 'node:fs';
 import path from 'node:path';
 import { loadProject, projectFile } from './project.js';

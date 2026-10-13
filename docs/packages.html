@@ -42,6 +42,16 @@
     <div class="docs">
       <button class="menu-toggle" type="button" aria-expanded="false">☰ Contents</button>
       <aside class="sidebar">
+        <h4>Testing</h4>
+        <ul>
+          <li><a href="test/index.html">@xufa/test</a></li>
+          <li><a href="test/guide.html#e2e">@xufa/test-web</a></li>
+          <li><a href="browser/index.html">@xufa/browser</a></li>
+          <li><a href="bundle/index.html">@xufa/bundle</a></li>
+          <li><a href="lint/index.html">@xufa/lint</a></li>
+          <li><a href="test/guide.html#ai">@xufa/test-ai</a></li>
+          <li><a href="test/guide.html#agents">@xufa/test-mcp</a></li>
+        </ul>
         <h4>The framework</h4>
         <ul>
           <li><a href="http/index.html">@xufa/http</a></li>
@@ -68,6 +78,7 @@
         <ul>
           <li><a href="expression/index.html">@xufa/expression</a></li>
           <li><a href="template/index.html">@xufa/template</a></li>
+          <li><a href="rules/index.html">@xufa/rules</a></li>
         </ul>
         <h4>Security</h4>
         <ul>
@@ -105,6 +116,45 @@
         </p>
         <pre><code class="language-sh">npm install xufa # all of them, as one package
 npm install @xufa/pg # or only the one you need</code></pre>
+
+        <h2 id="testing">Testing</h2>
+        <div class="package-cards">
+          <a class="package-card" href="test/index.html">
+            <h3>@xufa/test</h3>
+            <span class="package-replaces">Jest, Vitest</span>
+            <p>A test runner with the API of Jest and Vitest: their suites run as they are, several times faster, with no dependencies.</p>
+          </a>
+          <a class="package-card" href="test/guide.html#e2e">
+            <h3>@xufa/test-web</h3>
+            <span class="package-replaces">Playwright Test</span>
+            <p>End-to-end tests in a browser on Playwright: fixtures, web-first assertions and failure pages that show what the page did.</p>
+          </a>
+          <a class="package-card" href="browser/index.html">
+            <h3>@xufa/browser</h3>
+            <span class="package-replaces">playwright-core</span>
+            <p>Chrome and Edge driven by the DevTools Protocol, with the API of Playwright for pages, locators, the keyboard and the mouse.</p>
+          </a>
+          <a class="package-card" href="bundle/index.html">
+            <h3>@xufa/bundle</h3>
+            <span class="package-replaces">esbuild</span>
+            <p>ES modules, JSX, TypeScript and CommonJS packages as one script for browsers, with tree shaking, minifying and their stylesheets.</p>
+          </a>
+          <a class="package-card" href="lint/index.html">
+            <h3>@xufa/lint</h3>
+            <span class="package-replaces">ESLint, prettier</span>
+            <p>ESLint's recommended rules and prettier's formatter, ported, on TypeScript's parser: the same problems as ESLint, the same output as prettier.</p>
+          </a>
+          <a class="package-card" href="test/guide.html#ai">
+            <h3>@xufa/test-ai</h3>
+            <span class="package-replaces"></span>
+            <p>AI steps: an agent that drives a page toward a goal, and toSatisfy(claim), replayed from a cache so CI makes no model calls.</p>
+          </a>
+          <a class="package-card" href="test/guide.html#agents">
+            <h3>@xufa/test-mcp</h3>
+            <span class="package-replaces"></span>
+            <p>An MCP server: coding agents run the tests, read what failed and why, and try locators on pages.</p>
+          </a>
+        </div>
 
         <h2 id="framework">The framework</h2>
         <div class="package-cards">
@@ -205,6 +255,11 @@ npm install @xufa/pg # or only the one you need</code></pre>
             <h3>@xufa/template</h3>
             <span class="package-replaces">Handlebars, Mustache</span>
             <p>Templates with expressions, partials, layouts and streaming, and reply.view() for @xufa/http.</p>
+          </a>
+          <a class="package-card" href="rules/index.html">
+            <h3>@xufa/rules</h3>
+            <span class="package-replaces">OpenL Tablets, Drools decision tables</span>
+            <p>Business rules in Excel workbooks: decision tables, calculations in steps and their tests, run as functions; kept in versions and edited in the admin.</p>
           </a>
         </div>
 

@@ -74,7 +74,7 @@ masked 8 bytes at a time in JavaScript.
 
 ## Tests
 
-`test/ws` and `test/fastify` are the suites of ws and @fastify/websocket (438 and 62 tests), ported to vyntra by
+`test/ws` and `test/fastify` are the suites of ws and @fastify/websocket (438 and 62 tests), ported to @xufa/test by
 `tools/port-ws` from checkouts of their repositories; `test/xufa` tests the hub in one process, between two machines
 (NetCaches) and in a cluster of two workers.
 

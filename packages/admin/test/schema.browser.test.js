@@ -1,4 +1,4 @@
-// The editor of the data model page in a browser (Chrome or Edge, driven by playwright-core; skipped without one),
+// The editor of the data model page in a browser (Chrome or Edge, driven by @xufa/browser; skipped without one),
 // with a designer of its own here (xufa's is tested in packages/xufa/test/designer.test.js): the models of the designer
 // editable, those of code locked; a field added, renamed and typed; a foreign key drawn from a model to another; the
 // draft kept in the browser; the changes reviewed and published, and the page waiting for the server.
@@ -6,26 +6,10 @@ import fs from 'node:fs';
 import xufa from '@xufa/http';
 import { Database, Model, fields } from '@xufa/orm';
 import { admin } from '../index.js';
-import { createRequire } from 'node:module';
+import { chromium, findBrowser } from '@xufa/browser';
 
-const require = createRequire(import.meta.url);
-
-const CHROME = [
-  process.env.CHROME,
-  'C:/Program Files/Google/Chrome/Application/chrome.exe',
-  'C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe',
-  '/usr/bin/google-chrome',
-  '/usr/bin/chromium',
-  '/usr/bin/chromium-browser',
-  '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',
-].find((file) => file && fs.existsSync(file));
-
-let playwright = null;
-try {
-  playwright = require('playwright-core'); // eslint-disable-line global-require
-} catch {
-  playwright = null;
-}
+// Chrome or Edge as installed (CHROME gives another), driven by @xufa/browser.
+const CHROME = findBrowser();
 
 class Customer extends Model {
   static fields = { name: fields.string({ maxLength: 100 }) };
@@ -34,7 +18,7 @@ class Order extends Model {
   static fields = { title: fields.string({ maxLength: 200 }) };
 }
 
-describe.skipIf(!CHROME || !playwright)('the editor of the data model, in a browser', () => {
+describe.skipIf(!CHROME)('the editor of the data model, in a browser', () => {
   let app;
   let browser;
   let base;
@@ -84,7 +68,7 @@ describe.skipIf(!CHROME || !playwright)('the editor of the data model, in a brow
     app.register(admin, { prefix: '/admin', authorize: () => true, models: [Customer, Order], designer });
     await app.listen({ port: 0 });
     base = `http://127.0.0.1:${app.server.address().port}/admin/`;
-    browser = await playwright.chromium.launch({ executablePath: CHROME });
+    browser = await chromium.launch({ executablePath: CHROME });
   }, 60000);
 
   afterAll(async () => {
@@ -125,6 +109,8 @@ describe.skipIf(!CHROME || !playwright)('the editor of the data model, in a brow
     await page.mouse.move(to.x + to.width / 2, to.y + to.height / 2, { steps: 6 });
     await page.mouse.up();
     await page.waitForSelector('.design-field input[value="customer"]');
+    // (React Flow draws the edge a frame after the field shows.)
+    await page.waitForSelector('.react-flow__edge');
     expect(await page.$$eval('.react-flow__edge', (edges) => edges.length)).toBe(1);
 
     // The draft outlives the page.

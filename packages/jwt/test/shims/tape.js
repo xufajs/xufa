@@ -1,4 +1,4 @@
-// The part of tape and tap that the suites of jws and jwa use, over vyntra: test(name, (t) => ...) is a test, whose t
+// The part of tape and tap that the suites of jws and jwa use, over @xufa/test: test(name, (t) => ...) is a test, whose t
 // asserts with expect() and ends with t.end(), or after the assertions of t.plan(n).
 const util = require('node:util');
 

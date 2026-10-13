@@ -1,12 +1,12 @@
-import { expectType, expectError } from 'tsd';
+import { assertType, expectTypeOf } from '@xufa/test';
 import { compile, render, fill, TemplateEngine, TemplateError, SafeString, escapeHtml, CompiledTemplate } from '../..';
 
 const page = compile('<h1>{{ title }}</h1>', { name: 'page.html' });
-expectType<CompiledTemplate>(page);
-expectType<string>(page({ title: 'x' }));
-expectType<((context?: object | Record<string, unknown> | null) => unknown) | undefined>(page.value);
-expectType<string>(render('{{ a }}', { a: 1 }, { escape: false }));
-expectType<unknown>(fill({ port: '{{ env.PORT }}' }, { env: process.env }));
+expectTypeOf(page).toEqualTypeOf<CompiledTemplate>();
+expectTypeOf(page({ title: 'x' })).toEqualTypeOf<string>();
+expectTypeOf(page.value).toEqualTypeOf<((context?: object | Record<string, unknown> | null) => unknown) | undefined>();
+expectTypeOf(render('{{ a }}', { a: 1 }, { escape: false })).toEqualTypeOf<string>();
+expectTypeOf(fill({ port: '{{ env.PORT }}' }, { env: process.env })).toEqualTypeOf<unknown>();
 
 const engine = new TemplateEngine({
   filters: { money: (value: number) => `${value.toFixed(2)} €` },
@@ -17,16 +17,18 @@ const engine = new TemplateEngine({
   maxDepth: 10,
   cacheSize: 100,
 });
-expectType<TemplateEngine>(engine.filter('shout', (value: string) => `${value}!`).partial('x', '{{ 1 }}'));
-expectType<string>(engine.render('{{ 1 | money }}'));
-expectError(new TemplateEngine({ escape: 'html' }));
-expectError(engine.partial('x', 1));
+expectTypeOf(engine.filter('shout', (value: string) => `${value}!`).partial('x', '{{ 1 }}')).toEqualTypeOf<TemplateEngine>();
+expectTypeOf(engine.render('{{ 1 | money }}')).toEqualTypeOf<string>();
+// @ts-expect-error
+new TemplateEngine({ escape: 'html' });
+// @ts-expect-error
+engine.partial('x', 1);
 
-expectType<string>(new SafeString('<b>').value);
-expectType<string>(escapeHtml('<'));
+expectTypeOf(new SafeString('<b>').value).toEqualTypeOf<string>();
+expectTypeOf(escapeHtml('<')).toEqualTypeOf<string>();
 const error = new TemplateError('bad');
-expectType<number | undefined>(error.line);
-expectType<string | undefined>(error.template);
+expectTypeOf(error.line).toEqualTypeOf<number | undefined>();
+expectTypeOf(error.template).toEqualTypeOf<string | undefined>();
 
 import { plugin, TemplatePluginOptions, ReplyView, RenderView } from '../..';
 
@@ -40,18 +42,20 @@ const viewOptions: TemplatePluginOptions = {
   filters: { upper: (value: string) => value.toUpperCase() },
   loadPartial: (name) => (name === 'x' ? '{{ 1 }}' : undefined),
 };
-expectType<void>(plugin({}, viewOptions, () => {}));
+expectTypeOf(plugin({}, viewOptions, () => {})).toEqualTypeOf<void>();
 declare const view: RenderView;
-expectType<Promise<string>>(view('users/show', { user: 1 }, { layout: false }));
+expectTypeOf(view('users/show', { user: 1 }, { layout: false })).toEqualTypeOf<Promise<string>>();
 declare const replyView: ReplyView<{ sent: true }>;
-expectType<{ sent: true }>(replyView('hello'));
-expectError(view(1));
+expectTypeOf(replyView('hello')).toEqualTypeOf<{ sent: true }>();
+// @ts-expect-error
+view(1);
 
-expectType<Generator<string, void, undefined>>(page.stream({ title: 'x' }, { chunkSize: 1024 }));
+expectTypeOf(page.stream({ title: 'x' }, { chunkSize: 1024 })).toEqualTypeOf<Generator<string, void, undefined>>();
 const streaming: TemplatePluginOptions = { stream: true, chunkSize: 4096 };
-expectType<boolean | undefined>(streaming.stream);
-expectType<Promise<string>>(view('big', {}, { stream: true }));
+expectTypeOf(streaming.stream).toEqualTypeOf<boolean | undefined>();
+expectTypeOf(view('big', {}, { stream: true })).toEqualTypeOf<Promise<string>>();
 
 const withContext: TemplatePluginOptions = { context: [async (request) => ({ user: request.user })], builtins: false };
-expectType<boolean | undefined>(withContext.builtins);
-expectError<TemplatePluginOptions>({ context: 'nope' });
+expectTypeOf(withContext.builtins).toEqualTypeOf<boolean | undefined>();
+// @ts-expect-error
+assertType<TemplatePluginOptions>({ context: 'nope' });

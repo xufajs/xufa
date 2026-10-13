@@ -1,4 +1,4 @@
-import { expectType, expectError } from 'tsd';
+import { expectTypeOf } from '@xufa/test';
 import xufa from '@xufa/http';
 import { Database } from '@xufa/orm';
 import { sessionPlugin, ormStore, Session, UserSession } from '../..';
@@ -12,26 +12,28 @@ app.register(sessionPlugin, {
   cookie: { sameSite: 'strict' },
 });
 app.get('/', async (request) => {
-  expectType<Session>(request.session);
-  expectType<number | undefined>(request.session.get<number>('count'));
+  expectTypeOf(request.session).toEqualTypeOf<Session>();
+  expectTypeOf(request.session.get<number>('count')).toEqualTypeOf<number | undefined>();
   request.session.regenerate().set('userId', 1).flash('notice', 'hi');
-  expectType<string>(request.session.csrfToken());
+  expectTypeOf(request.session.csrfToken()).toEqualTypeOf<string>();
   return 'ok';
 });
-expectError(app.register(sessionPlugin, { secret: 'x', cookie: { sameSite: 'sometimes' } }));
+// @ts-expect-error
+app.register(sessionPlugin, { secret: 'x', cookie: { sameSite: 'sometimes' } });
 
 // The users of sessions.
 app.post('/login', async (request) => {
   await request.session.login(7);
-  expectType<string | null>(request.session.user);
+  expectTypeOf(request.session.user).toEqualTypeOf<string | null>();
   await request.session.logoutOthers();
   await request.session.logoutEverywhere();
-  expectType<Promise<void>>(app.sessions.logoutUser('7'));
-  expectType<Promise<UserSession[]>>(app.sessions.list(7));
-  expectType<Promise<boolean>>(app.sessions.end('7', request.session.handle));
-  expectType<Promise<number>>(app.sessions.generationOf(7));
-  expectError(request.session.login({}));
-  expectType<typeof request.session>(request.session.message('Saved', 'success'));
-  expectType<{ text: string; level: string }[]>(request.session.messages());
+  expectTypeOf(app.sessions.logoutUser('7')).toEqualTypeOf<Promise<void>>();
+  expectTypeOf(app.sessions.list(7)).toEqualTypeOf<Promise<UserSession[]>>();
+  expectTypeOf(app.sessions.end('7', request.session.handle)).toEqualTypeOf<Promise<boolean>>();
+  expectTypeOf(app.sessions.generationOf(7)).toEqualTypeOf<Promise<number>>();
+  // @ts-expect-error
+  request.session.login({});
+  expectTypeOf(request.session.message('Saved', 'success')).toEqualTypeOf<typeof request.session>();
+  expectTypeOf(request.session.messages()).toEqualTypeOf<{ text: string; level: string }[]>();
   return 'ok';
 });

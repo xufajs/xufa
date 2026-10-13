@@ -16,12 +16,17 @@ fi
 export PATH="$NODE_DIR/bin:$PATH"
 
 # The working tree as it is (changes not committed too), without node_modules nor the history; files deleted in it
-# are deleted in the copy too (rsync --delete), so tests and files removed do not stay.
+# are deleted in the copy too (rsync --delete), so tests and files removed do not stay. The node_modules of the
+# fixtures of @xufa/test are part of them (as in .gitignore): copied, but for their caches.
+FIXTURE_MODULES='/packages/test*/test/fixtures/**/node_modules'
 mkdir -p "$COPY"
 if command -v rsync >/dev/null; then
-  rsync -a --delete --exclude=node_modules --exclude=.git --exclude='*.cpuprofile' --exclude=.bench-linux-lock "$REPO/" "$COPY/"
+  rsync -a --delete --exclude="$FIXTURE_MODULES/.cache" --include="$FIXTURE_MODULES/***" --exclude=node_modules \
+    --exclude=.git --exclude='*.cpuprofile' --exclude=.bench-linux-lock "$REPO/" "$COPY/"
 else
   tar -C "$REPO" --exclude=node_modules --exclude=.git --exclude='*.cpuprofile' -cf - . | tar -C "$COPY" -xf -
+  (cd "$REPO" && find packages/test*/test/fixtures -type d -name node_modules -prune -print0) |
+    tar -C "$REPO" --null --exclude=.cache -T - -cf - | tar -C "$COPY" -xf -
 fi
 
 cd "$COPY"

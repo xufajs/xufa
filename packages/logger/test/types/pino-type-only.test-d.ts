@@ -1,5 +1,5 @@
 // Ported from pino (test/types/pino-type-only.test-d.ts, MIT License) by tools/port-types/port.js: do not edit, change the tool.
-import { expectAssignable, expectType, expectNotAssignable } from 'tsd'
+import { assertType, expectTypeOf } from '@xufa/test';
 
 import pino from '../../'
 import type {
@@ -17,29 +17,33 @@ import type {
 // NB: can also use `import * as pino`, but that form is callable as `pino()`
 // under `esModuleInterop: false` or `pino.default()` under `esModuleInterop: true`.
 const log = pino()
-expectAssignable<LoggerExtras>(log)
-expectType<Logger>(log)
-expectType<LogFn>(log.info)
+assertType<LoggerExtras>(log);
+expectTypeOf(log).toEqualTypeOf<Logger>();
+expectTypeOf(log.info).toEqualTypeOf<LogFn>();
 
-expectType<Parameters<typeof log.isLevelEnabled>>([log.level])
+assertType<Parameters<typeof log.isLevelEnabled>>([log.level]);
 
 const level: Level = 'debug'
-expectAssignable<string>(level)
+assertType<string>(level);
 
 const levelWithSilent: LevelWithSilent = 'silent'
-expectAssignable<string>(levelWithSilent)
+assertType<string>(levelWithSilent);
 
 const levelOrString: LevelOrString = 'myCustomLevel'
-expectAssignable<string>(levelOrString)
-expectNotAssignable<pino.Level>(levelOrString)
-expectNotAssignable<pino.LevelWithSilent>(levelOrString)
-expectAssignable<pino.LevelWithSilentOrString>(levelOrString)
+assertType<string>(levelOrString);
+// @ts-expect-error
+assertType<pino.Level>(levelOrString);
+// @ts-expect-error
+assertType<pino.LevelWithSilent>(levelOrString);
+assertType<pino.LevelWithSilentOrString>(levelOrString);
 
 const levelWithSilentOrString: LevelWithSilentOrString = 'myCustomLevel'
-expectAssignable<string>(levelWithSilentOrString)
-expectNotAssignable<pino.Level>(levelWithSilentOrString)
-expectNotAssignable<pino.LevelWithSilent>(levelWithSilentOrString)
-expectAssignable<pino.LevelOrString>(levelWithSilentOrString)
+assertType<string>(levelWithSilentOrString);
+// @ts-expect-error
+assertType<pino.Level>(levelWithSilentOrString);
+// @ts-expect-error
+assertType<pino.LevelWithSilent>(levelWithSilentOrString);
+assertType<pino.LevelOrString>(levelWithSilentOrString);
 
 function createStream (): DestinationStreamWithMetadata {
   return { write () {} }
@@ -50,7 +54,7 @@ const stream = createStream()
 // break without annotating the type explicitly
 const needsMetadata: typeof pino.symbols.needsMetadataGsym = pino.symbols.needsMetadataGsym
 if (stream[needsMetadata]) {
-  expectType<number>(stream.lastLevel)
+  expectTypeOf(stream.lastLevel).toEqualTypeOf<number>();
 }
 
 const loggerOptions: LoggerOptions = {
@@ -66,7 +70,7 @@ const loggerOptions: LoggerOptions = {
   },
 }
 
-expectType<LoggerOptions>(loggerOptions)
+expectTypeOf(loggerOptions).toEqualTypeOf<LoggerOptions>();
 
 // Reference: https://github.com/pinojs/pino/issues/2285
 const someConst = 'test' as const

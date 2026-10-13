@@ -1,0 +1,395 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>@xufa/lint: Reference · xufa</title>
+    <meta
+      name="description"
+      content="The reference of @xufa/lint: every function, class, interface and type it declares, made from its TypeScript declarations."
+    />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%23d9502b'/%3E%3Ctext x='16' y='22.5' font-family='monospace' font-size='18' font-weight='700' fill='white' text-anchor='middle'%3Ex%3C/text%3E%3C/svg%3E"
+    />
+    <link rel="stylesheet" href="../style.css?v=0.1.0" />
+    <script src="../main.js?v=0.1.0"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js" defer></script>
+  </head>
+  <body>
+    <header class="header">
+      <div class="header-inner">
+        <a class="logo" href="../index.html"><span class="logo-mark">x</span>xufa</a>
+        <nav class="nav">
+          <a href="../guide.html">Guide</a>
+          <a href="../playground.html">Playground</a>
+          <a href="../http/index.html">HTTP</a>
+          <a href="../orm/index.html">ORM</a>
+          <a class="hide-small" href="../auth/index.html">Auth</a>
+          <a class="hide-small" href="../sequelize/index.html">Sequelize</a>
+          <a class="hide-small" href="../packages.html" aria-current="page">Packages</a>
+          <a class="hide-small" href="../benchmarks.html">Benchmarks</a>
+          <a href="https://github.com/xufajs/xufa">GitHub</a>
+          <button class="theme-toggle" type="button" aria-label="Switch between light and dark theme">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+              <path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z" />
+            </svg>
+          </button>
+        </nav>
+      </div>
+    </header>
+
+    <div class="docs">
+      <button class="menu-toggle" type="button" aria-expanded="false">☰ Contents</button>
+      <aside class="sidebar">
+        <h4>Reference</h4>
+        <ul>
+          <li><a href="#functions">Functions (10)</a></li>
+          <li><a href="#classes">Classes (2)</a></li>
+          <li><a href="#constants">Constants (3)</a></li>
+          <li><a href="#interfaces">Interfaces (8)</a></li>
+          <li><a href="#types">Types (2)</a></li>
+        </ul>
+        <h4>Packages</h4>
+        <ul>
+          <li><a href="../websocket/index.html">@xufa/websocket</a></li>
+          <li><a href="../admin/index.html">@xufa/admin</a></li>
+          <li><a href="../session/index.html">@xufa/session</a></li>
+          <li><a href="../forms/index.html">@xufa/forms</a></li>
+          <li><a href="../views/index.html">@xufa/views</a></li>
+          <li><a href="../mail/index.html">@xufa/mail</a></li>
+          <li><a href="../i18n/index.html">@xufa/i18n</a></li>
+          <li><a href="../openapi/index.html">@xufa/openapi</a></li>
+          <li><a href="../client/index.html">@xufa/client</a></li>
+          <li><a href="../schema/index.html">@xufa/schema</a></li>
+          <li><a href="../pg/index.html">@xufa/pg</a></li>
+          <li><a href="../mongo/index.html">@xufa/mongo</a></li>
+          <li><a href="../expression/index.html">@xufa/expression</a></li>
+          <li><a href="../template/index.html">@xufa/template</a></li>
+          <li><a href="../cluster/index.html">@xufa/cluster</a></li>
+          <li><a href="../scheduler/index.html">@xufa/scheduler</a></li>
+          <li><a href="../queue/index.html">@xufa/queue</a></li>
+          <li><a href="../config/index.html">@xufa/config</a></li>
+          <li><a href="../discovery/index.html">@xufa/discovery</a></li>
+          <li><a href="../netcache/index.html">@xufa/netcache</a></li>
+          <li><a href="../faults/index.html">@xufa/faults</a></li>
+          <li><a href="../browser/index.html">@xufa/browser</a></li>
+          <li><a href="../bundle/index.html">@xufa/bundle</a></li>
+          <li><a href="index.html" aria-current="page">@xufa/lint</a></li>
+          <li><a href="../marshal/index.html">@xufa/marshal</a></li>
+          <li><a href="../yaml/index.html">@xufa/yaml</a></li>
+          <li><a href="../jwt/index.html">@xufa/jwt</a></li>
+          <li><a href="../logger/index.html">@xufa/logger</a></li>
+          <li><a href="../router/index.html">@xufa/router</a></li>
+          <li><a href="../serializer/index.html">@xufa/serializer</a></li>
+          <li><a href="../inject/index.html">@xufa/inject</a></li>
+          <li><a href="../boot/index.html">@xufa/boot</a></li>
+          <li><a href="../errors/index.html">@xufa/errors</a></li>
+          <li><a href="../packages.html">All the packages</a></li>
+        </ul>
+      </aside>
+
+      <article class="content">
+        <nav class="package-tabs" aria-label="@xufa/lint">
+          <a href="index.html">Overview</a>
+          <a href="reference.html" aria-current="page">Reference</a>
+        </nav>
+        <h1>Reference</h1>
+        <p class="intro">
+          A linter with ESLint's recommended rules (ported, with their tests) and a formatter with prettier's output, on TypeScript's parser. Every declaration of its TypeScript declarations
+          (<code>packages/lint/index.d.ts</code> or <code>index.d.cts</code>), as they are written, with their comments: made from them each time
+          the docs are built. How to use them is in <a href="index.html">the overview</a>.
+        </p>
+
+        <h2 id="functions">Functions</h2>
+        <p class="ref-index"><a href="#ref-loadConfig"><code>loadConfig</code></a>, <a href="#ref-findConfigFile"><code>findConfigFile</code></a>, <a href="#ref-lintFiles"><code>lintFiles</code></a>, <a href="#ref-lintText"><code>lintText</code></a>, <a href="#ref-getRule"><code>getRule</code></a>, <a href="#ref-defineRule"><code>defineRule</code></a>, <a href="#ref-parse"><code>parse</code></a>, <a href="#ref-tokenize"><code>tokenize</code></a>, <a href="#ref-format"><code>format</code></a>, <a href="#ref-formatFiles"><code>formatFiles</code></a></p>
+
+        <h3 id="ref-loadConfig"><code>loadConfig</code></h3>
+        <pre><code class="language-ts">export declare function loadConfig(file: string): Promise&lt;ConfigArray&gt;;</code></pre>
+        <p>Loads xufa.lint.config.js (its default export: a list, or a function that gives one).</p>
+
+        <h3 id="ref-findConfigFile"><code>findConfigFile</code></h3>
+        <pre><code class="language-ts">export declare function findConfigFile(from?: string): string | null;</code></pre>
+        <p>The config file of a folder or of the nearest one above it; null when none.</p>
+
+        <h3 id="ref-lintFiles"><code>lintFiles</code></h3>
+        <pre><code class="language-ts">export declare function lintFiles(paths: string[], configs: ConfigArray, options?: { fix?: boolean }): LintResult[];</code></pre>
+        <p>Lints the files of paths (folders walked); with fix, writes what is fixed.</p>
+
+        <h3 id="ref-lintText"><code>lintText</code></h3>
+        <pre><code class="language-ts">export declare function lintText(text: string, config: Config, file: string, options?: { fix?: boolean }): LintResult;</code></pre>
+        <p>Lints a text with the config of a file.</p>
+
+        <h3 id="ref-getRule"><code>getRule</code></h3>
+        <pre><code class="language-ts">export declare function getRule(id: string): Rule | null;</code></pre>
+
+        <h3 id="ref-defineRule"><code>defineRule</code></h3>
+        <pre><code class="language-ts">export declare function defineRule(id: string, rule: Rule): void;</code></pre>
+        <p>Adds a rule of the project.</p>
+
+        <h3 id="ref-parse"><code>parse</code></h3>
+        <pre><code class="language-ts">export declare function parse(
+  text: string,
+  options?: { sourceType?: 'module' | 'script' | 'commonjs'; jsx?: boolean; filePath?: string }
+): any;</code></pre>
+        <p>ESTree, as espree makes it (with tokens and comments).</p>
+
+        <h3 id="ref-tokenize"><code>tokenize</code></h3>
+        <pre><code class="language-ts">export declare function tokenize(text: string): any[] &amp; { comments: any[] };</code></pre>
+
+        <h3 id="ref-format"><code>format</code></h3>
+        <pre><code class="language-ts">export declare function format(text: string, options: FormatOptions &amp; { filepath: string }): Promise&lt;string&gt;;</code></pre>
+        <p>A text formatted as prettier formats the file filepath (its extension tells the language).</p>
+
+        <h3 id="ref-formatFiles"><code>formatFiles</code></h3>
+        <pre><code class="language-ts">export declare function formatFiles(
+  paths: string[],
+  configs: ConfigArray,
+  options?: { write?: boolean }
+): Promise&lt;Array&lt;{ filePath: string; changed: boolean; error?: Error }&gt;&gt;;</code></pre>
+        <p>Formats the files of paths with their configs; with write, writes those that change.</p>
+
+        <h2 id="classes">Classes</h2>
+        <p class="ref-index"><a href="#ref-Linter"><code>Linter</code></a>, <a href="#ref-ConfigArray"><code>ConfigArray</code></a></p>
+
+        <h3 id="ref-Linter"><code>Linter</code></h3>
+        <pre><code class="language-ts">export declare class Linter { ... }</code></pre>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>new (options?: { cwd?: string })</code></td><td></td><td></td></tr>
+                <tr><td><code>verify(text: string, config?: Config, filename?: string | { filename?: string; physicalFilename?: string })</code></td><td><code><a href="#ref-LintMessage">LintMessage</a>[]</code></td><td><p>The problems of a text with a config (one object: the merged config of a file).</p></td></tr>
+                <tr><td><code>verifyAndFix(text: string, config?: Config, options?: string | { filename?: string; fix?: boolean })</code></td><td><code>{ fixed: boolean; output: string; messages: <a href="#ref-LintMessage">LintMessage</a>[] }</code></td><td><p>verify(), applying fixes again until nothing changes (10 times at most).</p></td></tr>
+                <tr><td><code>getSuppressedMessages()</code></td><td><code><a href="#ref-LintMessage">LintMessage</a>[]</code></td><td><p>The problems of the last verify() that comments disabled.</p></td></tr>
+                <tr><td><code>getSourceCode()</code></td><td><code>any</code></td><td></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-ConfigArray"><code>ConfigArray</code></h3>
+        <pre><code class="language-ts">export declare class ConfigArray { ... }</code></pre>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>new (configs: Array&lt;Config | Config[]&gt;, base?: string)</code></td><td></td><td></td></tr>
+                <tr><td><code>isIgnored(file: string)</code></td><td><code>boolean</code></td><td></td></tr>
+                <tr><td><code>isLinted(file: string)</code></td><td><code>boolean</code></td><td></td></tr>
+                <tr><td><code>isFormatted(file: string)</code></td><td><code>boolean</code></td><td><p>Whether a file is formatted: of a language the formatter has, and not ignored.</p></td></tr>
+                <tr><td><code>configFor(file: string)</code></td><td><code><a href="#ref-Config">Config</a></code></td><td><p>The objects that apply to a file, merged.</p></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h2 id="constants">Constants</h2>
+        <p class="ref-index"><a href="#ref-formatters"><code>formatters</code></a>, <a href="#ref-globals"><code>globals</code></a>, <a href="#ref-configs"><code>configs</code></a></p>
+
+        <h3 id="ref-formatters"><code>formatters</code></h3>
+        <pre><code class="language-ts">export declare const formatters: {
+  stylish(results: LintResult[], options?: { color?: boolean }): string;
+  json(results: LintResult[]): string;
+};</code></pre>
+
+        <h3 id="ref-globals"><code>globals</code></h3>
+        <pre><code class="language-ts">export declare const globals: Record&lt;
+  | 'builtin'
+  | 'es5'
+  | 'es2015'
+  | 'es2016'
+  | 'es2017'
+  | 'es2018'
+  | 'es2019'
+  | 'es2020'
+  | 'es2021'
+  | 'es2022'
+  | 'es2023'
+  | 'es2024'
+  | 'es2025'
+  | 'es2026'
+  | 'browser'
+  | 'worker'
+  | 'serviceworker'
+  | 'sharedWorker'
+  | 'node'
+  | 'nodeBuiltin'
+  | 'commonjs'
+  | 'shared-node-browser'
+  | 'jest'
+  | 'vitest'
+  | 'mocha',
+  Record&lt;string, boolean&gt;
+&gt;;</code></pre>
+        <p>The globals of environments, as the package globals gives them.</p>
+
+        <h3 id="ref-configs"><code>configs</code></h3>
+        <pre><code class="language-ts">export declare const configs: { recommended: Config };</code></pre>
+
+        <h2 id="interfaces">Interfaces</h2>
+        <p class="ref-index"><a href="#ref-LanguageOptions"><code>LanguageOptions</code></a>, <a href="#ref-LinterOptions"><code>LinterOptions</code></a>, <a href="#ref-Config"><code>Config</code></a>, <a href="#ref-FormatOptions"><code>FormatOptions</code></a>, <a href="#ref-Fix"><code>Fix</code></a>, <a href="#ref-LintMessage"><code>LintMessage</code></a>, <a href="#ref-LintResult"><code>LintResult</code></a>, <a href="#ref-Rule"><code>Rule</code></a></p>
+
+        <h3 id="ref-LanguageOptions"><code>LanguageOptions</code></h3>
+        <pre><code class="language-ts">export interface LanguageOptions { ... }</code></pre>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>ecmaVersion?</code></td><td><code>number | 'latest'</code></td><td><p>'latest' (the default), or a year or number of ECMAScript: the globals it gives, and the scopes.</p></td></tr>
+                <tr><td><code>sourceType?</code></td><td><code>'module' | 'script' | 'commonjs'</code></td><td><p>'module' (the default), 'script' or 'commonjs'.</p></td></tr>
+                <tr><td><code>globals?</code></td><td><code>Record&lt;string, boolean | 'readonly' | 'readable' | 'writable' | 'writeable' | 'off'&gt;</code></td><td><p>Names the code may use: { name: 'readonly' | 'writable' | 'off' | boolean }.</p></td></tr>
+                <tr><td><code>parserOptions?</code></td><td><code>{ ecmaFeatures?: { jsx?: boolean; globalReturn?: boolean; impliedStrict?: boolean } }</code></td><td></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-LinterOptions"><code>LinterOptions</code></h3>
+        <pre><code class="language-ts">export interface LinterOptions { ... }</code></pre>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>noInlineConfig?</code></td><td><code>boolean</code></td><td><p>Ignores the comments that configure and disable.</p></td></tr>
+                <tr><td><code>reportUnusedDisableDirectives?</code></td><td><code>boolean | <a href="#ref-Severity">Severity</a></code></td><td><p>Comments that disable what has no problems ('warn' by default).</p></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-Config"><code>Config</code></h3>
+        <pre><code class="language-ts">export interface Config { ... }</code></pre>
+        <p>A config object of xufa.lint.config.js, as one of ESLint's flat config.</p>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>name?</code></td><td><code>string</code></td><td></td></tr>
+                <tr><td><code>files?</code></td><td><code>string[]</code></td><td><p>The files it applies to (globs, relative to the config's folder); all when it has none.</p></td></tr>
+                <tr><td><code>ignores?</code></td><td><code>string[]</code></td><td><p>Files it does not apply to; alone in an object, files ignored everywhere.</p></td></tr>
+                <tr><td><code>languageOptions?</code></td><td><code><a href="#ref-LanguageOptions">LanguageOptions</a></code></td><td></td></tr>
+                <tr><td><code>linterOptions?</code></td><td><code><a href="#ref-LinterOptions">LinterOptions</a></code></td><td></td></tr>
+                <tr><td><code>rules?</code></td><td><code>Record&lt;string, <a href="#ref-RuleSetting">RuleSetting</a>&gt;</code></td><td></td></tr>
+                <tr><td><code>settings?</code></td><td><code>Record&lt;string, unknown&gt;</code></td><td></td></tr>
+                <tr><td><code>format?</code></td><td><code><a href="#ref-FormatOptions">FormatOptions</a> | false</code></td><td><p>The formatter's options for these files; false leaves them unformatted.</p></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-FormatOptions"><code>FormatOptions</code></h3>
+        <pre><code class="language-ts">export interface FormatOptions { ... }</code></pre>
+        <p>prettier's options (those of JavaScript, TypeScript, JSON and markdown).</p>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>printWidth?</code></td><td><code>number</code></td><td></td></tr>
+                <tr><td><code>tabWidth?</code></td><td><code>number</code></td><td></td></tr>
+                <tr><td><code>useTabs?</code></td><td><code>boolean</code></td><td></td></tr>
+                <tr><td><code>semi?</code></td><td><code>boolean</code></td><td></td></tr>
+                <tr><td><code>singleQuote?</code></td><td><code>boolean</code></td><td></td></tr>
+                <tr><td><code>jsxSingleQuote?</code></td><td><code>boolean</code></td><td></td></tr>
+                <tr><td><code>quoteProps?</code></td><td><code>'as-needed' | 'consistent' | 'preserve'</code></td><td></td></tr>
+                <tr><td><code>trailingComma?</code></td><td><code>'all' | 'es5' | 'none'</code></td><td></td></tr>
+                <tr><td><code>bracketSpacing?</code></td><td><code>boolean</code></td><td></td></tr>
+                <tr><td><code>bracketSameLine?</code></td><td><code>boolean</code></td><td></td></tr>
+                <tr><td><code>objectWrap?</code></td><td><code>'preserve' | 'collapse'</code></td><td></td></tr>
+                <tr><td><code>arrowParens?</code></td><td><code>'always' | 'avoid'</code></td><td></td></tr>
+                <tr><td><code>proseWrap?</code></td><td><code>'always' | 'never' | 'preserve'</code></td><td></td></tr>
+                <tr><td><code>endOfLine?</code></td><td><code>'lf' | 'crlf' | 'cr' | 'auto'</code></td><td></td></tr>
+                <tr><td><code>experimentalTernaries?</code></td><td><code>boolean</code></td><td></td></tr>
+                <tr><td><code>experimentalOperatorPosition?</code></td><td><code>'start' | 'end'</code></td><td></td></tr>
+                <tr><td><code>embeddedLanguageFormatting?</code></td><td><code>'auto' | 'off'</code></td><td></td></tr>
+                <tr><td><code>singleAttributePerLine?</code></td><td><code>boolean</code></td><td></td></tr>
+                <tr><td><code>ignores?</code></td><td><code>string[]</code></td><td><p>(In a config) files never formatted.</p></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-Fix"><code>Fix</code></h3>
+        <pre><code class="language-ts">export interface Fix { ... }</code></pre>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>range</code></td><td><code>[number, number]</code></td><td></td></tr>
+                <tr><td><code>text</code></td><td><code>string</code></td><td></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-LintMessage"><code>LintMessage</code></h3>
+        <pre><code class="language-ts">export interface LintMessage { ... }</code></pre>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>ruleId</code></td><td><code>string | null</code></td><td></td></tr>
+                <tr><td><code>severity</code></td><td><code>1 | 2</code></td><td></td></tr>
+                <tr><td><code>message</code></td><td><code>string</code></td><td></td></tr>
+                <tr><td><code>line</code></td><td><code>number</code></td><td></td></tr>
+                <tr><td><code>column</code></td><td><code>number</code></td><td></td></tr>
+                <tr><td><code>endLine?</code></td><td><code>number</code></td><td></td></tr>
+                <tr><td><code>endColumn?</code></td><td><code>number</code></td><td></td></tr>
+                <tr><td><code>messageId?</code></td><td><code>string</code></td><td></td></tr>
+                <tr><td><code>nodeType?</code></td><td><code>string | null</code></td><td></td></tr>
+                <tr><td><code>fatal?</code></td><td><code>true</code></td><td></td></tr>
+                <tr><td><code>fix?</code></td><td><code><a href="#ref-Fix">Fix</a></code></td><td></td></tr>
+                <tr><td><code>suggestions?</code></td><td><code>Array&lt;{ desc: string; messageId?: string; fix: <a href="#ref-Fix">Fix</a> }&gt;</code></td><td></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-LintResult"><code>LintResult</code></h3>
+        <pre><code class="language-ts">export interface LintResult { ... }</code></pre>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>filePath</code></td><td><code>string</code></td><td></td></tr>
+                <tr><td><code>messages</code></td><td><code><a href="#ref-LintMessage">LintMessage</a>[]</code></td><td></td></tr>
+                <tr><td><code>suppressedMessages</code></td><td><code><a href="#ref-LintMessage">LintMessage</a>[]</code></td><td></td></tr>
+                <tr><td><code>errorCount</code></td><td><code>number</code></td><td></td></tr>
+                <tr><td><code>fatalErrorCount</code></td><td><code>number</code></td><td></td></tr>
+                <tr><td><code>warningCount</code></td><td><code>number</code></td><td></td></tr>
+                <tr><td><code>fixableErrorCount</code></td><td><code>number</code></td><td></td></tr>
+                <tr><td><code>fixableWarningCount</code></td><td><code>number</code></td><td></td></tr>
+                <tr><td><code>output?</code></td><td><code>string</code></td><td><p>With fix: the text fixed, when anything was.</p></td></tr>
+                <tr><td><code>source?</code></td><td><code>string</code></td><td></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-Rule"><code>Rule</code></h3>
+        <pre><code class="language-ts">export interface Rule { ... }</code></pre>
+        <p>A rule, as ESLint's: { meta, create(context) }.</p>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>meta?</code></td><td><code>{ type?: 'problem' | 'suggestion' | 'layout'; fixable?: 'code' | 'whitespace'; hasSuggestions?: boolean; messages?: Record&lt;string, string&gt;; defaultOptions?: unknown[]; schema?: unknown; docs?: Record&lt;string, unknown&gt;; }</code></td><td></td></tr>
+                <tr><td><code>create(context: any)</code></td><td><code>Record&lt;string, (...args: any[]) =&gt; void&gt;</code></td><td></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h2 id="types">Types</h2>
+        <p class="ref-index"><a href="#ref-Severity"><code>Severity</code></a>, <a href="#ref-RuleSetting"><code>RuleSetting</code></a></p>
+
+        <h3 id="ref-Severity"><code>Severity</code></h3>
+        <pre><code class="language-ts">export type Severity = 0 | 1 | 2 | 'off' | 'warn' | 'error';</code></pre>
+
+        <h3 id="ref-RuleSetting"><code>RuleSetting</code></h3>
+        <pre><code class="language-ts">export type RuleSetting = Severity | [Severity, ...unknown[]];</code></pre>
+      </article>
+    </div>
+
+    <footer class="footer">
+      <div class="container">
+        <span>xufa is MIT licensed. &copy; Jes&uacute;s Seijas</span>
+        <span>
+          <a href="../guide.html">Guide</a> &middot; <a href="../playground.html">Playground</a> &middot; <a href="../http/index.html">HTTP</a> &middot; <a href="../orm/index.html">ORM</a> &middot; <a href="../auth/index.html">Auth</a> &middot;
+          <a href="../sequelize/index.html">Sequelize</a> &middot; <a href="../packages.html">Packages</a> &middot;
+          <a href="../benchmarks.html">Benchmarks</a> &middot; <a href="https://github.com/xufajs/xufa">GitHub</a>
+        </span>
+      </div>
+    </footer>
+  </body>
+</html>

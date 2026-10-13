@@ -1,5 +1,5 @@
 // Ported from pino (test/types/pino-multistream.test-d.ts, MIT License) by tools/port-types/port.js: do not edit, change the tool.
-import { expectType, expectNotType } from 'tsd'
+import { expectTypeOf } from '@xufa/test';
 
 import { createWriteStream } from 'node:fs'
 
@@ -12,18 +12,18 @@ const streams = [
   { level: 'fatal' as const, stream: process.stderr },
 ]
 
-expectType<pino.MultiStreamRes>(pino.multistream(process.stdout))
-expectType<pino.MultiStreamRes>(pino.multistream([createWriteStream('')]))
-expectType<pino.MultiStreamRes<'error'>>(pino.multistream({ level: 'error' as const, stream: process.stderr }))
-expectType<pino.MultiStreamRes<'fatal'>>(pino.multistream([{ level: 'fatal' as const, stream: createWriteStream('') }]))
+expectTypeOf(pino.multistream(process.stdout)).toEqualTypeOf<pino.MultiStreamRes>();
+expectTypeOf(pino.multistream([createWriteStream('')])).toEqualTypeOf<pino.MultiStreamRes>();
+expectTypeOf(pino.multistream({ level: 'error' as const, stream: process.stderr })).toEqualTypeOf<pino.MultiStreamRes<'error'>>();
+expectTypeOf(pino.multistream([{ level: 'fatal' as const, stream: createWriteStream('') }])).toEqualTypeOf<pino.MultiStreamRes<'fatal'>>();
 
-expectType<pino.MultiStreamRes<'error' | 'fatal'>>(pino.multistream(streams))
-expectType<pino.MultiStreamRes<'error' | 'fatal'>>(pino.multistream(streams, {}))
-expectType<pino.MultiStreamRes<'error' | 'fatal'>>(pino.multistream(streams, { levels: { info: 30 } }))
-expectType<pino.MultiStreamRes<'error' | 'fatal'>>(pino.multistream(streams, { dedupe: true }))
-expectType<pino.MultiStreamRes<'error' | 'fatal'>>(pino.multistream(streams[0]).add(streams[1]))
-expectType<pino.MultiStreamRes<'error' | 'fatal'>>(multistream(streams))
-expectType<pino.MultiStreamRes<'error'>>(multistream(streams).clone('error'))
-expectNotType<pino.MultiStreamRes<string>>(multistream(streams).clone('error'))
+expectTypeOf(pino.multistream(streams)).toEqualTypeOf<pino.MultiStreamRes<'error' | 'fatal'>>();
+expectTypeOf(pino.multistream(streams, {})).toEqualTypeOf<pino.MultiStreamRes<'error' | 'fatal'>>();
+expectTypeOf(pino.multistream(streams, { levels: { info: 30 } })).toEqualTypeOf<pino.MultiStreamRes<'error' | 'fatal'>>();
+expectTypeOf(pino.multistream(streams, { dedupe: true })).toEqualTypeOf<pino.MultiStreamRes<'error' | 'fatal'>>();
+expectTypeOf(pino.multistream(streams[0]).add(streams[1])).toEqualTypeOf<pino.MultiStreamRes<'error' | 'fatal'>>();
+expectTypeOf(multistream(streams)).toEqualTypeOf<pino.MultiStreamRes<'error' | 'fatal'>>();
+expectTypeOf(multistream(streams).clone('error')).toEqualTypeOf<pino.MultiStreamRes<'error'>>();
+expectTypeOf(multistream(streams).clone('error')).not.toEqualTypeOf<pino.MultiStreamRes<string>>();
 
-expectType<pino.MultiStreamRes>(multistream(process.stdout))
+expectTypeOf(multistream(process.stdout)).toEqualTypeOf<pino.MultiStreamRes>();

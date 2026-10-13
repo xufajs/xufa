@@ -34,7 +34,7 @@ npx xufa createsuperuser                # a superuser of the model of users (Abs
 npx xufa shell                          # a REPL with app, db, queue and the models
 npx xufa dev                            # the server, restarted on changes; xufa work: workers of the queue
 npx xufa health                         # the checks of GET /health: database, queue
-npx xufa test                           # the tests (NODE_ENV=test), each in a transaction rolled back
+npx xufa test                           # the tests (NODE_ENV=test, with @xufa/test), each in a transaction rolled back
 npx xufa down --message "Back at noon" --retry 600 --secret   # maintenance mode (--everywhere: every machine)
 npx xufa up
 ```

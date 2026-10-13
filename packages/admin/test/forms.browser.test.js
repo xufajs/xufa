@@ -1,4 +1,4 @@
-// The forms and lists of Django's ModelAdmin in a browser (Chrome or Edge, driven by playwright-core; skipped without
+// The forms and lists of Django's ModelAdmin in a browser (Chrome or Edge, driven by @xufa/browser; skipped without
 // one): a many-to-many field chosen with chips and its combobox, saved; fieldsets with fields on one line and a group
 // that opens; columns of a method and of a path; with no error of a script on the way.
 import fs from 'node:fs';
@@ -7,26 +7,10 @@ import path from 'node:path';
 import xufa from '@xufa/http';
 import { Database, Model, fields } from '@xufa/orm';
 import { admin } from '../index.js';
-import { createRequire } from 'node:module';
+import { chromium, findBrowser } from '@xufa/browser';
 
-const require = createRequire(import.meta.url);
-
-const CHROME = [
-  process.env.CHROME,
-  'C:/Program Files/Google/Chrome/Application/chrome.exe',
-  'C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe',
-  '/usr/bin/google-chrome',
-  '/usr/bin/chromium',
-  '/usr/bin/chromium-browser',
-  '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',
-].find((file) => file && fs.existsSync(file));
-
-let playwright = null;
-try {
-  playwright = require('playwright-core'); // eslint-disable-line global-require
-} catch {
-  playwright = null;
-}
+// Chrome or Edge as installed (CHROME gives another), driven by @xufa/browser.
+const CHROME = findBrowser();
 
 class Genre extends Model {
   static fields = {
@@ -81,7 +65,7 @@ class Crew extends Model {
   };
 }
 
-describe.skipIf(!CHROME || !playwright)('the forms of the admin, in a browser', () => {
+describe.skipIf(!CHROME)('the forms of the admin, in a browser', () => {
   let app;
   let browser;
   let base;
@@ -121,7 +105,7 @@ describe.skipIf(!CHROME || !playwright)('the forms of the admin, in a browser', 
     });
     await app.listen({ port: 0 });
     base = `http://127.0.0.1:${app.server.address().port}/admin/`;
-    browser = await playwright.chromium.launch({ executablePath: CHROME });
+    browser = await chromium.launch({ executablePath: CHROME });
   }, 60000);
 
   afterAll(async () => {

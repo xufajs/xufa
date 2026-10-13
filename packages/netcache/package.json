@@ -18,8 +18,8 @@
     "lib"
   ],
   "scripts": {
-    "test": "vyntra",
-    "test:types": "tsd"
+    "test": "xufa-test",
+    "test:types": "xufa-test --typecheck.only"
   },
   "keywords": [
     "cache",
@@ -42,12 +42,9 @@
   "engines": {
     "node": "^22.22.3 || ^24.15.0 || >=25.7.0"
   },
-  "tsd": {
-    "directory": "test/types"
-  },
   "devDependencies": {
     "@xufa/orm": "workspace:*",
-    "vyntra": "^0.7.0"
+    "@xufa/test": "workspace:^"
   },
   "publishConfig": {
     "access": "public"
@@ -57,7 +54,7 @@
     "@xufa/faults": "workspace:*",
     "@xufa/marshal": "workspace:*"
   },
-  "vyntra": {
+  "xufaTest": {
     "setupFiles": [
       "@xufa/faults/register-strict"
     ]

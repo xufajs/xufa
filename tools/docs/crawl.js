@@ -2,39 +2,32 @@
 // Opens every page of docs/ in a browser, from the disk (file://, as the docs are read without a server), following
 // their links from index.html: it fails on a link to a page or file that is not there, to a folder (which a browser
 // shows as a list of files), to an anchor that is not in its page, on a page without the style of the site, and on
-// an error of a script. Chrome or Edge as installed (CHROME gives another), driven by playwright-core.
+// an error of a script. Chrome or Edge as installed (CHROME gives another), driven by @xufa/browser.
 //
 // node tools/docs/crawl.js          (pnpm docs:crawl)
 import fs from 'node:fs';
 import path from 'node:path';
 import { pathToFileURL, fileURLToPath } from 'node:url';
-import { createRequire } from 'node:module';
-
-const require = createRequire(import.meta.url);
+import { chromium, findBrowser } from '@xufa/browser';
 
 const DOCS = path.join(import.meta.dirname, '../../docs');
 
-function browserPath() {
-  const candidates = [
-    process.env.CHROME,
-    'C:/Program Files/Google/Chrome/Application/chrome.exe',
-    'C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe',
-    '/usr/bin/google-chrome',
-    '/usr/bin/chromium',
-    '/usr/bin/chromium-browser',
-    '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',
-  ];
-  return candidates.find((file) => file && fs.existsSync(file));
-}
-
 async function crawl() {
-  const executablePath = browserPath();
+  const executablePath = findBrowser();
   if (!executablePath) {
     console.log('docs crawl: no Chrome nor Edge found (CHROME=<path of one>): skipped');
     return { skipped: true };
   }
-  const { chromium } = require('playwright-core'); // eslint-disable-line global-require
   const browser = await chromium.launch({ executablePath });
+  // (Closed whatever happens: an open browser keeps the process running.)
+  try {
+    return await crawlWith(browser);
+  } finally {
+    await browser.close();
+  }
+}
+
+async function crawlWith(browser) {
   const page = await browser.newPage();
   const start = pathToFileURL(path.join(DOCS, 'index.html')).href;
   const root = start.replace(/index\.html$/, '');
@@ -83,7 +76,6 @@ async function crawl() {
   for (const [from, target, id] of anchors) {
     if (ids.has(target) && !ids.get(target).has(id)) problems.push(`no #${id} in ${short(target)} (${short(from)})`);
   }
-  await browser.close();
   return { pages: ids.size, anchors: anchors.length, problems: [...new Set(problems)] };
 }
 
@@ -104,4 +96,4 @@ if (process.argv[1] === import.meta.filename) {
   );
 }
 
-export { crawl, browserPath };
+export { crawl };

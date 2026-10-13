@@ -1,0 +1,1128 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>@xufa/rules · xufa</title>
+    <meta
+      name="description"
+      content="@xufa/rules: business rules in Excel workbooks (decision tables, calculations in steps, tests) run as functions, with safe compiled expressions; kept in versions and edited in the admin. No dependencies beyond @xufa/expression."
+    />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%23d9502b'/%3E%3Ctext x='16' y='22.5' font-family='monospace' font-size='18' font-weight='700' fill='white' text-anchor='middle'%3Ex%3C/text%3E%3C/svg%3E"
+    />
+    <link rel="stylesheet" href="../style.css?v=0.1.0" />
+    <script src="../main.js?v=0.1.0"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js" defer></script>
+  </head>
+  <body>
+    <header class="header">
+      <div class="header-inner">
+        <a class="logo" href="../index.html"><span class="logo-mark">x</span>xufa</a>
+        <nav class="nav">
+          <a href="../guide.html">Guide</a>
+          <a href="../playground.html">Playground</a>
+          <a href="../http/index.html">HTTP</a>
+          <a href="../orm/index.html">ORM</a>
+          <a class="hide-small" href="../auth/index.html">Auth</a>
+          <a class="hide-small" href="../sequelize/index.html">Sequelize</a>
+          <a class="hide-small" href="../packages.html" aria-current="page">Packages</a>
+          <a class="hide-small" href="../benchmarks.html">Benchmarks</a>
+          <a href="https://github.com/xufajs/xufa">GitHub</a>
+          <button class="theme-toggle" type="button" aria-label="Switch between light and dark theme">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+              <path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z" />
+            </svg>
+          </button>
+        </nav>
+      </div>
+    </header>
+
+    <div class="docs">
+      <button class="menu-toggle" type="button" aria-expanded="false">☰ Contents</button>
+      <aside class="sidebar">
+        <h4>Using it</h4>
+        <ul>
+          <li><a href="#start">Quick start</a></li>
+          <li><a href="#uses">What it is for</a></li>
+          <li><a href="#books">Books and tables</a></li>
+          <li><a href="#expressions">Expressions</a></li>
+          <li><a href="#types">Types</a></li>
+        </ul>
+        <h4>Tables</h4>
+        <ul>
+          <li><a href="#rules">Rules</a></li>
+          <li><a href="#multi">Multi and Nested</a></li>
+          <li><a href="#smartrules">SmartRules and SimpleRules</a></li>
+          <li><a href="#lookups">SmartLookup and SimpleLookup</a></li>
+          <li><a href="#conditions">Conditions</a></li>
+          <li><a href="#data">Data, Run and tests of OpenL</a></li>
+          <li><a href="#openl">The language of OpenL</a></li>
+          <li><a href="#spreadsheet">Spreadsheet</a></li>
+          <li><a href="#others">Constants, datatypes, methods</a></li>
+          <li><a href="#transform">Transform</a></li>
+          <li><a href="#versions">Properties and versions</a></li>
+        </ul>
+        <h4>Checking</h4>
+        <ul>
+          <li><a href="#tests">Tests</a></li>
+          <li><a href="#checks">Checks</a></li>
+          <li><a href="#trace">Traces, gaps, checks and coverage</a></li>
+        </ul>
+        <h4>Keeping them</h4>
+        <ul>
+          <li><a href="#workbooks">Workbooks</a></li>
+          <li><a href="#json">JSON</a></li>
+          <li><a href="#store">Books in a database</a></li>
+          <li><a href="#routes">Routes</a></li>
+          <li><a href="#editor">The editor of the admin</a></li>
+        </ul>
+        <h4>About it</h4>
+        <ul>
+          <li><a href="#safety">Safety</a></li>
+          <li><a href="#compatibility">Books of other engines</a></li>
+          <li><a href="#performance">Performance</a></li>
+        </ul>
+        <h4>Packages</h4>
+        <ul>
+          <li><a href="../websocket/index.html">@xufa/websocket</a></li>
+          <li><a href="../admin/index.html">@xufa/admin</a></li>
+          <li><a href="../session/index.html">@xufa/session</a></li>
+          <li><a href="../forms/index.html">@xufa/forms</a></li>
+          <li><a href="../views/index.html">@xufa/views</a></li>
+          <li><a href="../mail/index.html">@xufa/mail</a></li>
+          <li><a href="../i18n/index.html">@xufa/i18n</a></li>
+          <li><a href="../openapi/index.html">@xufa/openapi</a></li>
+          <li><a href="../client/index.html">@xufa/client</a></li>
+          <li><a href="../schema/index.html">@xufa/schema</a></li>
+          <li><a href="../pg/index.html">@xufa/pg</a></li>
+          <li><a href="../mongo/index.html">@xufa/mongo</a></li>
+          <li><a href="../expression/index.html">@xufa/expression</a></li>
+          <li><a href="../template/index.html">@xufa/template</a></li>
+          <li><a href="../cluster/index.html">@xufa/cluster</a></li>
+          <li><a href="../scheduler/index.html">@xufa/scheduler</a></li>
+          <li><a href="../queue/index.html">@xufa/queue</a></li>
+          <li><a href="../config/index.html">@xufa/config</a></li>
+          <li><a href="../discovery/index.html">@xufa/discovery</a></li>
+          <li><a href="../netcache/index.html">@xufa/netcache</a></li>
+          <li><a href="../faults/index.html">@xufa/faults</a></li>
+          <li><a href="../browser/index.html">@xufa/browser</a></li>
+          <li><a href="../bundle/index.html">@xufa/bundle</a></li>
+          <li><a href="../lint/index.html">@xufa/lint</a></li>
+          <li><a href="../marshal/index.html">@xufa/marshal</a></li>
+          <li><a href="../yaml/index.html">@xufa/yaml</a></li>
+          <li><a href="../jwt/index.html">@xufa/jwt</a></li>
+          <li><a href="../logger/index.html">@xufa/logger</a></li>
+          <li><a href="../router/index.html">@xufa/router</a></li>
+          <li><a href="../serializer/index.html">@xufa/serializer</a></li>
+          <li><a href="../inject/index.html">@xufa/inject</a></li>
+          <li><a href="../boot/index.html">@xufa/boot</a></li>
+          <li><a href="../errors/index.html">@xufa/errors</a></li>
+          <li><a href="../packages.html">All the packages</a></li>
+        </ul>
+      </aside>
+
+      <article class="content">
+        <nav class="package-tabs" aria-label="@xufa/rules">
+          <a href="index.html" aria-current="page">Overview</a>
+          <a href="reference.html">Reference</a>
+        </nav>
+        <h1>@xufa/rules</h1>
+        <p class="intro">
+          Business rules in workbooks of Excel, run as functions: decision tables, calculations in steps, constants,
+          datatypes, transforms, and the tests that check them, written by the people who know the rules in the tool they
+          know. Their expressions are <a href="../expression/index.html">@xufa/expression</a>: safe, compiled once. Workbooks are
+          read and written with no other dependency; books are kept in a database in versions, each tested before it is
+          kept, and edited in <a href="../admin/index.html">the admin</a>.
+        </p>
+
+        <h2 id="start">Quick start</h2>
+        <pre><code class="language-sh">npm install @xufa/rules   # or: import from 'xufa/rules'</code></pre>
+        <pre data-run="rules"><code class="language-js">import { RuleBook } from '@xufa/rules';
+
+// The cells of a sheet (RuleBook.fromXlsx(bytes) reads them from a workbook).
+const book = RuleBook.fromSheets([
+  {
+    name: 'RULES',
+    rows: [
+      ['Rules Float Premium(String plan, Integer age)', null, null, null],
+      ['C1', 'HC1', 'RET', null],
+      ['plan', 'age', null, null],
+      ['String', 'IntRange', 'Float', null],
+      [null, '&lt;25', '[25..60)', '&gt;=60'],
+      ['basic', 120, 100, 150],
+      ['premium', 220, 180, 260],
+      [null, null, null, null],
+      ['Test Premium PremiumTests', null, null, null],
+      ['plan', 'age', 'RET', null],
+      ['basic', 30, 100, null],
+      ['premium', 70, 260, null],
+    ],
+  },
+]);
+
+console.log(book.call('Premium', 'basic', 30));
+console.log(book.fn('Premium')('premium', 18));
+console.log(await book.test()); // the messages of what fails: none</code></pre>
+        <pre data-output><code class="language-plaintext">100
+220
+[]</code></pre>
+
+        <h2 id="uses">What it is for</h2>
+        <ul>
+          <li><strong>Prices, rates and discounts</strong> by the values of a customer, a product, a date: decision tables
+            that the business keeps.</li>
+          <li><strong>Calculations in steps</strong> (a quote, a score, a recommendation) made of those tables.</li>
+          <li><strong>Rules that change often</strong>: a new version is a workbook uploaded or edited in the admin,
+            tested before it replaces the active one, and running in every process seconds later.</li>
+        </ul>
+
+        <h2 id="books">Books and tables</h2>
+        <p>
+          A book is every table of every sheet of a workbook. A table is a block of cells apart from the others by empty
+          rows and columns, anywhere in a sheet; its first cell says what it is (<code>Rules</code>,
+          <code>Spreadsheet</code>, <code>Test</code>...). Each table is a function of the book by its name
+          (<code>book.call(name, ...args)</code>, <code>book.fn(name)</code>), and every expression of the book sees the
+          others, the constants of the book and <code>Fun</code> (helpers: <code>Fun.mean</code>,
+          <code>Fun.sort</code>...).
+        </p>
+
+        <h2 id="expressions">Expressions</h2>
+        <p>
+          Cells can compute: a cell <code>= expression</code> of a table, the script of <code>RET</code>, the steps of a
+          spreadsheet, conditions written as expressions, the body of a method, <code>'@expression'</code> in a
+          transform. Expressions are those of <a href="../expression/index.html">@xufa/expression</a>: JavaScript without
+          statements or assignments (operators, <code>?.</code>, <code>??</code>, <code>? :</code>, template literals,
+          arrays and objects, spreads, arrow functions, methods of values such as <code>list.map(...)</code> and
+          <code>text.slice(1)</code>), compiled once and safe: they read and compute, nothing else. As in the engine
+          this one follows, a member of <code>null</code> or <code>undefined</code> is <code>undefined</code> (no error),
+          a trailing <code>;</code> is dropped, and <code>this</code> is the result a spreadsheet builds.
+        </p>
+        <pre data-run="rules-expressions"><code class="language-js">import { RuleBook } from '@xufa/rules';
+
+const book = RuleBook.fromSheets([
+  {
+    name: 'RULES',
+    rows: [
+      ['Constants Rates', null, null],
+      ['Float', 'vat', 0.21],
+      [null, null, null],
+      ['Spreadsheet SpreadsheetResult Order(Object order)', null, null],
+      ['Step', 'Formula', null],
+      ['lines', '= order.items.map((item) =&gt; item.price * item.quantity)', null],
+      ['net', '= Fun.sum($lines)', null],
+      ['biggest', '= Fun.max($lines)', null],
+      ['total', '= Math.round($net * (1 + vat) * 100) / 100', null],
+      ['label', '= `${order.id}: ${$total} (${$lines.length} lines)`', null],
+      ['vip', '= order.customer?.vip ?? false', null],
+    ],
+  },
+]);
+
+console.log(book.call('Order', { id: 'A1', items: [{ price: 10, quantity: 2 }, { price: 5, quantity: 1 }] }));</code></pre>
+        <pre data-output><code class="language-plaintext">{
+  lines: [ 20, 5 ],
+  net: 25,
+  biggest: 20,
+  total: 30.25,
+  label: 'A1: 30.25 (2 lines)',
+  vip: false
+}</code></pre>
+        <p>What an expression sees, besides the globals:</p>
+        <table>
+          <thead><tr><th>Where</th><th>Names</th></tr></thead>
+          <tbody>
+            <tr><td>Every expression</td><td>every table by its name (a function; versions dispatched by the context), the constants, the records of Data tables, datatypes, <code>Fun</code>, <code>error(message)</code></td></tr>
+            <tr><td>Cells of Rules and Multi</td><td>the parameters; <code>RET</code> in the script of the RET column</td></tr>
+            <tr><td>SmartRules, SimpleRules, lookups</td><td>the parameters, <code>$RuleId</code> (the number of the rule) and <code>$Rule</code> (its <code>Rule</code> column)</td></tr>
+            <tr><td>Spreadsheet steps</td><td>the parameters, <code>$name</code> of each step before, <code>$this</code> (the result)</td></tr>
+            <tr><td>Spreadsheet grids</td><td>the parameters, <code>$Column$Row</code> of any cell, <code>$Row</code> and <code>$Column</code> of its own column and row, ranges <code>$First:$Last</code></td></tr>
+            <tr><td>Methods</td><td>the parameters</td></tr>
+            <tr><td>Transform</td><td>the input's fields, the context's names over them, the input as <code>$</code></td></tr>
+          </tbody>
+        </table>
+        <p>
+          The globals: <code>Math</code>, <code>JSON</code>, <code>Number</code>, <code>String</code>,
+          <code>Boolean</code>, <code>Array.isArray</code>, <code>Object.keys</code>/<code>values</code>/<code>entries</code>/<code>fromEntries</code>,
+          <code>Date.now</code>/<code>parse</code>, <code>parseInt</code>, <code>parseFloat</code>, <code>isNaN</code>,
+          <code>isFinite</code>, the URI functions, <code>Infinity</code> and <code>NaN</code>.
+          <code>error(message)</code> ends the rule with an error of that message (as OpenL's <code>error()</code>):
+          tests expect it with <code>_error_</code>. The helpers of <code>Fun</code>:
+        </p>
+        <table>
+          <thead><tr><th>Fun.</th><th>What it gives</th></tr></thead>
+          <tbody>
+            <tr><td><code>sum(list)</code>, <code>mean</code>, <code>median</code>, <code>max</code>, <code>min</code></td><td>Of a list, or of their arguments: <code>Fun.sum([1, 2])</code>, <code>Fun.max(a, b, c)</code>.</td></tr>
+            <tr><td><code>sort(list)</code>, <code>sortDesc(list)</code></td><td>The list sorted (numbers as numbers), in place.</td></tr>
+            <tr><td><code>sortSeveral(a, b, ...)</code>, <code>sortSeveralDesc</code></td><td>Lists sorted by the values of the first: the others follow its order.</td></tr>
+            <tr><td><code>first(list, n)</code>, <code>last(list, n)</code></td><td>The first (last) <code>n</code> items; <code>firstSeveral</code> and <code>lastSeveral</code> of each of several lists.</td></tr>
+            <tr><td><code>reverse(list)</code>, <code>reverseSeveral(lists)</code></td><td>The list (each list) reversed, in place.</td></tr>
+            <tr><td><code>concat(a, b, ...)</code></td><td>One list of the items of every list.</td></tr>
+            <tr><td><code>flat(list, depth = 1)</code></td><td>Lists in the list taken out, to a depth.</td></tr>
+            <tr><td><code>zip(a, b)</code>, <code>zipObj(keys, values)</code></td><td>Pairs of the items of two lists; an object of keys and values.</td></tr>
+            <tr><td><code>clamp(value, min, max)</code></td><td>A value (or each of a list) between two.</td></tr>
+            <tr><td><code>splitString(text)</code></td><td>The lines of a text.</td></tr>
+            <tr><td><code>map</code>, <code>filter</code>, <code>forEach</code>, <code>some</code>, <code>every</code>, <code>none</code></td><td>Of a list and a function: <code>Fun.map(list, fn)</code>, or <code>Fun.map(list)</code> is a function of <code>fn</code>. <code>some</code>, <code>every</code> and <code>none</code> of nothing are false, false and true.</td></tr>
+            <tr><td><code>mapRight</code>, <code>forEachRight</code></td><td>From the last item to the first.</td></tr>
+            <tr><td><code>mapSrc</code>, <code>mapRightSrc</code>, <code>filterSrc</code></td><td>The same, and a text gives a text (of the characters mapped or kept).</td></tr>
+            <tr><td><code>allowIndexes(list, indexes)</code>, <code>denyIndexes</code></td><td>The items at (not at) some indexes; the <code>Src</code> forms keep texts as texts.</td></tr>
+            <tr><td><code>addToNested(target, parts)</code></td><td>Values added at every combination of keys: <code>Fun.addToNested({}, ['a,b', 'x', [1]])</code> gives <code>{ a: { x: [1] }, b: { x: [1] } }</code>.</td></tr>
+          </tbody>
+        </table>
+
+        <h2 id="types">Types</h2>
+        <table>
+          <thead><tr><th>Type</th><th>As a parameter or condition</th><th>As a result</th></tr></thead>
+          <tbody>
+            <tr><td><code>Integer</code>, <code>Long</code>, <code>Short</code>, <code>Byte</code>, <code>BigInteger</code></td><td>numbers (ranges compare them)</td><td>an integer (an error for <code>1.5</code>)</td></tr>
+            <tr><td><code>Double</code>, <code>Float</code>, <code>Number</code>, <code>BigDecimal</code></td><td>numbers</td><td>a number</td></tr>
+            <tr><td><code>IntRange</code>, <code>DoubleRange</code>, <code>FloatRange</code>, <code>NumberRange</code></td><td>ranges of numbers (in Rules tables)</td><td>—</td></tr>
+            <tr><td><code>String</code></td><td>texts, compared without accents, case or spaces around</td><td>a text</td></tr>
+            <tr><td><code>Code</code>, <code>Codes</code></td><td>texts</td><td>a code (trimmed); a list of codes</td></tr>
+            <tr><td><code>Boolean</code></td><td><code>true</code>, <code>yes</code>, <code>1</code>...</td><td>a boolean</td></tr>
+            <tr><td><code>Date</code>, <code>LocalDate</code>, <code>LocalDateTime</code>, <code>DateRange</code></td><td>dates: ISO (<code>2026-06-01</code>) or US (<code>06/01/2026</code>)</td><td>a date</td></tr>
+            <tr><td><code>Nested</code></td><td>a column of keys of a Rules table (see Multi and Nested)</td><td>—</td></tr>
+            <tr><td>a datatype</td><td>an object (its fields in conditions: <code>driver.age</code>)</td><td>an object of its fields</td></tr>
+            <tr><td><code>Type[]</code></td><td>—</td><td>a list (SmartRules collect every result)</td></tr>
+          </tbody>
+        </table>
+
+        <h2 id="rules">Rules</h2>
+        <p>Decision tables: the result is the cell of the row and column whose conditions the values meet.</p>
+        <pre><code class="language-plaintext">Rules Float Premium(String plan, Integer age)    &lt;- the type of the result, the name, the parameters
+C1       | HC1       | RET                         &lt;- C&lt;n&gt;: a column of conditions; HC&lt;n&gt;: a row of them; RET
+plan     | age       |                             &lt;- under RET: a script of the result (RET * 1.21)
+String   | IntRange  | Float                       &lt;- the types of the conditions, and of the result
+         | &lt;25       | [25..60)  | &gt;=60
+basic    | 120       | 100       | 150
+premium  | 220       | 180       | 260</code></pre>
+        <ul>
+          <li><strong>Conditions</strong>: a value (<code>String</code>, <code>Integer</code>, <code>Float</code>,
+            <code>Double</code>: texts compared without accents), <code>&lt;</code>, <code>&lt;=</code>,
+            <code>&gt;</code>, <code>&gt;=</code> and ranges <code>[a..b]</code>, <code>(a..b)</code>,
+            <code>[a..b)</code> (<code>IntRange</code>, <code>FloatRange</code>, <code>DoubleRange</code>); an empty
+            condition takes any value.</li>
+          <li><strong>Results</strong>: the first cell that matches (<code>undefined</code> when none), as its type says
+            (<code>Integer</code>, <code>Float</code>, <code>Boolean</code>, <code>Date</code>, <code>String</code>,
+            <code>Code</code>, <code>Codes</code>: a list). A cell <code>=expression</code> is computed with the book's
+            names and the parameters.</li>
+          <li>A book refuses a table with repeated combinations of conditions, saying where
+            (<code>RULES!A1: Duplicated combination at table Premium</code>).</li>
+        </ul>
+
+        <h2 id="multi">Multi and Nested</h2>
+        <pre data-run="rules-multi"><code class="language-js">import { RuleBook } from '@xufa/rules';
+
+const book = RuleBook.fromSheets([
+  {
+    name: 'RULES',
+    rows: [
+      ['Multi Code Covers(String plan)', null, null],
+      ['C1', 'RET', null],
+      ['plan', null, null],
+      ['String', 'Code', null],
+      [null, 'liability', null],
+      ['premium', 'theft', null],
+      ['premium', 'glass', null],
+      [null, null, null],
+      ['Rules Limits(String plan)', null, null],
+      ['C1', 'HC1', 'RET'],
+      ['plan', 'cover', null],
+      ['String', 'Nested', 'Integer'],
+      [null, 'theft', 'glass'],
+      ['basic', 1000, 200],
+      ['premium', 5000, 800],
+    ],
+  },
+]);
+
+console.log(book.call('Covers', 'premium')); // every result that matches, once
+console.log(book.call('Limits', 'premium')); // Nested: the conditions are the keys of an object</code></pre>
+        <pre data-output><code class="language-plaintext">[ 'liability', 'theft', 'glass' ]
+{ theft: 5000, glass: 800 }</code></pre>
+
+        <h2 id="smartrules">SmartRules and SimpleRules</h2>
+        <p>
+          The decision tables of <a href="https://openl-tablets.org/">OpenL Tablets</a> that people write most: a row of
+          titles, then a rule each row; the first rule whose conditions the arguments meet gives the result
+          (<code>undefined</code> when none does).
+        </p>
+        <ul>
+          <li><strong>SmartRules</strong>: each title is matched to a parameter, or a field of a datatype parameter
+            (<code>Driver Age</code> is <code>driver.age</code>), by its words; the columns after the conditions are
+            results. <strong>SimpleRules</strong>: the columns are the parameters, in their order.</li>
+          <li>Two columns under one merged title are a range: from (included) and to (excluded); either can be
+            empty.</li>
+          <li>A column whose title says <code>true</code> (<code>is true?</code>) has conditions written as
+            expressions; an empty cell is met.</li>
+          <li>A first column titled <code>Rule</code> names the rules: <code>$Rule</code> in their expressions, as
+            <code>$RuleId</code> is the number of the rule.</li>
+          <li>Of several result columns, the first that is not empty is the result; a rule whose results are all empty
+            goes on to the next rule. Results can be expressions (<code>= history &gt; 0 ? ... : null</code>).</li>
+        </ul>
+        <pre data-run="rules-smart"><code class="language-js">import { RuleBook } from '@xufa/rules';
+
+const book = RuleBook.fromSheets([
+  {
+    name: 'RULES',
+    rows: [
+      ['Datatype Driver', null, null, null],
+      ['Integer', 'age', null, null],
+      ['String', 'state', null, null],
+      [null, null, null, null],
+      ['SmartRules String Category(Driver driver)', null, null, null],
+      ['Driver Age', null, 'is true?', 'Category'], // A1:B1 merged: a range [from, to)
+      [16, 25, '= driver.state === "CA"', 'young CA'],
+      [16, 25, null, 'young'],
+      [25, null, null, 'adult'],
+      [null, null, null, null],
+      ['SmartRules String Volume(String coverage, Double history)', null, null, null],
+      ['Rule', 'Coverage', 'Volume 1', 'Volume 2'],
+      ['medical', 'Medical', '= history &gt; 0 ? "from history" : null', 'by default'],
+      ['other', null, null, '= $Rule + " #" + $RuleId'],
+    ],
+    merges: [{ top: 5, left: 0, bottom: 5, right: 1 }],
+  },
+]);
+
+console.log(book.call('Category', { age: 20, state: 'CA' }), book.call('Category', { age: 20, state: 'NY' }));
+console.log(book.call('Volume', 'Medical', 10)); // the first result column that is not empty
+console.log(book.call('Volume', 'Medical', 0)); // an empty result: the next column
+console.log(book.call('Volume', 'Dental', 0)); // $Rule and $RuleId</code></pre>
+        <pre data-output><code class="language-plaintext">young CA young
+from history
+by default
+other #2</code></pre>
+        <p>
+          <code>SmartRules Collect String[] Schemes(...)</code> (or any type <code>Type[]</code>) gives the results of
+          every rule met. A result of a datatype is made of the result columns, each the field its title names.
+        </p>
+        <pre data-run="rules-collect"><code class="language-js">import { RuleBook } from '@xufa/rules';
+
+const book = RuleBook.fromSheets([
+  {
+    name: 'RULES',
+    rows: [
+      ['Datatype Offer', null, null],
+      ['String', 'name', null],
+      ['Double', 'rate', null],
+      [null, null, null],
+      ['SmartRules Collect String[] Schemes(String plan)', null, null],
+      ['Plan', 'Scheme', null],
+      ['basic, gold', 'fixed', null],
+      ['gold', 'variable', null],
+      [null, 'savings', null],
+      [null, null, null],
+      ['SmartRules Offer BestOffer(String plan)', null, null],
+      ['Plan', 'Offer Name', 'Rate'],
+      ['gold', 'Gold offer', '0.05'],
+      [null, 'Standard', '0.02'],
+    ],
+  },
+]);
+
+console.log(book.call('Schemes', 'gold')); // every rule met
+console.log(book.call('BestOffer', 'gold')); // a datatype: its fields from the titles of the result columns</code></pre>
+        <pre data-output><code class="language-plaintext">[ 'fixed', 'variable', 'savings' ]
+{ name: 'Gold offer', rate: 0.05 }</code></pre>
+
+        <h2 id="lookups">SmartLookup and SimpleLookup</h2>
+        <p>
+          A grid: the first parameters go down the rows, the others across the titles; the cell of the row and the column
+          met is the result. A merged corner says how many go each way (its height: the arguments across; its width: those
+          down); without one, the last parameter goes across. <code>SmartLookup</code> also takes ranges of texts
+          (<code>A1 - A10</code>). Tests of OpenL are rows of the arguments and the result expected
+          (<code>_res_</code>).
+        </p>
+        <pre data-run="rules-openl"><code class="language-js">import { RuleBook } from '@xufa/rules';
+
+const book = RuleBook.fromSheets([
+  {
+    name: 'RULES',
+    rows: [
+      ['SmartRules Double Discount(String plan, Integer age)', null, null],
+      ['Plan', 'Age', 'Discount'],
+      ['basic', '&lt;25', 0],
+      ['basic, gold', '25 - 60', 0.05],
+      [null, '60+', 0.1],
+      [null, null, null],
+      ['SmartLookup Double Rate(String region, Integer year)', null, null],
+      ['Region', 2026, 2027],
+      ['north', 1.1, 1.2],
+      ['south', 1, 1.05],
+      [null, null, null],
+      ['Test Discount DiscountTest', null, null],
+      ['plan', 'age', '_res_'],
+      ['Plan', 'Age', 'Discount'],
+      ['gold', 30, 0.05],
+      ['premium', 70, 0.1],
+    ],
+  },
+]);
+
+console.log(book.call('Discount', 'gold', 30)); // titles matched to the parameters by their words
+console.log(book.call('Discount', 'premium', 20)); // no rule: undefined
+console.log(book.call('Rate', 'south', 2027));
+console.log(await book.test()); // the OpenL test passes</code></pre>
+        <pre data-output><code class="language-plaintext">0.05
+undefined
+1.05
+[]</code></pre>
+
+        <h2 id="conditions">Conditions</h2>
+        <p>The cells of conditions of SmartRules, SimpleRules and lookups, as OpenL writes them:</p>
+        <table>
+          <thead><tr><th>Written</th><th>Means</th></tr></thead>
+          <tbody>
+            <tr><td>empty, <code>*</code></td><td>any value</td></tr>
+            <tr><td><code>basic</code>, <code>30</code></td><td>that value (texts without accents nor case)</td></tr>
+            <tr><td><code>basic, gold</code></td><td>any of them (<code>\,</code> is a comma in a value; <code>1,500</code> is one number)</td></tr>
+            <tr><td><code>&lt;25</code>, <code>&lt;=25</code>, <code>&gt;18</code>, <code>&gt;=18</code>, <code>&gt;18 &lt;65</code></td><td>compared</td></tr>
+            <tr><td><code>25 - 60</code>, <code>25..60</code>, <code>25 – 60</code></td><td>from 25 to 60, both included</td></tr>
+            <tr><td><code>25 … 60</code></td><td>between them, both excluded</td></tr>
+            <tr><td><code>[25; 60)</code>, <code>(25..60]</code></td><td>brackets say whether each end is included</td></tr>
+            <tr><td><code>60+</code>, <code>60 and more</code>, <code>more than 60</code>, <code>less than 25</code></td><td>open ranges</td></tr>
+            <tr><td><code>$1K - 5M</code>, <code>1,000.50</code>, <code>-5</code></td><td>numbers with <code>$</code>, <code>K</code>, <code>M</code>, <code>B</code> and commas of thousands</td></tr>
+            <tr><td><code>2026-01-01 .. 2026-12-31</code>, <code>&lt;06/01/2026</code></td><td>dates and their ranges</td></tr>
+            <tr><td><code>A1 - A10</code></td><td>texts between two (their numbers as numbers: <code>A2</code> is in it)</td></tr>
+            <tr><td><code>= expression</code></td><td>in a column titled <code>true</code>: met when it is true</td></tr>
+          </tbody>
+        </table>
+        <p>
+          Rules and Multi tables keep the conditions of the engine this one follows: a value, <code>&lt;</code>,
+          <code>&lt;=</code>, <code>&gt;</code>, <code>&gt;=</code> and <code>[a..b)</code> in range types.
+        </p>
+
+        <h2 id="data">Data, Run and tests of OpenL</h2>
+        <ul>
+          <li><strong>Data</strong> <code>Data Car cars</code>: a row of the fields, a row of titles, then a record each
+            row, typed by the datatype; every expression sees the list by its name, and <code>book.call('cars')</code>
+            gives it. <code>Data Integer limits</code> with a column <code>this</code> is a list of values.</li>
+          <li><strong>Test</strong> of OpenL (a row of names, a row of titles, then a case each row): columns of the
+            parameters (<code>driver.age</code> sets a field of one), <code>_res_</code> the result expected
+            (<code>_res_.premium</code> a field of it), <code>_error_</code> the message of the error expected,
+            <code>_description_</code> what the case is. Numbers are equal within 1e-9.</li>
+          <li><strong>Run</strong>: the same rows, nothing expected; <code>book.testResults()</code> gives what each
+            row returned.</li>
+        </ul>
+        <pre data-run="rules-data"><code class="language-js">import { RuleBook } from '@xufa/rules';
+
+const book = RuleBook.fromSheets([
+  {
+    name: 'RULES',
+    rows: [
+      ['Datatype Car', null, null, null],
+      ['String', 'make', null, null],
+      ['Double', 'price', null, null],
+      [null, null, null, null],
+      ['Data Car cars', null, null, null],
+      ['make', 'price', null, null],
+      ['Make', 'Price', null, null],
+      ['Volvo', 45000, null, null],
+      ['Seat', 20000, null, null],
+      [null, null, null, null],
+      ['SimpleRules Double Price(String make)', null, null, null],
+      ['Make', 'Price', null, null],
+      ['*', '= cars.find((car) =&gt; car.make === make)?.price ?? error("No car " + make)', null, null],
+      [null, null, null, null],
+      ['Test Price PriceTest', null, null, null],
+      ['make', '_res_', '_error_', '_description_'],
+      ['Make', 'Price', 'Error', 'What'],
+      ['Seat', 20000, null, 'a car of the list'],
+      ['Tesla', null, 'No car Tesla', 'error() ends the rule'],
+      [null, null, null, null],
+      ['Run Price PriceRuns', null, null, null],
+      ['make', null, null, null],
+      ['Make', null, null, null],
+      ['Volvo', null, null, null],
+    ],
+  },
+]);
+
+console.log(book.call('cars'));
+console.log(await book.test()); // both rows of the test pass
+console.log(book.testResults().map((test) =&gt; [test.name, test.rows.map((row) =&gt; row.actual ?? row.error)]));</code></pre>
+        <pre data-output><code class="language-plaintext">[ { make: 'Volvo', price: 45000 }, { make: 'Seat', price: 20000 } ]
+[]
+[
+  [ 'PriceTest', [ 20000, 'No car Tesla' ] ],
+  [ 'PriceRuns', [ 45000 ] ]
+]</code></pre>
+
+        <h2 id="openl">The language of OpenL</h2>
+        <p>
+          A book whose formulas are of OpenL (or whose tables only OpenL has) is a book of OpenL:
+          <code>book.dialect</code> is <code>'openl'</code> (or <code>{ dialect: 'openl' }</code> as an option of
+          <code>RuleBook.fromSheets</code>), and its expressions, cells and Method bodies are OpenL's language. They are
+          parsed as OpenL and lowered to <a href="../expression/index.html#programs">programs of @xufa/expression</a>, which runs
+          them as it runs every formula of JavaScript (the same checks, the same limit of steps); what OpenL does as Java
+          are functions those programs call:
+        </p>
+        <ul>
+          <li><strong>Rules</strong> are OpenL's decision tables: <code>C1</code>, <code>HC1</code> (across),
+            <code>MC1</code>, <code>A1</code>, <code>RET1</code>, <code>CRET1</code> columns over rows of code, declared
+            parameters (<code>Double min</code>, <code>String[] plans</code>, <code>IntRange ages</code>) and titles. A code
+            that is only a parameter name is a simplified condition (<code>plan</code> with <code>basic, gold</code>);
+            <code>$C1.min</code> is a cell of the rule, <code>$Rule</code> its name.</li>
+          <li><strong>Conditions</strong>, <strong>Returns</strong> and <strong>Actions</strong> tables define elements
+            (inputs, expression, parameters, title) that SmartRules use by their titles.</li>
+          <li>Java's numbers: <code>int</code> wraps, <code>10 / 4</code> is <code>2.5</code>, <code>long</code> is a
+            <code>BigInt</code>, <code>BigDecimal</code> a decimal of 34 digits, <code>"x" + 1.0</code> is
+            <code>x1.0</code>; nulls count as 0 in <code>+</code> and <code>-</code>; casts such as
+            <code>(byte) 200</code>.</li>
+          <li>Arrays: <code>items[select all having price &gt; 50]</code>, <code>select first</code>,
+            <code>order by</code>, <code>split by</code>, <code>transform to</code>; <code>items.price</code> projects a
+            field; <code>new Item[] { ... }</code>, <code>new Item(name = "Lamp")</code>.</li>
+          <li>Business phrases (<code>a is less than b</code>, <code>age of the person</code>), <code>where</code>
+            bindings, and statements (variables, <code>if</code>, <code>for</code>, <code>while</code>,
+            <code>return</code>; loops have a limit of steps).</li>
+          <li>About 150 functions of OpenL (<code>sum</code>, <code>round(value, 2, HALF_UP)</code>,
+            <code>dateDif</code>, <code>textSplit</code>, <code>like</code>...), ranges, dates and statics of Java such as
+            <code>Integer.MAX_VALUE</code>. Books of JavaScript see these functions too.</li>
+          <li>Data records over rows (<code>boxes.label</code>, <code>list:Type.field</code>, references
+            <code>&gt;customers</code>), Test tables with <code>_context_</code> columns, <code>_res_.path</code> and
+            <code>_error_.field</code>, and versions chosen by fields of arguments (<code>String usState : context</code>)
+            or called by their <code>id</code>; <code>getContext()</code>, <code>modifyContext(name, value)</code>,
+            <code>setContext(context)</code>, <code>emptyContext()</code> and <code>restoreContext()</code> change the
+            runtime context of the calls a rule makes.</li>
+          <li>SmartRules written in columns are read so; Data tables of lists of objects take a record over its rows (a
+            blank first cell, or the same key again, goes on with it), and fields of <code>List</code> and
+            <code>Map</code> types are arrays and Maps; a spreadsheet of a datatype gives an object of it.</li>
+          <li><strong>Messages</strong>: <code>msg(code, arguments...)</code> gives a text of the <code>messages</code>
+            option of the book (bundles by locale: <code>{ '': {...}, fr: {...}, de_DE: {...} }</code>, which
+            <code>parseProperties</code> reads of the <code>.properties</code> files of OpenL's <code>i18n</code>
+            folders) in the locale of the runtime context, <code>fr-CA</code> taking <code>fr_CA</code>, then
+            <code>fr</code>, then the default.</li>
+          <li>Values of <code>LocalDate</code>, <code>LocalTime</code>, <code>LocalDateTime</code>,
+            <code>ZonedDateTime</code> and <code>Instant</code> of their ISO or US texts, written as Java writes
+            them.</li>
+        </ul>
+        <p>
+          Each table can be in its own language: one book can have methods of OpenL and methods of JavaScript. A table's
+          language is its property <code>language</code> (or <code>dialect</code>: <code>openl</code> or
+          <code>js</code>, a row <code>properties | language | js</code> under its title); else that of a Properties
+          table of its sheet (<code>scope</code> Worksheet), of its category (Category) or of the book (Module, which is
+          then the language of the book); without them, the language its code is in when only one of them reads it (<code>int total = 0;</code> is OpenL, <code>let total = 0</code>
+          JavaScript); else the book's. Code that both read gives different results in each (<code>"x" + 1.0</code>, a
+          null in a sum, <code>0.1 + 0.2 == 0.3</code>), so a table that must keep its results says its language.
+          <code>book.table(name).dialect</code> is the language of a table and <code>languageFrom</code> what told it
+          (<code>property</code>, <code>properties</code>, <code>code</code>, <code>book</code>); the admin shows it by
+          each table.
+        </p>
+        <pre data-run="rules-openl-language"><code class="language-js">import { RuleBook } from '@xufa/rules';
+
+const book = RuleBook.fromSheets([
+  {
+    name: 'RULES',
+    rows: [
+      ['Datatype Item', null, null],
+      ['String', 'name', null],
+      ['Double', 'price', null],
+      [null, null, null],
+      ['Rules Double Discount(String plan, Double total)', null, null],
+      ['C1', 'C2', 'RET1'],
+      ['plan', 'min &lt;= total', 'rate'],
+      ['String[] plans', 'Double min', 'Double rate'],
+      ['Plan', 'From', 'Rate'],
+      ['gold', 100, 0.1],
+      ['basic, gold', 0, 0.05],
+      [null, null, null],
+      ['Spreadsheet SpreadsheetResult Order(String plan, Item[] items)', null, null],
+      ['Step', 'Value', null],
+      ['Expensive', '= items[select all having price &gt; 50].name', null],
+      ['Total : Double', '= sum(items.price)', null],
+      ['Rate', '= Discount(plan, $Total)', null],
+      ['Pay', '= round($Total * (1 - $Rate), 2)', null],
+      ['Note', '= "Paid " + $Pay + "; cheapest: " + items[order by price][0].name', null],
+    ],
+  },
+]);
+
+const items = [
+  { name: 'Lamp', price: 60.5 },
+  { name: 'Mug', price: 9 },
+  { name: 'Chair', price: 45 },
+];
+console.log(book.dialect);
+console.log(book.call('Order', 'gold', items));
+console.log(book.call('Order', 'basic', items).Pay);</code></pre>
+        <pre data-output><code class="language-plaintext">openl
+{
+  Expensive: [ 'Lamp' ],
+  Total: 114.5,
+  Rate: 0.1,
+  Pay: 103.05,
+  Note: 'Paid 103.05; cheapest: Mug'
+}
+108.78</code></pre>
+        <p>
+          The test tables of OpenL's own examples run against this package in <code>tools/openl-compat</code> of the
+          repository: 722 of their 743 rows give OpenL's results. The others need what is not supported: the deprecated
+          tables of OpenL (ColumnMatch, TBasic, Table Part), classes of Java (Environment tables) and years past those
+          of JavaScript's dates.
+        </p>
+
+        <h2 id="spreadsheet">Spreadsheet</h2>
+        <p>Calculations in steps, in order, into an object: the result.</p>
+        <pre data-run="rules-spreadsheet"><code class="language-js">import { RuleBook } from '@xufa/rules';
+
+const book = RuleBook.fromSheets([
+  {
+    name: 'RULES',
+    rows: [
+      ['Rules Float Premium(String plan)', null],
+      ['C1', 'RET'],
+      ['plan', null],
+      ['String', 'Float'],
+      ['basic', 100],
+      ['premium', 200],
+      [null, null],
+      ['Constants Rates', null],
+      ['Float', 'vat', 0.21],
+      [null, null],
+      ['Spreadsheet SpreadsheetResult Quote(Customer customer)', null],
+      ['Step', 'Formula'],
+      ['base', '= Premium(customer.plan)'],
+      ['total', '= $base * (1 + vat)'],
+      ['total', '*= customer.years &gt; 3 ? 0.9 : 1'],
+      ['this.label', '= `${customer.plan}: ${$total}`'],
+    ],
+  },
+]);
+
+console.log(book.call('Quote', { plan: 'basic', years: 5 }));</code></pre>
+        <pre data-output><code class="language-plaintext">{ base: 100, total: 108.9, label: 'basic: 108.9' }</code></pre>
+        <p>
+          Each step is a value of the result and <code>$name</code> for the steps after it; <code>+=</code>,
+          <code>-=</code>, <code>*=</code>, <code>/=</code>, <code>%=</code> work on its value; <code>this.path</code>
+          (or <code>.path</code>) is a path in the result; <code>return expression</code> (without a name) is the result
+          itself; <code>delete $name</code> takes a value out. A step that gives <code>undefined</code> adds a message to
+          <code>result.errors</code>; a step that fails is left and told to <code>onError</code>.
+        </p>
+
+        <h3 id="grids">Grids</h3>
+        <p>
+          A spreadsheet of more than one column of values is a grid, as in OpenL: each cell is
+          <code>$Column$Row</code>, computed when it is read (in any order; a cell that reads itself through others is an
+          error, and <code>book.lint()</code> finds it), <code>$Row</code> and <code>$Column</code> alone are the cells
+          of its own column and row, <code>$First:$Last</code> the values between two rows (or columns), and
+          <code>Name : Type</code> types a row or column. The result is an object of rows of columns; a spreadsheet of a
+          type of one value (<code>Double</code>, <code>String</code>...) gives its <code>RETURN</code> row, or its last
+          value.
+        </p>
+        <pre data-run="rules-grid"><code class="language-js">import { RuleBook } from '@xufa/rules';
+
+const book = RuleBook.fromSheets([
+  {
+    name: 'RULES',
+    rows: [
+      ['Spreadsheet Double Budget(Double rent, Double food)', null, null],
+      ['Step', 'Month', 'Year : Double'],
+      ['Rent', '= rent', '= $Month * 12'],
+      ['Food', '= food', '= $Month * 12'],
+      ['Total', '= Fun.sum($Rent:$Food)', '= $Year$Rent + $Year$Food'],
+      ['RETURN', null, '= $Total'],
+    ],
+  },
+]);
+
+console.log(book.call('Budget', 800, 300)); // a Double: its RETURN row</code></pre>
+        <pre data-output><code class="language-plaintext">13200</code></pre>
+
+        <h2 id="others">Constants, datatypes, methods</h2>
+        <pre><code class="language-plaintext">Constants Rates            Datatype Customer        Method Float Round2(Float value)
+Float   | vat  | 0.21      String  | plan | basic   return Math.round(value * 100) / 100
+Integer | days | 30        Integer | age  |</code></pre>
+        <ul>
+          <li><strong>Constants</strong>: typed values, names of every expression of the book.</li>
+          <li><strong>Datatype</strong>: the fields of an input or a result: a type and a name each (their types convert
+            the values of tests and Data tables), and a default value in a third column. The objects the book makes
+            take the defaults of the fields they lack (empty, <code>null</code> or missing): Data records, results of
+            SmartRules, the inputs of tests, and the arguments of calls of a datatype parameter (or a list of one: a copy
+            of each object that lacks some takes them; the object of the application is not changed). Objects of datatypes
+            in their fields are filled the same, at any depth and in lists; missing ones are not made. A
+            default that is no value of its type is a message of <code>book.test()</code>.</li>
+          <li><strong>Method</strong>: a function whose body is an expression (<code>return ...</code>) or statements of
+            JavaScript (variables, <code>if</code>, loops, functions), run as a
+            <a href="../expression/index.html#programs">program of @xufa/expression</a>: as safe as every formula, with a limit of
+            steps. Without a <code>return</code>, its value is that of its last statement.</li>
+        </ul>
+
+        <h2 id="transform">Transform</h2>
+        <p>
+          An object made of another: each row is a path and a value. Texts <code>'@expression'</code> are computed (the
+          input's fields by name, the context's names over them, the input as <code>$</code>), <code>'@@...'</code> is a
+          text starting with <code>@</code>, and other texts are templates of the context (<code>{{name}}</code>,
+          <code>{{#items}}...{{/#}}</code>: the block once for each item, the item its context, with
+          <code>_parent_</code> and <code>_current_</code>; a template of one <code>{{ }}</code> alone gives its value as
+          it is). A path <code>__apply__</code> is a list of <code>{ pipe: [names of functions], paths? }</code>: the
+          functions of the context, one after another, over the result (or over the values at its paths).
+        </p>
+        <pre data-run="rules-transform"><code class="language-js">import { RuleBook } from '@xufa/rules';
+
+const book = RuleBook.fromSheets([
+  {
+    name: 'T',
+    rows: [
+      ['Transform Letter', null],
+      ['customer.name', "'@name'"],
+      ['customer.label', "'@`${name} (${plan})`'"],
+      ['company', "'{{company}}'"],
+      ['note', "'@@not an expression'"],
+    ],
+  },
+]);
+
+console.log(book.call('Letter', { name: 'Ada', plan: 'basic' }, { company: 'Acme' }));</code></pre>
+        <pre data-output><code class="language-plaintext">{
+  customer: { name: 'Ada', label: 'Ada (basic)' },
+  company: 'Acme',
+  note: '@not an expression'
+}</code></pre>
+
+        <h2 id="versions">Properties and versions</h2>
+        <p>
+          A table's properties are rows <code>properties | name | value</code> under its title; a
+          <code>Properties</code> table gives them to every table of its sheet (<code>scope: Worksheet</code>) or of the
+          book (<code>Module</code>), and a table's own win. Tables of the same name whose properties say where each
+          applies are versions of one table, and the runtime context of a call (<code>book.withContext(context)</code>)
+          chooses one.
+        </p>
+        <table>
+          <thead><tr><th>Property</th><th>What it does</th><th>Context</th></tr></thead>
+          <tbody>
+            <tr><td><code>effectiveDate</code>, <code>expirationDate</code></td><td>the dates it applies between</td><td><code>currentDate</code> (now by default)</td></tr>
+            <tr><td><code>startRequestDate</code>, <code>endRequestDate</code></td><td>the dates of the requests it applies to</td><td><code>requestDate</code></td></tr>
+            <tr><td><code>lob</code>, <code>country</code>, <code>currency</code>, <code>lang</code>, <code>region</code>... and any other</td><td>the values it applies to (a list: any of them)</td><td>the same name</td></tr>
+            <tr><td><code>state</code>, <code>usregion</code>, <code>caRegions</code>, <code>caProvinces</code></td><td>the same</td><td><code>usState</code>, <code>usRegion</code>, <code>caRegion</code>, <code>caProvince</code></td></tr>
+            <tr><td><code>origin</code></td><td><code>Deviation</code> wins over <code>Base</code></td><td>—</td></tr>
+            <tr><td><code>active</code></td><td><code>false</code>: not a version</td><td>—</td></tr>
+            <tr><td><code>failOnMiss</code></td><td>no rule met is an error (<code>XUFA_RULES_ERR_MISS</code>)</td><td>—</td></tr>
+            <tr><td><code>scope</code></td><td>of Properties tables: <code>Worksheet</code> or <code>Module</code></td><td>—</td></tr>
+            <tr><td><code>description</code>, <code>tags</code>, <code>createdBy</code>, <code>version</code>...</td><td>information, no dimension</td><td>—</td></tr>
+          </tbody>
+        </table>
+        <p>
+          Only what the context tells is compared, and a table without a property applies to every value of it. Of the
+          versions that apply, the most specific wins, then the one that restricts fewer dimensions the context does not
+          tell; two as specific are an error (<code>XUFA_RULES_ERR_AMBIGUOUS</code>), and none another
+          (<code>XUFA_RULES_ERR_NO_VERSION</code>). Tables called by a table run in the context of its call.
+        </p>
+        <pre data-run="rules-versions"><code class="language-js">import { RuleBook } from '@xufa/rules';
+
+const book = RuleBook.fromSheets([
+  {
+    name: 'RULES',
+    rows: [
+      ['SimpleRules Double Premium(String plan)', null, null],
+      ['Plan', 'Premium', null],
+      ['basic', 100, null],
+      [null, null, null],
+      ['SimpleRules Double Premium(String plan)', null, null],
+      ['properties', 'state', 'NY, CA'],
+      ['Plan', 'Premium', null],
+      ['basic', 120, null],
+      [null, null, null],
+      ['SimpleRules Double Premium(String plan)', null, null],
+      ['properties', 'effectiveDate', '2027-01-01'],
+      ['Plan', 'Premium', null],
+      ['basic', 110, null],
+    ],
+  },
+]);
+
+const in2026 = { currentDate: new Date('2026-06-01') };
+console.log(book.withContext({ ...in2026, usState: 'NY' }).call('Premium', 'basic')); // the version of NY and CA
+console.log(book.withContext({ ...in2026, usState: 'TX' }).call('Premium', 'basic')); // the general one
+console.log(book.withContext({ currentDate: new Date('2027-03-01') }).call('Premium', 'basic')); // from 2027</code></pre>
+        <pre data-output><code class="language-plaintext">120
+100
+110</code></pre>
+        <pre data-run="rules-properties"><code class="language-js">import { RuleBook } from '@xufa/rules';
+
+const book = RuleBook.fromSheets([
+  {
+    name: 'AUTO',
+    rows: [
+      ['Properties', null, null],
+      ['scope', 'Worksheet', null],
+      ['lob', 'auto', null],
+      [null, null, null],
+      ['SimpleRules Double Rate(String plan)', null, null],
+      ['Plan', 'Rate', null],
+      ['basic', 1.5, null],
+    ],
+  },
+  {
+    name: 'HOME',
+    rows: [
+      ['SimpleRules Double Rate(String plan)', null, null],
+      ['properties', 'lob', 'home'],
+      ['properties', 'failOnMiss', true],
+      ['Plan', 'Rate', null],
+      ['basic', 0.8, null],
+    ],
+  },
+]);
+
+console.log(book.withContext({ lob: 'auto' }).call('Rate', 'basic')); // the version of the sheet AUTO
+console.log(book.withContext({ lob: 'home' }).call('Rate', 'basic'));
+try {
+  book.withContext({ lob: 'home' }).call('Rate', 'gold');
+} catch (err) {
+  console.log(err.code); // failOnMiss: no rule is an error
+}</code></pre>
+        <pre data-output><code class="language-plaintext">1.5
+0.8
+XUFA_RULES_ERR_MISS</code></pre>
+
+        <h2 id="tests">Tests</h2>
+        <p>
+          Test tables are rows of parameters and the result each must give: the last column, or <code>RET.path</code>
+          columns of objects (<code>Test Quote QuoteTests Customer</code> types the inputs of a spreadsheet by a
+          datatype). <code>await book.test()</code> gives the messages of what is wrong (<code>[]</code> when nothing is):
+          results of the wrong type, parameters without a header that no formula uses, expressions that do not compile
+          (with the table and cell), the rows of tests that fail, and what check functions say.
+        </p>
+        <pre data-run="rules-tests"><code class="language-js">import { RuleBook } from '@xufa/rules';
+
+const book = RuleBook.fromSheets([
+  {
+    name: 'RULES',
+    rows: [
+      ['Rules Float Premium(String plan)', null],
+      ['C1', 'RET'],
+      ['plan', null],
+      ['String', 'Float'],
+      ['basic', 100],
+      [null, null],
+      ['Test Premium PremiumTests', null],
+      ['plan', 'RET'],
+      ['basic', 110],
+    ],
+  },
+]);
+
+console.log(await book.test());</code></pre>
+        <pre data-output><code class="language-plaintext">[ 'Test PremiumTests failed at row 1. Expected 110 but got 100' ]</code></pre>
+
+        <h2 id="checks">Checks</h2>
+        <p>
+          A Check table names rules tables (and a route in their results) whose every possible value goes to a check
+          function of the application: codes of products that must exist, limits that must hold. Its title is
+          <code>Check Name</code> (the name of the function), and each row a table and, optionally, a route in its
+          results (<code>covers.*.code</code>).
+        </p>
+        <pre><code class="language-js">const errors = await book.test({
+  checks: {
+    // Check Codes | Covers: every code the table Covers can give.
+    Codes: async (values, tableName) =&gt; values.filter((code) =&gt; !known.has(code)).map((code) =&gt; `Unknown ${code} in ${tableName}`),
+  },
+});</code></pre>
+
+        <h2 id="trace">Traces, gaps, checks and coverage</h2>
+        <p>
+          <code>book.trace(name, args, context)</code> gives the tree of the calls of a call: what each table got and
+          gave, the version chosen and the cells of the sheet that gave each result. <code>book.analyze(name)</code>
+          tries every case of the decision tables (conditions change only at their values and the ends of their ranges,
+          so one value of each interval stands for all of it): the values of no rule (gaps, merged into ranges as
+          conditions write them), those of several (overlaps: the first wins), the rules that never win, and the empty
+          cells of lookups. <code>book.testResults()</code> tells how each row of each test went.
+          <code>book.lint()</code> checks the formulas (expressions are lenient, so a typo is <code>undefined</code>,
+          not an error): names that nothing defines, steps read before they are computed, members that
+          <code>Fun</code> and the globals do not have, tables called with other arguments than they take, calls of
+          what is no table, cycles of grids, and, in a book of both languages, tables that run in the book's
+          language code that both read and compute differently (<code>ambiguous-language</code>: they should say their
+          language; its <code>fix</code> is the row of the table that says it, and its <code>sheetFix</code> the rows
+          that say it for the whole sheet, a Properties table of scope Worksheet, when that changes no other table of
+          it). <code>book.coverage()</code> tells the tables and rules that no test
+          reaches. <code>book.testCase(name, args, { context })</code> writes a call as it goes now as a row of a Test
+          table: its title (a test of a name no table has), the names of its columns (each argument, a column for each
+          field of those that are objects, <code>_context_</code> fields, <code>_res_</code> or
+          <code>_res_.field</code>, <code>_error_</code> of a call that fails), their titles and its cells.
+        </p>
+        <pre data-run="rules-trace"><code class="language-js">import { RuleBook } from '@xufa/rules';
+
+const book = RuleBook.fromSheets([
+  {
+    name: 'RULES',
+    rows: [
+      ['SmartRules String Tier(Integer age, String plan)', null, null],
+      ['Age', 'Plan', 'Tier'],
+      ['&lt;18', null, 'minor'],
+      ['18 - 64', 'basic, gold', 'adult'],
+      ['30', 'gold', 'thirty'],
+      [null, null, null],
+      ['SmartRules Double Fee(String plan, Integer age)', null, null],
+      ['Plan', 'Fee', null],
+      [null, '= Tier(age, plan) === "minor" ? 0 : 10', null],
+    ],
+  },
+]);
+
+const trace = book.trace('Fee', ['gold', 30]);
+console.log(trace.result, trace.cells); // the result, and the cell that gave it
+console.log(trace.children.map((call) =&gt; [call.table, call.args, call.result, call.cells[0]]));
+
+const [tier] = book.analyze('Tier');
+console.log(tier.axes[0].gaps); // values of no rule, as ranges
+console.log(tier.axes[0].overlaps, tier.axes[0].shadowed); // rule 3 never wins: rule 2 takes its cases</code></pre>
+        <pre data-output><code class="language-plaintext">10 [ { sheet: 'RULES', row: 8, column: 1 } ]
+[
+  [
+    'Tier',
+    [ 30, 'gold' ],
+    'adult',
+    { sheet: 'RULES', row: 3, column: 2 }
+  ]
+]
+[
+  { age: '&gt;=18', plan: 'not basic, gold' },
+  { age: '&gt;64', plan: 'basic, gold' }
+]
+[ { rules: [ 2, 3 ], count: 1, example: { age: 30, plan: 'gold' } } ] [ 3 ]</code></pre>
+
+        <h2 id="workbooks">Workbooks</h2>
+        <p>
+          <code>RuleBook.fromXlsx(bytes)</code> reads a workbook, <code>book.toXlsx()</code> writes one with each table
+          where it was. <code>readXlsx(bytes)</code> and <code>writeXlsx({ sheets })</code> are the reader and the writer
+          themselves: texts, numbers, booleans, dates (cells of a date format), the last result of formulas, merged
+          ranges; written cells can be <code>{ value, style }</code> (<code>title</code>, <code>header</code>,
+          <code>value</code>).
+        </p>
+        <pre data-run="rules-xlsx"><code class="language-js">import { RuleBook, readXlsx } from '@xufa/rules';
+
+const book = RuleBook.fromSheets([
+  { name: 'RULES', rows: [['Rules Float Premium(String plan)', null], ['C1', 'RET'], ['plan', null], ['String', 'Float'], ['basic', 100]] },
+]);
+const bytes = book.toXlsx(); // a workbook of Excel
+console.log(readXlsx(bytes).sheets.map((sheet) =&gt; sheet.name));
+console.log(RuleBook.fromXlsx(bytes).call('Premium', 'basic'));</code></pre>
+        <pre data-output><code class="language-plaintext">[ 'RULES' ]
+100</code></pre>
+
+        <h2 id="json">JSON</h2>
+        <p>
+          <code>book.toJSON()</code> is the book as data (the tables, compiled: <code>className</code>,
+          <code>params</code>, <code>matrix</code>, <code>lines</code>...), and <code>RuleBook.fromJSON(json)</code>
+          gives it back without reading a workbook.
+        </p>
+
+        <h2 id="store">Books in a database</h2>
+        <p>
+          <code>RuleStore</code> keeps books in a database of <a href="../orm/index.html">@xufa/orm</a> (any backend), by name and
+          tenant, in versions: each is tested before it is kept (refused when its tests fail, unless <code>force</code>),
+          one is the active one, and the workbook it came from is kept as it came. Books are compiled once a version in
+          each process; the active version is asked again after <code>refresh</code> ms (2000), so a new one reaches every
+          process and machine in that time.
+        </p>
+        <p>
+          With <code>tdz: true</code>, a <code>let</code> or <code>const</code> in a Method of JavaScript that is used
+          before its declaration runs is an error (<code>rate is used before its declaration</code>, with its line and
+          column), as in JavaScript. By default it is <code>undefined</code>, so
+          <code>const total = base * rate; const rate = 1.21;</code> gives <code>NaN</code> instead of failing. The option
+          applies to every book of the store, also to books given to it already made (on a copy). Without a store,
+          <code>RuleBook</code> takes the same option.
+        </p>
+        <p>
+          Books import books: a Method of JavaScript takes the tables of another book by its name
+          (<code>import { Discount, vat } from 'pricing'</code>: its rules, spreadsheets and methods as functions, its
+          constants and data as values), and the store links the active version of it, of the same tenant, before the
+          book runs, is tested or is inspected (a new active version is taken when the book is loaded again). Books
+          importing each other, and books of no active version, are refused. <code>store.dependents(name)</code> gives the
+          books that import one, and <code>store.impact(name, { version })</code> runs their tests with another version
+          of it (on copies): what making it the active one would break. With <code>checkImporters: true</code> such a
+          version does not become the active one (<code>save()</code> and <code>activate()</code> refuse it,
+          <code>XUFA_RULES_ERR_BREAKS</code>; 409 in the routes) unless <code>force</code> or
+          <code>breaking: true</code>.
+        </p>
+        <pre><code class="language-js">import { RuleStore } from '@xufa/rules';
+
+const rules = new RuleStore(db, { checks: { Codes: checkCodes } });
+await rules.sync(); // its table (db.sync() and migrations make it too)
+
+await rules.save('pricing', xlsxBytes, { author: 'ada', comment: 'new rates' }); // { version: 2, errors: [] }
+await rules.call('pricing', 'Quote', customer);
+const book = await rules.book('pricing', { tenant: 'acme', version: 1 });
+await rules.activate('pricing', 1); // back to an older version</code></pre>
+
+        <h2 id="routes">Routes</h2>
+        <p>
+          <code>rulesPlugin</code> gives a store routes of <a href="../http/index.html">@xufa/http</a> (<code>app.rules</code> is
+          the store): <code>GET /</code> the books, <code>GET /:name</code> its versions and tables,
+          <code>GET /:name/xlsx</code> and <code>/:name/json</code> (<code>?version</code>), <code>POST /:name</code> a new
+          version (the bytes of a workbook or its JSON; 422 with the messages when its tests fail),
+          <code>POST /:name/test</code>, <code>POST /:name/run/:table</code> (<code>{ args }</code>),
+          <code>PUT /:name/active</code> and <code>DELETE /:name</code>.
+        </p>
+        <pre><code class="language-js">app.register(rulesPlugin, {
+  store: rules,
+  prefix: '/api/rules',
+  onRequest: app.auth.guard('rules.change'),
+  tenantOf: (request) =&gt; request.tenantId,
+});</code></pre>
+
+        <h2 id="editor">The editor of the admin</h2>
+        <p>
+          With <code>rules</code> (a store), <a href="../admin/index.html">the admin</a> has a page of books: workbooks uploaded as
+          new versions, and each book edited as its sheets, a grid of cells as in Excel (arrows, Enter, Tab, typing, copy
+          and paste with Excel itself, undo). Its tables are outlined by kind, the messages of its tests follow the
+          changes, and saving makes a new version, tested first. Its tables are found by name, each with its properties (its own, and those of Properties tables
+          apart) and, of versions, how many there are and a link to try one in the context that chooses it; each with its gaps,
+          overlaps and rules that never win (marked on the grid); the rows of its tests are green or red; its tables can
+          be tried with arguments and a runtime context, the cells that gave the result highlighted and the calls made
+          shown as a tree, or measured (calls a second); new tables start from an example of each kind, and a rule for a gap is one click (its conditions written, the
+          cursor at its result). The warnings of the formulas are with the messages, marked on their cells, and the
+          rules no test reaches are marked too. The result of a try is a test with a click: a row added to the test of
+          the table that has the same columns, or a new test under the cells of its sheet (a table no test runs links
+          to a try of it). Its versions can be seen, compared with the one shown, their rows lined up as a diff does (rows inserted
+          or deleted move none of the others): the cells that changed highlighted, or the two side by side (a gap
+          opposite each row inserted or deleted), scrolled together, with the tables changed, new and gone), made the
+          active one or downloaded. The permissions are <code>_rules.view</code>,
+          <code>_rules.change</code> and <code>_rules.delete</code>; with tenants, the books are of the tenant chosen.
+        </p>
+        <pre><code class="language-js">app.register(admin, { prefix: '/admin', models, rules });</code></pre>
+
+        <h2 id="safety">Safety</h2>
+        <p>
+          The expressions of cells read their context and compute: they cannot assign, reach prototypes, constructors,
+          <code>process</code> or modules. The bodies of methods, of JavaScript or of OpenL, run on the same engine,
+          as its programs: their variables are their own, they change only plain objects and arrays, and loops and calls
+          have a limit of steps. A book is data, never code. A step whose expression is refused (<code>input.constructor.constructor(...)</code>)
+          is left, and <code>book.test()</code> says where it is.
+        </p>
+
+        <h2 id="compatibility">Books of other engines</h2>
+        <p>
+          The layouts of its tables, its JSON and the messages of its tests are those of the engine it was made after
+          (itself made to replace OpenL Tablets), so books written for it load as they are, and give the same results:
+          checked on real books, on every combination of the conditions of every table. What changes: texts are compared
+          normalized on both sides; parameters are names of <code>=</code> cells and scripts; Multi tables may repeat
+          combinations; a trailing <code>;</code> of a formula is dropped and <code>this</code> is the result of a
+          spreadsheet; methods of statements run as programs of @xufa/expression (no <code>this</code>, classes nor
+          destructuring).
+        </p>
+
+        <h2 id="performance">Performance</h2>
+        <p>
+          On a real book of 14 rules tables and a spreadsheet of 23 steps (Node.js 24), against the engine it was made
+          after: its rules tables run 1.06 million times a second (6.7 times as many), the spreadsheet 32,600 times a
+          second (5.8 times), and the workbook is read in 7 ms (exceljs: 23 ms). Conditions are compiled once, cells
+          <code>=expression</code> the first time they run, and a call makes no objects until a cell needs its context.
+        </p>
+      </article>
+    </div>
+
+    <footer class="footer">
+      <div class="container">
+        <span>xufa is MIT licensed. &copy; Jes&uacute;s Seijas</span>
+        <span>
+          <a href="../guide.html">Guide</a> &middot; <a href="../playground.html">Playground</a> &middot; <a href="../http/index.html">HTTP</a> &middot; <a href="../orm/index.html">ORM</a> &middot; <a href="../auth/index.html">Auth</a> &middot;
+          <a href="../sequelize/index.html">Sequelize</a> &middot; <a href="../packages.html">Packages</a> &middot;
+          <a href="../benchmarks.html">Benchmarks</a> &middot; <a href="https://github.com/xufajs/xufa">GitHub</a>
+        </span>
+      </div>
+    </footer>
+  </body>
+</html>
