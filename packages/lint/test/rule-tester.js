@@ -1,15 +1,13 @@
-'use strict';
-
 // ESLint's RuleTester for the rules' tests ported from ESLint (test/rules, by tools/port-lint), on @xufa/lint's
 // linter: each valid case has no problems; each invalid case has the problems it lists (their count, message or
 // messageId with its data, node type, line, column, end), the output of its fixes, and its suggestions with theirs.
 // Cases for another parser (typescript-eslint's, a fixture's) are skipped: @xufa/lint parses JavaScript and JSX.
 
-const assert = require('node:assert');
-const { Linter } = require('../lib/linter');
-const { defineRule } = require('../lib/rules');
-const SourceCodeFixer = require('../lib/eslint/lib/linter/source-code-fixer');
-const { interpolate } = require('../lib/eslint/lib/linter/interpolate');
+import assert from 'node:assert';
+import { Linter } from '../lib/linter.js';
+import { defineRule } from '../lib/rules/index.js';
+import { applyFixes } from '../lib/report/apply-fixes.js';
+import { interpolate } from '../lib/report/report.js';
 
 const isObject = (value) => value !== null && typeof value === 'object' && !Array.isArray(value);
 
@@ -101,7 +99,7 @@ class RuleTester {
               errors.forEach((expected, index) => checkError(rule, item, messages[index], expected, index));
             }
             if (Object.hasOwn(item, 'output')) {
-              const fixed = SourceCodeFixer.applyFixes(item.code, messages).output;
+              const fixed = applyFixes(item.code, messages).output;
               if (item.output === null) assert.strictEqual(fixed, item.code, 'Expected no autofixes to be suggested');
               else assert.strictEqual(fixed, item.output, 'Output is incorrect.');
             }
@@ -158,12 +156,14 @@ function checkError(rule, item, message, expected, index) {
         }
       }
       if (Object.hasOwn(suggestion, 'output')) {
-        const output = SourceCodeFixer.applyFixes(item.code, [got]).output;
+        const output = applyFixes(item.code, [got]).output;
         assert.strictEqual(output, suggestion.output, `Suggestion ${at}: output`);
       }
     });
   }
 }
 
-module.exports = RuleTester;
-module.exports.RuleTester = RuleTester;
+export default RuleTester;
+RuleTester.RuleTester = RuleTester;
+
+export { RuleTester };

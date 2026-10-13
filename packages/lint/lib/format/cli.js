@@ -1,30 +1,31 @@
-'use strict';
-
-// xufa-format [paths...] [--check | --write] [--config file]
+// xufa-format [paths...] [--check | --write] [--config file] [--concurrency n|auto|off]
 //
 // Formats the files of the paths (the folder of the config by default) as prettier 3.9.9 does, with the format
 // options of xufa.lint.config.js. --check (the default) lists the files that are not formatted (exit 1 when any is);
 // --write formats them. The exit code is 2 when it cannot run or a file cannot be parsed.
 
-const path = require('node:path');
-const { loadConfig, findConfigFile } = require('../config');
-const { formatFiles } = require('./index');
+import path from 'node:path';
+import { loadConfig, findConfigFile } from '../config.js';
+import { formattedFiles } from './index.js';
+import { runFiles } from '../parallel.js';
 
 const HELP = `Usage: xufa-format [paths...] [options]
 
-  --check          Lists the files that are not formatted (the default)
-  --write          Formats them
-  --config <file>  The config (xufa.lint.config.js, found from the working folder up)
-  -h, --help       This help
+  --check            Lists the files that are not formatted (the default)
+  --write            Formats them
+  --config <file>    The config (xufa.lint.config.js, found from the working folder up)
+  --concurrency <n>  Workers: a number, auto (the default: up to 4) or off
+  -h, --help         This help
 `;
 
 function parseArgs(argv) {
-  const options = { paths: [], write: false, config: null };
+  const options = { paths: [], write: false, config: null, concurrency: 'auto' };
   for (let i = 0; i < argv.length; i++) {
     const arg = argv[i];
     if (arg === '--write' || arg === '-w') options.write = true;
     else if (arg === '--check' || arg === '-c') options.write = false;
     else if (arg.startsWith('--config')) options.config = arg.includes('=') ? arg.split('=')[1] : argv[++i];
+    else if (arg.startsWith('--concurrency')) options.concurrency = arg.includes('=') ? arg.split('=')[1] : argv[++i];
     else if (arg === '-h' || arg === '--help') options.help = true;
     else if (arg.startsWith('-')) throw new Error(`Unknown option: ${arg}`);
     else options.paths.push(arg);
@@ -56,7 +57,8 @@ async function main(
       : [path.dirname(path.resolve(file))];
     const shown = (result) => path.relative(cwd, result.filePath).split(path.sep).join('/');
     if (!options.write) stdout.write('Checking formatting...\n');
-    const results = await formatFiles(paths, configs, { write: options.write });
+    const files = formattedFiles(paths, configs).map((one) => [one, { write: options.write }]);
+    const results = await runFiles('format', files, { configFile: file, configs, concurrency: options.concurrency });
     const failed = results.filter((result) => result.error);
     for (const result of failed) stderr.write(`[error] ${shown(result)}: ${result.error.message.split('\n')[0]}\n`);
     const changed = results.filter((result) => result.changed);
@@ -81,4 +83,4 @@ async function main(
   }
 }
 
-module.exports = { main, parseArgs };
+export { main, parseArgs };

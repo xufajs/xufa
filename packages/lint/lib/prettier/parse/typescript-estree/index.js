@@ -6,7 +6,7 @@
 //
 // Locations (loc) are made only when asked for (locations: true): prettier reads ranges.
 
-import ts from '../typescript.cjs';
+import ts, { takeSourceFile } from '#typescript';
 import { Converter, convertError } from './convert.js';
 import { addOpaqueToken, convertComments } from './comments.js';
 import { AST_NODE_TYPES } from './node-types.js';
@@ -40,22 +40,26 @@ export function parse(code, options = {}) {
   loadTypeScript();
   const filePath = options.filePath ?? (options.jsx ? 'estree.tsx' : 'estree.ts');
   const isModule = options.sourceType === 'module' || (options.sourceType == null && /\.m[jt]s$/i.test(filePath));
-  const source = ts.createSourceFile(
-    filePath,
-    code,
-    {
-      languageVersion: ts.ScriptTarget.Latest,
-      jsDocParsingMode: ts.JSDocParsingMode.ParseNone,
-      setExternalModuleIndicator: isModule
-        ? (file) => {
-            file.externalModuleIndicator = true;
-          }
-        : undefined,
-    },
-    // (Parents are set below, with the parentheses: TypeScript's way of setting them takes more than twice as long.)
-    false,
-    scriptKind(filePath, options.jsx === true)
-  );
+  const kind = scriptKind(filePath, options.jsx === true);
+  // The linter's SourceFile of this text, when it has just parsed it (xufa-check), or a new one.
+  const source =
+    takeSourceFile(code, kind, isModule) ??
+    ts.createSourceFile(
+      filePath,
+      code,
+      {
+        languageVersion: ts.ScriptTarget.Latest,
+        jsDocParsingMode: ts.JSDocParsingMode.ParseNone,
+        setExternalModuleIndicator: isModule
+          ? (file) => {
+              file.externalModuleIndicator = true;
+            }
+          : undefined,
+      },
+      // (Parents are set below, with the parentheses: TypeScript's way of setting them takes more than twice as long.)
+      false,
+      kind
+    );
   if (source.parseDiagnostics.length) throw convertError(source.parseDiagnostics[0]);
   // JavaScript: its parentheses, whose expressions are mapped to their nodes (the rest is not).
   const opaque = [];

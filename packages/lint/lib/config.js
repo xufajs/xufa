@@ -1,5 +1,3 @@
-'use strict';
-
 // Configs: xufa.lint.config.js (or .mjs, .cjs) exports a list of config objects, as ESLint's flat config does.
 //
 //   { files, ignores, languageOptions: { ecmaVersion, sourceType, globals, parserOptions }, linterOptions, rules,
@@ -14,10 +12,10 @@
 // a file are merged in order: languageOptions and settings deeply, rules by rule (a rule given only a severity keeps
 // the options before it). The files to lint are those that match a files pattern: .js, .mjs and .cjs by default.
 
-const fs = require('node:fs');
-const path = require('node:path');
-const { pathToFileURL } = require('node:url');
-const { matches, ignored } = require('./glob');
+import fs from 'node:fs';
+import path from 'node:path';
+import { pathToFileURL } from 'node:url';
+import { matches, ignored } from './glob.js';
 
 const CONFIG_FILES = ['xufa.lint.config.js', 'xufa.lint.config.mjs', 'xufa.lint.config.cjs'];
 const DEFAULT_FILES = ['**/*.js', '**/*.mjs', '**/*.cjs'];
@@ -63,6 +61,9 @@ const flatten = (list) =>
   list.flatMap((item) => (Array.isArray(item) ? flatten(item) : item === undefined || item === null ? [] : [item]));
 
 class ConfigArray {
+  // The merged configs, by the configs that apply (files with the same ones share it).
+  #merged = new Map();
+
   // configs: the list of config objects; base: the folder their patterns are relative to.
   constructor(configs, base = process.cwd()) {
     this.configs = flatten(configs);
@@ -106,25 +107,48 @@ class ConfigArray {
     return this.configFor(file).format !== false;
   }
 
-  /** The config of a file: the objects that apply to it, merged. */
+  /** The config of a file: the objects that apply to it, merged (the same object for files they all apply to). */
   configFor(file) {
     const relative = this.relative(file);
-    let merged = { languageOptions: {}, linterOptions: {}, rules: {}, settings: {}, format: {} };
-    for (const config of this.configs) {
-      const keys = Object.keys(config).filter((key) => key !== 'name');
-      if (keys.length === 1 && keys[0] === 'ignores') continue;
-      if (config.files && !config.files.some((pattern) => matches(pattern, relative))) continue;
-      if (config.ignores && ignored(config.ignores, relative)) continue;
-      merged = {
-        languageOptions: mergeDeep(merged.languageOptions, config.languageOptions ?? {}),
-        linterOptions: { ...merged.linterOptions, ...config.linterOptions },
-        rules: mergeRules(merged.rules, config.rules ?? {}),
-        settings: mergeDeep(merged.settings, config.settings ?? {}),
-        format: config.format === false || merged.format === false ? false : { ...merged.format, ...config.format },
-      };
+    const applying = [];
+    const indexes = [];
+    this.configs.forEach((config, i) => {
+      if (appliesTo(config, relative)) {
+        applying.push(config);
+        indexes.push(i);
+      }
+    });
+    const key = indexes.join(',');
+    let merged = this.#merged.get(key);
+    if (!merged) {
+      merged = mergeConfigs(applying);
+      this.#merged.set(key, merged);
     }
     return merged;
   }
+}
+
+// Whether a config applies to a file (a config of global ignores alone applies to none).
+function appliesTo(config, relative) {
+  const keys = Object.keys(config).filter((key) => key !== 'name');
+  if (keys.length === 1 && keys[0] === 'ignores') return false;
+  if (config.files && !config.files.some((pattern) => matches(pattern, relative))) return false;
+  return !(config.ignores && ignored(config.ignores, relative));
+}
+
+// Configs merged in order, as ESLint merges them.
+function mergeConfigs(configs) {
+  let merged = { languageOptions: {}, linterOptions: {}, rules: {}, settings: {}, format: {} };
+  for (const config of configs) {
+    merged = {
+      languageOptions: mergeDeep(merged.languageOptions, config.languageOptions ?? {}),
+      linterOptions: { ...merged.linterOptions, ...config.linterOptions },
+      rules: mergeRules(merged.rules, config.rules ?? {}),
+      settings: mergeDeep(merged.settings, config.settings ?? {}),
+      format: config.format === false || merged.format === false ? false : { ...merged.format, ...config.format },
+    };
+  }
+  return merged;
 }
 
 /** Loads a config file (its default export, a list or a function that gives one): a ConfigArray. */
@@ -135,4 +159,4 @@ async function loadConfig(file) {
   return new ConfigArray(Array.isArray(configs) ? configs : [configs], path.dirname(path.resolve(file)));
 }
 
-module.exports = { ConfigArray, loadConfig, findConfigFile, CONFIG_FILES };
+export { ConfigArray, loadConfig, findConfigFile, CONFIG_FILES };

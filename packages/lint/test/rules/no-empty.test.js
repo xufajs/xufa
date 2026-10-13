@@ -3,14 +3,12 @@
  * @author Nicholas C. Zakas
  */
 
-"use strict";
-
 //------------------------------------------------------------------------------
 // Requirements
 //------------------------------------------------------------------------------
 
-const rule = require("../../lib/eslint/lib/rules/no-empty"),
-	RuleTester = require("../rule-tester");
+import * as rule from '../../lib/rules/no-empty.js';
+import RuleTester from '../rule-tester.js';
 
 //------------------------------------------------------------------------------
 // Tests

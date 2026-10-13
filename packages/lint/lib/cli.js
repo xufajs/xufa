@@ -1,14 +1,14 @@
-'use strict';
-
 // xufa-lint [paths...] [--fix] [--format stylish|json] [--config file] [--max-warnings n] [--quiet]
+//   [--concurrency n|auto|off]
 //
 // Lints the files of the paths (the folder of the config by default) with xufa.lint.config.js, as `eslint` does.
 // The exit code is 0 without errors (and no more warnings than --max-warnings), 1 with them, 2 when it cannot run.
 
-const path = require('node:path');
-const { loadConfig, findConfigFile } = require('./config');
-const { lintFiles } = require('./engine');
-const formatters = require('./formatters');
+import path from 'node:path';
+import { loadConfig, findConfigFile } from './config.js';
+import { filesOf } from './engine.js';
+import { runFiles } from './parallel.js';
+import * as formatters from './formatters.js';
 
 const HELP = `Usage: xufa-lint [paths...] [options]
 
@@ -17,12 +17,21 @@ const HELP = `Usage: xufa-lint [paths...] [options]
   --config <file>      The config (xufa.lint.config.js, found from the working folder up)
   --max-warnings <n>   Fails with more warnings than n
   --quiet              Errors only
+  --concurrency <n>    Workers: a number, auto (the default: up to 4) or off
   --no-color           Without colors
   -h, --help           This help
 `;
 
 function parseArgs(argv) {
-  const options = { paths: [], fix: false, format: 'stylish', config: null, maxWarnings: -1, quiet: false };
+  const options = {
+    paths: [],
+    fix: false,
+    format: 'stylish',
+    config: null,
+    maxWarnings: -1,
+    quiet: false,
+    concurrency: 'auto',
+  };
   for (let i = 0; i < argv.length; i++) {
     const arg = argv[i];
     const value = () => {
@@ -36,6 +45,7 @@ function parseArgs(argv) {
     else if (arg.startsWith('--format') || arg === '-f') options.format = value();
     else if (arg.startsWith('--config') || arg === '-c') options.config = value();
     else if (arg.startsWith('--max-warnings')) options.maxWarnings = Number(value());
+    else if (arg.startsWith('--concurrency')) options.concurrency = value();
     else if (arg === '-h' || arg === '--help') options.help = true;
     else if (arg.startsWith('-')) throw new Error(`Unknown option: ${arg}`);
     else options.paths.push(arg);
@@ -65,7 +75,8 @@ async function main(
     const paths = options.paths.length
       ? options.paths.map((given) => path.resolve(cwd, given))
       : [path.dirname(path.resolve(file))];
-    let results = lintFiles(paths, configs, { fix: options.fix });
+    const files = filesOf(paths, configs).map((one) => [one, { fix: options.fix }]);
+    let results = await runFiles('lint', files, { configFile: file, configs, concurrency: options.concurrency });
     if (options.quiet) {
       results = results.map((result) => ({
         ...result,
@@ -92,4 +103,4 @@ async function main(
   }
 }
 
-module.exports = { main, parseArgs };
+export { main, parseArgs };

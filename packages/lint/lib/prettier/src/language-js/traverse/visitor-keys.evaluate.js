@@ -1,4 +1,5 @@
-// The visitor keys of prettier 3.9.9 (evaluated when prettier is built), by tools/port-format.
+// The visitor keys of prettier 3.9.9 (evaluated when prettier is built), by tools/port-format; and of the nodes of
+// Babel's tree that parse/json.js makes (ObjectProperty, StringLiteral...), which comments of JSON are attached through.
 export default {
   AccessorProperty: ['decorators', 'key', 'typeAnnotation', 'value'],
   ArrayExpression: ['elements'],
@@ -7,8 +8,10 @@ export default {
   AssignmentExpression: ['left', 'right'],
   AssignmentPattern: ['left', 'right', 'decorators', 'typeAnnotation'],
   AwaitExpression: ['argument'],
+  BigIntLiteral: [],
   BinaryExpression: ['left', 'right'],
   BlockStatement: ['directives', 'body'],
+  BooleanLiteral: [],
   BreakStatement: ['label'],
   CallExpression: ['callee', 'typeArguments', 'arguments'],
   CatchClause: ['param', 'body'],
@@ -83,8 +86,11 @@ export default {
   MethodDefinition: ['decorators', 'key', 'value'],
   NGRoot: ['node'],
   NewExpression: ['callee', 'typeArguments', 'arguments'],
+  NullLiteral: [],
+  NumericLiteral: [],
   ObjectExpression: ['properties'],
   ObjectPattern: ['decorators', 'properties', 'typeAnnotation'],
+  ObjectProperty: ['key', 'value'],
   ParenthesizedExpression: ['expression'],
   PrivateIdentifier: [],
   Program: ['directives', 'body'],
@@ -95,6 +101,7 @@ export default {
   SequenceExpression: ['expressions'],
   SpreadElement: ['argument'],
   StaticBlock: ['body'],
+  StringLiteral: [],
   Super: [],
   SwitchCase: ['test', 'consequent'],
   SwitchStatement: ['discriminant', 'cases'],

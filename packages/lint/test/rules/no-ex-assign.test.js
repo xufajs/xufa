@@ -3,14 +3,12 @@
  * @author Stephen Murray <spmurrayzzz>
  */
 
-"use strict";
-
 //------------------------------------------------------------------------------
 // Requirements
 //------------------------------------------------------------------------------
 
-const rule = require("../../lib/eslint/lib/rules/no-ex-assign"),
-	RuleTester = require("../rule-tester");
+import * as rule from '../../lib/rules/no-ex-assign.js';
+import RuleTester from '../rule-tester.js';
 
 //------------------------------------------------------------------------------
 // Tests

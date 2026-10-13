@@ -17,6 +17,8 @@ const { js } = bundle(path.join(ROOT, 'lib/prettier/format.js'), {
   platform: 'node',
   format: 'esm',
   treeShaking: true,
+  // TypeScript's parser, which the linter loads too (lib/typescript, scripts/build-typescript.mjs).
+  external: ['#typescript'],
   legalComments: 'none',
   // (No module of it changes what it exports: values, which are read as fast as constants.)
   liveBindings: false,

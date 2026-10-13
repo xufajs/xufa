@@ -1,12 +1,10 @@
 import { configs, globals } from '@xufa/lint';
 
-// ES modules, but for the code that stays CommonJS: ported upstream code (@xufa/openapi, the library of @xufa/yaml,
-// ESLint's code in @xufa/lint) and the packages of the repository whose package.json says so (bench, tools with a
-// package of their own).
+// ES modules, but for the code that stays CommonJS: ported upstream code (@xufa/openapi, the library of @xufa/yaml)
+// and the packages of the repository whose package.json says so (bench, tools with a package of their own).
 const COMMONJS = [
   'packages/openapi/**/*.js',
   'packages/yaml/**/*.js',
-  'packages/lint/**/*.js',
   'bench/**/*.js',
   'tools/fastify-plugins/**/*.js',
   'tools/node-test-to-xufa-test/**/*.js',
@@ -33,12 +31,9 @@ export default [
       'tools/sequelize-compat/.snapshot/**',
       // js-yaml 4.1.0 as it is (tools/port-yaml): its style is kept, so it can be ported again.
       'packages/yaml/lib/**',
-      // ESLint's code and the packages it uses, as they are (tools/port-lint).
-      'packages/lint/lib/eslint/**',
-      'packages/lint/lib/vendor/**',
-      // The formatter as one file and TypeScript's parser for it, built (scripts/build-format.mjs, build-typescript.mjs).
+      // The formatter as one file and TypeScript's parser, built (scripts/build-format.mjs, build-typescript.mjs).
       'packages/lint/lib/prettier/dist/**',
-      'packages/lint/lib/prettier/parse/typescript.cjs',
+      'packages/lint/lib/typescript/typescript.cjs',
       // The built page of the admin (client/build.js).
       'packages/admin/lib/client/dist/**',
       // What runs leave (.gitignore).
@@ -79,10 +74,7 @@ export default [
         // @xufa/test: its Markdown docs are made from the site (scripts/build-docs.js), and replay caches are recorded.
         'packages/test/docs/**',
         '**/*.ai-cache/**',
-        // ESLint, prettier and the packages they use, as they are (tools/port-lint, tools/port-format), and their
-        // licenses.
-        'packages/lint/lib/eslint/**',
-        'packages/lint/lib/vendor/**',
+        // The licenses of what @xufa/lint is made from.
         'packages/lint/NOTICE.md',
       ],
     },
@@ -107,11 +99,6 @@ export default [
   {
     files: COMMONJS,
     languageOptions: { sourceType: 'commonjs', globals: { ...globals.node, ...globals.commonjs } },
-  },
-  {
-    // The formatter's driver of prettier's code (ES modules, as that code is).
-    files: ['packages/lint/lib/prettier/**/*.js'],
-    languageOptions: { sourceType: 'module' },
   },
   {
     // Code of @xufa/test that runs in a page (browser mode), and the page of an example app.

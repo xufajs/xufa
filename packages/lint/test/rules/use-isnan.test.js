@@ -3,14 +3,12 @@
  * @author James Allardice, Michael Paulukonis
  */
 
-"use strict";
-
 //------------------------------------------------------------------------------
 // Requirements
 //------------------------------------------------------------------------------
 
-const rule = require("../../lib/eslint/lib/rules/use-isnan"),
-	RuleTester = require("../rule-tester");
+import * as rule from '../../lib/rules/use-isnan.js';
+import RuleTester from '../rule-tester.js';
 
 //------------------------------------------------------------------------------
 // Tests

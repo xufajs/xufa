@@ -1,5 +1,5 @@
 // From typescript-estree 8.70.0 (src/getImportClausePhaseModifier.ts, BSD-2-Clause: see NOTICE.md), as @xufa/lint's code.
-import ts from '../typescript.cjs';
+import ts from '#typescript';
 import { isAtLeast59 } from './version.js';
 // TODO: Remove when we support TS >= 5.9
 export function getImportClausePhaseModifier(node) {

@@ -3,15 +3,13 @@
  * @author Ilya Volodin
  */
 
-"use strict";
-
 //------------------------------------------------------------------------------
 // Requirements
 //------------------------------------------------------------------------------
 
-const rule = require("../../lib/eslint/lib/rules/no-redeclare");
-const RuleTester = require("../rule-tester");
-const globals = require("../../lib/globals");
+import * as rule from '../../lib/rules/no-redeclare.js';
+import RuleTester from '../rule-tester.js';
+import globals from '../../lib/globals.js';
 
 //------------------------------------------------------------------------------
 // Tests

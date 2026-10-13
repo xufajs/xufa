@@ -1,10 +1,8 @@
-'use strict';
-
 // JavaScript (and JSX) parsed by TypeScript's parser into ESTree, as espree gives it to ESLint: the same nodes and
 // properties, ranges and locations, tokens and comments. The rules (ported from ESLint), eslint-scope and the code
 // path analysis read this tree.
 
-const ts = require('./typescript');
+import ts, { keepSourceFile } from '#typescript';
 
 const K = ts.SyntaxKind;
 
@@ -32,6 +30,28 @@ class ParseError extends SyntaxError {
 
 // Line feed, carriage return, and the line and paragraph separators.
 const isLineBreak = (code) => code === 10 || code === 13 || code === 0x2028 || code === 0x2029;
+
+// A node or a token. Its loc (lines and columns) is made when first read, as most never are, from its range and the
+// line starts of its file, then kept. (Made so and given its properties, it is faster to make than an object literal.)
+class Located {
+  #locate;
+
+  constructor(type, start, end, locate) {
+    this.type = type;
+    this.range = [start, end];
+    this.#locate = locate;
+  }
+
+  get loc() {
+    const loc = { start: this.#locate(this.range[0]), end: this.#locate(this.range[1]) };
+    Object.defineProperty(this, 'loc', { value: loc, writable: true, enumerable: true, configurable: true });
+    return loc;
+  }
+
+  set loc(value) {
+    Object.defineProperty(this, 'loc', { value, writable: true, enumerable: true, configurable: true });
+  }
+}
 
 // Offsets to { line, column }: line from 1, column from 0.
 function lineIndex(text) {
@@ -79,6 +99,40 @@ const ASSIGNMENT_OPERATORS = new Set(
   )
 );
 
+// The parents of the nodes of a TypeScript tree, and what its tokens need of it (Converter.scanTokens): the ends of
+// its identifiers, the starts of its regular expressions and of the parts of its templates after a ${...}, and
+// whether it has JSX.
+function prepare(source) {
+  const hints = { identifierEnds: new Set(), regexStarts: new Set(), templateStarts: new Set(), jsx: false };
+  const stack = [source];
+  while (stack.length) {
+    const node = stack.pop();
+    ts.forEachChild(node, (child) => {
+      child.parent = node;
+      stack.push(child);
+      switch (child.kind) {
+        case K.Identifier:
+          hints.identifierEnds.add(child.end);
+          break;
+        case K.RegularExpressionLiteral:
+          hints.regexStarts.add(child.end - child.text.length);
+          break;
+        case K.TemplateMiddle:
+        case K.TemplateTail:
+          hints.templateStarts.add(ts.skipTrivia(source.text, child.pos));
+          break;
+        case K.JsxElement:
+        case K.JsxSelfClosingElement:
+        case K.JsxFragment:
+          hints.jsx = true;
+          break;
+        default:
+      }
+    });
+  }
+  return hints;
+}
+
 /**
  * Parses `text`: an ESTree Program with tokens and comments. Options: sourceType ('module', 'script' or
  * 'commonjs'), jsx (true for .jsx), filePath.
@@ -89,9 +143,13 @@ function parse(text, options = {}) {
     filePath,
     text,
     { languageVersion: ts.ScriptTarget.Latest, jsDocParsingMode: ts.JSDocParsingMode.ParseNone },
-    true,
+    // (Parents are set below: TypeScript's way of setting them takes longer.)
+    false,
     jsx ? ts.ScriptKind.JSX : ts.ScriptKind.JS
   );
+  const hints = prepare(source);
+  // For the formatter of the same text (xufa-check).
+  keepSourceFile(source, text);
   const locate = lineIndex(text);
   // Scripts may have what strict code may not: legacy octal numbers (010, 08) and escapes ('\1', '\8').
   const diagnostics =
@@ -128,22 +186,22 @@ function parse(text, options = {}) {
       );
     }
   }
-  const converter = new Converter(source, text, locate);
+  const converter = new Converter(source, text, locate, hints);
   const program = converter.program(sourceType);
   return program;
 }
 
 class Converter {
-  constructor(source, text, locate) {
+  constructor(source, text, locate, hints) {
     this.source = source;
     this.text = text;
     this.locate = locate;
+    this.hints = hints;
   }
 
   // A node of ESTree over [start, end).
   make(type, start, end, props) {
-    const node = { type, ...props, range: [start, end], loc: { start: this.locate(start), end: this.locate(end) } };
-    return node;
+    return Object.assign(new Located(type, start, end, this.locate), props);
   }
 
   start(node) {
@@ -166,7 +224,7 @@ class Converter {
 
   program(sourceType) {
     const body = this.statements(this.source.statements, true);
-    const tokens = this.tokens();
+    const tokens = this.hints.jsx ? this.tokens() : this.scanTokens();
     const comments = this.comments(tokens);
     const start = tokens.length ? tokens[0].range[0] : 0;
     // (To the end of its last token.)
@@ -1066,7 +1124,73 @@ class Converter {
     }
   }
 
-  // The tokens, as espree makes them.
+  // The tokens, as espree makes them, by one scan of the text, which the tree tells where a / starts a regular
+  // expression, a } goes on with a template, and a word is a name (Converter.tokenFor's types). Not for JSX: tokens().
+  scanTokens() {
+    const { text } = this;
+    const { identifierEnds, regexStarts, templateStarts } = this.hints;
+    const scanner = ts.createScanner(ts.ScriptTarget.Latest, true, ts.LanguageVariant.Standard, text);
+    const out = [];
+    for (let kind = scanner.scan(); kind !== K.EndOfFileToken; kind = scanner.scan()) {
+      const start = scanner.getTokenStart();
+      if ((kind === K.SlashToken || kind === K.SlashEqualsToken) && regexStarts.has(start)) {
+        kind = scanner.reScanSlashToken();
+      } else if (kind === K.CloseBraceToken && templateStarts.has(start)) {
+        kind = scanner.reScanTemplateToken(false);
+      } else if (kind === K.GreaterThanToken) {
+        // (TypeScript's scanner gives > alone, for its type arguments: >>, >= and >>> are one token.)
+        kind = scanner.reScanGreaterToken();
+      }
+      const end = scanner.getTokenEnd();
+      const value = text.slice(start, end);
+      if (kind === K.Identifier || (kind >= K.FirstKeyword && kind <= K.LastKeyword)) {
+        if (identifierEnds.has(end)) {
+          // An identifier of the tree: a name, \u escapes decoded; static, let and yield are Keyword.
+          const name = value.includes('\\') ? scanner.getTokenValue() : value;
+          out.push(this.tokenOf(NAME_KEYWORDS.has(name) ? 'Keyword' : 'Identifier', name, start, end));
+        } else if (kind === K.TrueKeyword || kind === K.FalseKeyword) {
+          out.push(this.tokenOf('Boolean', value, start, end));
+        } else if (kind === K.NullKeyword) {
+          out.push(this.tokenOf('Null', value, start, end));
+        } else {
+          out.push(this.tokenOf(KEYWORDS.has(value) ? 'Keyword' : 'Identifier', value, start, end));
+        }
+        continue;
+      }
+      switch (kind) {
+        case K.PrivateIdentifier:
+          out.push(this.tokenOf('PrivateIdentifier', value.slice(1), start, end));
+          break;
+        case K.StringLiteral:
+          out.push(this.tokenOf('String', value, start, end));
+          break;
+        case K.NumericLiteral:
+        case K.BigIntLiteral:
+          out.push(this.tokenOf('Numeric', value, start, end));
+          break;
+        case K.RegularExpressionLiteral: {
+          const slash = value.lastIndexOf('/');
+          out.push(
+            this.tokenOf('RegularExpression', value, start, end, {
+              regex: { flags: value.slice(slash + 1), pattern: value.slice(1, slash) },
+            })
+          );
+          break;
+        }
+        case K.NoSubstitutionTemplateLiteral:
+        case K.TemplateHead:
+        case K.TemplateMiddle:
+        case K.TemplateTail:
+          out.push(this.tokenOf('Template', value, start, end));
+          break;
+        default:
+          out.push(this.tokenOf('Punctuator', value, start, end));
+      }
+    }
+    return out;
+  }
+
+  // The tokens, as espree makes them (of the tree: JSX's need it).
   tokens() {
     const out = [];
     const visit = (node) => {
@@ -1096,7 +1220,9 @@ class Converter {
   }
 
   tokenOf(type, value, start, end, extra) {
-    return { type, value, ...extra, range: [start, end], loc: { start: this.locate(start), end: this.locate(end) } };
+    const token = new Located(type, start, end, this.locate);
+    token.value = value;
+    return extra ? Object.assign(token, extra) : token;
   }
 
   tokenFor(node, value, start, end) {
@@ -1156,35 +1282,31 @@ class Converter {
       out.push(this.tokenOf('Hashbang', shebang[0].slice(2), 0, shebang[0].length));
       position = shebang[0].length;
     }
-    const gaps = [];
+    // The gaps between the tokens are white space and comments: each / in one starts a comment (// to the end of the
+    // line, /* to */). The next / is found going forward once through the text, not in a copy of each gap.
+    let slash = text.indexOf('/', position);
+    const gap = (start, end) => {
+      while (slash !== -1 && slash < start) slash = text.indexOf('/', slash + 1);
+      while (slash !== -1 && slash < end) {
+        const next = slash + 1 < end ? text.charCodeAt(slash + 1) : 0;
+        let close = slash + 1;
+        if (next === 47) {
+          close = slash + 2;
+          while (close < end && !isLineBreak(text.charCodeAt(close))) close++;
+          add(slash, close, false);
+        } else if (next === 42) {
+          const found = text.indexOf('*/', slash + 2);
+          close = found < 0 || found + 2 > end ? end : found + 2;
+          add(slash, close, true);
+        }
+        slash = text.indexOf('/', close);
+      }
+    };
     for (const token of tokens) {
-      gaps.push([position, token.range[0]]);
+      if (token.range[0] > position) gap(position, token.range[0]);
       position = token.range[1];
     }
-    gaps.push([position, text.length]);
-    for (const [start, end] of gaps) {
-      if (end <= start) continue;
-      const gap = text.slice(start, end);
-      if (!gap.includes('/')) continue;
-      // Comments in white space: // to the end of the line, /* to */.
-      let i = 0;
-      while (i < gap.length) {
-        const char = gap[i];
-        if (char === '/' && gap[i + 1] === '/') {
-          let j = i + 2;
-          while (j < gap.length && !isLineBreak(gap.charCodeAt(j))) j++;
-          add(start + i, start + j, false);
-          i = j;
-        } else if (char === '/' && gap[i + 1] === '*') {
-          const close = gap.indexOf('*/', i + 2);
-          const j = close < 0 ? gap.length : close + 2;
-          add(start + i, start + j, true);
-          i = j;
-        } else {
-          i++;
-        }
-      }
-    }
+    if (text.length > position) gap(position, text.length);
     return out;
   }
 }
@@ -1263,8 +1385,18 @@ function decodeEntities(text) {
 
 // Tokens of a piece of code, which need not parse (`!`, `foo(`): espree's tokenize(), with the comments as
 // `tokens.comments`. A / starts a regular expression where an expression may start; an invalid piece throws.
+// The errors of TypeScript's scanner that make a piece of code not tokens, as espree's tokenize() fails on it:
+// unterminated strings, templates, regular expressions and comments, and characters that are no token.
+const TOKEN_ERRORS = new Set([1002, 1160, 1161, 1010, 1127]);
+
 function tokenize(text) {
-  const scanner = ts.createScanner(ts.ScriptTarget.Latest, false, ts.LanguageVariant.Standard, text);
+  let error = null;
+  // For each template being read, the braces open in its current ${...}.
+  const braces = [];
+  const onError = (message, length) => {
+    if (!error && TOKEN_ERRORS.has(message.code)) error = { code: message.code, message: message.message, length };
+  };
+  const scanner = ts.createScanner(ts.ScriptTarget.Latest, false, ts.LanguageVariant.Standard, text, onError);
   const tokens = [];
   const comments = [];
   const locate = lineIndex(text);
@@ -1287,6 +1419,26 @@ function tokenize(text) {
     if ((kind === K.SlashToken || kind === K.SlashEqualsToken) && regexAllowed()) kind = scanner.reScanSlashToken();
     // (TypeScript's scanner gives > alone, for its type arguments: >>, >= and >>> are one token.)
     if (kind === K.GreaterThanToken) kind = scanner.reScanGreaterToken();
+    // Braces inside a template's ${...}: the one that closes it goes on with the template.
+    if (kind === K.OpenBraceToken && braces.length) braces[braces.length - 1] += 1;
+    if (kind === K.CloseBraceToken && braces.length) {
+      if (braces[braces.length - 1] === 0) kind = scanner.reScanTemplateToken(false);
+      else braces[braces.length - 1] -= 1;
+    }
+    if (kind === K.TemplateHead) braces.push(0);
+    if (kind === K.TemplateTail) braces.pop();
+    // As espree: a template that is only its first character at the end (` or the } of a ${}) is no error: the `
+    // is left out, the } is one.
+    if (
+      error?.code === 1160 &&
+      scanner.getTokenEnd() === text.length &&
+      scanner.getTokenEnd() - scanner.getTokenStart() === 1
+    ) {
+      error = null;
+      if (text[scanner.getTokenStart()] === '`') break;
+      kind = K.CloseBraceToken;
+    }
+    if (error) throw new ParseError(error.message, scanner.getTokenStart(), 1, scanner.getTokenStart() + 1);
     const start = scanner.getTokenStart();
     const end = scanner.getTokenEnd();
     const value = text.slice(start, end);
@@ -1303,7 +1455,8 @@ function tokenize(text) {
       comments.push(make('Hashbang', value.slice(2), start, end));
       continue;
     }
-    if (kind === K.Unknown) throw new ParseError(`Unexpected character '${value}'`, start, 1, start + 1);
+    if (kind === K.Unknown || kind === K.AtToken)
+      throw new ParseError(`Unexpected character '${value}'`, start, 1, start + 1);
     let type;
     if (kind === K.Identifier) type = NAME_KEYWORDS.has(value) ? 'Keyword' : 'Identifier';
     else if (kind === K.PrivateIdentifier) type = 'PrivateIdentifier';
@@ -1317,8 +1470,14 @@ function tokenize(text) {
         })
       );
       continue;
-    } else if (kind === K.NoSubstitutionTemplateLiteral || kind === K.TemplateHead) type = 'Template';
-    else if (kind === K.TrueKeyword || kind === K.FalseKeyword) type = 'Boolean';
+    } else if (
+      kind === K.NoSubstitutionTemplateLiteral ||
+      kind === K.TemplateHead ||
+      kind === K.TemplateMiddle ||
+      kind === K.TemplateTail
+    ) {
+      type = 'Template';
+    } else if (kind === K.TrueKeyword || kind === K.FalseKeyword) type = 'Boolean';
     else if (kind === K.NullKeyword) type = 'Null';
     else if (/^[A-Za-z]/.test(value)) type = KEYWORDS.has(value) ? 'Keyword' : 'Identifier';
     else type = 'Punctuator';
@@ -1328,4 +1487,15 @@ function tokenize(text) {
   return tokens;
 }
 
-module.exports = { parse, tokenize, ParseError };
+// The parser of a config's languageOptions, where ESLint has espree: parse(text, parserOptions), the options as espree
+// takes them (sourceType, ecmaFeatures.jsx, and the path of the file).
+const defaultParser = {
+  parse: (text, options = {}) =>
+    parse(text, {
+      sourceType: options.sourceType,
+      jsx: Boolean(options.ecmaFeatures?.jsx),
+      filePath: options.filePath,
+    }),
+};
+
+export { parse, tokenize, ParseError, defaultParser };

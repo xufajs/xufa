@@ -1,8 +1,6 @@
 // node:async_hooks and node:diagnostics_channel in the browser bundle of @xufa/http (docs/xufa-http.js): what the
 // modules use of them, without the tracking of Node. AsyncLocalStorage keeps its store for the code run() calls
 // synchronously, and the channels have no subscribers.
-'use strict';
-
 function AsyncResource() {}
 AsyncResource.prototype.runInAsyncScope = function (fn, thisArg) {
   return fn.apply(thisArg, Array.prototype.slice.call(arguments, 2));

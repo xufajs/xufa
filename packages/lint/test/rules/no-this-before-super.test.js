@@ -3,14 +3,12 @@
  * @author Toru Nagashima
  */
 
-"use strict";
-
 //------------------------------------------------------------------------------
 // Requirements
 //------------------------------------------------------------------------------
 
-const rule = require("../../lib/eslint/lib/rules/no-this-before-super");
-const RuleTester = require("../rule-tester");
+import * as rule from '../../lib/rules/no-this-before-super.js';
+import RuleTester from '../rule-tester.js';
 
 //------------------------------------------------------------------------------
 // Tests

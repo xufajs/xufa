@@ -3,14 +3,12 @@
  * @author Tim van der Lippe
  */
 
-"use strict";
-
 //------------------------------------------------------------------------------
 // Requirements
 //------------------------------------------------------------------------------
 
-const rule = require("../../lib/eslint/lib/rules/no-unused-private-class-members"),
-	RuleTester = require("../rule-tester");
+import * as rule from '../../lib/rules/no-unused-private-class-members.js';
+import RuleTester from '../rule-tester.js';
 
 //------------------------------------------------------------------------------
 // Tests

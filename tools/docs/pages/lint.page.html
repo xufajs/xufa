@@ -2,7 +2,7 @@
   "file": "lint.html",
   "name": "@xufa/lint",
   "title": "@xufa/lint",
-  "description": "@xufa/lint: ESLint's recommended rules (ported, with their tests) and prettier's formatter (ported, the same output) for JavaScript, TypeScript, JSON and markdown, on TypeScript's parser.",
+  "description": "@xufa/lint: ESLint's recommended rules (with their tests) and prettier's formatter (ported, the same output) for JavaScript, TypeScript, JSON and markdown, on TypeScript's parser.",
   "groups": [
     ["Using it", [["start", "Quick start"], ["configs", "Configs"], ["comments", "Comments"], ["cli", "The command"], ["format", "Formatting"]]],
     ["More", [["rules", "The rules"], ["api", "From code"], ["how", "How it works"], ["checks", "How it is checked"], ["speed", "Speed"]]],
@@ -11,9 +11,9 @@
 }-->
         <h1>@xufa/lint</h1>
         <p class="intro">
-          A linter with ESLint's recommended rules and a formatter with prettier's output: ESLint 9.39.5's own code for
-          the rules and prettier 3.9.9's for formatting, ported as they are, run on TypeScript's parser. The rules pass
-          ESLint's tests; the formatter writes what prettier writes. Configs are ESLint's flat configs, in
+          A linter with ESLint's recommended rules and a formatter with prettier's output, on TypeScript's parser: the
+          linter is @xufa/lint's own code, reporting what ESLint 9.39.5 reports, and the formatter is prettier 3.9.9's,
+          ported. The rules pass ESLint's tests; the formatter writes what prettier writes. Configs are ESLint's flat configs, in
           <code>xufa.lint.config.js</code>. xufa lints and formats itself with it.
         </p>
 
@@ -83,6 +83,7 @@ render(app);
               <tr><td><code>--format stylish|json</code></td><td>ESLint's outputs.</td></tr>
               <tr><td><code>--config file</code></td><td>Another config.</td></tr>
               <tr><td><code>--max-warnings n</code></td><td>Fails with more warnings.</td></tr>
+              <tr><td><code>--concurrency n|auto|off</code></td><td>Workers (processes) linting files in parallel: up to 4 with <code>auto</code>, the default (none for few files). <code>xufa-format</code> and <code>xufa-check</code> take it too.</td></tr>
               <tr><td><code>--quiet</code></td><td>Errors only.</td></tr>
             </tbody>
           </table>
@@ -115,6 +116,12 @@ export default [
           1.8 to 2 times as fast as <code>prettier --check</code> (<a href="../benchmarks.html#formatter">benchmarks</a>).
           <code>format(text, { filepath, ...options })</code> formats from code.
         </p>
+        <p>
+          <code>xufa-check</code> is <code>xufa-lint</code> and <code>xufa-format --check</code> in one command: each
+          file is read and parsed once (the formatter takes the linter's TypeScript tree), and the problems are written
+          before the files that are not formatted. <code>--fix</code> writes what rules fix, <code>--write</code> what
+          the formatter writes. It takes what the two commands take: parsing is little of the work.
+        </p>
 
         <h2 id="rules">The rules</h2>
         <p>
@@ -141,17 +148,19 @@ const { output } = linter.verifyAndFix('if (!!a) b();', configs.recommended, 'a.
         <p>
           The formatter (<code>lib/prettier</code>) is prettier's printers of ESTree and markdown, its comments and its
           doc printer, made <code>@xufa/lint</code>'s own code and tuned since. JavaScript and TypeScript are read by
-          its own copy of TypeScript's parser (<code>lib/prettier/parse/typescript.cjs</code>, what the parser needs of
-          TypeScript, loaded only for them) and converted to ESTree as typescript-estree does; JSON by a parser
+          @xufa/lint's copy of TypeScript's parser (<code>lib/typescript/typescript.cjs</code>, what the parser needs of
+          TypeScript, loaded only for them; the linter reads code with it too) and converted to ESTree as typescript-estree does; JSON by a parser
           of its own, into the tree prettier's json parsers make; markdown by micromark. It is loaded as one ES module
           (<code>lib/prettier/dist/format.mjs</code>, built by <code>@xufa/bundle</code>).
         </p>
         <p>
           The parser is <code>@xufa/lint</code>'s: TypeScript's parser, its tree made the ESTree that espree makes for
-          ESLint, with espree's tokens and comments. The rest is ESLint's code for the JavaScript language, ported to
-          <code>lib/eslint</code>: scope analysis (eslint-scope), globals, the traversal with its selectors (esquery) and
-          code path events, the reports of rules, disable directives and fixes. <code>tools/port-lint</code> ports it
-          again from a checkout of ESLint; <code>NOTICE.md</code> has the licenses.
+          ESLint, with espree's tokens and comments. The rest is @xufa/lint's too, written to give what ESLint's code
+          gives: scope analysis (<code>lib/scope</code>), the traversal with its selectors (<code>lib/ast</code>), code
+          path events (<code>lib/code-path</code>), regular expressions (<code>lib/regexp</code>), SourceCode, the
+          reports of rules, disable directives and fixes (<code>lib/report</code>), and the 60 rules
+          (<code>lib/rules</code>). <code>tools/port-lint</code> ports ESLint's tests of the rules from a checkout of
+          ESLint; <code>NOTICE.md</code> has the licenses.
         </p>
 
         <h2 id="checks">How it is checked</h2>
@@ -159,8 +168,11 @@ const { output } = linter.verifyAndFix('if (!!a) b();', configs.recommended, 'a.
           <li>ESLint's tests of the 60 rules: 5,249 pass; 32 need another parser (typescript-eslint's).</li>
           <li>The parser against espree: the same tree, tokens and comments for the 2,405 files of this repository and the
             5,248 pieces of code of those tests.</li>
-          <li>Against ESLint on 2,425 files with problems (the ported tests of this repository): the same 40,779 problems,
-            in about two thirds of the time.</li>
+          <li>Each part against ESLint's (<code>bench/lint-*.js</code>): scopes, selectors, regular expressions, code
+            paths, SourceCode, reports and fixes, on every file of this repository and every case of the rules' tests;
+            each rule against ESLint's with every set of options its tests use (291,713 lints): no difference.</li>
+          <li>Against ESLint on the 2,559 files of this repository with the ported tests: the same 36,571 problems, 1.18
+            times as fast (1.29 times on the code without the tests).</li>
           <li>The formatter against prettier: the same output for the 3,222 files of JavaScript, TypeScript, JSON and
             markdown of this repository, also when they are first printed otherwise (40 columns, other options); and
             for 27 cases of JSON, JSON5 and JSON with comments in five kinds of files with three sets of options.</li>

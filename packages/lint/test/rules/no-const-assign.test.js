@@ -3,14 +3,12 @@
  * @author Toru Nagashima
  */
 
-"use strict";
-
 //------------------------------------------------------------------------------
 // Requirements
 //------------------------------------------------------------------------------
 
-const rule = require("../../lib/eslint/lib/rules/no-const-assign");
-const RuleTester = require("../rule-tester");
+import * as rule from '../../lib/rules/no-const-assign.js';
+import RuleTester from '../rule-tester.js';
 
 //------------------------------------------------------------------------------
 // Tests

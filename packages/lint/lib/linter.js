@@ -1,27 +1,24 @@
-'use strict';
+// The linter: a file's text and a config to the problems of its rules, as ESLint 9's Linter (flat config) makes them:
+// the file parsed (TypeScript's parser into ESTree) into its SourceCode (lib/source-code: scopes, globals, tokens), the
+// rules' listeners run over its traversal (lib/ast/listeners.js, with the events of code paths, lib/code-path), their
+// reports made problems (lib/report), the disable directives applied, the fixes. createDisableDirectives and the
+// order of the steps follow ESLint's lib/linter/linter.js (MIT).
 
-// The linter: a file's text and a config to the problems of its rules, as ESLint 9's Linter (flat config) makes them.
-// Parsing is @xufa/lint's (TypeScript's parser into ESTree); the rest runs ESLint's own modules, ported to
-// lib/eslint: the JavaScript language (scope analysis, globals, SourceCode), the traversal with its selectors and code
-// path events, the reports of rules, disable directives and fixes. createDisableDirectives and the order of the steps
-// follow ESLint's lib/linter/linter.js (MIT).
+import * as jslang from './source-code/language.js';
+import { FileReport } from './report/report.js';
+import { FileContext } from './rule-context.js';
+import { Listeners } from './ast/listeners.js';
+import { applyDisableDirectives } from './report/directives.js';
+import { applyFixes } from './report/apply-fixes.js';
+import { deepMergeArrays } from './util/deep-merge.js';
+import { normalizeSeverityToNumber } from './util/severity.js';
+import { parseList } from './source-code/comments.js';
+import { defaultParser } from './parser.js';
+import { getRule, isKnownRule } from './rules/index.js';
 
-const jslang = require('./eslint/lib/languages/js');
-const { FileReport } = require('./eslint/lib/linter/file-report');
-const { FileContext } = require('./eslint/lib/linter/file-context');
-const { SourceCodeVisitor } = require('./eslint/lib/linter/source-code-visitor');
-const { SourceCodeTraverser } = require('./eslint/lib/linter/source-code-traverser');
-const applyDisableDirectives = require('./eslint/lib/linter/apply-disable-directives');
-const SourceCodeFixer = require('./eslint/lib/linter/source-code-fixer');
-const { deepMergeArrays } = require('./eslint/lib/shared/deep-merge-arrays');
-const { normalizeSeverityToNumber } = require('./eslint/lib/shared/severity');
-const { ConfigCommentParser } = require('./vendor/@eslint/plugin-kit/dist/cjs/index.cjs');
-const espree = require('./stubs/espree');
-const { getRule, isKnownRule } = require('./rules');
-
-const commentParser = new ConfigCommentParser();
 const MAX_FIX_PASSES = 10;
 const BOM = String.fromCharCode(0xfeff);
+const NO_GLOBALS = Object.freeze({});
 
 const severityOf = (setting) => {
   const value = Array.isArray(setting) ? setting[0] : setting;
@@ -39,9 +36,10 @@ function languageOptionsOf(config) {
     ecmaVersion: 'latest',
     sourceType: 'module',
     ...given,
-    parser: espree,
+    parser: defaultParser,
     parserOptions: { ...given.parserOptions },
-    globals: { ...given.globals },
+    // Read only: shared by the files of a config (its globals are merged once, source-code/globals.js).
+    globals: given.globals ?? NO_GLOBALS,
   };
   if (options.sourceType === 'commonjs') {
     options.parserOptions.ecmaFeatures = { ...options.parserOptions.ecmaFeatures, globalReturn: true };
@@ -51,7 +49,7 @@ function languageOptionsOf(config) {
 
 // The disable directives of a comment (createDisableDirectives of ESLint's linter.js).
 function createDisableDirectives({ type, value, justification, node }, report, sourceCode) {
-  const ruleIds = Object.keys(commentParser.parseListConfig(value));
+  const ruleIds = Object.keys(parseList(value));
   const directiveRules = ruleIds.length ? ruleIds : [null];
   const directives = [];
   const parentDirective = { node, value, ruleIds };
@@ -132,7 +130,7 @@ function optionsOf(setting, rule) {
 }
 
 function runRules(sourceCode, rules, languageOptions, settings, filename, physicalFilename, cwd, report) {
-  const visitor = new SourceCodeVisitor();
+  const visitor = new Listeners();
   const fileContext = new FileContext({
     cwd,
     filename,
@@ -172,18 +170,10 @@ function runRules(sourceCode, rules, languageOptions, settings, filename, physic
       error.message = `Error while loading rule '${ruleId}': ${error.message}`;
       throw error;
     }
-    for (const [selector, listener] of Object.entries(listeners)) {
-      visitor.add(selector, (...args) => {
-        try {
-          return listener(...args);
-        } catch (error) {
-          error.ruleId = ruleId;
-          throw error;
-        }
-      });
-    }
+    // Its errors say the rule (the listeners put ruleId on them).
+    for (const [selector, listener] of Object.entries(listeners)) visitor.add(selector, listener, ruleId);
   }
-  SourceCodeTraverser.getInstance(jslang).traverseSync(sourceCode, visitor, { steps });
+  visitor.run(steps);
   return report;
 }
 
@@ -265,7 +255,7 @@ class Linter {
     let messages;
     for (let pass = 0; pass < MAX_FIX_PASSES; pass++) {
       messages = this.verify(output, config, { ...(typeof options === 'object' ? options : {}), filename });
-      const result = SourceCodeFixer.applyFixes(output, messages, options.fix ?? true);
+      const result = applyFixes(output, messages, options.fix ?? true);
       if (!result.fixed) break;
       fixed = true;
       output = result.output;
@@ -279,4 +269,4 @@ class Linter {
   }
 }
 
-module.exports = { Linter, severityOf };
+export { Linter, severityOf };

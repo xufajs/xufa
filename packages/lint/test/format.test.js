@@ -1,14 +1,12 @@
-'use strict';
-
 // The formatter: prettier's output for JavaScript (with Babel's parentheses), TypeScript, JSX, JSON and markdown (its
 // code blocks too), the options of configs, and xufa-format. (Against prettier itself it was checked on every file of
 // this repository: tools/port-format.)
 
-const fs = require('node:fs');
-const os = require('node:os');
-const path = require('node:path');
-const { format, ConfigArray } = require('..');
-const { main } = require('../lib/format/cli');
+import fs from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
+import { format, ConfigArray } from '../index.js';
+import { main } from '../lib/format/cli.js';
 
 const OPTIONS = { singleQuote: true, trailingComma: 'es5', printWidth: 120 };
 
@@ -60,6 +58,18 @@ describe('format()', () => {
     expect(await format('{"name":"x","files":["a"]}', { filepath: 'package.json' })).toBe(
       '{\n  "name": "x",\n  "files": [\n    "a"\n  ]\n}\n'
     );
+  });
+
+  it('JSON with comments in objects (tsconfig.json); package.json keeps numbers, strings and keys as prettier does', async () => {
+    const tsconfig = '{\n  "compilerOptions": {\n    // the target\n    "target": "es2022" /* why */,\n    "strict": true\n  }\n}';
+    expect(await format(tsconfig, { filepath: 'tsconfig.json' })).toBe(`${tsconfig}\n`);
+    expect(await format('{\'a\': \'b\', "c": 15.0, "d": "x\\/", "c": +1}', { filepath: 'package.json' })).toBe(
+      '{\n  "a": "b",\n  "c": 15.0,\n  "d": "x\\/",\n  "c": 1\n}\n'
+    );
+  });
+
+  it('markdown in markdown is formatted', async () => {
+    expect(await format('# A\n\n```md\n* a\n* b\n```\n', { filepath: 'a.md' })).toBe('# A\n\n```md\n- a\n- b\n```\n');
   });
 
   it('markdown: lists, tables, emphasis, and the code blocks it can format', async () => {

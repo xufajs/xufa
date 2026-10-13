@@ -2,14 +2,13 @@
  * @fileoverview The rule should warn against code that tries to compare against -0.
  * @author Aladdin-ADD<hh_2013@foxmail.com>
  */
-"use strict";
 
 //------------------------------------------------------------------------------
 // Requirements
 //------------------------------------------------------------------------------
 
-const rule = require("../../lib/eslint/lib/rules/no-compare-neg-zero");
-const RuleTester = require("../rule-tester");
+import * as rule from '../../lib/rules/no-compare-neg-zero.js';
+import RuleTester from '../rule-tester.js';
 
 //------------------------------------------------------------------------------
 // Tests

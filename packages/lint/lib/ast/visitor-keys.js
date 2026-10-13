@@ -1,0 +1,110 @@
+// The keys of the children of each type of node of ESTree (ECMAScript 2025) and of JSX: the traversal of the linter
+// and scope analysis go through them in this order, the order of the source. Types not here (a parser's own) fall
+// back to getKeys().
+
+const TYPES = {
+  ArrayExpression: ['elements'],
+  ArrayPattern: ['elements'],
+  ArrowFunctionExpression: ['params', 'body'],
+  AssignmentExpression: ['left', 'right'],
+  AssignmentPattern: ['left', 'right'],
+  AwaitExpression: ['argument'],
+  BinaryExpression: ['left', 'right'],
+  BlockStatement: ['body'],
+  BreakStatement: ['label'],
+  CallExpression: ['callee', 'arguments'],
+  CatchClause: ['param', 'body'],
+  ChainExpression: ['expression'],
+  ClassBody: ['body'],
+  ClassDeclaration: ['id', 'superClass', 'body'],
+  ClassExpression: ['id', 'superClass', 'body'],
+  ConditionalExpression: ['test', 'consequent', 'alternate'],
+  ContinueStatement: ['label'],
+  DebuggerStatement: [],
+  DoWhileStatement: ['body', 'test'],
+  EmptyStatement: [],
+  ExperimentalRestProperty: ['argument'],
+  ExperimentalSpreadProperty: ['argument'],
+  ExportAllDeclaration: ['exported', 'source', 'attributes'],
+  ExportDefaultDeclaration: ['declaration'],
+  ExportNamedDeclaration: ['declaration', 'specifiers', 'source', 'attributes'],
+  ExportSpecifier: ['local', 'exported'],
+  ExpressionStatement: ['expression'],
+  ForInStatement: ['left', 'right', 'body'],
+  ForOfStatement: ['left', 'right', 'body'],
+  ForStatement: ['init', 'test', 'update', 'body'],
+  FunctionDeclaration: ['id', 'params', 'body'],
+  FunctionExpression: ['id', 'params', 'body'],
+  Identifier: [],
+  IfStatement: ['test', 'consequent', 'alternate'],
+  ImportAttribute: ['key', 'value'],
+  ImportDeclaration: ['specifiers', 'source', 'attributes'],
+  ImportDefaultSpecifier: ['local'],
+  ImportExpression: ['source', 'options'],
+  ImportNamespaceSpecifier: ['local'],
+  ImportSpecifier: ['imported', 'local'],
+  JSXAttribute: ['name', 'value'],
+  JSXClosingElement: ['name'],
+  JSXClosingFragment: [],
+  JSXElement: ['openingElement', 'children', 'closingElement'],
+  JSXEmptyExpression: [],
+  JSXExpressionContainer: ['expression'],
+  JSXFragment: ['openingFragment', 'children', 'closingFragment'],
+  JSXIdentifier: [],
+  JSXMemberExpression: ['object', 'property'],
+  JSXNamespacedName: ['namespace', 'name'],
+  JSXOpeningElement: ['name', 'attributes'],
+  JSXOpeningFragment: [],
+  JSXSpreadAttribute: ['argument'],
+  JSXSpreadChild: ['expression'],
+  JSXText: [],
+  LabeledStatement: ['label', 'body'],
+  Literal: [],
+  LogicalExpression: ['left', 'right'],
+  MemberExpression: ['object', 'property'],
+  MetaProperty: ['meta', 'property'],
+  MethodDefinition: ['key', 'value'],
+  NewExpression: ['callee', 'arguments'],
+  ObjectExpression: ['properties'],
+  ObjectPattern: ['properties'],
+  PrivateIdentifier: [],
+  Program: ['body'],
+  Property: ['key', 'value'],
+  PropertyDefinition: ['key', 'value'],
+  RestElement: ['argument'],
+  ReturnStatement: ['argument'],
+  SequenceExpression: ['expressions'],
+  SpreadElement: ['argument'],
+  StaticBlock: ['body'],
+  Super: [],
+  SwitchCase: ['test', 'consequent'],
+  SwitchStatement: ['discriminant', 'cases'],
+  TaggedTemplateExpression: ['tag', 'quasi'],
+  TemplateElement: [],
+  TemplateLiteral: ['quasis', 'expressions'],
+  ThisExpression: [],
+  ThrowStatement: ['argument'],
+  TryStatement: ['block', 'handler', 'finalizer'],
+  UnaryExpression: ['argument'],
+  UpdateExpression: ['argument'],
+  VariableDeclaration: ['declarations'],
+  VariableDeclarator: ['id', 'init'],
+  WhileStatement: ['test', 'body'],
+  WithStatement: ['object', 'body'],
+  YieldExpression: ['argument'],
+};
+
+for (const keys of Object.values(TYPES)) Object.freeze(keys);
+const KEYS = Object.freeze(TYPES);
+
+const NOT_CHILDREN = new Set(['parent', 'leadingComments', 'trailingComments']);
+
+/** The keys of a node of a type not in KEYS: its own, but for its parent, its comments and private ones (`_x`). */
+function getKeys(node) {
+  return Object.keys(node).filter((key) => !NOT_CHILDREN.has(key) && key[0] !== '_');
+}
+
+/** Whether a value is a node: an object with a type (a string). */
+const isNode = (value) => typeof value?.type === 'string';
+
+export { KEYS, getKeys, isNode };

@@ -1,5 +1,3 @@
-'use strict';
-
 // The output of the results: 'stylish' (ESLint's default: each file, then its problems in aligned columns, and a
 // summary) and 'json'.
 
@@ -94,4 +92,4 @@ function json(results) {
   );
 }
 
-module.exports = { stylish, json };
+export { stylish, json };

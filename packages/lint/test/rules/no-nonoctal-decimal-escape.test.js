@@ -3,14 +3,12 @@
  * @author Milos Djermanovic
  */
 
-"use strict";
-
 //------------------------------------------------------------------------------
 // Requirements
 //------------------------------------------------------------------------------
 
-const rule = require("../../lib/eslint/lib/rules/no-nonoctal-decimal-escape"),
-	RuleTester = require("../rule-tester");
+import * as rule from '../../lib/rules/no-nonoctal-decimal-escape.js';
+import RuleTester from '../rule-tester.js';
 
 //------------------------------------------------------------------------------
 // Helpers

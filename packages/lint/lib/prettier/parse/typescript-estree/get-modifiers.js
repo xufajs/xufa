@@ -1,5 +1,5 @@
 // From typescript-estree 8.70.0 (src/getModifiers.ts, BSD-2-Clause: see NOTICE.md), as @xufa/lint's code.
-import ts from '../typescript.cjs';
+import ts from '#typescript';
 import { isAtLeast48 } from './version.js';
 export function getModifiers(node, includeIllegalModifiers = false) {
   if (node == null) {

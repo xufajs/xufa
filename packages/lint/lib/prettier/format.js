@@ -133,6 +133,49 @@ function parseWith(text, options) {
   }
 }
 
+// A value of JSON as prettier's json-stringify parser writes it, in JSON.stringify's layout: strings in double quotes
+// and numbers as written, keys and other strings as JSON.stringify writes them, a unary + dropped, every key kept.
+function stringifyJson(node, indent = '') {
+  const inner = `${indent}  `;
+  const list = (open, items, close) =>
+    items.length ? `${open}\n${items.map((item) => inner + item).join(',\n')}\n${indent}${close}` : open + close;
+  switch (node.type) {
+    case 'ObjectExpression':
+      return list(
+        '{',
+        node.properties.map((property) => `${keyOf(property.key)}: ${stringifyJson(property.value, inner)}`),
+        '}'
+      );
+    case 'ArrayExpression':
+      return list(
+        '[',
+        node.elements.map((element) => stringifyJson(element, inner)),
+        ']'
+      );
+    case 'StringLiteral':
+      return node.extra.raw.startsWith('"') ? node.extra.raw : JSON.stringify(node.value);
+    case 'NumericLiteral':
+    case 'BigIntLiteral':
+      return node.extra.raw;
+    case 'UnaryExpression':
+      return (node.operator === '+' ? '' : node.operator) + stringifyJson(node.argument, indent);
+    case 'TemplateLiteral':
+      return JSON.stringify(node.quasis[0].value.cooked);
+    case 'BooleanLiteral':
+      return String(node.value);
+    case 'NullLiteral':
+      return 'null';
+    default:
+      // An identifier (Infinity, NaN, undefined), as written.
+      return node.name;
+  }
+}
+
+const keyOf = (key) =>
+  key.type === 'StringLiteral'
+    ? stringifyJson(key)
+    : JSON.stringify(key.type === 'Identifier' ? key.name : key.extra.raw);
+
 /**
  * `text` formatted: options as prettier's (printWidth, singleQuote, trailingComma...), and filepath (its
  * extension tells the language: JavaScript, TypeScript, JSX, JSON or markdown).
@@ -150,14 +193,14 @@ async function format(originalText, given = {}) {
   if (!text || text.trim().length === 0) return hasBOM ? BOM : '';
   let formatted;
   if (parser === 'json-stringify') {
-    formatted = `${JSON.stringify(JSON.parse(text), null, 2)}\n`;
+    formatted = `${stringifyJson(parseJson(text, { allowComments: false }).node)}\n`;
   } else {
     options.originalText = text;
     const ast = parseWith(text, options);
     const doc = await printAstToDoc(ast, options);
     ({ formatted } = printDocToString(doc, options));
   }
-  // (The doc printer writes the line ends of endOfLine; JSON.stringify writes \n.)
+  // (The doc printer writes the line ends of endOfLine; stringifyJson writes \n.)
   if (parser === 'json-stringify' && options.endOfLine !== 'lf') {
     formatted = formatted.replace(/\n/g, convertEndOfLineOptionToCharacter(options.endOfLine));
   }

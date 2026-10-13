@@ -1,10 +1,10 @@
 // Embedded code (the code blocks of markdown), for prettier's multiparser: the options of its parser, made from those
-// of the text it is in (as prettier's normalizeFormatOptions makes them), and its tree. JavaScript, TypeScript and
-// JSON are formatted; other languages throw, and prettier's multiparser leaves them as they are.
+// of the text it is in (as prettier's normalizeFormatOptions makes them), and its tree. JavaScript, TypeScript, JSON
+// and markdown (in markdown) are formatted; other languages throw, and prettier's multiparser leaves them as they are.
 
 import { optionsFor, parseWith } from './format.js';
 
-const FORMATTED = new Set(['babel', 'typescript', 'json', 'json5', 'jsonc']);
+const FORMATTED = new Set(['babel', 'typescript', 'json', 'json5', 'jsonc', 'markdown']);
 
 function embeddedOptions(raw) {
   const { parser } = raw;

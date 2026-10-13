@@ -3,14 +3,12 @@
  * @author Aladdin-ADD <hh_2013@foxmail.com>
  */
 
-"use strict";
-
 //------------------------------------------------------------------------------
 // Requirements
 //------------------------------------------------------------------------------
 
-const rule = require("../../lib/eslint/lib/rules/for-direction");
-const RuleTester = require("../rule-tester");
+import * as rule from '../../lib/rules/for-direction.js';
+import RuleTester from '../rule-tester.js';
 
 //------------------------------------------------------------------------------
 // Tests

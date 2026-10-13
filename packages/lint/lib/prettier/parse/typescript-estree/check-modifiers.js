@@ -1,5 +1,5 @@
 // From typescript-estree 8.70.0 (src/check-modifiers.ts, BSD-2-Clause: see NOTICE.md), as @xufa/lint's code.
-import ts from '../typescript.cjs';
+import ts from '#typescript';
 import { getDecorators, getModifiers } from './get-modifiers.js';
 import { getDeclarationKind, hasModifier, isThisIdentifier, createError } from './node-utils.js';
 import { SyntaxKind } from './version.js';

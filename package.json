@@ -19,6 +19,7 @@
     "lintfix": "xufa-lint --fix",
     "format": "xufa-format --write",
     "format:check": "xufa-format --check",
+    "check": "xufa-check",
     "build:check": "pnpm --filter @xufa/admin build:check && pnpm --filter @xufa/lint build:format:check && pnpm --filter @xufa/test build-docs:check",
     "bench": "node bench/run.js",
     "bench:quick": "node bench/run.js --duration 3 --warmup 1 --rounds 1",

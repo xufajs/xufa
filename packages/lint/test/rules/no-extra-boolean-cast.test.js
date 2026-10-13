@@ -3,15 +3,13 @@
  * @author Brandon Mills
  */
 
-"use strict";
-
 //------------------------------------------------------------------------------
 // Requirements
 //------------------------------------------------------------------------------
 
-const rule = require("../../lib/eslint/lib/rules/no-extra-boolean-cast"),
-	RuleTester = require("../rule-tester"),
-	parser = () => require.resolve("../unsupported-parser");
+import * as rule from '../../lib/rules/no-extra-boolean-cast.js';
+import RuleTester from '../rule-tester.js';
+import * as unsupportedParser from '../unsupported-parser.js';
 
 //------------------------------------------------------------------------------
 // Tests
@@ -4123,9 +4121,7 @@ ruleTester.run("no-extra-boolean-cast", rule, {
 			code: "if (!Boolean(a as any)) { }",
 			output: "if (!(a as any)) { }",
 			languageOptions: {
-				parser: require(
-					parser("typescript-parsers/boolean-cast-with-assertion"),
-				),
+				parser: unsupportedParser,
 				ecmaVersion: 2020,
 			},
 			errors: [{ messageId: "unexpectedCall" }],

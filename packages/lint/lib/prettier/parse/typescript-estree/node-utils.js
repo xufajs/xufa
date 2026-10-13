@@ -1,5 +1,5 @@
 // From typescript-estree 8.70.0 (src/node-utils.ts, BSD-2-Clause: see NOTICE.md), as @xufa/lint's code.
-import ts from '../typescript.cjs';
+import ts from '#typescript';
 import { getModifiers } from './get-modifiers.js';
 import { xhtmlEntities } from './xhtml-entities.js';
 import { AST_NODE_TYPES, AST_TOKEN_TYPES } from './node-types.js';
