@@ -22,13 +22,11 @@ function hasNakedLeftSide(node) {
     node.type === 'AssignmentExpression' ||
     node.type === 'BinaryExpression' ||
     node.type === 'LogicalExpression' ||
-    node.type === 'NGPipeExpression' ||
     node.type === 'ConditionalExpression' ||
     isCallExpression(node) ||
     isMemberExpression(node) ||
     node.type === 'SequenceExpression' ||
     node.type === 'TaggedTemplateExpression' ||
-    node.type === 'BindExpression' ||
     (node.type === 'UpdateExpression' && !node.prefix) ||
     isBinaryCastExpression(node) ||
     isChainElementWrapper(node)

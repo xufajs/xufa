@@ -8,7 +8,8 @@
 //   book.call('Premium', 'basic', 40);
 //   await book.test(); // [] when every test passes
 export { RuleBook } from './lib/book.js';
-export { readXlsx, writeXlsx } from './lib/xlsx.js';
+export { readXlsx, writeXlsx, patchXlsx } from './lib/xlsx.js';
+export { blocksOf } from './lib/blocks.js';
 export { RulesError, normalize, toValue } from './lib/values.js';
 export { Fun } from './lib/helpers.js';
 export { parseProperties } from './lib/messages.js';

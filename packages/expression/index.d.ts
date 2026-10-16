@@ -17,10 +17,19 @@ export interface EngineOptions {
   builtins?: boolean;
   /** Functions by name: `|` separates them in expressions (`price | round(2)`, the value first). */
   filters?: Record<string, Filter> | null;
-  /** Members of null or undefined, and calls of what is not a function, give undefined (not errors). */
-  lenient?: boolean;
+  /**
+   * Members of null or undefined, and calls of what is not a function, give undefined (not errors); 'members' or
+   * 'calls': only those.
+   */
+  lenient?: boolean | 'members' | 'calls';
   /** Names that are not in the context nor the globals are errors (not undefined). */
   strict?: boolean;
+  /**
+   * Functions by name that values have as methods when they have none of that name: `prices.sum()` is
+   * `methods.sum(prices)` when `prices.sum` is undefined or null. An object or a module (what is not a function is
+   * left out); `x['sum']()`, `x.sum?.()` and null or undefined values are not looked up.
+   */
+  methods?: Record<string, unknown> | null;
   /**
    * Programs: a `let`, `const` or class used before its declaration runs is an error (`XUFA_EXPR_ERR_RUNTIME`), as
    * in JavaScript; by default it is undefined.
@@ -40,6 +49,17 @@ export interface EngineOptions {
    * that of their return, or of the last expression statement run.
    */
   statements?: boolean;
+  /**
+   * Programs: 'program' (the default: the names a program declares or assigns are its own) or 'context' (those of its
+   * top level are the context's properties, as those of the global object of a script; `this` there is
+   * `context.this`). A program that writes the context needs a plain object.
+   */
+  scope?: 'program' | 'context';
+  /**
+   * Programs: an error of a top-level statement is given to it, the statement's value is undefined, and the program
+   * goes on with the next one. Limits (XUFA_EXPR_ERR_LIMIT) still end the run; syntax errors still throw.
+   */
+  onError?: (error: unknown, details: { source: string; statement: number; context: Record<string, unknown> }) => void;
   /** The loop turns and calls of functions of a run of a program (10 million): past them, XUFA_EXPR_ERR_LIMIT. */
   maxSteps?: number;
   /** How deep calls of a program's functions can nest (1000): deeper, XUFA_EXPR_ERR_LIMIT. */
@@ -58,7 +78,7 @@ export declare class Engine {
   constructor(options?: EngineOptions);
   readonly globals: Readonly<Record<string, unknown>>;
   readonly filters: Readonly<Record<string, Filter>> | null;
-  readonly lenient: boolean;
+  readonly lenient: boolean | 'members' | 'calls';
   readonly strict: boolean;
   readonly statements: boolean;
   readonly maxSteps: number;
@@ -85,8 +105,13 @@ export type ExpressionErrorCode =
   | 'XUFA_EXPR_ERR_LIMIT';
 
 export declare class ExpressionError extends Error {
-  constructor(message: string, options?: { code?: ExpressionErrorCode; source?: string; position?: number });
+  constructor(
+    message: string,
+    options?: { code?: ExpressionErrorCode; source?: string; position?: number; reason?: 'notFunction' | 'nullMember' }
+  );
   code: ExpressionErrorCode;
+  /** Of some runtime errors: a call of what is not a function, a member of null or undefined. */
+  reason?: 'notFunction' | 'nullMember';
   /** Where in the source (from 0), and its line and column (from 1). */
   position?: number;
   line?: number;

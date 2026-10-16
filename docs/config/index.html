@@ -62,6 +62,7 @@
         <h4>Packages</h4>
         <ul>
           <li><a href="../websocket/index.html">@xufa/websocket</a></li>
+          <li><a href="../express/index.html">@xufa/express</a></li>
           <li><a href="../admin/index.html">@xufa/admin</a></li>
           <li><a href="../session/index.html">@xufa/session</a></li>
           <li><a href="../forms/index.html">@xufa/forms</a></li>
@@ -160,6 +161,33 @@ The configuration (development) has errors:
           lines; <code>parseDotenv(text)</code> reads one. <code>readConfigFile(file)</code> reads one file of JSON,
           YAML or JS as the layers do (the <code>urls.yaml</code> of a project's apps).
         </p>
+        <h3 id="dotenv-api">dotenv's API</h3>
+        <p>
+          Without <code>loadConfig()</code>, <code>@xufa/config/dotenv</code> (or <code>xufa/dotenv</code>) reads
+          <code>.env</code> files with dotenv's API, where <code>require('dotenv').config()</code> was:
+          <code>config()</code> (<code>path</code>, a list where the first file that sets a variable wins, or a URL;
+          <code>override</code>, <code>processEnv</code>, <code>encoding</code>, <code>quiet</code>, <code>debug</code>),
+          <code>parse()</code>, <code>populate()</code> and the <code>.env.vault</code> of <code>DOTENV_KEY</code>; and
+          <code>node -r @xufa/config/dotenv/config app.js</code> (or <code>xufa/dotenv/config</code>) to read it before the
+          app, with <code>DOTENV_CONFIG_*</code> variables or <code>dotenv_config_*=</code> arguments. Its parsing is
+          dotenv's (the same values for 600,000 random texts) and dotenv 17.2.3's tests pass on it. Like dotenv 17, it
+          logs one line of what it injected unless <code>quiet: true</code>; the line has no tips (dotenv's are ads). A
+          missing file is not an error: it comes back in <code>error</code>.
+        </p>
+<!--run-before: import fs from 'node:fs'; import os from 'node:os'; import path from 'node:path'; -->
+        <pre data-run="dotenv"><code class="language-js">import dotenv from '@xufa/config/dotenv'; // or require('@xufa/config/dotenv')
+
+const file = path.join(fs.mkdtempSync(path.join(os.tmpdir(), 'app-')), '.env');
+fs.writeFileSync(file, 'PORT=8080\nGREETING="hello # not a comment"\nexport KEY=\'a\\nb\'\n');
+process.env.PORT = '3000';
+
+const { parsed } = dotenv.config({ path: file, quiet: true });
+console.log(parsed);
+console.log(process.env.PORT, process.env.GREETING); // PORT was set: kept
+console.log(dotenv.config({ path: 'missing.env', quiet: true }).error.code);</code></pre>
+        <pre data-output><code class="language-plaintext">{ PORT: '8080', GREETING: 'hello # not a comment', KEY: 'a\\nb' }
+3000 hello # not a comment
+ENOENT</code></pre>
 
         <h2 id="templates">Templates</h2>
         <pre><code class="language-yaml">server:

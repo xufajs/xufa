@@ -30,7 +30,8 @@ schema (params, querystring, headers, body, response) and by `tags`, `summary`, 
   `config.swaggerTransform` replaces `transform` for it.
 - `hideUntagged`, `hiddenTag`, `exposeHeadRoutes`, `stripBasePath`, `refResolver`, `decorator`.
 - `mode: 'static'` with `specification: { path, baseDir }` (a JSON or YAML file) or `{ document }` serves a document
-  of yours instead (`postProcessor` changes it).
+  of yours instead (`postProcessor` changes it). `document` may be a function (xufa): called once, when the document
+  is first needed.
 
 ## What xufa adds
 
@@ -107,17 +108,64 @@ await app.register(openapi.operations, {
   document, to serve it as well. Swagger 2.0 documents are read as OpenAPI 3 (`openapi.fromSwagger2(document)`):
   definitions, body and formData parameters, consumes and produces, collectionFormat, securityDefinitions.
 
+## From comments (`@xufa/openapi/jsdoc`)
+
+swagger-jsdoc 6's API and output, without its dependencies: the `@openapi` (or `@swagger`) tags of the `/** */`
+comments of source files hold YAML, merged into a definition.
+
+```js
+const jsdoc = require('@xufa/openapi/jsdoc');
+
+const document = jsdoc({
+  definition: { openapi: '3.0.3', info: { title: 'Books', version: '1.0.0' } },
+  apis: ['./src/**/*.routes.js', './docs/*.yaml'],
+});
+// Built when first read, and served with the explorer:
+await app.register(openapi, { mode: 'static', specification: { document: () => jsdoc(options) } });
+```
+
+```js
+/**
+ * @openapi
+ * /books/{id}:
+ *   get:
+ *     summary: One book
+ *     responses:
+ *       200:
+ *         description: The book
+ */
+```
+
+- Paths at the top level (`/books:`) or under `paths:`, `components`, `tags` (each name once), `definitions`,
+  `parameters`, `responses`, `securityDefinitions`, `x-webhooks`; a path written twice is merged (arrays item by item,
+  `null` keeps what was there). YAML files are taken whole; CoffeeScript's `### ###` comments are read too.
+- An anchor of one comment (`&name`) can be used in another (`*name`).
+- `apis`: files or glob patterns (`*`, `?`, `**`, `[...]`), as glob 7 matches them (hidden names left out, links to
+  folders not crawled by `**`), each pattern's matches sorted.
+- A comment whose YAML is wrong is left out and reported on the console; `failOnErrors: true` throws it (`verbose`:
+  with the comment). `format: '.yaml'` gives the document as YAML.
+- YAML with the core schema of YAML 1.2, as the package yaml reads it: dates stay strings.
+- Checked against swagger-jsdoc 6.2.8: the same document, key for key, on the fixtures of `test/xufa/jsdoc.test.js`
+  (written by swagger-jsdoc) and on an API of 39 files and 191 paths (2.3x faster).
+
 ## The explorer
 
 `@xufa/openapi/ui` serves the document and an explorer, by default at `/documentation`: the page, `/json`, `/yaml`,
-and `/initializer.js` (what starts it: a file, not inline, so strict Content Security Policies allow it). Its routes
-are not in the document.
+and `/initializer.js` (what loads its files and starts it: a file, not inline, so strict Content Security Policies
+allow it). Its routes are not in the document. There is nothing to install: its files come from CDNs.
 
-- `ui`: `'swagger'` (Swagger UI, the default), `'scalar'` or `'redoc'`, loaded from a CDN (`cdn`:
-  `https://cdn.jsdelivr.net/npm`) at pinned versions (`version`, `ui.VERSIONS`).
-- `assets`: a folder of [swagger-ui-dist](https://www.npmjs.com/package/swagger-ui-dist), served at
-  `<routePrefix>/static` instead of the CDN (with OAuth logins from the explorer, whose redirect page must be of the
+- `ui`: `'swagger'` (Swagger UI, the default), `'scalar'` or `'redoc'`, at pinned versions (`version`, `ui.VERSIONS`).
+- `cdn`: where its files come from, one after another in the browser when one fails: names (`'jsdelivr'`, `'unpkg'`,
+  `'npmmirror'`, reachable from China), templates (`'https://cdn.example/{name}@{version}/{file}'`) or base URLs.
+  `['jsdelivr', 'npmmirror']` by default.
+- `integrity`: the browser checks each file by its sha384, the same on every CDN, so a mirror that changes a file is
+  passed over: `true` (the hashes of the pinned versions), `false`, or file to hash for versions of yours.
+- `assets`: a folder whose files are used instead of the CDNs', file by file, served at `<routePrefix>/static`: a copy
+  of [swagger-ui-dist](https://www.npmjs.com/package/swagger-ui-dist) for networks without a CDN, or only a
+  `swagger-ui.css` of yours. With an `oauth2-redirect.html` in it, OAuth logins from the explorer come back to it (the
   same origin).
+- `css` (yours, after the explorer's, at `<routePrefix>/custom.css`), `head` (HTML for the head of the page) and
+  `page(html, request, reply)` (the page as sent) change its look without copying it.
 - `routePrefix`, `title`, `uiConfig` (the configuration of the explorer, as JSON), `initOAuth`.
 - `transformSpecification(document, request, reply)` changes the document of `/json` and `/yaml` for a request (on a
   copy, unless `transformSpecificationClone: false`).

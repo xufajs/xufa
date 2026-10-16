@@ -79,6 +79,7 @@ Where the time goes, and what @xufa/test does instead:
 | Config       | `xufa.test.config.js`, `"xufaTest"` in package.json, the project's Vitest config (`vitest.config.*`, or `vite.config.*` with `test`) or Jest config (`jest.config.*` / `"jest"`)                                                                                                                                                                           |
 | Projects     | `projects` with their own options, `dependsOn`, `--project`, `globalSetup`/`globalTeardown` with `provide`/`inject`, a `server` started for the tests, fixtures shared per file or worker, `use` options                                                                                                                                                   |
 | API tests    | The `api` fixture (JSON, `baseURL`, cookies, recorded exchanges), `toHaveStatus`, `toHaveHeader`, `toMatchSchema` (JSON Schema)                                                                                                                                                                                                                            |
+| supertest    | `@xufa/test/supertest`: supertest 7's API (requests, `.expect`, `.field`/`.attach`, agents) on Express, `node:http`, fastify and @xufa/http; tested against supertest 7.2.2                                                                                                                                                                                |
 | Coverage     | Text table and `lcov.info` like Jest, `collectCoverageFrom`, `coverageThreshold`                                                                                                                                                                                                                                                                           |
 
 Environments: Node.js, and `jsdom` or `happy-dom` (the project's own), for the whole run or per file
@@ -166,4 +167,5 @@ src/modules/         vi.mock: scanner, hoisting, registry, loader hooks
 src/snapshot/        snapshot files and inline snapshots
 src/timers/          fake timers
 src/coverage/        V8 coverage and its reports
+src/supertest/       @xufa/test/supertest
 ```

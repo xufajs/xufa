@@ -1,0 +1,262 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>@xufa/fun · xufa</title>
+    <meta
+      name="description"
+      content="@xufa/fun: curried functions on any value (lists, strings, objects, iterables), placeholders, paths, operators classes take part in, and the methods of expressions. No dependencies."
+    />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%23d9502b'/%3E%3Ctext x='16' y='22.5' font-family='monospace' font-size='18' font-weight='700' fill='white' text-anchor='middle'%3Ex%3C/text%3E%3C/svg%3E"
+    />
+    <link rel="stylesheet" href="../style.css?v=0.1.0" />
+    <script src="../main.js?v=0.1.0"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js" defer></script>
+  </head>
+  <body>
+    <header class="header">
+      <div class="header-inner">
+        <a class="logo" href="../index.html"><span class="logo-mark">x</span>xufa</a>
+        <nav class="nav">
+          <a href="../guide.html">Guide</a>
+          <a href="../playground.html">Playground</a>
+          <a href="../http/index.html">HTTP</a>
+          <a href="../orm/index.html">ORM</a>
+          <a class="hide-small" href="../auth/index.html">Auth</a>
+          <a class="hide-small" href="../sequelize/index.html">Sequelize</a>
+          <a class="hide-small" href="../packages.html" aria-current="page">Packages</a>
+          <a class="hide-small" href="../benchmarks.html">Benchmarks</a>
+          <a href="https://github.com/xufajs/xufa">GitHub</a>
+          <button class="theme-toggle" type="button" aria-label="Switch between light and dark theme">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+              <path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z" />
+            </svg>
+          </button>
+        </nav>
+      </div>
+    </header>
+
+    <div class="docs">
+      <button class="menu-toggle" type="button" aria-expanded="false">☰ Contents</button>
+      <aside class="sidebar">
+        <h4>Using it</h4>
+        <ul>
+          <li><a href="#start">Quick start</a></li>
+          <li><a href="#values">Any value</a></li>
+          <li><a href="#curry">Currying</a></li>
+          <li><a href="#paths">Paths</a></li>
+        </ul>
+        <h4>More</h4>
+        <ul>
+          <li><a href="#operators">Operators</a></li>
+          <li><a href="#expressions">In expressions</a></li>
+          <li><a href="#api">The functions</a></li>
+        </ul>
+        <h4>Packages</h4>
+        <ul>
+          <li><a href="../websocket/index.html">@xufa/websocket</a></li>
+          <li><a href="../express/index.html">@xufa/express</a></li>
+          <li><a href="../admin/index.html">@xufa/admin</a></li>
+          <li><a href="../session/index.html">@xufa/session</a></li>
+          <li><a href="../forms/index.html">@xufa/forms</a></li>
+          <li><a href="../views/index.html">@xufa/views</a></li>
+          <li><a href="../mail/index.html">@xufa/mail</a></li>
+          <li><a href="../i18n/index.html">@xufa/i18n</a></li>
+          <li><a href="../openapi/index.html">@xufa/openapi</a></li>
+          <li><a href="../client/index.html">@xufa/client</a></li>
+          <li><a href="../schema/index.html">@xufa/schema</a></li>
+          <li><a href="../pg/index.html">@xufa/pg</a></li>
+          <li><a href="../mongo/index.html">@xufa/mongo</a></li>
+          <li><a href="../expression/index.html">@xufa/expression</a></li>
+          <li><a href="../template/index.html">@xufa/template</a></li>
+          <li><a href="../cluster/index.html">@xufa/cluster</a></li>
+          <li><a href="../scheduler/index.html">@xufa/scheduler</a></li>
+          <li><a href="../queue/index.html">@xufa/queue</a></li>
+          <li><a href="../config/index.html">@xufa/config</a></li>
+          <li><a href="../discovery/index.html">@xufa/discovery</a></li>
+          <li><a href="../netcache/index.html">@xufa/netcache</a></li>
+          <li><a href="../faults/index.html">@xufa/faults</a></li>
+          <li><a href="../browser/index.html">@xufa/browser</a></li>
+          <li><a href="../bundle/index.html">@xufa/bundle</a></li>
+          <li><a href="../lint/index.html">@xufa/lint</a></li>
+          <li><a href="../marshal/index.html">@xufa/marshal</a></li>
+          <li><a href="../yaml/index.html">@xufa/yaml</a></li>
+          <li><a href="../jwt/index.html">@xufa/jwt</a></li>
+          <li><a href="../logger/index.html">@xufa/logger</a></li>
+          <li><a href="../router/index.html">@xufa/router</a></li>
+          <li><a href="../serializer/index.html">@xufa/serializer</a></li>
+          <li><a href="../inject/index.html">@xufa/inject</a></li>
+          <li><a href="../boot/index.html">@xufa/boot</a></li>
+          <li><a href="../errors/index.html">@xufa/errors</a></li>
+          <li><a href="../packages.html">All the packages</a></li>
+        </ul>
+      </aside>
+
+      <article class="content">
+        <nav class="package-tabs" aria-label="@xufa/fun">
+          <a href="index.html" aria-current="page">Overview</a>
+          <a href="reference.html">Reference</a>
+        </nav>
+        <h1>@xufa/fun</h1>
+        <p class="intro">
+          A functional library of plain functions that work on any value: lists, strings, objects, iterables, or one
+          item. They are curried, <code>_</code> holds an argument's place, paths read and write deep values, and
+          classes can take part in the operators. It has no dependencies, and is made to be the methods of expressions
+          too: <code>prices.sum()</code>.
+        </p>
+
+        <h2 id="start">Quick start</h2>
+        <pre><code class="language-sh">npm install @xufa/fun</code></pre>
+        <pre data-run="fun"><code class="language-js">import { getAtPath, map, sum, subtract, median, _ } from '@xufa/fun';
+
+const order = { lines: [{ price: 4 }, { price: 6 }], customer: { name: 'Ann' } };
+console.log(getAtPath(order, 'customer.name'), getAtPath(order, 'lines[1].price'));
+console.log(sum(map(order.lines, (line) => line.price)));
+console.log(median([7, 1, 3]), subtract(_, 1)(10));</code></pre>
+        <pre data-output><code class="language-plaintext">Ann 6
+10
+3 9</code></pre>
+
+        <h2 id="values">Any value</h2>
+        <p>
+          The functions walk what they are given: arrays and array-likes and strings by index, iterables (Set, Map,
+          generators) in order, objects by key, and anything else as one item; <code>null</code> and
+          <code>undefined</code> have no items. <code>map</code>, <code>filter</code> and <code>reduce</code> give
+          arrays; their <code>*Src</code> forms give what the source is: a string of a string, an object of an object,
+          a typed array of a typed array.
+        </p>
+        <pre data-run="fun-values"><code class="language-js">import { map, mapSrc, filterSrc, len, reduce } from '@xufa/fun';
+
+console.log(map({ a: 1, b: 2 }, (n, key) => `${key}${n}`));
+console.log(mapSrc('abc', (c) => c.toUpperCase()), filterSrc({ a: 1, b: 2 }, (n) => n > 1));
+console.log(len(new Set([1, 2])), len({ x: 1 }), len('four'));
+console.log(reduce(new Map([['a', 1]]), (acc, [key, value]) => `${acc}${key}=${value}`, ''));</code></pre>
+        <pre data-output><code class="language-plaintext">[ 'a1', 'b2' ]
+ABC { b: 2 }
+2 1 4
+a=1</code></pre>
+
+        <h2 id="curry">Currying</h2>
+        <p>
+          Given fewer arguments than they take, the functions give a function of the rest; <code>_</code> holds the
+          place of one given later. <code>curry</code> and <code>curryN</code> make functions of yours so.
+        </p>
+        <pre data-run="fun-curry"><code class="language-js">import { clamp, subtract, curry, _ } from '@xufa/fun';
+
+const percent = clamp(0, 100);
+console.log(percent(140), percent(-3), subtract(_, 5)(12));
+const line = curry((qty, price, tax) => qty * price * (1 + tax));
+console.log(line(2)(10)(0.5), line(2, _, 0.5)(10));</code></pre>
+        <pre data-output><code class="language-plaintext">100 0 7
+30 30</code></pre>
+
+        <h2 id="paths">Paths</h2>
+        <p>
+          <code>getAtPath(value, 'a.b[0].c')</code> reads (undefined when a step has nothing),
+          <code>setAtPath</code> sets on a copy and <code>setAtPathMut</code> on the object itself, making the objects
+          and arrays on the way. <code>getAt</code> and <code>setAt</code> take an index from the end too:
+          <code>getAt(list, -1)</code>.
+        </p>
+        <pre data-run="fun-paths"><code class="language-js">import { getAtPath, setAtPath, setAtPathMut, getAt } from '@xufa/fun';
+
+const doc = { a: { b: [10, 20] } };
+console.log(getAtPath(doc, 'a.b[1]'), getAtPath(doc, 'a.x.y'), getAt(doc.a.b, -1));
+console.log(setAtPath(doc, 'a.b[0]', 1).a.b, doc.a.b);
+console.log(setAtPathMut({}, 'x[0].y', 2));</code></pre>
+        <pre data-output><code class="language-plaintext">20 undefined 20
+[ 1, 20 ] [ 10, 20 ]
+{ x: [ { y: 2 } ] }</code></pre>
+
+        <h2 id="operators">Operators</h2>
+        <p>
+          <code>add</code>, <code>subtract</code>, <code>mult</code>, <code>div</code>, <code>mod</code> and
+          <code>pow</code> take any number of values. <code>add</code> merges objects, adds lists item by item, and
+          adds strings and numbers as JavaScript does; the others take numbers. A class takes part with a static method
+          named by a tag (<code>ADD_TAG</code>, <code>MULT_TAG</code>, <code>NEGATE_TAG</code>...).
+        </p>
+        <pre data-run="fun-operators"><code class="language-js">import { add, mult, ADD_TAG } from '@xufa/fun';
+
+class Money {
+  constructor(cents) {
+    this.cents = cents;
+  }
+  static [ADD_TAG](a, b) {
+    return new Money(a.cents + (b.cents ?? b));
+  }
+}
+console.log(add(1, 2, 3), add([1, 2], [10, 20]), add({ a: 1 }, { b: 2 }), mult('2', 3));
+console.log(add(new Money(250), new Money(100)).cents);</code></pre>
+        <pre data-output><code class="language-plaintext">6 [ 11, 22 ] { a: 1, b: 2 } 6
+350</code></pre>
+
+        <h2 id="expressions">In expressions</h2>
+        <p>
+          Given to an engine of <a href="../expression/index.html">@xufa/expression</a> as its <code>methods</code>, the
+          functions are methods of every value that has none of their name: <code>prices.sum()</code> is
+          <code>sum(prices)</code>. Users write formulas as they think of them, and the values stay plain data.
+        </p>
+        <pre data-run="fun-expressions"><code class="language-js">import { Engine } from '@xufa/expression';
+import * as fun from '@xufa/fun';
+
+const engine = new Engine({ methods: fun });
+const context = { prices: [4, 9, 2], order: { customer: { name: 'Ann' } } };
+console.log(engine.evaluate('prices.sum() / prices.len()', context));
+console.log(engine.evaluate("order.getAtPath('customer.name')", context), engine.evaluate('prices.median()', context));</code></pre>
+        <pre data-output><code class="language-plaintext">5
+Ann 4</code></pre>
+
+        <h2 id="api">The functions</h2>
+        <ul>
+          <li>
+            Walking: <code>forEach</code>, <code>forEachRight</code>, <code>forWhile</code> (until false),
+            <code>map</code>, <code>mapRight</code>, <code>mapSrc</code>, <code>mapRightSrc</code>,
+            <code>filter</code>, <code>filterSrc</code>, <code>reduce</code>, <code>reduceRight</code>,
+            <code>every</code>, <code>some</code>, <code>none</code>.
+          </li>
+          <li>
+            Lists: <code>concat</code>, <code>zip</code>, <code>zipObj</code>, <code>zipWith</code>,
+            <code>fromPairs</code>, <code>allowIndexes</code>, <code>denyIndexes</code> (and their
+            <code>*Src</code>), <code>range</code>, <code>len</code>, <code>asArrayLike</code>,
+            <code>boolDict</code>.
+          </li>
+          <li>
+            Paths: <code>getAt</code>, <code>getAtPath</code>, <code>setAt</code>, <code>setAtPath</code>,
+            <code>setAtPathMut</code>, <code>atPath</code>, <code>atIndex</code>.
+          </li>
+          <li>
+            Numbers: <code>add</code>, <code>subtract</code>, <code>mult</code>, <code>div</code>, <code>mod</code>,
+            <code>pow</code> (and their <code>*Op</code> of two), <code>inc</code>, <code>dec</code>,
+            <code>negate</code>, <code>sum</code>, <code>mean</code>, <code>median</code>, <code>max</code>,
+            <code>min</code>, <code>clamp</code>, <code>gt</code>, <code>gte</code>, <code>lt</code>, <code>lte</code>.
+          </li>
+          <li>
+            Logic: <code>and</code>, <code>or</code>, <code>not</code>, <code>andOp</code>, <code>orOp</code>,
+            <code>andFn</code>, <code>orFn</code> (of functions, for the same arguments).
+          </li>
+          <li>
+            Functions and values: <code>curry</code>, <code>curryN</code>, <code>curry2</code>, <code>curry3</code>,
+            <code>_</code>, <code>isPlaceholder</code>, <code>pipe</code>, <code>always</code>, <code>identity</code>,
+            <code>merge</code> (deep, on a copy), <code>approve</code>, and the tests <code>isArray</code>,
+            <code>isArrayLike</code>, <code>isObject</code>, <code>isString</code>, <code>isFunction</code>,
+            <code>isIterable</code>, <code>isInteger</code>, <code>isNull</code>, <code>isPromise</code>,
+            <code>has</code>.
+          </li>
+        </ul>
+      </article>
+    </div>
+
+    <footer class="footer">
+      <div class="container">
+        <span>xufa is MIT licensed. &copy; Jes&uacute;s Seijas</span>
+        <span>
+          <a href="../guide.html">Guide</a> &middot; <a href="../playground.html">Playground</a> &middot; <a href="../http/index.html">HTTP</a> &middot; <a href="../orm/index.html">ORM</a> &middot; <a href="../auth/index.html">Auth</a> &middot;
+          <a href="../sequelize/index.html">Sequelize</a> &middot; <a href="../packages.html">Packages</a> &middot;
+          <a href="../benchmarks.html">Benchmarks</a> &middot; <a href="https://github.com/xufajs/xufa">GitHub</a>
+        </span>
+      </div>
+    </footer>
+  </body>
+</html>

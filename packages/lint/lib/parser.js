@@ -138,7 +138,7 @@ function prepare(source) {
  * 'commonjs'), jsx (true for .jsx), filePath.
  */
 function parse(text, options = {}) {
-  const { sourceType = 'module', jsx = false, filePath = jsx ? 'file.jsx' : 'file.js' } = options;
+  const { sourceType = 'module', jsx = false, filePath = jsx ? 'file.jsx' : 'file.js', ecmaVersion } = options;
   const source = ts.createSourceFile(
     filePath,
     text,
@@ -187,6 +187,8 @@ function parse(text, options = {}) {
     }
   }
   const converter = new Converter(source, text, locate, hints);
+  // ECMAScript 3 has no directives: espree marks none then.
+  converter.directives = ecmaVersion !== 3;
   const program = converter.program(sourceType);
   return program;
 }
@@ -197,6 +199,7 @@ class Converter {
     this.text = text;
     this.locate = locate;
     this.hints = hints;
+    this.directives = true;
   }
 
   // A node of ESTree over [start, end).
@@ -237,7 +240,7 @@ class Converter {
 
   statements(list, prologue) {
     const out = [];
-    let directives = prologue;
+    let directives = prologue && this.directives;
     for (const statement of list) {
       const node = this.statement(statement);
       if (directives && t_isDirective(statement)) {
@@ -1495,6 +1498,7 @@ const defaultParser = {
       sourceType: options.sourceType,
       jsx: Boolean(options.ecmaFeatures?.jsx),
       filePath: options.filePath,
+      ecmaVersion: options.ecmaVersion,
     }),
 };
 

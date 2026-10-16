@@ -20,17 +20,6 @@ const isPrintingImportAttributes = createTypeCheckFunction([
   'ExportDefaultDeclaration',
   'ExportNamedDeclaration',
   'ExportAllDeclaration',
-  'DeclareExportDeclaration',
-  'DeclareExportAllDeclaration',
-]);
-
-const isPrintingFlowEnumBody = createTypeCheckFunction([
-  'EnumBody',
-  'EnumBooleanBody',
-  'EnumNumberBody',
-  'EnumBigIntBody',
-  'EnumStringBody',
-  'EnumSymbolBody',
 ]);
 
 /*
@@ -53,7 +42,7 @@ const isPrintingFlowEnumBody = createTypeCheckFunction([
 function printObject(path, options, print) {
   const { node, parent } = path;
 
-  const isFlowEnumBody = isPrintingFlowEnumBody(node);
+  const isFlowEnumBody = false;
   const isEnumBody = node.type === 'TSEnumBody' || isFlowEnumBody;
   const isImportAttributes = isPrintingImportAttributes(node);
   const hasUnknownMembers = isFlowEnumBody && node.hasUnknownMembers;
@@ -67,9 +56,6 @@ function printObject(path, options, print) {
       parent.type !== 'FunctionDeclaration' &&
       parent.type !== 'FunctionExpression' &&
       parent.type !== 'ArrowFunctionExpression' &&
-      parent.type !== 'ObjectMethod' &&
-      parent.type !== 'ClassMethod' &&
-      parent.type !== 'ClassPrivateMethod' &&
       parent.type !== 'AssignmentPattern' &&
       parent.type !== 'CatchClause' &&
       node.properties.some(
@@ -141,17 +127,12 @@ function printObject(path, options, print) {
       shouldHugTheOnlyParameter
     ) ||
     (isObjectType(node) &&
-      (path.match(
+      path.match(
         undefined,
         (node, name) => name === 'typeAnnotation',
         (node, name) => name === 'typeAnnotation',
         shouldHugTheOnlyParameter
-      ) ||
-        path.match(
-          undefined,
-          (node, name) => node.type === 'FunctionTypeParam' && name === 'typeAnnotation',
-          shouldHugTheOnlyParameter
-        ))) ||
+      )) ||
     // Assignment printing logic (printAssignment) is responsible
     // for adding a group if needed
     (!shouldBreak &&

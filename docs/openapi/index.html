@@ -60,6 +60,7 @@
         <h4>Packages</h4>
         <ul>
           <li><a href="../websocket/index.html">@xufa/websocket</a></li>
+          <li><a href="../express/index.html">@xufa/express</a></li>
           <li><a href="../admin/index.html">@xufa/admin</a></li>
           <li><a href="../session/index.html">@xufa/session</a></li>
           <li><a href="../forms/index.html">@xufa/forms</a></li>
@@ -193,12 +194,16 @@ await app.register(openapi.operations, {
         <h2 id="explorer">The explorer</h2>
         <p>
           <code>@xufa/openapi/ui</code> serves the document and an explorer, by default at <code>/documentation</code>: the
-          page, <code>/json</code>, <code>/yaml</code>, and <code>/initializer.js</code> (what starts it: a file, not inline,
-          so strict Content Security Policies allow it). Its routes are not in the document.
+          page, <code>/json</code>, <code>/yaml</code>, and <code>/initializer.js</code> (what loads its files and starts it:
+          a file, not inline, so strict Content Security Policies allow it). Its routes are not in the document. There is
+          nothing to install: its files come from CDNs, one after another when one fails, each checked by its integrity.
         </p>
         <ul>
-          <li><code>ui</code>: <code>'swagger'</code> (Swagger UI, the default), <code>'scalar'</code> or <code>'redoc'</code>, from a CDN (<code>cdn</code>) at pinned versions.</li>
-          <li><code>assets</code>: a folder of swagger-ui-dist served at <code>&lt;routePrefix&gt;/static</code> instead of the CDN (needed for OAuth logins from the explorer: its redirect page must be of the same origin).</li>
+          <li><code>ui</code>: <code>'swagger'</code> (Swagger UI, the default), <code>'scalar'</code> or <code>'redoc'</code>, at pinned versions.</li>
+          <li><code>cdn</code>: names (<code>'jsdelivr'</code>, <code>'unpkg'</code>, <code>'npmmirror'</code>, reachable from China), templates (<code>'https://cdn.example/{name}@{version}/{file}'</code>) or base URLs, tried in order by the browser; <code>['jsdelivr', 'npmmirror']</code> by default.</li>
+          <li><code>integrity</code>: the sha384 of each file, the same on every CDN, so a mirror that changes one is passed over (<code>true</code> for the pinned versions, <code>false</code>, or file to hash).</li>
+          <li><code>assets</code>: a folder whose files replace the CDNs', file by file, at <code>&lt;routePrefix&gt;/static</code>: a copy of swagger-ui-dist for networks without a CDN, or a <code>swagger-ui.css</code> of yours; its <code>oauth2-redirect.html</code> brings OAuth logins back to the same origin.</li>
+          <li><code>css</code> (yours, after the explorer's), <code>head</code> (HTML for the head) and <code>page(html, request, reply)</code> change its look without copying it.</li>
           <li><code>uiConfig</code> (the configuration of the explorer, as JSON), <code>initOAuth</code>, <code>title</code>, <code>routePrefix</code>.</li>
           <li><code>transformSpecification(document, request, reply)</code>: the document of a request (on a copy).</li>
           <li><code>uiHooks: { onRequest, preHandler }</code>, to protect its routes; <code>csp: true</code> (or a policy) for a Content-Security-Policy.</li>

@@ -18,14 +18,16 @@
 // transactions are not: db.transaction() runs its function, its writes made at once (as MongoDB without a replica set).
 //
 // A backend of a store gives (all async, `table` the name of the container):
-//   storePut(table, key, body, { contentType, metadata, create })   body a Buffer or a readable stream; gives the
-//                                                            info. create: refused (an error of code EXISTS) when
-//                                                            the object is there
+//   storePut(table, key, body, { contentType, metadata, create, info })   body a Buffer or a readable stream; gives
+//                                                            the info. create: refused (an error of code EXISTS) when
+//                                                            the object is there. info: false, null may be given (for
+//                                                            what does not need it: a disk skips a stat)
 //   storeRead(table, key)                                    a Buffer or a readable stream of the body, or null
 //   storeHead(table, key)                                    { info, contentType, metadata } or null
 //   storeList(table, prefix)                                 an async iterable of { key, info } (info without metadata)
 //   storeSetMeta(table, key, { contentType, metadata })      the metadata of an object, its body kept
 //   storeDelete(table, key)                                  whether there was one
+//   storeExists(table, key)                                  whether it is there (optional: its head by default)
 //   storeCreate(table), storeDrop(table), storeUrl(table, key, options) (optional: a URL to read it)
 // info: { size, etag, updatedAt }.
 import { Backend } from '../base.js';
@@ -339,6 +341,11 @@ class BlobBackend extends Backend {
   // No transactions: the function runs, its writes made at once.
   async transaction(fn) {
     return fn();
+  }
+
+  // Whether an object is there (backends with a cheaper way than its head give their own).
+  async storeExists(table, key) {
+    return (await this.storeHead(table, key)) !== null;
   }
 }
 

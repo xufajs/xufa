@@ -78,6 +78,7 @@
         <h4>Packages</h4>
         <ul>
           <li><a href="../websocket/index.html">@xufa/websocket</a></li>
+          <li><a href="../express/index.html">@xufa/express</a></li>
           <li><a href="../admin/index.html">@xufa/admin</a></li>
           <li><a href="../session/index.html">@xufa/session</a></li>
           <li><a href="../forms/index.html">@xufa/forms</a></li>
@@ -299,7 +300,9 @@ pool.close();</code></pre>
   byNode: [
     { id: 'a', slots: 1, running: 0, failures: 0 },
     { id: 'b', slots: 1, running: 0, failures: 0 }
-  ]
+  ],
+  waitingByKind: {},
+  runningByKind: {}
 }</code></pre>
         <p>In a cluster, the primary makes the pool and the workers use it by its name:</p>
         <pre><code class="language-js">import { start, createPool, usePool } from '@xufa/cluster';
@@ -370,6 +373,13 @@ start({
     scale: (count) =&gt; kubernetes.scaleDeployment('converters', count), // yours
   },
 });</code></pre>
+        <p>
+          Its settings can change while it runs: <code>pool.autoscaler.min</code>, <code>max</code>,
+          <code>perNode</code>... (by a schedule), then <code>pool.autoscaler.evaluate(pool.stats())</code> to apply them
+          now; <code>pool.autoscaler.active = false</code> stops it until it is <code>true</code> again. Works given a
+          <code>kind</code> (<code>use(fn, { kind: 'convert' })</code>) are counted by it in <code>stats()</code>
+          (<code>waitingByKind</code>, <code>runningByKind</code>), and <code>grant</code> tells each node given.
+        </p>
 
         <h2 id="pool-machines">Across machines</h2>
         <p>
@@ -434,7 +444,7 @@ app.post('/infer', async (request, reply) =&gt; {
               <tr><td><code>leaseTimeout</code></td><td>none</td><td>A lease longer is taken back (<code>'5m'</code>).</td></tr>
               <tr><td><code>waitTimeout</code></td><td>none</td><td>A ticket that waits longer is rejected.</td></tr>
               <tr><td><code>maxWaiting</code></td><td>none</td><td>Tickets waiting at most; more are rejected at once.</td></tr>
-              <tr><td><code>autoscale</code></td><td></td><td><code>{ scale, perNode, min, max, upEvery, downAfter, initial }</code>.</td></tr>
+              <tr><td><code>autoscale</code></td><td></td><td><code>{ scale, perNode, min, max, upEvery, downAfter, initial, active }</code>.</td></tr>
               <tr><td><code>shared</code></td><td></td><td>A store of slots shared by the machines: <code>ormSlots(db, { ttl })</code>.</td></tr>
               <tr><td><code>notify</code></td><td></td><td>Tells the other machines when a slot comes back: a NetCache, a Discovery, or <code>{ publish, subscribe }</code>.</td></tr>
               <tr><td><code>pollEvery</code></td><td><code>'500ms'</code></td><td>How often to look again when other machines hold every free slot.</td></tr>

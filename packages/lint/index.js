@@ -8,7 +8,7 @@
 
 import { createRequire } from 'node:module';
 import { ConfigArray, loadConfig, findConfigFile } from './lib/config.js';
-import { RULES } from './lib/rules/index.js';
+import { RECOMMENDED } from './lib/rules/index.js';
 import * as formatters from './lib/formatters.js';
 import globals from './lib/globals.js';
 
@@ -21,9 +21,16 @@ const formatter = () => require('./lib/format/index.js');
 // ESLint's recommended rules (no-unexpected-multiline aside: what it checks is the formatter's).
 const recommended = {
   name: '@xufa/lint/recommended',
-  rules: Object.fromEntries([...RULES].map((id) => [id, 'error'])),
+  rules: Object.fromEntries([...RECOMMENDED].map((id) => [id, 'error'])),
 };
 const configs = { recommended };
+
+// Plugins of rules ported (lib/plugins): eslint-plugin-jest's, as `plugins: { jest: plugins.jest }` in a config.
+const plugins = {
+  get jest() {
+    return require('./lib/plugins/jest/index.js');
+  },
+};
 
 const lintFiles = (...args) => engine().lintFiles(...args);
 const lintText = (...args) => engine().lintText(...args);
@@ -48,6 +55,7 @@ export {
   formatters,
   globals,
   configs,
+  plugins,
   Linter,
   lintFiles,
   lintText,

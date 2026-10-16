@@ -1,6 +1,10 @@
 node_modules
 coverage
+# The coverage of @xufa/test is its code (its reports are what the line above leaves out).
+!packages/test/src/coverage/
 bench/results/*.json
+# Results the docs are built from.
+!bench/results/inproc-linux-2.json
 .xufa-test
 # The node_modules of the fixtures of @xufa/test are part of them.
 !packages/test*/test/fixtures/**/node_modules/

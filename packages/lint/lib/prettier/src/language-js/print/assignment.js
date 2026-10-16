@@ -179,11 +179,9 @@ function shouldBreakAfterOperator(path, options, print, hasShortKey) {
   }
 
   switch (rightNode.type) {
-    case 'StringLiteralTypeAnnotation':
     case 'SequenceExpression':
       return true;
     case 'TSConditionalType':
-    case 'ConditionalTypeAnnotation':
       if (!options.experimentalTernaries && !shouldBreakBeforeConditionalType(rightNode)) {
         break;
       }
@@ -298,9 +296,6 @@ function isArrowFunctionVariableDeclarator(node) {
 function getTypeParametersFromTypeReference(node) {
   let typeArguments;
   switch (node.type) {
-    case 'GenericTypeAnnotation':
-      typeArguments = node.typeParameters;
-      break;
     case 'TSTypeReference':
       typeArguments = node.typeArguments;
       break;
@@ -373,12 +368,7 @@ function isCallExpressionWithComplexTypeArguments(node, print) {
     }
     if (typeArgs.length === 1) {
       const firstArg = typeArgs[0];
-      if (
-        isUnionType(firstArg) ||
-        isIntersectionType(firstArg) ||
-        firstArg.type === 'TSTypeLiteral' ||
-        firstArg.type === 'ObjectTypeAnnotation'
-      ) {
+      if (isUnionType(firstArg) || isIntersectionType(firstArg) || firstArg.type === 'TSTypeLiteral') {
         return true;
       }
     }
@@ -391,8 +381,6 @@ function isCallExpressionWithComplexTypeArguments(node, print) {
 
 function isGeneric(node) {
   switch (node.type) {
-    case 'FunctionTypeAnnotation':
-    case 'GenericTypeAnnotation':
     case 'TSFunctionType':
       return Boolean(node.typeParameters);
     case 'TSTypeReference':

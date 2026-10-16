@@ -188,6 +188,16 @@ function implicitNames(program) {
   return implicit;
 }
 
+// The frame of a program's top level: with the context as its scope (scope: 'context'), only its hidden names (#...:
+// of the compiler's own lowering), the names of the program being the context's properties.
+function contextFrame(frame, contextScope) {
+  if (!contextScope) return frame;
+  const hidden = frame.filter((name) => name.startsWith('#'));
+  hidden.consts = new Set([...frame.consts].filter((name) => name.startsWith('#')));
+  hidden.lexical = new Set();
+  return hidden;
+}
+
 // The objects and functions the globals reach (to some depth): what a program can never change.
 function guardedOf(globals) {
   const guarded = new WeakSet();
@@ -247,13 +257,22 @@ const statements = {
     this.inProgram = true;
     // (The scan first: declaredNames reads the var it found.)
     const scanned = implicitNames(node);
-    const frame = declaredNames(node.body, true);
-    const implicit = scanned.filter((name) => !frame.includes(name));
+    const { contextScope } = this;
+    if (contextScope && node.async) {
+      throw this.error("A program whose scope is the context (scope: 'context') cannot await at its top", node);
+    }
+    // (With the context as its scope, the program's own names are the context's: its frame keeps the hidden ones.)
+    const frame = contextFrame(declaredNames(node.body, true), contextScope);
+    const implicit = contextScope ? [] : scanned.filter((name) => !frame.includes(name));
     for (const name of implicit) this.checkKey(name, node);
     const firstImplicit = frame.length;
     frame.push(...implicit);
     // (await at its top: an async program, run by the driver of async bodies; a promise of its value.)
-    const body = node.async ? this.aList(node.body, [frame]) : this.list(node.body, [frame]);
+    const body = node.async
+      ? this.aList(node.body, [frame])
+      : this.onError || contextScope
+        ? this.topList(node.body, [frame])
+        : this.list(node.body, [frame]);
     const size = frame.length;
     const { globals } = this;
     const { hasOwnProperty } = Object.prototype;
@@ -333,7 +352,65 @@ const statements = {
         scope.frame[index] = value;
       };
     }
+    // (With the context as the program's scope: a name of the program is the context's property.)
+    if (this.contextScope && !name.startsWith('#')) {
+      this.checkKey(name, node);
+      const compiler = this;
+      return (s, value) => {
+        compiler.contextWritable(s.ctx, node)[name] = value;
+      };
+    }
     throw this.error(`${name} is not declared here`, node);
+  },
+
+  // The context, when a program writes a name of it: a plain object (not a value of the engine, as Math).
+  contextWritable(ctx, node) {
+    const proto = Object.getPrototypeOf(ctx);
+    if (this.guarded.has(ctx) || this.guardedToo?.has(ctx) || !(proto === Object.prototype || proto === null)) {
+      throw this.error('The context cannot be changed: only a plain object can', node, 'XUFA_EXPR_ERR_FORBIDDEN');
+    }
+    return ctx;
+  },
+
+  // The statements of a program's top level, with onError (an error of one is given to it, its value is undefined,
+  // and the next one runs; limits still end the run) and, with the context as its scope, a declaration's value
+  // undefined (the value of the program is that of its last statement).
+  topList(nodes, env) {
+    const hoisted = nodes
+      .filter((node) => node.type === 'FunctionDeclaration')
+      .map((node) => ({ set: this.setter(node.id, node, env, true), make: this.functionOf(node, env) }));
+    const top = [];
+    nodes.forEach((node, index) => {
+      if (node.type !== 'FunctionDeclaration') {
+        top.push({ step: this.statement(node, env), index, declares: node.type === 'VariableDeclaration', node });
+      }
+    });
+    const { onError, contextScope } = this;
+    const compiler = this;
+    const { length } = top;
+    return (s) => {
+      for (let i = 0; i < hoisted.length; i += 1) hoisted[i].set(s, hoisted[i].make(s));
+      for (let i = 0; i < length; i += 1) {
+        const { step, index, declares, node } = top[i];
+        let completion;
+        if (onError) {
+          try {
+            completion = step(s);
+          } catch (error) {
+            if (isLimit(error)) throw error;
+            s.run.last = undefined;
+            // (The source of the statement: of an expression statement, its expression.)
+            onError(error, { source: compiler.text(node.expression ?? node), statement: index, context: s.ctx });
+            continue;
+          }
+        } else {
+          completion = step(s);
+        }
+        if (contextScope && declares) s.run.last = undefined;
+        if (completion !== undefined) return completion;
+      }
+      return undefined;
+    };
   },
 
   // A function (of a declaration, a function expression or an arrow function with a body of statements).
@@ -867,6 +944,7 @@ const statements = {
 
 export {
   statements,
+  contextFrame,
   guardedOf,
   isExpressionOnly,
   isLimit,

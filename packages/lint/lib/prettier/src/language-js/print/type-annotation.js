@@ -36,7 +36,7 @@ function printTypeAnnotationProperty(path, print, propertyName = 'typeAnnotation
 
   let shouldPrintLeadingSpace = false;
 
-  if (typeAnnotation.type === 'TSTypeAnnotation' || typeAnnotation.type === 'TypeAnnotation') {
+  if (typeAnnotation.type === 'TSTypeAnnotation') {
     const firstToken = path.call(getTypeAnnotationFirstToken, propertyName);
 
     if (firstToken === '=>' || (firstToken === ':' && hasComment(typeAnnotation, CommentCheckFlags.Leading))) {
@@ -66,48 +66,7 @@ const getTypeAnnotationFirstToken = (path) => {
     // TypeScript
     path.match(
       (node) => node.type === 'TSTypeAnnotation',
-      (node, key) =>
-        key === 'typeAnnotation' &&
-        (node.type === 'TSJSDocNullableType' ||
-          node.type === 'TSJSDocNonNullableType' ||
-          node.type === 'TSTypePredicate')
-    ) ||
-    /*
-    Flow
-
-    ```js
-    declare function foo(): void;
-                        ^^^^^^^^ `TypeAnnotation`
-    ```
-    */
-    path.match(
-      (node) => node.type === 'TypeAnnotation',
-      (node, key) => key === 'typeAnnotation' && node.type === 'Identifier',
-      (node, key) => key === 'id' && node.type === 'DeclareFunction'
-    ) ||
-    /*
-    Flow
-    ```js
-    declare hook foo(): void;
-                    ^^^^^^^^ `TypeAnnotation`
-    ```
-    */
-    path.match(
-      (node) => node.type === 'TypeAnnotation',
-      (node, key) => key === 'typeAnnotation' && node.type === 'Identifier',
-      (node, key) => key === 'id' && node.type === 'DeclareHook'
-    ) ||
-    /*
-    Flow
-
-    ```js
-    type A = () => infer R extends string;
-                                   ^^^^^^ `TypeAnnotation`
-    ```
-    */
-    path.match(
-      (node) => node.type === 'TypeAnnotation',
-      (node, key) => key === 'bound' && node.type === 'TypeParameter' && node.usesExtendsBound
+      (node, key) => key === 'typeAnnotation' && node.type === 'TSTypePredicate'
     )
   ) {
     return '';

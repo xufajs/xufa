@@ -61,6 +61,8 @@
   "format defaults validator@13.15.35/node_modules/validator/README.md": "differs",
   "format repository yargs-parser@22.0.0/node_modules/yargs-parser/README.md": "differs",
   "format defaults yargs-parser@22.0.0/node_modules/yargs-parser/README.md": "differs",
+  "format repository yargs-parser@20.2.9/node_modules/yargs-parser/README.md": "differs",
+  "format defaults yargs-parser@20.2.9/node_modules/yargs-parser/README.md": "differs",
   "format repository yup@1.7.1/node_modules/yup/README.md": "differs",
   "format defaults yup@1.7.1/node_modules/yup/README.md": "differs",
   "format defaults z-schema@12.4.6/node_modules/z-schema/README.md": "differs",

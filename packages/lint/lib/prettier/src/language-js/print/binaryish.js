@@ -1,5 +1,4 @@
 import {
-  align,
   cleanDoc,
   DOC_TYPE_ARRAY,
   DOC_TYPE_FILL,
@@ -9,7 +8,6 @@ import {
   group,
   indent,
   indentIfBreak,
-  join,
   line,
   softline,
 } from '../../document/index.js';
@@ -90,12 +88,6 @@ function printBinaryishExpression(path, options, print) {
   const shouldNotIndent =
     isReturnOrThrowStatement(parent) ||
     (parent.type === 'JSXExpressionContainer' && grandparent.type === 'JSXAttribute') ||
-    (node.operator !== '|' && parent.type === 'JsExpressionRoot') ||
-    (node.type !== 'NGPipeExpression' &&
-      ((parent.type === 'NGRoot' && options.parser === '__ng_binding') ||
-        (parent.type === 'NGMicrosyntaxExpression' &&
-          grandparent.type === 'NGMicrosyntax' &&
-          grandparent.body.length === 1))) ||
     (node === parent.body && parent.type === 'ArrowFunctionExpression') ||
     (node !== parent.body && parent.type === 'ForStatement') ||
     (parent.type === 'ConditionalExpression' &&
@@ -108,10 +100,8 @@ function printBinaryishExpression(path, options, print) {
   const shouldIndentIfInlining =
     parent.type === 'AssignmentExpression' ||
     parent.type === 'VariableDeclarator' ||
-    parent.type === 'ClassProperty' ||
     parent.type === 'PropertyDefinition' ||
     parent.type === 'TSAbstractPropertyDefinition' ||
-    parent.type === 'ClassPrivateProperty' ||
     isObjectProperty(parent);
 
   const samePrecedenceSubExpression = isBinaryish(node.left) && shouldFlatten(node.operator, node.left.operator);
@@ -213,26 +203,13 @@ function printBinaryishExpressions(path, options, print, isNested, isInsideParen
   const shouldInline = shouldInlineLogicalExpression(node);
   const rightNodeToCheckComments = node.right.type === 'ChainExpression' ? node.right.expression : node.right;
   const lineBeforeOperator =
-    (node.type === 'NGPipeExpression' || node.operator === '|>' || isVueFilterSequenceExpression(path, options)) &&
-    !hasLeadingOwnLineComment(options.originalText, rightNodeToCheckComments);
+    node.operator === '|>' && !hasLeadingOwnLineComment(options.originalText, rightNodeToCheckComments);
   const hasTypeCastComment = hasComment(rightNodeToCheckComments, CommentCheckFlags.Leading, isTypeCastComment);
   const commentBeforeOperator =
     !hasTypeCastComment && hasLeadingOwnLineComment(options.originalText, rightNodeToCheckComments);
 
-  const operator = node.type === 'NGPipeExpression' ? '|' : node.operator;
-  const rightSuffix =
-    node.type === 'NGPipeExpression' && node.arguments.length > 0
-      ? group(
-          indent([
-            softline,
-            ': ',
-            join(
-              [line, ': '],
-              path.map(() => align(2, group(print())), 'arguments')
-            ),
-          ])
-        )
-      : '';
+  const operator = node.operator;
+  const rightSuffix = '';
 
   /** @type {Doc} */
   let right;
@@ -325,16 +302,6 @@ function shouldInlineLogicalExpression(node) {
   }
 
   return false;
-}
-
-const isBitwiseOrExpression = (node) => node.type === 'BinaryExpression' && node.operator === '|';
-
-function isVueFilterSequenceExpression(path, options) {
-  return (
-    (options.parser === '__vue_expression' || options.parser === '__vue_ts_expression') &&
-    isBitwiseOrExpression(path.node) &&
-    !path.hasAncestor((node) => !isBitwiseOrExpression(node) && node.type !== 'JsExpressionRoot')
-  );
 }
 
 export { printBinaryishExpression, shouldInlineLogicalExpression };

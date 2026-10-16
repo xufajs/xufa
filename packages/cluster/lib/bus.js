@@ -94,6 +94,15 @@ function busFaults(bus) {
       return request(event, data, options);
     })();
   };
+  // (Requests with a callback go through the faults too, when there are.)
+  const requestThen = bus.requestThen.bind(bus);
+  bus.requestThen = (event, data, options = {}, done) => {
+    if (faults.rules.length === 0) {
+      requestThen(event, data, options, done);
+      return;
+    }
+    bus.request(event, data, options).then((reply) => done(null, reply), done);
+  };
   return faults;
 }
 
@@ -113,12 +122,14 @@ class Bus {
     this.marshaller = null;
   }
 
-  // Sends data written by @xufa/marshal, with `registry` (its default one when not given). The processes that
-  // receive must know the same classes (they run the same code). (As its text: one string is cheaper for the IPC
-  // to copy than the objects of the data.)
-  useMarshal(registry) {
-    const { stringify, parse, registry: fallback } = marshalModule;
-    const options = { registry: registry || fallback };
+  // Sends data written by @xufa/marshal: a Registry (its default one when not given), or options of marshal
+  // ({ registry, unknown, functions }: unknown 'json' and functions 'skip' write what JSON would of what is not
+  // registered). The processes that receive must know the same classes (they run the same code). (As its text: one
+  // string is cheaper for the IPC to copy than the objects of the data.)
+  useMarshal(settings) {
+    const { stringify, parse, registry: fallback, Registry } = marshalModule;
+    const given = settings === undefined || settings instanceof Registry ? { registry: settings } : settings;
+    const options = { ...given, registry: given.registry || fallback };
     this.marshaller = { write: (value) => stringify(value, options), read: (text) => parse(text, options) };
     return this;
   }
@@ -175,6 +186,25 @@ class Bus {
     return result;
   }
 
+  // dispatch() with its result to done(err, result): at once when the handler (one) answers at once, else when its
+  // promise does (no turns of async functions between a message and its answer).
+  dispatchThen(event, data, sender, done) {
+    const list = this.handlers.get(event) || EMPTY;
+    if (list.length > 1) {
+      this.dispatch(event, data, sender).then((result) => done(null, result), done);
+      return;
+    }
+    let result;
+    try {
+      result = list.length === 1 ? list[0](data, sender) : undefined;
+    } catch (err) {
+      done(err);
+      return;
+    }
+    if (result && typeof result.then === 'function') result.then((value) => done(null, value), done);
+    else done(null, result);
+  }
+
   receive(message, worker) {
     const envelope = message && message[TAG];
     if (!envelope) return;
@@ -187,12 +217,13 @@ class Bus {
     }
     switch (kind) {
       case 'event':
-        this.dispatch(event, data, worker).catch((err) => process.emitWarning(err));
+        this.dispatchThen(event, data, worker, (err) => {
+          if (err) process.emitWarning(err);
+        });
         return;
       case 'request':
-        this.dispatch(event, data, worker).then(
-          (result) => this.post(worker, { kind: 'reply', id, data: result }),
-          (err) => this.post(worker, { kind: 'reply', id, error: err })
+        this.dispatchThen(event, data, worker, (err, result) =>
+          this.post(worker, err ? { kind: 'reply', id, error: err } : { kind: 'reply', id, data: result })
         );
         return;
       case 'reply': {
@@ -201,8 +232,8 @@ class Bus {
         this.pending.delete(id);
         clearTimeout(request.timer);
         if (envelope.error) {
-          request.reject(envelope.marshalled ? this.marshaller.read(envelope.error) : errorOf(envelope.error));
-        } else request.resolve(data);
+          request.done(envelope.marshalled ? this.marshaller.read(envelope.error) : errorOf(envelope.error));
+        } else request.done(null, data);
         return;
       }
       case 'broadcast':
@@ -268,17 +299,26 @@ class Bus {
   request(event, data, { timeout = 30000 } = {}) {
     if (this.local || cluster.isPrimary) return this.dispatch(event, data, null);
     return new Promise((resolve, reject) => {
-      const id = this.nextId;
-      this.nextId += 1;
-      const timer = timeout
-        ? setTimeout(() => {
-            this.pending.delete(id);
-            reject(new BusError(`The request ${event} had no reply in ${timeout} ms`));
-          }, timeout)
-        : null;
-      this.pending.set(id, { resolve, reject, timer });
-      this.post(null, { kind: 'request', event, data, id });
+      this.requestThen(event, data, { timeout }, (err, result) => (err ? reject(err) : resolve(result)));
     });
+  }
+
+  // request() with its reply to done(err, reply), called as the reply arrives (no promise between them).
+  requestThen(event, data, { timeout = 30000 } = {}, done) {
+    if (this.local || cluster.isPrimary) {
+      this.dispatchThen(event, data, null, done);
+      return;
+    }
+    const id = this.nextId;
+    this.nextId += 1;
+    const timer = timeout
+      ? setTimeout(() => {
+          this.pending.delete(id);
+          done(new BusError(`The request ${event} had no reply in ${timeout} ms`));
+        }, timeout)
+      : null;
+    this.pending.set(id, { done, timer });
+    this.post(null, { kind: 'request', event, data, id });
   }
 }
 

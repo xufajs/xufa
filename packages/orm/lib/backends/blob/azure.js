@@ -188,8 +188,9 @@ class AzureBackend extends BlobBackend {
       throw new BackendError('The key of an object of the azure-blob backend is at most 900 bytes');
   }
 
+  // (A table of '' is the root of the container: its objects have no folder of a table.)
   objectKey(table, key) {
-    return `${this.prefix}${table}/${key}`;
+    return table === '' ? `${this.prefix}${key}` : `${this.prefix}${table}/${key}`;
   }
 
   // The URL of the container, or of a blob of it, with a query.
@@ -257,10 +258,14 @@ class AzureBackend extends BlobBackend {
     const condition = create ? { 'if-none-match': '*' } : {};
     try {
       if (Buffer.isBuffer(body) && body.length <= this.blockSize) {
-        await this.request('PUT', this.url(objectKey), {
+        const response = await this.request('PUT', this.url(objectKey), {
           headers: { ...headers, ...condition, 'x-ms-blob-type': 'BlockBlob' },
           body,
         });
+        // (Put Blob answers the etag and the time: the info without a second request.)
+        if (response.headers.get('etag') && response.headers.get('last-modified')) {
+          return { ...AzureBackend.infoOf(response.headers), size: body.length };
+        }
       } else {
         await this.upload(objectKey, Buffer.isBuffer(body) ? Readable.from([body]) : body, headers, condition);
       }
@@ -388,14 +393,32 @@ class AzureBackend extends BlobBackend {
     await Promise.all(writes);
   }
 
+  // Whether there was one (Azure answers 404 for a blob that is not there).
   async storeDelete(table, key) {
-    await this.request('DELETE', this.url(this.objectKey(table, key)), { ok: [404] });
-    return true;
+    const response = await this.request('DELETE', this.url(this.objectKey(table, key)), { ok: [404] });
+    return response.status !== 404;
   }
 
   async storeCreate() {
     if (!this.createContainer) return;
     await this.request('PUT', this.url(null, { restype: 'container' }), { ok: [409] });
+  }
+
+  // The container itself: whether it exists (Get Container Properties), made (false when it was there), deleted
+  // (false when it was not), whatever the option createContainer says.
+  async containerExists() {
+    const response = await this.request('GET', this.url(null, { restype: 'container' }), { ok: [404] });
+    return response.status !== 404;
+  }
+
+  async containerCreate() {
+    const response = await this.request('PUT', this.url(null, { restype: 'container' }), { ok: [409] });
+    return response.status !== 409;
+  }
+
+  async containerDelete() {
+    const response = await this.request('DELETE', this.url(null, { restype: 'container' }), { ok: [404] });
+    return response.status !== 404;
   }
 
   // Deletes every blob of a table (the container stays), 16 at a time.

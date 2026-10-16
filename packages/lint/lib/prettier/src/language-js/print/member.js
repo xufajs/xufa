@@ -37,7 +37,6 @@ function printMemberExpression(path, options, print) {
   const firstNonChainElementWrapperParent = path.findAncestor((node) => !isChainElementWrapper(node));
 
   const shouldInline =
-    firstNonMemberParent.type === 'BindExpression' ||
     (firstNonMemberParent.type === 'AssignmentExpression' && firstNonMemberParent.left.type !== 'Identifier') ||
     shouldInlineNewExpressionCallee(path) ||
     node.computed ||

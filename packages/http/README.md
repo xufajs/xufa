@@ -120,6 +120,54 @@ Parameters can say their kind, as Django's path converters: `/books/<int:pk>/` (
 named with `[]` is a list, a file is `{ filename, contentType, size, data }`. Limits: `bodyLimit`, `files`,
 `fileSize`, `fields`, `fieldSize`, `parts` (413 or 400 past them); `multipart: false` for urlencoded bodies only.
 
+Multipart bodies are read as they come by xufa's own parser (busboy's rules, without busboy). `@xufa/http/multer` is
+multer's API on it, for Express or any Node server (`single`, `array`, `fields`, `any`, `none`, `memoryStorage`,
+`diskStorage`, `limits`, `fileFilter`, `MulterError`); multer 2.1.1's 72 tests pass on it (`tools/port-multer`).
+Names of files are read as latin1, as multer does; `defParamCharset: 'utf8'` reads them as browsers send them. The
+parser alone reads 2.2× busboy's MB/s on 5 MB files (1.8× at 100 KB, even at 1 KB); over HTTP, uploads are as fast or
+faster than multer's, with the same peak memory.
+
+To send forms, `@xufa/http/form-data` is the API of the form-data package, xufa's own: `append(name, value, options)`
+(texts, Buffers, streams of files and responses; a filename, `contentType`, `knownLength`, headers), `getHeaders()`,
+`getLength()`, `getBuffer()`, `submit(url)`, and `pipe()`, so axios and other clients send it as they send form-data.
+form-data 4.0.5's 27 tests pass on it (`tools/port-form-data`; its boundary is of crypto). Two differences: the types of
+files are those of @xufa/http's mime table (mime-db 1.54: newer types, `.js` is `text/javascript`), and the length of a
+file stream with an `end` and no `start` is the range it reads (form-data counted the whole file, and a request of that
+length waits for bytes that never come). As fast as form-data.
+
+`@xufa/http/compression` is compression's API (1.8.2), xufa's own: `app.use(compression({ threshold: 256 }))` for
+Express or any Node server compresses answers with brotli (quality 4), gzip or deflate as the request accepts (brotli
+and gzip preferred when equal), when their type is compressible (mime-db's word, or `text/*`, `+json`, `+xml`), from
+the threshold (`1kb`), not for HEAD, answers already encoded, or `Cache-Control: no-transform`; `filter`,
+`enforceEncoding`, `brotli` and zlib's options, and `res.flush()` for streams of events. It lets the stream of zlib
+go when the response closes (compression's fix of 1.8.2). compression 1.8.2's 63 tests pass on it
+(`tools/port-compression`), and 8,000 random requests through both gave the same bytes; as fast, and faster for
+answers under the threshold (it keeps what the filter said of each type).
+
+`@xufa/http/helmet` is helmet's API (8.3.0), xufa's own: `app.use(helmet(options))` sets the security headers of
+responses (Content-Security-Policy, Strict-Transport-Security, X-Frame-Options, the Cross-Origin policies,
+Referrer-Policy and the rest; X-Powered-By removed), each middleware on its own too (`helmet.contentSecurityPolicy()`,
+the old names as `hsts` or `frameguard`), with helmet's checks of the options when it is made. `staticHeaders(options)`
+(xufa's) gives what it sets on every response, for servers that set headers their own way. helmet 8.3.0's 119 tests pass
+on it (`tools/port-helmet`), and 220,000 random sets of options gave the same headers (the last 100,000 checked in their
+order too), and the same errors and warnings. 1.09x to 1.22x as fast: headers known when it is made are set in one loop,
+and a policy with a value computed per request (a nonce) computes only that directive.
+
+### Security headers, compression and ETags
+
+`xufa.helmet`, `xufa.compress` and `xufa.etag` give the routes of @xufa/http what helmet, compression and Express's
+ETags give an Express app, with the same options: helmet's headers (set at once when they are known, the policy computed
+per request when it has a nonce), compression's rules (streams too), and Express's weak ETag of each body with 304 when
+the client has it. The same routes on @xufa/http with the three and on @xufa/express with `helmet()` and
+`compression()` give the same answers (`test/xufa/response-plugins.test.js`: encodings, types, sizes, copies the
+client has, HEAD, no-transform, streams, a nonce).
+
+```js
+app.register(xufa.helmet, { contentSecurityPolicy: { directives: { scriptSrc: ["'self'"] } } });
+app.register(xufa.etag); // before compress: the ETag of the body before it is compressed, as in Express
+app.register(xufa.compress, { threshold: 256 });
+```
+
 ### Static files
 
 `app.register(xufa.staticFiles, { root: ['static'], prefix: '/static/' })`: the files of the folders, with their type,

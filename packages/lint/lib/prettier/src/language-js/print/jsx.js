@@ -381,10 +381,8 @@ const isNoWrapParent = createTypeCheckFunction([
   'ExpressionStatement',
   'NewExpression',
   'CallExpression',
-  'OptionalCallExpression',
+
   'ConditionalExpression',
-  'JsExpressionRoot',
-  'MatchExpressionCase',
 ]);
 function maybeWrapJsxElementInParens(path, elem, options) {
   const { parent } = path;
@@ -464,7 +462,6 @@ function printJsxExpressionContainer(path, options, print) {
         node.type === 'FunctionExpression' ||
         node.type === 'TemplateLiteral' ||
         node.type === 'TaggedTemplateExpression' ||
-        node.type === 'DoExpression' ||
         (isJsxElement(parent) && (node.type === 'ConditionalExpression' || isBinaryish(node)))));
 
   if (shouldInline(node.expression, path.parent)) {

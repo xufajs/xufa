@@ -76,9 +76,7 @@ function printTypeParameters(path, options, print, paramsKey) {
   const shouldInline =
     parameters.length === 0 ||
     (!isArrowFunctionVariable &&
-      (isParameterInTestCall ||
-        (parameters.length === 1 &&
-          (parameters[0].type === 'NullableTypeAnnotation' || shouldHugType(parameters[0])))) &&
+      (isParameterInTestCall || (parameters.length === 1 && shouldHugType(parameters[0]))) &&
       !parameters.some((node) => {
         const comments = getComments(node, (comment) => comment.leading || comment.trailing);
         return (

@@ -53,17 +53,14 @@ function blocksOf(sheet) {
     sheet.rows.map((row) => row.map((value) => (isEmpty(value) ? null : value))),
     sheet.merges
   );
-  let pending = [{ rows, row: 0, column: 0 }];
+  // (In the order of the sheet: each block split in place, the parts of the first before those of the second.)
   const done = [];
-  while (pending.length) {
-    const next = [];
-    for (const block of pending) {
-      const parts = split(block);
-      if (parts.length === 1 && parts[0] === block) done.push(block);
-      else next.push(...parts);
-    }
-    pending = next;
-  }
+  const walk = (block) => {
+    const parts = split(block);
+    if (parts.length === 1 && parts[0] === block) done.push(block);
+    else parts.forEach(walk);
+  };
+  walk({ rows, row: 0, column: 0 });
   // The merged ranges inside each block, from its first cell (a merge across a table says what its cells mean).
   const mergesOf = (block) => {
     const height = block.rows.length;

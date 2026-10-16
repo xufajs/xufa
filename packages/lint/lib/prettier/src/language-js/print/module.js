@@ -34,8 +34,7 @@ function printImportDeclaration(path, options, print) {
   ];
 }
 
-const isDefaultExport = (node) =>
-  node.type === 'ExportDefaultDeclaration' || (node.type === 'DeclareExportDeclaration' && node.default);
+const isDefaultExport = (node) => node.type === 'ExportDefaultDeclaration' || false;
 
 /*
 - `ExportDefaultDeclaration`
@@ -70,7 +69,7 @@ function printExportDeclaration(path, options, print) {
   } else {
     parts.push(printExportKind(node));
 
-    if (node.type === 'ExportAllDeclaration' || node.type === 'DeclareExportAllDeclaration') {
+    if (node.type === 'ExportAllDeclaration') {
       parts.push(' *');
       if (exported) {
         parts.push(' as ', print('exported'));
@@ -89,16 +88,11 @@ function printExportDeclaration(path, options, print) {
 
 const shouldOmitSemicolon = createTypeCheckFunction([
   'ClassDeclaration',
-  'ComponentDeclaration',
+
   'FunctionDeclaration',
   'TSInterfaceDeclaration',
-  'DeclareClass',
-  'DeclareComponent',
-  'DeclareFunction',
-  'DeclareHook',
-  'HookDeclaration',
+
   'TSDeclareFunction',
-  'EnumDeclaration',
 ]);
 function printSemicolonAfterExportDeclaration(node, options) {
   if (!node.declaration || (isDefaultExport(node) && !shouldOmitSemicolon(node.declaration))) {
@@ -283,7 +277,7 @@ function printModuleSpecifier(path, options, print) {
   const rightSideNode = node[rightSideProperty];
   let left = '';
   let right = '';
-  if (type === 'ExportNamespaceSpecifier' || type === 'ImportNamespaceSpecifier') {
+  if (type === 'ImportNamespaceSpecifier') {
     left = '*';
   } else if (leftSideNode) {
     left = print(leftSideProperty);

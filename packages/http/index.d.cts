@@ -232,6 +232,28 @@ declare namespace xufa {
     types?: Record<string, string>;
   }>;
   /**
+   * The security headers of helmet (@xufa/http/helmet) on the routes, with helmet's options: set at once when they
+   * are known, by helmet's middleware for a policy with values per request (a nonce); X-Powered-By removed.
+   */
+  export const helmet: XufaPluginCallback<import('../helmet.cjs').HelmetOptions>;
+  /**
+   * Answers compressed (brotli, gzip, deflate) by the rules of @xufa/http/compression: compressible types (or
+   * filter), from threshold (1kb), not HEAD nor no-transform, the encoding the request prefers; streams too.
+   */
+  export const compress: XufaPluginCallback<
+    import('node:zlib').ZlibOptions & {
+      threshold?: number | string;
+      filter?: (request: XufaRequest, reply: XufaReply) => boolean;
+      brotli?: import('node:zlib').BrotliOptions;
+      enforceEncoding?: 'gzip' | 'deflate' | 'br' | 'identity';
+    }
+  >;
+  /**
+   * ETags of bodies (weak, as Express's; weak: false for strong ones) and 304 for a GET or HEAD whose client has the
+   * answer (If-None-Match, If-Modified-Since), as Express answers them.
+   */
+  export const etag: XufaPluginCallback<{ weak?: boolean }>;
+  /**
    * Error pages (Django's handler404, handler500 and their templates): for requests of browsers, the views of
    * @xufa/template by status (404, 403, 400, 500: { error, statusCode, message, permission }); the others go on
    * to the error handlers under it (JSON). notFound: routes that are not there too.

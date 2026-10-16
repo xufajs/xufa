@@ -255,6 +255,37 @@ describe('pool', () => {
   });
 });
 
+describe('pool kinds', () => {
+  it('counts the works of each kind waiting and running', async () => {
+    const { pool, client } = makePool({ nodes: ['a'] });
+    const granted = [];
+    pool.on('grant', ({ node, worker, kind }) => granted.push([node.id, worker, kind]));
+    const g = gate();
+    const works = [
+      client.use(() => g.promise, { kind: 'convert' }),
+      client.use(() => g.promise, { kind: 'convert' }),
+      client.use(() => g.promise, { kind: 'thumbnail' }),
+      client.use(() => g.promise),
+    ];
+    await tick();
+    expect(pool.stats()).toMatchObject({
+      running: 1,
+      waiting: 3,
+      runningByKind: { convert: 1 },
+      waitingByKind: { convert: 1, thumbnail: 1 },
+    });
+    g.open();
+    await Promise.all(works);
+    expect(pool.stats()).toMatchObject({ waitingByKind: {}, runningByKind: {} });
+    expect(granted).toEqual([
+      ['a', 0, 'convert'],
+      ['a', 0, 'convert'],
+      ['a', 0, 'thumbnail'],
+      ['a', 0, null],
+    ]);
+  });
+});
+
 describe('pool autoscale', () => {
   it('scales up by the demand, and down only after downAfter, counting the works running', async () => {
     const scaled = [];
@@ -289,6 +320,26 @@ describe('pool autoscale', () => {
     expect(scaled).toEqual([3]);
     await sleep(150);
     expect(scaled).toEqual([3, 1]);
+  });
+
+  it('scales nothing while not active, and its limits can change while it runs', async () => {
+    const scaled = [];
+    const { pool, client } = makePool({
+      nodes: ['a'],
+      autoscale: { max: 8, upEvery: 0, active: false, scale: (count) => scaled.push(count) },
+    });
+    const g = gate();
+    const works = [1, 2, 3, 4, 5].map(() => client.use(() => g.promise));
+    await tick();
+    expect(scaled).toEqual([]);
+    pool.autoscaler.active = true;
+    pool.autoscaler.max = 3;
+    pool.add('b');
+    await tick();
+    // (5 works, at most 3 nodes.)
+    expect(scaled).toEqual([3]);
+    g.open();
+    await Promise.all(works);
   });
 
   it('scales from zero nodes when tickets wait', async () => {

@@ -127,4 +127,13 @@ function enableMocking(file, esm, importsEsm = false) {
   hoistTargets.add(file);
 }
 
-module.exports = { enableMocking, installCjs };
+// The source of a file the runner's own load hook compiled (TypeScript through a transformer, a plugin's code): that
+// hook gives it without asking the next hook, so the hook above never sees it; its mock calls are hoisted here.
+function hoistedSource(file, source) {
+  if (!hoistTargets.has(file)) {
+    return source;
+  }
+  return rewriteMocks(source, { esm: true }) ?? source;
+}
+
+module.exports = { enableMocking, installCjs, hoistedSource };

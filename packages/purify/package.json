@@ -1,0 +1,56 @@
+{
+  "name": "@xufa/purify",
+  "version": "0.1.0",
+  "description": "DOMPurify, the XSS sanitizer of HTML, on the DOM of @xufa/html: no jsdom, ready in Node",
+  "main": "./index.js",
+  "types": "./index.d.ts",
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./index.d.ts",
+      "default": "./index.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "index.js",
+    "index.d.ts",
+    "lib",
+    "LICENSE",
+    "LICENSE.dompurify"
+  ],
+  "scripts": {
+    "test": "xufa-test",
+    "test:types": "xufa-test --typecheck.only"
+  },
+  "keywords": [
+    "xss",
+    "sanitize",
+    "html",
+    "dompurify",
+    "security"
+  ],
+  "author": "Jesús Seijas <jseijas@gmail.com>",
+  "license": "MIT AND (MPL-2.0 OR Apache-2.0)",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/xufajs/xufa.git",
+    "directory": "packages/purify"
+  },
+  "homepage": "https://github.com/xufajs/xufa/tree/main/packages/purify#readme",
+  "bugs": {
+    "url": "https://github.com/xufajs/xufa/issues"
+  },
+  "engines": {
+    "node": "^22.22.3 || ^24.15.0 || >=25.7.0"
+  },
+  "devDependencies": {
+    "@xufa/test": "workspace:^"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "dependencies": {
+    "@xufa/html": "workspace:*"
+  }
+}

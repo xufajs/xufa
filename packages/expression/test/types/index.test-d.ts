@@ -34,6 +34,9 @@ const engine = new Engine({
 expectTypeOf(engine.evaluate<boolean>('a > 1', { a: 2 })).toEqualTypeOf<boolean>();
 // @ts-expect-error
 new Engine({ lenient: 'yes' });
+new Engine({ methods: { sum: (list: number[]) => list.length } });
+// @ts-expect-error
+new Engine({ methods: 'sum' });
 // @ts-expect-error
 compile(1);
 

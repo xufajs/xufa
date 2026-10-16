@@ -8,6 +8,8 @@ import * as authModule from 'xufa/auth';
 import * as authModule_ from '@xufa/auth';
 import * as expressionModule from 'xufa/expression';
 import * as expressionModule_ from '@xufa/expression';
+import * as funModule from 'xufa/fun';
+import * as funModule_ from '@xufa/fun';
 import * as templateModule from 'xufa/template';
 import * as templateModule_ from '@xufa/template';
 import * as mailModule from 'xufa/mail';
@@ -32,6 +34,18 @@ import * as queueModule from 'xufa/queue';
 import * as queueModule_ from '@xufa/queue';
 import * as faultsModule from 'xufa/faults';
 import * as faultsModule_ from '@xufa/faults';
+import * as dotenvModule from 'xufa/dotenv';
+import * as xlsxModule from 'xufa/xlsx';
+import * as xlsxModule_ from '@xufa/xlsx';
+import * as htmlModule from 'xufa/html';
+import * as htmlModule_ from '@xufa/html';
+import * as domModule from 'xufa/html/dom';
+import * as domModule_ from '@xufa/html/dom';
+import purifyModule from 'xufa/purify';
+import purifyModule_ from '@xufa/purify';
+import * as dotenvModule_ from '@xufa/config/dotenv';
+import * as axiosModule from 'xufa/axios';
+import * as axiosModule_ from '@xufa/client/axios';
 
 const require = createRequire(import.meta.url);
 
@@ -80,6 +94,32 @@ describe('xufa/expression and xufa/template', () => {
   it('are @xufa/expression and @xufa/template', () => {
     expectSameExports(expressionModule, expressionModule_);
     expectSameExports(templateModule, templateModule_);
+  });
+
+  it('xufa/fun is @xufa/fun', () => {
+    expectSameExports(funModule, funModule_);
+  });
+
+  it('xufa/xlsx is @xufa/xlsx', () => {
+    expectSameExports(xlsxModule, xlsxModule_);
+  });
+
+  it('xufa/html is @xufa/html, xufa/html/dom its DOM, xufa/purify is @xufa/purify', () => {
+    expectSameExports(htmlModule, htmlModule_);
+    expectSameExports(domModule, domModule_);
+    expect(purifyModule).toBe(purifyModule_);
+    expect(require('xufa/purify')).toBe(require('@xufa/purify'));
+  });
+
+  it('xufa/dotenv is @xufa/config/dotenv, for import and require', () => {
+    expectSameExports(dotenvModule, dotenvModule_);
+    expect(require('xufa/dotenv')).toBe(require('@xufa/config/dotenv'));
+  });
+
+  it('xufa/axios is @xufa/client/axios, for import and require', () => {
+    expectSameExports(axiosModule, axiosModule_);
+    expect(require('xufa/axios')).toBe(require('@xufa/client/axios'));
+    expect(typeof require('xufa/axios').get).toBe('function');
   });
 
   it('xufa/mail is @xufa/mail, xufa/i18n is @xufa/i18n', () => {

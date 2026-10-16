@@ -19,7 +19,6 @@ import { printIndexSignature } from './index-signature.js';
 import { printIndexedAccessType } from './indexed-access-type.js';
 import { printInferType } from './infer-type.js';
 import { printIntersectionType } from './intersection-type.js';
-import { printJSDocType } from './js-doc-type.js';
 import { printKey } from './key.js';
 import { printTypeScriptMappedType } from './mapped-type.js';
 import { printMethodSignature } from './method-signature.js';
@@ -72,7 +71,6 @@ function printTypescript(path, options, print, args) {
     case 'TSQualifiedName':
       return [print('left'), '.', print('right')];
     case 'TSAbstractMethodDefinition':
-    case 'TSDeclareMethod':
       return printClassMethod(path, options, print);
     case 'TSAbstractAccessorProperty':
     case 'TSAbstractPropertyDefinition':
@@ -196,15 +194,7 @@ function printTypescript(path, options, print, args) {
       return printMethodValue(path, options, print);
 
     // These are not valid TypeScript. Printing them just for the sake of error recovery.
-    case 'TSJSDocAllType':
-      return '*';
-    case 'TSJSDocUnknownType':
-      return '?';
-    case 'TSJSDocNullableType':
-      return printJSDocType(path, print, /* token */ '?');
-    case 'TSJSDocNonNullableType':
-      return printJSDocType(path, print, /* token */ '!');
-    case 'TSParenthesizedType': // Removed in `../parse/postprocess.js`
+    // Removed in `../parse/postprocess.js`
     default:
       /* c8 ignore next */
       throw new UnexpectedNodeError(node, 'TypeScript');

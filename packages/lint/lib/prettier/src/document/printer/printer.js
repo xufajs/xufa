@@ -131,8 +131,10 @@ function fits(
 
       case DOC_TYPE_ARRAY:
       case DOC_TYPE_FILL: {
-        const parts = docType === DOC_TYPE_ARRAY ? doc : doc.parts;
-        const end = doc[DOC_FILL_PRINTED_LENGTH] ?? 0;
+        // (Only fills are printed in parts: an array has no DOC_FILL_PRINTED_LENGTH, and looking it up on one is slow.)
+        const isArray = docType === DOC_TYPE_ARRAY;
+        const parts = isArray ? doc : doc.parts;
+        const end = isArray ? 0 : (doc[DOC_FILL_PRINTED_LENGTH] ?? 0);
         for (let index = parts.length - 1; index >= end; index--) {
           modes.push(mode);
           docs.push(parts[index]);

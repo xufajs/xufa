@@ -2,6 +2,8 @@
 
 @xufa/test runs the files in parallel, in worker threads that stay alive between files. Each file gets fresh copies of your own modules (what it changes in them does not reach the next file), while `node_modules` stays loaded, which is where most of the loading time is.
 
+An ES module of yours that a CommonJS file loads with `require()` is a fresh copy too, the same one its `import()` gives (Node keeps one by file name; @xufa/test loads a copy for each file). Packages linked from outside the project (`link:`, workspaces) stay shared under `require()`.
+
 - **How many workers:** after the first run, @xufa/test knows how long each file takes. It starts the slowest first, and uses just enough workers for the slowest file to be the whole run: more would only add startup time and compete for the cores. `-w` sets the number.
 - **`--pool forks`** runs the files in child processes, as Jest does, for code that needs a process of its own: `process.chdir`, native addons that are not thread safe.
 - **`-i`** runs everything in the main thread: the fastest for a few small files, and the easiest to debug.

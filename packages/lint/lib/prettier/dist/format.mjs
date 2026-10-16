@@ -1,33 +1,33 @@
 // @xufa/lint: lib/prettier as one file (scripts/build-format.mjs, by @xufa/bundle): do not edit. NOTICE.md has the licenses.
-import * as __external$151 from "#typescript";
+import * as __external$145 from "#typescript";
 
-import __external$151_default from "#typescript";
+import __external$145_default from "#typescript";
 
-import * as __external$152 from "node:assert";
+import * as __external$146 from "node:assert";
 
-import __external$154_default from "node:path";
+import __external$148_default from "node:path";
 
-let __namespace$155_object;
-function __namespace$155() {
-  return (__namespace$155_object ??= Object.freeze({
+let __namespace$149_object;
+function __namespace$149() {
+  return (__namespace$149_object ??= Object.freeze({
     __proto__: null,
     [Symbol.toStringTag]: 'Module',
-    get "mdast"() { return printer$78; },
+    get "mdast"() { return printer$72; },
   }));
 }
 
-let __namespace$156_object;
-function __namespace$156() {
-  return (__namespace$156_object ??= Object.freeze({
+let __namespace$150_object;
+function __namespace$150() {
+  return (__namespace$150_object ??= Object.freeze({
     __proto__: null,
     [Symbol.toStringTag]: 'Module',
     get "parseMarkdown"() { return parseMarkdown; },
   }));
 }
 
-let __namespace$157_object;
-function __namespace$157() {
-  return (__namespace$157_object ??= Object.freeze({
+let __namespace$151_object;
+function __namespace$151() {
+  return (__namespace$151_object ??= Object.freeze({
     __proto__: null,
     [Symbol.toStringTag]: 'Module',
     get "locEnd"() { return locEnd$67; },
@@ -35,20 +35,20 @@ function __namespace$157() {
   }));
 }
 
-let __namespace$158_object;
-function __namespace$158() {
-  return (__namespace$158_object ??= Object.freeze({
+let __namespace$152_object;
+function __namespace$152() {
+  return (__namespace$152_object ??= Object.freeze({
     __proto__: null,
     [Symbol.toStringTag]: 'Module',
-    get "attentionMarkers"() { return attentionMarkers$115; },
+    get "attentionMarkers"() { return attentionMarkers$109; },
     get "contentInitial"() { return contentInitial; },
     get "disable"() { return disable; },
-    get "document"() { return document$110; },
-    get "flow"() { return flow$111; },
+    get "document"() { return document$104; },
+    get "flow"() { return flow$105; },
     get "flowInitial"() { return flowInitial; },
-    get "insideSpan"() { return insideSpan$114; },
-    get "string"() { return string$112; },
-    get "text"() { return text$113; },
+    get "insideSpan"() { return insideSpan$108; },
+    get "string"() { return string$106; },
+    get "text"() { return text$107; },
   }));
 }
 
@@ -76,29 +76,17 @@ function loadTypeScript() {
   if (SyntaxKind !== undefined) {
     return;
   }
-  [major, minor] = __external$151_default.versionMajorMinor.split('.').map(Number);
+  [major, minor] = __external$145_default.versionMajorMinor.split('.').map(Number);
   isAtLeast48 = atLeast(4, 8);
   isAtLeast50 = atLeast(5, 0);
   isAtLeast59 = atLeast(5, 9);
-  ScriptKind = __external$151_default.ScriptKind;
-  SyntaxKind = __external$151_default.SyntaxKind;
+  ScriptKind = __external$145_default.ScriptKind;
+  SyntaxKind = __external$145_default.SyntaxKind;
 }
 
 function atLeast(wantedMajor, wantedMinor) {
   return major > wantedMajor || (major === wantedMajor && minor >= wantedMinor);
 }
-
-// typescriptVersionIsAtLeast['5.9'], as typescript-estree has it.
-const typescriptVersionIsAtLeast = new Proxy(
-  {},
-  {
-    get(target, version) {
-      loadTypeScript();
-      const [wantedMajor, wantedMinor] = String(version).split('.').map(Number);
-      return atLeast(wantedMajor, wantedMinor);
-    },
-  }
-);
 
 
 // typescript-estree/get-modifiers.js
@@ -110,15 +98,15 @@ function getModifiers(node, includeIllegalModifiers = false) {
     return undefined;
   }
   if (isAtLeast48) {
-    if (includeIllegalModifiers || __external$151_default.canHaveModifiers(node)) {
-      const modifiers = __external$151_default.getModifiers(node);
+    if (includeIllegalModifiers || __external$145_default.canHaveModifiers(node)) {
+      const modifiers = __external$145_default.getModifiers(node);
       return modifiers ? [...modifiers] : undefined;
     }
     return undefined;
   }
   return (
     // @ts-expect-error intentional fallback for older TS versions
-    node.modifiers?.filter((m) => !__external$151_default.isDecorator(m))
+    node.modifiers?.filter((m) => !__external$145_default.isDecorator(m))
   );
 }
 function getDecorators(node, includeIllegalDecorators = false) {
@@ -126,15 +114,15 @@ function getDecorators(node, includeIllegalDecorators = false) {
     return undefined;
   }
   if (isAtLeast48) {
-    if (includeIllegalDecorators || __external$151_default.canHaveDecorators(node)) {
-      const decorators = __external$151_default.getDecorators(node);
+    if (includeIllegalDecorators || __external$145_default.canHaveDecorators(node)) {
+      const decorators = __external$145_default.getDecorators(node);
       return decorators ? [...decorators] : undefined;
     }
     return undefined;
   }
   return (
     // @ts-expect-error intentional fallback for older TS versions
-    node.decorators?.filter(__external$151_default.isDecorator)
+    node.decorators?.filter(__external$145_default.isDecorator)
   );
 }
 
@@ -572,23 +560,6 @@ const AST_NODE_TYPES = Object.freeze({
   TSVoidKeyword: 'TSVoidKeyword',
 });
 
-const AST_TOKEN_TYPES = Object.freeze({
-  Boolean: 'Boolean',
-  Identifier: 'Identifier',
-  JSXIdentifier: 'JSXIdentifier',
-  PrivateIdentifier: 'PrivateIdentifier',
-  JSXText: 'JSXText',
-  Keyword: 'Keyword',
-  Null: 'Null',
-  Numeric: 'Numeric',
-  Punctuator: 'Punctuator',
-  RegularExpression: 'RegularExpression',
-  String: 'String',
-  Template: 'Template',
-  Block: 'Block',
-  Line: 'Line',
-});
-
 
 // typescript-estree/node-utils.js
 // From typescript-estree 8.70.0 (src/node-utils.ts, BSD-2-Clause: see NOTICE.md), as @xufa/lint's code.
@@ -609,22 +580,22 @@ function makeOperators() {
     SyntaxKind.QuestionQuestionToken,
   ]);
   ASSIGNMENT_OPERATORS = new Set([
-    __external$151_default.SyntaxKind.AmpersandAmpersandEqualsToken,
-    __external$151_default.SyntaxKind.AmpersandEqualsToken,
-    __external$151_default.SyntaxKind.AsteriskAsteriskEqualsToken,
-    __external$151_default.SyntaxKind.AsteriskEqualsToken,
-    __external$151_default.SyntaxKind.BarBarEqualsToken,
-    __external$151_default.SyntaxKind.BarEqualsToken,
-    __external$151_default.SyntaxKind.CaretEqualsToken,
-    __external$151_default.SyntaxKind.EqualsToken,
-    __external$151_default.SyntaxKind.GreaterThanGreaterThanEqualsToken,
-    __external$151_default.SyntaxKind.GreaterThanGreaterThanGreaterThanEqualsToken,
-    __external$151_default.SyntaxKind.LessThanLessThanEqualsToken,
-    __external$151_default.SyntaxKind.MinusEqualsToken,
-    __external$151_default.SyntaxKind.PercentEqualsToken,
-    __external$151_default.SyntaxKind.PlusEqualsToken,
-    __external$151_default.SyntaxKind.QuestionQuestionEqualsToken,
-    __external$151_default.SyntaxKind.SlashEqualsToken,
+    __external$145_default.SyntaxKind.AmpersandAmpersandEqualsToken,
+    __external$145_default.SyntaxKind.AmpersandEqualsToken,
+    __external$145_default.SyntaxKind.AsteriskAsteriskEqualsToken,
+    __external$145_default.SyntaxKind.AsteriskEqualsToken,
+    __external$145_default.SyntaxKind.BarBarEqualsToken,
+    __external$145_default.SyntaxKind.BarEqualsToken,
+    __external$145_default.SyntaxKind.CaretEqualsToken,
+    __external$145_default.SyntaxKind.EqualsToken,
+    __external$145_default.SyntaxKind.GreaterThanGreaterThanEqualsToken,
+    __external$145_default.SyntaxKind.GreaterThanGreaterThanGreaterThanEqualsToken,
+    __external$145_default.SyntaxKind.LessThanLessThanEqualsToken,
+    __external$145_default.SyntaxKind.MinusEqualsToken,
+    __external$145_default.SyntaxKind.PercentEqualsToken,
+    __external$145_default.SyntaxKind.PlusEqualsToken,
+    __external$145_default.SyntaxKind.QuestionQuestionEqualsToken,
+    __external$145_default.SyntaxKind.SlashEqualsToken,
   ]);
   BINARY_OPERATORS = new Set([
     SyntaxKind.AmpersandAmpersandToken,
@@ -675,7 +646,7 @@ function isESTreeBinaryOperator(operator) {
  * Returns the string form of the given TSToken SyntaxKind
  */
 function getTextForTokenKind(kind) {
-  return __external$151_default.tokenToString(kind);
+  return __external$145_default.tokenToString(kind);
 }
 /**
  * Returns true if the given ts.Node is a valid ESTree class member
@@ -708,14 +679,6 @@ function isComma(token) {
   return token.kind === SyntaxKind.CommaToken;
 }
 /**
- * Returns true if the given ts.Node is a comment
- */
-
-/**
- * Returns true if the given ts.Node is a JSDoc comment
- */
-
-/**
  * Returns the binary expression type of the given ts.Token
  */
 function getBinaryExpressionType(operator) {
@@ -737,7 +700,7 @@ function getBinaryExpressionType(operator) {
       operator: getTextForTokenKind(operator.kind),
     };
   }
-  throw new Error(`Unexpected binary operator ${__external$151_default.tokenToString(operator.kind)}`);
+  throw new Error(`Unexpected binary operator ${__external$145_default.tokenToString(operator.kind)}`);
 }
 /**
  * Returns line and column data for the given positions
@@ -761,15 +724,15 @@ function getLocFor(range, ast) {
  * Check whatever node can contain directive
  */
 function canContainDirective(node) {
-  if (node.kind === __external$151_default.SyntaxKind.Block) {
+  if (node.kind === __external$145_default.SyntaxKind.Block) {
     switch (node.parent.kind) {
-      case __external$151_default.SyntaxKind.Constructor:
-      case __external$151_default.SyntaxKind.GetAccessor:
-      case __external$151_default.SyntaxKind.SetAccessor:
-      case __external$151_default.SyntaxKind.ArrowFunction:
-      case __external$151_default.SyntaxKind.FunctionExpression:
-      case __external$151_default.SyntaxKind.FunctionDeclaration:
-      case __external$151_default.SyntaxKind.MethodDeclaration:
+      case __external$145_default.SyntaxKind.Constructor:
+      case __external$145_default.SyntaxKind.GetAccessor:
+      case __external$145_default.SyntaxKind.SetAccessor:
+      case __external$145_default.SyntaxKind.ArrowFunction:
+      case __external$145_default.SyntaxKind.FunctionExpression:
+      case __external$145_default.SyntaxKind.FunctionDeclaration:
+      case __external$145_default.SyntaxKind.MethodDeclaration:
         return true;
       default:
         return false;
@@ -783,31 +746,23 @@ function canContainDirective(node) {
 function getRange(node, ast) {
   // (What node.getStart() does for nodes of code, without its checks: JSDoc is not parsed here. Missing nodes and
   // JSX text, which it treats otherwise, go through it.)
-  if (node.pos !== node.end && node.kind !== SyntaxKind.JsxText) return [__external$151_default.skipTrivia(ast.text, node.pos), node.end];
+  if (node.pos !== node.end && node.kind !== SyntaxKind.JsxText) return [__external$145_default.skipTrivia(ast.text, node.pos), node.end];
   return [node.getStart(ast), node.getEnd()];
 }
-/**
- * Returns true if a given ts.Node is a token
- */
-
-/**
- * Returns true if a given ts.Node is a JSX token
- */
-
 /**
  * Returns the declaration kind of the given ts.Node
  */
 function getDeclarationKind(node) {
-  if (node.flags & __external$151_default.NodeFlags.Let) {
+  if (node.flags & __external$145_default.NodeFlags.Let) {
     return 'let';
   }
-  if ((node.flags & __external$151_default.NodeFlags.AwaitUsing) === __external$151_default.NodeFlags.AwaitUsing) {
+  if ((node.flags & __external$145_default.NodeFlags.AwaitUsing) === __external$145_default.NodeFlags.AwaitUsing) {
     return 'await using';
   }
-  if (node.flags & __external$151_default.NodeFlags.Const) {
+  if (node.flags & __external$145_default.NodeFlags.Const) {
     return 'const';
   }
-  if (node.flags & __external$151_default.NodeFlags.Using) {
+  if (node.flags & __external$145_default.NodeFlags.Using) {
     return 'using';
   }
   return 'var';
@@ -841,7 +796,7 @@ function getTSNodeAccessibility(node) {
 function findNextToken(previousToken, parent, ast) {
   return find(parent);
   function find(n) {
-    if (__external$151_default.isToken(n) && n.pos === previousToken.end) {
+    if (__external$145_default.isToken(n) && n.pos === previousToken.end) {
       // this is token that starts at the end of previous token - return it
       return n;
     }
@@ -855,17 +810,6 @@ function findNextToken(previousToken, parent, ast) {
     });
   }
 }
-/**
- * Find the first matching ancestor based on the given predicate function.
- * @param node The current ts.Node
- * @param predicate The predicate function to apply to each checked ancestor
- * @returns a matching parent ts.Node
- */
-
-/**
- * Returns true if a given ts.Node has a JSX token within its hierarchy
- */
-
 /**
  * Unescape the text content of string literals, e.g. &amp; -> &
  * @param text The escaped string literal text.
@@ -909,23 +853,9 @@ function isChildUnwrappableOptionalChain(node, child) {
   return (
     isChainExpression(child) &&
     // (x?.y).z is semantically different, and as such .z is no longer optional
-    node.expression.kind !== __external$151_default.SyntaxKind.ParenthesizedExpression
+    node.expression.kind !== __external$145_default.SyntaxKind.ParenthesizedExpression
   );
 }
-/**
- * Returns the type of a given ts.Token
- */
-
-/**
- * Extends and formats a given ts.Token, for a given AST
- */
-
-/**
- * Converts all tokens for the given AST
- * @param ast the AST object
- * @returns the converted Tokens
- */
-
 class TSError extends Error {
   fileName;
   location;
@@ -992,7 +922,7 @@ function firstDefined(array, callback) {
 function identifierIsThisKeyword(id) {
   return (
     (isAtLeast50
-      ? __external$151_default.identifierToKeywordKind(id)
+      ? __external$145_default.identifierToKeywordKind(id)
       : // @ts-expect-error -- intentional fallback for older TS versions <=4.9
         id.originalKeywordKind) === SyntaxKind.ThisKeyword
   );
@@ -1004,7 +934,7 @@ function isThisInTypeQuery(node) {
   if (!isThisIdentifier(node)) {
     return false;
   }
-  while (__external$151_default.isQualifiedName(node.parent) && node.parent.left === node) {
+  while (__external$145_default.isQualifiedName(node.parent) && node.parent.left === node) {
     node = node.parent;
   }
   return node.parent.kind === SyntaxKind.TypeQuery;
@@ -1015,7 +945,7 @@ function isValidAssignmentTarget(node) {
       return true;
     case SyntaxKind.PropertyAccessExpression:
     case SyntaxKind.ElementAccessExpression:
-      if (node.flags & __external$151_default.NodeFlags.OptionalChain) {
+      if (node.flags & __external$145_default.NodeFlags.OptionalChain) {
         return false;
       }
       return true;
@@ -1035,7 +965,7 @@ function getNamespaceModifiers(node) {
   //   export declare namespace foo.bar.baz {}
   let modifiers = getModifiers(node);
   let moduleDeclaration = node;
-  while ((!modifiers || modifiers.length === 0) && __external$151_default.isModuleDeclaration(moduleDeclaration.parent)) {
+  while ((!modifiers || modifiers.length === 0) && __external$145_default.isModuleDeclaration(moduleDeclaration.parent)) {
     const parentModifiers = getModifiers(moduleDeclaration.parent);
     if (parentModifiers?.length) {
       modifiers = parentModifiers;
@@ -1050,7 +980,7 @@ function declarationNameToString(node) {
   return text || '(Missing)';
 }
 function isPropertyAccessEntityNameExpression(node) {
-  return __external$151_default.isPropertyAccessExpression(node) && __external$151_default.isIdentifier(node.name) && isEntityNameExpression(node.expression);
+  return __external$145_default.isPropertyAccessExpression(node) && __external$145_default.isIdentifier(node.name) && isEntityNameExpression(node.expression);
 }
 function isEntityNameExpression(node) {
   return node.kind === SyntaxKind.Identifier || isPropertyAccessEntityNameExpression(node);
@@ -1080,7 +1010,7 @@ function hasAbstractModifier(node) {
 }
 // `ts.getThisParameter`
 function getThisParameter(signature) {
-  if (signature.parameters.length && !__external$151_default.isJSDocSignature(signature)) {
+  if (signature.parameters.length && !__external$145_default.isJSDocSignature(signature)) {
     const thisParameter = signature.parameters[0];
     if (parameterIsThisKeyword(thisParameter)) {
       return thisParameter;
@@ -1094,7 +1024,7 @@ function parameterIsThisKeyword(parameter) {
 }
 // `ts.getContainingFunction`
 function getContainingFunction(node) {
-  return __external$151_default.findAncestor(node.parent, __external$151_default.isFunctionLike);
+  return __external$145_default.findAncestor(node.parent, __external$145_default.isFunctionLike);
 }
 // Rewrite version of `ts.nodeCanBeDecorated`
 // Returns `true` for both `useLegacyDecorators: true` and `useLegacyDecorators: false`
@@ -1108,12 +1038,12 @@ function nodeCanBeDecorated(node) {
     case SyntaxKind.PropertyDeclaration: {
       const { parent } = node;
       // `ts.nodeCanBeDecorated` uses this if `useLegacyDecorators: true`
-      if (__external$151_default.isClassDeclaration(parent)) {
+      if (__external$145_default.isClassDeclaration(parent)) {
         return true;
       }
       // `ts.nodeCanBeDecorated` uses this if `useLegacyDecorators: false`
       // parent is already a ClassLike subtype; defensive check
-      if (__external$151_default.isClassLike(parent) && !hasAbstractModifier(node)) {
+      if (__external$145_default.isClassLike(parent) && !hasAbstractModifier(node)) {
         return true;
       }
       return false;
@@ -1125,7 +1055,7 @@ function nodeCanBeDecorated(node) {
       // In `ts.nodeCanBeDecorated`
       // when `useLegacyDecorators: true` uses `ts.isClassDeclaration`
       // when `useLegacyDecorators: true` uses `ts.isClassLike`
-      return Boolean(node.body) && (__external$151_default.isClassDeclaration(parent) || __external$151_default.isClassLike(parent));
+      return Boolean(node.body) && (__external$145_default.isClassDeclaration(parent) || __external$145_default.isClassLike(parent));
     }
     case SyntaxKind.Parameter: {
       // `ts.nodeCanBeDecorated` returns `false` if `useLegacyDecorators: false`
@@ -1161,7 +1091,7 @@ function checkModifiers(node) {
   for (const decorator of getDecorators(node, /* includeIllegalDecorators */ true) ?? []) {
     // `checkGrammarModifiers` function in typescript
     if (!nodeCanBeDecorated(node)) {
-      if (__external$151_default.isMethodDeclaration(node) && !nodeIsPresent(node.body)) {
+      if (__external$145_default.isMethodDeclaration(node) && !nodeIsPresent(node.body)) {
         throw createError$2(decorator, 'A decorator can only decorate a method implementation, not an overload.');
       } else {
         throw createError$2(decorator, 'Decorators are not valid here.');
@@ -1172,15 +1102,15 @@ function checkModifiers(node) {
   for (const modifier of modifiers) {
     if (modifier.kind !== SyntaxKind.ReadonlyKeyword) {
       if (node.kind === SyntaxKind.PropertySignature || node.kind === SyntaxKind.MethodSignature) {
-        throw createError$2(modifier, `'${__external$151_default.tokenToString(modifier.kind)}' modifier cannot appear on a type member`);
+        throw createError$2(modifier, `'${__external$145_default.tokenToString(modifier.kind)}' modifier cannot appear on a type member`);
       }
       if (
         node.kind === SyntaxKind.IndexSignature &&
-        (modifier.kind !== SyntaxKind.StaticKeyword || !__external$151_default.isClassLike(node.parent))
+        (modifier.kind !== SyntaxKind.StaticKeyword || !__external$145_default.isClassLike(node.parent))
       ) {
         throw createError$2(
           modifier,
-          `'${__external$151_default.tokenToString(modifier.kind)}' modifier cannot appear on an index signature`
+          `'${__external$145_default.tokenToString(modifier.kind)}' modifier cannot appear on an index signature`
         );
       }
     }
@@ -1190,20 +1120,20 @@ function checkModifiers(node) {
       modifier.kind !== SyntaxKind.ConstKeyword &&
       node.kind === SyntaxKind.TypeParameter
     ) {
-      throw createError$2(modifier, `'${__external$151_default.tokenToString(modifier.kind)}' modifier cannot appear on a type parameter`);
+      throw createError$2(modifier, `'${__external$145_default.tokenToString(modifier.kind)}' modifier cannot appear on a type parameter`);
     }
     if (
       (modifier.kind === SyntaxKind.InKeyword || modifier.kind === SyntaxKind.OutKeyword) &&
       (node.kind !== SyntaxKind.TypeParameter ||
         !(
-          __external$151_default.isInterfaceDeclaration(node.parent) ||
-          __external$151_default.isClassLike(node.parent) ||
-          __external$151_default.isTypeAliasDeclaration(node.parent)
+          __external$145_default.isInterfaceDeclaration(node.parent) ||
+          __external$145_default.isClassLike(node.parent) ||
+          __external$145_default.isTypeAliasDeclaration(node.parent)
         ))
     ) {
       throw createError$2(
         modifier,
-        `'${__external$151_default.tokenToString(modifier.kind)}' modifier can only appear on a type parameter of a class, interface or type alias`
+        `'${__external$145_default.tokenToString(modifier.kind)}' modifier can only appear on a type parameter of a class, interface or type alias`
       );
     }
     if (
@@ -1215,13 +1145,13 @@ function checkModifiers(node) {
     ) {
       throw createError$2(modifier, "'readonly' modifier can only appear on a property declaration or index signature.");
     }
-    if (modifier.kind === SyntaxKind.DeclareKeyword && __external$151_default.isClassLike(node.parent) && !__external$151_default.isPropertyDeclaration(node)) {
+    if (modifier.kind === SyntaxKind.DeclareKeyword && __external$145_default.isClassLike(node.parent) && !__external$145_default.isPropertyDeclaration(node)) {
       throw createError$2(
         modifier,
-        `'${__external$151_default.tokenToString(modifier.kind)}' modifier cannot appear on class elements of this kind.`
+        `'${__external$145_default.tokenToString(modifier.kind)}' modifier cannot appear on class elements of this kind.`
       );
     }
-    if (modifier.kind === SyntaxKind.DeclareKeyword && __external$151_default.isVariableStatement(node)) {
+    if (modifier.kind === SyntaxKind.DeclareKeyword && __external$145_default.isVariableStatement(node)) {
       const declarationKind = getDeclarationKind(node.declarationList);
       if (declarationKind === 'using' || declarationKind === 'await using') {
         throw createError$2(modifier, `'declare' modifier cannot appear on a '${declarationKind}' declaration.`);
@@ -1238,7 +1168,7 @@ function checkModifiers(node) {
     ) {
       throw createError$2(
         modifier,
-        `'${__external$151_default.tokenToString(modifier.kind)}' modifier can only appear on a class, method, or property declaration.`
+        `'${__external$145_default.tokenToString(modifier.kind)}' modifier can only appear on a class, method, or property declaration.`
       );
     }
     if (
@@ -1250,7 +1180,7 @@ function checkModifiers(node) {
     ) {
       throw createError$2(
         modifier,
-        `'${__external$151_default.tokenToString(modifier.kind)}' modifier cannot appear on a module or namespace element.`
+        `'${__external$145_default.tokenToString(modifier.kind)}' modifier cannot appear on a module or namespace element.`
       );
     }
     if (modifier.kind === SyntaxKind.AccessorKeyword && node.kind !== SyntaxKind.PropertyDeclaration) {
@@ -1274,7 +1204,7 @@ function checkModifiers(node) {
         modifier.kind === SyntaxKind.DeclareKeyword ||
         modifier.kind === SyntaxKind.AsyncKeyword)
     ) {
-      throw createError$2(modifier, `'${__external$151_default.tokenToString(modifier.kind)}' modifier cannot appear on a parameter.`);
+      throw createError$2(modifier, `'${__external$145_default.tokenToString(modifier.kind)}' modifier cannot appear on a parameter.`);
     }
     // `checkGrammarModifiers` function in `typescript`
     if (
@@ -1324,7 +1254,7 @@ function checkModifiers(node) {
   if (node.parent?.kind === SyntaxKind.ObjectLiteralExpression) {
     // @ts-expect-error intentional to access deprecated `node.modifiers`
     for (const modifier of node.modifiers ?? []) {
-      if (__external$151_default.isDecorator(modifier) || modifiers.includes(modifier)) {
+      if (__external$145_default.isDecorator(modifier) || modifiers.includes(modifier)) {
         continue;
       }
       checkObjectPropertyModifier(node, modifier);
@@ -1337,7 +1267,7 @@ function checkObjectPropertyModifier(node, modifier) {
     (modifier.kind !== SyntaxKind.AsyncKeyword || node.kind !== SyntaxKind.MethodDeclaration) &&
     node.parent.kind === SyntaxKind.ObjectLiteralExpression
   ) {
-    throw createError$2(modifier, `'${__external$151_default.tokenToString(modifier.kind)}' modifier cannot be used here.`);
+    throw createError$2(modifier, `'${__external$145_default.tokenToString(modifier.kind)}' modifier cannot be used here.`);
   }
 }
 
@@ -1352,9 +1282,9 @@ function getImportClausePhaseModifier(node) {
     return null;
   }
   if (isAtLeast59) {
-    return node.phaseModifier === __external$151_default.SyntaxKind.TypeKeyword
+    return node.phaseModifier === __external$145_default.SyntaxKind.TypeKeyword
       ? 'type'
-      : node.phaseModifier === __external$151_default.SyntaxKind.DeferKeyword
+      : node.phaseModifier === __external$145_default.SyntaxKind.DeferKeyword
         ? 'defer'
         : null;
   }
@@ -1511,7 +1441,7 @@ function checkSyntaxError(tsNode, parent, allowPattern) {
       break;
     }
     case SyntaxKind.TaggedTemplateExpression:
-      if (node.tag.flags & __external$151_default.NodeFlags.OptionalChain) {
+      if (node.tag.flags & __external$145_default.NodeFlags.OptionalChain) {
         throw createError$2(node, 'Tagged template expressions are not permitted in an optional chain.');
       }
       break;
@@ -1545,7 +1475,7 @@ function checkSyntaxError(tsNode, parent, allowPattern) {
       break;
     }
     case SyntaxKind.EnumMember: {
-      const computed = node.name.kind === __external$151_default.SyntaxKind.ComputedPropertyName;
+      const computed = node.name.kind === __external$145_default.SyntaxKind.ComputedPropertyName;
       if (computed) {
         throw createError$2(node.name, 'Computed property names are not allowed in enums.');
       }
@@ -1619,7 +1549,7 @@ function checkSyntaxError(tsNode, parent, allowPattern) {
     case SyntaxKind.ClassDeclaration:
       if (
         !node.name &&
-        (!hasModifier(__external$151_default.SyntaxKind.ExportKeyword, node) || !hasModifier(__external$151_default.SyntaxKind.DefaultKeyword, node))
+        (!hasModifier(__external$145_default.SyntaxKind.ExportKeyword, node) || !hasModifier(__external$145_default.SyntaxKind.DefaultKeyword, node))
       ) {
         throw createError$2(node, "A class declaration without the 'default' modifier must have a name.");
       }
@@ -1631,7 +1561,7 @@ function checkSyntaxError(tsNode, parent, allowPattern) {
       for (const heritageClause of heritageClauses) {
         const { token, types } = heritageClause;
         if (types.length === 0) {
-          throw createError$2(heritageClause, `'${__external$151_default.tokenToString(token)}' list cannot be empty.`);
+          throw createError$2(heritageClause, `'${__external$145_default.tokenToString(token)}' list cannot be empty.`);
         }
         if (token === SyntaxKind.ExtendsKeyword) {
           if (seenExtendsClause) {
@@ -1650,7 +1580,7 @@ function checkSyntaxError(tsNode, parent, allowPattern) {
             throw createError$2(heritageClause, "'implements' clause already seen.");
           }
           for (const heritageType of heritageClause.types) {
-            if (!isEntityNameExpression(heritageType.expression) || __external$151_default.isOptionalChain(heritageType.expression)) {
+            if (!isEntityNameExpression(heritageType.expression) || __external$145_default.isOptionalChain(heritageType.expression)) {
               throw createError$2(
                 heritageType,
                 'A class can only implement an identifier/qualified-name with optional type arguments.'
@@ -1674,14 +1604,14 @@ function checkSyntaxError(tsNode, parent, allowPattern) {
           throw createError$2(heritageClause, 'Unexpected token.');
         }
         if (types.length === 0) {
-          throw createError$2(heritageClause, `'${__external$151_default.tokenToString(token)}' list cannot be empty.`);
+          throw createError$2(heritageClause, `'${__external$145_default.tokenToString(token)}' list cannot be empty.`);
         }
         if (seenExtendsClause) {
           throw createError$2(heritageClause, "'extends' clause already seen.");
         }
         seenExtendsClause = true;
         for (const heritageType of heritageClause.types) {
-          if (!isEntityNameExpression(heritageType.expression) || __external$151_default.isOptionalChain(heritageType.expression)) {
+          if (!isEntityNameExpression(heritageType.expression) || __external$145_default.isOptionalChain(heritageType.expression)) {
             throw createError$2(
               heritageType,
               'Interface declaration can only extend an identifier/qualified name with optional type arguments.'
@@ -1743,24 +1673,24 @@ function checkSyntaxError(tsNode, parent, allowPattern) {
       }
       break;
     case SyntaxKind.ModuleDeclaration: {
-      if (node.flags & __external$151_default.NodeFlags.GlobalAugmentation) {
+      if (node.flags & __external$145_default.NodeFlags.GlobalAugmentation) {
         const { body } = node;
         if (body == null || body.kind === SyntaxKind.ModuleDeclaration) {
           throw createError$2(node.body ?? node, 'Expected a valid module body');
         }
         const { name } = node;
-        if (name.kind !== __external$151_default.SyntaxKind.Identifier) {
+        if (name.kind !== __external$145_default.SyntaxKind.Identifier) {
           throw createError$2(name, 'global module augmentation must have an Identifier id');
         }
         return;
       }
-      if (__external$151_default.isStringLiteral(node.name)) {
+      if (__external$145_default.isStringLiteral(node.name)) {
         return;
       }
       if (node.body == null) {
         throw createError$2(node, 'Expected a module body');
       }
-      if (node.name.kind !== __external$151_default.SyntaxKind.Identifier) {
+      if (node.name.kind !== __external$145_default.SyntaxKind.Identifier) {
         throw createError$2(node.name, '`namespace`s must have an Identifier id');
       }
       break;
@@ -1776,7 +1706,7 @@ function checkSyntaxError(tsNode, parent, allowPattern) {
 function checkForStatementDeclaration(node) {
   const { initializer, kind } = node;
   const loop = kind === SyntaxKind.ForInStatement ? 'for...in' : 'for...of';
-  if (__external$151_default.isVariableDeclarationList(initializer)) {
+  if (__external$145_default.isVariableDeclarationList(initializer)) {
     if (initializer.declarations.length !== 1) {
       throw createError$2(initializer, `Only a single variable declaration is allowed in a '${loop}' statement.`);
     }
@@ -1967,7 +1897,7 @@ class Converter {
         .map((statement) => {
           const child = this.convertChild(statement);
           if (allowDirectives) {
-            if (child?.expression && __external$151_default.isExpressionStatement(statement) && __external$151_default.isStringLiteral(statement.expression)) {
+            if (child?.expression && __external$145_default.isExpressionStatement(statement) && __external$145_default.isStringLiteral(statement.expression)) {
               const raw = child.expression.raw;
               child.directive = raw.slice(1, -1);
               return child; // child can be null, but it's filtered below
@@ -2156,7 +2086,7 @@ class Converter {
   convertJSXNamespaceOrIdentifier(node) {
     // TypeScript@5.1 added in ts.JsxNamespacedName directly
     // We prefer using that if it's relevant for this node type
-    if (node.kind === __external$151_default.SyntaxKind.JsxNamespacedName) {
+    if (node.kind === __external$145_default.SyntaxKind.JsxNamespacedName) {
       const result = this.createNode(node, {
         type: AST_NODE_TYPES.JSXNamespacedName,
         name: this.createNode(node.name, {
@@ -3781,12 +3711,12 @@ class Converter {
           const tokenAfterAttributes = findNextToken(node.attributes, node, this.ast);
           // Since TS 5.9, there could be a trailing comma, i.e. `{ with: { ... }, }`
           const closeBraceToken =
-            tokenAfterAttributes.kind === __external$151_default.SyntaxKind.CommaToken
+            tokenAfterAttributes.kind === __external$145_default.SyntaxKind.CommaToken
               ? findNextToken(tokenAfterAttributes, node, this.ast)
               : tokenAfterAttributes;
           const withOrAssertToken = findNextToken(openBraceToken, node, this.ast);
           const withOrAssertTokenRange = getRange(withOrAssertToken, this.ast);
-          const withOrAssertName = withOrAssertToken.kind === __external$151_default.SyntaxKind.AssertKeyword ? 'assert' : 'with';
+          const withOrAssertName = withOrAssertToken.kind === __external$145_default.SyntaxKind.AssertKeyword ? 'assert' : 'with';
           options = this.createNode(node, {
             type: AST_NODE_TYPES.ObjectExpression,
             range: [openBraceToken.getStart(this.ast), closeBraceToken.end],
@@ -3863,7 +3793,7 @@ class Converter {
         return this.fixExports(node, result);
       }
       case SyntaxKind.EnumMember: {
-        const computed = node.name.kind === __external$151_default.SyntaxKind.ComputedPropertyName;
+        const computed = node.name.kind === __external$145_default.SyntaxKind.ComputedPropertyName;
         return this.createNode(
           node,
           this.#withDeprecatedGetter(
@@ -3883,7 +3813,7 @@ class Converter {
         const result = this.createNode(node, {
           type: AST_NODE_TYPES.TSModuleDeclaration,
           ...(() => {
-            if (node.flags & __external$151_default.NodeFlags.GlobalAugmentation) {
+            if (node.flags & __external$145_default.NodeFlags.GlobalAugmentation) {
               return {
                 body: this.convertChild(node.body),
                 declare: false,
@@ -3892,7 +3822,7 @@ class Converter {
                 kind: 'global',
               };
             }
-            if (__external$151_default.isStringLiteral(node.name)) {
+            if (__external$145_default.isStringLiteral(node.name)) {
               const body = this.convertChild(node.body);
               return {
                 kind: 'module',
@@ -3913,7 +3843,7 @@ class Converter {
               optional: false,
               typeAnnotation: undefined,
             });
-            while (node.body && __external$151_default.isModuleDeclaration(node.body) && node.body.name) {
+            while (node.body && __external$145_default.isModuleDeclaration(node.body) && node.body.name) {
               node = node.body;
               isDeclare ||= hasModifier(SyntaxKind.DeclareKeyword, node);
               const nextName = node.name;
@@ -3937,12 +3867,12 @@ class Converter {
               declare: false,
               global: false,
               id: name,
-              kind: node.flags & __external$151_default.NodeFlags.Namespace ? 'namespace' : 'module',
+              kind: node.flags & __external$145_default.NodeFlags.Namespace ? 'namespace' : 'module',
             };
           })(),
         });
         result.declare = isDeclare;
-        if (node.flags & __external$151_default.NodeFlags.GlobalAugmentation) {
+        if (node.flags & __external$145_default.NodeFlags.GlobalAugmentation) {
           result.global = true;
         }
         return this.fixExports(node, result);
@@ -4126,7 +4056,7 @@ class Converter {
    * property instead of a kind property. Recursively copies all children.
    */
   deeplyCopy(node) {
-    if (node.kind === __external$151_default.SyntaxKind.JSDocFunctionType) {
+    if (node.kind === __external$145_default.SyntaxKind.JSDocFunctionType) {
       this.#throwError(node, 'JSDoc types can only be used inside documentation comments.');
     }
     const customType = `TS${SyntaxKind[node.kind]}`;
@@ -4142,7 +4072,7 @@ class Converter {
     });
     if ('type' in node) {
       result.typeAnnotation =
-        node.type && 'kind' in node.type && __external$151_default.isTypeNode(node.type)
+        node.type && 'kind' in node.type && __external$145_default.isTypeNode(node.type)
           ? this.convertTypeAnnotation(node.type, node)
           : null;
     }
@@ -4203,7 +4133,7 @@ class Converter {
    * @returns the ESTreeNode with fixed exports
    */
   fixExports(node, result) {
-    const isNamespaceNode = __external$151_default.isModuleDeclaration(node) && !__external$151_default.isStringLiteral(node.name);
+    const isNamespaceNode = __external$145_default.isModuleDeclaration(node) && !__external$145_default.isStringLiteral(node.name);
     const modifiers = isNamespaceNode ? getNamespaceModifiers(node) : getModifiers(node);
     if (modifiers?.[0].kind === SyntaxKind.ExportKeyword) {
       /**
@@ -4418,13 +4348,13 @@ function parse$6(code, options = {}) {
   const kind = scriptKind(filePath, options.jsx === true);
   // The linter's SourceFile of this text, when it has just parsed it (xufa-check), or a new one.
   const source =
-    __external$151.takeSourceFile(code, kind, isModule) ??
-    __external$151_default.createSourceFile(
+    __external$145.takeSourceFile(code, kind, isModule) ??
+    __external$145_default.createSourceFile(
       filePath,
       code,
       {
-        languageVersion: __external$151_default.ScriptTarget.Latest,
-        jsDocParsingMode: __external$151_default.JSDocParsingMode.ParseNone,
+        languageVersion: __external$145_default.ScriptTarget.Latest,
+        jsDocParsingMode: __external$145_default.JSDocParsingMode.ParseNone,
         setExternalModuleIndicator: isModule
           ? (file) => {
               file.externalModuleIndicator = true;
@@ -4472,11 +4402,11 @@ function setParents(source, withParentheses, opaque) {
     node.parent = parent;
     if (opaque) addOpaqueToken(node, source, add);
     parent = node;
-    __external$151_default.forEachChild(node, visit);
+    __external$145_default.forEachChild(node, visit);
     parent = node.parent;
-    if (withParentheses && node.kind === __external$151_default.SyntaxKind.ParenthesizedExpression) parentheses.push(node);
+    if (withParentheses && node.kind === __external$145_default.SyntaxKind.ParenthesizedExpression) parentheses.push(node);
   };
-  __external$151_default.forEachChild(source, visit);
+  __external$145_default.forEachChild(source, visit);
   if (!sorted) {
     const pairs = [];
     for (let index = 0; index < opaque.length; index += 2) pairs.push([opaque[index], opaque[index + 1]]);
@@ -4734,7 +4664,6 @@ const getContentEnd = (node) => node.__contentEnd ?? locEndWithFullText(node);
 
 const nodeTypesWithContentEnd = /** @type {const} */ ([
   'ExpressionStatement',
-  'Directive',
   'ImportDeclaration',
   'ExportDefaultDeclaration',
   'ExportNamedDeclaration',
@@ -4910,26 +4839,9 @@ function getOrInsert(map, key, defaultValue) {
  * @param {Comment} comment
  * @returns {boolean}
  */
-const isBlockComment = createTypeCheckFunction([
-  'Block',
-  'CommentBlock',
-  // `meriyah`
-  'MultiLine',
-]);
+const isBlockComment = createTypeCheckFunction(['Block', 'CommentBlock']);
 
-const isLineComment = createTypeCheckFunction([
-  'Line',
-  'CommentLine',
-  // `meriyah` has `SingleLine`, `HashbangComment`, `HTMLOpen`, and `HTMLClose`
-  'SingleLine',
-  'HashbangComment',
-  'HTMLOpen',
-  'HTMLClose',
-  // `espree`, and `oxc`(with `{astType: 'ts'}`)
-  'Hashbang',
-  // `babel` and `flow` hashbang
-  'InterpreterDirective',
-]);
+const isLineComment = createTypeCheckFunction(['Line', 'CommentLine']);
 
 
 
@@ -5133,311 +5045,7 @@ function mergeNestledJsdocComments(comments) {
 
 
 
-// utilities/is-object.js
-/**
- * @param {unknown} object
- * @returns {object is NonNullable<object>}
- */
-function isObject(object) {
-  return object !== null && typeof object === 'object';
-}
-
-
-
-
-// utilities/create-get-visitor-keys.js
-/**
-@typedef {(node: Node) => VisitorKeys} GetVisitorKeys
-@typedef {NonNullable<object>} Node
-@typedef {readonly string[]} VisitorKeys
-*/
-
-/**
-@param {Record<string, VisitorKeys>} visitorKeys
-@param {string} [typeProperty="type"]
-@returns {GetVisitorKeys}
-*/
-function createGetVisitorKeys(visitorKeys, typeProperty = 'type') {
-  /** @type {GetVisitorKeys} */
-  function getVisitorKeys(node) {
-    const type = node[typeProperty];
-
-    const keys = visitorKeys[type];
-    /* c8 ignore next 5 */
-    if (!Array.isArray(keys)) {
-      throw Object.assign(new Error(`Missing visitor keys for '${type}'.`), {
-        node,
-      });
-    }
-
-    return keys;
-  }
-
-  return getVisitorKeys;
-}
-
-
-
-
-// traverse/visitor-keys.evaluate.js
-// The visitor keys of prettier 3.9.9 (evaluated when prettier is built), by tools/port-format; and of the nodes of
-// Babel's tree that parse/json.js makes (ObjectProperty, StringLiteral...), which comments of JSON are attached through.
-const __default$13 = {
-  AccessorProperty: ['decorators', 'key', 'typeAnnotation', 'value'],
-  ArrayExpression: ['elements'],
-  ArrayPattern: ['elements', 'typeAnnotation', 'decorators'],
-  ArrowFunctionExpression: ['typeParameters', 'params', 'predicate', 'returnType', 'body'],
-  AssignmentExpression: ['left', 'right'],
-  AssignmentPattern: ['left', 'right', 'decorators', 'typeAnnotation'],
-  AwaitExpression: ['argument'],
-  BigIntLiteral: [],
-  BinaryExpression: ['left', 'right'],
-  BlockStatement: ['directives', 'body'],
-  BooleanLiteral: [],
-  BreakStatement: ['label'],
-  CallExpression: ['callee', 'typeArguments', 'arguments'],
-  CatchClause: ['param', 'body'],
-  ChainExpression: ['expression'],
-  ClassBody: ['body'],
-  ClassDeclaration: [
-    'decorators',
-    'id',
-    'typeParameters',
-    'superClass',
-    'superTypeArguments',
-    'mixins',
-    'implements',
-    'body',
-  ],
-  ClassExpression: [
-    'decorators',
-    'id',
-    'typeParameters',
-    'superClass',
-    'superTypeArguments',
-    'mixins',
-    'implements',
-    'body',
-  ],
-  ConditionalExpression: ['test', 'consequent', 'alternate'],
-  ContinueStatement: ['label'],
-  DebuggerStatement: [],
-  Decorator: ['expression'],
-  DoWhileStatement: ['body', 'test'],
-  EmptyStatement: [],
-  ExportAllDeclaration: ['source', 'attributes', 'exported'],
-  ExportDefaultDeclaration: ['declaration'],
-  ExportNamedDeclaration: ['declaration', 'specifiers', 'source', 'attributes'],
-  ExportSpecifier: ['local', 'exported'],
-  ExpressionStatement: ['expression'],
-  ForInStatement: ['left', 'right', 'body'],
-  ForOfStatement: ['left', 'right', 'body'],
-  ForStatement: ['init', 'test', 'update', 'body'],
-  FunctionDeclaration: ['id', 'typeParameters', 'params', 'predicate', 'returnType', 'body'],
-  FunctionExpression: ['id', 'typeParameters', 'params', 'predicate', 'returnType', 'body'],
-  Identifier: ['typeAnnotation', 'decorators'],
-  IfStatement: ['test', 'consequent', 'alternate'],
-  ImportAttribute: ['key', 'value'],
-  ImportDeclaration: ['specifiers', 'source', 'attributes'],
-  ImportDefaultSpecifier: ['local'],
-  ImportExpression: ['source', 'options'],
-  ImportNamespaceSpecifier: ['local'],
-  ImportSpecifier: ['imported', 'local'],
-  JSXAttribute: ['name', 'value'],
-  JSXClosingElement: ['name'],
-  JSXClosingFragment: [],
-  JSXElement: ['openingElement', 'children', 'closingElement'],
-  JSXEmptyExpression: [],
-  JSXExpressionContainer: ['expression'],
-  JSXFragment: ['openingFragment', 'children', 'closingFragment'],
-  JSXIdentifier: [],
-  JSXMemberExpression: ['object', 'property'],
-  JSXNamespacedName: ['namespace', 'name'],
-  JSXOpeningElement: ['name', 'typeArguments', 'attributes'],
-  JSXOpeningFragment: [],
-  JSXSpreadAttribute: ['argument'],
-  JSXSpreadChild: ['expression'],
-  JSXText: [],
-  JsExpressionRoot: ['node'],
-  JsonRoot: ['node'],
-  LabeledStatement: ['label', 'body'],
-  Literal: [],
-  LogicalExpression: ['left', 'right'],
-  MemberExpression: ['object', 'property'],
-  MetaProperty: ['meta', 'property'],
-  MethodDefinition: ['decorators', 'key', 'value'],
-  NGRoot: ['node'],
-  NewExpression: ['callee', 'typeArguments', 'arguments'],
-  NullLiteral: [],
-  NumericLiteral: [],
-  ObjectExpression: ['properties'],
-  ObjectPattern: ['decorators', 'properties', 'typeAnnotation'],
-  ObjectProperty: ['key', 'value'],
-  ParenthesizedExpression: ['expression'],
-  PrivateIdentifier: [],
-  Program: ['directives', 'body'],
-  Property: ['key', 'value'],
-  PropertyDefinition: ['decorators', 'variance', 'key', 'typeAnnotation', 'value'],
-  RestElement: ['argument', 'typeAnnotation', 'decorators'],
-  ReturnStatement: ['argument'],
-  SequenceExpression: ['expressions'],
-  SpreadElement: ['argument'],
-  StaticBlock: ['body'],
-  StringLiteral: [],
-  Super: [],
-  SwitchCase: ['test', 'consequent'],
-  SwitchStatement: ['discriminant', 'cases'],
-  TSAbstractAccessorProperty: ['decorators', 'key', 'typeAnnotation'],
-  TSAbstractKeyword: [],
-  TSAbstractMethodDefinition: ['key', 'value'],
-  TSAbstractPropertyDefinition: ['decorators', 'key', 'typeAnnotation'],
-  TSAnyKeyword: [],
-  TSArrayType: ['elementType'],
-  TSAsExpression: ['expression', 'typeAnnotation'],
-  TSAsyncKeyword: [],
-  TSBigIntKeyword: [],
-  TSBooleanKeyword: [],
-  TSCallSignatureDeclaration: ['typeParameters', 'params', 'returnType'],
-  TSClassImplements: ['expression', 'typeArguments'],
-  TSConditionalType: ['checkType', 'extendsType', 'trueType', 'falseType'],
-  TSConstructSignatureDeclaration: ['typeParameters', 'params', 'returnType'],
-  TSConstructorType: ['typeParameters', 'params', 'returnType'],
-  TSDeclareFunction: ['id', 'typeParameters', 'params', 'returnType', 'body'],
-  TSDeclareKeyword: [],
-  TSEmptyBodyFunctionExpression: ['id', 'typeParameters', 'params', 'returnType'],
-  TSEnumBody: ['members'],
-  TSEnumDeclaration: ['id', 'body'],
-  TSEnumMember: ['id', 'initializer'],
-  TSExportAssignment: ['expression'],
-  TSExportKeyword: [],
-  TSExternalModuleReference: ['expression'],
-  TSFunctionType: ['typeParameters', 'params', 'returnType'],
-  TSImportEqualsDeclaration: ['id', 'moduleReference'],
-  TSImportType: ['source', 'options', 'qualifier', 'typeArguments'],
-  TSIndexSignature: ['parameters', 'typeAnnotation'],
-  TSIndexedAccessType: ['objectType', 'indexType'],
-  TSInferType: ['typeParameter'],
-  TSInstantiationExpression: ['expression', 'typeArguments'],
-  TSInterfaceBody: ['body'],
-  TSInterfaceDeclaration: ['id', 'typeParameters', 'extends', 'body'],
-  TSInterfaceHeritage: ['expression', 'typeArguments'],
-  TSIntersectionType: ['types'],
-  TSIntrinsicKeyword: [],
-  TSJSDocAllType: [],
-  TSLiteralType: ['literal'],
-  TSMappedType: ['key', 'constraint', 'nameType', 'typeAnnotation'],
-  TSMethodSignature: ['key', 'typeParameters', 'params', 'returnType'],
-  TSModuleBlock: ['body'],
-  TSModuleDeclaration: ['id', 'body'],
-  TSNamedTupleMember: ['label', 'elementType'],
-  TSNamespaceExportDeclaration: ['id'],
-  TSNeverKeyword: [],
-  TSNonNullExpression: ['expression'],
-  TSNullKeyword: [],
-  TSNumberKeyword: [],
-  TSObjectKeyword: [],
-  TSOptionalType: ['typeAnnotation'],
-  TSParameterProperty: ['parameter', 'decorators'],
-  TSPrivateKeyword: [],
-  TSPropertySignature: ['key', 'typeAnnotation'],
-  TSProtectedKeyword: [],
-  TSPublicKeyword: [],
-  TSQualifiedName: ['left', 'right'],
-  TSReadonlyKeyword: [],
-  TSRestType: ['typeAnnotation'],
-  TSSatisfiesExpression: ['expression', 'typeAnnotation'],
-  TSStaticKeyword: [],
-  TSStringKeyword: [],
-  TSSymbolKeyword: [],
-  TSTemplateLiteralType: ['quasis', 'types'],
-  TSThisType: [],
-  TSTupleType: ['elementTypes'],
-  TSTypeAliasDeclaration: ['id', 'typeParameters', 'typeAnnotation'],
-  TSTypeAnnotation: ['typeAnnotation'],
-  TSTypeAssertion: ['expression', 'typeAnnotation'],
-  TSTypeLiteral: ['members'],
-  TSTypeOperator: ['typeAnnotation'],
-  TSTypeParameter: ['name', 'constraint', 'default'],
-  TSTypeParameterDeclaration: ['params'],
-  TSTypeParameterInstantiation: ['params'],
-  TSTypePredicate: ['parameterName', 'typeAnnotation'],
-  TSTypeQuery: ['exprName', 'typeArguments'],
-  TSTypeReference: ['typeName', 'typeArguments'],
-  TSUndefinedKeyword: [],
-  TSUnionType: ['types'],
-  TSUnknownKeyword: [],
-  TSVoidKeyword: [],
-  TaggedTemplateExpression: ['tag', 'typeArguments', 'quasi'],
-  TemplateElement: [],
-  TemplateLiteral: ['quasis', 'expressions'],
-  ThisExpression: [],
-  ThrowStatement: ['argument'],
-  TryStatement: ['block', 'handler', 'finalizer'],
-  UnaryExpression: ['argument'],
-  UpdateExpression: ['argument'],
-  VariableDeclaration: ['declarations'],
-  VariableDeclarator: ['id', 'init'],
-  WhileStatement: ['body', 'test'],
-  WithStatement: ['object', 'body'],
-  YieldExpression: ['argument'],
-};
-
-
-// traverse/get-visitor-keys.js
-
-
-
-const getVisitorKeys$14 = createGetVisitorKeys(__default$13);
-
-
-
-
-// postprocess/visit-node.js
-
-
-
-function visitNode(node, options) {
-  if (!isObject(node)) {
-    return node;
-  }
-
-  if (Array.isArray(node)) {
-    // As of Node.js 16 using raw for loop over Array.entries provides a
-    // measurable difference in performance. Array.entries returns an iterator
-    // of arrays.
-    for (let i = 0; i < node.length; i++) {
-      node[i] = visitNode(node[i], options);
-    }
-    return node;
-  }
-
-  if (options.onEnter) {
-    const result = options.onEnter(node) ?? node;
-    // If node is replaced, re-enter
-    if (result !== node) {
-      return visitNode(result, options);
-    }
-
-    node = result;
-  }
-
-  const keys = getVisitorKeys$14(node);
-  for (let i = 0; i < keys.length; i++) {
-    node[keys[i]] = visitNode(node[keys[i]], options);
-  }
-
-  if (options.onLeave) {
-    node = options.onLeave(node) || node;
-  }
-
-  return node;
-}
-
-
-
-
 // postprocess/index.js
-
 
 
 
@@ -5463,7 +5071,7 @@ function visitNode(node, options) {
     | "typescript"
 }} options
 */
-function postprocess$15(ast, options) {
+function postprocess$13(ast, options) {
   const { text, astType } = options;
   const { comments } = ast;
 
@@ -5472,7 +5080,7 @@ function postprocess$15(ast, options) {
   // `InterpreterDirective` from babel parser and flow parser
   // Other parsers parse it as comment, babel treat it as comment too
   // https://github.com/babel/babel/issues/15116
-  const program = ast.type === 'File' ? ast.program : ast;
+  const program = ast;
   if (program.interpreter) {
     comments.unshift(program.interpreter);
     delete program.interpreter;
@@ -5494,171 +5102,50 @@ function postprocess$15(ast, options) {
 
   let typeCastCommentsEnds;
 
-  // @xufa/lint: given the nodes to change (the converter lists them as it makes them, children first, as the walk
-  // leaves them), they are changed as the walk below would: what replaces a node takes its place in the same object.
-  if (options.postprocessed) {
-    for (const node of options.postprocessed) {
-      setContentEnd(node, comments, text);
-      switch (node.type) {
-        case 'ParenthesizedExpression': {
-          const { expression } = node;
-          const start = locStart$8(node);
-          if (!typeCastCommentsEnds) {
-            typeCastCommentsEnds = [];
-            for (const comment of comments) {
-              if (isTypeCastComment(comment)) {
-                typeCastCommentsEnds.push(locEnd$9(comment));
-              }
+  // @xufa/lint: the nodes to change, as the converter lists them while it makes them (children first: prettier's walk
+  // of the tree, which this replaces, left them in that order); what replaces a node takes its place in the same object.
+  for (const node of options.postprocessed) {
+    setContentEnd(node, comments, text);
+    switch (node.type) {
+      case 'ParenthesizedExpression': {
+        const { expression } = node;
+        const start = locStart$8(node);
+        if (!typeCastCommentsEnds) {
+          typeCastCommentsEnds = [];
+          for (const comment of comments) {
+            if (isTypeCastComment(comment)) {
+              typeCastCommentsEnds.push(locEnd$9(comment));
             }
           }
-          const previousCommentEnd = typeCastCommentsEnds.findLast((end) => end <= start);
-          const shouldKeepParenthesizedExpression =
-            previousCommentEnd && text.slice(previousCommentEnd, start).trim().length === 0;
-          if (!shouldKeepParenthesizedExpression) {
-            expression.extra = { ...expression.extra, parenthesized: true };
-            replaceWith(node, expression);
-          }
-          break;
         }
-        case 'TemplateElement': {
-          const start = locStart$8(node) + 1;
-          const end = locEnd$9(node) - (node.tail ? 1 : 2);
-          node.range = [start, end];
-          break;
-        }
-        case 'TSParenthesizedType':
-          replaceWith(node, node.typeAnnotation);
-          break;
-        case 'TSUnionType':
-        case 'TSIntersectionType':
-          if (node.types.length === 1) {
-            replaceWith(node, node.types[0]);
-          }
-          break;
-        case 'LogicalExpression':
-          if (isUnbalancedLogicalTree(node)) {
-            replaceWith(node, rebalanceLogicalTree(node));
-          }
-          break;
-      }
-    }
-    return ast;
-  }
-
-  ast = visitNode(ast, {
-    onEnter(node) {
-      setContentEnd(node, comments, text);
-
-      switch (node.type) {
-        case 'ParenthesizedExpression': {
-          const { expression } = node;
-          const start = locStart$8(node);
-
-          // Align range with `flow`
-          if (expression.type === 'TypeCastExpression') {
-            expression.range = [start, locEnd$9(node)];
-            return expression;
-          }
-
-          let shouldKeepParenthesizedExpression = false;
-          if (astType !== 'oxc-ts') {
-            if (!typeCastCommentsEnds) {
-              typeCastCommentsEnds = [];
-
-              for (const comment of comments) {
-                if (isTypeCastComment(comment)) {
-                  typeCastCommentsEnds.push(locEnd$9(comment));
-                }
-              }
-            }
-
-            // Keep ParenthesizedExpression nodes only if they have Closure-style type cast comments.
-            const previousCommentEnd = typeCastCommentsEnds.findLast((end) => end <= start);
-            shouldKeepParenthesizedExpression =
-              previousCommentEnd &&
-              // check that there are only white spaces between the comment and the parenthesis
-              text.slice(previousCommentEnd, start).trim().length === 0;
-          }
-
-          if (shouldKeepParenthesizedExpression) {
-            return;
-          }
-
+        const previousCommentEnd = typeCastCommentsEnds.findLast((end) => end <= start);
+        const shouldKeepParenthesizedExpression =
+          previousCommentEnd && text.slice(previousCommentEnd, start).trim().length === 0;
+        if (!shouldKeepParenthesizedExpression) {
           expression.extra = { ...expression.extra, parenthesized: true };
-          return expression;
+          replaceWith(node, expression);
         }
-
-        // This happened when use `oxc-parser` to parse `` `${foo satisfies bar}`; ``
-        // https://github.com/oxc-project/oxc/issues/11313
-        case 'TemplateLiteral':
-          /* c8 ignore next 3 */
-          if (node.expressions.length !== node.quasis.length - 1) {
-            throw new Error('Malformed template literal.');
-          }
-          break;
-
-        case 'TemplateElement':
-          // `flow`, `hermes`, `typescript`, and `oxc`(with `{astType: 'ts'}`) follows the `espree` style positions
-          // https://github.com/eslint/js/blob/5826877f7b33548e5ba984878dd4a8eac8448f87/packages/espree/lib/espree.js#L213
-          if (
-            astType === 'flow' ||
-            astType === 'hermes' ||
-            astType === 'espree' ||
-            astType === 'typescript' ||
-            astType === 'oxc-ts' ||
-            astType === 'yuku-ts'
-          ) {
-            const start = locStart$8(node) + 1;
-            const end = locEnd$9(node) - (node.tail ? 1 : 2);
-
-            node.range = [start, end];
-          }
-          break;
-
-        // remove redundant TypeScript nodes
-        case 'TSParenthesizedType':
-          return node.typeAnnotation;
-
-        // For hack-style pipeline
-        case 'TopicReference':
-          ast.extra = { ...ast.extra, __isUsingHackPipeline: true };
-          break;
-
-        // In Flow parser, it doesn't generate union/intersection types for single type
-        case 'TSUnionType':
-        case 'TSIntersectionType':
-          if (node.types.length === 1) {
-            return node.types[0];
-          }
-          break;
-
-        // babel-flow
-        case 'TupleTypeAnnotation':
-          if (node.types && !node.elementTypes) {
-            node.elementTypes = node.types;
-          }
-          break;
-
-        case 'ImportDeclaration':
-          if (astType === 'hermes' && node.assertions && !node.attributes) {
-            node.attributes = node.assertions;
-            delete node.assertions;
-          }
-          break;
+        break;
       }
-    },
-    onLeave(node) {
-      switch (node.type) {
-        // Children can be parenthesized, need do this in `onLeave`
-        case 'LogicalExpression':
-          // We remove unneeded parens around same-operator LogicalExpressions
-          if (isUnbalancedLogicalTree(node)) {
-            return rebalanceLogicalTree(node);
-          }
-          break;
+      case 'TemplateElement': {
+        const start = locStart$8(node) + 1;
+        const end = locEnd$9(node) - (node.tail ? 1 : 2);
+        node.range = [start, end];
+        break;
       }
-    },
-  });
+      case 'TSUnionType':
+      case 'TSIntersectionType':
+        if (node.types.length === 1) {
+          replaceWith(node, node.types[0]);
+        }
+        break;
+      case 'LogicalExpression':
+        if (isUnbalancedLogicalTree(node)) {
+          replaceWith(node, rebalanceLogicalTree(node));
+        }
+        break;
+    }
+  }
   return ast;
 }
 
@@ -5793,7 +5280,7 @@ function printKeyValues(key, valueOrArray) {
 }
 
 /** A docblock of comments and pragmas. */
-function print$16({ comments = '', pragmas = {} }) {
+function print$14({ comments = '', pragmas = {} }) {
   const line = newlineOf(comments);
   const head = '/**';
   const start = ' *';
@@ -5834,38 +5321,6 @@ const FORMAT_PRAGMAS = ['format', 'prettier'];
 const FORMAT_IGNORE_PRAGMAS = FORMAT_PRAGMAS.map((pragma) => `no${pragma}`);
 const FORMAT_PRAGMA_TO_INSERT = FORMAT_PRAGMAS[0];
 
-// Regular expressions are put in this file so they can be evaluated
-
-const YAML_IS_PRAGMA_REGEXP = new RegExp(String.raw`^\s*@(?:${FORMAT_PRAGMAS.join('|')})\s*$`);
-
-const [YAML_HAS_PRAGMA_REGEXP, YAML_HAS_IGNORE_PRAGMA_REGEXP] = [FORMAT_PRAGMAS, FORMAT_IGNORE_PRAGMAS].map(
-  (pragmas) => new RegExp(String.raw`^\s*#[^\S\n]*@(?:${pragmas.join('|')})\s*?(?:\n|$)`)
-);
-
-const [GRAPHQL_HAS_PRAGMA_REGEXP, GRAPHQL_HAS_IGNORE_PRAGMA_REGEXP] = [
-  FORMAT_PRAGMAS,
-  FORMAT_IGNORE_PRAGMAS,
-].map((pragmas) => new RegExp(String.raw`^\s*#[^\S\n]*@(?:${pragmas.join('|')})\s*(?:\n|$)`));
-
-const [HTML_HAS_PRAGMA_REGEXP, HTML_HAS_IGNORE_PRAGMA_REGEXP] = [FORMAT_PRAGMAS, FORMAT_IGNORE_PRAGMAS].map(
-  (pragmas) => new RegExp(String.raw`^\s*<!--\s*@(?:${pragmas.join('|')})\s*-->`)
-);
-
-const [MARKDOWN_HAS_PRAGMA_REGEXP, MARKDOWN_HAS_IGNORE_PRAGMA_REGEXP] = [
-  FORMAT_PRAGMAS,
-  FORMAT_IGNORE_PRAGMAS,
-].map((pragmas) => {
-  const pragma = `@(?:${pragmas.join('|')})`;
-  return new RegExp(
-    [
-      String.raw`<!--\s*${pragma}\s*-->`,
-      String.raw`\{\s*\/\*\s*${pragma}\s*\*\/\s*\}`,
-      `<!--.*\r?\n[\\s\\S]*(^|\n)[^\\S\n]*${pragma}[^\\S\n]*($|\n)[\\s\\S]*\n.*-->`,
-    ].join('|'),
-    'm'
-  );
-});
-
 
 // utilities/get-shebang.js
 function getShebang(text) {
@@ -5900,7 +5355,7 @@ function parseDocBlock(text) {
   return { shebang, text, pragmas, comments };
 }
 
-function hasPragma$17(text) {
+function hasPragma(text) {
   const { pragmas } = parseDocBlock(text);
   return FORMAT_PRAGMAS.some((pragma) => Object.hasOwn(pragmas, pragma));
 }
@@ -5910,11 +5365,11 @@ function hasIgnorePragma(text) {
   return FORMAT_IGNORE_PRAGMAS.some((pragma) => Object.hasOwn(pragmas, pragma));
 }
 
-function insertPragma$18(originalText) {
+function insertPragma$15(originalText) {
   const { shebang, text, pragmas, comments } = parseDocBlock(originalText);
   const strippedText = strip(text);
 
-  let docBlock = print$16({
+  let docBlock = print$14({
     pragmas: {
       [FORMAT_PRAGMA_TO_INSERT]: '',
       ...pragmas,
@@ -5937,7 +5392,7 @@ function createParser(options) {
 
   return {
     astFormat: 'estree',
-    hasPragma: hasPragma$17,
+    hasPragma: hasPragma,
     hasIgnorePragma: hasIgnorePragma,
     locStart: locStart$8,
     locEnd: locEnd$9,
@@ -5953,7 +5408,7 @@ function createParser(options) {
  * Use a naive regular expression to detect JSX
  * copied from typescript.js
  */
-const __default$19 = new RegExp(
+const __default$16 = new RegExp(
   [
     '^[^"\'`]*</', // Contains "</" when probably not in a string
     '|',
@@ -6072,13 +5527,13 @@ function getParseOptionsCombinations(text, filepath) {
     return combinations;
   }
 
-  const shouldEnableJsx = __default$19.test(text);
+  const shouldEnableJsx = __default$16.test(text);
   return [shouldEnableJsx, !shouldEnableJsx].flatMap((jsx) =>
     combinations.map((parseOptions) => ({ ...parseOptions, jsx }))
   );
 }
 
-function parse$20(text, options) {
+function parse$17(text, options) {
   let filepath = options?.filepath;
   if (typeof filepath !== 'string') {
     filepath = undefined;
@@ -6108,10 +5563,10 @@ function parse$20(text, options) {
     throw createParseError(error);
   }
 
-  return postprocess$15(ast, { text, astType: 'typescript', postprocessed });
+  return postprocess$13(ast, { text, astType: 'typescript', postprocessed });
 }
 
-const typescript = /* @__PURE__ */ createParser(parse$20);
+const typescript = /* @__PURE__ */ createParser(parse$17);
 
 
 // utilities/is-non-empty-array.js
@@ -6257,14 +5712,7 @@ function getRaw(node) {
  * @param {Node} node
  * @returns {node is BigIntLiteral}
  */
-function isBigIntLiteral(node) {
-  return (
-    node.type === 'BigIntLiteral' ||
-    (node.type === 'Literal' &&
-      // @ts-expect-error -- Safe
-      Boolean(node.bigint))
-  );
-}
+
 
 /**
  * @param {Node} node
@@ -6288,10 +5736,9 @@ function isNumericLiteral(node) {
  */
 function isRegExpLiteral(node) {
   return (
-    node.type === 'RegExpLiteral' ||
-    (node.type === 'Literal' &&
-      // @ts-expect-error -- Safe
-      Boolean(node.regex))
+    node.type === 'Literal' &&
+    // @ts-expect-error -- Safe
+    Boolean(node.regex)
   );
 }
 
@@ -6325,32 +5772,27 @@ const isBinaryCastExpression = createTypeCheckFunction([
   // TS
   'TSAsExpression',
   'TSSatisfiesExpression',
-  // Flow
-  'AsExpression',
-  'AsConstExpression',
-  'SatisfiesExpression',
 ]);
 
-const isSatisfiesExpression = createTypeCheckFunction(['SatisfiesExpression', 'TSSatisfiesExpression']);
+const isSatisfiesExpression = createTypeCheckFunction(['TSSatisfiesExpression']);
 
-const isUnionType = createTypeCheckFunction(['TSUnionType', 'UnionTypeAnnotation']);
+const isUnionType = createTypeCheckFunction(['TSUnionType']);
 
-const isIntersectionType = createTypeCheckFunction(['TSIntersectionType', 'IntersectionTypeAnnotation']);
+const isIntersectionType = createTypeCheckFunction(['TSIntersectionType']);
 
-const isTupleType = createTypeCheckFunction(['TupleTypeAnnotation', 'TSTupleType']);
+const isTupleType = createTypeCheckFunction(['TSTupleType']);
 
-const isConditionalType = createTypeCheckFunction(['TSConditionalType', 'ConditionalTypeAnnotation']);
+const isConditionalType = createTypeCheckFunction(['TSConditionalType']);
 
-const isTypeAlias = createTypeCheckFunction(['TSTypeAliasDeclaration', 'TypeAlias']);
+const isTypeAlias = createTypeCheckFunction(['TSTypeAliasDeclaration']);
 
 const isReturnOrThrowStatement = createTypeCheckFunction(['ReturnStatement', 'ThrowStatement']);
 
-const isExportDeclaration$21 = createTypeCheckFunction([
+const isExportDeclaration$18 = createTypeCheckFunction([
   'ExportDefaultDeclaration',
-  'DeclareExportDeclaration',
+
   'ExportNamedDeclaration',
   'ExportAllDeclaration',
-  'DeclareExportAllDeclaration',
 ]);
 
 // These two functions exists because we used support `recordAndTuple`
@@ -6363,46 +5805,34 @@ const isLiteral = createTypeCheckFunction([
   'Literal',
   'BooleanLiteral',
   'BigIntLiteral', // Babel, flow use `BigIntLiteral` too
-  'DirectiveLiteral',
+
   'NullLiteral',
   'NumericLiteral',
-  'RegExpLiteral',
+
   'StringLiteral',
 ]);
 
-const isObjectType$22 = createTypeCheckFunction(['ObjectTypeAnnotation', 'TSTypeLiteral', 'TSMappedType']);
+const isObjectType$19 = createTypeCheckFunction(['TSTypeLiteral', 'TSMappedType']);
 
 const isFunctionOrArrowExpression = createTypeCheckFunction(['FunctionExpression', 'ArrowFunctionExpression']);
 
 const isJsxElement = createTypeCheckFunction(['JSXElement', 'JSXFragment']);
 
-const isBinaryish = createTypeCheckFunction(['BinaryExpression', 'LogicalExpression', 'NGPipeExpression']);
+const isBinaryish = createTypeCheckFunction(['BinaryExpression', 'LogicalExpression']);
 
-const isCallExpression = createTypeCheckFunction(['CallExpression', 'OptionalCallExpression']);
+const isCallExpression = createTypeCheckFunction(['CallExpression']);
 
-const isMemberExpression = createTypeCheckFunction(['MemberExpression', 'OptionalMemberExpression']);
+const isMemberExpression = createTypeCheckFunction(['MemberExpression']);
 
-const isCallOrNewExpression = createTypeCheckFunction([
-  'CallExpression',
-  'OptionalCallExpression',
-  'NewExpression',
-]);
+const isCallOrNewExpression = createTypeCheckFunction(['CallExpression', 'NewExpression']);
 
-const isCallLikeExpression = createTypeCheckFunction([
-  'CallExpression',
-  'OptionalCallExpression',
-  'NewExpression',
-  'ImportExpression',
-]);
+const isCallLikeExpression = createTypeCheckFunction(['CallExpression', 'NewExpression', 'ImportExpression']);
 
 const isChainElementWrapper = createTypeCheckFunction(['ChainExpression', 'TSNonNullExpression']);
 
-const isArrayType = createTypeCheckFunction(['TSArrayType', 'ArrayTypeAnnotation']);
+const isArrayType = createTypeCheckFunction(['TSArrayType']);
 
-const isTypeParameterInstantiation = createTypeCheckFunction([
-  'TSTypeParameterInstantiation',
-  'TypeParameterInstantiation',
-]);
+const isTypeParameterInstantiation = createTypeCheckFunction(['TSTypeParameterInstantiation']);
 
 
 
@@ -6469,7 +5899,6 @@ function isShorthandSpecifier(specifier) {
 
 const isNodeCantAttachComment = createTypeCheckFunction([
   // Babel only
-  'File',
   'TemplateElement',
   // There is no similar node in Babel AST
   // ```ts
@@ -6489,8 +5918,6 @@ const isNodeCantAttachComment = createTypeCheckFunction([
 @returns {boolean}
 */
 const isChildWontPrint = (node, [parent]) =>
-  (parent?.type === 'ComponentParameter' && parent.shorthand && parent.name === node && parent.local !== parent.name) ||
-  (parent?.type === 'MatchObjectPatternProperty' && parent.shorthand && parent.key === node) ||
   (parent?.type === 'ObjectProperty' && parent.shorthand && parent.key === node && parent.value !== parent.key) ||
   (parent?.type === 'Property' &&
     parent.shorthand &&
@@ -6690,11 +6117,6 @@ function skip(characters) {
     return false;
   };
 }
-
-/**
- * @type {(text: string, startIndex: number | false, options?: SkipOptions) => number | false}
- */
-const skipWhitespace = skip(/\s/);
 /**
  * @type {(text: string, startIndex: number | false, options?: SkipOptions) => number | false}
  */
@@ -7433,7 +6855,7 @@ function addLeadingCommentToPossibleUnionType(node, context) {
  * @param {CommentContext} context
  * @returns {boolean}
  */
-function handleOwnLineComment$23(context) {
+function handleOwnLineComment$20(context) {
   return [
     handleCommentInEmptyParens,
     handleIgnoreComments,
@@ -7447,7 +6869,6 @@ function handleOwnLineComment$23(context) {
     handleClassComments,
     handleForXStatementComments,
     handleUnionTypeComments,
-    handleMatchOrPatternComments,
     handleOnlyComments,
     handleModuleSpecifiersComments,
     handleAssignmentPatternComments,
@@ -7465,7 +6886,7 @@ function handleOwnLineComment$23(context) {
  * @param {CommentContext} context
  * @returns {boolean}
  */
-function handleEndOfLineComment$24(context) {
+function handleEndOfLineComment$21(context) {
   return [
     handleCommentInEmptyParens,
     handleClosureTypeCastComments,
@@ -7498,7 +6919,7 @@ function handleEndOfLineComment$24(context) {
  * @param {CommentContext} context
  * @returns {boolean}
  */
-function handleRemainingComment$25(context) {
+function handleRemainingComment$22(context) {
   return [
     handleCommentInEmptyParens,
     handleIgnoreComments,
@@ -7607,14 +7028,7 @@ function handleConditionalExpressionComments({ comment, precedingNode, enclosing
   return false;
 }
 
-const isClassLikeNode = createTypeCheckFunction([
-  'ClassDeclaration',
-  'ClassExpression',
-  'DeclareClass',
-  'DeclareInterface',
-  'InterfaceDeclaration',
-  'TSInterfaceDeclaration',
-]);
+const isClassLikeNode = createTypeCheckFunction(['ClassDeclaration', 'ClassExpression', 'TSInterfaceDeclaration']);
 function handleClassComments({ comment, precedingNode, enclosingNode, followingNode }) {
   if (isClassLikeNode(enclosingNode)) {
     // @ts-expect-error -- Safe
@@ -7665,14 +7079,12 @@ function handleClassComments({ comment, precedingNode, enclosingNode, followingN
 }
 
 const isPropertyLikeNode = createTypeCheckFunction([
-  'ClassMethod',
-  'ClassProperty',
   'PropertyDefinition',
   'TSAbstractPropertyDefinition',
   'TSAbstractMethodDefinition',
-  'TSDeclareMethod',
+
   'MethodDefinition',
-  'ClassAccessorProperty',
+
   'AccessorProperty',
   'TSAbstractAccessorProperty',
   'TSParameterProperty',
@@ -7686,9 +7098,7 @@ function handleMethodNameComments({ placement, comment, precedingNode, enclosing
     precedingNode &&
     getNextNonSpaceNonCommentCharacter(text, locEnd$9(comment)) === '(' &&
     // "MethodDefinition" is handled in `canAttachComment`
-    (enclosingNode.type === 'Property' ||
-      enclosingNode.type === 'TSDeclareMethod' ||
-      enclosingNode.type === 'TSAbstractMethodDefinition') &&
+    (enclosingNode.type === 'Property' || enclosingNode.type === 'TSAbstractMethodDefinition') &&
     precedingNode.type === 'Identifier' &&
     enclosingNode.key === precedingNode &&
     // special Property case: { key: /*comment*/(value) };
@@ -7721,13 +7131,7 @@ function handleMethodNameComments({ placement, comment, precedingNode, enclosing
   return false;
 }
 
-const isFunctionLikeNode = createTypeCheckFunction([
-  'FunctionDeclaration',
-  'FunctionExpression',
-  'ClassMethod',
-  'MethodDefinition',
-  'ObjectMethod',
-]);
+const isFunctionLikeNode = createTypeCheckFunction(['FunctionDeclaration', 'FunctionExpression', 'MethodDefinition']);
 function handleFunctionNameComments({ comment, precedingNode, enclosingNode, text }) {
   if (getNextNonSpaceNonCommentCharacter(text, locEnd$9(comment)) !== '(') {
     return false;
@@ -7772,12 +7176,6 @@ function isInArgumentOrParameterParentheses(node, comment, options) {
   );
 }
 
-const isFlowComponent = createTypeCheckFunction([
-  'ComponentDeclaration',
-  'DeclareComponent',
-  'ComponentTypeAnnotation',
-]);
-
 function handleCommentInEmptyParens({ comment, enclosingNode, options }) {
   if (!enclosingNode) {
     return false;
@@ -7795,16 +7193,13 @@ function handleCommentInEmptyParens({ comment, enclosingNode, options }) {
   // Only add dangling comments to fix the case when no params are present,
   // i.e. a function without any argument.
 
-  const functionNode =
-    isRealFunctionLikeNode(enclosingNode) ||
-    isFlowComponent(enclosingNode) ||
-    enclosingNode.type === 'HookTypeAnnotation'
-      ? enclosingNode
-      : enclosingNode.type === 'MethodDefinition' ||
-          enclosingNode.type === 'TSAbstractMethodDefinition' ||
-          (enclosingNode.type === 'Property' && isMethod(enclosingNode))
-        ? enclosingNode.value
-        : undefined;
+  const functionNode = isRealFunctionLikeNode(enclosingNode)
+    ? enclosingNode
+    : enclosingNode.type === 'MethodDefinition' ||
+        enclosingNode.type === 'TSAbstractMethodDefinition' ||
+        (enclosingNode.type === 'Property' && isMethod(enclosingNode))
+      ? enclosingNode.value
+      : undefined;
 
   if (
     functionNode &&
@@ -7820,24 +7215,8 @@ function handleCommentInEmptyParens({ comment, enclosingNode, options }) {
 
 function handleLastFunctionParameterComments({ comment, precedingNode, enclosingNode, followingNode, text }) {
   // Flow function type definitions
-  if (
-    precedingNode?.type === 'FunctionTypeParam' &&
-    enclosingNode?.type === 'FunctionTypeAnnotation' &&
-    followingNode?.type !== 'FunctionTypeParam'
-  ) {
-    addTrailingComment(precedingNode, comment);
-    return true;
-  }
 
   // "DeclareComponent" and "ComponentTypeAnnotation" definitions
-  if (
-    precedingNode?.type === 'ComponentTypeParameter' &&
-    (enclosingNode?.type === 'DeclareComponent' || enclosingNode?.type === 'ComponentTypeAnnotation') &&
-    followingNode?.type !== 'ComponentTypeParameter'
-  ) {
-    addTrailingComment(precedingNode, comment);
-    return true;
-  }
 
   // Real functions and TypeScript function type definitions
   if (
@@ -7863,14 +7242,6 @@ function handleLastFunctionParameterComments({ comment, precedingNode, enclosing
   }
 
   // "ComponentParameter" definitions
-  if (
-    (precedingNode?.type === 'ComponentParameter' || precedingNode?.type === 'RestElement') &&
-    (enclosingNode?.type === 'ComponentDeclaration' || enclosingNode?.type === 'DeclareComponent') &&
-    getNextNonSpaceNonCommentCharacter(text, locEnd$9(comment)) === ')'
-  ) {
-    addTrailingComment(precedingNode, comment);
-    return true;
-  }
 
   // Comment between function parameters parentheses and function body
   if (!isBlockComment(comment) && followingNode?.type === 'BlockStatement' && isFunctionLikeNode(enclosingNode)) {
@@ -7924,27 +7295,6 @@ function handleUnionTypeComments({ comment, precedingNode, enclosingNode, follow
 
   if (isUnionType(followingNode) && isPrettierIgnoreComment(comment)) {
     // @ts-expect-error -- Fix me
-    followingNode.types[0].prettierIgnore = true;
-    comment.unignore = true;
-  }
-
-  return false;
-}
-
-function handleMatchOrPatternComments({ comment, precedingNode, enclosingNode, followingNode }) {
-  if (enclosingNode && enclosingNode.type === 'MatchOrPattern') {
-    if (isPrettierIgnoreComment(comment)) {
-      followingNode.prettierIgnore = true;
-      comment.unignore = true;
-    }
-    if (precedingNode) {
-      addTrailingComment(precedingNode, comment);
-      return true;
-    }
-    return false;
-  }
-
-  if (followingNode && followingNode.type === 'MatchOrPattern' && isPrettierIgnoreComment(comment)) {
     followingNode.types[0].prettierIgnore = true;
     comment.unignore = true;
   }
@@ -8014,7 +7364,7 @@ function handleAssignmentPatternComments({ comment, enclosingNode }) {
 const isAssignmentLikeNode = createTypeCheckFunction([
   'VariableDeclarator',
   'AssignmentExpression',
-  'TypeAlias',
+
   'TSTypeAliasDeclaration',
 ]);
 
@@ -8023,7 +7373,7 @@ const isComplexExprNode = createTypeCheckFunction([
   'ArrayExpression',
   'TemplateLiteral',
   'TaggedTemplateExpression',
-  'ObjectTypeAnnotation',
+
   'TSTypeLiteral',
 ]);
 
@@ -8217,7 +7567,7 @@ function handleLastBinaryOperatorOperand({ comment, precedingNode, enclosingNode
 function handlePropertySignatureComments({ enclosingNode, followingNode, comment }) {
   if (
     enclosingNode &&
-    (enclosingNode.type === 'TSPropertySignature' || enclosingNode.type === 'ObjectTypeProperty') &&
+    enclosingNode.type === 'TSPropertySignature' &&
     (isUnionType(followingNode) || isIntersectionType(followingNode))
   ) {
     addLeadingComment(followingNode, comment);
@@ -8324,22 +7674,19 @@ const isRealFunctionLikeNode = createTypeCheckFunction([
   'ArrowFunctionExpression',
   'FunctionExpression',
   'FunctionDeclaration',
-  'ObjectMethod',
-  'ClassMethod',
+
   'TSDeclareFunction',
   'TSCallSignatureDeclaration',
   'TSConstructSignatureDeclaration',
   'TSMethodSignature',
   'TSConstructorType',
   'TSFunctionType',
-  'TSDeclareMethod',
-  'HookDeclaration',
 ]);
 
-const handleComments$26 = {
-  endOfLine: handleEndOfLineComment$24,
-  ownLine: handleOwnLineComment$23,
-  remaining: handleRemainingComment$25,
+const handleComments$23 = {
+  endOfLine: handleEndOfLineComment$21,
+  ownLine: handleOwnLineComment$20,
+  remaining: handleRemainingComment$22,
 };
 
 
@@ -8605,10 +7952,8 @@ function startsWithNoLookaheadToken(node, predicate) {
     case 'BinaryExpression':
     case 'LogicalExpression':
     case 'AssignmentExpression':
-    case 'NGPipeExpression':
       return startsWithNoLookaheadToken(node.left, predicate);
     case 'MemberExpression':
-    case 'OptionalMemberExpression':
       return startsWithNoLookaheadToken(node.object, predicate);
     case 'TaggedTemplateExpression':
       if (node.tag.type === 'FunctionExpression') {
@@ -8617,7 +7962,6 @@ function startsWithNoLookaheadToken(node, predicate) {
       }
       return startsWithNoLookaheadToken(node.tag, predicate);
     case 'CallExpression':
-    case 'OptionalCallExpression':
       if (node.callee.type === 'FunctionExpression') {
         // IIFEs are always already parenthesized
         return false;
@@ -8627,17 +7971,12 @@ function startsWithNoLookaheadToken(node, predicate) {
       return startsWithNoLookaheadToken(node.test, predicate);
     case 'UpdateExpression':
       return !node.prefix && startsWithNoLookaheadToken(node.argument, predicate);
-    case 'BindExpression':
-      return node.object && startsWithNoLookaheadToken(node.object, predicate);
     case 'SequenceExpression':
       return startsWithNoLookaheadToken(node.expressions[0], predicate);
     case 'ChainExpression':
     case 'TSNonNullExpression':
     case 'TSSatisfiesExpression':
     case 'TSAsExpression':
-    case 'AsExpression':
-    case 'AsConstExpression':
-    case 'SatisfiesExpression':
       return startsWithNoLookaheadToken(node.expression, predicate);
     default:
       return predicate(node);
@@ -8648,8 +7987,6 @@ function startsWithNoLookaheadToken(node, predicate) {
 
 
 // parentheses/chain-expression.js
-
-
 /**
 @import AstPath from "../../common/ast-path.js"
 */
@@ -8666,48 +8003,12 @@ function shouldAddParenthesesToChainExpression(path) {
   );
 }
 
-const isParenthesized = (node) => node.extra?.parenthesized;
-const isBabelOptionalChainElement = createTypeCheckFunction(['OptionalCallExpression', 'OptionalMemberExpression']);
-
-/**
-@param {AstPath} path
-*/
-function isBabelOptionalChainRoot(path) {
-  const { node } = path;
-
-  let child = node;
-  while (child.type === 'TSNonNullExpression') {
-    child = child.expression;
-
-    if (isParenthesized(child)) {
-      return false;
-    }
-  }
-
-  if (!isBabelOptionalChainElement(child)) {
-    return false;
-  }
-
-  if (isParenthesized(node)) {
-    return true;
-  }
-
-  return !(
-    path.key === 'expression' && path.parent.type === 'TSNonNullExpression'
-    // We should exclude if it's in `OptionalCallExpression` or `OptionalMemberExpression`
-    // But in these cases it should not matter, since we don't need parentheses anyway
-  );
-}
-
 /**
 @param {AstPath} path
 @returns {boolean}
 */
 function shouldAddParenthesesToChainElement(path) {
-  return (
-    (path.node.type === 'ChainExpression' || isBabelOptionalChainRoot(path)) &&
-    shouldAddParenthesesToChainExpression(path)
-  );
+  return path.node.type === 'ChainExpression' && shouldAddParenthesesToChainExpression(path);
 }
 
 
@@ -8804,98 +8105,6 @@ function shouldAddParenthesesToIdentifier(path) {
 
 
 
-// utilities/ast.js
-
-
-/**
-@import {GetVisitorKeys, Node} from "./create-get-visitor-keys.js"
-@typedef {(node: Node) => boolean} Predicate
-*/
-
-/**
-@param {Node} node
-@param {{getVisitorKeys: GetVisitorKeys, filter?: Predicate}} options
-*/
-function* getChildren(node, options) {
-  const { getVisitorKeys, filter = () => true } = options;
-  const isMatchedNode = (node) => isObject(node) && filter(node);
-
-  for (const key of getVisitorKeys(node)) {
-    const value = node[key];
-
-    if (Array.isArray(value)) {
-      for (const child of value) {
-        if (isMatchedNode(child)) {
-          yield child;
-        }
-      }
-    } else if (isMatchedNode(value)) {
-      yield value;
-    }
-  }
-}
-
-/**
-@param {Node} node
-@param {{getVisitorKeys: GetVisitorKeys, filter?: Predicate}} options
-*/
-function* getDescendants(node, options) {
-  const queue = [node];
-  for (let index = 0; index < queue.length; index++) {
-    const node = queue[index];
-
-    for (const child of getChildren(node, options)) {
-      yield child;
-      queue.push(child);
-    }
-  }
-}
-
-/**
-@param {Node} node
-@param {{getVisitorKeys: GetVisitorKeys}} options
-*/
-
-
-/**
-@param {Node} node
-@param {{getVisitorKeys: GetVisitorKeys, predicate: Predicate}} options
-*/
-function hasDescendant(node, { getVisitorKeys, predicate }) {
-  for (const descendant of getDescendants(node, { getVisitorKeys })) {
-    if (predicate(descendant)) {
-      return true;
-    }
-  }
-
-  return false;
-}
-
-
-
-
-// utilities/has-node.js
-
-
-
-/**
-@import {
-  Node,
-} from "../types/estree.js";
-*/
-
-/**
- * @param {Node} node
- * @param {(node: Node) => boolean} predicate
- * @returns {boolean}
- */
-function hasNode(node, predicate) {
-  return predicate(node) || hasDescendant(node, { getVisitorKeys: getVisitorKeys$14, predicate });
-}
-
-
-
-
 // utilities/left-side.js
 
 
@@ -8921,13 +8130,11 @@ function hasNakedLeftSide(node) {
     node.type === 'AssignmentExpression' ||
     node.type === 'BinaryExpression' ||
     node.type === 'LogicalExpression' ||
-    node.type === 'NGPipeExpression' ||
     node.type === 'ConditionalExpression' ||
     isCallExpression(node) ||
     isMemberExpression(node) ||
     node.type === 'SequenceExpression' ||
     node.type === 'TaggedTemplateExpression' ||
-    node.type === 'BindExpression' ||
     (node.type === 'UpdateExpression' && !node.prefix) ||
     isBinaryCastExpression(node) ||
     isChainElementWrapper(node)
@@ -9046,9 +8253,9 @@ function returnArgumentHasLeadingCommentWithoutCache(node, options) {
   return false;
 }
 
-const cache$27 = new WeakMap();
+const cache$24 = new WeakMap();
 function returnArgumentHasLeadingComment(node, options) {
-  return getOrInsertComputed(cache$27, node, (node) => returnArgumentHasLeadingCommentWithoutCache(node, options));
+  return getOrInsertComputed(cache$24, node, (node) => returnArgumentHasLeadingCommentWithoutCache(node, options));
 }
 
 
@@ -9080,7 +8287,6 @@ function stripChainElementWrappers(node) {
 
 
 // parentheses/parent-needs-parentheses.js
-
 
 
 
@@ -9147,22 +8353,6 @@ function parentNeedsParentheses(path, options, needsParentheses) {
 
     case 'Decorator':
       if (key === 'expression' && !canDecoratorExpressionUnparenthesized(node)) {
-        return true;
-      }
-      break;
-
-    case 'TypeAnnotation':
-      if (
-        path.match(
-          undefined,
-          undefined,
-          (node, key) => key === 'returnType' && node.type === 'ArrowFunctionExpression'
-        ) &&
-        !(
-          node.type === 'NullableTypeAnnotation' && path.call(() => needsParentheses(path, options), 'typeAnnotation')
-        ) &&
-        includesFunctionTypeInObjectType(node)
-      ) {
         return true;
       }
       break;
@@ -9278,18 +8468,10 @@ function isDecoratorMemberExpression(node) {
   return false;
 }
 
-function includesFunctionTypeInObjectType(node) {
-  return hasNode(
-    node,
-    (node) => node.type === 'ObjectTypeAnnotation' && hasNode(node, (node) => node.type === 'FunctionTypeAnnotation')
-  );
-}
-
 
 
 
 // parentheses/needs-parentheses.js
-
 
 
 
@@ -9311,7 +8493,7 @@ function includesFunctionTypeInObjectType(node) {
  * @param {AstPath} path
  * @returns {boolean}
  */
-function needsParentheses$28(path, options) {
+function needsParentheses$25(path, options) {
   if (path.isRoot) {
     return false;
   }
@@ -9337,12 +8519,7 @@ function needsParentheses$28(path, options) {
     return shouldAddParenthesesToIdentifier(path);
   }
 
-  if (
-    node.type === 'ObjectExpression' ||
-    node.type === 'FunctionExpression' ||
-    node.type === 'ClassExpression' ||
-    node.type === 'DoExpression'
-  ) {
+  if (node.type === 'ObjectExpression' || node.type === 'FunctionExpression' || node.type === 'ClassExpression') {
     const expression = path.findAncestor((node) => node.type === 'ExpressionStatement')?.expression;
     if (expression && startsWithNoLookaheadToken(expression, (leftmostNode) => leftmostNode === node)) {
       return true;
@@ -9361,7 +8538,7 @@ function needsParentheses$28(path, options) {
     }
   }
 
-  const parentCheckResult = parentNeedsParentheses(path, options, needsParentheses$28);
+  const parentCheckResult = parentNeedsParentheses(path, options, needsParentheses$25);
   if (typeof parentCheckResult === 'boolean') {
     return parentCheckResult;
   }
@@ -9380,11 +8557,7 @@ function needsParentheses$28(path, options) {
         case 'UnaryExpression':
           return node.operator === parent.operator && (node.operator === '+' || node.operator === '-');
 
-        case 'BindExpression':
-          return true;
-
         case 'MemberExpression':
-        case 'OptionalMemberExpression':
           return key === 'object';
 
         case 'TaggedTemplateExpression':
@@ -9392,7 +8565,6 @@ function needsParentheses$28(path, options) {
 
         case 'NewExpression':
         case 'CallExpression':
-        case 'OptionalCallExpression':
           return key === 'callee';
 
         case 'BinaryExpression':
@@ -9437,16 +8609,10 @@ function needsParentheses$28(path, options) {
     case 'TSTypeAssertion':
     case 'TSAsExpression':
     case 'TSSatisfiesExpression':
-    case 'AsExpression':
-    case 'AsConstExpression':
-    case 'SatisfiesExpression':
     case 'LogicalExpression':
       switch (parent.type) {
         case 'TSAsExpression':
         case 'TSSatisfiesExpression':
-        case 'AsExpression':
-        case 'AsConstExpression':
-        case 'SatisfiesExpression':
           // examples:
           //   foo as unknown as Bar
           //   foo satisfies unknown satisfies Bar
@@ -9459,7 +8625,6 @@ function needsParentheses$28(path, options) {
 
         case 'CallExpression':
         case 'NewExpression':
-        case 'OptionalCallExpression':
           return key === 'callee';
 
         case 'ClassExpression':
@@ -9470,7 +8635,6 @@ function needsParentheses$28(path, options) {
         case 'TaggedTemplateExpression':
         case 'JSXSpreadAttribute':
         case 'SpreadElement':
-        case 'BindExpression':
         case 'AwaitExpression':
         case 'TSNonNullExpression':
         case 'UpdateExpression':
@@ -9483,7 +8647,6 @@ function needsParentheses$28(path, options) {
           break;
 
         case 'MemberExpression':
-        case 'OptionalMemberExpression':
           return key === 'object';
 
         case 'AssignmentExpression':
@@ -9563,19 +8726,13 @@ function needsParentheses$28(path, options) {
         case 'TSAsExpression':
         case 'TSSatisfiesExpression':
         case 'TSNonNullExpression':
-        case 'AsExpression':
-        case 'AsConstExpression':
-        case 'SatisfiesExpression':
-        case 'BindExpression':
           return true;
 
         case 'MemberExpression':
-        case 'OptionalMemberExpression':
           return key === 'object';
 
         case 'NewExpression':
         case 'CallExpression':
-        case 'OptionalCallExpression':
           return key === 'callee';
 
         case 'ConditionalExpression':
@@ -9605,22 +8762,13 @@ function needsParentheses$28(path, options) {
     // fallthrough
     case 'TSConditionalType':
     case 'TSConstructorType':
-    case 'ConditionalTypeAnnotation':
       if (key === 'extendsType' && isConditionalType(node) && parent.type === node.type) {
         return true;
       }
 
       // `const foo = <Foo extends (Bar extends Baz ? A : B)>() => true;`
       //                            ^^^^^^^^^^^^^^^^^^^^^^^
-      if (
-        (key === 'constraint' && node.type === 'TSConditionalType' && parent.type === 'TSTypeParameter') ||
-        (key === 'typeAnnotation' &&
-          node.type === 'ConditionalTypeAnnotation' &&
-          parent.type === 'TypeAnnotation' &&
-          path.grandparent.type === 'TypeParameter' &&
-          path.grandparent.bound === parent &&
-          path.grandparent.usesExtendsBound)
-      ) {
+      if (key === 'constraint' && node.type === 'TSConditionalType' && parent.type === 'TSTypeParameter') {
         return true;
       }
 
@@ -9678,124 +8826,9 @@ function needsParentheses$28(path, options) {
         (key === 'elementType' && parent.type === 'TSArrayType')
       );
     // Same as `TSTypeOperator`, but for Flow syntax
-    case 'TypeOperator':
-      return (
-        parent.type === 'ArrayTypeAnnotation' ||
-        parent.type === 'NullableTypeAnnotation' ||
-        (key === 'objectType' &&
-          (parent.type === 'IndexedAccessType' || parent.type === 'OptionalIndexedAccessType')) ||
-        parent.type === 'TypeOperator'
-      );
     // Same as `TSTypeQuery`, but for Flow syntax
-    case 'TypeofTypeAnnotation':
-    case 'KeyofTypeAnnotation':
-      return (
-        (key === 'objectType' &&
-          (parent.type === 'IndexedAccessType' || parent.type === 'OptionalIndexedAccessType')) ||
-        (key === 'elementType' && parent.type === 'ArrayTypeAnnotation')
-      );
-    case 'ArrayTypeAnnotation':
-      return parent.type === 'NullableTypeAnnotation';
-
-    case 'IntersectionTypeAnnotation':
-    case 'UnionTypeAnnotation':
-      return (
-        parent.type === 'TypeOperator' ||
-        parent.type === 'KeyofTypeAnnotation' ||
-        parent.type === 'ArrayTypeAnnotation' ||
-        parent.type === 'NullableTypeAnnotation' ||
-        parent.type === 'IntersectionTypeAnnotation' ||
-        parent.type === 'UnionTypeAnnotation' ||
-        (key === 'objectType' && (parent.type === 'IndexedAccessType' || parent.type === 'OptionalIndexedAccessType'))
-      );
-    case 'InferTypeAnnotation':
-    case 'NullableTypeAnnotation':
-      if (
-        parent.type === 'ArrayTypeAnnotation' ||
-        (key === 'objectType' && (parent.type === 'IndexedAccessType' || parent.type === 'OptionalIndexedAccessType'))
-      ) {
-        return true;
-      }
-
-      break;
-
-    case 'ComponentTypeAnnotation':
-    case 'FunctionTypeAnnotation': {
-      if (node.type === 'ComponentTypeAnnotation' && (node.rendersType === null || node.rendersType === undefined)) {
-        return false;
-      }
-
-      if (
-        path.match(
-          undefined,
-          (node, key) => key === 'typeAnnotation' && node.type === 'TypeAnnotation',
-          (node, key) => key === 'returnType' && node.type === 'ArrowFunctionExpression'
-        )
-      ) {
-        return true;
-      }
-
-      // If the return type is a nullable arrow function, then we need a paren
-      // otherwise the inner => can be assumed to be for the outer one.
-      if (
-        path.match(
-          undefined,
-          (node, key) => key === 'typeAnnotation' && node.type === 'NullableTypeAnnotation',
-          (node, key) => key === 'typeAnnotation' && node.type === 'TypeAnnotation',
-          (node, key) => key === 'returnType' && node.type === 'ArrowFunctionExpression'
-        )
-      ) {
-        return true;
-      }
-
-      /*
-      Matches the following case in Flow:
-
-      ```
-      const a = (x: any): x is (number => string) => true;
-      ```
-
-      This case is not necessary in TS since `number => string` is not a valid
-      arrow type there.
-      */
-      if (
-        path.match(
-          undefined,
-          (node, key) => key === 'typeAnnotation' && node.type === 'TypePredicate',
-          (node, key) => key === 'typeAnnotation' && node.type === 'TypeAnnotation',
-          (node, key) => key === 'returnType' && node.type === 'ArrowFunctionExpression'
-        )
-      ) {
-        return true;
-      }
-
-      const ancestor = parent.type === 'NullableTypeAnnotation' ? path.grandparent : parent;
-
-      return (
-        ancestor.type === 'UnionTypeAnnotation' ||
-        ancestor.type === 'IntersectionTypeAnnotation' ||
-        ancestor.type === 'ArrayTypeAnnotation' ||
-        (key === 'objectType' &&
-          (ancestor.type === 'IndexedAccessType' || ancestor.type === 'OptionalIndexedAccessType')) ||
-        (key === 'checkType' && parent.type === 'ConditionalTypeAnnotation') ||
-        (key === 'extendsType' &&
-          parent.type === 'ConditionalTypeAnnotation' &&
-          node.returnType?.type === 'InferTypeAnnotation' &&
-          node.returnType.typeParameter.bound) ||
-        // We should check ancestor's parent to know whether the parentheses
-        // are really needed, but since ??T doesn't make sense this check
-        // will almost never be true.
-        ancestor.type === 'NullableTypeAnnotation' ||
-        // See #5283
-        (parent.type === 'FunctionTypeParam' &&
-          parent.name === null &&
-          getFunctionParameters(node).some((param) => param.typeAnnotation?.type === 'NullableTypeAnnotation'))
-      );
-    }
 
     // fallthrough
-    case 'OptionalIndexedAccessType':
-      return key === 'objectType' && parent.type === 'IndexedAccessType';
 
     case 'StringLiteral':
     case 'NumericLiteral':
@@ -9850,14 +8883,6 @@ function needsParentheses$28(path, options) {
         return false;
       }
 
-      if (parent.type === 'NGChainedExpression') {
-        return false;
-      }
-
-      if (key === 'node' && parent.type === 'JsExpressionRoot') {
-        return false;
-      }
-
       return true;
 
     case 'ConditionalExpression':
@@ -9867,22 +8892,16 @@ function needsParentheses$28(path, options) {
         case 'SpreadElement':
         case 'BinaryExpression':
         case 'LogicalExpression':
-        case 'NGPipeExpression':
         case 'AwaitExpression':
         case 'JSXSpreadAttribute':
         case 'TSTypeAssertion':
-        case 'TypeCastExpression':
         case 'TSAsExpression':
         case 'TSSatisfiesExpression':
-        case 'AsExpression':
-        case 'AsConstExpression':
-        case 'SatisfiesExpression':
         case 'TSNonNullExpression':
           return true;
 
         case 'NewExpression':
         case 'CallExpression':
-        case 'OptionalCallExpression':
           return key === 'callee';
 
         case 'ConditionalExpression':
@@ -9893,7 +8912,6 @@ function needsParentheses$28(path, options) {
           return false;
 
         case 'MemberExpression':
-        case 'OptionalMemberExpression':
           return key === 'object';
 
         default:
@@ -9904,7 +8922,6 @@ function needsParentheses$28(path, options) {
       switch (parent.type) {
         case 'NewExpression':
         case 'CallExpression':
-        case 'OptionalCallExpression':
           // Not always necessary, but it's clearer to the reader if IIFEs are wrapped in parentheses.
           // Is necessary if it is `expression` of `ExpressionStatement`.
           return key === 'callee';
@@ -9922,26 +8939,19 @@ function needsParentheses$28(path, options) {
           return parent.operator !== '|>' || node.extra?.parenthesized;
         case 'NewExpression':
         case 'CallExpression':
-        case 'OptionalCallExpression':
           return key === 'callee';
 
         case 'MemberExpression':
-        case 'OptionalMemberExpression':
           return key === 'object';
 
         case 'TSAsExpression':
         case 'TSSatisfiesExpression':
-        case 'AsExpression':
-        case 'AsConstExpression':
-        case 'SatisfiesExpression':
         case 'TSNonNullExpression':
-        case 'BindExpression':
         case 'TaggedTemplateExpression':
         case 'UnaryExpression':
         case 'LogicalExpression':
         case 'AwaitExpression':
         case 'TSTypeAssertion':
-        case 'MatchExpressionCase':
           return true;
 
         case 'TSInstantiationExpression':
@@ -9963,8 +8973,6 @@ function needsParentheses$28(path, options) {
         default:
           return false;
       }
-    case 'OptionalMemberExpression':
-    case 'OptionalCallExpression':
     case 'ChainExpression':
     case 'TSNonNullExpression':
       if (shouldAddParenthesesToChainElement(path)) {
@@ -9976,7 +8984,7 @@ function needsParentheses$28(path, options) {
     case 'MemberExpression':
     case 'TaggedTemplateExpression':
     case 'ImportExpression':
-      if (key === 'callee' && (parent.type === 'BindExpression' || parent.type === 'NewExpression')) {
+      if (key === 'callee' && parent.type === 'NewExpression') {
         let object = node;
         while (object) {
           switch (object.type) {
@@ -9984,8 +8992,6 @@ function needsParentheses$28(path, options) {
             case 'ImportExpression':
               return true;
             case 'MemberExpression':
-            case 'OptionalMemberExpression':
-            case 'BindExpression':
               object = object.object;
               break;
             // tagged templates are basically member expressions from a grammar perspective
@@ -10004,27 +9010,6 @@ function needsParentheses$28(path, options) {
 
       return false;
 
-    case 'BindExpression':
-      return (
-        (key === 'callee' && (parent.type === 'BindExpression' || parent.type === 'NewExpression')) ||
-        (key === 'object' && isMemberExpression(parent))
-      );
-    case 'NGPipeExpression':
-      if (
-        parent.type === 'NGRoot' ||
-        parent.type === 'NGMicrosyntaxExpression' ||
-        (parent.type === 'ObjectProperty' &&
-          // Preserve parens for compatibility with AngularJS expressions
-          !node.extra?.parenthesized) ||
-        isArrayExpression(parent) ||
-        (key === 'arguments' && isCallExpression(parent)) ||
-        (key === 'right' && parent.type === 'NGPipeExpression') ||
-        (key === 'property' && parent.type === 'MemberExpression') ||
-        parent.type === 'AssignmentExpression'
-      ) {
-        return false;
-      }
-      return true;
     case 'JSXFragment':
     case 'JSXElement':
       return (
@@ -10037,7 +9022,6 @@ function needsParentheses$28(path, options) {
           parent.type !== 'BinaryExpression' &&
           parent.type !== 'ConditionalExpression' &&
           parent.type !== 'ExpressionStatement' &&
-          parent.type !== 'JsExpressionRoot' &&
           parent.type !== 'JSXAttribute' &&
           parent.type !== 'JSXElement' &&
           parent.type !== 'JSXExpressionContainer' &&
@@ -10046,18 +9030,13 @@ function needsParentheses$28(path, options) {
           !isCallOrNewExpression(parent) &&
           !isObjectProperty(parent) &&
           !isReturnOrThrowStatement(parent) &&
-          parent.type !== 'TypeCastExpression' &&
           parent.type !== 'VariableDeclarator' &&
           parent.type !== 'YieldExpression' &&
-          parent.type !== 'MatchExpressionCase' &&
           !(key === 'declaration' && parent.type === 'ExportDefaultDeclaration'))
       );
 
     case 'TSInstantiationExpression':
       return key === 'object' && isMemberExpression(parent);
-
-    case 'MatchOrPattern':
-      return parent.type === 'MatchAsPattern';
   }
 
   return false;
@@ -10066,29 +9045,17 @@ function needsParentheses$28(path, options) {
 const isStatement = createTypeCheckFunction([
   'BlockStatement',
   'BreakStatement',
-  'ComponentDeclaration',
+
   'ClassBody',
   'ClassDeclaration',
-  'ClassMethod',
-  'ClassProperty',
+
   'PropertyDefinition',
-  'ClassPrivateProperty',
+
   'ContinueStatement',
   'DebuggerStatement',
-  'DeclareComponent',
-  'DeclareClass',
-  'DeclareExportAllDeclaration',
-  'DeclareExportDeclaration',
-  'DeclareFunction',
-  'DeclareHook',
-  'DeclareInterface',
-  'DeclareModule',
-  'DeclareModuleExports',
-  'DeclareNamespace',
-  'DeclareVariable',
-  'DeclareEnum',
+
   'DoWhileStatement',
-  'EnumDeclaration',
+
   'ExportAllDeclaration',
   'ExportDefaultDeclaration',
   'ExportNamedDeclaration',
@@ -10097,10 +9064,10 @@ const isStatement = createTypeCheckFunction([
   'ForOfStatement',
   'ForStatement',
   'FunctionDeclaration',
-  'HookDeclaration',
+
   'IfStatement',
   'ImportDeclaration',
-  'InterfaceDeclaration',
+
   'LabeledStatement',
   'MethodDefinition',
   'ReturnStatement',
@@ -10113,7 +9080,7 @@ const isStatement = createTypeCheckFunction([
   'TSInterfaceDeclaration',
   'TSModuleDeclaration',
   'TSNamespaceExportDeclaration',
-  'TypeAlias',
+
   'VariableDeclaration',
   'WhileStatement',
   'WithStatement',
@@ -10148,11 +9115,6 @@ function endsWithRightBracket(node) {
 function isFollowedByRightBracket(path) {
   const { parent, key } = path;
   switch (parent.type) {
-    case 'NGPipeExpression':
-      if (key === 'arguments' && path.isLast) {
-        return path.callParent(isFollowedByRightBracket);
-      }
-      break;
     case 'ObjectProperty':
       if (key === 'value') {
         return path.callParent(() => path.key === 'properties' && path.isLast);
@@ -10227,7 +9189,7 @@ const VALID_OBJECT_DOC_TYPES = new Set([
 @param {Doc} contents
 @returns {Indent}
 */
-function indent$29(contents) {
+function indent$26(contents) {
   return { type: DOC_TYPE_INDENT, contents };
 }
 
@@ -10257,7 +9219,7 @@ function indent$29(contents) {
 @param {D} contents
 @returns {Omit<Align, "n" | "contents"> & {readonly n: N, readonly contents: D}}
 */
-function align$30(alignType, contents) {
+function align$27(alignType, contents) {
   return { type: DOC_TYPE_ALIGN, contents, n: alignType };
 }
 
@@ -10272,7 +9234,7 @@ function align$30(alignType, contents) {
 @returns {Align & {readonly n: AlignTypeRoot}}
 */
 function markAsRoot(contents) {
-  return align$30({ type: 'root' }, contents);
+  return align$27({ type: 'root' }, contents);
 }
 
 /**
@@ -10280,7 +9242,7 @@ function markAsRoot(contents) {
 @returns {Align & {readonly n: -1}}
 */
 function dedent(contents) {
-  return align$30(-1, contents);
+  return align$27(-1, contents);
 }
 
 /**
@@ -10294,13 +9256,13 @@ function addAlignmentToDoc(doc, size, tabWidth) {
   if (size > 0) {
     // Use indent to add tabs for all the levels of tabs we need
     for (let level = 0; level < Math.floor(size / tabWidth); ++level) {
-      aligned = indent$29(aligned);
+      aligned = indent$26(aligned);
     }
     // Use align for all the spaces that are needed
-    aligned = align$30(size % tabWidth, aligned);
+    aligned = align$27(size % tabWidth, aligned);
     // size is absolute from 0 and not relative to the current
     // indentation, so we use -Infinity to reset the indentation to 0
-    aligned = align$30(Number.NEGATIVE_INFINITY, aligned);
+    aligned = align$27(Number.NEGATIVE_INFINITY, aligned);
   }
   return aligned;
 }
@@ -10329,7 +9291,7 @@ const breakParent = { type: DOC_TYPE_BREAK_PARENT };
 */
 
 /** @type {Cursor} */
-const cursor$31 = { type: DOC_TYPE_CURSOR };
+const cursor$28 = { type: DOC_TYPE_CURSOR };
 
 
 
@@ -10377,7 +9339,7 @@ function fill(parts) {
 @param {GroupOptions} [options]
 @returns {Group}
 */
-function group$32(contents, options = {}) {
+function group$29(contents, options = {}) {
   return {
     type: DOC_TYPE_GROUP,
     id: options.id,
@@ -10395,7 +9357,7 @@ function group$32(contents, options = {}) {
 @returns Doc
 */
 function conditionalGroup(states, options) {
-  return group$32(states[0], { ...options, expandedStates: states });
+  return group$29(states[0], { ...options, expandedStates: states });
 }
 
 
@@ -10519,7 +9481,7 @@ but can be useful for heuristics based on doc introspection.
 @param {D} contents
 @returns {Omit<Label, "label"> & {readonly label: L} | D}
 */
-function label$33(label, contents) {
+function label$30(label, contents) {
   return label ? { type: DOC_TYPE_LABEL, label, contents } : contents;
 }
 
@@ -10547,7 +9509,7 @@ function label$33(label, contents) {
 */
 
 /** @type {Line} */
-const line$34 = { type: DOC_TYPE_LINE };
+const line$31 = { type: DOC_TYPE_LINE };
 /** @type {SoftLine} */
 const softline = { type: DOC_TYPE_LINE, soft: true };
 /** @type {HardlineWithoutBreakParent} */
@@ -10578,7 +9540,7 @@ const literalline = [literallineWithoutBreakParent, breakParent];
 @param {Doc} contents
 @returns {LineSuffix}
 */
-function lineSuffix$35(contents) {
+function lineSuffix$32(contents) {
   return { type: DOC_TYPE_LINE_SUFFIX, contents };
 }
 
@@ -10663,16 +9625,6 @@ const lineSuffixBoundary = { type: DOC_TYPE_LINE_SUFFIX_BOUNDARY };
 
 
 
-// document/debug.js
-
-
-
-
-
-
-
-
-
 // common/end-of-line.js
 /**
 @typedef {"auto" | OPTION_CR | OPTION_CRLF | OPTION_LF} EndOfLineOption
@@ -10708,18 +9660,6 @@ function guessEndOfLine(text) {
 function convertEndOfLineOptionToCharacter(endOfLineOption) {
   return endOfLineOption === OPTION_CR ? CHARACTER_CR : endOfLineOption === OPTION_CRLF ? CHARACTER_CRLF : DEFAULT_EOL;
 }
-
-const regexps = new Map([
-  [CHARACTER_LF, /\n/g],
-  [CHARACTER_CR, /\r/g],
-  [CHARACTER_CRLF, /\r\n/g],
-]);
-/**
-@param {string} text
-@param {EndOfLine} endOfLineCharacter
-@returns {number}
-*/
-
 
 const END_OF_LINE_REGEXP = /\r\n?/g;
 /**
@@ -11054,7 +9994,7 @@ function collapseWhiteSpace(value) {
 }
 
 /** A text as a regular expression that matches it. */
-function escapeStringRegexp$36(text) {
+function escapeStringRegexp$33(text) {
   return text.replace(/[|\\{}()[\]^$+*?.]/g, '\\$&').replace(/-/g, '\\x2d');
 }
 
@@ -11424,8 +10364,12 @@ function propagateBreaks(doc) {
       continue;
     }
     if (Array.isArray(current)) {
+      // (Strings, most of the parts, are not pushed: there is nothing in them to propagate.)
       for (let index = current.length - 1; index >= 0; index--) {
-        stack.push(current[index]);
+        const part = current[index];
+        if (typeof part !== 'string') {
+          stack.push(part);
+        }
       }
       continue;
     }
@@ -11671,7 +10615,7 @@ function canBreakFn(doc) {
   }
 }
 
-function canBreak$37(doc) {
+function canBreak$34(doc) {
   return findInDoc(doc, canBreakFn, false);
 }
 
@@ -12119,8 +11063,10 @@ function fits(
 
       case DOC_TYPE_ARRAY:
       case DOC_TYPE_FILL: {
-        const parts = docType === DOC_TYPE_ARRAY ? doc : doc.parts;
-        const end = doc[DOC_FILL_PRINTED_LENGTH] ?? 0;
+        // (Only fills are printed in parts: an array has no DOC_FILL_PRINTED_LENGTH, and looking it up on one is slow.)
+        const isArray = docType === DOC_TYPE_ARRAY;
+        const parts = isArray ? doc : doc.parts;
+        const end = isArray ? 0 : (doc[DOC_FILL_PRINTED_LENGTH] ?? 0);
         for (let index = parts.length - 1; index >= end; index--) {
           modes.push(mode);
           docs.push(parts[index]);
@@ -12405,14 +11351,14 @@ function printDocToString(doc, options) {
         const groupMode = doc.groupId ? groupModeMap[doc.groupId] : mode;
         if (groupMode === MODE_BREAK) {
           const breakContents =
-            doc.type === DOC_TYPE_IF_BREAK ? doc.breakContents : doc.negate ? doc.contents : indent$29(doc.contents);
+            doc.type === DOC_TYPE_IF_BREAK ? doc.breakContents : doc.negate ? doc.contents : indent$26(doc.contents);
           if (breakContents) {
             push(indent, mode, breakContents);
           }
         }
         if (groupMode === MODE_FLAT) {
           const flatContents =
-            doc.type === DOC_TYPE_IF_BREAK ? doc.flatContents : doc.negate ? indent$29(doc.contents) : doc.contents;
+            doc.type === DOC_TYPE_IF_BREAK ? doc.flatContents : doc.negate ? indent$26(doc.contents) : doc.contents;
           if (flatContents) {
             push(indent, mode, flatContents);
           }
@@ -12545,41 +11491,9 @@ function printDocToString(doc, options) {
 
 
 
-
 // common/errors.js
-
-
-
-
 class ArgExpansionBailout extends Error {
   name = 'ArgExpansionBailout';
-}
-
-
-
-
-// utilities/is-flow-object-type-property-a-function.js
-/**
-@import {
-  Node,
-} from "../types/estree.js";
-*/
-
-/**
- * @param {Node} node
- * @returns {boolean}
- */
-function isFlowObjectTypePropertyAFunction(node) {
-  return (
-    (node.type === 'ObjectTypeProperty' || node.type === 'ObjectTypeInternalSlot') &&
-    !node.static &&
-    !node.method &&
-    // @ts-expect-error -- exists on `ObjectTypeProperty` but not `ObjectTypeInternalSlot`
-    node.kind !== 'get' &&
-    // @ts-expect-error -- exists on `ObjectTypeProperty` but not `ObjectTypeInternalSlot`
-    node.kind !== 'set' &&
-    node.value.type === 'FunctionTypeAnnotation'
-  );
 }
 
 
@@ -12597,7 +11511,7 @@ function isFlowObjectTypePropertyAFunction(node) {
  * @param {number} startIndex
  * @returns {boolean}
  */
-function isNextLineEmpty$38(text, startIndex) {
+function isNextLineEmpty$35(text, startIndex) {
   /** @type {number | false} */
   let oldIdx = null;
   /** @type {number | false} */
@@ -12631,10 +11545,10 @@ function isNextLineEmpty$38(text, startIndex) {
  * @param {Node} node
  * @returns {boolean}
  */
-const isNextLineEmpty$39 = (node, { originalText }) => {
+const isNextLineEmpty$36 = (node, { originalText }) => {
   const end = locEnd$9(node);
 
-  if (isNextLineEmpty$38(originalText, end)) {
+  if (isNextLineEmpty$35(originalText, end)) {
     return true;
   }
 
@@ -12643,106 +11557,8 @@ const isNextLineEmpty$39 = (node, { originalText }) => {
     return false;
   }
 
-  return isNextLineEmpty$38(originalText, endWithSemicolon);
+  return isNextLineEmpty$35(originalText, endWithSemicolon);
 };
-
-
-
-
-// utilities/is-flow-keyword-type.js
-
-
-const isFlowKeywordType = createTypeCheckFunction([
-  'AnyTypeAnnotation',
-  'ThisTypeAnnotation',
-  'NumberTypeAnnotation',
-  'VoidTypeAnnotation',
-  'BooleanTypeAnnotation',
-  'BigIntTypeAnnotation',
-  'SymbolTypeAnnotation',
-  'StringTypeAnnotation',
-  'NeverTypeAnnotation',
-  'UndefinedTypeAnnotation',
-  'UnknownTypeAnnotation',
-  // FLow only
-  'EmptyTypeAnnotation',
-  'MixedTypeAnnotation',
-]);
-
-
-
-
-// utilities/is-simple-type-annotation.js
-
-
-const isSimpleTypeAnnotation = createTypeCheckFunction([
-  'TSThisType',
-  // literals
-  'NullLiteralTypeAnnotation',
-  'BooleanLiteralTypeAnnotation',
-  'StringLiteralTypeAnnotation',
-  'BigIntLiteralTypeAnnotation',
-  'NumberLiteralTypeAnnotation',
-  'TSLiteralType',
-  'TSTemplateLiteralType',
-]);
-
-
-
-
-// utilities/is-ts-keyword-type.js
-/**
- * @returns {boolean}
- */
-function isTsKeywordType({ type }) {
-  return type.startsWith('TS') && type.endsWith('Keyword');
-}
-
-
-
-
-// utilities/is-simple-type.js
-
-
-
-
-/**
-@import {
-  Node,
-} from "../types/estree.js";
-*/
-
-/**
- * @param {Node} node
- * @returns {boolean}
- */
-function isSimpleType(node) {
-  return (
-    isTsKeywordType(node) ||
-    isFlowKeywordType(node) ||
-    isSimpleTypeAnnotation(node) ||
-    (node.type === 'GenericTypeAnnotation' && !node.typeParameters) ||
-    (node.type === 'TSTypeReference' && !node.typeArguments)
-  );
-}
-
-
-
-
-// utilities/is-type-annotation-a-function.js
-
-
-// Hack to differentiate between the following two which have the same AST
-// declare function f(a): void;
-// var f: (a) => void;
-function isTypeAnnotationAFunction(node) {
-  return (
-    (node.type === 'TypeAnnotation' || node.type === 'TSTypeAnnotation') &&
-    node.typeAnnotation.type === 'FunctionTypeAnnotation' &&
-    !node.static &&
-    !hasSameLocStart(node, node.typeAnnotation)
-  );
-}
 
 
 
@@ -12948,7 +11764,7 @@ function isTestCall(node, parent) {
  * @param {number} startIndex
  * @returns {boolean}
  */
-function isPreviousLineEmpty$40(text, startIndex) {
+function isPreviousLineEmpty$37(text, startIndex) {
   /** @type {number | false} */
   let idx = startIndex - 1;
   idx = skipSpaces(text, idx, { backwards: true });
@@ -12979,7 +11795,7 @@ function isPreviousLineEmpty$40(text, startIndex) {
 
 const returnTrue = () => true;
 
-function printComment$41(path, options) {
+function printComment$38(path, options) {
   const comment = path.node;
   comment.printed = true;
   return options.printer.printComment(path, options);
@@ -12987,7 +11803,7 @@ function printComment$41(path, options) {
 
 function printLeadingComment(path, options) {
   const comment = path.node;
-  const parts = [printComment$41(path, options)];
+  const parts = [printComment$38(path, options)];
 
   const { printer, originalText, locStart, locEnd } = options;
   const isBlock = printer.isBlockComment?.(comment);
@@ -13001,7 +11817,7 @@ function printLeadingComment(path, options) {
       if (hasNewline(originalText, locStart(comment), { backwards: true })) {
         lineBreak = hardline;
       } else {
-        lineBreak = line$34;
+        lineBreak = line$31;
       }
     }
 
@@ -13021,7 +11837,7 @@ function printLeadingComment(path, options) {
 
 function printTrailingComment(path, options, previousComment) {
   const comment = path.node;
-  const printed = printComment$41(path, options);
+  const printed = printComment$38(path, options);
 
   const { printer, originalText, locStart } = options;
   const isBlock = printer.isBlockComment?.(comment);
@@ -13042,10 +11858,10 @@ function printTrailingComment(path, options, previousComment) {
     // if this a comment on its own line; normal trailing comments are
     // always at the end of another expression.
 
-    const isLineBeforeEmpty = isPreviousLineEmpty$40(originalText, locStart(comment));
+    const isLineBeforeEmpty = isPreviousLineEmpty$37(originalText, locStart(comment));
 
     return {
-      doc: lineSuffix$35([hardline, isLineBeforeEmpty ? hardline : '', printed]),
+      doc: lineSuffix$32([hardline, isLineBeforeEmpty ? hardline : '', printed]),
       isBlock,
       hasLineSuffix: true,
     };
@@ -13053,7 +11869,7 @@ function printTrailingComment(path, options, previousComment) {
 
   if (!isBlock || previousComment?.hasLineSuffix) {
     return {
-      doc: [lineSuffix$35([' ', printed]), breakParent],
+      doc: [lineSuffix$32([' ', printed]), breakParent],
       isBlock,
       hasLineSuffix: true,
     };
@@ -13083,11 +11899,11 @@ function printDanglingComments(path, options, danglingCommentsPrintOptions = {})
   }
 
   const parts = path
-    .map(({ node: comment }) => (danglingComments.has(comment) ? printComment$41(path, options) : ''), 'comments')
+    .map(({ node: comment }) => (danglingComments.has(comment) ? printComment$38(path, options) : ''), 'comments')
     .filter(Boolean);
 
   const doc = join(hardline, parts);
-  return shouldIndent ? indent$29([hardline, doc]) : doc;
+  return shouldIndent ? indent$26([hardline, doc]) : doc;
 }
 
 /**
@@ -13225,11 +12041,7 @@ function printOptionalToken(path) {
   ) {
     return '';
   }
-  if (
-    isCallExpression(node) ||
-    (isMemberExpression(node) && node.computed) ||
-    node.type === 'OptionalIndexedAccessType'
-  ) {
+  if (isCallExpression(node) || (isMemberExpression(node) && node.computed)) {
     return '?.';
   }
   return '?';
@@ -13246,30 +12058,8 @@ function printDefiniteToken(path) {
     : '';
 }
 
-const isFlowDeclareNode = createTypeCheckFunction([
-  'DeclareClass',
-  'DeclareComponent',
-  'DeclareFunction',
-  'DeclareHook',
-  'DeclareVariable',
-  'DeclareExportDeclaration',
-  'DeclareExportAllDeclaration',
-  'DeclareOpaqueType',
-  'DeclareTypeAlias',
-  'DeclareEnum',
-  'DeclareInterface',
-]);
-
 const shouldPrintDeclareToken = (path) => {
   const { node } = path;
-
-  if (isFlowDeclareNode(node)) {
-    return (
-      path.parent.type !== 'DeclareExportDeclaration' &&
-      // @ts-expect-error -- hermes doesn't support yet
-      !node.implicitDeclare
-    );
-  }
 
   // TypeScript
   return node.declare;
@@ -13350,7 +12140,7 @@ function printIfOrWhileConditionOrWithStatementObject(path, options, print) {
     return conditionDoc;
   }
 
-  return group$32([indent$29([softline, conditionDoc]), softline]);
+  return group$29([indent$26([softline, conditionDoc]), softline]);
 }
 
 /**
@@ -13362,7 +12152,7 @@ function printDanglingCommentsInList(path, options, filter) {
 
   return hasComment(node, CommentCheckFlags.Dangling, filter)
     ? [
-        indent$29([softline, printDanglingComments(path, options, { filter })]),
+        indent$26([softline, printDanglingComments(path, options, { filter })]),
         hasComment(node, CommentCheckFlags.Dangling | CommentCheckFlags.Line, filter) ? hardline : softline,
       ]
     : '';
@@ -13384,9 +12174,6 @@ function printSemicolon(options) {
 
 
 // print/function-parameters.js
-
-
-
 
 
 
@@ -13458,10 +12245,10 @@ function printFunctionParameters(path, options, print, shouldExpandParameters, s
     printed.push(',');
     if (isParametersInTestCall || shouldHugParameters) {
       printed.push(' ');
-    } else if (isNextLineEmpty$39(parameters[index], options)) {
+    } else if (isNextLineEmpty$36(parameters[index], options)) {
       printed.push(hardline, hardline);
     } else {
-      printed.push(line$34);
+      printed.push(line$31);
     }
   });
 
@@ -13480,7 +12267,7 @@ function printFunctionParameters(path, options, print, shouldExpandParameters, s
       // Removing lines in this case leads to broken or ugly output
       throw new ArgExpansionBailout();
     }
-    return group$32([removeLines(typeParametersDoc), '(', removeLines(printed), ')']);
+    return group$29([removeLines(typeParametersDoc), '(', removeLines(printed), ')']);
   }
 
   // Single object destructuring should hug
@@ -13500,24 +12287,10 @@ function printFunctionParameters(path, options, print, shouldExpandParameters, s
     return [typeParametersDoc, '(', ...printed, ')'];
   }
 
-  const isFlowShorthandWithOneArg =
-    (isFlowObjectTypePropertyAFunction(parent) ||
-      isTypeAnnotationAFunction(parent) ||
-      parent.type === 'TypeAlias' ||
-      parent.type === 'UnionTypeAnnotation' ||
-      parent.type === 'IntersectionTypeAnnotation' ||
-      (parent.type === 'FunctionTypeAnnotation' && parent.returnType === functionNode)) &&
-    parameters.length === 1 &&
-    parameters[0].name === null &&
-    // `type q = (this: string) => void;`
-    functionNode.this !== parameters[0] &&
-    parameters[0].typeAnnotation &&
-    functionNode.typeParameters === null &&
-    isSimpleType(parameters[0].typeAnnotation) &&
-    !functionNode.rest;
+  const isFlowShorthandWithOneArg = false;
 
   if (isFlowShorthandWithOneArg) {
-    if (options.arrowParens === 'always' || functionNode.type === 'HookTypeAnnotation') {
+    if (options.arrowParens === 'always') {
       return ['(', ...printed, ')'];
     }
     return printed;
@@ -13526,12 +12299,8 @@ function printFunctionParameters(path, options, print, shouldExpandParameters, s
   return [
     typeParametersDoc,
     '(',
-    indent$29([softline, ...printed]),
-    !hasRestParameter(functionNode) &&
-    // Angular does not allow trailing comma
-    path.root.type !== 'NGRoot'
-      ? printTrailingComma(options, 'all')
-      : '',
+    indent$26([softline, ...printed]),
+    !hasRestParameter(functionNode) ? printTrailingComma(options, 'all') : '',
     softline,
     ')',
   ];
@@ -13552,9 +12321,8 @@ function shouldHugTheOnlyFunctionParameter(node) {
       parameter.type === 'ArrayPattern' ||
       (parameter.type === 'Identifier' &&
         parameter.typeAnnotation &&
-        (parameter.typeAnnotation.type === 'TypeAnnotation' || parameter.typeAnnotation.type === 'TSTypeAnnotation') &&
-        isObjectType$22(parameter.typeAnnotation.typeAnnotation)) ||
-      (parameter.type === 'FunctionTypeParam' && isObjectType$22(parameter.typeAnnotation) && parameter !== node.rest) ||
+        parameter.typeAnnotation.type === 'TSTypeAnnotation' &&
+        isObjectType$19(parameter.typeAnnotation.typeAnnotation)) ||
       (parameter.type === 'AssignmentPattern' &&
         (parameter.left.type === 'ObjectPattern' || parameter.left.type === 'ArrayPattern') &&
         (parameter.right.type === 'Identifier' ||
@@ -13596,7 +12364,7 @@ function shouldGroupFunctionParameters(functionNode, returnTypeDoc) {
     }
   }
 
-  return getFunctionParameters(functionNode).length === 1 && (isObjectType$22(returnTypeNode) || willBreak(returnTypeDoc));
+  return getFunctionParameters(functionNode).length === 1 && (isObjectType$19(returnTypeNode) || willBreak(returnTypeDoc));
 }
 
 /**
@@ -13689,15 +12457,15 @@ function printNumber(rawNumber) {
  * @typedef {SINGLE_QUOTE | DOUBLE_QUOTE} Quote
  */
 
-const SINGLE_QUOTE$42 = "'";
-const DOUBLE_QUOTE$43 = '"';
+const SINGLE_QUOTE$39 = "'";
+const DOUBLE_QUOTE$40 = '"';
 
 const SINGLE_QUOTE_DATA = Object.freeze({
-  character: SINGLE_QUOTE$42,
+  character: SINGLE_QUOTE$39,
   codePoint: 39,
 });
 const DOUBLE_QUOTE_DATA = Object.freeze({
-  character: DOUBLE_QUOTE$43,
+  character: DOUBLE_QUOTE$40,
   codePoint: 34,
 });
 
@@ -13717,7 +12485,7 @@ const DOUBLE_QUOTE_SETTINGS = Object.freeze({
  */
 function getPreferredQuote(text, preferredQuoteOrPreferSingleQuote) {
   const { preferred, alternate } =
-    preferredQuoteOrPreferSingleQuote === true || preferredQuoteOrPreferSingleQuote === SINGLE_QUOTE$42
+    preferredQuoteOrPreferSingleQuote === true || preferredQuoteOrPreferSingleQuote === SINGLE_QUOTE$39
       ? SINGLE_QUOTE_SETTINGS
       : DOUBLE_QUOTE_SETTINGS;
   const { length } = text;
@@ -13755,7 +12523,7 @@ const REGEX = /\\(["'\\])|(["'])/g;
  * @returns {string}
  */
 function makeString(rawText, enclosingQuote) {
-  const otherQuote = enclosingQuote === DOUBLE_QUOTE$43 ? SINGLE_QUOTE$42 : DOUBLE_QUOTE$43;
+  const otherQuote = enclosingQuote === DOUBLE_QUOTE$40 ? SINGLE_QUOTE$39 : DOUBLE_QUOTE$40;
 
   // Escape and unescape single and double quotes as needed to be able to
   // enclose `rawText` with `enclosingQuote`.
@@ -13787,7 +12555,7 @@ function makeString(rawText, enclosingQuote) {
 /** @import {Quote} from "./get-preferred-quote.js" */
 
 function printString(raw, options) {
-  __external$152.ok(/^(?<quote>["']).*\k<quote>$/s.test(raw));
+  __external$146.ok(/^(?<quote>["']).*\k<quote>$/s.test(raw));
 
   // `rawContent` is the string exactly like it appeared in the input source
   // code, without its enclosing quotes.
@@ -13808,9 +12576,9 @@ function printString(raw, options) {
     // See https://github.com/prettier/prettier/pull/15831#discussion_r1431010636
     (options.parser === 'json5' && options.quoteProps === 'preserve' && !options.singleQuote)
   ) {
-    enclosingQuote = DOUBLE_QUOTE$43;
+    enclosingQuote = DOUBLE_QUOTE$40;
   } else if (options.__isInHtmlAttribute) {
-    enclosingQuote = SINGLE_QUOTE$42;
+    enclosingQuote = SINGLE_QUOTE$39;
   } else {
     enclosingQuote = getPreferredQuote(rawContent, options.singleQuote);
   }
@@ -13840,10 +12608,10 @@ function printString(raw, options) {
 @import {Node, NodeMap, NumericLiteral, StringLiteral} from "../types/estree.js"
 */
 
-const isTsEnumMember$44 = (node) => node.type === 'TSEnumMember';
-const getKeyProperty = (node) => (isTsEnumMember$44(node) ? 'id' : 'key');
+const isTsEnumMember$41 = (node) => node.type === 'TSEnumMember';
+const getKeyProperty = (node) => (isTsEnumMember$41(node) ? 'id' : 'key');
 const getKey = (node) => node[getKeyProperty(node)];
-const isComputedKey = (node) => !isTsEnumMember$44(node) && node.computed;
+const isComputedKey = (node) => !isTsEnumMember$41(node) && node.computed;
 
 // Matches “simple” numbers like `123` and `2.5` but not `1_000`, `1e+100` or `0b10`.
 function isSimpleNumber(numberString) {
@@ -13934,10 +12702,7 @@ function isKeySafeToUnquote(node, options) {
   if (
     // With `--strictPropertyInitialization`, TS treats properties with quoted names differently than unquoted ones.
     // See https://github.com/microsoft/TypeScript/pull/20075
-    !(
-      (parser === 'babel-ts' && node.type === 'ClassProperty') ||
-      ((parser === 'typescript' || parser === 'oxc-ts' || parser === 'yuku-ts') && node.type === 'PropertyDefinition')
-    ) &&
+    !((parser === 'typescript' || parser === 'oxc-ts' || parser === 'yuku-ts') && node.type === 'PropertyDefinition') &&
     ES5_IDENTIFIER.test(value)
   ) {
     return true;
@@ -14054,23 +12819,65 @@ function printKey(path, options, print) {
 
 
 
+// utilities/is-simple-type-annotation.js
+
+
+const isSimpleTypeAnnotation = createTypeCheckFunction([
+  'TSThisType',
+  // literals
+
+  'TSLiteralType',
+  'TSTemplateLiteralType',
+]);
+
+
+
+
+// utilities/is-ts-keyword-type.js
+/**
+ * @returns {boolean}
+ */
+function isTsKeywordType({ type }) {
+  return type.startsWith('TS') && type.endsWith('Keyword');
+}
+
+
+
+
+// utilities/is-simple-type.js
+
+
+
+/**
+@import {
+  Node,
+} from "../types/estree.js";
+*/
+
+/**
+ * @param {Node} node
+ * @returns {boolean}
+ */
+function isSimpleType(node) {
+  return (
+    isTsKeywordType(node) || isSimpleTypeAnnotation(node) || (node.type === 'TSTypeReference' && !node.typeArguments)
+  );
+}
+
+
+
+
 // utilities/union-type-print.js
 
 
 
 
-const isVoidType = createTypeCheckFunction([
-  'VoidTypeAnnotation',
-  'TSVoidKeyword',
-  'NullLiteralTypeAnnotation',
-  'TSNullKeyword',
-]);
+const isVoidType = createTypeCheckFunction(['TSVoidKeyword', 'TSNullKeyword']);
 
 const isObjectLikeType = createTypeCheckFunction([
-  'ObjectTypeAnnotation',
   'TSTypeLiteral',
   // This is a bit aggressive but captures Array<{x}>
-  'GenericTypeAnnotation',
+
   'TSTypeReference',
 ]);
 
@@ -14119,7 +12926,6 @@ function shouldUnionTypePrintOwnComments(path) {
 
 
 
-
 /**
 @import {Doc} from "../../document/index.js";
 */
@@ -14149,15 +12955,15 @@ function printUnionType(path, options, print, args) {
   // // comment
   // | child2
   /** @type {Doc} */
-  let printed = group$32(
+  let printed = group$29(
     path.map(({ isFirst }) => {
-      const bar = isFirst ? ifBreak('| ') : [line$34, '| '];
+      const bar = isFirst ? ifBreak('| ') : [line$31, '| '];
       const typeDoc = print();
       if (hasComment(path.node, CommentCheckFlags.Leading)) {
-        return [bar, align$30(2, printComments(path, typeDoc, options))];
+        return [bar, align$27(2, printComments(path, typeDoc, options))];
       }
 
-      return [bar, printComments(path, align$30(2, typeDoc), options)];
+      return [bar, printComments(path, align$27(2, typeDoc), options)];
     }, 'types')
   );
 
@@ -14165,12 +12971,12 @@ function printUnionType(path, options, print, args) {
     printed = printComments(path, printed, options);
   }
 
-  if (needsParentheses$28(path, options)) {
-    return group$32([indent$29([softline, printed]), softline]);
+  if (needsParentheses$25(path, options)) {
+    return group$29([indent$26([softline, printed]), softline]);
   }
 
   if (isMultipleTupleTypeElement(path)) {
-    return group$32([indent$29([ifBreak(['(', softline]), printed]), softline, ifBreak(')')]);
+    return group$29([indent$26([ifBreak(['(', softline]), printed]), softline, ifBreak(')')]);
   }
 
   // Already indent in parent
@@ -14178,7 +12984,7 @@ function printUnionType(path, options, print, args) {
     return printed;
   }
 
-  return group$32(indent$29([softline, printed]));
+  return group$29(indent$26([softline, printed]));
 }
 
 function shouldIndentUnionType(path) {
@@ -14187,22 +12993,7 @@ function shouldIndentUnionType(path) {
     (key === 'typeAnnotation' && parent.type === 'TSTypeAssertion') ||
     (key === 'elementTypes' && isTupleType(parent)) ||
     ((key === 'trueType' || key === 'falseType') && isConditionalType(parent)) ||
-    (key === 'params' && isTypeParameterInstantiation(parent)) ||
-    (key === 'typeAnnotation' &&
-      parent.type === 'FunctionTypeParam' &&
-      !parent.name &&
-      path.grandparent.this !== parent)
-  ) {
-    return false;
-  }
-
-  if (
-    path.match(
-      undefined,
-      (node, key) => key === 'typeAnnotation' && node.type === 'FunctionTypeParam',
-      (node, key) => key === 'params' && node.type === 'FunctionTypeAnnotation',
-      (node, key) => key === 'value' && node.type === 'ObjectTypeProperty' && isFlowObjectTypePropertyAFunction(node)
-    )
+    (key === 'params' && isTypeParameterInstantiation(parent))
   ) {
     return false;
   }
@@ -14224,7 +13015,7 @@ function shouldIndentUnionType(path) {
  */
 
 function shouldHugType(node) {
-  if (isSimpleType(node) || isObjectType$22(node)) {
+  if (isSimpleType(node) || isObjectType$19(node)) {
     return true;
   }
 
@@ -14252,7 +13043,7 @@ function printTypeAnnotationProperty(path, print, propertyName = 'typeAnnotation
 
   let shouldPrintLeadingSpace = false;
 
-  if (typeAnnotation.type === 'TSTypeAnnotation' || typeAnnotation.type === 'TypeAnnotation') {
+  if (typeAnnotation.type === 'TSTypeAnnotation') {
     const firstToken = path.call(getTypeAnnotationFirstToken, propertyName);
 
     if (firstToken === '=>' || (firstToken === ':' && hasComment(typeAnnotation, CommentCheckFlags.Leading))) {
@@ -14282,48 +13073,7 @@ const getTypeAnnotationFirstToken = (path) => {
     // TypeScript
     path.match(
       (node) => node.type === 'TSTypeAnnotation',
-      (node, key) =>
-        key === 'typeAnnotation' &&
-        (node.type === 'TSJSDocNullableType' ||
-          node.type === 'TSJSDocNonNullableType' ||
-          node.type === 'TSTypePredicate')
-    ) ||
-    /*
-    Flow
-
-    ```js
-    declare function foo(): void;
-                        ^^^^^^^^ `TypeAnnotation`
-    ```
-    */
-    path.match(
-      (node) => node.type === 'TypeAnnotation',
-      (node, key) => key === 'typeAnnotation' && node.type === 'Identifier',
-      (node, key) => key === 'id' && node.type === 'DeclareFunction'
-    ) ||
-    /*
-    Flow
-    ```js
-    declare hook foo(): void;
-                    ^^^^^^^^ `TypeAnnotation`
-    ```
-    */
-    path.match(
-      (node) => node.type === 'TypeAnnotation',
-      (node, key) => key === 'typeAnnotation' && node.type === 'Identifier',
-      (node, key) => key === 'id' && node.type === 'DeclareHook'
-    ) ||
-    /*
-    Flow
-
-    ```js
-    type A = () => infer R extends string;
-                                   ^^^^^^ `TypeAnnotation`
-    ```
-    */
-    path.match(
-      (node) => node.type === 'TypeAnnotation',
-      (node, key) => key === 'bound' && node.type === 'TypeParameter' && node.usesExtendsBound
+      (node, key) => key === 'typeAnnotation' && node.type === 'TSTypePredicate'
     )
   ) {
     return '';
@@ -14367,12 +13117,8 @@ function printTypeAnnotation(path, options, print) {
 const isMethodValue = ({ node, key, parent }) =>
   key === 'value' &&
   node.type === 'FunctionExpression' &&
-  (parent.type === 'ObjectMethod' ||
-    parent.type === 'ClassMethod' ||
-    parent.type === 'ClassPrivateMethod' ||
-    parent.type === 'MethodDefinition' ||
+  (parent.type === 'MethodDefinition' ||
     parent.type === 'TSAbstractMethodDefinition' ||
-    parent.type === 'TSDeclareMethod' ||
     (parent.type === 'Property' && isMethod(parent)));
 
 /*
@@ -14404,7 +13150,7 @@ function printFunction(path, options, print, args) {
   const returnTypeDoc = printReturnType(path, print);
   const shouldGroupParameters = shouldGroupFunctionParameters(node, returnTypeDoc);
 
-  const isFlowHookDeclaration = node.type === 'HookDeclaration';
+  const isFlowHookDeclaration = false;
   const keyword = isFlowHookDeclaration ? 'hook' : 'function';
 
   return [
@@ -14415,7 +13161,7 @@ function printFunction(path, options, print, args) {
     ' ',
     node.id ? print('id') : '',
     print('typeParameters'),
-    group$32([shouldGroupParameters ? group$32(parametersDoc) : parametersDoc, returnTypeDoc]),
+    group$29([shouldGroupParameters ? group$29(parametersDoc) : parametersDoc, returnTypeDoc]),
     node.body ? ' ' : '',
     print('body'),
     node.declare || !node.body ? printSemicolon(options) : '',
@@ -14446,7 +13192,7 @@ function printMethod(path, options, print) {
       parts.push('async ');
     }
   } else {
-    __external$152.ok(kind === 'get' || kind === 'set');
+    __external$146.ok(kind === 'get' || kind === 'set');
 
     parts.push(kind, ' ');
   }
@@ -14484,11 +13230,11 @@ function printMethodValue(path, options, print) {
   const shouldGroupParameters = shouldGroupFunctionParameters(node, returnTypeDoc);
   const parts = [
     print('typeParameters'),
-    group$32([
+    group$29([
       shouldBreakParameters
-        ? group$32(parametersDoc, { shouldBreak: true })
+        ? group$29(parametersDoc, { shouldBreak: true })
         : shouldGroupParameters
-          ? group$32(parametersDoc)
+          ? group$29(parametersDoc)
           : parametersDoc,
       returnTypeDoc,
     ]),
@@ -14563,12 +13309,7 @@ function shouldExpressionStatementPrintLeadingSemicolon(path, options) {
 
   const { node } = path;
 
-  if (
-    node.type !== 'ExpressionStatement' ||
-    isSingleJsxExpressionStatementInMarkdown(path, options) ||
-    isSingleVueEventBindingExpressionStatement(path, options) ||
-    isSingleHtmlEventHandlerExpressionStatement(path, options)
-  ) {
+  if (node.type !== 'ExpressionStatement' || isSingleJsxExpressionStatementInMarkdown(path, options)) {
     return false;
   }
 
@@ -14593,13 +13334,11 @@ function expressionNeedsAsiProtection(path, options) {
   const { node } = path;
   switch (node.type) {
     case 'ParenthesizedExpression':
-    case 'TypeCastExpression':
     case 'TSTypeAssertion':
     case 'ArrayExpression':
     case 'ArrayPattern':
     case 'TemplateLiteral':
     case 'TemplateElement':
-    case 'RegExpLiteral':
       return true;
 
     case 'ArrowFunctionExpression':
@@ -14615,11 +13354,6 @@ function expressionNeedsAsiProtection(path, options) {
       }
       break;
     }
-    case 'BindExpression':
-      if (!node.object) {
-        return true;
-      }
-      break;
 
     case 'Literal':
       if (node.regex) {
@@ -14633,7 +13367,7 @@ function expressionNeedsAsiProtection(path, options) {
       }
   }
 
-  if (needsParentheses$28(path, options)) {
+  if (needsParentheses$25(path, options)) {
     return true;
   }
 
@@ -14652,22 +13386,7 @@ const isSingleExpressionStatement = ({ node, parent }) =>
   ((Array.isArray(parent.directives) && parent.directives.length === 0) || !parent.directives);
 
 function isSingleJsxExpressionStatementInMarkdown(path, options) {
-  return (
-    (options.parentParser === 'markdown' || options.parentParser === 'mdx') &&
-    isSingleExpressionStatement(path) &&
-    isJsxElement(path.node.expression)
-  );
-}
-
-function isSingleHtmlEventHandlerExpressionStatement(path, options) {
-  return options.__isHtmlInlineEventHandler && isSingleExpressionStatement(path);
-}
-
-function isSingleVueEventBindingExpressionStatement(path, options) {
-  return (
-    (options.parser === '__vue_event_binding' || options.parser === '__vue_ts_event_binding') &&
-    isSingleExpressionStatement(path)
-  );
+  return options.parentParser === 'markdown' && isSingleExpressionStatement(path) && isJsxElement(path.node.expression);
 }
 
 
@@ -14714,9 +13433,7 @@ function shouldExpressionStatementPrintOwnComments(path, options) {
 const isClassOrInterface = createTypeCheckFunction([
   'ClassDeclaration',
   'ClassExpression',
-  'DeclareClass',
-  'DeclareInterface',
-  'InterfaceDeclaration',
+
   'TSInterfaceDeclaration',
   // Can't have `id` or `typeParameters`
   // "InterfaceTypeAnnotation",
@@ -14734,8 +13451,6 @@ function willPrintOwnComments(path, options) {
     (key === 'expression' && parent.type === 'JSXSpreadChild') ||
     (key === 'superClass' && (parent.type === 'ClassDeclaration' || parent.type === 'ClassExpression')) ||
     ((key === 'id' || key === 'typeParameters') && isClassOrInterface(parent)) ||
-    // Not tested, don't know how to
-    (key === 'patterns' && parent.type === 'MatchOrPattern') ||
     isIifeCalleeOrTaggedTemplateExpressionTag(path)
   ) {
     return true;
@@ -14767,336 +13482,7 @@ function willPrintOwnComments(path, options) {
 
 // embed/index.js
 // @xufa/lint: embedded languages of JavaScript are left as they are.
-const embed$45 = undefined;
-
-
-
-
-// massage-ast/chain-expression.js
-
-
-/**
-@import {Node} from "../types/estree.js"
-*/
-
-/**
-@param {Node} original
-@param {any} cloned
-*/
-function cleanChainExpression(original, cloned) {
-  // We don't add parentheses to `(a?.b)?.c`
-  if (original.type === 'ChainExpression') {
-    cleanEstreeChainExpression(cloned);
-  } else if (original.type === 'OptionalMemberExpression' || original.type === 'OptionalCallExpression') {
-    cleanBabelChainExpression(cloned);
-  }
-}
-
-/**
-@param {Node} node
-*/
-function getChainElementProperty(node) {
-  if (isMemberExpression(node)) {
-    return 'object';
-  }
-
-  if (isCallExpression(node)) {
-    return 'callee';
-  }
-
-  if (isChainElementWrapper(node)) {
-    return 'expression';
-  }
-}
-
-/**
-@param {Node} node
-*/
-function getChainElement(node) {
-  const property = getChainElementProperty(node);
-  if (property) {
-    return node[property];
-  }
-}
-
-/**
-@param {Node} node
-*/
-function cleanEstreeChainExpression(node) {
-  for (
-    node = getChainElement(node);
-    node.type === 'MemberExpression' || node.type === 'CallExpression' || node.type === 'TSNonNullExpression';
-    node = getChainElement(node)
-  ) {
-    const property = getChainElementProperty(node);
-    const child = node[property];
-    if (child.type === 'ChainExpression') {
-      node[property] = child.expression;
-    }
-  }
-}
-
-/**
-@param {Node} node
-*/
-function cleanBabelChainExpression(node) {
-  for (
-    node = getChainElement(node);
-    node.type === 'MemberExpression' || node.type === 'CallExpression';
-    node = getChainElement(node)
-  ) {
-    // @ts-expect-error -- intentionally to mutate
-    node.type = `Optional${node.type}`;
-  }
-}
-
-
-
-
-// massage-ast/key.js
-
-
-/**
-@import {Node} from "../types/estree.js"
-*/
-
-function cleanNodeKey(cloned, original, property) {
-  const key = original[property];
-  if (isStringLiteral(key) || isNumericLiteral(key)) {
-    cloned[property] = String(key.value);
-  }
-
-  if (key.type === 'Identifier') {
-    cloned[property] = key.name;
-  }
-}
-
-/**
-@param {Node} original
-@param {any} cloned
-*/
-function cleanKey(original, cloned) {
-  // We change {'key': value} into {key: value}.
-  // And {key: value} into {'key': value}.
-  // Also for (some) number keys.
-  if (
-    (original.type === 'Property' ||
-      original.type === 'ObjectProperty' ||
-      original.type === 'MethodDefinition' ||
-      original.type === 'ClassProperty' ||
-      original.type === 'ClassMethod' ||
-      original.type === 'PropertyDefinition' ||
-      original.type === 'TSDeclareMethod' ||
-      original.type === 'TSPropertySignature' ||
-      original.type === 'TSMethodSignature' ||
-      original.type === 'ObjectTypeProperty' ||
-      original.type === 'ImportAttribute' ||
-      original.type === 'RecordDeclarationProperty' ||
-      original.type === 'RecordDeclarationStaticProperty') &&
-    // @ts-expect-error -- safe
-    !original.computed
-  ) {
-    cleanNodeKey(cloned, original, 'key');
-  }
-
-  if (original.type === 'TSEnumMember') {
-    cleanNodeKey(cloned, original, 'id');
-  }
-}
-
-
-
-
-// massage-ast/regexp-literal.js
-/**
-@import {Node} from "../types/estree.js"
-*/
-
-/**
-@param {Node} original
-@param {any} cloned
-*/
-function cleanRegExpLiteral(original, cloned) {
-  if (original.type === 'RegExpLiteral') {
-    cloned.flags = [...original.flags].sort().join('');
-  }
-
-  if (original.type === 'Literal' && 'regex' in original) {
-    cloned.regex.flags = [...original.regex.flags].sort().join('');
-  }
-}
-
-
-
-
-// massage-ast/index.js
-
-
-
-
-
-
-/**
-@import {Node} from "../types/estree.js"
-*/
-
-const ignoredProperties$46 = new Set([
-  'range',
-  'raw',
-  'comments',
-  'extra',
-  'start',
-  'end',
-  'loc',
-  'errors',
-  'tokens',
-  // Hermes
-  'trailingComma',
-  'docblock',
-  // Prettier
-  '__contentEnd',
-]);
-
-const removeTemplateElementsValue = (node) => {
-  for (const templateElement of node.quasis) {
-    delete templateElement.value;
-  }
-};
-
-/**
-@param {Node} original
-@param {any} cloned
-@param {Node | undefined} parent
-*/
-function massageAstNode$47(original, cloned, parent) {
-  if (original.type === 'Program') {
-    delete cloned.sourceType;
-  }
-
-  // We don't add parentheses to `(a?.b)?.c`
-  cleanChainExpression(original, cloned);
-
-  // We quote/unquote keys
-  cleanKey(original, cloned);
-
-  // We sort regex flags
-  cleanRegExpLiteral(original, cloned);
-
-  if ((isBigIntLiteral(original) || original.type === 'BigIntLiteralTypeAnnotation') && 'bigint' in original) {
-    cloned.bigint = original.bigint.toLowerCase();
-  }
-
-  // We remove extra `;` and add them when needed
-  if (original.type === 'EmptyStatement' && !isMeaningfulEmptyStatement({ node: original, parent })) {
-    return null;
-  }
-
-  // We move text around, including whitespaces and add {" "}
-  if (original.type === 'JSXText') {
-    return null;
-  }
-  if (
-    original.type === 'JSXExpressionContainer' &&
-    (original.expression.type === 'Literal' || original.expression.type === 'StringLiteral') &&
-    original.expression.value === ' '
-  ) {
-    return null;
-  }
-
-  // Remove raw and cooked values from TemplateElement when it's CSS
-  // styled-jsx
-  if (
-    original.type === 'JSXElement' &&
-    original.openingElement.name.type === 'JSXIdentifier' &&
-    original.openingElement.name.name === 'style' &&
-    original.openingElement.attributes.some((attr) => attr.type === 'JSXAttribute' && attr.name.name === 'jsx')
-  ) {
-    for (const { type, expression } of cloned.children) {
-      if (type === 'JSXExpressionContainer' && expression.type === 'TemplateLiteral') {
-        removeTemplateElementsValue(expression);
-      }
-    }
-  }
-
-  // CSS template literals in CSS prop
-  if (
-    original.type === 'JSXAttribute' &&
-    original.name.name === 'css' &&
-    original.value.type === 'JSXExpressionContainer' &&
-    original.value.expression.type === 'TemplateLiteral'
-  ) {
-    removeTemplateElementsValue(cloned.value.expression);
-  }
-
-  // We change quotes
-  if (
-    original.type === 'JSXAttribute' &&
-    isStringLiteral(original.value) &&
-    /["']|&quot;|&apos;/.test(original.value.value)
-  ) {
-    cloned.value.value = original.value.value.replaceAll(/["']|&quot;|&apos;/g, '"');
-  }
-
-  // Angular Components: Inline HTML template and Inline CSS styles
-  // @ts-expect-error -- Fixme
-  const expression = original.expression || original.callee;
-  if (
-    original.type === 'Decorator' &&
-    expression.type === 'CallExpression' &&
-    expression.callee.name === 'Component' &&
-    expression.arguments.length === 1
-  ) {
-    // @ts-expect-error -- Fixme
-    const astProps = original.expression.arguments[0].properties;
-    for (const [index, prop] of cloned.expression.arguments[0].properties.entries()) {
-      switch (astProps[index].key.name) {
-        case 'styles':
-          if (isArrayExpression(prop.value)) {
-            removeTemplateElementsValue(prop.value.elements[0]);
-          }
-          break;
-        case 'template':
-          if (prop.value.type === 'TemplateLiteral') {
-            removeTemplateElementsValue(prop.value);
-          }
-          break;
-      }
-    }
-  }
-
-  // styled-components, GraphQL, markdown
-  if (
-    original.type === 'TaggedTemplateExpression' &&
-    (original.tag.type === 'MemberExpression' ||
-      (original.tag.type === 'Identifier' &&
-        (original.tag.name === 'gql' ||
-          original.tag.name === 'graphql' ||
-          original.tag.name === 'css' ||
-          original.tag.name === 'md' ||
-          original.tag.name === 'markdown' ||
-          original.tag.name === 'html')) ||
-      original.tag.type === 'CallExpression')
-  ) {
-    removeTemplateElementsValue(cloned.quasi);
-  }
-
-  if (
-    (original.type === 'CallExpression' || original.type === 'MemberExpression') &&
-    // @ts-expect-error -- safe
-    !original.optional
-  ) {
-    delete cloned.optional;
-  }
-
-  // TODO: Only delete value when there is leading comment which is exactly
-  // `/* GraphQL */` or `/* HTML */`
-  // Also see ./embed.js
-  if (original.type === 'TemplateLiteral') {
-    removeTemplateElementsValue(cloned);
-  }
-}
-
-massageAstNode$47.ignoredProperties = ignoredProperties$46;
+const embed$42 = undefined;
 
 
 
@@ -15112,7 +13498,7 @@ massageAstNode$47.ignoredProperties = ignoredProperties$46;
 @import {Comment} from "../types/estree.js"
 */
 
-function printComment$48(path, options) {
+function printComment$43(path, options) {
   const comment = path.node;
 
   if (isLineComment(comment)) {
@@ -15231,7 +13617,7 @@ class WhitespaceUtilities {
   }
 
   split(text, captureWhitespace = false) {
-    const pattern = `[${escapeStringRegexp$36([...this.#whitespaceCharacters].join(''))}]+`;
+    const pattern = `[${escapeStringRegexp$33([...this.#whitespaceCharacters].join(''))}]+`;
     const regexp = new RegExp(captureWhitespace ? `(${pattern})` : pattern);
     return text.split(regexp);
   }
@@ -15387,454 +13773,6 @@ function isIgnored(path) {
 
 
 
-// utilities/unexpected-node-error.js
-class UnexpectedNodeError extends Error {
-  name = 'UnexpectedNodeError';
-
-  constructor(node, language, typeProperty = 'type') {
-    super(`Unexpected ${language} node ${typeProperty}: ${JSON.stringify(node[typeProperty])}.`);
-    this.node = node;
-  }
-}
-
-
-
-
-// utilities/is-boolean-type-coercion.js
-/**
-@import {
-  Node,
-} from "../types/estree.js";
-*/
-
-/**
- * @param {Node} node
- * @returns {boolean}
- */
-function isBooleanTypeCoercion(node) {
-  return (
-    node.type === 'CallExpression' &&
-    // @ts-expect-error -- expected
-    !node.optional &&
-    node.arguments.length === 1 &&
-    node.callee.type === 'Identifier' &&
-    node.callee.name === 'Boolean'
-  );
-}
-
-
-
-
-// print/binaryish.js
-
-
-
-
-
-
-
-
-
-
-/** @import {Doc} from "../../document/index.js" */
-
-let uid = 0;
-/*
-- `BinaryExpression`
-- `LogicalExpression`
-- `NGPipeExpression`(Angular)
-*/
-function printBinaryishExpression(path, options, print) {
-  const { node, parent, grandparent, key } = path;
-  const isInsideParenthesis =
-    key !== 'body' &&
-    (parent.type === 'IfStatement' ||
-      parent.type === 'WhileStatement' ||
-      parent.type === 'SwitchStatement' ||
-      parent.type === 'DoWhileStatement');
-  const isHackPipeline = node.operator === '|>' && path.root.extra?.__isUsingHackPipeline;
-
-  const parts = printBinaryishExpressions(path, options, print, /* isNested */ false, isInsideParenthesis);
-
-  //   if (
-  //     this.hasPlugin("dynamicImports") && this.lookahead().type === tt.parenLeft
-  //   ) {
-  //
-  // looks super weird, we want to break the children if the parent breaks
-  //
-  //   if (
-  //     this.hasPlugin("dynamicImports") &&
-  //     this.lookahead().type === tt.parenLeft
-  //   ) {
-  if (isInsideParenthesis) {
-    return parts;
-  }
-
-  if (isHackPipeline) {
-    return group$32(parts);
-  }
-
-  // Break between the parens in
-  // unaries or in a member or specific call expression, i.e.
-  //
-  //   (
-  //     a &&
-  //     b &&
-  //     c
-  //   ).call()
-  if (
-    (key === 'callee' && isCallOrNewExpression(parent)) ||
-    // `UnaryExpression` adds parentheses and indention when argument has comment
-    (parent.type === 'UnaryExpression' && !hasComment(node)) ||
-    (isMemberExpression(parent) && !parent.computed)
-  ) {
-    return group$32([indent$29([softline, ...parts]), softline]);
-  }
-
-  // Avoid indenting sub-expressions in some cases where the first sub-expression is already
-  // indented accordingly. We should indent sub-expressions where the first case isn't indented.
-  const shouldNotIndent =
-    isReturnOrThrowStatement(parent) ||
-    (parent.type === 'JSXExpressionContainer' && grandparent.type === 'JSXAttribute') ||
-    (node.operator !== '|' && parent.type === 'JsExpressionRoot') ||
-    (node.type !== 'NGPipeExpression' &&
-      ((parent.type === 'NGRoot' && options.parser === '__ng_binding') ||
-        (parent.type === 'NGMicrosyntaxExpression' &&
-          grandparent.type === 'NGMicrosyntax' &&
-          grandparent.body.length === 1))) ||
-    (node === parent.body && parent.type === 'ArrowFunctionExpression') ||
-    (node !== parent.body && parent.type === 'ForStatement') ||
-    (parent.type === 'ConditionalExpression' &&
-      !isReturnOrThrowStatement(grandparent) &&
-      !isCallOrNewExpression(grandparent)) ||
-    parent.type === 'TemplateLiteral' ||
-    (key === 'argument' && parent.type === 'UnaryExpression') ||
-    (key === 'arguments' && isBooleanTypeCoercion(parent));
-
-  const shouldIndentIfInlining =
-    parent.type === 'AssignmentExpression' ||
-    parent.type === 'VariableDeclarator' ||
-    parent.type === 'ClassProperty' ||
-    parent.type === 'PropertyDefinition' ||
-    parent.type === 'TSAbstractPropertyDefinition' ||
-    parent.type === 'ClassPrivateProperty' ||
-    isObjectProperty(parent);
-
-  const samePrecedenceSubExpression = isBinaryish(node.left) && shouldFlatten(node.operator, node.left.operator);
-
-  if (
-    shouldNotIndent ||
-    (shouldInlineLogicalExpression(node) && !samePrecedenceSubExpression) ||
-    (!shouldInlineLogicalExpression(node) && shouldIndentIfInlining)
-  ) {
-    return group$32(parts);
-  }
-
-  if (parts.length === 0) {
-    return '';
-  }
-
-  // If the right part is a JSX node, we include it in a separate group to
-  // prevent it breaking the whole chain, so we can print the expression like:
-  //
-  //   foo && bar && (
-  //     <Foo>
-  //       <Bar />
-  //     </Foo>
-  //   )
-
-  const hasJsx = isJsxElement(node.right);
-
-  const firstGroupIndex = parts.findIndex(
-    (part) => typeof part !== 'string' && !Array.isArray(part) && part.type === DOC_TYPE_GROUP
-  );
-
-  // Separate the leftmost expression, possibly with its leading comments.
-  const headParts = parts.slice(0, firstGroupIndex === -1 ? 1 : firstGroupIndex + 1);
-
-  const rest = parts.slice(headParts.length, hasJsx ? -1 : undefined);
-
-  const groupId = Symbol('logicalChain-' + ++uid);
-
-  const chain = group$32(
-    [
-      // Don't include the initial expression in the indentation
-      // level. The first item is guaranteed to be the first
-      // left-most expression.
-      ...headParts,
-      indent$29(rest),
-    ],
-    { id: groupId }
-  );
-
-  if (!hasJsx) {
-    return chain;
-  }
-
-  const jsxPart = parts.at(-1);
-  return group$32([chain, indentIfBreak(jsxPart, { groupId })]);
-}
-
-// For binary expressions to be consistent, we need to group
-// subsequent operators with the same precedence level under a single
-// group. Otherwise they will be nested such that some of them break
-// onto new lines but not all. Operators with the same precedence
-// level should either all break or not. Because we group them by
-// precedence level and the AST is structured based on precedence
-// level, things are naturally broken up correctly, i.e. `&&` is
-// broken before `+`.
-function printBinaryishExpressions(path, options, print, isNested, isInsideParenthesis) {
-  const { node } = path;
-
-  // Simply print the node normally.
-  if (!isBinaryish(node)) {
-    return [group$32(print())];
-  }
-
-  /** @type{Doc[]} */
-  let parts = [];
-
-  // We treat BinaryExpression and LogicalExpression nodes the same.
-
-  // Put all operators with the same precedence level in the same
-  // group. The reason we only need to do this with the `left`
-  // expression is because given an expression like `1 + 2 - 3`, it
-  // is always parsed like `((1 + 2) - 3)`, meaning the `left` side
-  // is where the rest of the expression will exist. Binary
-  // expressions on the right side mean they have a difference
-  // precedence level and should be treated as a separate group, so
-  // print them normally. (This doesn't hold for the `**` operator,
-  // which is unique in that it is right-associative.)
-  // @ts-expect-error -- FIXME
-  if (shouldFlatten(node.operator, node.left.operator)) {
-    // Flatten them out by recursively calling this function.
-    parts = path.call(
-      () => printBinaryishExpressions(path, options, print, /* isNested */ true, isInsideParenthesis),
-      'left'
-    );
-  } else {
-    parts.push(group$32(print('left')));
-  }
-
-  const shouldInline = shouldInlineLogicalExpression(node);
-  const rightNodeToCheckComments = node.right.type === 'ChainExpression' ? node.right.expression : node.right;
-  const lineBeforeOperator =
-    (node.type === 'NGPipeExpression' || node.operator === '|>' || isVueFilterSequenceExpression(path, options)) &&
-    !hasLeadingOwnLineComment(options.originalText, rightNodeToCheckComments);
-  const hasTypeCastComment = hasComment(rightNodeToCheckComments, CommentCheckFlags.Leading, isTypeCastComment);
-  const commentBeforeOperator =
-    !hasTypeCastComment && hasLeadingOwnLineComment(options.originalText, rightNodeToCheckComments);
-
-  const operator = node.type === 'NGPipeExpression' ? '|' : node.operator;
-  const rightSuffix =
-    node.type === 'NGPipeExpression' && node.arguments.length > 0
-      ? group$32(
-          indent$29([
-            softline,
-            ': ',
-            join(
-              [line$34, ': '],
-              path.map(() => align$30(2, group$32(print())), 'arguments')
-            ),
-          ])
-        )
-      : '';
-
-  /** @type {Doc} */
-  let right;
-  if (shouldInline) {
-    right = [
-      operator,
-      hasLeadingOwnLineComment(options.originalText, rightNodeToCheckComments)
-        ? indent$29([line$34, print('right'), rightSuffix])
-        : [' ', print('right'), rightSuffix],
-    ];
-  } else {
-    const isHackPipeline = operator === '|>' && path.root.extra?.__isUsingHackPipeline;
-    const rightContent = isHackPipeline
-      ? path.call(
-          () => printBinaryishExpressions(path, options, print, /* isNested */ true, isInsideParenthesis),
-          'right'
-        )
-      : print('right');
-    if (options.experimentalOperatorPosition === 'start') {
-      let comment = '';
-      if (commentBeforeOperator) {
-        switch (getDocType(rightContent)) {
-          case DOC_TYPE_ARRAY:
-            comment = rightContent[0];
-            rightContent.shift();
-            break;
-          case DOC_TYPE_LABEL:
-            comment = rightContent.contents[0];
-            rightContent.contents.shift();
-            break;
-        }
-      }
-      right = [line$34, comment, operator, ' ', rightContent, rightSuffix];
-    } else {
-      right = [lineBeforeOperator ? line$34 : '', operator, lineBeforeOperator ? ' ' : line$34, rightContent, rightSuffix];
-    }
-  }
-
-  // If there's only a single binary expression, we want to create a group
-  // in order to avoid having a small right part like -1 be on its own line.
-  const { parent } = path;
-  const shouldBreak = hasComment(node.left, CommentCheckFlags.Trailing | CommentCheckFlags.Line);
-  const shouldGroup =
-    shouldBreak ||
-    (!(isInsideParenthesis && node.type === 'LogicalExpression') &&
-      parent.type !== node.type &&
-      node.left.type !== node.type &&
-      node.right.type !== node.type);
-  if (shouldGroup) {
-    right = group$32(right, { shouldBreak });
-  }
-
-  if (options.experimentalOperatorPosition === 'start') {
-    parts.push(shouldInline || commentBeforeOperator ? ' ' : '', right);
-  } else {
-    parts.push(lineBeforeOperator ? '' : ' ', right);
-  }
-
-  // The root comments are already printed, but we need to manually print
-  // the other ones since we don't call the normal print on BinaryExpression,
-  // only for the left and right parts
-  if (isNested && hasComment(node)) {
-    const printed = cleanDoc(printComments(path, parts, options));
-    /* c8 ignore next 3 */
-    if (printed.type === DOC_TYPE_FILL) {
-      return printed.parts;
-    }
-
-    return Array.isArray(printed) ? printed : [printed];
-  }
-
-  return parts;
-}
-
-function shouldInlineLogicalExpression(node) {
-  if (node.type !== 'LogicalExpression') {
-    return false;
-  }
-
-  if (isObjectExpression(node.right) && node.right.properties.length > 0) {
-    return true;
-  }
-
-  if (isArrayExpression(node.right) && node.right.elements.length > 0) {
-    return true;
-  }
-
-  if (isJsxElement(node.right)) {
-    return true;
-  }
-
-  return false;
-}
-
-const isBitwiseOrExpression = (node) => node.type === 'BinaryExpression' && node.operator === '|';
-
-function isVueFilterSequenceExpression(path, options) {
-  return (
-    (options.parser === '__vue_expression' || options.parser === '__vue_ts_expression') &&
-    isBitwiseOrExpression(path.node) &&
-    !path.hasAncestor((node) => !isBitwiseOrExpression(node) && node.type !== 'JsExpressionRoot')
-  );
-}
-
-
-
-
-// print/angular.js
-
-
-
-
-
-
-/** @import AstPath from "../../common/ast-path.js" */
-
-function printAngular(path, options, print) {
-  const { node } = path;
-
-  // Angular nodes always starts with `NG`
-  if (!node.type.startsWith('NG')) {
-    return;
-  }
-
-  switch (node.type) {
-    case 'NGRoot':
-      return print('node');
-    case 'NGPipeExpression':
-      return printBinaryishExpression(path, options, print);
-    case 'NGChainedExpression':
-      return group$32(
-        join(
-          [';', line$34],
-          path.map(() => (hasNgSideEffect(path) ? print() : ['(', print(), ')']), 'expressions')
-        )
-      );
-    case 'NGEmptyExpression':
-      return '';
-    case 'NGMicrosyntax':
-      return path.map(() => [path.isFirst ? '' : isNgForOf(path) ? ' ' : [';', line$34], print()], 'body');
-    case 'NGMicrosyntaxKey':
-      return /^[$_a-z][\w$]*(?:-[$_a-z][\w$])*$/i.test(node.name) ? node.name : JSON.stringify(node.name);
-    case 'NGMicrosyntaxExpression':
-      return [print('expression'), node.alias === null ? '' : [' as ', print('alias')]];
-    case 'NGMicrosyntaxKeyedExpression': {
-      const { index, parent } = path;
-      // https://github.com/prettier/angular-estree-parser/issues/267
-      const shouldNotPrintColon =
-        isNgForOf(path) ||
-        isNgForOfTrack(path) ||
-        (((index === 1 && (node.key.name === 'then' || node.key.name === 'else' || node.key.name === 'as')) ||
-          (index === 2 &&
-            ((node.key.name === 'else' &&
-              parent.body[index - 1].type === 'NGMicrosyntaxKeyedExpression' &&
-              parent.body[index - 1].key.name === 'then') ||
-              node.key.name === 'track'))) &&
-          parent.body[0].type === 'NGMicrosyntaxExpression');
-      return [print('key'), shouldNotPrintColon ? ' ' : ': ', print('expression')];
-    }
-    case 'NGMicrosyntaxLet':
-      return ['let ', print('key'), node.value === null ? '' : [' = ', print('value')]];
-    case 'NGMicrosyntaxAs':
-      return [print('key'), ' as ', print('alias')];
-    default:
-      /* c8 ignore next */
-      throw new UnexpectedNodeError(node, 'Angular');
-  }
-}
-
-function isNgForOf({ node, index }) {
-  return node.type === 'NGMicrosyntaxKeyedExpression' && node.key.name === 'of' && index === 1;
-}
-
-function isNgForOfTrack(path) {
-  const { node } = path;
-  return (
-    path.parent.body[1].key.name === 'of' &&
-    node.type === 'NGMicrosyntaxKeyedExpression' &&
-    node.key.name === 'track' &&
-    node.key.type === 'NGMicrosyntaxKey'
-  );
-}
-
-const hasSideEffect = createTypeCheckFunction(['CallExpression', 'OptionalCallExpression', 'AssignmentExpression']);
-/** identify if an angular expression seems to have side effects */
-/**
- * @param {AstPath} path
- * @returns {boolean}
- */
-function hasNgSideEffect({ node }) {
-  return hasNode(node, hasSideEffect);
-}
-
-
-
-
 // print/decorators.js
 
 
@@ -15845,9 +13783,9 @@ function hasNgSideEffect({ node }) {
 
 function printClassMemberDecorators(path, options, print) {
   const { node } = path;
-  return group$32([
-    join(line$34, path.map(print, 'decorators')),
-    hasNewlineBetweenOrAfterDecorators(node, options) ? hardline : line$34,
+  return group$29([
+    join(line$31, path.map(print, 'decorators')),
+    hasNewlineBetweenOrAfterDecorators(node, options) ? hardline : line$31,
   ]);
 }
 
@@ -15885,9 +13823,9 @@ function printDecorators(path, options, print) {
     hasNewlineBetweenOrAfterDecorators(node, options);
 
   return [
-    path.key === 'declaration' && isExportDeclaration$21(parent) ? hardline : shouldBreak ? breakParent : '',
-    join(line$34, path.map(print, 'decorators')),
-    line$34,
+    path.key === 'declaration' && isExportDeclaration$18(parent) ? hardline : shouldBreak ? breakParent : '',
+    join(line$31, path.map(print, 'decorators')),
+    line$31,
   ];
 }
 
@@ -15896,17 +13834,26 @@ function hasNewlineBetweenOrAfterDecorators(node, options) {
 }
 
 function hasDecoratorsBeforeExport(node) {
-  if (
-    node.type !== 'ExportDefaultDeclaration' &&
-    node.type !== 'ExportNamedDeclaration' &&
-    node.type !== 'DeclareExportDeclaration'
-  ) {
+  if (node.type !== 'ExportDefaultDeclaration' && node.type !== 'ExportNamedDeclaration') {
     return false;
   }
 
   const decorators = node.declaration?.decorators;
 
   return isNonEmptyArray(decorators) && hasSameLocStart(node, decorators[0]);
+}
+
+
+
+
+// utilities/unexpected-node-error.js
+class UnexpectedNodeError extends Error {
+  name = 'UnexpectedNodeError';
+
+  constructor(node, language, typeProperty = 'type') {
+    super(`Unexpected ${language} node ${typeProperty}: ${JSON.stringify(node[typeProperty])}.`);
+    this.node = node;
+  }
 }
 
 
@@ -15969,7 +13916,7 @@ function printArray(path, options, print) {
   const elementsProperty = isTupleType(node) ? 'elementTypes' : 'elements';
   const elements = node[elementsProperty];
   if (elements.length === 0 && !node.inexact) {
-    parts.push(group$32(['[', printDanglingCommentsInList(path, options), ']']));
+    parts.push(group$29(['[', printDanglingCommentsInList(path, options), ']']));
   } else {
     const lastElem = elements.at(-1);
     const canHaveTrailingComma = lastElem?.type !== 'RestElement' && !node.inexact;
@@ -16021,10 +13968,10 @@ function printArray(path, options, print) {
             : ifBreak(',');
 
     parts.push(
-      group$32(
+      group$29(
         [
           '[',
-          indent$29([
+          indent$26([
             softline,
             shouldUseConciseFormatting
               ? printArrayElementsConcisely(path, options, print, trailingComma)
@@ -16079,17 +14026,17 @@ function isLineAfterElementEmpty({ node }, { originalText: text }) {
     currentIdx = /** @type {number} */ (skipInlineComment(text, skipTrailingComment(text, currentIdx + 1)));
   }
 
-  return isNextLineEmpty$38(text, currentIdx);
+  return isNextLineEmpty$35(text, currentIdx);
 }
 
 function printArrayElements(path, options, print, elementsProperty, inexact) {
   const parts = [];
 
   path.each(({ node, isLast }) => {
-    parts.push(node ? group$32(print()) : '');
+    parts.push(node ? group$29(print()) : '');
 
     if (!isLast || inexact) {
-      parts.push([',', line$34, node && isLineAfterElementEmpty(path, options) ? softline : '']);
+      parts.push([',', line$31, node && isLineAfterElementEmpty(path, options) ? softline : '']);
     }
   }, elementsProperty);
 
@@ -16112,7 +14059,7 @@ function printArrayElementsConcisely(path, options, print, trailingComma) {
           ? [hardline, hardline]
           : hasComment(next, CommentCheckFlags.Leading | CommentCheckFlags.Line)
             ? hardline
-            : line$34
+            : line$31
       );
     }
   }, 'elements');
@@ -16301,13 +14248,13 @@ function printArrowFunction(path, options, print, args = {}) {
     shouldPutBodyOnSameLine,
   });
 
-  return group$32([
-    group$32(
-      shouldIndentSignatures ? indent$29([shouldPrintSoftlineInIndent ? softline : '', signaturesDoc]) : signaturesDoc,
+  return group$29([
+    group$29(
+      shouldIndentSignatures ? indent$26([shouldPrintSoftlineInIndent ? softline : '', signaturesDoc]) : signaturesDoc,
       { shouldBreak: shouldBreakSignatures, id: chainGroupId }
     ),
     ' =>',
-    shouldPrintAsChain ? indentIfBreak(bodyDoc, { groupId: chainGroupId }) : group$32(bodyDoc),
+    shouldPrintAsChain ? indentIfBreak(bodyDoc, { groupId: chainGroupId }) : group$29(bodyDoc),
     shouldPrintAsChain && isCallee ? ifBreak(softline, '', { groupId: chainGroupId }) : '',
   ]);
 }
@@ -16329,10 +14276,10 @@ function printArrowFunctionSignature(path, options, print, args) {
       if (willBreak(returnTypeDoc)) {
         throw new ArgExpansionBailout();
       }
-      returnTypeDoc = group$32(removeLines(returnTypeDoc));
+      returnTypeDoc = group$29(removeLines(returnTypeDoc));
     }
     parts.push(
-      group$32([
+      group$29([
         printFunctionParameters(path, options, print, shouldExpandParameters, /* shouldPrintTypeParameters */ true),
         returnTypeDoc,
       ])
@@ -16360,7 +14307,6 @@ function mayBreakAfterShortPrefix(functionBody, bodyDoc, options) {
     isArrayExpression(functionBody) ||
     isObjectExpression(functionBody) ||
     functionBody.type === 'ArrowFunctionExpression' ||
-    functionBody.type === 'DoExpression' ||
     functionBody.type === 'BlockStatement' ||
     isJsxElement(functionBody) ||
     (bodyDoc.label?.hug !== false &&
@@ -16383,7 +14329,7 @@ function printArrowFunctionSignatures(path, args, { signatureDocs, shouldBreak }
 
   const { parent, key } = path;
   if ((key !== 'callee' && isCallLikeExpression(parent)) || isBinaryish(parent)) {
-    return group$32([signatureDocs[0], ' =>', indent$29([line$34, join([' =>', line$34], signatureDocs.slice(1))])], {
+    return group$29([signatureDocs[0], ' =>', indent$26([line$31, join([' =>', line$31], signatureDocs.slice(1))])], {
       shouldBreak,
     });
   }
@@ -16393,10 +14339,10 @@ function printArrowFunctionSignatures(path, args, { signatureDocs, shouldBreak }
     // isAssignmentRhs
     args.assignmentLayout
   ) {
-    return group$32(join([' =>', line$34], signatureDocs), { shouldBreak });
+    return group$29(join([' =>', line$31], signatureDocs), { shouldBreak });
   }
 
-  return group$32(indent$29(join([' =>', line$34], signatureDocs)), { shouldBreak });
+  return group$29(indent$26(join([' =>', line$31], signatureDocs)), { shouldBreak });
 }
 
 /**
@@ -16424,14 +14370,14 @@ function printArrowFunctionBody(path, options, args, { bodyDoc, bodyComments, fu
   if (shouldPutBodyOnSameLine && shouldAddParensIfNotBreak(functionBody)) {
     return [
       ' ',
-      group$32([ifBreak('', '('), indent$29([softline, bodyDoc]), ifBreak('', ')'), trailingComma, trailingSpace]),
+      group$29([ifBreak('', '('), indent$26([softline, bodyDoc]), ifBreak('', ')'), trailingComma, trailingSpace]),
       bodyComments,
     ];
   }
 
   return shouldPutBodyOnSameLine
     ? [' ', bodyDoc, bodyComments]
-    : [indent$29([line$34, bodyDoc, bodyComments]), trailingComma, trailingSpace];
+    : [indent$26([line$31, bodyDoc, bodyComments]), trailingComma, trailingSpace];
 }
 
 
@@ -16473,9 +14419,7 @@ function isLoneShortArgument(node, options) {
     return true;
   }
 
-  const regexpPattern =
-    (node.type === 'Literal' && 'regex' in node && node.regex.pattern) ||
-    (node.type === 'RegExpLiteral' && node.pattern);
+  const regexpPattern = (node.type === 'Literal' && 'regex' in node && node.regex.pattern) || false;
 
   if (regexpPattern) {
     return regexpPattern.length <= threshold;
@@ -16507,6 +14451,321 @@ function isLoneShortArgument(node, options) {
 
 
 
+// utilities/is-boolean-type-coercion.js
+/**
+@import {
+  Node,
+} from "../types/estree.js";
+*/
+
+/**
+ * @param {Node} node
+ * @returns {boolean}
+ */
+function isBooleanTypeCoercion(node) {
+  return (
+    node.type === 'CallExpression' &&
+    // @ts-expect-error -- expected
+    !node.optional &&
+    node.arguments.length === 1 &&
+    node.callee.type === 'Identifier' &&
+    node.callee.name === 'Boolean'
+  );
+}
+
+
+
+
+// print/binaryish.js
+
+
+
+
+
+
+
+
+
+
+/** @import {Doc} from "../../document/index.js" */
+
+let uid = 0;
+/*
+- `BinaryExpression`
+- `LogicalExpression`
+- `NGPipeExpression`(Angular)
+*/
+function printBinaryishExpression(path, options, print) {
+  const { node, parent, grandparent, key } = path;
+  const isInsideParenthesis =
+    key !== 'body' &&
+    (parent.type === 'IfStatement' ||
+      parent.type === 'WhileStatement' ||
+      parent.type === 'SwitchStatement' ||
+      parent.type === 'DoWhileStatement');
+  const isHackPipeline = node.operator === '|>' && path.root.extra?.__isUsingHackPipeline;
+
+  const parts = printBinaryishExpressions(path, options, print, /* isNested */ false, isInsideParenthesis);
+
+  //   if (
+  //     this.hasPlugin("dynamicImports") && this.lookahead().type === tt.parenLeft
+  //   ) {
+  //
+  // looks super weird, we want to break the children if the parent breaks
+  //
+  //   if (
+  //     this.hasPlugin("dynamicImports") &&
+  //     this.lookahead().type === tt.parenLeft
+  //   ) {
+  if (isInsideParenthesis) {
+    return parts;
+  }
+
+  if (isHackPipeline) {
+    return group$29(parts);
+  }
+
+  // Break between the parens in
+  // unaries or in a member or specific call expression, i.e.
+  //
+  //   (
+  //     a &&
+  //     b &&
+  //     c
+  //   ).call()
+  if (
+    (key === 'callee' && isCallOrNewExpression(parent)) ||
+    // `UnaryExpression` adds parentheses and indention when argument has comment
+    (parent.type === 'UnaryExpression' && !hasComment(node)) ||
+    (isMemberExpression(parent) && !parent.computed)
+  ) {
+    return group$29([indent$26([softline, ...parts]), softline]);
+  }
+
+  // Avoid indenting sub-expressions in some cases where the first sub-expression is already
+  // indented accordingly. We should indent sub-expressions where the first case isn't indented.
+  const shouldNotIndent =
+    isReturnOrThrowStatement(parent) ||
+    (parent.type === 'JSXExpressionContainer' && grandparent.type === 'JSXAttribute') ||
+    (node === parent.body && parent.type === 'ArrowFunctionExpression') ||
+    (node !== parent.body && parent.type === 'ForStatement') ||
+    (parent.type === 'ConditionalExpression' &&
+      !isReturnOrThrowStatement(grandparent) &&
+      !isCallOrNewExpression(grandparent)) ||
+    parent.type === 'TemplateLiteral' ||
+    (key === 'argument' && parent.type === 'UnaryExpression') ||
+    (key === 'arguments' && isBooleanTypeCoercion(parent));
+
+  const shouldIndentIfInlining =
+    parent.type === 'AssignmentExpression' ||
+    parent.type === 'VariableDeclarator' ||
+    parent.type === 'PropertyDefinition' ||
+    parent.type === 'TSAbstractPropertyDefinition' ||
+    isObjectProperty(parent);
+
+  const samePrecedenceSubExpression = isBinaryish(node.left) && shouldFlatten(node.operator, node.left.operator);
+
+  if (
+    shouldNotIndent ||
+    (shouldInlineLogicalExpression(node) && !samePrecedenceSubExpression) ||
+    (!shouldInlineLogicalExpression(node) && shouldIndentIfInlining)
+  ) {
+    return group$29(parts);
+  }
+
+  if (parts.length === 0) {
+    return '';
+  }
+
+  // If the right part is a JSX node, we include it in a separate group to
+  // prevent it breaking the whole chain, so we can print the expression like:
+  //
+  //   foo && bar && (
+  //     <Foo>
+  //       <Bar />
+  //     </Foo>
+  //   )
+
+  const hasJsx = isJsxElement(node.right);
+
+  const firstGroupIndex = parts.findIndex(
+    (part) => typeof part !== 'string' && !Array.isArray(part) && part.type === DOC_TYPE_GROUP
+  );
+
+  // Separate the leftmost expression, possibly with its leading comments.
+  const headParts = parts.slice(0, firstGroupIndex === -1 ? 1 : firstGroupIndex + 1);
+
+  const rest = parts.slice(headParts.length, hasJsx ? -1 : undefined);
+
+  const groupId = Symbol('logicalChain-' + ++uid);
+
+  const chain = group$29(
+    [
+      // Don't include the initial expression in the indentation
+      // level. The first item is guaranteed to be the first
+      // left-most expression.
+      ...headParts,
+      indent$26(rest),
+    ],
+    { id: groupId }
+  );
+
+  if (!hasJsx) {
+    return chain;
+  }
+
+  const jsxPart = parts.at(-1);
+  return group$29([chain, indentIfBreak(jsxPart, { groupId })]);
+}
+
+// For binary expressions to be consistent, we need to group
+// subsequent operators with the same precedence level under a single
+// group. Otherwise they will be nested such that some of them break
+// onto new lines but not all. Operators with the same precedence
+// level should either all break or not. Because we group them by
+// precedence level and the AST is structured based on precedence
+// level, things are naturally broken up correctly, i.e. `&&` is
+// broken before `+`.
+function printBinaryishExpressions(path, options, print, isNested, isInsideParenthesis) {
+  const { node } = path;
+
+  // Simply print the node normally.
+  if (!isBinaryish(node)) {
+    return [group$29(print())];
+  }
+
+  /** @type{Doc[]} */
+  let parts = [];
+
+  // We treat BinaryExpression and LogicalExpression nodes the same.
+
+  // Put all operators with the same precedence level in the same
+  // group. The reason we only need to do this with the `left`
+  // expression is because given an expression like `1 + 2 - 3`, it
+  // is always parsed like `((1 + 2) - 3)`, meaning the `left` side
+  // is where the rest of the expression will exist. Binary
+  // expressions on the right side mean they have a difference
+  // precedence level and should be treated as a separate group, so
+  // print them normally. (This doesn't hold for the `**` operator,
+  // which is unique in that it is right-associative.)
+  // @ts-expect-error -- FIXME
+  if (shouldFlatten(node.operator, node.left.operator)) {
+    // Flatten them out by recursively calling this function.
+    parts = path.call(
+      () => printBinaryishExpressions(path, options, print, /* isNested */ true, isInsideParenthesis),
+      'left'
+    );
+  } else {
+    parts.push(group$29(print('left')));
+  }
+
+  const shouldInline = shouldInlineLogicalExpression(node);
+  const rightNodeToCheckComments = node.right.type === 'ChainExpression' ? node.right.expression : node.right;
+  const lineBeforeOperator =
+    node.operator === '|>' && !hasLeadingOwnLineComment(options.originalText, rightNodeToCheckComments);
+  const hasTypeCastComment = hasComment(rightNodeToCheckComments, CommentCheckFlags.Leading, isTypeCastComment);
+  const commentBeforeOperator =
+    !hasTypeCastComment && hasLeadingOwnLineComment(options.originalText, rightNodeToCheckComments);
+
+  const operator = node.operator;
+  const rightSuffix = '';
+
+  /** @type {Doc} */
+  let right;
+  if (shouldInline) {
+    right = [
+      operator,
+      hasLeadingOwnLineComment(options.originalText, rightNodeToCheckComments)
+        ? indent$26([line$31, print('right'), rightSuffix])
+        : [' ', print('right'), rightSuffix],
+    ];
+  } else {
+    const isHackPipeline = operator === '|>' && path.root.extra?.__isUsingHackPipeline;
+    const rightContent = isHackPipeline
+      ? path.call(
+          () => printBinaryishExpressions(path, options, print, /* isNested */ true, isInsideParenthesis),
+          'right'
+        )
+      : print('right');
+    if (options.experimentalOperatorPosition === 'start') {
+      let comment = '';
+      if (commentBeforeOperator) {
+        switch (getDocType(rightContent)) {
+          case DOC_TYPE_ARRAY:
+            comment = rightContent[0];
+            rightContent.shift();
+            break;
+          case DOC_TYPE_LABEL:
+            comment = rightContent.contents[0];
+            rightContent.contents.shift();
+            break;
+        }
+      }
+      right = [line$31, comment, operator, ' ', rightContent, rightSuffix];
+    } else {
+      right = [lineBeforeOperator ? line$31 : '', operator, lineBeforeOperator ? ' ' : line$31, rightContent, rightSuffix];
+    }
+  }
+
+  // If there's only a single binary expression, we want to create a group
+  // in order to avoid having a small right part like -1 be on its own line.
+  const { parent } = path;
+  const shouldBreak = hasComment(node.left, CommentCheckFlags.Trailing | CommentCheckFlags.Line);
+  const shouldGroup =
+    shouldBreak ||
+    (!(isInsideParenthesis && node.type === 'LogicalExpression') &&
+      parent.type !== node.type &&
+      node.left.type !== node.type &&
+      node.right.type !== node.type);
+  if (shouldGroup) {
+    right = group$29(right, { shouldBreak });
+  }
+
+  if (options.experimentalOperatorPosition === 'start') {
+    parts.push(shouldInline || commentBeforeOperator ? ' ' : '', right);
+  } else {
+    parts.push(lineBeforeOperator ? '' : ' ', right);
+  }
+
+  // The root comments are already printed, but we need to manually print
+  // the other ones since we don't call the normal print on BinaryExpression,
+  // only for the left and right parts
+  if (isNested && hasComment(node)) {
+    const printed = cleanDoc(printComments(path, parts, options));
+    /* c8 ignore next 3 */
+    if (printed.type === DOC_TYPE_FILL) {
+      return printed.parts;
+    }
+
+    return Array.isArray(printed) ? printed : [printed];
+  }
+
+  return parts;
+}
+
+function shouldInlineLogicalExpression(node) {
+  if (node.type !== 'LogicalExpression') {
+    return false;
+  }
+
+  if (isObjectExpression(node.right) && node.right.properties.length > 0) {
+    return true;
+  }
+
+  if (isArrayExpression(node.right) && node.right.elements.length > 0) {
+    return true;
+  }
+
+  if (isJsxElement(node.right)) {
+    return true;
+  }
+
+  return false;
+}
+
+
+
+
 // utilities/is-memberish.js
 
 
@@ -16521,7 +14780,7 @@ function isLoneShortArgument(node, options) {
  * @returns {boolean}
  */
 function isMemberish(node) {
-  return isMemberExpression(node) || (node.type === 'BindExpression' && Boolean(node.object));
+  return isMemberExpression(node) || false;
 }
 
 
@@ -16618,13 +14877,7 @@ function isLongCurriedCallExpression(path) {
 
 const simpleCallArgumentUnaryOperators = new Set(['!', '-', '+', '~']);
 
-const isSingleWordType = createTypeCheckFunction([
-  'Identifier',
-  'ThisExpression',
-  'Super',
-  'PrivateName',
-  'PrivateIdentifier',
-]);
+const isSingleWordType = createTypeCheckFunction(['Identifier', 'ThisExpression', 'Super', 'PrivateIdentifier']);
 
 /**
  * @param {Node} node
@@ -16647,7 +14900,7 @@ function isSimpleCallArgument(node, depth = 2) {
     );
   }
 
-  if (isLiteral(node) || isSingleWordType(node) || node.type === 'ArgumentPlaceholder') {
+  if (isLiteral(node) || isSingleWordType(node)) {
     return true;
   }
 
@@ -16712,7 +14965,6 @@ function isSimpleCallArgument(node, depth = 2) {
 
 
 
-
 /*
 - `NewExpression`
 - `ImportExpression`
@@ -16727,7 +14979,7 @@ function printCallArguments(path, options, print) {
   const args = getCallArguments(node);
 
   if (args.length === 0) {
-    return group$32(['(', printDanglingCommentsInList(path, options), ')']);
+    return group$29(['(', printDanglingCommentsInList(path, options), ')']);
   }
 
   const lastArgIndex = args.length - 1;
@@ -16753,11 +15005,11 @@ function printCallArguments(path, options, print) {
 
     if (index === lastArgIndex) {
       // do nothing
-    } else if (isNextLineEmpty$39(arg, options)) {
+    } else if (isNextLineEmpty$36(arg, options)) {
       anyArgEmptyLine = true;
       argDoc = [argDoc, ',', hardline, hardline];
     } else {
-      argDoc = [argDoc, ',', line$34];
+      argDoc = [argDoc, ',', line$31];
     }
 
     printedArguments.push(argDoc);
@@ -16765,16 +15017,12 @@ function printCallArguments(path, options, print) {
 
   const trailingComma =
     // Angular does not allow trailing comma
-    path.root.type !== 'NGRoot' &&
-    // Dynamic imports cannot have trailing commas
-    node.type !== 'ImportExpression' &&
-    node.type !== 'TSImportType' &&
-    node.type !== 'TSExternalModuleReference'
+    node.type !== 'ImportExpression' && node.type !== 'TSImportType' && node.type !== 'TSExternalModuleReference'
       ? printTrailingComma(options, 'all')
       : '';
 
   function allArgsBrokenOut() {
-    return group$32(['(', indent$29([line$34, ...printedArguments]), trailingComma, line$34, ')'], { shouldBreak: true });
+    return group$29(['(', indent$26([line$31, ...printedArguments]), trailingComma, line$31, ')'], { shouldBreak: true });
   }
 
   if (anyArgEmptyLine || (path.parent.type !== 'Decorator' && isFunctionCompositionArguments(args))) {
@@ -16802,13 +15050,13 @@ function printCallArguments(path, options, print) {
     if (willBreak(firstArg)) {
       return [
         breakParent,
-        conditionalGroup([['(', group$32(firstArg, { shouldBreak: true }), ', ', ...tailArgs, ')'], allArgsBrokenOut()]),
+        conditionalGroup([['(', group$29(firstArg, { shouldBreak: true }), ', ', ...tailArgs, ')'], allArgsBrokenOut()]),
       ];
     }
 
     return conditionalGroup([
       ['(', firstArg, ', ', ...tailArgs, ')'],
-      ['(', group$32(firstArg, { shouldBreak: true }), ', ', ...tailArgs, ')'],
+      ['(', group$29(firstArg, { shouldBreak: true }), ', ', ...tailArgs, ')'],
       allArgsBrokenOut(),
     ]);
   }
@@ -16834,25 +15082,25 @@ function printCallArguments(path, options, print) {
     if (willBreak(lastArg)) {
       return [
         breakParent,
-        conditionalGroup([['(', ...headArgs, group$32(lastArg, { shouldBreak: true }), ')'], allArgsBrokenOut()]),
+        conditionalGroup([['(', ...headArgs, group$29(lastArg, { shouldBreak: true }), ')'], allArgsBrokenOut()]),
       ];
     }
 
     return conditionalGroup([
       ['(', ...headArgs, lastArg, ')'],
-      ['(', ...headArgs, group$32(lastArg, { shouldBreak: true }), ')'],
+      ['(', ...headArgs, group$29(lastArg, { shouldBreak: true }), ')'],
       allArgsBrokenOut(),
     ]);
   }
 
-  const contents = ['(', indent$29([softline, ...printedArguments]), trailingComma, softline, ')'];
+  const contents = ['(', indent$26([softline, ...printedArguments]), trailingComma, softline, ')'];
   if (isLongCurriedCallExpression(path)) {
     // By not wrapping the arguments in a group, the printer prioritizes
     // breaking up these arguments rather than the args of the parent call.
     return contents;
   }
 
-  return group$32(contents, {
+  return group$29(contents, {
     shouldBreak: printedArguments.some(willBreak) || anyArgEmptyLine,
   });
 }
@@ -16870,7 +15118,7 @@ function couldExpandArg(arg, arrowChainRecursion = false) {
     return true;
   }
 
-  if (arg.type === 'FunctionExpression' || arg.type === 'DoExpression' || arg.type === 'ModuleExpression') {
+  if (arg.type === 'FunctionExpression') {
     return true;
   }
 
@@ -16929,10 +15177,6 @@ function shouldExpandFirstArg(args) {
 
   const [firstArg, secondArg] = args;
 
-  if (firstArg.type === 'ModuleExpression' && isTypeModuleObjectExpression(secondArg)) {
-    return true;
-  }
-
   return (
     !hasComment(firstArg) &&
     (firstArg.type === 'FunctionExpression' ||
@@ -16955,11 +15199,8 @@ function isHopefullyShortCallArgument(node) {
     return isHopefullyShortCallArgument(node.expression);
   }
 
-  if (isBinaryCastExpression(node) || node.type === 'TypeCastExpression') {
+  if (isBinaryCastExpression(node)) {
     let { typeAnnotation } = node;
-    if (typeAnnotation.type === 'TypeAnnotation') {
-      typeAnnotation = typeAnnotation.typeAnnotation;
-    }
 
     if (typeAnnotation.type === 'TSArrayType') {
       typeAnnotation = typeAnnotation.elementType;
@@ -16968,9 +15209,8 @@ function isHopefullyShortCallArgument(node) {
       }
     }
 
-    if (typeAnnotation.type === 'GenericTypeAnnotation' || typeAnnotation.type === 'TSTypeReference') {
-      const typeArguments =
-        typeAnnotation.type === 'GenericTypeAnnotation' ? typeAnnotation.typeParameters : typeAnnotation.typeArguments;
+    if (typeAnnotation.type === 'TSTypeReference') {
+      const typeArguments = typeAnnotation.typeArguments;
       if (typeArguments?.params.length === 1) {
         typeAnnotation = typeArguments.params[0];
       }
@@ -17024,37 +15264,10 @@ function isValidHookCallbackAndDepsFormat(args, baseIndex) {
   );
 }
 
-// `{ type: "module" }` and `{"type": "module"}`
-function isTypeModuleObjectExpression(node) {
-  if (!(node.type === 'ObjectExpression' && node.properties.length === 1)) {
-    return false;
-  }
-
-  const [property] = node.properties;
-
-  if (!isObjectProperty(property)) {
-    return false;
-  }
-
-  return (
-    !property.computed &&
-    ((property.key.type === 'Identifier' && property.key.name === 'type') ||
-      (isStringLiteral(property.key) && property.key.value === 'type')) &&
-    isStringLiteral(property.value) &&
-    property.value.value === 'module'
-  );
-}
-
 
 
 
 // print/bind-expression.js
-
-
-function printBindExpression(path, options, print) {
-  return [print('object'), group$32(indent$29([softline, printBindExpressionCallee(path, options, print)]))];
-}
-
 function printBindExpressionCallee(path, options, print) {
   return ['::', print('callee')];
 }
@@ -17097,7 +15310,6 @@ function printMemberExpression(path, options, print) {
   const firstNonChainElementWrapperParent = path.findAncestor((node) => !isChainElementWrapper(node));
 
   const shouldInline =
-    firstNonMemberParent.type === 'BindExpression' ||
     (firstNonMemberParent.type === 'AssignmentExpression' && firstNonMemberParent.left.type !== 'Identifier') ||
     shouldInlineNewExpressionCallee(path) ||
     node.computed ||
@@ -17108,10 +15320,10 @@ function printMemberExpression(path, options, print) {
       firstNonChainElementWrapperParent.type === 'VariableDeclarator') &&
       (isCallExpressionWithArguments(stripChainElementWrappers(node.object)) || objectDoc.label?.memberChain));
 
-  return label$33(objectDoc.label, [
+  return label$30(objectDoc.label, [
     objectDoc,
     lineSuffixBoundary,
-    shouldInline ? lookupDoc : group$32(indent$29([softline, lookupDoc])),
+    shouldInline ? lookupDoc : group$29(indent$26([softline, lookupDoc])),
   ]);
 }
 
@@ -17128,7 +15340,7 @@ function printMemberLookup(path, options, print) {
     return [optional, '[', property, ']'];
   }
 
-  return group$32([optional, '[', indent$29([softline, property]), softline, ']']);
+  return group$29([optional, '[', indent$26([softline, property]), softline, ']']);
 }
 
 
@@ -17197,10 +15409,10 @@ function printMemberChain(path, options, print) {
     // if it is cut off by a parenthesis, we only account for one typed empty
     // line after that parenthesis
     if (nextChar === ')') {
-      return nextCharIndex !== false && isNextLineEmpty$38(originalText, nextCharIndex + 1);
+      return nextCharIndex !== false && isNextLineEmpty$35(originalText, nextCharIndex + 1);
     }
 
-    return isNextLineEmpty$39(node, options);
+    return isNextLineEmpty$36(node, options);
   }
 
   function rec() {
@@ -17209,7 +15421,7 @@ function printMemberChain(path, options, print) {
     if (
       isCallExpression(node) &&
       (isMemberish(node.callee) || isCallExpression(node.callee)) &&
-      !needsParentheses$28(path, options)
+      !needsParentheses$25(path, options)
     ) {
       const hasTrailingEmptyLine = shouldInsertEmptyLineAfter(node);
       printedNodes.unshift({
@@ -17225,7 +15437,7 @@ function printMemberChain(path, options, print) {
         ],
       });
       path.call(rec, 'callee');
-    } else if (isMemberish(node) && !needsParentheses$28(path, options)) {
+    } else if (isMemberish(node) && !needsParentheses$25(path, options)) {
       printedNodes.unshift({
         node,
         printed: printComments(
@@ -17237,9 +15449,9 @@ function printMemberChain(path, options, print) {
         ),
       });
       path.call(rec, 'object');
-    } else if (node.type === 'ChainExpression' && !needsParentheses$28(path, options)) {
+    } else if (node.type === 'ChainExpression' && !needsParentheses$25(path, options)) {
       path.call(rec, 'expression');
-    } else if (node.type === 'TSNonNullExpression' && !needsParentheses$28(path, options)) {
+    } else if (node.type === 'TSNonNullExpression' && !needsParentheses$25(path, options)) {
       printedNodes.unshift({
         node,
         printed: printComments(path, '!', options),
@@ -17411,7 +15623,7 @@ function printMemberChain(path, options, print) {
     if (groups.length === 0) {
       return '';
     }
-    return indent$29([hardline, join(hardline, groups.map(printGroup))]);
+    return indent$26([hardline, join(hardline, groups.map(printGroup))]);
   }
 
   const printedGroups = groups.map(printGroup);
@@ -17431,7 +15643,7 @@ function printMemberChain(path, options, print) {
     if (isLongCurriedCallExpression(path)) {
       return oneLine;
     }
-    return group$32(oneLine);
+    return group$29(oneLine);
   }
 
   // Find out the last node in the first group and check if it has an
@@ -17474,7 +15686,7 @@ function printMemberChain(path, options, print) {
     printedGroups.slice(0, -1).some(willBreak) ||
     lastGroupWillBreakAndOtherCallsHaveFunctionArguments()
   ) {
-    result = group$32(expanded);
+    result = group$29(expanded);
   } else {
     result = [
       // We only need to check `oneLine` because if `expanded` is chosen
@@ -17485,7 +15697,7 @@ function printMemberChain(path, options, print) {
     ];
   }
 
-  return label$33({ memberChain: true }, result);
+  return label$30({ memberChain: true }, result);
 }
 
 
@@ -17571,7 +15783,7 @@ function printCallExpression(path, options, print) {
     !isNewExpression &&
     isMemberish(node.callee) &&
     !path.call(
-      () => needsParentheses$28(path, options),
+      () => needsParentheses$25(path, options),
       'callee',
       ...(node.callee.type === 'ChainExpression' ? ['expression'] : [])
     )
@@ -17584,7 +15796,7 @@ function printCallExpression(path, options, print) {
   // We group here when the callee is itself a call expression.
   // See `isLongCurriedCallExpression` for more info.
   if (isDynamicImportLike || isCallExpression(node.callee)) {
-    return group$32(contents);
+    return group$29(contents);
   }
 
   return contents;
@@ -17693,37 +15905,37 @@ function printAssignment(path, options, print, leftDoc, operator, rightPropertyN
   switch (layout) {
     // First break after operator, then the sides are broken independently on their own lines
     case 'break-after-operator':
-      return group$32([group$32(leftDoc), operator, group$32(indent$29([line$34, rightDoc]))]);
+      return group$29([group$29(leftDoc), operator, group$29(indent$26([line$31, rightDoc]))]);
 
     // First break right-hand side, then left-hand side
     case 'never-break-after-operator':
-      return group$32([group$32(leftDoc), operator, ' ', rightDoc]);
+      return group$29([group$29(leftDoc), operator, ' ', rightDoc]);
 
     // First break right-hand side, then after operator
     case 'fluid': {
       const groupId = Symbol('assignment');
-      return group$32([
-        group$32(leftDoc),
+      return group$29([
+        group$29(leftDoc),
         operator,
-        group$32(indent$29(line$34), { id: groupId }),
+        group$29(indent$26(line$31), { id: groupId }),
         lineSuffixBoundary,
         indentIfBreak(rightDoc, { groupId }),
       ]);
     }
 
     case 'break-lhs':
-      return group$32([leftDoc, operator, ' ', group$32(rightDoc)]);
+      return group$29([leftDoc, operator, ' ', group$29(rightDoc)]);
 
     // Parts of assignment chains aren't wrapped in groups.
     // Once one of them breaks, the chain breaks too.
     case 'chain':
-      return [group$32(leftDoc), operator, line$34, rightDoc];
+      return [group$29(leftDoc), operator, line$31, rightDoc];
 
     case 'chain-tail':
-      return [group$32(leftDoc), operator, indent$29([line$34, rightDoc])];
+      return [group$29(leftDoc), operator, indent$26([line$31, rightDoc])];
 
     case 'chain-tail-arrow-chain':
-      return [group$32(leftDoc), operator, rightDoc];
+      return [group$29(leftDoc), operator, rightDoc];
 
     case 'only-left':
       return leftDoc;
@@ -17751,9 +15963,9 @@ function chooseLayout(path, options, print, leftDoc, rightPropertyName) {
   //   1) a = b = c; (expression statements)
   //   2) var/let/const a = b = c;
 
-  const isTail = !isAssignment$49(rightNode);
+  const isTail = !isAssignment$44(rightNode);
   const shouldUseChainFormatting = path.match(
-    isAssignment$49,
+    isAssignment$44,
     isAssignmentOrVariableDeclarator,
     (node) => !isTail || (node.type !== 'ExpressionStatement' && node.type !== 'VariableDeclaration')
   );
@@ -17764,7 +15976,7 @@ function chooseLayout(path, options, print, leftDoc, rightPropertyName) {
         ? 'chain-tail-arrow-chain'
         : 'chain-tail';
   }
-  const isHeadOfLongChain = !isTail && isAssignment$49(rightNode.right);
+  const isHeadOfLongChain = !isTail && isAssignment$44(rightNode.right);
 
   if (
     isHeadOfLongChain ||
@@ -17784,7 +15996,7 @@ function chooseLayout(path, options, print, leftDoc, rightPropertyName) {
     return 'never-break-after-operator';
   }
 
-  const canBreakLeftDoc = canBreak$37(leftDoc);
+  const canBreakLeftDoc = canBreak$34(leftDoc);
 
   if (
     isComplexDestructuring(node) ||
@@ -17828,11 +16040,9 @@ function shouldBreakAfterOperator(path, options, print, hasShortKey) {
   }
 
   switch (rightNode.type) {
-    case 'StringLiteralTypeAnnotation':
     case 'SequenceExpression':
       return true;
     case 'TSConditionalType':
-    case 'ConditionalTypeAnnotation':
       if (!options.experimentalTernaries && !shouldBreakBeforeConditionalType(rightNode)) {
         break;
       }
@@ -17897,12 +16107,12 @@ function isComplexDestructuring(node) {
   return false;
 }
 
-function isAssignment$49(node) {
+function isAssignment$44(node) {
   return node.type === 'AssignmentExpression';
 }
 
 function isAssignmentOrVariableDeclarator(node) {
-  return isAssignment$49(node) || node.type === 'VariableDeclarator';
+  return isAssignment$44(node) || node.type === 'VariableDeclarator';
 }
 
 function isComplexTypeAliasParams(node) {
@@ -17947,9 +16157,6 @@ function isArrowFunctionVariableDeclarator(node) {
 function getTypeParametersFromTypeReference(node) {
   let typeArguments;
   switch (node.type) {
-    case 'GenericTypeAnnotation':
-      typeArguments = node.typeParameters;
-      break;
     case 'TSTypeReference':
       typeArguments = node.typeArguments;
       break;
@@ -18022,12 +16229,7 @@ function isCallExpressionWithComplexTypeArguments(node, print) {
     }
     if (typeArgs.length === 1) {
       const firstArg = typeArgs[0];
-      if (
-        isUnionType(firstArg) ||
-        isIntersectionType(firstArg) ||
-        firstArg.type === 'TSTypeLiteral' ||
-        firstArg.type === 'ObjectTypeAnnotation'
-      ) {
+      if (isUnionType(firstArg) || isIntersectionType(firstArg) || firstArg.type === 'TSTypeLiteral') {
         return true;
       }
     }
@@ -18040,8 +16242,6 @@ function isCallExpressionWithComplexTypeArguments(node, print) {
 
 function isGeneric(node) {
   switch (node.type) {
-    case 'FunctionTypeAnnotation':
-    case 'GenericTypeAnnotation':
     case 'TSFunctionType':
       return Boolean(node.typeParameters);
     case 'TSTypeReference':
@@ -18079,7 +16279,7 @@ function printAwaitExpression(path, options, print) {
       (isCallExpression(parent) && parent.callee === node) ||
       (isMemberExpression(parent) && parent.object === node)
     ) {
-      parts = [indent$29([softline, ...parts]), softline];
+      parts = [indent$26([softline, ...parts]), softline];
       // avoid printing `await (await` on one line
       const parentAwaitOrBlock = path.findAncestor(
         (node) => node.type === 'AwaitExpression' || node.type === 'BlockStatement'
@@ -18088,7 +16288,7 @@ function printAwaitExpression(path, options, print) {
         parentAwaitOrBlock?.type !== 'AwaitExpression' ||
         !startsWithNoLookaheadToken(parentAwaitOrBlock.argument, (leftmostNode) => leftmostNode === node)
       ) {
-        return group$32(parts);
+        return group$29(parts);
       }
     }
   }
@@ -18131,7 +16331,7 @@ function printStatementSequence(path, options, print, property) {
     if (node !== lastStatement) {
       parts.push(hardline);
 
-      if (isNextLineEmpty$39(node, options)) {
+      if (isNextLineEmpty$36(node, options)) {
         parts.push(hardline);
       }
     }
@@ -18163,7 +16363,7 @@ function printBlock(path, options, print) {
   const bodyDoc = printBlockBody(path, options, print);
   const { node, parent } = path;
 
-  if (node.type === 'Program' && parent?.type !== 'ModuleExpression') {
+  if (node.type === 'Program') {
     return bodyDoc ? [bodyDoc, hardline] : '';
   }
 
@@ -18175,27 +16375,18 @@ function printBlock(path, options, print) {
 
   parts.push('{');
   if (bodyDoc) {
-    parts.push(indent$29([hardline, bodyDoc]), hardline);
+    parts.push(indent$26([hardline, bodyDoc]), hardline);
   } else {
     const parentParent = path.grandparent;
     if (!(
       parent.type === 'ArrowFunctionExpression' ||
       parent.type === 'FunctionExpression' ||
       parent.type === 'FunctionDeclaration' ||
-      parent.type === 'ComponentDeclaration' ||
-      parent.type === 'HookDeclaration' ||
-      parent.type === 'ObjectMethod' ||
-      parent.type === 'ClassMethod' ||
-      parent.type === 'ClassPrivateMethod' ||
       parent.type === 'ForStatement' ||
       parent.type === 'WhileStatement' ||
       parent.type === 'DoWhileStatement' ||
-      parent.type === 'DoExpression' ||
-      parent.type === 'ModuleExpression' ||
       (parent.type === 'CatchClause' && !parentParent.finalizer) ||
       parent.type === 'TSModuleDeclaration' ||
-      parent.type === 'DeclareModule' ||
-      parent.type === 'MatchStatementCase' ||
       node.type === 'StaticBlock'
     )) {
       parts.push(hardline);
@@ -18231,7 +16422,7 @@ function printBlockBody(path, options, print) {
 
     if (hasBody || hasDanglingComments) {
       parts.push(hardline);
-      if (isNextLineEmpty$39(node.directives.at(-1), options)) {
+      if (isNextLineEmpty$36(node.directives.at(-1), options)) {
         parts.push(hardline);
       }
     }
@@ -18269,14 +16460,6 @@ function createGroupIdMapper(description) {
 // utilities/class-members.js
 
 
-
-/**
-@import AstPath from "../../common/ast-path.js";
-@import {Node, NodeMap} from "../types/estree.js";
-*/
-
-const flowObjectTypeAnnotationChildrenProperties = ['properties', 'indexers', 'callProperties', 'internalSlots'];
-
 function iterateClassMembersPath(path, iteratee) {
   const { node } = path;
   if (node.type === 'ClassBody' || node.type === 'TSInterfaceBody') {
@@ -18287,41 +16470,6 @@ function iterateClassMembersPath(path, iteratee) {
   if (node.type === 'TSTypeLiteral') {
     path.each(iteratee, 'members');
     return;
-  }
-
-  if (node.type === 'RecordDeclarationBody') {
-    path.each(iteratee, 'elements');
-    return;
-  }
-
-  if (node.type === 'ObjectTypeAnnotation') {
-    // Unfortunately, things grouped together in the AST can be
-    // interleaved in the source code. So we need to reorder them before
-    // printing them.
-    const children = flowObjectTypeAnnotationChildrenProperties
-      .flatMap((field) =>
-        path.map(
-          ({ node, index }) => ({
-            node,
-            loc: locStart$8(node),
-            selector: [field, index],
-          }),
-          field
-        )
-      )
-      .sort((a, b) => a.loc - b.loc);
-
-    for (const [index, { node, selector }] of children.entries()) {
-      path.call(
-        () =>
-          iteratee({
-            node,
-            next: children[index + 1]?.node,
-            isLast: index === children.length - 1,
-          }),
-        ...selector
-      );
-    }
   }
 }
 
@@ -18335,11 +16483,7 @@ function iterateClassMembersPath(path, iteratee) {
 @returns {boolean}
 */
 function isNonEmptyClassBody(node) {
-  if (node.type === 'ObjectTypeAnnotation') {
-    return flowObjectTypeAnnotationChildrenProperties.some((property) => isNonEmptyArray(node[property]));
-  }
-
-  const members = node.type === 'RecordDeclarationBody' ? node.elements : node.body;
+  const members = node.body;
 
   return isNonEmptyArray(members);
 }
@@ -18348,7 +16492,6 @@ function isNonEmptyClassBody(node) {
 
 
 // print/class-body.js
-
 
 
 
@@ -18370,10 +16513,10 @@ function isNonEmptyClassBody(node) {
 function printClassBody(path, options, print) {
   const { node } = path;
   const parts = [];
-  const isFlowTypeAnnotation = node.type === 'ObjectTypeAnnotation';
-  const isFlowRecordDeclaration = node.type === 'RecordDeclarationBody';
+  const isFlowTypeAnnotation = false;
+  const isFlowRecordDeclaration = false;
   const isObjectType = !isClassBody(path);
-  const separator = isObjectType ? line$34 : hardline;
+  const separator = isObjectType ? line$31 : hardline;
   const hasDanglingComments = hasComment(node, CommentCheckFlags.Dangling);
 
   const [openingBrace, closingBrace] = isFlowTypeAnnotation && node.exact ? ['{|', '|}'] : '{}';
@@ -18411,7 +16554,7 @@ function printClassBody(path, options, print) {
     if (!isLast) {
       parts.push(separator);
 
-      if (isNextLineEmpty$39(node, options)) {
+      if (isNextLineEmpty$36(node, options)) {
         parts.push(hardline);
       }
     }
@@ -18422,20 +16565,6 @@ function printClassBody(path, options, print) {
   }
 
   // TODO: this part can unify with the similar part in `printObject`
-  if (node.type === 'ObjectTypeAnnotation' && node.inexact) {
-    isEmpty &&= false;
-    let printed;
-    if (hasComment(node, CommentCheckFlags.Dangling)) {
-      const hasLineComments = hasComment(node, CommentCheckFlags.Line);
-      printed = [
-        hasLineComments || hasNewline(options.originalText, locEnd$9(getComments(node).at(-1))) ? hardline : line$34,
-        '...',
-      ];
-    } else {
-      printed = [firstMember ? line$34 : '', '...'];
-    }
-    parts.push(printed);
-  }
 
   if (isObjectType) {
     const shouldBreak =
@@ -18448,8 +16577,8 @@ function printClassBody(path, options, print) {
     if (parts.length === 0) {
       content = openingBrace + closingBrace;
     } else {
-      const spacing = !options.bracketSpacing || (isEmpty && !shouldBreak) ? softline : line$34;
-      content = [openingBrace, indent$29([spacing, ...parts]), spacing, closingBrace];
+      const spacing = !options.bracketSpacing || (isEmpty && !shouldBreak) ? softline : line$31;
+      content = [openingBrace, indent$26([spacing, ...parts]), spacing, closingBrace];
     }
 
     // If we inline the object as first argument of the parent, we don't want
@@ -18461,41 +16590,28 @@ function printClassBody(path, options, print) {
         (node, name) => name === 'typeAnnotation',
         (node, name) => name === 'typeAnnotation',
         shouldHugTheOnlyParameter
-      ) ||
-      path.match(
-        undefined,
-        (node, name) => node.type === 'FunctionTypeParam' && name === 'typeAnnotation',
-        shouldHugTheOnlyParameter
       )
     ) {
       return content;
     }
 
-    return group$32(content, { shouldBreak });
+    return group$29(content, { shouldBreak });
   }
 
-  return [openingBrace, parts.length > 0 ? [indent$29([hardline, parts]), hardline] : '', closingBrace];
+  return [openingBrace, parts.length > 0 ? [indent$26([hardline, parts]), hardline] : '', closingBrace];
 }
 
 function isClassBody(path) {
   const { node } = path;
 
-  if (node.type === 'ObjectTypeAnnotation') {
-    const { key, parent } = path;
-    return (
-      key === 'body' &&
-      (parent.type === 'InterfaceDeclaration' || parent.type === 'DeclareInterface' || parent.type === 'DeclareClass')
-    );
-  }
-
-  return node.type === 'ClassBody' || node.type === 'TSInterfaceBody' || node.type === 'RecordDeclarationBody';
+  return node.type === 'ClassBody' || node.type === 'TSInterfaceBody' || false;
 }
 
 function printClassMemberSemicolon(path, options) {
   const { parent } = path;
 
   if (path.callParent(isClassBody)) {
-    return parent.type === 'ObjectTypeAnnotation' ? ';' : printSemicolon(options);
+    return printSemicolon(options);
   }
 
   if (parent.type === 'TSTypeLiteral') {
@@ -18514,10 +16630,8 @@ function printClassMemberSemicolon(path, options) {
 }
 
 const isClassProperty = createTypeCheckFunction([
-  'ClassProperty',
   'PropertyDefinition',
-  'ClassPrivateProperty',
-  'ClassAccessorProperty',
+
   'AccessorProperty',
   'TSAbstractPropertyDefinition',
   'TSAbstractAccessorProperty',
@@ -18577,14 +16691,11 @@ function shouldPrintSemicolonAfterClassProperty({ node, next: nextNode }, option
   }
 
   switch (nextNode.type) {
-    case 'ClassProperty':
     case 'PropertyDefinition':
     case 'TSAbstractPropertyDefinition':
       return nextNode.computed;
     case 'MethodDefinition':
-    case 'TSAbstractMethodDefinition':
-    case 'ClassMethod':
-    case 'ClassPrivateMethod': {
+    case 'TSAbstractMethodDefinition': {
       // Babel
       const isAsync = nextNode.value ? nextNode.value.async : nextNode.async;
       if (isAsync || nextNode.kind === 'get' || nextNode.kind === 'set') {
@@ -18660,12 +16771,7 @@ function shouldPrintSemicolonAfterInterfaceProperty({ node, next: nextNode }, op
 
 const getHeritageGroupId = createGroupIdMapper('heritageGroup');
 
-const isInterface = createTypeCheckFunction([
-  'TSInterfaceDeclaration',
-  'DeclareInterface',
-  'InterfaceDeclaration',
-  'InterfaceTypeAnnotation',
-]);
+const isInterface = createTypeCheckFunction(['TSInterfaceDeclaration']);
 
 /*
 - `ClassDeclaration`
@@ -18683,8 +16789,8 @@ function printClass(path, options, print) {
   const { node } = path;
   if (node.type === 'ClassExpression' && isNonEmptyArray(node.decorators)) {
     const decoratorsDoc = printDecorators(path, options, print);
-    const needsParens = needsParentheses$28(path, options);
-    return needsParens ? [indent$29([softline, decoratorsDoc, doc]), softline] : [decoratorsDoc, doc];
+    const needsParens = needsParentheses$25(path, options);
+    return needsParens ? [indent$26([softline, decoratorsDoc, doc]), softline] : [decoratorsDoc, doc];
   }
 
   return doc;
@@ -18693,7 +16799,7 @@ function printClass(path, options, print) {
 function printClassWithoutDecorators(path, options, print) {
   const { node } = path;
   const isPrintingInterface = isInterface(node);
-  const isPrintingRecord = node.type === 'RecordDeclaration';
+  const isPrintingRecord = false;
 
   const keyword = isPrintingInterface ? 'interface' : isPrintingRecord ? 'record' : 'class';
 
@@ -18707,7 +16813,7 @@ function printClassWithoutDecorators(path, options, print) {
   const partsGroup = [];
   const extendsParts = [];
 
-  if (node.type !== 'InterfaceTypeAnnotation') {
+  {
     if (node.id) {
       partsGroup.push(' ');
     }
@@ -18715,7 +16821,7 @@ function printClassWithoutDecorators(path, options, print) {
     for (const property of ['id', 'typeParameters']) {
       if (node[property]) {
         const { leading, trailing } = path.call(() => printCommentsSeparately(path, options), property);
-        partsGroup.push(leading, print(property), indent$29(trailing));
+        partsGroup.push(leading, print(property), indent$26(trailing));
       }
     }
   }
@@ -18724,7 +16830,7 @@ function printClassWithoutDecorators(path, options, print) {
     const printed = [printSuperClass(path, options, print), print('superTypeArguments')];
     const printedWithComments = path.call(() => ['extends ', printComments(path, printed, options)], 'superClass');
     if (groupMode) {
-      extendsParts.push(line$34, group$32(printedWithComments));
+      extendsParts.push(line$31, group$29(printedWithComments));
     } else {
       extendsParts.push(' ', printedWithComments);
     }
@@ -18740,7 +16846,7 @@ function printClassWithoutDecorators(path, options, print) {
   let heritageGroupId;
   if (groupMode) {
     heritageGroupId = getHeritageGroupId(node);
-    parts.push(group$32([...partsGroup, indent$29(extendsParts)], { id: heritageGroupId }));
+    parts.push(group$29([...partsGroup, indent$26(extendsParts)], { id: heritageGroupId }));
   } else {
     parts.push(...partsGroup, ...extendsParts);
   }
@@ -18807,12 +16913,9 @@ function shouldPrintClassInGroupModeWithoutCache(path) {
 
   const groupMode =
     // `ClassImplements` seem not allow `QualifiedTypeIdentifier`
-    (heritage.type === 'InterfaceExtends' &&
-      heritage.id.type === 'QualifiedTypeIdentifier' &&
-      !heritage.typeParameters) ||
-    ((heritage.type === 'TSClassImplements' || heritage.type === 'TSInterfaceHeritage') &&
-      isMemberExpression(heritage.expression) &&
-      !heritage.typeArguments);
+    (heritage.type === 'TSClassImplements' || heritage.type === 'TSInterfaceHeritage') &&
+    isMemberExpression(heritage.expression) &&
+    !heritage.typeArguments;
 
   return groupMode;
 }
@@ -18834,23 +16937,23 @@ function printHeritageClauses(path, options, print, listName) {
     marker: listName,
   });
 
-  const heritageClausesDoc = join([',', line$34], path.map(print, listName));
+  const heritageClausesDoc = join([',', line$31], path.map(print, listName));
 
   // Make it print like `superClass`
   if (!hasMultipleHeritage(node)) {
     const printed = [`${listName} `, printedLeadingComments, heritageClausesDoc];
     if (shouldPrintClassInGroupMode(path)) {
-      return [line$34, group$32(printed)];
+      return [line$31, group$29(printed)];
     }
     return [' ', printed];
   }
 
   return [
-    line$34,
+    line$31,
     printedLeadingComments,
     printedLeadingComments && hardline,
     listName,
-    group$32(indent$29([line$34, heritageClausesDoc])),
+    group$29(indent$26([line$31, heritageClausesDoc])),
   ];
 }
 
@@ -18858,7 +16961,7 @@ function printSuperClass(path, options, print) {
   const printed = print('superClass');
   const { parent } = path;
   if (parent.type === 'AssignmentExpression') {
-    return group$32(ifBreak(['(', indent$29([softline, printed]), softline, ')'], printed));
+    return group$29(ifBreak(['(', indent$26([softline, printed]), softline, ')'], printed));
   }
   return printed;
 }
@@ -18922,11 +17025,7 @@ function printClassProperty(path, options, print) {
   if (node.variance) {
     parts.push(print('variance'));
   }
-  if (
-    node.type === 'ClassAccessorProperty' ||
-    node.type === 'AccessorProperty' ||
-    node.type === 'TSAbstractAccessorProperty'
-  ) {
+  if (node.type === 'AccessorProperty' || node.type === 'TSAbstractAccessorProperty') {
     parts.push('accessor ');
   }
   parts.push(
@@ -18979,7 +17078,7 @@ function printClause(path, options, print, property = 'body') {
     const isBlockStatement = node.type === 'BlockStatement';
 
     if (shouldPrintLeadingHardline(node, options)) {
-      return isBlockStatement ? [hardline, doc] : indent$29([hardline, doc]);
+      return isBlockStatement ? [hardline, doc] : indent$26([hardline, doc]);
     }
 
     if (
@@ -18989,7 +17088,7 @@ function printClause(path, options, print, property = 'body') {
       return [' ', doc];
     }
 
-    return indent$29([line$34, doc]);
+    return indent$26([line$31, doc]);
   }, property);
 }
 
@@ -19006,7 +17105,7 @@ const printIfStatementAlternate = (path, options, print) => printClause(path, op
 
 function printDoWhileStatement(path, options, print) {
   return [
-    group$32(['do', printClause(path, options, print)]),
+    group$29(['do', printClause(path, options, print)]),
     path.node.body.type === 'BlockStatement' ? ' ' : hardline,
     'while (',
     printIfOrWhileConditionOrWithStatementObject(path, options, print),
@@ -19018,44 +17117,7 @@ function printDoWhileStatement(path, options, print) {
 
 
 
-// utilities/vue-event-binding.js
-
-
-// https://github.com/vuejs/core/blob/35785f3cd7bd86cbec3f8324022491da2d088b61/packages/compiler-core/src/babelUtils.ts#L498
-const isVueEventBindingTsNode = createTypeCheckFunction([
-  'TSAsExpression', // `foo as number`
-  'TSTypeAssertion', // `(<number>foo)`
-  'TSNonNullExpression', // `foo!`
-  'TSInstantiationExpression', // `foo<string>`
-  'TSSatisfiesExpression', // `foo satisfies T`
-]);
-
-// https://github.com/vuejs/core/blob/35785f3cd7bd86cbec3f8324022491da2d088b61/packages/compiler-core/src/babelUtils.ts#L506C8-L512C2
-function unwrapVueEventBindingTsNode(node) {
-  if (isVueEventBindingTsNode(node)) {
-    return unwrapVueEventBindingTsNode(node.expression);
-  }
-
-  return node;
-}
-
-// https://github.com/vuejs/core/blob/35785f3cd7bd86cbec3f8324022491da2d088b61/packages/compiler-core/src/utils.ts#L197
-const isVueEventBindingFunctionExpression = createTypeCheckFunction(['FunctionExpression', 'ArrowFunctionExpression']);
-
-// https://github.com/vuejs/core/blob/35785f3cd7bd86cbec3f8324022491da2d088b61/packages/compiler-core/src/utils.ts#L161
-function isVueEventBindingMemberExpression(node) {
-  return (
-    node.type === 'MemberExpression' ||
-    node.type === 'OptionalMemberExpression' ||
-    (node.type === 'Identifier' && node.name !== 'undefined')
-  );
-}
-
-
-
-
 // print/expression-statement.js
-
 
 
 
@@ -19066,21 +17128,12 @@ function isVueEventBindingMemberExpression(node) {
 */
 
 function shouldPrintSemicolon(path, options) {
-  if (isSingleVueEventBindingExpressionStatement(path, options)) {
-    const expression = unwrapVueEventBindingTsNode(path.node.expression);
-    return isVueEventBindingFunctionExpression(expression) || isVueEventBindingMemberExpression(expression);
-  }
-
   if (!options.semi) {
     return false;
   }
 
-  if (
-    // Do not append semicolon after the only JSX element in a program
-    isSingleJsxExpressionStatementInMarkdown(path, options) ||
-    // Do not append semicolon after the only HTML event binding expression in a program
-    isSingleHtmlEventHandlerExpressionStatement(path, options)
-  ) {
+  // Do not append semicolon after the only JSX element in a program
+  if (isSingleJsxExpressionStatementInMarkdown(path, options)) {
     return false;
   }
 
@@ -19133,15 +17186,15 @@ function printForStatement(path, options, print) {
   const printedComments = dangling ? [dangling, softline] : '';
 
   if (!node.init && !node.test && !node.update) {
-    return [printedComments, group$32(['for (;;)', body])];
+    return [printedComments, group$29(['for (;;)', body])];
   }
 
   return [
     printedComments,
-    group$32([
+    group$29([
       'for (',
-      group$32([
-        indent$29([softline, print('init'), ';', line$34, print('test'), ';', node.update ? [line$34, print('update')] : '']),
+      group$29([
+        indent$26([softline, print('init'), ';', line$31, print('test'), ';', node.update ? [line$31, print('update')] : '']),
         softline,
       ]),
       ')',
@@ -19160,7 +17213,7 @@ function printForStatement(path, options, print) {
 function printForXStatement(path, options, print) {
   const { node } = path;
   const isForOfStatement = node.type === 'ForOfStatement';
-  return group$32([
+  return group$29([
     'for',
     isForOfStatement && node.await ? ' await' : '',
     ' (',
@@ -19172,32 +17225,6 @@ function printForXStatement(path, options, print) {
     ')',
     printClause(path, options, print),
   ]);
-}
-
-
-
-
-// print/html-binding.js
-
-
-function printHtmlBinding(path, options, print) {
-  if (options.__isVueBindings || options.__isVueForBindingLeft) {
-    const parameterDocs = path.map(print, 'program', 'body', 0, 'params');
-
-    if (parameterDocs.length === 1) {
-      return parameterDocs[0];
-    }
-
-    const doc = join([',', line$34], parameterDocs);
-
-    return options.__isVueForBindingLeft ? ['(', indent$29([softline, group$32(doc)]), softline, ')'] : doc;
-  }
-
-  if (options.__isEmbeddedTypescriptGenericParameters) {
-    const parameterDocs = path.map(print, 'program', 'body', 0, 'typeParameters', 'params');
-
-    return join([',', line$34], parameterDocs);
-  }
 }
 
 
@@ -19218,7 +17245,7 @@ function printHtmlBinding(path, options, print) {
  * @param {Node | Comment} node
  * @returns {boolean}
  */
-const isPreviousLineEmpty$50 = (node, { originalText }) => isPreviousLineEmpty$40(originalText, locStart$8(node));
+const isPreviousLineEmpty$45 = (node, { originalText }) => isPreviousLineEmpty$37(originalText, locStart$8(node));
 
 
 
@@ -19262,7 +17289,7 @@ function needsHardlineAfterDanglingComment(node) {
 
 function printIfStatement(path, options, print) {
   const { node } = path;
-  const opening = group$32([
+  const opening = group$29([
     'if (',
     printIfOrWhileConditionOrWithStatementObject(path, options, print),
     ')',
@@ -19288,7 +17315,7 @@ function printIfStatement(path, options, print) {
   if (danglingComments.length > 0) {
     const [firstComment] = danglingComments;
 
-    if (isPreviousLineEmpty$50(firstComment, options)) {
+    if (isPreviousLineEmpty$45(firstComment, options)) {
       parts.push(isConsequentBlockStatement ? [hardline, hardline] : hardline);
     } else if (
       hasNewline(options.originalText, locStart$8(firstComment), {
@@ -19309,7 +17336,7 @@ function printIfStatement(path, options, print) {
     needSpace = false;
   }
 
-  parts.push(needSpace ? ' ' : '', 'else', group$32(printIfStatementAlternate(path, options, print)));
+  parts.push(needSpace ? ' ' : '', 'else', group$29(printIfStatementAlternate(path, options, print)));
 
   return parts;
 }
@@ -19330,8 +17357,6 @@ function printLiteral(path, options /* , print*/) {
   const { node } = path;
 
   switch (node.type) {
-    case 'RegExpLiteral': // Babel
-      return printRegex(node);
     case 'BigIntLiteral': // Babel
       return printBigInt(node.extra.raw);
     case 'NumericLiteral': // Babel
@@ -19342,8 +17367,6 @@ function printLiteral(path, options /* , print*/) {
       return 'null';
     case 'BooleanLiteral': // Babel
       return String(node.value);
-    case 'DirectiveLiteral':
-      return printDirective(node.extra.raw, options);
     case 'Literal': {
       if (node.regex) {
         return printRegex(node.regex);
@@ -19431,17 +17454,6 @@ const isPrintingImportAttributes = createTypeCheckFunction([
   'ExportDefaultDeclaration',
   'ExportNamedDeclaration',
   'ExportAllDeclaration',
-  'DeclareExportDeclaration',
-  'DeclareExportAllDeclaration',
-]);
-
-const isPrintingFlowEnumBody = createTypeCheckFunction([
-  'EnumBody',
-  'EnumBooleanBody',
-  'EnumNumberBody',
-  'EnumBigIntBody',
-  'EnumStringBody',
-  'EnumSymbolBody',
 ]);
 
 /*
@@ -19464,7 +17476,7 @@ const isPrintingFlowEnumBody = createTypeCheckFunction([
 function printObject(path, options, print) {
   const { node, parent } = path;
 
-  const isFlowEnumBody = isPrintingFlowEnumBody(node);
+  const isFlowEnumBody = false;
   const isEnumBody = node.type === 'TSEnumBody' || isFlowEnumBody;
   const isImportAttributes = isPrintingImportAttributes(node);
   const hasUnknownMembers = isFlowEnumBody && node.hasUnknownMembers;
@@ -19478,9 +17490,6 @@ function printObject(path, options, print) {
       parent.type !== 'FunctionDeclaration' &&
       parent.type !== 'FunctionExpression' &&
       parent.type !== 'ArrowFunctionExpression' &&
-      parent.type !== 'ObjectMethod' &&
-      parent.type !== 'ClassMethod' &&
-      parent.type !== 'ClassPrivateMethod' &&
       parent.type !== 'AssignmentPattern' &&
       parent.type !== 'CatchClause' &&
       node.properties.some(
@@ -19496,8 +17505,8 @@ function printObject(path, options, print) {
   let separatorParts = [];
   const parts = path.map(({ node }) => {
     const result = [...separatorParts, print()];
-    separatorParts = [',', line$34];
-    if (isNextLineEmpty$39(node, options)) {
+    separatorParts = [',', line$31];
+    if (isNextLineEmpty$36(node, options)) {
       separatorParts.push(hardline);
     }
     return result;
@@ -19510,7 +17519,7 @@ function printObject(path, options, print) {
       const printedDanglingComments = printDanglingComments(path, options);
       printed = [
         printedDanglingComments,
-        hasLineComments || hasNewline(options.originalText, locEnd$9(getComments(node).at(-1))) ? hardline : line$34,
+        hasLineComments || hasNewline(options.originalText, locEnd$9(getComments(node).at(-1))) ? hardline : line$31,
         '...',
       ];
     } else {
@@ -19523,7 +17532,7 @@ function printObject(path, options, print) {
 
   let content;
   if (parts.length === 0) {
-    content = group$32([
+    content = group$29([
       '{',
       printDanglingCommentsInList(path, options),
       '}',
@@ -19531,10 +17540,10 @@ function printObject(path, options, print) {
       printTypeAnnotationProperty(path, print),
     ]);
   } else {
-    const spacing = options.bracketSpacing ? line$34 : softline;
+    const spacing = options.bracketSpacing ? line$31 : softline;
     content = [
       '{',
-      indent$29([spacing, ...parts]),
+      indent$26([spacing, ...parts]),
       canHaveTrailingSeparator ? printTrailingComma(options) : '',
       spacing,
       '}',
@@ -19551,18 +17560,13 @@ function printObject(path, options, print) {
       (node) => node.type === 'ObjectPattern' && !isNonEmptyArray(node.decorators),
       shouldHugTheOnlyParameter
     ) ||
-    (isObjectType$22(node) &&
-      (path.match(
+    (isObjectType$19(node) &&
+      path.match(
         undefined,
         (node, name) => name === 'typeAnnotation',
         (node, name) => name === 'typeAnnotation',
         shouldHugTheOnlyParameter
-      ) ||
-        path.match(
-          undefined,
-          (node, name) => node.type === 'FunctionTypeParam' && name === 'typeAnnotation',
-          shouldHugTheOnlyParameter
-        ))) ||
+      )) ||
     // Assignment printing logic (printAssignment) is responsible
     // for adding a group if needed
     (!shouldBreak &&
@@ -19574,7 +17578,7 @@ function printObject(path, options, print) {
     return content;
   }
 
-  return group$32(content, { shouldBreak });
+  return group$29(content, { shouldBreak });
 }
 
 function hasNewLineAfterOpeningBrace(node, firstProperty, options) {
@@ -19629,8 +17633,7 @@ function printImportDeclaration(path, options, print) {
   ];
 }
 
-const isDefaultExport = (node) =>
-  node.type === 'ExportDefaultDeclaration' || (node.type === 'DeclareExportDeclaration' && node.default);
+const isDefaultExport = (node) => node.type === 'ExportDefaultDeclaration' || false;
 
 /*
 - `ExportDefaultDeclaration`
@@ -19665,7 +17668,7 @@ function printExportDeclaration(path, options, print) {
   } else {
     parts.push(printExportKind(node));
 
-    if (node.type === 'ExportAllDeclaration' || node.type === 'DeclareExportAllDeclaration') {
+    if (node.type === 'ExportAllDeclaration') {
       parts.push(' *');
       if (exported) {
         parts.push(' as ', print('exported'));
@@ -19684,16 +17687,11 @@ function printExportDeclaration(path, options, print) {
 
 const shouldOmitSemicolon = createTypeCheckFunction([
   'ClassDeclaration',
-  'ComponentDeclaration',
+
   'FunctionDeclaration',
   'TSInterfaceDeclaration',
-  'DeclareClass',
-  'DeclareComponent',
-  'DeclareFunction',
-  'DeclareHook',
-  'HookDeclaration',
+
   'TSDeclareFunction',
-  'EnumDeclaration',
 ]);
 function printSemicolonAfterExportDeclaration(node, options) {
   if (!node.declaration || (isDefaultExport(node) && !shouldOmitSemicolon(node.declaration))) {
@@ -19770,11 +17768,11 @@ function printModuleSpecifiers(path, options, print) {
 
       if (canBreak) {
         parts.push(
-          group$32([
+          group$29([
             '{',
-            indent$29([options.bracketSpacing ? line$34 : softline, join([',', line$34], groupedSpecifiers)]),
+            indent$26([options.bracketSpacing ? line$31 : softline, join([',', line$31], groupedSpecifiers)]),
             printTrailingComma(options),
-            options.bracketSpacing ? line$34 : softline,
+            options.bracketSpacing ? line$31 : softline,
             '}',
           ])
         );
@@ -19878,7 +17876,7 @@ function printModuleSpecifier(path, options, print) {
   const rightSideNode = node[rightSideProperty];
   let left = '';
   let right = '';
-  if (type === 'ExportNamespaceSpecifier' || type === 'ImportNamespaceSpecifier') {
+  if (type === 'ImportNamespaceSpecifier') {
     left = '*';
   } else if (leftSideNode) {
     left = print(leftSideProperty);
@@ -19948,7 +17946,7 @@ function printReturnOrThrowArgument(path, options, print) {
   const argumentDoc = print();
 
   if (returnArgumentHasLeadingComment(node, options)) {
-    return ['(', indent$29([hardline, argumentDoc]), hardline, ')'];
+    return ['(', indent$26([hardline, argumentDoc]), hardline, ')'];
   }
 
   if (
@@ -19957,7 +17955,7 @@ function printReturnOrThrowArgument(path, options, print) {
       node.type === 'ConditionalExpression' &&
       (node.consequent.type === 'ConditionalExpression' || node.alternate.type === 'ConditionalExpression'))
   ) {
-    return group$32([ifBreak('('), indent$29([softline, argumentDoc]), softline, ifBreak(')')]);
+    return group$29([ifBreak('('), indent$26([softline, argumentDoc]), softline, ifBreak(')')]);
   }
 
   return argumentDoc;
@@ -19983,7 +17981,7 @@ function printReturnOrThrowStatement(path, options, print) {
 
 function shouldIndentSequenceExpression(path, options) {
   const { key, parent } = path;
-  if (key === 'argument' && isReturnOrThrowStatement(parent) && needsParentheses$28(path, options)) {
+  if (key === 'argument' && isReturnOrThrowStatement(parent) && needsParentheses$25(path, options)) {
     return true;
   }
 
@@ -20005,19 +18003,19 @@ function printSequenceExpression(path, options, print) {
       if (isFirst) {
         parts.push(print());
       } else {
-        parts.push(',', indent$29([line$34, print()]));
+        parts.push(',', indent$26([line$31, print()]));
       }
     }, 'expressions');
-    return group$32(parts);
+    return group$29(parts);
   }
 
-  const parts = join([',', line$34], path.map(print, 'expressions'));
+  const parts = join([',', line$31], path.map(print, 'expressions'));
 
   if (shouldIndentSequenceExpression(path, options)) {
-    return group$32(ifBreak([indent$29([softline, parts]), softline], parts));
+    return group$29(ifBreak([indent$26([softline, parts]), softline], parts));
   }
 
-  return group$32(parts);
+  return group$29(parts);
 }
 
 
@@ -20032,15 +18030,15 @@ function printSequenceExpression(path, options, print) {
 
 function printSwitchStatement(path, options, print) {
   return [
-    group$32(['switch (', indent$29([softline, print('discriminant')]), softline, ')']),
+    group$29(['switch (', indent$26([softline, print('discriminant')]), softline, ')']),
     ' {',
     path.node.cases.length > 0
-      ? indent$29([
+      ? indent$26([
           hardline,
           join(
             hardline,
             path.map(
-              ({ node, isLast }) => [print(), !isLast && isNextLineEmpty$39(node, options) ? hardline : ''],
+              ({ node, isLast }) => [print(), !isLast && isNextLineEmpty$36(node, options) ? hardline : ''],
               'cases'
             )
           ),
@@ -20070,7 +18068,7 @@ function printSwitchCase(path, options, print) {
     const cons = printStatementSequence(path, options, print, 'consequent');
 
     parts.push(
-      consequent.length === 1 && consequent[0].type === 'BlockStatement' ? [' ', cons] : indent$29([hardline, cons])
+      consequent.length === 1 && consequent[0].type === 'BlockStatement' ? [' ', cons] : indent$26([hardline, cons])
     );
   }
 
@@ -20182,7 +18180,7 @@ function printTaggedTemplateExpression(path, options, print) {
     }
   }
 
-  return label$33(quasiDoc.label && { tagged: true, ...quasiDoc.label }, [
+  return label$30(quasiDoc.label && { tagged: true, ...quasiDoc.label }, [
     print('tag'),
     print('typeArguments'),
     space,
@@ -20245,7 +18243,7 @@ function printJestEachTemplateLiteral(path, options, print) {
     return [
       lineSuffixBoundary,
       '`',
-      indent$29([
+      indent$26([
         hardline,
         join(
           hardline,
@@ -20326,12 +18324,12 @@ function printTemplateExpression(path, options, print, shouldPreserveIndentation
       isBinaryCastExpression(node) ||
       isBinaryish(node))
   ) {
-    expressionDoc = [indent$29([softline, expressionDoc]), softline];
+    expressionDoc = [indent$26([softline, expressionDoc]), softline];
   }
 
   // There is no way to know how the quasis will be printed
   if (!shouldPreserveIndentation) {
-    return group$32(['${', expressionDoc, lineSuffixBoundary, '}']);
+    return group$29(['${', expressionDoc, lineSuffixBoundary, '}']);
   }
 
   // For a template literal of the following form:
@@ -20352,10 +18350,10 @@ function printTemplateExpression(path, options, print, shouldPreserveIndentation
   }
   expressionDoc =
     indentSize === 0 && previousQuasiText.endsWith('\n')
-      ? align$30(Number.NEGATIVE_INFINITY, expressionDoc)
+      ? align$27(Number.NEGATIVE_INFINITY, expressionDoc)
       : addAlignmentToDoc(expressionDoc, indentSize, options.tabWidth);
 
-  return group$32(['${', expressionDoc, lineSuffixBoundary, '}']);
+  return group$29(['${', expressionDoc, lineSuffixBoundary, '}']);
 }
 
 function printTemplateExpressions(path, options, print) {
@@ -20364,12 +18362,6 @@ function printTemplateExpressions(path, options, print) {
     path.node.type === 'TSTemplateLiteralType' ? 'types' : 'expressions'
   );
 }
-
-
-
-
-
-
 
 /**
  * describe.each`table`(name, fn)
@@ -20397,6 +18389,18 @@ function isJestEachTemplateLiteral({ node, parent }) {
         parent.tag.object.object.type === 'Identifier' &&
         jestEachTriggerRegex.test(parent.tag.object.object.name)))
   );
+}
+
+
+
+
+// utilities/is-object.js
+/**
+ * @param {unknown} object
+ * @returns {object is NonNullable<object>}
+ */
+function isObject(object) {
+  return object !== null && typeof object === 'object';
 }
 
 
@@ -20543,12 +18547,12 @@ function printTernaryTest(path, options, print) {
    *       : e
    */
   if (parent.type === node.type && parent[alternateNodePropertyName] === node) {
-    return align$30(2, printed);
+    return align$27(2, printed);
   }
   return printed;
 }
 
-const ancestorNameMap$51 = new Map([
+const ancestorNameMap$46 = new Map([
   ['AssignmentExpression', 'right'],
   ['VariableDeclarator', 'init'],
   ['ReturnStatement', 'argument'],
@@ -20557,7 +18561,7 @@ const ancestorNameMap$51 = new Map([
   ['YieldExpression', 'argument'],
   ['AwaitExpression', 'argument'],
 ]);
-function shouldExtraIndentForConditionalExpression$52(path) {
+function shouldExtraIndentForConditionalExpression$47(path) {
   const { node } = path;
   if (node.type !== 'ConditionalExpression') {
     return false;
@@ -20595,7 +18599,7 @@ function shouldExtraIndentForConditionalExpression$52(path) {
     return false;
   }
 
-  return parent[ancestorNameMap$51.get(parent.type)] === child;
+  return parent[ancestorNameMap$46.get(parent.type)] === child;
 }
 
 /**
@@ -20655,7 +18659,7 @@ function printTernaryOld(path, options, print) {
     // Even though they don't need parens, we wrap (almost) everything in
     // parens when using ?: within JSX, because the parens are analogous to
     // curly braces in an if statement.
-    const wrap = (doc) => [ifBreak('('), indent$29([softline, doc]), softline, ifBreak(')')];
+    const wrap = (doc) => [ifBreak('('), indent$26([softline, doc]), softline, ifBreak(')')];
 
     // The only things we don't wrap are:
     // * Nested conditional expressions in alternates
@@ -20698,15 +18702,15 @@ function printTernaryOld(path, options, print) {
     ```
     */
     const printBranch = (nodePropertyName) =>
-      options.useTabs ? indent$29(print(nodePropertyName)) : align$30(2, print(nodePropertyName));
+      options.useTabs ? indent$26(print(nodePropertyName)) : align$27(2, print(nodePropertyName));
     // normal mode
     const part = [
-      line$34,
+      line$31,
       '? ',
       consequentNode.type === node.type ? ifBreak('', '(') : '',
       printBranch(consequentNodePropertyName),
       consequentNode.type === node.type ? ifBreak('', ')') : '',
-      line$34,
+      line$31,
       ': ',
       printBranch(alternateNodePropertyName),
     ];
@@ -20714,32 +18718,29 @@ function printTernaryOld(path, options, print) {
       parent.type !== node.type || parent[alternateNodePropertyName] === node || isParentTest
         ? part
         : options.useTabs
-          ? dedent(indent$29(part))
-          : align$30(Math.max(0, options.tabWidth - 2), part)
+          ? dedent(indent$26(part))
+          : align$27(Math.max(0, options.tabWidth - 2), part)
     );
   }
 
-  const maybeGroup = (doc) => (parent === firstNonConditionalParent ? group$32(doc) : doc);
+  const maybeGroup = (doc) => (parent === firstNonConditionalParent ? group$29(doc) : doc);
 
   // Break the closing paren to keep the chain right after it:
   // (a
   //   ? b
   //   : c
   // ).call()
-  const breakClosingParen =
-    !jsxMode &&
-    (isMemberExpression(parent) || (parent.type === 'NGPipeExpression' && parent.left === node)) &&
-    !parent.computed;
+  const breakClosingParen = !jsxMode && isMemberExpression(parent) && !parent.computed;
 
-  const shouldExtraIndent = shouldExtraIndentForConditionalExpression$52(path);
+  const shouldExtraIndent = shouldExtraIndentForConditionalExpression$47(path);
 
   const result = maybeGroup([
     printTernaryTest(path, options, print),
-    forceNoIndent ? parts : indent$29(parts),
+    forceNoIndent ? parts : indent$26(parts),
     isConditionalExpression && breakClosingParen && !shouldExtraIndent ? softline : '',
   ]);
 
-  return isParentTest || shouldExtraIndent ? group$32([indent$29([softline, result]), softline]) : result;
+  return isParentTest || shouldExtraIndent ? group$29([indent$26([softline, result]), softline]) : result;
 }
 
 
@@ -20771,9 +18772,7 @@ function printTernaryOld(path, options, print) {
 //   : c
 // ).call()
 function shouldBreakClosingParen(node, parent) {
-  return (
-    (isMemberExpression(parent) || (parent.type === 'NGPipeExpression' && parent.left === node)) && !parent.computed
-  );
+  return isMemberExpression(parent) && !parent.computed;
 }
 
 function hasMultilineBlockComments(testNodes, consequentNode, alternateNode, options) {
@@ -20787,7 +18786,7 @@ function hasMultilineBlockComments(testNodes, consequentNode, alternateNode, opt
   );
 }
 
-const ancestorNameMap$53 = new Map([
+const ancestorNameMap$48 = new Map([
   ['AssignmentExpression', 'right'],
   ['VariableDeclarator', 'init'],
   ['ReturnStatement', 'argument'],
@@ -20808,7 +18807,7 @@ const ancestorNameMap$53 = new Map([
  *        cons
  *      : alt
  */
-function shouldExtraIndentForConditionalExpression$54(path) {
+function shouldExtraIndentForConditionalExpression$49(path) {
   const { node } = path;
   if (node.type !== 'ConditionalExpression') {
     return false;
@@ -20845,10 +18844,10 @@ function shouldExtraIndentForConditionalExpression$54(path) {
     return false;
   }
 
-  return parent[ancestorNameMap$53.get(parent.type)] === child;
+  return parent[ancestorNameMap$48.get(parent.type)] === child;
 }
 
-const wrapInParens = (doc) => [ifBreak('('), indent$29([softline, doc]), softline, ifBreak(')')];
+const wrapInParens = (doc) => [ifBreak('('), indent$26([softline, doc]), softline, ifBreak(')')];
 
 /**
  * The following is the shared logic for
@@ -20905,9 +18904,7 @@ function printTernary(path, options, print, args) {
     args.assignmentLayout !== 'break-after-operator' &&
     (parent.type === 'AssignmentExpression' ||
       parent.type === 'VariableDeclarator' ||
-      parent.type === 'ClassProperty' ||
       parent.type === 'PropertyDefinition' ||
-      parent.type === 'ClassPrivateProperty' ||
       parent.type === 'ObjectProperty' ||
       parent.type === 'Property');
 
@@ -20918,9 +18915,9 @@ function printTernary(path, options, print, args) {
     firstNonConditionalParent.type === 'JSXExpressionContainer' &&
     path.grandparent.type !== 'JSXAttribute';
 
-  const shouldExtraIndent = shouldExtraIndentForConditionalExpression$54(path);
+  const shouldExtraIndent = shouldExtraIndentForConditionalExpression$49(path);
   const breakClosingParen = shouldBreakClosingParen(node, parent);
-  const breakTSClosingParen = isTSConditional && needsParentheses$28(path, options);
+  const breakTSClosingParen = isTSConditional && needsParentheses$25(path, options);
 
   const fillTab = !isBigTabs ? '' : options.useTabs ? '\t' : ' '.repeat(options.tabWidth - 1);
 
@@ -20986,29 +18983,29 @@ function printTernary(path, options, print, args) {
         ' ',
         isConditionalType(node.extendsType) || node.extendsType.type === 'TSMappedType'
           ? print('extendsType')
-          : group$32(wrapInParens(print('extendsType'))),
+          : group$29(wrapInParens(print('extendsType'))),
       ];
-  const printedTestWithQuestionMark = group$32([printedTest, ' ?'], {
+  const printedTestWithQuestionMark = group$29([printedTest, ' ?'], {
     id: testId,
   });
 
   const printedConsequent = print(consequentNodePropertyName);
-  const consequent = indent$29([
+  const consequent = indent$26([
     isConsequentTernary || (isInJsx && (isJsxElement(consequentNode) || isParentTernary || isInChain))
       ? hardline
-      : line$34,
+      : line$31,
     printedConsequent,
   ]);
 
   const printedTestAndConsequent = shouldGroupTestAndConsequent
-    ? group$32(
+    ? group$29(
         [
           printedTestWithQuestionMark,
           // Avoid indenting consequent if it isn't a chain, even if the test breaks.
           isInChain
             ? consequent
             : // If the test breaks, also break the consequent
-              ifBreak(consequent, group$32(consequent, { id: consequentId }), {
+              ifBreak(consequent, group$29(consequent, { id: consequentId }), {
                 groupId: testId,
               }),
         ],
@@ -21027,12 +19024,12 @@ function printTernary(path, options, print, args) {
     printedTestAndConsequent,
 
     alternateComments.length > 0
-      ? [indent$29([hardline, alternateComments]), hardline]
+      ? [indent$26([hardline, alternateComments]), hardline]
       : isAlternateTernary
         ? hardline
         : tryToParenthesizeAlternate
-          ? ifBreak(line$34, ' ', { groupId: testAndConsequentId })
-          : line$34,
+          ? ifBreak(line$31, ' ', { groupId: testAndConsequentId })
+          : line$31,
 
     ':',
 
@@ -21046,7 +19043,7 @@ function printTernary(path, options, print, args) {
 
     isAlternateTernary
       ? printedAlternateWithParens
-      : group$32([indent$29(printedAlternateWithParens), isInJsx && !tryToParenthesizeAlternate ? softline : '']),
+      : group$29([indent$26(printedAlternateWithParens), isInJsx && !tryToParenthesizeAlternate ? softline : '']),
 
     breakClosingParen && !shouldExtraIndent ? softline : '',
     shouldBreak ? breakParent : '',
@@ -21061,13 +19058,13 @@ function printTernary(path, options, print, args) {
         //
         // However, this sadly means that tests are always shunted to the next line in this case,
         // which I'm ambivalent about but some people like keeping on the same line as the assignment.
-        group$32(indent$29([softline, group$32(parts)]))
+        group$29(indent$26([softline, group$29(parts)]))
       : isOnSameLineAsAssignment || isOnSameLineAsReturn
-        ? group$32(indent$29(parts))
+        ? group$29(indent$26(parts))
         : shouldExtraIndent || (isTSConditional && isInTest)
-          ? group$32([indent$29([softline, parts]), breakTSClosingParen ? softline : ''])
+          ? group$29([indent$26([softline, parts]), breakTSClosingParen ? softline : ''])
           : parent === firstNonConditionalParent
-            ? group$32(parts)
+            ? group$29(parts)
             : parts;
 
   return result;
@@ -21110,7 +19107,7 @@ function printCatchClause(path, options, print) {
 
     return [
       'catch ',
-      parameterHasComments ? ['(', indent$29([softline, param]), softline, ') '] : ['(', param, ') '],
+      parameterHasComments ? ['(', indent$26([softline, param]), softline, ') '] : ['(', param, ') '],
       print('body'),
     ];
   }
@@ -21144,14 +19141,14 @@ function printVariableDeclaration(path, options, print) {
     firstVariable = printed[0];
   } else {
     // Indent first var to comply with ESLint one-var rule
-    firstVariable = indent$29(printed[0]);
+    firstVariable = indent$26(printed[0]);
   }
 
-  return group$32([
+  return group$29([
     printDeclareToken(path),
     node.kind,
     firstVariable ? [' ', firstVariable] : '',
-    indent$29(printed.slice(1).map((doc) => [',', hasValue && !isForXStatementInitializer ? hardline : line$34, doc])),
+    indent$26(printed.slice(1).map((doc) => [',', hasValue && !isForXStatementInitializer ? hardline : line$31, doc])),
     isForXStatementInitializer ? '' : printSemicolon(options),
   ]);
 }
@@ -21168,7 +19165,7 @@ function printWhileStatement(path, options, print) {
   const { node } = path;
   const keyword = node.type === 'WithStatement' ? 'with' : 'while';
 
-  return group$32([
+  return group$29([
     keyword,
     ' (',
     printIfOrWhileConditionOrWithStatementObject(path, options, print),
@@ -21181,8 +19178,6 @@ function printWhileStatement(path, options, print) {
 
 
 // print/estree.js
-
-
 
 
 
@@ -21241,13 +19236,8 @@ function printEstree(path, options, print, args) {
   }
 
   switch (node.type) {
-    case 'JsExpressionRoot':
-      return print('node');
     case 'JsonRoot':
       return [printDanglingComments(path, options), print('node'), hardline];
-    // Babel extension.
-    case 'File':
-      return printHtmlBinding(path, options, print) ?? print('program');
     case 'ExpressionStatement':
       return printExpressionStatement(path, options, print);
 
@@ -21261,7 +19251,7 @@ function printEstree(path, options, print, args) {
       if (shouldHug) {
         return ['(', print('expression'), ')'];
       }
-      return group$32(['(', indent$29([softline, print('expression')]), softline, ')']);
+      return group$29(['(', indent$26([softline, print('expression')]), softline, ')']);
     }
     case 'AssignmentExpression':
       return printAssignmentExpression(path, options, print);
@@ -21272,19 +19262,14 @@ function printEstree(path, options, print, args) {
       return printBinaryishExpression(path, options, print);
     case 'AssignmentPattern':
       return [print('left'), ' = ', print('right')];
-    case 'OptionalMemberExpression':
     case 'MemberExpression':
       return printMemberExpression(path, options, print);
 
     case 'MetaProperty':
       return [print('meta'), '.', print('property')];
-    case 'BindExpression':
-      return printBindExpression(path, options, print);
     case 'Identifier':
       return [node.name, printOptionalToken(path), printDefiniteToken(path), printTypeAnnotationProperty(path, print)];
 
-    case 'V8IntrinsicIdentifier':
-      return ['%', node.name];
     case 'SpreadElement':
       return printRestOrSpreadElement(path, print);
     case 'RestElement':
@@ -21308,9 +19293,7 @@ function printEstree(path, options, print, args) {
     case 'ImportSpecifier':
     case 'ExportSpecifier':
     case 'ImportNamespaceSpecifier':
-    case 'ExportNamespaceSpecifier':
     case 'ImportDefaultSpecifier':
-    case 'ExportDefaultSpecifier':
       return printModuleSpecifier(path, options, print);
     case 'ImportAttribute':
       return printProperty(path, options, print);
@@ -21327,7 +19310,6 @@ function printEstree(path, options, print, args) {
       return printReturnOrThrowStatement(path, options, print);
     case 'NewExpression':
     case 'ImportExpression':
-    case 'OptionalCallExpression':
     case 'CallExpression':
       return printCallExpression(path, options, print);
 
@@ -21343,8 +19325,6 @@ function printEstree(path, options, print, args) {
     case 'ObjectProperty':
       return printProperty(path, options, print);
     // Babel
-    case 'ObjectMethod':
-      return printMethod(path, options, print);
     case 'Decorator':
       return ['@', print('expression')];
     case 'ArrayExpression':
@@ -21357,8 +19337,6 @@ function printEstree(path, options, print, args) {
       return 'this';
     case 'Super':
       return 'super';
-    case 'Directive':
-      return [print('value'), printSemicolon(options)];
     case 'UnaryExpression': {
       const parts = [node.operator];
 
@@ -21369,7 +19347,7 @@ function printEstree(path, options, print, args) {
       const argumentDoc = print('argument');
 
       if (hasComment(node.argument)) {
-        parts.push(group$32(['(', indent$29([softline, argumentDoc]), softline, ')']));
+        parts.push(group$29(['(', indent$26([softline, argumentDoc]), softline, ')']));
       } else {
         parts.push(argumentDoc);
       }
@@ -21396,8 +19374,6 @@ function printEstree(path, options, print, args) {
     case 'ForOfStatement':
       return printForXStatement(path, options, print);
 
-    case 'DoExpression':
-      return [node.async ? 'async ' : '', 'do ', print('body')];
     case 'BreakStatement':
     case 'ContinueStatement':
       return [
@@ -21425,14 +19401,9 @@ function printEstree(path, options, print, args) {
     case 'ClassDeclaration':
     case 'ClassExpression':
       return printClass(path, options, print);
-    case 'ClassMethod':
-    case 'ClassPrivateMethod':
     case 'MethodDefinition':
       return printClassMethod(path, options, print);
-    case 'ClassProperty':
     case 'PropertyDefinition':
-    case 'ClassPrivateProperty':
-    case 'ClassAccessorProperty':
     case 'AccessorProperty':
       return printClassProperty(path, options, print);
     case 'TemplateElement':
@@ -21443,1401 +19414,15 @@ function printEstree(path, options, print, args) {
       return printTaggedTemplateExpression(path, options, print);
     case 'PrivateIdentifier':
       return ['#', node.name];
-    case 'PrivateName':
-      return ['#', print('id')];
-
-    // For hack-style pipeline
-    case 'TopicReference':
-      return '%';
-
-    case 'ArgumentPlaceholder':
-      return '?';
-
-    case 'ModuleExpression':
-      return ['module ', print('body')];
-
-    case 'VoidPattern':
-      return 'void';
 
     case 'EmptyStatement':
       if (isMeaningfulEmptyStatement(path)) {
         return ';';
       }
     // Fall through
-    case 'InterpreterDirective': // Printed as comment
     default:
       /* c8 ignore next */
       throw new UnexpectedNodeError(node, 'ESTree');
-  }
-}
-
-
-
-
-// print/array-type.js
-/*
-- `TSArrayType`
-- `ArrayTypeAnnotation`
-*/
-function printArrayType(print) {
-  return [print('elementType'), '[]'];
-}
-
-
-
-
-// print/binary-cast-expression.js
-
-
-
-function printBinaryCastExpression(path, options, print) {
-  const { parent, node, key } = path;
-  const isFlowAsConstExpression = node.type === 'AsConstExpression';
-  const typeAnnotationDoc = isFlowAsConstExpression ? 'const' : print('typeAnnotation');
-
-  const parts = [print('expression'), ' ', isSatisfiesExpression(node) ? 'satisfies' : 'as', ' ', typeAnnotationDoc];
-
-  if ((key === 'callee' && isCallOrNewExpression(parent)) || (key === 'object' && isMemberExpression(parent))) {
-    return group$32([indent$29([softline, ...parts]), softline]);
-  }
-
-  return parts;
-}
-
-
-
-
-// print/component.js
-
-
-
-
-/**
- * @import AstPath from "../../common/ast-path.js"
- * @import {Doc} from "../../document/index.js"
- */
-
-/*
-- `ComponentDeclaration` (Flow)
-- `DeclareComponent` (Flow)
-- `ComponentTypeAnnotation` (Flow)
-*/
-function printComponent(path, options, print) {
-  const { node } = path;
-
-  const parts = [printDeclareToken(path), node.async ? 'async ' : '', 'component'];
-  if (node.id) {
-    parts.push(' ', print('id'));
-  }
-
-  parts.push(print('typeParameters'));
-
-  const parametersDoc = printFunctionParameters(path, options, print);
-  if (node.rendersType) {
-    parts.push(group$32([parametersDoc, ' ', print('rendersType')]));
-  } else {
-    parts.push(group$32([parametersDoc]));
-  }
-
-  if (node.body) {
-    parts.push(' ', print('body'));
-  }
-
-  if (node.type === 'DeclareComponent') {
-    parts.push(printSemicolon(options));
-  }
-
-  return parts;
-}
-
-/*
-- `ComponentParameter` (Flow)
-*/
-function printComponentParameter(path, options, print) {
-  const { node } = path;
-  if (node.shorthand) {
-    return print('local');
-  }
-
-  return [print('name'), ' as ', print('local')];
-}
-
-function printComponentTypeParameter(path, options, print) {
-  const { node } = path;
-
-  const printed = [];
-  if (node.name) {
-    printed.push(print('name'), node.optional ? '?: ' : ': ');
-  }
-
-  printed.push(print('typeAnnotation'));
-
-  return printed;
-}
-
-
-
-
-// print/enum.js
-
-
-
-
-function printFlowEnumBody(path, options, print) {
-  const { node } = path;
-  return [node.explicitType ? `of ${node.explicitType} ` : '', printObject(path, options, print)];
-}
-
-function printLegacyFlowEnumBody(path, options, print) {
-  const { node } = path;
-  return [
-    node.type === 'EnumSymbolBody' || node.explicitType
-      ? `of ${node.type
-          .slice(
-            // `Enum`
-            4,
-            // `Body`
-            -4
-          )
-          .toLowerCase()} `
-      : '',
-    printObject(path, options, print),
-  ];
-}
-
-/*
-- `EnumBooleanMember`(flow)
-- `EnumNumberMember`(flow)
-- `EnumBigIntMember`(flow)
-- `EnumStringMember`(flow)
-- `EnumDefaultedMember`(flow)
-- `TSEnumMember`(TypeScript)
-*/
-function printEnumMember(path, options, print) {
-  const { node } = path;
-  const isTsEnumMember = node.type === 'TSEnumMember';
-
-  const idDoc = isTsEnumMember
-    ? printKey(path, options, print)
-    : // Flow only allow identifier
-      print('id');
-  const initializerProperty = isTsEnumMember ? 'initializer' : 'init';
-  if (!node[initializerProperty]) {
-    return idDoc;
-  }
-
-  return [idDoc, ' = ', print(initializerProperty)];
-}
-
-/*
-- `DeclareEnum`(flow)
-- `EnumDeclaration`(flow)
-- `TSEnumDeclaration`(TypeScript)
-*/
-function printEnumDeclaration(path, print) {
-  const { node } = path;
-  return [printDeclareToken(path), node.const ? 'const ' : '', 'enum ', print('id'), ' ', print('body')];
-}
-
-
-
-
-// print/function-type.js
-
-
-
-
-
-
-
-
-/**
- * @import {Doc} from "../../document/index.js"
- */
-
-/*
-- `TSFunctionType` (TypeScript)
-- `TSCallSignatureDeclaration` (TypeScript)
-- `TSConstructorType` (TypeScript)
-- `TSConstructSignatureDeclaration` (TypeScript)
-- `FunctionTypeAnnotation` (Flow)
-*/
-function printFunctionType(path, options, print) {
-  const { node } = path;
-  /** @type {Doc[]} */
-  const parts = [
-    // `TSConstructorType` only
-    printAbstractToken(path),
-  ];
-
-  if (node.type === 'TSConstructorType' || node.type === 'TSConstructSignatureDeclaration') {
-    parts.push('new ');
-  }
-
-  let parametersDoc = printFunctionParameters(
-    path,
-    options,
-    print,
-    /* shouldExpandParameters */ false,
-    /* shouldPrintTypeParameters */ true
-  );
-
-  const returnTypeDoc = [];
-  // `flow` doesn't wrap the `returnType` with `TypeAnnotation`, so the colon
-  // needs to be added separately.
-  if (node.type === 'FunctionTypeAnnotation') {
-    returnTypeDoc.push(isFlowArrowFunctionTypeAnnotation(path) ? ' => ' : ': ', print('returnType'));
-  } else {
-    returnTypeDoc.push(printTypeAnnotationProperty(path, print, 'returnType'));
-  }
-
-  if (shouldGroupFunctionParameters(node, returnTypeDoc)) {
-    parametersDoc = group$32(parametersDoc);
-  }
-
-  parts.push(parametersDoc, returnTypeDoc);
-
-  return [
-    group$32(parts),
-    node.type === 'TSConstructSignatureDeclaration' || node.type === 'TSCallSignatureDeclaration'
-      ? printClassMemberSemicolon(path, options)
-      : '',
-  ];
-}
-
-/*
-`FunctionTypeAnnotation` is ambiguous:
-- `declare function foo(a: B): void;`
-- `var A: (a: B) => void;`
-*/
-function isFlowArrowFunctionTypeAnnotation(path) {
-  const { node, parent } = path;
-  return (
-    node.type === 'FunctionTypeAnnotation' &&
-    (isFlowObjectTypePropertyAFunction(parent) ||
-      !(
-        ((parent.type === 'ObjectTypeProperty' || parent.type === 'ObjectTypeInternalSlot') &&
-          !parent.variance &&
-          !parent.optional &&
-          hasSameLocStart(parent, node)) ||
-        parent.type === 'ObjectTypeCallProperty' ||
-        path.getParentNode(2)?.type === 'DeclareFunction'
-      ))
-  );
-}
-
-
-
-
-// print/hook.js
-
-
-
-
-/**
- * @import AstPath from "../../common/ast-path.js"
- * @import {Doc} from "../../document/index.js"
- */
-
-/*
-- "DeclareHook"
-*/
-function printDeclareHook(path, options, print) {
-  return [printDeclareToken(path), 'hook', path.node.id ? [' ', print('id')] : '', printSemicolon(options)];
-}
-
-/*
-`HookTypeAnnotation` is ambiguous:
-- `declare hook useFoo(a: B): void;`
-- `var A: hook (a: B) => void;`
-*/
-function isDeclareHookTypeAnnotation(path) {
-  const { node } = path;
-  return node.type === 'HookTypeAnnotation' && path.getParentNode(2)?.type === 'DeclareHook';
-}
-
-/*
-- `HookTypeAnnotation` (Flow)
-*/
-function printHookTypeAnnotation(path, options, print) {
-  const { node } = path;
-
-  const parametersDoc = printFunctionParameters(
-    path,
-    options,
-    print,
-    /* shouldExpandParameters */ false,
-    /* shouldPrintTypeParameters */ true
-  );
-
-  const returnTypeDoc = [isDeclareHookTypeAnnotation(path) ? ': ' : ' => ', print('returnType')];
-
-  return group$32([
-    isDeclareHookTypeAnnotation(path) ? '' : 'hook ',
-    shouldGroupFunctionParameters(node, returnTypeDoc) ? group$32(parametersDoc) : parametersDoc,
-    returnTypeDoc,
-  ]);
-}
-
-
-
-
-// print/indexed-access-type.js
-
-
-/*
-- `TSIndexedAccessType`(TypeScript)
-- `IndexedAccessType`(flow)
-- `OptionalIndexedAccessType`(flow)
-*/
-function printIndexedAccessType(path, options, print) {
-  return [print('objectType'), printOptionalToken(path), '[', print('indexType'), ']'];
-}
-
-
-
-
-// print/infer-type.js
-/*
-- `TSInferType`(TypeScript)
-- `InferTypeAnnotation`(flow)
-*/
-function printInferType(path, options, print) {
-  return ['infer ', print('typeParameter')];
-}
-
-
-
-
-// print/intersection-type.js
-
-
-
-
-// `TSIntersectionType` and `IntersectionTypeAnnotation`
-function printIntersectionType(path, options, print) {
-  let wasIndented = false;
-  return group$32(
-    path.map(({ isFirst, previous, node, index }) => {
-      const doc = print();
-      if (isFirst) {
-        return doc;
-      }
-
-      const currentIsObjectType = isObjectType$22(node);
-      const previousIsObjectType = isObjectType$22(previous);
-
-      // If both are objects, don't indent
-      if (previousIsObjectType && currentIsObjectType) {
-        return [' & ', wasIndented ? indent$29(doc) : doc];
-      }
-
-      if (
-        // If no object is involved, go to the next line if it breaks
-        (!previousIsObjectType && !currentIsObjectType) ||
-        hasLeadingOwnLineComment(options.originalText, node)
-      ) {
-        if (options.experimentalOperatorPosition === 'start') {
-          return indent$29([line$34, '& ', doc]);
-        }
-        return indent$29([' &', line$34, doc]);
-      }
-
-      // If you go from object to non-object or vis-versa, then inline it
-      if (index > 1) {
-        wasIndented = true;
-      }
-
-      return [' & ', index > 1 ? indent$29(doc) : doc];
-    }, 'types')
-  );
-}
-
-
-
-
-// print/mapped-type.js
-
-
-
-
-
-
-
-
-
-
-/**
-@import {Doc} from "../../document/index.js"
-*/
-
-/**
- * @param {string | null} optional
- * @returns {string}
- */
-function printFlowMappedTypeOptionalModifier(optional) {
-  switch (optional) {
-    case null:
-      return '';
-    case 'PlusOptional':
-      return '+?';
-    case 'MinusOptional':
-      return '-?';
-    case 'Optional':
-      return '?';
-  }
-}
-
-function printFlowMappedTypeProperty(path, options, print) {
-  const { node } = path;
-  return [
-    group$32([
-      node.variance ? print('variance') : '',
-      group$32(['[', indent$29([softline, print('keyTparam'), ' in ', print('sourceType')]), softline, ']']),
-      printFlowMappedTypeOptionalModifier(node.optional),
-      ': ',
-      print('propType'),
-    ]),
-    printClassMemberSemicolon(path, options),
-  ];
-}
-
-/**
- * @param {string} tokenNode
- * @param {string} keyword
- * @returns {string}
- */
-function printTypeScriptMappedTypeModifier(tokenNode, keyword) {
-  if (tokenNode === '+' || tokenNode === '-') {
-    return tokenNode + keyword;
-  }
-
-  return keyword;
-}
-
-function printTypeScriptMappedType(path, options, print) {
-  const { node } = path;
-  // Break after `{` like `printObject`
-  let shouldBreak = false;
-  if (options.objectWrap === 'preserve') {
-    const text = stripComments(options);
-    // Skip `{`
-    const start = locStart$8(node) + 1;
-    const textAfter = text.slice(start);
-    const nextTokenIndex = start + textAfter.search(/\S/);
-    if (hasNewlineInRange(options.originalText, start, nextTokenIndex)) {
-      shouldBreak = true;
-    }
-  }
-
-  /** @type {Doc[]} */
-  const danglingCommentsDoc = [];
-  const danglingComments = getComments(node, CommentCheckFlags.Dangling);
-  if (danglingComments.length > 0) {
-    const lastComment = danglingComments.at(-1);
-    const parts = /** @type {Doc[]} */ (printDanglingComments(path, options));
-    danglingCommentsDoc.push(
-      ...parts.slice(0, -1),
-      group$32([
-        parts.at(-1),
-        isLineComment(lastComment) || hasNewline(options.originalText, locEnd$9(lastComment)) ? hardline : line$34,
-      ])
-    );
-  }
-
-  return group$32(
-    [
-      '{',
-      indent$29([
-        options.bracketSpacing ? line$34 : softline,
-        ...danglingCommentsDoc,
-        node.readonly ? [printTypeScriptMappedTypeModifier(node.readonly, 'readonly'), ' '] : '',
-        group$32([
-          '[',
-          indent$29([
-            softline,
-            print('key'),
-            ' in ',
-            print('constraint'),
-            node.nameType ? [' as ', print('nameType')] : '',
-          ]),
-          softline,
-          ']',
-        ]),
-        node.optional ? printTypeScriptMappedTypeModifier(node.optional, '?') : '',
-        node.typeAnnotation ? ': ' : '',
-        print('typeAnnotation'),
-        options.semi ? ifBreak(';') : '',
-      ]),
-      options.bracketSpacing ? line$34 : softline,
-      '}',
-    ],
-    { shouldBreak }
-  );
-}
-
-
-
-
-// print/match.js
-
-
-
-
-
-
-
-
-/*
-- `MatchExpression` (Flow)
-- `MatchStatement` (Flow)
-*/
-function printMatch(path, options, print) {
-  const { node } = path;
-  return [
-    group$32(['match (', indent$29([softline, print('argument')]), softline, ')']),
-    ' {',
-    node.cases.length > 0
-      ? indent$29([
-          hardline,
-          join(
-            hardline,
-            path.map(
-              ({ node, isLast }) => [print(), !isLast && isNextLineEmpty$39(node, options) ? hardline : ''],
-              'cases'
-            )
-          ),
-        ])
-      : '',
-    hardline,
-    '}',
-  ];
-}
-
-/*
-- `MatchExpressionCase` (Flow)
-- `MatchStatementCase` (Flow)
-*/
-function printMatchCase(path, options, print) {
-  const { node } = path;
-
-  const comment = hasComment(node, CommentCheckFlags.Dangling) ? [' ', printDanglingComments(path, options)] : [];
-
-  const body = node.type === 'MatchStatementCase' ? [' ', print('body')] : indent$29([line$34, print('body'), ',']);
-
-  return [
-    print('pattern'),
-    node.guard ? group$32([indent$29([line$34, 'if (', print('guard'), ')'])]) : '',
-    group$32([' =>', comment, body]),
-  ];
-}
-
-/*
-- `MatchOrPattern` (Flow)
-- `MatchAsPattern` (Flow)
-- `MatchWildcardPattern` (Flow)
-- `MatchLiteralPattern` (Flow)
-- `MatchUnaryPattern` (Flow)
-- `MatchIdentifierPattern` (Flow)
-- `MatchMemberPattern` (Flow)
-- `MatchBindingPattern` (Flow)
-- `MatchObjectPattern` (Flow)
-- `MatchArrayPattern` (Flow)
-- `MatchObjectPatternProperty` (Flow)
-- `MatchRestPattern` (Flow)
-*/
-function printMatchPattern(path, options, print) {
-  const { node } = path;
-
-  switch (node.type) {
-    case 'MatchOrPattern':
-      return printMatchOrPattern(path, options, print);
-    case 'MatchAsPattern':
-      return [print('pattern'), ' as ', print('target')];
-    case 'MatchWildcardPattern':
-      return ['_'];
-    case 'MatchLiteralPattern':
-      return print('literal');
-    case 'MatchUnaryPattern':
-      return [node.operator, print('argument')];
-    case 'MatchIdentifierPattern':
-      return print('id');
-    case 'MatchMemberPattern': {
-      const property =
-        node.property.type === 'Identifier'
-          ? ['.', print('property')]
-          : ['[', indent$29([softline, print('property')]), softline, ']'];
-      return group$32([print('base'), property]);
-    }
-    case 'MatchBindingPattern':
-      return [node.kind, ' ', print('id')];
-    case 'MatchObjectPattern':
-    case 'MatchInstanceObjectPattern':
-      return printMatchObjectPattern(path, options, print);
-    case 'MatchInstancePattern':
-      return group$32([print('targetConstructor'), ' ', print('properties')]);
-
-    case 'MatchArrayPattern': {
-      const elements = path.map(print, 'elements');
-      if (node.rest) {
-        elements.push(print('rest'));
-      }
-      return group$32([
-        '[',
-        indent$29([softline, join([',', line$34], elements)]),
-        node.rest ? '' : ifBreak(','),
-        softline,
-        ']',
-      ]);
-    }
-    case 'MatchObjectPatternProperty':
-      if (node.shorthand) {
-        return print('pattern');
-      }
-      return group$32([print('key'), ':', indent$29([line$34, print('pattern')])]);
-    case 'MatchRestPattern': {
-      const parts = ['...'];
-      if (node.argument) {
-        parts.push(print('argument'));
-      }
-      return parts;
-    }
-  }
-}
-
-function printMatchObjectPattern(path, options, print) {
-  const { node } = path;
-  const properties = path.map(print, 'properties');
-  if (node.rest) {
-    properties.push(print('rest'));
-  }
-  return group$32(['{', indent$29([softline, join([',', line$34], properties)]), node.rest ? '' : ifBreak(','), softline, '}']);
-}
-
-const isSimpleMatchPattern = createTypeCheckFunction([
-  'MatchWildcardPattern',
-  'MatchLiteralPattern',
-  'MatchUnaryPattern',
-  'MatchIdentifierPattern',
-]);
-
-function shouldHugMatchOrPattern(node) {
-  const { patterns } = node;
-  if (patterns.some((node) => hasComment(node))) {
-    return false;
-  }
-
-  const objectPattern = patterns.find((node) => node.type === 'MatchObjectPattern');
-  if (!objectPattern) {
-    return false;
-  }
-
-  return patterns.every((node) => node === objectPattern || isSimpleMatchPattern(node));
-}
-
-function shouldHugMatchPattern(node) {
-  if (isSimpleMatchPattern(node) || node.type === 'MatchObjectPattern') {
-    return true;
-  }
-
-  if (node.type === 'MatchOrPattern') {
-    return shouldHugMatchOrPattern(node);
-  }
-
-  return false;
-}
-
-function printMatchOrPattern(path, options, print) {
-  const { node } = path;
-  // single-line variation
-  // A | B | C
-
-  // multi-line variation
-  // | A
-  // | B
-  // | C
-
-  const { parent } = path;
-
-  const shouldIndent =
-    parent.type !== 'MatchStatementCase' &&
-    parent.type !== 'MatchExpressionCase' &&
-    parent.type !== 'MatchArrayPattern' &&
-    parent.type !== 'MatchObjectPatternProperty' &&
-    !hasLeadingOwnLineComment(options.originalText, node);
-
-  // {
-  //   a: foo
-  // } | null | void
-  // should be inlined and not be printed in the multi-line variant
-  const shouldHug = shouldHugMatchPattern(node);
-
-  // We want to align the children but without its comment, so it looks like
-  // | child1
-  // // comment
-  // | child2
-  const printed = path.map(() => {
-    let printedPattern = print();
-    if (!shouldHug) {
-      printedPattern = align$30(2, printedPattern);
-    }
-    return printComments(path, printedPattern, options);
-  }, 'patterns');
-
-  if (shouldHug) {
-    return join(' | ', printed);
-  }
-
-  const code = [ifBreak(['| ']), join([line$34, '| '], printed)];
-
-  if (needsParentheses$28(path, options)) {
-    return group$32([indent$29([ifBreak([softline]), code]), softline]);
-  }
-
-  if (parent.type === 'MatchArrayPattern' && parent.elements.length > 1) {
-    return group$32([indent$29([ifBreak(['(', softline]), code]), softline, ifBreak(')')]);
-  }
-
-  return group$32(shouldIndent ? indent$29(code) : code);
-}
-
-
-// print/opaque-type.js
-
-
-
-/*
-- `DeclareOpaqueType`(flow)
-- `OpaqueType`(flow)
-*/
-function printOpaqueType(path, options, print) {
-  const { node } = path;
-  const parts = [printDeclareToken(path), 'opaque type ', print('id'), print('typeParameters')];
-
-  if (node.supertype) {
-    parts.push(': ', print('supertype'));
-  }
-
-  if (node.lowerBound || node.upperBound) {
-    const lowerAndUpperBoundParts = [];
-    if (node.lowerBound) {
-      lowerAndUpperBoundParts.push(indent$29([line$34, 'super ', print('lowerBound')]));
-    }
-    if (node.upperBound) {
-      lowerAndUpperBoundParts.push(indent$29([line$34, 'extends ', print('upperBound')]));
-    }
-    parts.push(group$32(lowerAndUpperBoundParts));
-  }
-
-  if (node.impltype) {
-    parts.push(' = ', print('impltype'));
-  }
-
-  parts.push(printSemicolon(options));
-
-  return parts;
-}
-
-
-
-
-// print/rest-type.js
-/*
-- `TSRestType`(TypeScript)
-- `TupleTypeSpreadElement`(flow)
-*/
-function printRestType(path, options, print) {
-  const { node } = path;
-
-  return [
-    '...',
-    ...(node.type === 'TupleTypeSpreadElement' && node.label ? [print('label'), ': '] : []),
-    print('typeAnnotation'),
-  ];
-}
-
-
-
-
-// print/tuple.js
-/*
-- `TSNamedTupleMember`(TypeScript)
-- `TupleTypeLabeledElement`(flow)
-*/
-function printNamedTupleMember(path, options, print) {
-  const { node } = path;
-
-  return [
-    // `TupleTypeLabeledElement` only
-    node.variance ? print('variance') : '',
-    print('label'),
-    node.optional ? '?' : '',
-    ': ',
-    print('elementType'),
-  ];
-}
-
-
-
-
-// print/type-alias.js
-
-
-
-/*
-- `DeclareTypeAlias`(flow)
-- `TypeAlias`(flow)
-- `TSTypeAliasDeclaration`(TypeScript)
-*/
-function printTypeAlias(path, options, print) {
-  const { node } = path;
-  const parts = [printDeclareToken(path), 'type ', print('id'), print('typeParameters')];
-
-  const rightPropertyName = node.type === 'TSTypeAliasDeclaration' ? 'typeAnnotation' : 'right';
-  return [printAssignment(path, options, print, parts, ' =', rightPropertyName), printSemicolon(options)];
-}
-
-
-
-
-// print/type-parameters.js
-
-
-
-
-
-
-
-
-
-
-
-
-
-/**
- * @import {Doc} from "../../document/index.js"
- * @import AstPath from "../../common/ast-path.js"
- */
-
-// Keep comma if the file extension not `.ts` and
-// has one type parameter that isn't extend with any types.
-// Because, otherwise formatted result will be invalid as tsx.
-function shouldForceTrailingComma(path, options, paramsKey) {
-  const { node } = path;
-  return (
-    getFunctionParameters(node).length === 1 &&
-    node.type.startsWith('TS') &&
-    !node[paramsKey][0].constraint &&
-    path.parent.type === 'ArrowFunctionExpression' &&
-    !(options.filepath && /\.ts$/.test(options.filepath))
-  );
-}
-
-/**
-@param {AstPath} path
-
-- `GenericTypeAnnotation` (Flow)
-- `TypeParameterDeclaration` (Flow)
-- `TypeParameterInstantiation` (Flow)
-- `TSTypeParameterDeclaration` (TypeScript)
-- `TSTypeParameterInstantiation` (TypeScript)
-- `TSImportType` (TypeScript)
-- `TSTypeReference` (TypeScript)
-*/
-function printTypeParameters(path, options, print, paramsKey) {
-  const { node } = path;
-  const parameters = node[paramsKey];
-
-  if (!parameters) {
-    return '';
-  }
-
-  // for TypeParameterDeclaration typeParameters is a single node
-  if (!Array.isArray(parameters)) {
-    return print(paramsKey);
-  }
-
-  const isParameterInTestCall = isTestCall(path.grandparent);
-
-  const isArrowFunctionVariable = path.match(
-    (node) => !(node[paramsKey].length === 1 && isObjectType$22(node[paramsKey][0])),
-    undefined,
-    (node, name) => name === 'typeAnnotation',
-    (node) => node.type === 'Identifier',
-    isArrowFunctionVariableDeclarator
-  );
-
-  const shouldInline =
-    parameters.length === 0 ||
-    (!isArrowFunctionVariable &&
-      (isParameterInTestCall ||
-        (parameters.length === 1 &&
-          (parameters[0].type === 'NullableTypeAnnotation' || shouldHugType(parameters[0])))) &&
-      !parameters.some((node) => {
-        const comments = getComments(node, (comment) => comment.leading || comment.trailing);
-        return (
-          comments.length > 0 &&
-          (comments.some((comment) => isLineComment(comment)) ||
-            // This condition base on existing one in class-body.js
-            // It is not really correct, but we don't have a way to check how comments are printed
-            hasNewline(options.originalText, locEnd$9(comments.at(-1))))
-        );
-      }));
-
-  if (shouldInline) {
-    return ['<', join(', ', path.map(print, paramsKey)), printDanglingCommentsForInline(path, options), '>'];
-  }
-
-  const trailingComma =
-    node.type === 'TSTypeParameterInstantiation' // https://github.com/microsoft/TypeScript/issues/21984
-      ? ''
-      : shouldForceTrailingComma(path, options, paramsKey)
-        ? ','
-        : printTrailingComma(options);
-
-  return group$32(['<', indent$29([softline, join([',', line$34], path.map(print, paramsKey))]), trailingComma, softline, '>']);
-}
-
-function printDanglingCommentsForInline(path, options) {
-  const { node } = path;
-  if (!hasComment(node, CommentCheckFlags.Dangling)) {
-    return '';
-  }
-  const hasOnlyBlockComments = !hasComment(node, CommentCheckFlags.Line);
-  const printed = printDanglingComments(path, options, {
-    indent: !hasOnlyBlockComments,
-  });
-  if (hasOnlyBlockComments) {
-    return printed;
-  }
-  return [printed, hardline];
-}
-
-// `TSTypeParameter` and `TypeParameter`
-function printTypeParameter(path, options, print) {
-  const { node } = path;
-
-  /**
-   * @type {Doc[]}
-   */
-  const parts = [node.const ? 'const ' : ''];
-
-  const name = node.type === 'TSTypeParameter' ? print('name') : node.name;
-
-  if (node.variance) {
-    parts.push(print('variance'));
-  }
-
-  if (node.in) {
-    parts.push('in ');
-  }
-
-  if (node.out) {
-    parts.push('out ');
-  }
-
-  parts.push(name);
-
-  if (node.bound) {
-    if (node.usesExtendsBound) {
-      parts.push(' extends ');
-    }
-
-    parts.push(printTypeAnnotationProperty(path, print, 'bound'));
-  }
-
-  if (node.constraint) {
-    const groupId = Symbol('constraint');
-    parts.push(
-      ' extends',
-      group$32(indent$29(line$34), { id: groupId }),
-      lineSuffixBoundary,
-      indentIfBreak(print('constraint'), { groupId })
-    );
-  }
-
-  if (node.default) {
-    const groupId = Symbol('default');
-    parts.push(
-      ' =',
-      group$32(indent$29(line$34), { id: groupId }),
-      lineSuffixBoundary,
-      indentIfBreak(print('default'), { groupId })
-    );
-  }
-
-  return group$32(parts);
-}
-
-
-
-
-// print/type-predicate.js
-
-
-/*
-- `TSTypePredicate` (TypeScript)
-- `TypePredicate` (flow)
-*/
-function printTypePredicate(path, print) {
-  const { node } = path;
-  const prefix =
-    node.type === 'TSTypePredicate' && node.asserts
-      ? 'asserts '
-      : node.type === 'TypePredicate' && node.kind
-        ? `${node.kind} `
-        : '';
-  return [
-    prefix,
-    print('parameterName'),
-    node.typeAnnotation ? [' is ', printTypeAnnotationProperty(path, print)] : '',
-  ];
-}
-
-
-
-
-// print/type-query.js
-/*
-- `TSTypeQuery` (TypeScript)
-- `TypeofTypeAnnotation` (flow)
-*/
-function printTypeQuery({ node }, print) {
-  const argumentPropertyName = node.type === 'TSTypeQuery' ? 'exprName' : 'argument';
-  return ['typeof ', print(argumentPropertyName), print('typeArguments')];
-}
-
-
-
-
-// print/flow.js
-/** @import {Doc} from "../../document/index.js" */
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-function printFlow(path, options, print, args) {
-  const { node } = path;
-
-  if (isFlowKeywordType(node)) {
-    // Flow keyword types ends with `TypeAnnotation`
-    return node.type.slice(0, -14).toLowerCase();
-  }
-
-  switch (node.type) {
-    case 'ComponentDeclaration':
-    case 'DeclareComponent':
-    case 'ComponentTypeAnnotation':
-      return printComponent(path, options, print);
-    case 'ComponentParameter':
-      return printComponentParameter(path, options, print);
-    case 'ComponentTypeParameter':
-      return printComponentTypeParameter(path, options, print);
-    case 'HookDeclaration':
-      return printFunction(path, options, print);
-    case 'DeclareHook':
-      return printDeclareHook(path, options, print);
-    case 'HookTypeAnnotation':
-      return printHookTypeAnnotation(path, options, print);
-    case 'DeclareFunction':
-      return [printDeclareToken(path), 'function ', print('id'), print('predicate'), printSemicolon(options)];
-    case 'DeclareModule':
-      return ['declare module ', print('id'), ' ', print('body')];
-    case 'DeclareModuleExports':
-      return ['declare module.exports', printTypeAnnotationProperty(path, print), printSemicolon(options)];
-    case 'DeclareNamespace':
-      return ['declare namespace ', print('id'), ' ', print('body')];
-    case 'DeclareVariable':
-      if (Array.isArray(node.declarations)) {
-        return printVariableDeclaration(path, options, print);
-      }
-
-      // TODO: Remove this part when hermes update AST
-      return [
-        printDeclareToken(path),
-        // TODO: Only use `node.kind` when babel update AST
-        node.kind ?? 'var',
-        ' ',
-        print('id'),
-        printSemicolon(options),
-      ];
-    case 'DeclareExportDeclaration':
-    case 'DeclareExportAllDeclaration':
-      return printExportDeclaration(path, options, print);
-    case 'DeclareOpaqueType':
-    case 'OpaqueType':
-      return printOpaqueType(path, options, print);
-
-    case 'DeclareTypeAlias':
-    case 'TypeAlias':
-      return printTypeAlias(path, options, print);
-
-    case 'IntersectionTypeAnnotation':
-      return printIntersectionType(path, options, print);
-    case 'UnionTypeAnnotation':
-      return printUnionType(path, options, print, args);
-    case 'ConditionalTypeAnnotation':
-      return printTernary(path, options, print);
-    case 'InferTypeAnnotation':
-      return printInferType(path, options, print);
-    case 'FunctionTypeAnnotation':
-      return printFunctionType(path, options, print);
-    case 'TupleTypeAnnotation':
-      return printArray(path, options, print);
-    case 'TupleTypeLabeledElement':
-      return printNamedTupleMember(path, options, print);
-    case 'TupleTypeSpreadElement':
-      return printRestType(path, options, print);
-    case 'GenericTypeAnnotation':
-      return [print('id'), printTypeParameters(path, options, print, 'typeParameters')];
-    case 'IndexedAccessType':
-    case 'OptionalIndexedAccessType':
-      return printIndexedAccessType(path, options, print);
-    // Type Annotations for Facebook Flow, typically stripped out or
-    // transformed away before printing.
-    case 'TypeAnnotation':
-      return printTypeAnnotation(path, options, print);
-    case 'TypeParameter':
-      return printTypeParameter(path, options, print);
-    case 'TypeofTypeAnnotation':
-      return printTypeQuery(path, print);
-    case 'ExistsTypeAnnotation':
-      return '*';
-    case 'ArrayTypeAnnotation':
-      return printArrayType(print);
-
-    case 'DeclareEnum':
-    case 'EnumDeclaration':
-      return printEnumDeclaration(path, print);
-
-    case 'EnumBody':
-      return printFlowEnumBody(path, options, print);
-
-    case 'EnumBooleanBody':
-    case 'EnumNumberBody':
-    case 'EnumBigIntBody':
-    case 'EnumStringBody':
-    case 'EnumSymbolBody':
-      return printLegacyFlowEnumBody(path, options, print);
-
-    case 'EnumBooleanMember':
-    case 'EnumNumberMember':
-    case 'EnumBigIntMember':
-    case 'EnumStringMember':
-    case 'EnumDefaultedMember':
-      return printEnumMember(path, options, print);
-
-    case 'FunctionTypeParam': {
-      const name = node.name ? print('name') : path.parent.this === node ? 'this' : '';
-      return [
-        name,
-        printOptionalToken(path),
-        // `flow` doesn't wrap the `typeAnnotation` with `TypeAnnotation`, so the colon
-        // needs to be added separately.
-        name ? ': ' : '',
-        print('typeAnnotation'),
-      ];
-    }
-
-    case 'DeclareClass':
-    case 'DeclareInterface':
-    case 'InterfaceDeclaration':
-    case 'InterfaceTypeAnnotation':
-    case 'RecordDeclaration':
-      return printClass(path, options, print);
-    case 'ObjectTypeAnnotation':
-    case 'RecordDeclarationBody':
-      return printClassBody(path, options, print);
-    case 'ClassImplements':
-    case 'InterfaceExtends':
-      // Use `typeArguments` once https://github.com/facebook/flow/issues/9343 get fixed
-      return [print('id'), print('typeParameters')];
-    case 'RecordDeclarationImplements':
-      return [print('id'), print('typeArguments')];
-    case 'NullableTypeAnnotation':
-      return ['?', print('typeAnnotation')];
-    case 'Variance': {
-      const { kind } = node;
-      __external$152.ok(
-        kind === 'plus' ||
-          kind === 'minus' ||
-          kind === 'readonly' ||
-          kind === 'writeonly' ||
-          kind === 'in' ||
-          kind === 'out'
-      );
-      return kind === 'plus' ? '+' : kind === 'minus' ? '-' : `${kind} `;
-    }
-    case 'KeyofTypeAnnotation':
-      return ['keyof ', print('argument')];
-    case 'ObjectTypeCallProperty':
-      return [node.static ? 'static ' : '', print('value'), printClassMemberSemicolon(path, options)];
-    case 'ObjectTypeMappedTypeProperty':
-      return printFlowMappedTypeProperty(path, options, print);
-    case 'ObjectTypeIndexer':
-      return [
-        node.static ? 'static ' : '',
-        node.variance ? print('variance') : '',
-        '[',
-        print('id'),
-        node.id ? ': ' : '',
-        print('key'),
-        ']: ',
-        print('value'),
-        printClassMemberSemicolon(path, options),
-      ];
-
-    case 'ObjectTypeProperty': {
-      let modifier = '';
-
-      if (node.proto) {
-        modifier = 'proto ';
-      } else if (node.static) {
-        modifier = 'static ';
-      }
-
-      return [
-        modifier,
-        node.kind !== 'init' ? node.kind + ' ' : '',
-        node.variance ? print('variance') : '',
-        printKey(path, options, print),
-        printOptionalToken(path),
-        isMethod(node) ? '' : ': ',
-        print('value'),
-        printClassMemberSemicolon(path, options),
-      ];
-    }
-    case 'ObjectTypeInternalSlot':
-      return [
-        node.static ? 'static ' : '',
-        '[[',
-        print('id'),
-        ']]',
-        printOptionalToken(path),
-        node.method ? '' : ': ',
-        print('value'),
-        printClassMemberSemicolon(path, options),
-      ];
-    // Same as `RestElement`
-    case 'ObjectTypeSpreadProperty':
-      return printRestOrSpreadElement(path, print);
-    case 'QualifiedTypeofIdentifier':
-    case 'QualifiedTypeIdentifier':
-      return [print('qualification'), '.', print('id')];
-
-    case 'NullLiteralTypeAnnotation':
-      return 'null';
-    case 'BooleanLiteralTypeAnnotation':
-      return String(node.value);
-    case 'StringLiteralTypeAnnotation':
-      return replaceEndOfLine(printString(getRaw(node), options));
-    case 'NumberLiteralTypeAnnotation':
-      return printNumber(getRaw(node));
-    case 'BigIntLiteralTypeAnnotation':
-      return printBigInt(getRaw(node));
-    case 'TypeCastExpression':
-      return ['(', print('expression'), printTypeAnnotationProperty(path, print), ')'];
-
-    case 'TypePredicate':
-      return printTypePredicate(path, print);
-
-    case 'TypeOperator':
-      return [node.operator, ' ', print('typeAnnotation')];
-
-    case 'TypeParameterDeclaration':
-    case 'TypeParameterInstantiation':
-      return printTypeParameters(path, options, print, 'params');
-
-    // Deprecated https://github.com/facebook/flow/commit/b98ae5528d9a073ddc62fc8ce418bbb1f2f80a82
-    case 'InferredPredicate':
-    case 'DeclaredPredicate':
-      // Note: Leading comment print should be improved https://github.com/prettier/prettier/pull/14710#issuecomment-1512522282
-      return [
-        // The return type will already add the colon, but otherwise we
-        // need to do it ourselves
-        path.key === 'predicate' && path.parent.type !== 'DeclareFunction' && !path.parent.returnType ? ': ' : ' ',
-        '%checks',
-        ...(node.type === 'DeclaredPredicate' ? ['(', print('value'), ')'] : []),
-      ];
-
-    case 'AsExpression':
-    case 'AsConstExpression':
-    case 'SatisfiesExpression':
-      return printBinaryCastExpression(path, options, print);
-
-    case 'MatchExpression':
-    case 'MatchStatement':
-      return printMatch(path, options, print);
-    case 'MatchExpressionCase':
-    case 'MatchStatementCase':
-      return printMatchCase(path, options, print);
-    case 'MatchOrPattern':
-    case 'MatchAsPattern':
-    case 'MatchWildcardPattern':
-    case 'MatchLiteralPattern':
-    case 'MatchUnaryPattern':
-    case 'MatchIdentifierPattern':
-    case 'MatchInstancePattern':
-    case 'MatchInstanceObjectPattern':
-    case 'MatchMemberPattern':
-    case 'MatchBindingPattern':
-    case 'MatchObjectPattern':
-    case 'MatchObjectPatternProperty':
-    case 'MatchRestPattern':
-    case 'MatchArrayPattern':
-      return printMatchPattern(path, options, print);
-
-    case 'RecordExpression':
-      return [print('recordConstructor'), print('typeArguments'), ' ', print('properties')];
-    case 'RecordExpressionProperties':
-      return printObject(path, options, print);
-    case 'RecordDeclarationProperty':
-    case 'RecordDeclarationStaticProperty': {
-      const isStatic = node.type === 'RecordDeclarationStaticProperty';
-      const valueKey = isStatic ? 'value' : 'defaultValue';
-      return [
-        isStatic ? 'static ' : '',
-        printKey(path, options, print),
-        printTypeAnnotationProperty(path, print),
-        node[valueKey] ? [' = ', print(valueKey)] : '',
-      ];
-    }
   }
 }
 
@@ -22850,7 +19435,7 @@ function printFlow(path, options, print, args) {
 
 
 
-function printIgnored$55(path, options /* , print*/) {
+function printIgnored$50(path, options /* , print*/) {
   const { node } = path;
   let text = options.originalText.slice(locStart$8(node), locEnd$9(node));
 
@@ -22861,7 +19446,7 @@ function printIgnored$55(path, options /* , print*/) {
   }
 
   if (node.type === 'ClassExpression' && isNonEmptyArray(node.decorators)) {
-    return [indent$29([softline, text]), softline];
+    return [indent$26([softline, text]), softline];
   }
 
   return text;
@@ -22891,7 +19476,7 @@ function printIgnored$55(path, options /* , print*/) {
 @import {Doc} from "../../document/index.js";
 */
 
-const isEmptyStringOrAnyLine = (doc) => doc === '' || doc === line$34 || doc === hardline || doc === softline;
+const isEmptyStringOrAnyLine = (doc) => doc === '' || doc === line$31 || doc === hardline || doc === softline;
 
 // JSX expands children from the inside-out, instead of the outside-in.
 // This is both to break children before attributes,
@@ -22952,7 +19537,7 @@ function printJsxElementInternal(path, options, print) {
   const isMdxBlock = path.parent.rootMarker === 'mdx';
 
   const rawJsxWhitespace = options.singleQuote ? "{' '}" : '{" "}';
-  const whitespace = isMdxBlock ? line$34 : ifBreak([rawJsxWhitespace, softline], ' ');
+  const whitespace = isMdxBlock ? line$31 : ifBreak([rawJsxWhitespace, softline], ' ');
 
   const isFacebookTranslationTag = node.openingElement?.name?.name === 'fbt';
 
@@ -23064,7 +19649,7 @@ function printJsxElementInternal(path, options, print) {
   // When there is no text (just tags and expressions) we use `group`
   // to output each on a separate line.
   /** @type {Doc} */
-  let content = containsText ? fill(multilineChildren) : group$32(multilineChildren, { shouldBreak: true });
+  let content = containsText ? fill(multilineChildren) : group$29(multilineChildren, { shouldBreak: true });
 
   /*
   `printJsxChildren` won't call `print` on `JSXText`, so when the cursorNode,
@@ -23072,24 +19657,24 @@ function printJsxElementInternal(path, options, print) {
   This logic fixes that:
   */
   if (options.cursorNode?.type === 'JSXText' && node.children.includes(options.cursorNode)) {
-    content = [cursor$31, content, cursor$31];
+    content = [cursor$28, content, cursor$28];
   } else if (options.nodeBeforeCursor?.type === 'JSXText' && node.children.includes(options.nodeBeforeCursor)) {
-    content = [cursor$31, content];
+    content = [cursor$28, content];
   } else if (options.nodeAfterCursor?.type === 'JSXText' && node.children.includes(options.nodeAfterCursor)) {
-    content = [content, cursor$31];
+    content = [content, cursor$28];
   }
 
   if (isMdxBlock) {
     return content;
   }
 
-  const multiLineElem = group$32([openingLines, indent$29([hardline, content]), hardline, closingLines]);
+  const multiLineElem = group$29([openingLines, indent$26([hardline, content]), hardline, closingLines]);
 
   if (forcedBreak) {
     return multiLineElem;
   }
 
-  return conditionalGroup([group$32([openingLines, ...children, closingLines]), multiLineElem]);
+  return conditionalGroup([group$29([openingLines, ...children, closingLines]), multiLineElem]);
 }
 
 // JSX Children are strange, mostly for two reasons:
@@ -23151,7 +19736,7 @@ function printJsxChildren(path, options, print, whitespace, isFacebookTranslatio
 
         for (const [i, word] of words.entries()) {
           if (i % 2 === 1) {
-            pushLine(line$34);
+            pushLine(line$31);
           } else {
             push(word);
           }
@@ -23232,10 +19817,8 @@ const isNoWrapParent = createTypeCheckFunction([
   'ExpressionStatement',
   'NewExpression',
   'CallExpression',
-  'OptionalCallExpression',
+
   'ConditionalExpression',
-  'JsExpressionRoot',
-  'MatchExpressionCase',
 ]);
 function maybeWrapJsxElementInParens(path, elem, options) {
   const { parent } = path;
@@ -23245,9 +19828,9 @@ function maybeWrapJsxElementInParens(path, elem, options) {
   }
 
   const shouldBreak = shouldBreakJsxElement(path);
-  const needsParens = needsParentheses$28(path, options);
+  const needsParens = needsParentheses$25(path, options);
 
-  return group$32([needsParens ? '' : ifBreak('('), indent$29([softline, elem]), softline, needsParens ? '' : ifBreak(')')], {
+  return group$29([needsParens ? '' : ifBreak('('), indent$26([softline, elem]), softline, needsParens ? '' : ifBreak(')')], {
     shouldBreak,
   });
 }
@@ -23315,14 +19898,13 @@ function printJsxExpressionContainer(path, options, print) {
         node.type === 'FunctionExpression' ||
         node.type === 'TemplateLiteral' ||
         node.type === 'TaggedTemplateExpression' ||
-        node.type === 'DoExpression' ||
         (isJsxElement(parent) && (node.type === 'ConditionalExpression' || isBinaryish(node)))));
 
   if (shouldInline(node.expression, path.parent)) {
-    return group$32(['{', print('expression'), lineSuffixBoundary, '}']);
+    return group$29(['{', print('expression'), lineSuffixBoundary, '}']);
   }
 
-  return group$32(['{', indent$29([softline, print('expression')]), softline, lineSuffixBoundary, '}']);
+  return group$29(['{', indent$26([softline, print('expression')]), softline, lineSuffixBoundary, '}']);
 }
 
 function printJsxOpeningElement(path, options, print) {
@@ -23352,7 +19934,7 @@ function printJsxOpeningElement(path, options, print) {
     !nameHasComments &&
     !hasComment(node.attributes[0])
   ) {
-    return group$32([
+    return group$29([
       '<',
       print('name'),
       print('typeArguments'),
@@ -23366,17 +19948,17 @@ function printJsxOpeningElement(path, options, print) {
   // string literal with newlines
   const shouldBreak = node.attributes?.some((attr) => isStringLiteral(attr.value) && attr.value.value.includes('\n'));
 
-  const attributeLine = options.singleAttributePerLine && node.attributes.length > 1 ? hardline : line$34;
+  const attributeLine = options.singleAttributePerLine && node.attributes.length > 1 ? hardline : line$31;
 
-  return group$32(
+  return group$29(
     [
       '<',
       print('name'),
       print('typeArguments'),
-      indent$29(
+      indent$26(
         path.map(
           ({ isFirst, previous }) => [
-            isFirst ? attributeLine : isNextLineEmpty$39(previous, options) ? [hardline, hardline] : attributeLine,
+            isFirst ? attributeLine : isNextLineEmpty$36(previous, options) ? [hardline, hardline] : attributeLine,
             print(),
           ],
           'attributes'
@@ -23390,7 +19972,7 @@ function printJsxOpeningElement(path, options, print) {
 
 function printEndOfOpeningTag(node, options, nameHasComments) {
   if (node.selfClosing) {
-    return [line$34, '/>'];
+    return [line$31, '/>'];
   }
   const bracketSameLine = shouldPrintBracketSameLine(node, options, nameHasComments);
   if (bracketSameLine) {
@@ -23428,7 +20010,7 @@ function printJsxClosingElement(path, options, print) {
 
   const printed = print('name');
   if (hasComment(node.name, CommentCheckFlags.Leading | CommentCheckFlags.Line)) {
-    parts.push(indent$29([hardline, printed]), hardline);
+    parts.push(indent$26([hardline, printed]), hardline);
   } else if (hasComment(node.name, CommentCheckFlags.Leading | CommentCheckFlags.Block)) {
     parts.push(' ', printed);
   } else {
@@ -23447,7 +20029,7 @@ function printJsxOpeningClosingFragment(path, options /* , print*/) {
   const isOpeningFragment = node.type === 'JSXOpeningFragment';
   return [
     isOpeningFragment ? '<' : '</',
-    indent$29([
+    indent$26([
       hasOwnLineComment ? hardline : nodeHasComment && !isOpeningFragment ? ' ' : '',
       printDanglingComments(path, options),
     ]),
@@ -23479,7 +20061,7 @@ function printJsxSpreadAttributeOrChild(path, options, print) {
         if (!hasComment(node)) {
           return printed;
         }
-        return [indent$29([softline, printComments(path, printed, options)]), softline];
+        return [indent$26([softline, printComments(path, printed, options)]), softline];
       },
       node.type === 'JSXSpreadAttribute' ? 'argument' : 'expression'
     ),
@@ -23561,6 +20143,142 @@ function isJsxWhitespaceExpression(node) {
 
 
 
+// print/array-type.js
+/*
+- `TSArrayType`
+- `ArrayTypeAnnotation`
+*/
+function printArrayType(print) {
+  return [print('elementType'), '[]'];
+}
+
+
+
+
+// print/binary-cast-expression.js
+
+
+
+function printBinaryCastExpression(path, options, print) {
+  const { parent, node, key } = path;
+  const isFlowAsConstExpression = false;
+  const typeAnnotationDoc = isFlowAsConstExpression ? 'const' : print('typeAnnotation');
+
+  const parts = [print('expression'), ' ', isSatisfiesExpression(node) ? 'satisfies' : 'as', ' ', typeAnnotationDoc];
+
+  if ((key === 'callee' && isCallOrNewExpression(parent)) || (key === 'object' && isMemberExpression(parent))) {
+    return group$29([indent$26([softline, ...parts]), softline]);
+  }
+
+  return parts;
+}
+
+
+
+
+// print/enum.js
+
+
+
+/*
+- `EnumBooleanMember`(flow)
+- `EnumNumberMember`(flow)
+- `EnumBigIntMember`(flow)
+- `EnumStringMember`(flow)
+- `EnumDefaultedMember`(flow)
+- `TSEnumMember`(TypeScript)
+*/
+function printEnumMember(path, options, print) {
+  const { node } = path;
+  const isTsEnumMember = node.type === 'TSEnumMember';
+
+  const idDoc = isTsEnumMember
+    ? printKey(path, options, print)
+    : // Flow only allow identifier
+      print('id');
+  const initializerProperty = isTsEnumMember ? 'initializer' : 'init';
+  if (!node[initializerProperty]) {
+    return idDoc;
+  }
+
+  return [idDoc, ' = ', print(initializerProperty)];
+}
+
+/*
+- `DeclareEnum`(flow)
+- `EnumDeclaration`(flow)
+- `TSEnumDeclaration`(TypeScript)
+*/
+function printEnumDeclaration(path, print) {
+  const { node } = path;
+  return [printDeclareToken(path), node.const ? 'const ' : '', 'enum ', print('id'), ' ', print('body')];
+}
+
+
+
+
+// print/function-type.js
+
+
+
+
+
+
+/**
+ * @import {Doc} from "../../document/index.js"
+ */
+
+/*
+- `TSFunctionType` (TypeScript)
+- `TSCallSignatureDeclaration` (TypeScript)
+- `TSConstructorType` (TypeScript)
+- `TSConstructSignatureDeclaration` (TypeScript)
+- `FunctionTypeAnnotation` (Flow)
+*/
+function printFunctionType(path, options, print) {
+  const { node } = path;
+  /** @type {Doc[]} */
+  const parts = [
+    // `TSConstructorType` only
+    printAbstractToken(path),
+  ];
+
+  if (node.type === 'TSConstructorType' || node.type === 'TSConstructSignatureDeclaration') {
+    parts.push('new ');
+  }
+
+  let parametersDoc = printFunctionParameters(
+    path,
+    options,
+    print,
+    /* shouldExpandParameters */ false,
+    /* shouldPrintTypeParameters */ true
+  );
+
+  const returnTypeDoc = [];
+  // `flow` doesn't wrap the `returnType` with `TypeAnnotation`, so the colon
+  // needs to be added separately.
+  {
+    returnTypeDoc.push(printTypeAnnotationProperty(path, print, 'returnType'));
+  }
+
+  if (shouldGroupFunctionParameters(node, returnTypeDoc)) {
+    parametersDoc = group$29(parametersDoc);
+  }
+
+  parts.push(parametersDoc, returnTypeDoc);
+
+  return [
+    group$29(parts),
+    node.type === 'TSConstructSignatureDeclaration' || node.type === 'TSCallSignatureDeclaration'
+      ? printClassMemberSemicolon(path, options)
+      : '',
+  ];
+}
+
+
+
+
 // print/index-signature.js
 
 
@@ -23575,8 +20293,8 @@ function printIndexSignature(path, options, print) {
   // So we leave off the trailing comma when there's just one parameter.
   const trailingComma = node.parameters.length > 1 ? printTrailingComma(options) : '';
 
-  const parametersGroup = group$32([
-    indent$29([softline, join([', ', softline], path.map(print, 'parameters'))]),
+  const parametersGroup = group$29([
+    indent$26([softline, join([', ', softline], path.map(print, 'parameters'))]),
     trailingComma,
     softline,
   ]);
@@ -23598,13 +20316,162 @@ function printIndexSignature(path, options, print) {
 
 
 
-// print/js-doc-type.js
+// print/indexed-access-type.js
 
 
-// `TSJSDocNullableType`, `TSJSDocNonNullableType`
-function printJSDocType(path, print, token) {
+/*
+- `TSIndexedAccessType`(TypeScript)
+- `IndexedAccessType`(flow)
+- `OptionalIndexedAccessType`(flow)
+*/
+function printIndexedAccessType(path, options, print) {
+  return [print('objectType'), printOptionalToken(path), '[', print('indexType'), ']'];
+}
+
+
+
+
+// print/infer-type.js
+/*
+- `TSInferType`(TypeScript)
+- `InferTypeAnnotation`(flow)
+*/
+function printInferType(path, options, print) {
+  return ['infer ', print('typeParameter')];
+}
+
+
+
+
+// print/intersection-type.js
+
+
+
+
+// `TSIntersectionType` and `IntersectionTypeAnnotation`
+function printIntersectionType(path, options, print) {
+  let wasIndented = false;
+  return group$29(
+    path.map(({ isFirst, previous, node, index }) => {
+      const doc = print();
+      if (isFirst) {
+        return doc;
+      }
+
+      const currentIsObjectType = isObjectType$19(node);
+      const previousIsObjectType = isObjectType$19(previous);
+
+      // If both are objects, don't indent
+      if (previousIsObjectType && currentIsObjectType) {
+        return [' & ', wasIndented ? indent$26(doc) : doc];
+      }
+
+      if (
+        // If no object is involved, go to the next line if it breaks
+        (!previousIsObjectType && !currentIsObjectType) ||
+        hasLeadingOwnLineComment(options.originalText, node)
+      ) {
+        if (options.experimentalOperatorPosition === 'start') {
+          return indent$26([line$31, '& ', doc]);
+        }
+        return indent$26([' &', line$31, doc]);
+      }
+
+      // If you go from object to non-object or vis-versa, then inline it
+      if (index > 1) {
+        wasIndented = true;
+      }
+
+      return [' & ', index > 1 ? indent$26(doc) : doc];
+    }, 'types')
+  );
+}
+
+
+
+
+// print/mapped-type.js
+
+
+
+
+
+
+
+
+
+/**
+ * @param {string} tokenNode
+ * @param {string} keyword
+ * @returns {string}
+ */
+function printTypeScriptMappedTypeModifier(tokenNode, keyword) {
+  if (tokenNode === '+' || tokenNode === '-') {
+    return tokenNode + keyword;
+  }
+
+  return keyword;
+}
+
+function printTypeScriptMappedType(path, options, print) {
   const { node } = path;
-  return [node.postfix ? '' : token, printTypeAnnotationProperty(path, print), node.postfix ? token : ''];
+  // Break after `{` like `printObject`
+  let shouldBreak = false;
+  if (options.objectWrap === 'preserve') {
+    const text = stripComments(options);
+    // Skip `{`
+    const start = locStart$8(node) + 1;
+    const textAfter = text.slice(start);
+    const nextTokenIndex = start + textAfter.search(/\S/);
+    if (hasNewlineInRange(options.originalText, start, nextTokenIndex)) {
+      shouldBreak = true;
+    }
+  }
+
+  /** @type {Doc[]} */
+  const danglingCommentsDoc = [];
+  const danglingComments = getComments(node, CommentCheckFlags.Dangling);
+  if (danglingComments.length > 0) {
+    const lastComment = danglingComments.at(-1);
+    const parts = /** @type {Doc[]} */ (printDanglingComments(path, options));
+    danglingCommentsDoc.push(
+      ...parts.slice(0, -1),
+      group$29([
+        parts.at(-1),
+        isLineComment(lastComment) || hasNewline(options.originalText, locEnd$9(lastComment)) ? hardline : line$31,
+      ])
+    );
+  }
+
+  return group$29(
+    [
+      '{',
+      indent$26([
+        options.bracketSpacing ? line$31 : softline,
+        ...danglingCommentsDoc,
+        node.readonly ? [printTypeScriptMappedTypeModifier(node.readonly, 'readonly'), ' '] : '',
+        group$29([
+          '[',
+          indent$26([
+            softline,
+            print('key'),
+            ' in ',
+            print('constraint'),
+            node.nameType ? [' as ', print('nameType')] : '',
+          ]),
+          softline,
+          ']',
+        ]),
+        node.optional ? printTypeScriptMappedTypeModifier(node.optional, '?') : '',
+        node.typeAnnotation ? ': ' : '',
+        print('typeAnnotation'),
+        options.semi ? ifBreak(';') : '',
+      ]),
+      options.bracketSpacing ? line$31 : softline,
+      '}',
+    ],
+    { shouldBreak }
+  );
 }
 
 
@@ -23638,13 +20505,13 @@ function printMethodSignature(path, options, print) {
   const returnTypeDoc = printTypeAnnotationProperty(path, print, 'returnType');
   const shouldGroupParameters = shouldGroupFunctionParameters(node, returnTypeDoc);
 
-  parts.push(shouldGroupParameters ? group$32(parametersDoc) : parametersDoc);
+  parts.push(shouldGroupParameters ? group$29(parametersDoc) : parametersDoc);
 
   if (node.returnType) {
-    parts.push(group$32(returnTypeDoc));
+    parts.push(group$29(returnTypeDoc));
   }
 
-  return [group$32(parts), printClassMemberSemicolon(path, options)];
+  return [group$29(parts), printClassMemberSemicolon(path, options)];
 }
 
 
@@ -23664,8 +20531,58 @@ function printModuleDeclaration(path, options, print) {
     printDeclareToken(path),
     node.kind === 'global' ? '' : `${node.kind} `,
     print('id'),
-    node.body ? [' ', group$32(print('body'))] : printSemicolon(options),
+    node.body ? [' ', group$29(print('body'))] : printSemicolon(options),
   ];
+}
+
+
+
+
+// print/rest-type.js
+// TSRestType.
+function printRestType(path, options, print) {
+  return ['...', print('typeAnnotation')];
+}
+
+
+
+
+// print/tuple.js
+/*
+- `TSNamedTupleMember`(TypeScript)
+- `TupleTypeLabeledElement`(flow)
+*/
+function printNamedTupleMember(path, options, print) {
+  const { node } = path;
+
+  return [
+    // `TupleTypeLabeledElement` only
+    node.variance ? print('variance') : '',
+    print('label'),
+    node.optional ? '?' : '',
+    ': ',
+    print('elementType'),
+  ];
+}
+
+
+
+
+// print/type-alias.js
+
+
+
+/*
+- `DeclareTypeAlias`(flow)
+- `TypeAlias`(flow)
+- `TSTypeAliasDeclaration`(TypeScript)
+*/
+function printTypeAlias(path, options, print) {
+  const { node } = path;
+  const parts = [printDeclareToken(path), 'type ', print('id'), print('typeParameters')];
+
+  const rightPropertyName = node.type === 'TSTypeAliasDeclaration' ? 'typeAnnotation' : 'right';
+  return [printAssignment(path, options, print, parts, ' =', rightPropertyName), printSemicolon(options)];
 }
 
 
@@ -23682,25 +20599,227 @@ function printTypeAssertion(path, options, print) {
   const { node } = path;
   const shouldBreakAfterCast = !(isArrayExpression(node.expression) || isObjectExpression(node.expression));
 
-  const castGroup = group$32(['<', indent$29([softline, print('typeAnnotation')]), softline, '>']);
+  const castGroup = group$29(['<', indent$26([softline, print('typeAnnotation')]), softline, '>']);
 
-  const exprContents = [ifBreak('('), indent$29([softline, print('expression')]), softline, ifBreak(')')];
+  const exprContents = [ifBreak('('), indent$26([softline, print('expression')]), softline, ifBreak(')')];
 
   if (shouldBreakAfterCast) {
     return conditionalGroup([
       [castGroup, print('expression')],
-      [castGroup, group$32(exprContents, { shouldBreak: true })],
+      [castGroup, group$29(exprContents, { shouldBreak: true })],
       [castGroup, print('expression')],
     ]);
   }
-  return group$32([castGroup, print('expression')]);
+  return group$29([castGroup, print('expression')]);
+}
+
+
+
+
+// print/type-parameters.js
+
+
+
+
+
+
+
+
+
+
+
+
+
+/**
+ * @import {Doc} from "../../document/index.js"
+ * @import AstPath from "../../common/ast-path.js"
+ */
+
+// Keep comma if the file extension not `.ts` and
+// has one type parameter that isn't extend with any types.
+// Because, otherwise formatted result will be invalid as tsx.
+function shouldForceTrailingComma(path, options, paramsKey) {
+  const { node } = path;
+  return (
+    getFunctionParameters(node).length === 1 &&
+    node.type.startsWith('TS') &&
+    !node[paramsKey][0].constraint &&
+    path.parent.type === 'ArrowFunctionExpression' &&
+    !(options.filepath && /\.ts$/.test(options.filepath))
+  );
+}
+
+/**
+@param {AstPath} path
+
+- `GenericTypeAnnotation` (Flow)
+- `TypeParameterDeclaration` (Flow)
+- `TypeParameterInstantiation` (Flow)
+- `TSTypeParameterDeclaration` (TypeScript)
+- `TSTypeParameterInstantiation` (TypeScript)
+- `TSImportType` (TypeScript)
+- `TSTypeReference` (TypeScript)
+*/
+function printTypeParameters(path, options, print, paramsKey) {
+  const { node } = path;
+  const parameters = node[paramsKey];
+
+  if (!parameters) {
+    return '';
+  }
+
+  // for TypeParameterDeclaration typeParameters is a single node
+  if (!Array.isArray(parameters)) {
+    return print(paramsKey);
+  }
+
+  const isParameterInTestCall = isTestCall(path.grandparent);
+
+  const isArrowFunctionVariable = path.match(
+    (node) => !(node[paramsKey].length === 1 && isObjectType$19(node[paramsKey][0])),
+    undefined,
+    (node, name) => name === 'typeAnnotation',
+    (node) => node.type === 'Identifier',
+    isArrowFunctionVariableDeclarator
+  );
+
+  const shouldInline =
+    parameters.length === 0 ||
+    (!isArrowFunctionVariable &&
+      (isParameterInTestCall || (parameters.length === 1 && shouldHugType(parameters[0]))) &&
+      !parameters.some((node) => {
+        const comments = getComments(node, (comment) => comment.leading || comment.trailing);
+        return (
+          comments.length > 0 &&
+          (comments.some((comment) => isLineComment(comment)) ||
+            // This condition base on existing one in class-body.js
+            // It is not really correct, but we don't have a way to check how comments are printed
+            hasNewline(options.originalText, locEnd$9(comments.at(-1))))
+        );
+      }));
+
+  if (shouldInline) {
+    return ['<', join(', ', path.map(print, paramsKey)), printDanglingCommentsForInline(path, options), '>'];
+  }
+
+  const trailingComma =
+    node.type === 'TSTypeParameterInstantiation' // https://github.com/microsoft/TypeScript/issues/21984
+      ? ''
+      : shouldForceTrailingComma(path, options, paramsKey)
+        ? ','
+        : printTrailingComma(options);
+
+  return group$29(['<', indent$26([softline, join([',', line$31], path.map(print, paramsKey))]), trailingComma, softline, '>']);
+}
+
+function printDanglingCommentsForInline(path, options) {
+  const { node } = path;
+  if (!hasComment(node, CommentCheckFlags.Dangling)) {
+    return '';
+  }
+  const hasOnlyBlockComments = !hasComment(node, CommentCheckFlags.Line);
+  const printed = printDanglingComments(path, options, {
+    indent: !hasOnlyBlockComments,
+  });
+  if (hasOnlyBlockComments) {
+    return printed;
+  }
+  return [printed, hardline];
+}
+
+// `TSTypeParameter` and `TypeParameter`
+function printTypeParameter(path, options, print) {
+  const { node } = path;
+
+  /**
+   * @type {Doc[]}
+   */
+  const parts = [node.const ? 'const ' : ''];
+
+  const name = node.type === 'TSTypeParameter' ? print('name') : node.name;
+
+  if (node.variance) {
+    parts.push(print('variance'));
+  }
+
+  if (node.in) {
+    parts.push('in ');
+  }
+
+  if (node.out) {
+    parts.push('out ');
+  }
+
+  parts.push(name);
+
+  if (node.bound) {
+    if (node.usesExtendsBound) {
+      parts.push(' extends ');
+    }
+
+    parts.push(printTypeAnnotationProperty(path, print, 'bound'));
+  }
+
+  if (node.constraint) {
+    const groupId = Symbol('constraint');
+    parts.push(
+      ' extends',
+      group$29(indent$26(line$31), { id: groupId }),
+      lineSuffixBoundary,
+      indentIfBreak(print('constraint'), { groupId })
+    );
+  }
+
+  if (node.default) {
+    const groupId = Symbol('default');
+    parts.push(
+      ' =',
+      group$29(indent$26(line$31), { id: groupId }),
+      lineSuffixBoundary,
+      indentIfBreak(print('default'), { groupId })
+    );
+  }
+
+  return group$29(parts);
+}
+
+
+
+
+// print/type-predicate.js
+
+
+/*
+- `TSTypePredicate` (TypeScript)
+- `TypePredicate` (flow)
+*/
+function printTypePredicate(path, print) {
+  const { node } = path;
+  const prefix = node.type === 'TSTypePredicate' && node.asserts ? 'asserts ' : '';
+  return [
+    prefix,
+    print('parameterName'),
+    node.typeAnnotation ? [' is ', printTypeAnnotationProperty(path, print)] : '',
+  ];
+}
+
+
+
+
+// print/type-query.js
+/*
+- `TSTypeQuery` (TypeScript)
+- `TypeofTypeAnnotation` (flow)
+*/
+function printTypeQuery({ node }, print) {
+  const argumentPropertyName = node.type === 'TSTypeQuery' ? 'exprName' : 'argument';
+  return ['typeof ', print(argumentPropertyName), print('typeArguments')];
 }
 
 
 
 
 // print/typescript.js
-
 
 
 
@@ -23768,7 +20887,6 @@ function printTypescript(path, options, print, args) {
     case 'TSQualifiedName':
       return [print('left'), '.', print('right')];
     case 'TSAbstractMethodDefinition':
-    case 'TSDeclareMethod':
       return printClassMethod(path, options, print);
     case 'TSAbstractAccessorProperty':
     case 'TSAbstractPropertyDefinition':
@@ -23892,15 +21010,7 @@ function printTypescript(path, options, print, args) {
       return printMethodValue(path, options, print);
 
     // These are not valid TypeScript. Printing them just for the sake of error recovery.
-    case 'TSJSDocAllType':
-      return '*';
-    case 'TSJSDocUnknownType':
-      return '?';
-    case 'TSJSDocNullableType':
-      return printJSDocType(path, print, /* token */ '?');
-    case 'TSJSDocNonNullableType':
-      return printJSDocType(path, print, /* token */ '!');
-    case 'TSParenthesizedType': // Removed in `../parse/postprocess.js`
+    // Removed in `../parse/postprocess.js`
     default:
       /* c8 ignore next */
       throw new UnexpectedNodeError(node, 'TypeScript');
@@ -23925,16 +21035,14 @@ function printTypescript(path, options, print, args) {
 
 
 
-
-
 /**
  * @import AstPath from "../../common/ast-path.js"
  * @import {Doc} from "../../document/index.js"
  */
 
-const PRINTERS = [printAngular, printJsx, printFlow, printTypescript, printEstree];
+const PRINTERS = [printJsx, printTypescript, printEstree];
 // @xufa/lint: the printer of each type of node, from the first node of it printed. Which printer prints a node
-// depends on its type only (Angular, JSX and TypeScript by its prefix, Flow by a list of types, estree the rest), so
+// depends on its type only (JSX and TypeScript by its prefix, estree the rest), so
 // the others need not be asked again: they were asked for every node, a million times a round.
 const printerOfType = new Map();
 
@@ -23955,18 +21063,13 @@ function printWithoutParentheses(path, options, print, args) {
 
 // Their decorators are handled themselves, and they don't need parentheses or leading semicolons
 const shouldPrintDirectly = createTypeCheckFunction([
-  'ClassMethod',
-  'ClassPrivateMethod',
-  'ClassProperty',
-  'ClassAccessorProperty',
   'AccessorProperty',
   'TSAbstractAccessorProperty',
   'PropertyDefinition',
   'TSAbstractPropertyDefinition',
-  'ClassPrivateProperty',
+
   'MethodDefinition',
   'TSAbstractMethodDefinition',
-  'TSDeclareMethod',
 ]);
 
 /**
@@ -23976,14 +21079,14 @@ const shouldPrintDirectly = createTypeCheckFunction([
  * @param {*} [args]
  * @returns {Doc}
  */
-function print$56(path, options, print, args) {
+function print$51(path, options, print, args) {
   if (path.isRoot) {
     options.__onHtmlBindingRoot?.(path.node, options);
   }
 
   const { node } = path;
 
-  let doc = isIgnored(path) ? printIgnored$55(path, options) : printWithoutParentheses(path, options, print, args);
+  let doc = isIgnored(path) ? printIgnored$50(path, options) : printWithoutParentheses(path, options, print, args);
   if (!doc) {
     return '';
   }
@@ -23998,7 +21101,7 @@ function print$56(path, options, print, args) {
     // `ClassExpression` prints own decorators
     node.type !== 'ClassExpression' && isNonEmptyArray(node.decorators) ? printDecorators(path, options, print) : '';
 
-  const needsParens = needsParentheses$28(path, options);
+  const needsParens = needsParentheses$25(path, options);
 
   if (!decoratorsDoc && !needsParens) {
     return doc;
@@ -24006,7 +21109,7 @@ function print$56(path, options, print, args) {
 
   return inheritLabel(doc, (doc) => [
     needsParens ? '(' : '',
-    decoratorsDoc ? group$32([decoratorsDoc, doc]) : doc,
+    decoratorsDoc ? group$29([decoratorsDoc, doc]) : doc,
     needsParens ? ')' : '',
   ]);
 }
@@ -24018,11 +21121,258 @@ function printCommentsForFunction(path, options, doc) {
     (hasComment(node, CommentCheckFlags.Leading) || hasComment(node, CommentCheckFlags.Trailing)) &&
     isIifeCalleeOrTaggedTemplateExpressionTag(path)
   ) {
-    return [indent$29([softline, printComments(path, doc, options)]), softline];
+    return [indent$26([softline, printComments(path, doc, options)]), softline];
   }
 
   return doc;
 }
+
+
+
+
+// utilities/create-get-visitor-keys.js
+/**
+@typedef {(node: Node) => VisitorKeys} GetVisitorKeys
+@typedef {NonNullable<object>} Node
+@typedef {readonly string[]} VisitorKeys
+*/
+
+/**
+@param {Record<string, VisitorKeys>} visitorKeys
+@param {string} [typeProperty="type"]
+@returns {GetVisitorKeys}
+*/
+function createGetVisitorKeys(visitorKeys, typeProperty = 'type') {
+  /** @type {GetVisitorKeys} */
+  function getVisitorKeys(node) {
+    const type = node[typeProperty];
+
+    const keys = visitorKeys[type];
+    /* c8 ignore next 5 */
+    if (!Array.isArray(keys)) {
+      throw Object.assign(new Error(`Missing visitor keys for '${type}'.`), {
+        node,
+      });
+    }
+
+    return keys;
+  }
+
+  return getVisitorKeys;
+}
+
+
+
+
+// traverse/visitor-keys.evaluate.js
+// The visitor keys of prettier 3.9.9 (evaluated when prettier is built), by tools/port-format; and of the nodes of
+// Babel's tree that parse/json.js makes (ObjectProperty, StringLiteral...), which comments of JSON are attached through.
+const __default$52 = {
+  AccessorProperty: ['decorators', 'key', 'typeAnnotation', 'value'],
+  ArrayExpression: ['elements'],
+  ArrayPattern: ['elements', 'typeAnnotation', 'decorators'],
+  ArrowFunctionExpression: ['typeParameters', 'params', 'predicate', 'returnType', 'body'],
+  AssignmentExpression: ['left', 'right'],
+  AssignmentPattern: ['left', 'right', 'decorators', 'typeAnnotation'],
+  AwaitExpression: ['argument'],
+  BigIntLiteral: [],
+  BinaryExpression: ['left', 'right'],
+  BlockStatement: ['directives', 'body'],
+  BooleanLiteral: [],
+  BreakStatement: ['label'],
+  CallExpression: ['callee', 'typeArguments', 'arguments'],
+  CatchClause: ['param', 'body'],
+  ChainExpression: ['expression'],
+  ClassBody: ['body'],
+  ClassDeclaration: [
+    'decorators',
+    'id',
+    'typeParameters',
+    'superClass',
+    'superTypeArguments',
+    'mixins',
+    'implements',
+    'body',
+  ],
+  ClassExpression: [
+    'decorators',
+    'id',
+    'typeParameters',
+    'superClass',
+    'superTypeArguments',
+    'mixins',
+    'implements',
+    'body',
+  ],
+  ConditionalExpression: ['test', 'consequent', 'alternate'],
+  ContinueStatement: ['label'],
+  DebuggerStatement: [],
+  Decorator: ['expression'],
+  DoWhileStatement: ['body', 'test'],
+  EmptyStatement: [],
+  ExportAllDeclaration: ['source', 'attributes', 'exported'],
+  ExportDefaultDeclaration: ['declaration'],
+  ExportNamedDeclaration: ['declaration', 'specifiers', 'source', 'attributes'],
+  ExportSpecifier: ['local', 'exported'],
+  ExpressionStatement: ['expression'],
+  ForInStatement: ['left', 'right', 'body'],
+  ForOfStatement: ['left', 'right', 'body'],
+  ForStatement: ['init', 'test', 'update', 'body'],
+  FunctionDeclaration: ['id', 'typeParameters', 'params', 'predicate', 'returnType', 'body'],
+  FunctionExpression: ['id', 'typeParameters', 'params', 'predicate', 'returnType', 'body'],
+  Identifier: ['typeAnnotation', 'decorators'],
+  IfStatement: ['test', 'consequent', 'alternate'],
+  ImportAttribute: ['key', 'value'],
+  ImportDeclaration: ['specifiers', 'source', 'attributes'],
+  ImportDefaultSpecifier: ['local'],
+  ImportExpression: ['source', 'options'],
+  ImportNamespaceSpecifier: ['local'],
+  ImportSpecifier: ['imported', 'local'],
+  JSXAttribute: ['name', 'value'],
+  JSXClosingElement: ['name'],
+  JSXClosingFragment: [],
+  JSXElement: ['openingElement', 'children', 'closingElement'],
+  JSXEmptyExpression: [],
+  JSXExpressionContainer: ['expression'],
+  JSXFragment: ['openingFragment', 'children', 'closingFragment'],
+  JSXIdentifier: [],
+  JSXMemberExpression: ['object', 'property'],
+  JSXNamespacedName: ['namespace', 'name'],
+  JSXOpeningElement: ['name', 'typeArguments', 'attributes'],
+  JSXOpeningFragment: [],
+  JSXSpreadAttribute: ['argument'],
+  JSXSpreadChild: ['expression'],
+  JSXText: [],
+  JsExpressionRoot: ['node'],
+  JsonRoot: ['node'],
+  LabeledStatement: ['label', 'body'],
+  Literal: [],
+  LogicalExpression: ['left', 'right'],
+  MemberExpression: ['object', 'property'],
+  MetaProperty: ['meta', 'property'],
+  MethodDefinition: ['decorators', 'key', 'value'],
+  NGRoot: ['node'],
+  NewExpression: ['callee', 'typeArguments', 'arguments'],
+  NullLiteral: [],
+  NumericLiteral: [],
+  ObjectExpression: ['properties'],
+  ObjectPattern: ['decorators', 'properties', 'typeAnnotation'],
+  ObjectProperty: ['key', 'value'],
+  ParenthesizedExpression: ['expression'],
+  PrivateIdentifier: [],
+  Program: ['directives', 'body'],
+  Property: ['key', 'value'],
+  PropertyDefinition: ['decorators', 'variance', 'key', 'typeAnnotation', 'value'],
+  RestElement: ['argument', 'typeAnnotation', 'decorators'],
+  ReturnStatement: ['argument'],
+  SequenceExpression: ['expressions'],
+  SpreadElement: ['argument'],
+  StaticBlock: ['body'],
+  StringLiteral: [],
+  Super: [],
+  SwitchCase: ['test', 'consequent'],
+  SwitchStatement: ['discriminant', 'cases'],
+  TSAbstractAccessorProperty: ['decorators', 'key', 'typeAnnotation'],
+  TSAbstractKeyword: [],
+  TSAbstractMethodDefinition: ['key', 'value'],
+  TSAbstractPropertyDefinition: ['decorators', 'key', 'typeAnnotation'],
+  TSAnyKeyword: [],
+  TSArrayType: ['elementType'],
+  TSAsExpression: ['expression', 'typeAnnotation'],
+  TSAsyncKeyword: [],
+  TSBigIntKeyword: [],
+  TSBooleanKeyword: [],
+  TSCallSignatureDeclaration: ['typeParameters', 'params', 'returnType'],
+  TSClassImplements: ['expression', 'typeArguments'],
+  TSConditionalType: ['checkType', 'extendsType', 'trueType', 'falseType'],
+  TSConstructSignatureDeclaration: ['typeParameters', 'params', 'returnType'],
+  TSConstructorType: ['typeParameters', 'params', 'returnType'],
+  TSDeclareFunction: ['id', 'typeParameters', 'params', 'returnType', 'body'],
+  TSDeclareKeyword: [],
+  TSEmptyBodyFunctionExpression: ['id', 'typeParameters', 'params', 'returnType'],
+  TSEnumBody: ['members'],
+  TSEnumDeclaration: ['id', 'body'],
+  TSEnumMember: ['id', 'initializer'],
+  TSExportAssignment: ['expression'],
+  TSExportKeyword: [],
+  TSExternalModuleReference: ['expression'],
+  TSFunctionType: ['typeParameters', 'params', 'returnType'],
+  TSImportEqualsDeclaration: ['id', 'moduleReference'],
+  TSImportType: ['source', 'options', 'qualifier', 'typeArguments'],
+  TSIndexSignature: ['parameters', 'typeAnnotation'],
+  TSIndexedAccessType: ['objectType', 'indexType'],
+  TSInferType: ['typeParameter'],
+  TSInstantiationExpression: ['expression', 'typeArguments'],
+  TSInterfaceBody: ['body'],
+  TSInterfaceDeclaration: ['id', 'typeParameters', 'extends', 'body'],
+  TSInterfaceHeritage: ['expression', 'typeArguments'],
+  TSIntersectionType: ['types'],
+  TSIntrinsicKeyword: [],
+  TSJSDocAllType: [],
+  TSLiteralType: ['literal'],
+  TSMappedType: ['key', 'constraint', 'nameType', 'typeAnnotation'],
+  TSMethodSignature: ['key', 'typeParameters', 'params', 'returnType'],
+  TSModuleBlock: ['body'],
+  TSModuleDeclaration: ['id', 'body'],
+  TSNamedTupleMember: ['label', 'elementType'],
+  TSNamespaceExportDeclaration: ['id'],
+  TSNeverKeyword: [],
+  TSNonNullExpression: ['expression'],
+  TSNullKeyword: [],
+  TSNumberKeyword: [],
+  TSObjectKeyword: [],
+  TSOptionalType: ['typeAnnotation'],
+  TSParameterProperty: ['parameter', 'decorators'],
+  TSPrivateKeyword: [],
+  TSPropertySignature: ['key', 'typeAnnotation'],
+  TSProtectedKeyword: [],
+  TSPublicKeyword: [],
+  TSQualifiedName: ['left', 'right'],
+  TSReadonlyKeyword: [],
+  TSRestType: ['typeAnnotation'],
+  TSSatisfiesExpression: ['expression', 'typeAnnotation'],
+  TSStaticKeyword: [],
+  TSStringKeyword: [],
+  TSSymbolKeyword: [],
+  TSTemplateLiteralType: ['quasis', 'types'],
+  TSThisType: [],
+  TSTupleType: ['elementTypes'],
+  TSTypeAliasDeclaration: ['id', 'typeParameters', 'typeAnnotation'],
+  TSTypeAnnotation: ['typeAnnotation'],
+  TSTypeAssertion: ['expression', 'typeAnnotation'],
+  TSTypeLiteral: ['members'],
+  TSTypeOperator: ['typeAnnotation'],
+  TSTypeParameter: ['name', 'constraint', 'default'],
+  TSTypeParameterDeclaration: ['params'],
+  TSTypeParameterInstantiation: ['params'],
+  TSTypePredicate: ['parameterName', 'typeAnnotation'],
+  TSTypeQuery: ['exprName', 'typeArguments'],
+  TSTypeReference: ['typeName', 'typeArguments'],
+  TSUndefinedKeyword: [],
+  TSUnionType: ['types'],
+  TSUnknownKeyword: [],
+  TSVoidKeyword: [],
+  TaggedTemplateExpression: ['tag', 'typeArguments', 'quasi'],
+  TemplateElement: [],
+  TemplateLiteral: ['quasis', 'expressions'],
+  ThisExpression: [],
+  ThrowStatement: ['argument'],
+  TryStatement: ['block', 'handler', 'finalizer'],
+  UnaryExpression: ['argument'],
+  UpdateExpression: ['argument'],
+  VariableDeclaration: ['declarations'],
+  VariableDeclarator: ['id', 'init'],
+  WhileStatement: ['body', 'test'],
+  WithStatement: ['object', 'body'],
+  YieldExpression: ['argument'],
+};
+
+
+// traverse/get-visitor-keys.js
+
+
+
+const getVisitorKeys$53 = createGetVisitorKeys(__default$52);
 
 
 
@@ -24041,8 +21391,7 @@ function printCommentsForFunction(path, options, doc) {
 
 
 
-
-const features$57 = {
+const features$54 = {
   // TODO: Make this default behavior
   experimental_avoidAstMutation: true,
   experimental_locForRangeFormat: {
@@ -24051,19 +21400,18 @@ const features$57 = {
   },
 };
 
-const estree$58 = {
-  features: features$57,
-  massageAstNode: massageAstNode$47,
+const estree$55 = {
+  features: features$54,
   canAttachComment: canAttachComment,
-  handleComments: handleComments$26,
+  handleComments: handleComments$23,
   isGap: isGap,
   willPrintOwnComments: willPrintOwnComments,
-  embed: embed$45,
-  insertPragma: insertPragma$18,
-  printComment: printComment$48,
-  printPrettierIgnored: print$56,
-  print: print$56,
-  getVisitorKeys: getVisitorKeys$14,
+  embed: embed$42,
+  insertPragma: insertPragma$15,
+  printComment: printComment$43,
+  printPrettierIgnored: print$51,
+  print: print$51,
+  getVisitorKeys: getVisitorKeys$53,
   isBlockComment: isBlockComment,
   hasPrettierIgnore: isIgnored,
 };
@@ -24348,6 +21696,40 @@ class AstPath {
       if (!Array.isArray(value)) {
         yield value;
       }
+    }
+  }
+}
+
+
+
+
+// utilities/ast.js
+
+
+/**
+@import {GetVisitorKeys, Node} from "./create-get-visitor-keys.js"
+@typedef {(node: Node) => boolean} Predicate
+*/
+
+/**
+@param {Node} node
+@param {{getVisitorKeys: GetVisitorKeys, filter?: Predicate}} options
+*/
+function* getChildren(node, options) {
+  const { getVisitorKeys, filter = () => true } = options;
+  const isMatchedNode = (node) => isObject(node) && filter(node);
+
+  for (const key of getVisitorKeys(node)) {
+    const value = node[key];
+
+    if (Array.isArray(value)) {
+      for (const child of value) {
+        if (isMatchedNode(child)) {
+          yield child;
+        }
+      }
+    } else if (isMatchedNode(value)) {
+      yield value;
     }
   }
 }
@@ -24687,8 +22069,8 @@ function breakTies(tiesToBreak, options) {
       precedingNode: currentCommentPrecedingNode,
       followingNode: currentCommentFollowingNode,
     } = tiesToBreak[indexOfFirstLeadingComment - 1];
-    __external$152.strictEqual(currentCommentPrecedingNode, precedingNode);
-    __external$152.strictEqual(currentCommentFollowingNode, followingNode);
+    __external$146.strictEqual(currentCommentPrecedingNode, precedingNode);
+    __external$146.strictEqual(currentCommentFollowingNode, followingNode);
 
     const gap = options.originalText.slice(options.locEnd(comment), gapEndPos);
 
@@ -24829,7 +22211,7 @@ async function printEmbeddedLanguages(/** @type {AstPath} */ path, genericPrint,
   path.stack = originalPathStack;
 
   function textToDocForEmbed(text, partialNextOptions) {
-    return textToDoc$59(text, partialNextOptions, options, printAstToDoc);
+    return textToDoc$56(text, partialNextOptions, options, printAstToDoc);
   }
 
   function recurse() {
@@ -24865,7 +22247,7 @@ async function printEmbeddedLanguages(/** @type {AstPath} */ path, genericPrint,
   }
 }
 
-async function textToDoc$59(text, partialNextOptions, parentOptions, printAstToDoc) {
+async function textToDoc$56(text, partialNextOptions, parentOptions, printAstToDoc) {
   const options = embeddedOptions({
     ...parentOptions,
     ...partialNextOptions,
@@ -24889,7 +22271,7 @@ async function textToDoc$59(text, partialNextOptions, parentOptions, printAstToD
 // main/print-ignored.js
 
 
-function printIgnored$60(path, options, printPath, args) {
+function printIgnored$57(path, options, printPath, args) {
   const {
     originalText,
     [commentsPropertyInOptions]: comments,
@@ -24949,7 +22331,7 @@ function printIgnored$60(path, options, printPath, args) {
  * state of the recursion. It is called "path", because it represents
  * the path to the current node through the Abstract Syntax Tree.
  */
-async function printAstToDoc$61(ast, options) {
+async function printAstToDoc$58(ast, options) {
   ({ ast } = await prepareToPrint(ast, options));
 
   const cache = new Map();
@@ -24958,7 +22340,7 @@ async function printAstToDoc$61(ast, options) {
   const ensurePrintingNode = createPrintPreCheckFunction(options);
   const embeds = new Map();
 
-  await printEmbeddedLanguages(path, mainPrint, options, printAstToDoc$61, embeds);
+  await printEmbeddedLanguages(path, mainPrint, options, printAstToDoc$58, embeds);
 
   // Only the root call of the print method is awaited.
   // This is done to make things simpler for plugins that don't use recursive printing.
@@ -24968,10 +22350,10 @@ async function printAstToDoc$61(ast, options) {
 
   if (options.cursorOffset >= 0) {
     if (options.nodeAfterCursor && !options.nodeBeforeCursor) {
-      return [cursor$31, doc];
+      return [cursor$28, doc];
     }
     if (options.nodeBeforeCursor && !options.nodeAfterCursor) {
-      return [doc, cursor$31];
+      return [doc, cursor$28];
     }
   }
 
@@ -25034,7 +22416,7 @@ function callPluginPrintFunction(path, options, printPath, args, embeds) {
 
   // Escape hatch
   if (printer.hasPrettierIgnore?.(path)) {
-    doc = printIgnored$60(path, options, printPath, args);
+    doc = printIgnored$57(path, options, printPath, args);
   } else if (embeds.size > 0 && embeds.has(node)) {
     doc = embeds.get(node);
   } else {
@@ -25043,13 +22425,13 @@ function callPluginPrintFunction(path, options, printPath, args, embeds) {
 
   switch (node) {
     case options.cursorNode:
-      doc = inheritLabel(doc, (doc) => [cursor$31, doc, cursor$31]);
+      doc = inheritLabel(doc, (doc) => [cursor$28, doc, cursor$28]);
       break;
     case options.nodeBeforeCursor:
-      doc = inheritLabel(doc, (doc) => [doc, cursor$31]);
+      doc = inheritLabel(doc, (doc) => [doc, cursor$28]);
       break;
     case options.nodeAfterCursor:
-      doc = inheritLabel(doc, (doc) => [cursor$31, doc]);
+      doc = inheritLabel(doc, (doc) => [cursor$28, doc]);
       break;
   }
 
@@ -25084,7 +22466,13 @@ async function prepareToPrint(ast, options) {
 
 
 
-const __json$153 = [
+// front-matter/constants.js
+/** @type {unique symbol} */
+const FRONT_MATTER_MARK = Symbol.for('PRETTIER_IS_FRONT_MATTER');
+const FRONT_MATTER_VISITOR_KEYS = [];
+
+
+const __json$147 = [
   {
     "name": "JSON.stringify",
     "aliases": ["geojson", "jsonl", "sarif", "topojson"],
@@ -25353,16 +22741,16 @@ const __json$153 = [
 
 const byName = (name) =>
   name &&
-  (__json$153.find((language) => language.name.toLowerCase() === name) ??
-    __json$153.find((language) => language.aliases?.includes(name)) ??
-    __json$153.find((language) => language.extensions?.includes(`.${name}`)));
+  (__json$147.find((language) => language.name.toLowerCase() === name) ??
+    __json$147.find((language) => language.aliases?.includes(name)) ??
+    __json$147.find((language) => language.extensions?.includes(`.${name}`)));
 
 const byFile = (file) => {
   if (!file) return;
   const base = String(file).split(/[\\/]/).pop().toLowerCase();
   return (
-    __json$153.find((language) => language.filenames?.some((name) => name.toLowerCase() === base)) ??
-    __json$153.find((language) => language.extensions?.some((extension) => base.endsWith(extension)))
+    __json$147.find((language) => language.filenames?.some((name) => name.toLowerCase() === base)) ??
+    __json$147.find((language) => language.extensions?.some((extension) => base.endsWith(extension)))
   );
 };
 
@@ -25372,12 +22760,6 @@ function inferParser(options, fileInfo) {
 }
 
 
-
-
-// front-matter/constants.js
-/** @type {unique symbol} */
-const FRONT_MATTER_MARK = Symbol.for('PRETTIER_IS_FRONT_MATTER');
-const FRONT_MATTER_VISITOR_KEYS = [];
 
 
 // front-matter/is-front-matter.js
@@ -25430,22 +22812,6 @@ async function printEmbedFrontMatter(textToDoc, print, path, options) {
     doc ? hardline : '',
     node.endDelimiter,
   ]);
-}
-
-
-
-
-// front-matter/clean.js
-
-
-function clean(original, cloned) {
-  if (isEmbedFrontMatter({ node: original })) {
-    delete cloned.end;
-    delete cloned.raw;
-    delete cloned.value;
-  }
-
-  return cloned;
 }
 
 
@@ -25545,7 +22911,7 @@ function getFrontMatter(text) {
   };
 }
 
-function parse$62(text) {
+function parse$59(text) {
   const frontMatter = getFrontMatter(text);
 
   if (!frontMatter) {
@@ -25573,7 +22939,6 @@ function printFrontMatter({ node }) {
 
 
 // front-matter/index.js
-
 
 
 
@@ -25610,26 +22975,8 @@ function createGetVisitorKeysFunction(printerGetVisitorKeys, supportFrontMatter)
 
 
 
-
-
-
-
-
-
-
-
-
-
-
 function normalizePrinterWithoutCache(printer) {
-  let {
-    features,
-    getVisitorKeys,
-    embed: originalEmbed,
-    massageAstNode: originalCleanFunction,
-    print: originalPrint,
-    ...printerRestProperties
-  } = printer;
+  let { features, getVisitorKeys, embed: originalEmbed, print: originalPrint, ...printerRestProperties } = printer;
 
   features = normalizePrinterFeatures(features);
   const frontMatterSupport = features.experimental_frontMatterSupport;
@@ -25640,16 +22987,6 @@ function normalizePrinterWithoutCache(printer) {
       frontMatterSupport.embed ||
       frontMatterSupport.print
   );
-
-  let massageAstNode = originalCleanFunction;
-  if (originalCleanFunction && frontMatterSupport.massageAstNode) {
-    massageAstNode = new Proxy(originalCleanFunction, {
-      apply(target, thisArgument, argumentsList) {
-        clean(...argumentsList);
-        return Reflect.apply(target, thisArgument, argumentsList);
-      },
-    });
-  }
 
   let embed = originalEmbed;
   if (originalEmbed) {
@@ -25692,7 +23029,6 @@ function normalizePrinterWithoutCache(printer) {
     features,
     getVisitorKeys,
     embed,
-    massageAstNode,
     print,
     ...printerRestProperties,
   };
@@ -25744,7 +23080,7 @@ const ID_START = /[\p{ID_Start}$_]/u;
 const ID_CONTINUE = /[\p{ID_Continue}$‌‍]/u;
 const SINGLE_ESCAPES = { b: '\b', f: '\f', n: '\n', r: '\r', t: '\t', v: '\v', 0: '\0' };
 
-const isLineBreak$63 = (code) => code === 10 || code === 13 || code === 0x2028 || code === 0x2029;
+const isLineBreak$60 = (code) => code === 10 || code === 13 || code === 0x2028 || code === 0x2029;
 // JavaScript's white space: tab, vertical tab, form feed, space, no-break space, BOM and the Space_Separator class.
 const isSpace = (code) =>
   code === 9 ||
@@ -25771,7 +23107,7 @@ function parseJson(text, { allowComments = true, allowEmpty = false } = {}) {
   }
   const { comments } = parser;
   if (!allowComments && comments.length) throw notAllowed(text, comments[0], 'Comment');
-  if (node) check$65(text, node);
+  if (node) check$62(text, node);
   const root = { type: 'JsonRoot', comments, range: [0, text.length], rootMarker: undefined };
   if (node) root.node = node;
   return root;
@@ -25789,12 +23125,12 @@ class Parser {
     const { text } = this;
     while (this.index < text.length) {
       const code = text.charCodeAt(this.index);
-      if (isSpace(code) || isLineBreak$63(code)) {
+      if (isSpace(code) || isLineBreak$60(code)) {
         this.index++;
       } else if (code === 47 && text.charCodeAt(this.index + 1) === 47) {
         const start = this.index;
         let end = start + 2;
-        while (end < text.length && !isLineBreak$63(text.charCodeAt(end))) end++;
+        while (end < text.length && !isLineBreak$60(text.charCodeAt(end))) end++;
         this.comments.push({ type: 'CommentLine', value: text.slice(start + 2, end), start, end });
         this.index = end;
       } else if (code === 47 && text.charCodeAt(this.index + 1) === 42) {
@@ -26028,7 +23364,7 @@ class Parser {
       return [SINGLE_ESCAPES[character], index + 2];
     }
     if (character === '\r') return ['', text[index + 2] === '\n' ? index + 3 : index + 2];
-    if (isLineBreak$63(character.charCodeAt(0))) return ['', index + 2];
+    if (isLineBreak$60(character.charCodeAt(0))) return ['', index + 2];
     if (character === 'x') {
       const hex = text.slice(index + 2, index + 4);
       if (!/^[\da-fA-F]{2}$/.test(hex)) this.fail('Bad character escape sequence.', index);
@@ -26172,7 +23508,7 @@ class Parser {
 }
 
 // Where an offset is: { line (from 1), column (from 0) }.
-function position$64(text, offset) {
+function position$61(text, offset) {
   let line = 1;
   let lineStart = 0;
   for (let index = text.indexOf('\n'); index !== -1 && index < offset; index = text.indexOf('\n', index + 1)) {
@@ -26183,7 +23519,7 @@ function position$64(text, offset) {
 }
 
 function errorAt(text, message, start, end) {
-  const [from, to] = [position$64(text, start), position$64(text, end)];
+  const [from, to] = [position$61(text, start), position$61(text, end)];
   return createError$7(message, {
     loc: { start: { line: from.line, column: from.column + 1 }, end: { line: to.line, column: to.column + 1 } },
   });
@@ -26195,19 +23531,19 @@ function notAllowed(text, node, what) {
 }
 
 // prettier's check of the tree (its json parsers' assertJsonNode).
-function check$65(text, node) {
+function check$62(text, node) {
   switch (node.type) {
     case 'ArrayExpression':
-      for (const element of node.elements) if (element !== null) check$65(text, element);
+      for (const element of node.elements) if (element !== null) check$62(text, element);
       return;
     case 'ObjectExpression':
-      for (const property of node.properties) check$65(text, property);
+      for (const property of node.properties) check$62(text, property);
       return;
     case 'ObjectProperty':
       if (node.computed) throw notAllowed(text, node.key, 'Computed key');
       if (node.shorthand) throw notAllowed(text, node.key, 'Shorthand property');
-      if (node.key.type !== 'Identifier') check$65(text, node.key);
-      check$65(text, node.value);
+      if (node.key.type !== 'Identifier') check$62(text, node.key);
+      check$62(text, node.value);
       return;
     case 'UnaryExpression': {
       const { operator, argument } = node;
@@ -26226,7 +23562,7 @@ function check$65(text, node) {
       }
       return;
     case 'TemplateLiteral':
-      for (const quasi of node.quasis) check$65(text, quasi);
+      for (const quasi of node.quasis) check$62(text, quasi);
       return;
     case 'NullLiteral':
     case 'BooleanLiteral':
@@ -26301,9 +23637,9 @@ let markdown = null;
 async function loadMarkdown() {
   if (!markdown) {
     const [printers, parse, loc] = await Promise.all([
-      Promise.resolve(__namespace$155()),
-      Promise.resolve(__namespace$156()),
-      Promise.resolve(__namespace$157()),
+      Promise.resolve(__namespace$149()),
+      Promise.resolve(__namespace$150()),
+      Promise.resolve(__namespace$151()),
     ]);
     markdown = { printer: normalizePrinter(printers.mdast), parse: parse.parseMarkdown, ...loc };
   }
@@ -26313,7 +23649,7 @@ async function loadMarkdown() {
 // The parser prettier has for a file: babel, typescript, json, json5, jsonc, json-stringify or markdown (null: not
 // formatted). The JSON ones by prettier's table of languages (.json5, .jsonc, .babelrc, tsconfig.json...).
 function parserOf(filepath = '') {
-  const name = __external$154_default.basename(filepath).toLowerCase();
+  const name = __external$148_default.basename(filepath).toLowerCase();
   if (JSON_STRINGIFY.has(name)) return 'json-stringify';
   if (/\.(?:[cm]?js|jsx)$/.test(name)) return 'babel';
   if (/\.(?:[cm]?ts|tsx)$/.test(name)) return 'typescript';
@@ -26343,7 +23679,7 @@ function optionsFor(parser, given) {
   } else {
     Object.assign(options, {
       astFormat: 'estree',
-      printer: normalizePrinter(estree$58),
+      printer: normalizePrinter(estree$55),
       locStart: typescript.locStart,
       locEnd: typescript.locEnd,
     });
@@ -26390,7 +23726,11 @@ function stringifyJson(node, indent = '') {
         '}'
       );
     case 'ArrayExpression':
-      return list('[', node.elements.map((element) => stringifyJson(element, inner)), ']');
+      return list(
+        '[',
+        node.elements.map((element) => stringifyJson(element, inner)),
+        ']'
+      );
     case 'StringLiteral':
       return node.extra.raw.startsWith('"') ? node.extra.raw : JSON.stringify(node.value);
     case 'NumericLiteral':
@@ -26436,7 +23776,7 @@ async function format(originalText, given = {}) {
   } else {
     options.originalText = text;
     const ast = parseWith(text, options);
-    const doc = await printAstToDoc$61(ast, options);
+    const doc = await printAstToDoc$58(ast, options);
     ({ formatted } = printDocToString(doc, options));
   }
   // (The doc printer writes the line ends of endOfLine; stringifyJson writes \n.)
@@ -26458,7 +23798,7 @@ async function format(originalText, given = {}) {
  * @returns {number}
  */
 function getMaxContinuousCount(text, searchString) {
-  let results = text.matchAll(new RegExp(`(?:${escapeStringRegexp$36(searchString)})+`, 'g'));
+  let results = text.matchAll(new RegExp(`(?:${escapeStringRegexp$33(searchString)})+`, 'g'));
 
   // TODO: Use `Iterator#reduce` when we drop support for Node.js < 22
   if (!results.reduce) {
@@ -26468,6 +23808,200 @@ function getMaxContinuousCount(text, searchString) {
 
   return results.reduce((maxCount, [result]) => Math.max(maxCount, result.length), 0) / searchString.length;
 }
+
+
+
+
+// language-markdown/embed.js
+
+
+
+
+function embed$63(path, options) {
+  const { node } = path;
+
+  switch (node.type) {
+    case 'code': {
+      const { lang: language } = node;
+      if (!language) {
+        return;
+      }
+
+      let parser;
+      // https://shiki.style/references/engine-js-compat#supported-languages
+      if (language === 'angular-ts') {
+        parser = inferParser(options, { language: 'typescript' });
+      } else if (language === 'angular-html') {
+        parser = 'angular';
+      } else {
+        parser = inferParser(options, { language });
+      }
+
+      if (!parser) {
+        return;
+      }
+
+      return async (textToDoc) => {
+        const textToDocOptions = { parser };
+
+        // Override the filepath option.
+        // This is because whether the trailing comma of type parameters
+        // should be printed depends on whether it is `*.ts` or `*.tsx`.
+        // https://github.com/prettier/prettier/issues/15282
+        if (language === 'ts' || language === 'typescript') {
+          textToDocOptions.filepath = 'dummy.ts';
+        } else if (language === 'tsx') {
+          textToDocOptions.filepath = 'dummy.tsx';
+        }
+
+        const doc = await textToDoc(node.value, textToDocOptions);
+
+        const styleUnit = options.__inJsTemplate ? '~' : '`';
+        const style = styleUnit.repeat(Math.max(3, getMaxContinuousCount(node.value, styleUnit) + 1));
+
+        return markAsRoot([
+          style,
+          node.lang,
+          node.meta ? ' ' + node.meta : '',
+          hardline,
+          replaceEndOfLine(doc),
+          hardline,
+          style,
+        ]);
+      };
+    }
+
+    // MDX
+    case 'import':
+    case 'export':
+      return (textToDoc) =>
+        textToDoc(node.value, {
+          // TODO: Rename this option since it's not used in HTML
+          __onHtmlBindingRoot: (ast) => validateImportExport(ast, node.type),
+          parser: 'babel',
+        });
+    case 'jsx':
+      return (textToDoc) =>
+        textToDoc(`<$>${node.value}</$>`, {
+          parser: '__js_expression',
+          rootMarker: 'mdx',
+        });
+  }
+
+  return null;
+}
+
+function validateImportExport(ast, type) {
+  const {
+    program: { body },
+  } = ast;
+
+  // https://github.com/mdx-js/mdx/blob/3430138958c9c0344ecad9d59e0d6b5d72bedae3/packages/remark-mdx/extract-imports-and-exports.js#L16
+  if (
+    body.some(
+      (node) =>
+        !(
+          node.type === 'ImportDeclaration' ||
+          node.type === 'ExportDefaultDeclaration' ||
+          node.type === 'ExportNamedDeclaration'
+        )
+    )
+  ) {
+    throw new Error(`Unexpected '${type}' in MDX.`);
+  }
+}
+
+
+
+
+// language-markdown/pragma.js
+
+
+
+const insertPragma$64 = (text) => {
+  const { frontMatter } = parse$59(text);
+  const pragma = `<!-- @${FORMAT_PRAGMA_TO_INSERT} -->`;
+  return frontMatter
+    ? `${frontMatter.raw}\n\n${pragma}\n\n${text.slice(frontMatter.end.index)}`
+    : `${pragma}\n\n${text}`;
+};
+
+
+
+
+// print/ignored.js
+/**
+ * @import AstPath from "../../common/ast-path.js";
+ * @import {Doc} from "../../document/index.js";
+ */
+
+/**
+ * @param {AstPath} path
+ * @param {*} options
+ * @returns {Doc}
+ */
+function printPrettierIgnored$65(path, options) {
+  const originalText = options.originalText.slice(path.node.position.start.offset, path.node.position.end.offset);
+
+  switch (path.node.type) {
+    case 'list':
+      if (path.findAncestor((p) => p.type === 'blockquote') && options.proseWrap !== 'always') {
+        return originalText.replace(/\n>\s*$/, '');
+      }
+      return originalText;
+    default:
+      return originalText;
+  }
+}
+
+
+
+
+// utilities/get-min-not-present-continuous-count.js
+
+
+/**
+ * Calculates the minimum `n` (>= 1) where `searchString.repeat(n)` is not present in `text`.
+ * @param {string} text
+ * @param {string} searchString
+ * @example getMinNotPresentContinuousCount("```", "`") // 1
+ * @example getMinNotPresentContinuousCount("``` `", "`") // 2 (1 is occupied)
+ * @example getMinNotPresentContinuousCount("``` ` ``", "`") // 4 (1-3 are occupied)
+ * @returns {number} 1 if not exists, see the above example otherwise
+ */
+function getMinNotPresentContinuousCount(text, searchString) {
+  const matches = text.match(new RegExp(`(${escapeStringRegexp$33(searchString)})+`, 'g'));
+
+  if (matches === null) {
+    return 1;
+  }
+
+  const countPresent = new Map();
+  let max = 0;
+
+  for (const match of matches) {
+    const count = match.length / searchString.length;
+    countPresent.set(count, true);
+    if (count > max) {
+      max = count;
+    }
+  }
+
+  for (let i = 1; i < max; i++) {
+    if (!countPresent.get(i)) {
+      return i;
+    }
+  }
+
+  return max + 1;
+}
+
+
+
+
+// language-markdown/loc.js
+const locStart$66 = (node) => node.position.start.offset;
+const locEnd$67 = (node) => node.position.end.offset;
 
 
 
@@ -26483,13 +24017,6 @@ const PUNCTUATION_REGEXP = new RegExp(
   '(?:[\\u{21}-\\u{2f}\\u{3a}-\\u{40}\\u{5b}-\\u{60}\\u{7b}-\\u{7e}\\u{3000}\\u{ff5e}]|\\p{General_Category=Connector_Punctuation}|\\p{General_Category=Dash_Punctuation}|\\p{General_Category=Close_Punctuation}|\\p{General_Category=Final_Punctuation}|\\p{General_Category=Initial_Punctuation}|\\p{General_Category=Other_Punctuation}|\\p{General_Category=Open_Punctuation})',
   'u'
 );
-
-
-
-
-// language-markdown/loc.js
-const locStart$66 = (node) => node.position.start.offset;
-const locEnd$67 = (node) => node.position.end.offset;
 
 
 
@@ -26670,7 +24197,7 @@ function splitText(text) {
 
 function getOrderedListItemInfo(orderListItem, options) {
   let text = options.originalText.slice(orderListItem.position.start.offset, orderListItem.position.end.offset);
-  if (options.parser !== 'mdx') {
+  {
     const firstChild = orderListItem.children[0];
     if (firstChild) {
       text = options.originalText.slice(orderListItem.position.start.offset, firstChild.position.start.offset);
@@ -26700,22 +24227,6 @@ function hasGitDiffFriendlyOrderedList(node, options) {
   }
 
   return node.children.length > 2 && getOrderedListItemInfo(node.children[2], options).number === 1;
-}
-
-// The final new line should not include in value
-// https://github.com/remarkjs/remark/issues/512
-// TODO[@fisker]: Use `node.value` directly when we update mdx to use latest remark
-function getFencedCodeBlockValue(node, originalText) {
-  const { value } = node;
-  if (
-    node.position.end.offset === originalText.length &&
-    value.endsWith('\n') &&
-    // Code block has no end mark
-    originalText.endsWith('\n')
-  ) {
-    return value.slice(0, -1);
-  }
-  return value;
 }
 
 function mapAst(ast, handler) {
@@ -26797,279 +24308,6 @@ const isNewLine = (node) => node?.type === 'whitespace' && node.value === '\n';
 
 
 
-// language-markdown/embed.js
-
-
-
-
-
-function embed$69(path, options) {
-  const { node } = path;
-
-  switch (node.type) {
-    case 'code': {
-      const { lang: language } = node;
-      if (!language) {
-        return;
-      }
-
-      let parser;
-      // https://shiki.style/references/engine-js-compat#supported-languages
-      if (language === 'angular-ts') {
-        parser = inferParser(options, { language: 'typescript' });
-      } else if (language === 'angular-html') {
-        parser = 'angular';
-      } else {
-        parser = inferParser(options, { language });
-      }
-
-      if (!parser) {
-        return;
-      }
-
-      return async (textToDoc) => {
-        const textToDocOptions = { parser };
-
-        // Override the filepath option.
-        // This is because whether the trailing comma of type parameters
-        // should be printed depends on whether it is `*.ts` or `*.tsx`.
-        // https://github.com/prettier/prettier/issues/15282
-        if (language === 'ts' || language === 'typescript') {
-          textToDocOptions.filepath = 'dummy.ts';
-        } else if (language === 'tsx') {
-          textToDocOptions.filepath = 'dummy.tsx';
-        }
-
-        const doc = await textToDoc(
-          options.parser === 'mdx' ? getFencedCodeBlockValue(node, options.originalText) : node.value,
-          textToDocOptions
-        );
-
-        const styleUnit = options.__inJsTemplate ? '~' : '`';
-        const style = styleUnit.repeat(Math.max(3, getMaxContinuousCount(node.value, styleUnit) + 1));
-
-        return markAsRoot([
-          style,
-          node.lang,
-          node.meta ? ' ' + node.meta : '',
-          hardline,
-          replaceEndOfLine(doc),
-          hardline,
-          style,
-        ]);
-      };
-    }
-
-    // MDX
-    case 'import':
-    case 'export':
-      return (textToDoc) =>
-        textToDoc(node.value, {
-          // TODO: Rename this option since it's not used in HTML
-          __onHtmlBindingRoot: (ast) => validateImportExport(ast, node.type),
-          parser: 'babel',
-        });
-    case 'jsx':
-      return (textToDoc) =>
-        textToDoc(`<$>${node.value}</$>`, {
-          parser: '__js_expression',
-          rootMarker: 'mdx',
-        });
-  }
-
-  return null;
-}
-
-function validateImportExport(ast, type) {
-  const {
-    program: { body },
-  } = ast;
-
-  // https://github.com/mdx-js/mdx/blob/3430138958c9c0344ecad9d59e0d6b5d72bedae3/packages/remark-mdx/extract-imports-and-exports.js#L16
-  if (
-    body.some(
-      (node) =>
-        !(
-          node.type === 'ImportDeclaration' ||
-          node.type === 'ExportDefaultDeclaration' ||
-          node.type === 'ExportNamedDeclaration'
-        )
-    )
-  ) {
-    throw new Error(`Unexpected '${type}' in MDX.`);
-  }
-}
-
-
-
-
-// language-markdown/pragma.js
-
-
-
-const hasPragma$70 = (text) => parse$62(text).content.trimStart().match(MARKDOWN_HAS_PRAGMA_REGEXP)?.index === 0;
-
-
-
-const insertPragma$71 = (text) => {
-  const { frontMatter } = parse$62(text);
-  const pragma = `<!-- @${FORMAT_PRAGMA_TO_INSERT} -->`;
-  return frontMatter
-    ? `${frontMatter.raw}\n\n${pragma}\n\n${text.slice(frontMatter.end.index)}`
-    : `${pragma}\n\n${text}`;
-};
-
-
-
-
-// massage-ast/index.js
-
-
-
-
-const ignoredProperties$72 = new Set([
-  'position',
-  'raw', // front-matter
-]);
-function massageAstNode$73(original, cloned, parent) {
-  // for codeblock
-  if (
-    original.type === 'code' ||
-    original.type === 'yaml' ||
-    original.type === 'import' ||
-    original.type === 'export' ||
-    original.type === 'jsx'
-  ) {
-    delete cloned.value;
-  }
-
-  if (original.type === 'list') {
-    delete cloned.isAligned;
-  }
-
-  if (original.type === 'list' || original.type === 'listItem') {
-    delete cloned.spread;
-  }
-
-  // texts can be splitted or merged
-  if (original.type === 'text') {
-    return null;
-  }
-
-  if (original.type === 'inlineCode') {
-    cloned.value = original.value.replaceAll('\n', ' ');
-  }
-
-  if (original.type === 'definition' || original.type === 'linkReference' || original.type === 'imageReference') {
-    cloned.label = collapseWhiteSpace(original.label);
-  }
-
-  // Maybe we should fix this
-  if (original.type === 'imageReference' && original.referenceType === 'collapsed') {
-    cloned.alt = collapseWhiteSpace(original.alt);
-  }
-
-  if ((original.type === 'link' || original.type === 'image') && original.url && original.url.includes('(')) {
-    for (const character of '<>') {
-      cloned.url = original.url.replaceAll(character, encodeURIComponent(character));
-    }
-  }
-
-  if ((original.type === 'definition' || original.type === 'link' || original.type === 'image') && original.title) {
-    cloned.title = original.title.replaceAll(/\\(?=["')])/g, '');
-  }
-
-  // for insert pragma
-  if (
-    parent?.type === 'root' &&
-    parent.children.length > 0 &&
-    (parent.children[0] === original || (isFrontMatter(parent.children[0]) && parent.children[1] === original)) &&
-    original.type === 'html' &&
-    hasPragma$70(original.value)
-  ) {
-    return null;
-  }
-}
-
-massageAstNode$73.ignoredProperties = ignoredProperties$72;
-
-
-
-
-// print/ignored.js
-/**
- * @import AstPath from "../../common/ast-path.js";
- * @import {Doc} from "../../document/index.js";
- */
-
-/**
- * @param {AstPath} path
- * @param {*} options
- * @returns {Doc}
- */
-function printPrettierIgnored$74(path, options) {
-  const originalText = options.originalText.slice(path.node.position.start.offset, path.node.position.end.offset);
-
-  if (options.parser === 'mdx') {
-    return originalText;
-  }
-
-  switch (path.node.type) {
-    case 'list':
-      if (path.findAncestor((p) => p.type === 'blockquote') && options.proseWrap !== 'always') {
-        return originalText.replace(/\n>\s*$/, '');
-      }
-      return originalText;
-    default:
-      return originalText;
-  }
-}
-
-
-
-
-// utilities/get-min-not-present-continuous-count.js
-
-
-/**
- * Calculates the minimum `n` (>= 1) where `searchString.repeat(n)` is not present in `text`.
- * @param {string} text
- * @param {string} searchString
- * @example getMinNotPresentContinuousCount("```", "`") // 1
- * @example getMinNotPresentContinuousCount("``` `", "`") // 2 (1 is occupied)
- * @example getMinNotPresentContinuousCount("``` ` ``", "`") // 4 (1-3 are occupied)
- * @returns {number} 1 if not exists, see the above example otherwise
- */
-function getMinNotPresentContinuousCount(text, searchString) {
-  const matches = text.match(new RegExp(`(${escapeStringRegexp$36(searchString)})+`, 'g'));
-
-  if (matches === null) {
-    return 1;
-  }
-
-  const countPresent = new Map();
-  let max = 0;
-
-  for (const match of matches) {
-    const count = match.length / searchString.length;
-    countPresent.set(count, true);
-    if (count > max) {
-      max = count;
-    }
-  }
-
-  for (let i = 1; i < max; i++) {
-    if (!countPresent.get(i)) {
-      return i;
-    }
-  }
-
-  return max + 1;
-}
-
-
-
-
 // print/children.js
 
 
@@ -27097,7 +24335,7 @@ function printChildren(path, options, print, events = {}) {
       if (parts.length > 0 && shouldPrePrintHardline(path)) {
         parts.push(hardline);
 
-        if (shouldPrePrintDoubleHardline(path, options)) {
+        if (shouldPrePrintDoubleHardline(path)) {
           parts.push(hardline);
         }
       }
@@ -27124,22 +24362,10 @@ const SIBLING_NODE_TYPES = new Set(['listItem', 'definition']);
  * @param {AstPath} path
  * @returns {boolean}
  */
-function shouldPrePrintDoubleHardline(path, options) {
+function shouldPrePrintDoubleHardline(path) {
   const { node, previous, parent } = path;
 
-  if (options.parser === 'mdx') {
-    if (
-      isLooseListItemLegacy(previous, options) ||
-      (node.type === 'list' &&
-        parent.type === 'listItem' &&
-        (previous.type === 'code' ||
-          // Preserve blank line before nested list within listItem (issue #17746)
-          previous.type === 'paragraph') &&
-        previous.position.end.line + 1 < node.position.start.line)
-    ) {
-      return true;
-    }
-  } else {
+  {
     if (isSetextHeading(node) && node.position.start.line < previous.position.end.line) {
       return false;
     }
@@ -27160,16 +24386,13 @@ function shouldPrePrintDoubleHardline(path, options) {
   const isSequence = previous.type === node.type;
   const isSiblingNode = isSequence && SIBLING_NODE_TYPES.has(node.type);
   let isInTightListItem;
-  if (options.parser === 'mdx') {
-    isInTightListItem = parent.type === 'listItem' && (node.type === 'list' || !isLooseListItemLegacy(parent, options));
-  } else {
+  {
     isInTightListItem = parent.type === 'listItem' && (node.type === 'list' || !path.callParent(isLooseListItem));
   }
   const isPrevNodePrettierIgnore = isPrettierIgnore(previous) === 'next';
   const isBlockHtmlWithoutBlankLineBetweenPrevHtml =
     node.type === 'html' && previous.type === 'html' && previous.position.end.line + 1 === node.position.start.line;
   const isBlockHtmlWithoutBlankLineBetweenPrevParagraph =
-    options.parser !== 'mdx' &&
     node.type === 'html' &&
     previous.type === 'paragraph' &&
     previous.position.end.line + 1 === node.position.start.line;
@@ -27190,16 +24413,6 @@ function shouldPrePrintDoubleHardline(path, options) {
     isBlockHtmlWithoutBlankLineBetweenPrevParagraph ||
     isHtmlDirectAfterListItem ||
     isBlockLiquidWithoutBlankLine
-  );
-}
-
-function isLooseListItemLegacy(node, options) {
-  return (
-    node.type === 'listItem' &&
-    (node.spread ||
-      // Check if `listItem` ends with `\n`
-      // since it can't be empty, so we only need check the last character
-      options.originalText.charAt(node.position.end.offset - 1) === '\n')
   );
 }
 
@@ -27250,7 +24463,7 @@ function printSetextHeading(path, options, print) {
 }
 
 function printHeading(path, options, print) {
-  if (options.parser !== 'mdx' && isSetextHeading(path.node)) {
+  if (isSetextHeading(path.node)) {
     return printSetextHeading(path, options, print);
   }
 
@@ -27301,7 +24514,7 @@ function printList(path, options, print) {
         return [prefix, printListItem(path, options, print, prefix)];
       }
 
-      return [prefix, align$30(' '.repeat(prefix.length), printListItem(path, options, print, prefix))];
+      return [prefix, align$27(' '.repeat(prefix.length), printListItem(path, options, print, prefix))];
 
       function getPrefix() {
         const rawPrefix = node.ordered
@@ -27345,7 +24558,7 @@ function printListItem(path, options, print, listPrefix) {
     printChildren(path, options, print, {
       processor({ node, isFirst }) {
         if ((isFirst && node.type !== 'list') || node.type === 'html') {
-          return align$30(' '.repeat(prefix.length), print());
+          return align$27(' '.repeat(prefix.length), print());
         }
 
         if (node.type === 'code' && node.isIndented) {
@@ -27355,7 +24568,7 @@ function printListItem(path, options, print, listPrefix) {
         const alignment = ' '.repeat(
           clamp(options.tabWidth - listPrefix.length, 0, 3) // 4+ will cause indented code block
         );
-        return [alignment, align$30(alignment, print())];
+        return [alignment, align$27(alignment, print())];
       },
     }),
   ];
@@ -27382,75 +24595,6 @@ function requiredIndent(path) {
     [...leadingSpaces].reduce((count, char) => count + (char === '\t' ? 4 : 1), 0) +
     1 // at least one space more than the code block
   );
-}
-
-/**
- * @param {AstPath} path
- * @param {*} options
- * @param {() => Doc} print
- * @return {Doc}
- */
-function printListLegacy(path, options, print) {
-  const { node } = path;
-  const nthSiblingIndex = getNthListSiblingIndex(node, path.parent);
-
-  const isGitDiffFriendlyOrderedList = hasGitDiffFriendlyOrderedList(node, options);
-
-  return printChildren(path, options, print, {
-    processor() {
-      const prefix = getPrefix();
-      const { node: childNode } = path;
-
-      if (
-        childNode.children.length === 2 &&
-        childNode.children[1].type === 'html' &&
-        childNode.children[0].position.start.column !== childNode.children[1].position.start.column
-      ) {
-        return [prefix, printListItemLegacy(path, options, print, prefix)];
-      }
-
-      return [prefix, align$30(' '.repeat(prefix.length), printListItemLegacy(path, options, print, prefix))];
-
-      function getPrefix() {
-        const rawPrefix = node.ordered
-          ? (path.isFirst ? node.start : isGitDiffFriendlyOrderedList ? 1 : node.start + path.index) +
-            (nthSiblingIndex % 2 === 0 ? '. ' : ') ')
-          : nthSiblingIndex % 2 === 0
-            ? '- '
-            : '* ';
-
-        return (node.isAligned ||
-          /* workaround for https://github.com/remarkjs/remark/issues/315 */ node.hasIndentedCodeblock) &&
-          node.ordered
-          ? alignListPrefix(rawPrefix, options)
-          : rawPrefix;
-      }
-    },
-  });
-}
-
-function printListItemLegacy(path, options, print, listPrefix) {
-  const { node } = path;
-  const prefix = node.checked === null ? '' : node.checked ? '[x] ' : '[ ] ';
-  return [
-    prefix,
-    printChildren(path, options, print, {
-      processor({ node, isFirst }) {
-        if (isFirst && node.type !== 'list') {
-          return align$30(' '.repeat(prefix.length), print());
-        }
-
-        if (node.type === 'code' && node.isIndented) {
-          return print();
-        }
-
-        const alignment = ' '.repeat(
-          clamp(options.tabWidth - listPrefix.length, 0, 3) // 4+ will cause indented code block
-        );
-        return [alignment, align$30(alignment, print())];
-      },
-    }),
-  ];
 }
 
 function alignListPrefix(prefix, options) {
@@ -27600,7 +24744,7 @@ function printTable(path, options, print) {
 
   // Only if the --prose-wrap never is set and it exceeds the print width.
   const compactTable = printTableContents(/* isCompact */ true);
-  return [breakParent, group$32(ifBreak(compactTable, alignedTable))];
+  return [breakParent, group$29(ifBreak(compactTable, alignedTable))];
 
   function printTableContents(isCompact) {
     return join(
@@ -27616,7 +24760,7 @@ function printTable(path, options, print) {
   function printAlign(isCompact) {
     return columnMaxWidths
       .map((width, index) => {
-        if (options.parser !== 'mdx' && index >= contents[0].length) {
+        if (index >= contents[0].length) {
           // The header row must match the delimiter row in the number of cells. If not, a table will not be recognized
           // https://github.github.com/gfm/#example-203
           return null;
@@ -27821,13 +24965,11 @@ function isNonCJKOrKoreanLetter(kind) {
  * @param {boolean} isLink
  * @returns {boolean}
  */
-function isBreakable(path, value, proseWrap, isLink, options) {
+function isBreakable(path, value, proseWrap, isLink) {
   if (
     proseWrap !== 'always' ||
     path.hasAncestor(
-      (node) =>
-        SINGLE_LINE_NODE_TYPES.has(node.type) ||
-        (node.type === 'heading' && (options.parser === 'mdx' || !isSetextHeading(node)))
+      (node) => SINGLE_LINE_NODE_TYPES.has(node.type) || (node.type === 'heading' && !isSetextHeading(node))
     )
   ) {
     return false;
@@ -27891,15 +25033,15 @@ function isBreakable(path, value, proseWrap, isLink, options) {
  * @param {any} options Special mode of (un)wrapping that preserves the
  * normalized form of link labels. https://spec.commonmark.org/0.30/#matches
  */
-function printWhitespace(path, value, proseWrap, isLink, options) {
+function printWhitespace(path, value, proseWrap, isLink) {
   if (proseWrap === 'preserve' && value === '\n') {
     return hardline;
   }
 
   const canBeSpace = value === ' ' || (value === '\n' && lineBreakCanBeConvertedToSpace(path, isLink));
 
-  if (isBreakable(path, value, proseWrap, isLink, options)) {
-    return canBeSpace ? line$34 : softline;
+  if (isBreakable(path, value, proseWrap, isLink)) {
+    return canBeSpace ? line$31 : softline;
   }
 
   return canBeSpace ? ' ' : '';
@@ -28014,40 +25156,6 @@ function canOpenOrCloseStrongOrEmphasis(preceding, delimiterRun, following) {
   return false;
 }
 
-/**
- * @param {AstPath} path
- * @return {Doc}
- */
-function printWordLegacy(path) {
-  const { node } = path;
-  let escapedValue = node.value
-    .replaceAll('*', String.raw`\*`) // escape all `*`
-    .replaceAll(
-      new RegExp([`(^|${PUNCTUATION_REGEXP.source})(_+)`, `(_+)(${PUNCTUATION_REGEXP.source}|$)`].join('|'), 'gu'),
-      (_, text1, underscore1, underscore2, text2) =>
-        (underscore1 ? `${text1}${underscore1}` : `${underscore2}${text2}`).replaceAll('_', String.raw`\_`)
-    ); // escape all `_` except concating with non-punctuation, e.g. `1_2_3` is not considered emphasis
-
-  const isFirstSentence = (node, name, index) => node.type === 'sentence' && index === 0;
-  const isLastChildAutolink = (node, name, index) => isAutolink(node.children[index - 1]);
-
-  if (
-    escapedValue !== node.value &&
-    (path.match(undefined, isFirstSentence, isLastChildAutolink) ||
-      path.match(
-        undefined,
-        isFirstSentence,
-        (node, name, index) => node.type === 'emphasis' && index === 0,
-        isLastChildAutolink
-      ))
-  ) {
-    // backslash is parsed as part of autolinks, so we need to remove it
-    escapedValue = escapedValue.replace(/^(\\?[*_])+/, (prefix) => prefix.replaceAll('\\', ''));
-  }
-
-  return escapedValue;
-}
-
 
 
 
@@ -28128,7 +25236,7 @@ function printMdast(path, options, print) {
         parts.push([parts.pop(), node.value]);
         continue;
       }
-      const doc = printWhitespace(path, node.value, options.proseWrap, true, options);
+      const doc = printWhitespace(path, node.value, options.proseWrap, true);
       if (getDocType(doc) === DOC_TYPE_STRING) {
         parts.push([parts.pop(), doc]);
         continue;
@@ -28151,7 +25259,7 @@ function printMdast(path, options, print) {
     case 'sentence':
       return printSentence(path, print);
     case 'word':
-      return options.parser !== 'mdx' ? printWord(path, options) : printWordLegacy(path);
+      return printWord(path, options);
     case 'whitespace': {
       const { next } = path;
 
@@ -28166,7 +25274,7 @@ function printMdast(path, options, print) {
           ? 'never'
           : options.proseWrap;
 
-      return printWhitespace(path, node.value, proseWrap, false, options);
+      return printWhitespace(path, node.value, proseWrap, false);
     }
     case 'emphasis': {
       let style;
@@ -28189,7 +25297,7 @@ function printMdast(path, options, print) {
       return ['~~', printChildren(path, options, print), '~~'];
     case 'inlineCode': {
       let code = options.proseWrap === 'preserve' ? node.value : node.value.replaceAll('\n', ' ');
-      if (options.parser !== 'mdx' && path.hasAncestor((node) => node.type === 'tableCell')) {
+      if (path.hasAncestor((node) => node.type === 'tableCell')) {
         code = code.replaceAll('|', String.raw`\|`);
       }
       const backtickCount = getMinNotPresentContinuousCount(code, '`');
@@ -28232,7 +25340,7 @@ function printMdast(path, options, print) {
             '[',
             printChildren(path, options, print),
             '](',
-            options.parser !== 'mdx' && node.url === '' ? '<>' : printUrl(node.url, ')'),
+            node.url === '' ? '<>' : printUrl(node.url, ')'),
             printTitle(node.title, options),
             ')',
           ];
@@ -28242,21 +25350,21 @@ function printMdast(path, options, print) {
     case 'image':
       return [
         '![',
-        printImageAlt(node, options),
+        printImageAlt(node),
         '](',
-        options.parser !== 'mdx' && node.url === '' ? '<>' : printUrl(node.url, ')'),
+        node.url === '' ? '<>' : printUrl(node.url, ')'),
         printTitle(node.title, options),
         ')',
       ];
     case 'blockquote':
-      return ['> ', align$30('> ', printChildren(path, options, print))];
+      return ['> ', align$27('> ', printChildren(path, options, print))];
     case 'heading':
       return printHeading(path, options, print);
     case 'code': {
       if (node.isIndented) {
         // indented code block
         const alignment = ' '.repeat(4);
-        return align$30(alignment, [alignment, replaceEndOfLine(node.value, hardline)]);
+        return align$27(alignment, [alignment, replaceEndOfLine(node.value, hardline)]);
       }
 
       // fenced code block
@@ -28267,10 +25375,7 @@ function printMdast(path, options, print) {
         node.lang || '',
         node.meta ? ' ' + node.meta : '',
         hardline,
-        replaceEndOfLine(
-          options.parser === 'mdx' ? getFencedCodeBlockValue(node, options.originalText) : node.value,
-          hardline
-        ),
+        replaceEndOfLine(node.value, hardline),
         hardline,
         style,
       ];
@@ -28283,9 +25388,6 @@ function printMdast(path, options, print) {
       return replaceEndOfLine(value, isHtmlComment ? hardline : markAsRoot(literalline));
     }
     case 'list':
-      if (options.parser === 'mdx') {
-        return printListLegacy(path, options, print);
-      }
       return printList(path, options, print);
     case 'thematicBreak': {
       const { ancestors } = path;
@@ -28304,26 +25406,23 @@ function printMdast(path, options, print) {
         node.referenceType === 'full' ? printLinkReference(node) : node.referenceType === 'collapsed' ? '[]' : '',
       ];
     case 'imageReference': {
-      const alt = printImageAlt(node, options);
+      const alt = printImageAlt(node);
 
       switch (node.referenceType) {
         case 'full':
           return ['![', alt, ']', printLinkReference(node)];
         default:
-          return [
-            ...(options.parser === 'mdx' ? ['![', alt, ']'] : ['!', printLinkReference(node)]),
-            node.referenceType === 'collapsed' ? '[]' : '',
-          ];
+          return ['!', printLinkReference(node), node.referenceType === 'collapsed' ? '[]' : ''];
       }
     }
     case 'definition': {
-      const lineOrSpace = options.proseWrap === 'always' ? line$34 : ' ';
-      return group$32([
+      const lineOrSpace = options.proseWrap === 'always' ? line$31 : ' ';
+      return group$29([
         printLinkReference(node),
         ':',
-        indent$29([
+        indent$26([
           lineOrSpace,
-          options.parser !== 'mdx' && node.url === '' ? '<>' : printUrl(node.url),
+          node.url === '' ? '<>' : printUrl(node.url),
           node.title === null ? '' : [lineOrSpace, printTitle(node.title, options, false)],
         ]),
       ]);
@@ -28347,11 +25446,11 @@ function printMdast(path, options, print) {
         ': ',
         shouldInlineFootnote
           ? printChildren(path, options, print)
-          : group$32([
-              align$30(
+          : group$29([
+              align$27(
                 ' '.repeat(4),
                 printChildren(path, options, print, {
-                  processor: ({ isFirst }) => (isFirst ? group$32([softline, print()]) : print()),
+                  processor: ({ isFirst }) => (isFirst ? group$29([softline, print()]) : print()),
                 })
               ),
             ]),
@@ -28497,7 +25596,7 @@ function printUrl(url, dangerousCharOrChars = []) {
     ...(Array.isArray(dangerousCharOrChars) ? dangerousCharOrChars : [dangerousCharOrChars]),
   ];
 
-  return new RegExp(dangerousChars.map((x) => escapeStringRegexp$36(x)).join('|')).test(url)
+  return new RegExp(dangerousChars.map((x) => escapeStringRegexp$33(x)).join('|')).test(url)
     ? `<${encodeUrl(url, '<>')}>`
     : url;
 }
@@ -28511,9 +25610,6 @@ function printTitle(title, options, printSpace = true) {
   }
 
   // title is escaped before `remark-parse` v10
-  if (options.parser === 'mdx') {
-    title = title.replaceAll(/\\(?=["')])/g, '');
-  }
 
   if (title.includes('"') && title.includes("'") && !title.includes(')')) {
     return `(${title})`; // avoid escaped quotes
@@ -28524,13 +25620,11 @@ function printTitle(title, options, printSpace = true) {
   return `${quote}${title}${quote}`;
 }
 
-function printLinkReference(node, options) {
+function printLinkReference(node) {
   // `remark-parse` lowercase the `label` as `identifier`, we don't want do that
   // https://github.com/remarkjs/remark/blob/daddcb463af2d5b2115496c395d0571c0ff87d15/packages/remark-parse/lib/tokenize/reference.js
   const label = collapseWhiteSpace(node.label);
-  if (options?.parser === 'mdx') {
-    return `[${label}]`;
-  }
+
   const name = label.replaceAll(/[\\[\]]/g, (s) => `\\${s}`);
   return `[${name}]`;
 }
@@ -28539,8 +25633,8 @@ function printFootnoteReference(node) {
   return `[^${node.label}]`;
 }
 
-function printImageAlt(node, options) {
-  if (options.parser !== 'mdx' && node.originalAltText) {
+function printImageAlt(node) {
+  if (node.originalAltText) {
     return node.originalAltText;
   }
 
@@ -28639,63 +25733,24 @@ function getBlockquoteRawText(text, node) {
 
 
 
-// 0x0 ~ 0x10ffff
-const isSingleCharRegex = /^\\?.$/su;
-const isNewLineBlockquoteRegex = /^\n *>[ >]*$/;
-
-function preprocess$75(ast, options) {
-  if (options.parser === 'mdx') {
-    ast = restoreUnescapedCharacter(ast, options);
-  } else {
+function preprocess$69(ast, options) {
+  {
     ast = addRawToText(ast, options);
   }
   ast = mergeContinuousTexts(ast);
-  if (options.parser === 'mdx') {
-    ast = transformIndentedCodeblockAndMarkItsParentList(ast, options);
-  } else {
+  {
     ast = transformIndentedCodeblock(ast, options);
   }
-  if (options.parser !== 'mdx') {
+  {
     ast = markOriginalImageAndLinkAlt(ast, options);
   }
-  if (options.parser === 'mdx') {
-    ast = markAlignedListLegacy(ast, options);
-  } else {
+  {
     ast = markAlignedList(ast, options);
   }
-  if (options.parser === 'mdx') {
-    ast = splitTextIntoSentencesLegacy(ast);
-  } else {
+  {
     ast = splitTextIntoSentences(ast);
   }
   return ast;
-}
-
-function restoreUnescapedCharacter(ast, options) {
-  return mapAst(ast, (node) => {
-    if (node.type !== 'text') {
-      return node;
-    }
-
-    const { value } = node;
-
-    if (
-      value === '*' ||
-      value === '_' || // handle these cases in printer
-      !isSingleCharRegex.test(value) ||
-      node.position.end.offset - node.position.start.offset === value.length
-    ) {
-      return node;
-    }
-
-    const text = options.originalText.slice(node.position.start.offset, node.position.end.offset);
-
-    if (isNewLineBlockquoteRegex.test(text)) {
-      return node;
-    }
-
-    return { ...node, value: text };
-  });
 }
 
 function addRawToText(ast, options) {
@@ -28747,33 +25802,6 @@ function mergeContinuousTexts(ast) {
       },
     })
   );
-}
-
-function splitTextIntoSentencesLegacy(ast) {
-  return mapAst(ast, (node, index, [parentNode]) => {
-    if (node.type !== 'text') {
-      return node;
-    }
-
-    let { value } = node;
-
-    if (parentNode.type === 'paragraph') {
-      // CommonMark doesn't remove trailing/leading \f, but it should be
-      // removed in the HTML rendering process
-      if (index === 0) {
-        value = htmlWhitespace.trimStart(value);
-      }
-      if (index === parentNode.children.length - 1) {
-        value = htmlWhitespace.trimEnd(value);
-      }
-    }
-
-    return {
-      type: 'sentence',
-      position: node.position,
-      children: splitText(value),
-    };
-  });
 }
 
 function splitTextIntoSentences(ast) {
@@ -28886,35 +25914,6 @@ function transformIndentedCodeblock(ast, options) {
     );
 
     node.isIndented = isIndented;
-    return node;
-  });
-}
-
-function transformIndentedCodeblockAndMarkItsParentList(ast, options) {
-  return mapAst(ast, (node, index, parentStack) => {
-    if (node.type === 'code') {
-      // the first char may point to `\n`, e.g. `\n\t\tbar`, just ignore it
-      const isIndented = /^\n?(?: {4,}|\t)/.test(
-        options.originalText.slice(node.position.start.offset, node.position.end.offset)
-      );
-
-      node.isIndented = isIndented;
-
-      if (isIndented) {
-        for (let i = 0; i < parentStack.length; i++) {
-          const parent = parentStack[i];
-
-          // no need to check checked items
-          if (parent.hasIndentedCodeblock) {
-            break;
-          }
-
-          if (parent.type === 'list') {
-            parent.hasIndentedCodeblock = true;
-          }
-        }
-      }
-    }
     return node;
   });
 }
@@ -29089,150 +26088,10 @@ function markAlignedList(ast, options) {
   }
 }
 
-function markAlignedListLegacy(ast, options) {
-  return mapAst(ast, (node, index, parentStack) => {
-    if (node.type === 'list' && node.children.length > 0) {
-      // if one of its parents is not aligned, it's not possible to be aligned in sub-lists
-      for (let i = 0; i < parentStack.length; i++) {
-        const parent = parentStack[i];
-        if (parent.type === 'list' && !parent.isAligned) {
-          node.isAligned = false;
-          return node;
-        }
-      }
-
-      node.isAligned = isAligned(node);
-    }
-
-    return node;
-  });
-
-  function getListItemStart(listItem) {
-    return listItem.children.length === 0 ? -1 : listItem.children[0].position.start.column - 1;
-  }
-
-  function isAligned(list) {
-    if (!list.ordered) {
-      /**
-       * - 123
-       * - 123
-       */
-      return true;
-    }
-
-    const [firstItem, secondItem] = list.children;
-
-    const firstInfo = getOrderedListItemInfo(firstItem, options);
-
-    if (firstInfo.leadingSpaces.length > 1) {
-      /**
-       * 1.   123
-       *
-       * 1.   123
-       * 1. 123
-       */
-      return true;
-    }
-
-    const firstStart = getListItemStart(firstItem);
-
-    if (firstStart === -1) {
-      /**
-       * 1.
-       *
-       * 1.
-       * 1.
-       */
-      return false;
-    }
-
-    if (list.children.length === 1) {
-      /**
-       * aligned:
-       *
-       * 11. 123
-       *
-       * not aligned:
-       *
-       * 1. 123
-       */
-      return firstStart % options.tabWidth === 0;
-    }
-
-    const secondStart = getListItemStart(secondItem);
-
-    if (firstStart !== secondStart) {
-      /**
-       * 11. 123
-       * 1. 123
-       *
-       * 1. 123
-       * 11. 123
-       */
-      return false;
-    }
-
-    if (firstStart % options.tabWidth === 0) {
-      /**
-       * 11. 123
-       * 12. 123
-       */
-      return true;
-    }
-
-    /**
-     * aligned:
-     *
-     * 11. 123
-     * 1.  123
-     *
-     * not aligned:
-     *
-     * 1. 123
-     * 2. 123
-     */
-    const secondInfo = getOrderedListItemInfo(secondItem, options);
-    return secondInfo.leadingSpaces.length > 1;
-  }
-}
-
 
 
 
 // utilities/visitor-keys.js
-
-
-/**
-@typedef {readonly string[]} Keys
-@typedef {Record<string, Keys>} VisitorKeys */
-
-
-
-/**
-@param {...VisitorKeys} all
-@returns {VisitorKeys}
-*/
-
-
-/**
-@param {VisitorKeys} visitorKeys
-@param {VisitorKeys} keysToRemove
-@returns {VisitorKeys}
-*/
-
-
-/**
-@param {VisitorKeys} visitorKeys
-@param {VisitorKeys} keysToAdd
-@returns {VisitorKeys}
-*/
-
-
-/**
-@param {VisitorKeys} visitorKeys
-@param {string[]} nodeTypesToRemove
-@returns {VisitorKeys}
-*/
 
 
 /**
@@ -29264,7 +26123,7 @@ function generateReferenceSharedVisitorKeys(visitorKeys) {
 // traverse/visitor-keys.evaluate.js
 
 
-const visitorKeys$76 = generateReferenceSharedVisitorKeys({
+const visitorKeys$70 = generateReferenceSharedVisitorKeys({
   root: ['children'],
   paragraph: ['children'],
   sentence: ['children'],
@@ -29311,7 +26170,7 @@ const visitorKeys$76 = generateReferenceSharedVisitorKeys({
 
 
 
-const getVisitorKeys$77 = createGetVisitorKeys(visitorKeys$76);
+const getVisitorKeys$71 = createGetVisitorKeys(visitorKeys$70);
 
 
 
@@ -29324,23 +26183,20 @@ const getVisitorKeys$77 = createGetVisitorKeys(visitorKeys$76);
 
 
 
-
-const printer$78 = {
+const printer$72 = {
   features: {
     experimental_frontMatterSupport: {
-      massageAstNode: true,
       embed: true,
       print: true,
     },
   },
-  preprocess: preprocess$75,
+  preprocess: preprocess$69,
   print: printMdast,
-  embed: embed$69,
-  massageAstNode: massageAstNode$73,
+  embed: embed$63,
   hasPrettierIgnore: hasPrettierIgnore$68,
-  insertPragma: insertPragma$71,
-  getVisitorKeys: getVisitorKeys$77,
-  printPrettierIgnored: printPrettierIgnored$74,
+  insertPragma: insertPragma$64,
+  getVisitorKeys: getVisitorKeys$71,
+  printPrettierIgnored: printPrettierIgnored$65,
 };
 
 
@@ -29354,7 +26210,7 @@ function defaultLinkTemplate({ slug, permalink, alias }) {
     hChildren: [{ type: 'text', value: alias == null ? slug : alias }],
   };
 }
-function fromMarkdown$79(opts = {}) {
+function fromMarkdown$73(opts = {}) {
   const linkTemplate = opts.linkTemplate || defaultLinkTemplate;
   let node;
   function enterWikiLink(token) {
@@ -29417,18 +26273,18 @@ function fromMarkdown$79(opts = {}) {
 
 
 // dist/syntax.js
-const codes$80 = {
+const codes$74 = {
   horizontalTab: -2,
   virtualSpace: -1,
   nul: 0,
   eof: null,
   space: 32,
 };
-function markdownLineEndingOrSpace$81(code) {
-  return code !== codes$80.eof && (code < codes$80.nul || code === codes$80.space);
+function markdownLineEndingOrSpace$75(code) {
+  return code !== codes$74.eof && (code < codes$74.nul || code === codes$74.space);
 }
-function markdownLineEnding$82(code) {
-  return code !== codes$80.eof && (code === null || code < codes$80.horizontalTab);
+function markdownLineEnding$76(code) {
+  return code !== codes$74.eof && (code === null || code < codes$74.horizontalTab);
 }
 function syntax(opts = {}) {
   const aliasDivider = opts.aliasDivider || '|';
@@ -29464,7 +26320,7 @@ function syntax(opts = {}) {
       return consumeStart;
     }
     function consumeData(code) {
-      if (markdownLineEnding$82(code) || code === codes$80.eof) {
+      if (markdownLineEnding$76(code) || code === codes$74.eof) {
         return nok(code);
       }
       // @ts-expect-error
@@ -29492,10 +26348,10 @@ function syntax(opts = {}) {
         effects.enter('wikiLinkMarker');
         return consumeEnd(code);
       }
-      if (markdownLineEnding$82(code) || code === codes$80.eof) {
+      if (markdownLineEnding$76(code) || code === codes$74.eof) {
         return nok(code);
       }
-      if (!markdownLineEndingOrSpace$81(code)) {
+      if (!markdownLineEndingOrSpace$75(code)) {
         data = true;
       }
       effects.consume(code);
@@ -29527,10 +26383,10 @@ function syntax(opts = {}) {
         effects.enter('wikiLinkMarker');
         return consumeEnd(code);
       }
-      if (markdownLineEnding$82(code) || code === codes$80.eof) {
+      if (markdownLineEnding$76(code) || code === codes$74.eof) {
         return nok(code);
       }
-      if (!markdownLineEndingOrSpace$81(code)) {
+      if (!markdownLineEndingOrSpace$75(code)) {
         alias = true;
       }
       effects.consume(code);
@@ -29611,7 +26467,7 @@ function toString(value, options) {
  *   Serialized node.
  */
 function one(value, includeImageAlt, includeHtml) {
-  if (node$84(value)) {
+  if (node$78(value)) {
     if ('value' in value) {
       return value.type === 'html' && !includeHtml ? '' : value.value;
     }
@@ -29621,12 +26477,12 @@ function one(value, includeImageAlt, includeHtml) {
     }
 
     if ('children' in value) {
-      return all$83(value.children, includeImageAlt, includeHtml);
+      return all$77(value.children, includeImageAlt, includeHtml);
     }
   }
 
   if (Array.isArray(value)) {
-    return all$83(value, includeImageAlt, includeHtml);
+    return all$77(value, includeImageAlt, includeHtml);
   }
 
   return '';
@@ -29644,7 +26500,7 @@ function one(value, includeImageAlt, includeHtml) {
  * @returns {string}
  *   Serialized nodes.
  */
-function all$83(values, includeImageAlt, includeHtml) {
+function all$77(values, includeImageAlt, includeHtml) {
   /** @type {Array<string>} */
   const result = [];
   let index = -1;
@@ -29664,7 +26520,7 @@ function all$83(values, includeImageAlt, includeHtml) {
  * @returns {value is Nodes}
  *   Whether `value` is a node.
  */
-function node$84(value) {
+function node$78(value) {
   return Boolean(value && typeof value === 'object');
 }
 
@@ -29752,7 +26608,7 @@ function splice(list, start, remove, items) {
  * @returns {Array<T>}
  *   Either `list` or `items`.
  */
-function push$85(list, items) {
+function push$79(list, items) {
   if (list.length > 0) {
     splice(list, list.length, 0, items);
     return list;
@@ -29822,7 +26678,7 @@ function syntaxExtension(all, extension) {
       for (code in right) {
         if (!hasOwnProperty.call(left, code)) left[code] = [];
         const value = right[code];
-        constructs$86(
+        constructs$80(
           // @ts-expect-error Looks like a list.
           left[code],
           Array.isArray(value) ? value : value ? [value] : []
@@ -29843,7 +26699,7 @@ function syntaxExtension(all, extension) {
  * @returns {undefined}
  *   Nothing.
  */
-function constructs$86(existing, list) {
+function constructs$80(existing, list) {
   let index = -1;
   /** @type {Array<unknown>} */
   const before = [];
@@ -30020,7 +26876,7 @@ const asciiPunctuation = regexCheck(/[!-/:-@[-`{-~]/);
  * @returns {boolean}
  *   Whether it matches.
  */
-function markdownLineEnding$87(code) {
+function markdownLineEnding$81(code) {
   return code !== null && code < -2;
 }
 
@@ -30033,7 +26889,7 @@ function markdownLineEnding$87(code) {
  * @returns {boolean}
  *   Whether it matches.
  */
-function markdownLineEndingOrSpace$88(code) {
+function markdownLineEndingOrSpace$82(code) {
   return code !== null && (code < 0 || code === 32);
 }
 
@@ -30259,7 +27115,7 @@ function factorySpaceMinMax(effects, ok, nok, type, min, max) {
 
 
 /** @type {InitialConstruct} */
-const content$89 = {
+const content$83 = {
   tokenize: initializeContent,
 };
 
@@ -30318,7 +27174,7 @@ function initializeContent(effects) {
       effects.consume(code);
       return;
     }
-    if (markdownLineEnding$87(code)) {
+    if (markdownLineEnding$81(code)) {
       effects.consume(code);
       effects.exit('chunkText');
       return lineStart;
@@ -30357,7 +27213,7 @@ function initializeContent(effects) {
  * And, in other cases, it’s needed to parse subcontent: pass some events
  * through another tokenizer and inject the result.
  */
-class EditMap$90 {
+class EditMap$84 {
   /**
    * Create a new edit map.
    *
@@ -30394,7 +27250,7 @@ class EditMap$90 {
    *   Nothing.
    */
   add(index, remove, add) {
-    addImplementation$91(this, index, remove, add, false);
+    addImplementation$85(this, index, remove, add, false);
   }
 
   /**
@@ -30411,7 +27267,7 @@ class EditMap$90 {
    *   Nothing.
    */
   addBefore(index, remove, add) {
-    addImplementation$91(this, index, remove, add, true);
+    addImplementation$85(this, index, remove, add, true);
   }
 
   /**
@@ -30490,7 +27346,7 @@ class EditMap$90 {
  * @returns {undefined}
  *   Nothing.
  */
-function addImplementation$91(editMap, at, remove, add, before) {
+function addImplementation$85(editMap, at, remove, add, before) {
   if (remove === 0 && add.length === 0) {
     return;
   }
@@ -30583,7 +27439,7 @@ function addImplementation$91(editMap, at, remove, add, before) {
 
 
 /** @type {InitialConstruct} */
-const document$92 = {
+const document$86 = {
   tokenize: initializeDocument,
 };
 
@@ -30670,7 +27526,7 @@ function initializeDocument(effects) {
         };
         index++;
       }
-      const editMap = new EditMap$90();
+      const editMap = new EditMap$84();
       // Inject the exits earlier (they’re still also at the end).
       editMap.add(indexBeforeFlow + 1, 0, self.events.slice(indexBeforeExits));
       // Discard the duplicate exits.
@@ -30774,7 +27630,7 @@ function initializeDocument(effects) {
       effects.consume(code);
       return;
     }
-    if (markdownLineEnding$87(code)) {
+    if (markdownLineEnding$81(code)) {
       effects.consume(code);
       writeToChild(effects.exit('chunkFlow'));
       // Get ready for the next line.
@@ -30886,7 +27742,7 @@ function initializeDocument(effects) {
         };
         index++;
       }
-      const editMap = new EditMap$90();
+      const editMap = new EditMap$84();
       // Inject the exits earlier (they’re still also at the end).
       editMap.add(indexBeforeFlow + 1, 0, self.events.slice(indexBeforeExits));
       // Discard the duplicate exits.
@@ -30959,7 +27815,7 @@ function tokenizeContainer(effects, ok, nok) {
  *   Group.
  */
 function classifyCharacter(code) {
-  if (code === null || markdownLineEndingOrSpace$88(code) || unicodeWhitespace(code)) {
+  if (code === null || markdownLineEndingOrSpace$82(code) || unicodeWhitespace(code)) {
     return 1;
   }
   if (unicodePunctuation(code)) {
@@ -31133,14 +27989,14 @@ function resolveAllAttention(events, context) {
 
           // If there are more markers in the opening, add them before.
           if (events[open][1].end.offset - events[open][1].start.offset) {
-            nextEvents = push$85(nextEvents, [
+            nextEvents = push$79(nextEvents, [
               ['enter', events[open][1], context],
               ['exit', events[open][1], context],
             ]);
           }
 
           // Opening.
-          nextEvents = push$85(nextEvents, [
+          nextEvents = push$79(nextEvents, [
             ['enter', group, context],
             ['enter', openingSequence, context],
             ['exit', openingSequence, context],
@@ -31150,13 +28006,13 @@ function resolveAllAttention(events, context) {
           // Always populated by defaults.
 
           // Between.
-          nextEvents = push$85(
+          nextEvents = push$79(
             nextEvents,
             resolveAll(context.parser.constructs.insideSpan.null, events.slice(open + 1, index), context)
           );
 
           // Closing.
-          nextEvents = push$85(nextEvents, [
+          nextEvents = push$79(nextEvents, [
             ['exit', text, context],
             ['enter', closingSequence, context],
             ['exit', closingSequence, context],
@@ -31169,7 +28025,7 @@ function resolveAllAttention(events, context) {
           // If there are more markers in the closing, add them after.
           if (events[index][1].end.offset - events[index][1].start.offset) {
             offset = 2;
-            nextEvents = push$85(nextEvents, [
+            nextEvents = push$79(nextEvents, [
               ['enter', events[index][1], context],
               ['exit', events[index][1], context],
             ]);
@@ -31571,7 +28427,7 @@ function tokenizeBlankLine(effects, ok, nok) {
    * @type {State}
    */
   function after(code) {
-    return code === null || markdownLineEnding$87(code) ? ok(code) : nok(code);
+    return code === null || markdownLineEnding$81(code) ? ok(code) : nok(code);
   }
 }
 
@@ -31590,11 +28446,11 @@ function tokenizeBlankLine(effects, ok, nok) {
 
 
 /** @type {Construct} */
-const blockQuote$93 = {
+const blockQuote$87 = {
   continuation: {
     tokenize: tokenizeBlockQuoteContinuation,
   },
-  exit: exit$94,
+  exit: exit$88,
   name: 'blockQuote',
   tokenize: tokenizeBlockQuoteStart,
 };
@@ -31717,12 +28573,12 @@ function tokenizeBlockQuoteContinuation(effects, ok, nok) {
    * @type {State}
    */
   function contBefore(code) {
-    return effects.attempt(blockQuote$93, ok, nok)(code);
+    return effects.attempt(blockQuote$87, ok, nok)(code);
   }
 }
 
 /** @type {Exiter} */
-function exit$94(effects) {
+function exit$88(effects) {
   effects.exit('blockQuote');
 }
 
@@ -33933,7 +30789,7 @@ const characterEntities = {
 
 
 // To do: next major: use `Object.hasOwn`.
-const own$95 = {}.hasOwnProperty;
+const own$89 = {}.hasOwnProperty;
 
 /**
  * Decode a single character reference (without the `&` or `;`).
@@ -33947,7 +30803,7 @@ const own$95 = {}.hasOwnProperty;
  *   Decoded reference.
  */
 function decodeNamedCharacterReference(value) {
-  return own$95.call(characterEntities, value) ? characterEntities[value] : false;
+  return own$89.call(characterEntities, value) ? characterEntities[value] : false;
 }
 
 
@@ -34114,9 +30970,9 @@ function tokenizeCharacterReference(effects, ok, nok) {
  */
 
 /** @type {Construct} */
-const nonLazyContinuation$96 = {
+const nonLazyContinuation$90 = {
   partial: true,
-  tokenize: tokenizeNonLazyContinuation$97,
+  tokenize: tokenizeNonLazyContinuation$91,
 };
 
 /**
@@ -34124,7 +30980,7 @@ const nonLazyContinuation$96 = {
  *   Context.
  * @type {Tokenizer}
  */
-function tokenizeNonLazyContinuation$97(effects, ok, nok) {
+function tokenizeNonLazyContinuation$91(effects, ok, nok) {
   const self = this;
   return start;
 
@@ -34283,9 +31139,9 @@ function tokenizeCodeFenced(effects, ok, nok) {
    * @type {State}
    */
   function infoBefore(code) {
-    if (code === null || markdownLineEnding$87(code)) {
+    if (code === null || markdownLineEnding$81(code)) {
       effects.exit('codeFencedFence');
-      return self.interrupt ? ok(code) : effects.check(nonLazyContinuation$96, atNonLazyBreak, after)(code);
+      return self.interrupt ? ok(code) : effects.check(nonLazyContinuation$90, atNonLazyBreak, after)(code);
     }
     effects.enter('codeFencedFenceInfo');
     effects.enter('chunkString', {
@@ -34307,7 +31163,7 @@ function tokenizeCodeFenced(effects, ok, nok) {
    * @type {State}
    */
   function info(code) {
-    if (code === null || markdownLineEnding$87(code)) {
+    if (code === null || markdownLineEnding$81(code)) {
       effects.exit('chunkString');
       effects.exit('codeFencedFenceInfo');
       return infoBefore(code);
@@ -34337,7 +31193,7 @@ function tokenizeCodeFenced(effects, ok, nok) {
    * @type {State}
    */
   function metaBefore(code) {
-    if (code === null || markdownLineEnding$87(code)) {
+    if (code === null || markdownLineEnding$81(code)) {
       return infoBefore(code);
     }
     effects.enter('codeFencedFenceMeta');
@@ -34360,7 +31216,7 @@ function tokenizeCodeFenced(effects, ok, nok) {
    * @type {State}
    */
   function meta(code) {
-    if (code === null || markdownLineEnding$87(code)) {
+    if (code === null || markdownLineEnding$81(code)) {
       effects.exit('chunkString');
       effects.exit('codeFencedFenceMeta');
       return infoBefore(code);
@@ -34439,8 +31295,8 @@ function tokenizeCodeFenced(effects, ok, nok) {
    * @type {State}
    */
   function beforeContentChunk(code) {
-    if (code === null || markdownLineEnding$87(code)) {
-      return effects.check(nonLazyContinuation$96, atNonLazyBreak, after)(code);
+    if (code === null || markdownLineEnding$81(code)) {
+      return effects.check(nonLazyContinuation$90, atNonLazyBreak, after)(code);
     }
     effects.enter('codeFlowValue');
     return contentChunk(code);
@@ -34459,7 +31315,7 @@ function tokenizeCodeFenced(effects, ok, nok) {
    * @type {State}
    */
   function contentChunk(code) {
-    if (code === null || markdownLineEnding$87(code)) {
+    if (code === null || markdownLineEnding$81(code)) {
       effects.exit('codeFlowValue');
       return beforeContentChunk(code);
     }
@@ -34592,7 +31448,7 @@ function tokenizeCodeFenced(effects, ok, nok) {
      * @type {State}
      */
     function sequenceCloseAfter(code) {
-      if (code === null || markdownLineEnding$87(code)) {
+      if (code === null || markdownLineEnding$81(code)) {
         effects.exit('codeFencedFence');
         return ok(code);
       }
@@ -34669,7 +31525,7 @@ function tokenizeCodeIndented(effects, ok, nok) {
     if (code === null) {
       return after(code);
     }
-    if (markdownLineEnding$87(code)) {
+    if (markdownLineEnding$81(code)) {
       return effects.attempt(furtherStart, atBreak, after)(code);
     }
     effects.enter('codeFlowValue');
@@ -34687,7 +31543,7 @@ function tokenizeCodeIndented(effects, ok, nok) {
    * @type {State}
    */
   function inside(code) {
-    if (code === null || markdownLineEnding$87(code)) {
+    if (code === null || markdownLineEnding$81(code)) {
       effects.exit('codeFlowValue');
       return atBreak(code);
     }
@@ -34731,7 +31587,7 @@ function tokenizeFurtherStart(effects, ok, nok) {
     if (self.parser.lazy[self.now().line]) {
       return nok(code);
     }
-    if (markdownLineEnding$87(code)) {
+    if (markdownLineEnding$81(code)) {
       effects.enter('lineEnding');
       effects.consume(code);
       effects.exit('lineEnding');
@@ -34759,7 +31615,7 @@ function tokenizeFurtherStart(effects, ok, nok) {
    * @type {State}
    */
   function onNotEnoughPrefix(code) {
-    return markdownLineEnding$87(code) ? furtherStart(code) : nok(code);
+    return markdownLineEnding$81(code) ? furtherStart(code) : nok(code);
   }
 }
 
@@ -34779,9 +31635,9 @@ function tokenizeFurtherStart(effects, ok, nok) {
 
 
 /** @type {Construct} */
-const codeText$98 = {
+const codeText$92 = {
   name: 'codeText',
-  previous: previous$99,
+  previous: previous$93,
   resolve: resolveCodeText,
   tokenize: tokenizeCodeText,
 };
@@ -34843,7 +31699,7 @@ function resolveCodeText(events) {
  *   Context.
  * @type {Previous}
  */
-function previous$99(code) {
+function previous$93(code) {
   // If there is a previous code, there will always be a tail.
   return code !== 96 || this.events[this.events.length - 1][1].type === 'characterEscape';
 }
@@ -34931,7 +31787,7 @@ function tokenizeCodeText(effects, ok, nok) {
       size = 0;
       return sequenceClose(code);
     }
-    if (markdownLineEnding$87(code)) {
+    if (markdownLineEnding$81(code)) {
       effects.enter('lineEnding');
       effects.consume(code);
       effects.exit('lineEnding');
@@ -34954,7 +31810,7 @@ function tokenizeCodeText(effects, ok, nok) {
    * @type {State}
    */
   function data(code) {
-    if (code === null || code === 32 || code === 96 || markdownLineEnding$87(code)) {
+    if (code === null || code === 32 || code === 96 || markdownLineEnding$81(code)) {
       effects.exit('codeTextData');
       return between(code);
     }
@@ -35514,7 +32370,7 @@ function subcontent(events, eventIndex) {
  * No name because it must not be turned off.
  * @type {Construct}
  */
-const content$100 = {
+const content$94 = {
   resolve: resolveContent,
   tokenize: tokenizeContent,
 };
@@ -35581,7 +32437,7 @@ function tokenizeContent(effects, ok) {
 
     // To do: in `markdown-rs`, each line is parsed on its own, and everything
     // is stitched together resolving.
-    if (markdownLineEnding$87(code)) {
+    if (markdownLineEnding$81(code)) {
       return effects.check(continuationConstruct, contentContinue, contentEnd)(code);
     }
 
@@ -35646,7 +32502,7 @@ function tokenizeContinuation(effects, ok, nok) {
    * @type {State}
    */
   function prefixed(code) {
-    if (code === null || markdownLineEnding$87(code)) {
+    if (code === null || markdownLineEnding$81(code)) {
       return nok(code);
     }
 
@@ -35791,7 +32647,7 @@ function factoryDestination(effects, ok, nok, type, literalType, literalMarkerTy
       effects.exit(stringType);
       return enclosedBefore(code);
     }
-    if (code === null || code === 60 || markdownLineEnding$87(code)) {
+    if (code === null || code === 60 || markdownLineEnding$81(code)) {
       return nok(code);
     }
     effects.consume(code);
@@ -35827,7 +32683,7 @@ function factoryDestination(effects, ok, nok, type, literalType, literalMarkerTy
    * @type {State}
    */
   function raw(code) {
-    if (!balance && (code === null || code === 41 || markdownLineEndingOrSpace$88(code))) {
+    if (!balance && (code === null || code === 41 || markdownLineEndingOrSpace$82(code))) {
       effects.exit('chunkString');
       effects.exit(stringType);
       effects.exit(rawType);
@@ -35978,7 +32834,7 @@ function factoryLabel(effects, ok, nok, type, markerType, stringType) {
     }
 
     // To do: indent? Link chunks and EOLs together?
-    if (markdownLineEnding$87(code)) {
+    if (markdownLineEnding$81(code)) {
       effects.enter('lineEnding');
       effects.consume(code);
       effects.exit('lineEnding');
@@ -36001,7 +32857,7 @@ function factoryLabel(effects, ok, nok, type, markerType, stringType) {
    * @type {State}
    */
   function labelInside(code) {
-    if (code === null || code === 91 || code === 93 || markdownLineEnding$87(code) || size++ > 999) {
+    if (code === null || code === 91 || code === 93 || markdownLineEnding$81(code) || size++ > 999) {
       effects.exit('chunkString');
       return atBreak(code);
     }
@@ -36145,7 +33001,7 @@ function factoryTitle(effects, ok, nok, type, markerType, stringType) {
     }
 
     // Note: blank lines can’t exist in content.
-    if (markdownLineEnding$87(code)) {
+    if (markdownLineEnding$81(code)) {
       // To do: use `space_or_tab_eol_with_options`, connect.
       effects.enter('lineEnding');
       effects.consume(code);
@@ -36164,7 +33020,7 @@ function factoryTitle(effects, ok, nok, type, markerType, stringType) {
    * @type {State}
    */
   function inside(code) {
-    if (code === marker || code === null || markdownLineEnding$87(code)) {
+    if (code === marker || code === null || markdownLineEnding$81(code)) {
       effects.exit('chunkString');
       return atBreak(code);
     }
@@ -36224,7 +33080,7 @@ function factoryWhitespace(effects, ok) {
 
   /** @type {State} */
   function start(code) {
-    if (markdownLineEnding$87(code)) {
+    if (markdownLineEnding$81(code)) {
       effects.enter('lineEnding');
       effects.consume(code);
       effects.exit('lineEnding');
@@ -36296,7 +33152,7 @@ function normalizeIdentifier(value) {
 
 
 /** @type {Construct} */
-const definition$101 = {
+const definition$95 = {
   name: 'definition',
   tokenize: tokenizeDefinition,
 };
@@ -36394,7 +33250,7 @@ function tokenizeDefinition(effects, ok, nok) {
    */
   function markerAfter(code) {
     // Note: whitespace is optional.
-    return markdownLineEndingOrSpace$88(code)
+    return markdownLineEndingOrSpace$82(code)
       ? factoryWhitespace(effects, destinationBefore)(code)
       : destinationBefore(code);
   }
@@ -36466,7 +33322,7 @@ function tokenizeDefinition(effects, ok, nok) {
    * @type {State}
    */
   function afterWhitespace(code) {
-    if (code === null || markdownLineEnding$87(code)) {
+    if (code === null || markdownLineEnding$81(code)) {
       effects.exit('definition');
 
       // Note: we don’t care about uniqueness.
@@ -36504,7 +33360,7 @@ function tokenizeTitleBefore(effects, ok, nok) {
    * @type {State}
    */
   function titleBefore(code) {
-    return markdownLineEndingOrSpace$88(code) ? factoryWhitespace(effects, beforeMarker)(code) : nok(code);
+    return markdownLineEndingOrSpace$82(code) ? factoryWhitespace(effects, beforeMarker)(code) : nok(code);
   }
 
   /**
@@ -36556,7 +33412,7 @@ function tokenizeTitleBefore(effects, ok, nok) {
    * @type {State}
    */
   function titleAfterOptionalWhitespace(code) {
-    return code === null || markdownLineEnding$87(code) ? ok(code) : nok(code);
+    return code === null || markdownLineEnding$81(code) ? ok(code) : nok(code);
   }
 }
 
@@ -36615,7 +33471,7 @@ function tokenizeHardBreakEscape(effects, ok, nok) {
    *  @type {State}
    */
   function after(code) {
-    if (markdownLineEnding$87(code)) {
+    if (markdownLineEnding$81(code)) {
       effects.exit('hardBreakEscape');
       return ok(code);
     }
@@ -36746,7 +33602,7 @@ function tokenizeHeadingAtx(effects, ok, nok) {
     }
 
     // Always at least one `#`.
-    if (code === null || markdownLineEndingOrSpace$88(code)) {
+    if (code === null || markdownLineEndingOrSpace$82(code)) {
       effects.exit('atxHeadingSequence');
       return atBreak(code);
     }
@@ -36768,7 +33624,7 @@ function tokenizeHeadingAtx(effects, ok, nok) {
       effects.enter('atxHeadingSequence');
       return sequenceFurther(code);
     }
-    if (code === null || markdownLineEnding$87(code)) {
+    if (code === null || markdownLineEnding$81(code)) {
       effects.exit('atxHeading');
       // To do: interrupt like `markdown-rs`.
       // // Feel free to interrupt.
@@ -36817,7 +33673,7 @@ function tokenizeHeadingAtx(effects, ok, nok) {
    * @type {State}
    */
   function data(code) {
-    if (code === null || code === 35 || markdownLineEndingOrSpace$88(code)) {
+    if (code === null || code === 35 || markdownLineEndingOrSpace$82(code)) {
       effects.exit('atxHeadingText');
       return atBreak(code);
     }
@@ -37184,7 +34040,7 @@ function tokenizeHtmlFlow(effects, ok, nok) {
    * @type {State}
    */
   function tagName(code) {
-    if (code === null || code === 47 || code === 62 || markdownLineEndingOrSpace$88(code)) {
+    if (code === null || code === 47 || code === 62 || markdownLineEndingOrSpace$82(code)) {
       const slash = code === 47;
       const name = buffer.toLowerCase();
       if (!slash && !closingTag && htmlRawNames.includes(name)) {
@@ -37396,7 +34252,7 @@ function tokenizeHtmlFlow(effects, ok, nok) {
       markerB = null;
       return completeAttributeValueQuotedAfter;
     }
-    if (code === null || markdownLineEnding$87(code)) {
+    if (code === null || markdownLineEnding$81(code)) {
       return nok(code);
     }
     effects.consume(code);
@@ -37423,7 +34279,7 @@ function tokenizeHtmlFlow(effects, ok, nok) {
       code === 61 ||
       code === 62 ||
       code === 96 ||
-      markdownLineEndingOrSpace$88(code)
+      markdownLineEndingOrSpace$82(code)
     ) {
       return completeAttributeNameAfter(code);
     }
@@ -37478,7 +34334,7 @@ function tokenizeHtmlFlow(effects, ok, nok) {
    * @type {State}
    */
   function completeAfter(code) {
-    if (code === null || markdownLineEnding$87(code)) {
+    if (code === null || markdownLineEnding$81(code)) {
       // // Do not form containers.
       // tokenizer.concrete = true
       return continuation(code);
@@ -37521,11 +34377,11 @@ function tokenizeHtmlFlow(effects, ok, nok) {
       effects.consume(code);
       return continuationCdataInside;
     }
-    if (markdownLineEnding$87(code) && (marker === 6 || marker === 7)) {
+    if (markdownLineEnding$81(code) && (marker === 6 || marker === 7)) {
       effects.exit('htmlFlowData');
       return effects.check(blankLineBefore, continuationAfter, continuationStart)(code);
     }
-    if (code === null || markdownLineEnding$87(code)) {
+    if (code === null || markdownLineEnding$81(code)) {
       effects.exit('htmlFlowData');
       return continuationStart(code);
     }
@@ -37545,7 +34401,7 @@ function tokenizeHtmlFlow(effects, ok, nok) {
    * @type {State}
    */
   function continuationStart(code) {
-    return effects.check(nonLazyContinuation$96, continuationStartNonLazy, continuationAfter)(code);
+    return effects.check(nonLazyContinuation$90, continuationStartNonLazy, continuationAfter)(code);
   }
 
   /**
@@ -37578,7 +34434,7 @@ function tokenizeHtmlFlow(effects, ok, nok) {
    * @type {State}
    */
   function continuationBefore(code) {
-    if (code === null || markdownLineEnding$87(code)) {
+    if (code === null || markdownLineEnding$81(code)) {
       return continuationStart(code);
     }
     effects.enter('htmlFlowData');
@@ -37711,7 +34567,7 @@ function tokenizeHtmlFlow(effects, ok, nok) {
    * @type {State}
    */
   function continuationClose(code) {
-    if (code === null || markdownLineEnding$87(code)) {
+    if (code === null || markdownLineEnding$81(code)) {
       effects.exit('htmlFlowData');
       return continuationAfter(code);
     }
@@ -37781,9 +34637,9 @@ function tokenizeBlankLineBefore(effects, ok, nok) {
 
 
 /** @type {Construct} */
-const htmlText$102 = {
+const htmlText$96 = {
   name: 'htmlText',
-  tokenize: tokenizeHtmlText$103,
+  tokenize: tokenizeHtmlText$97,
 };
 
 /**
@@ -37791,7 +34647,7 @@ const htmlText$102 = {
  *   Context.
  * @type {Tokenizer}
  */
-function tokenizeHtmlText$103(effects, ok, nok) {
+function tokenizeHtmlText$97(effects, ok, nok) {
   const self = this;
   /** @type {NonNullable<Code> | undefined} */
   let marker;
@@ -37921,7 +34777,7 @@ function tokenizeHtmlText$103(effects, ok, nok) {
       effects.consume(code);
       return commentClose;
     }
-    if (markdownLineEnding$87(code)) {
+    if (markdownLineEnding$81(code)) {
       returnState = comment;
       return lineEndingBefore(code);
     }
@@ -37998,7 +34854,7 @@ function tokenizeHtmlText$103(effects, ok, nok) {
       effects.consume(code);
       return cdataClose;
     }
-    if (markdownLineEnding$87(code)) {
+    if (markdownLineEnding$81(code)) {
       returnState = cdata;
       return lineEndingBefore(code);
     }
@@ -38059,7 +34915,7 @@ function tokenizeHtmlText$103(effects, ok, nok) {
     if (code === null || code === 62) {
       return end(code);
     }
-    if (markdownLineEnding$87(code)) {
+    if (markdownLineEnding$81(code)) {
       returnState = declaration;
       return lineEndingBefore(code);
     }
@@ -38085,7 +34941,7 @@ function tokenizeHtmlText$103(effects, ok, nok) {
       effects.consume(code);
       return instructionClose;
     }
-    if (markdownLineEnding$87(code)) {
+    if (markdownLineEnding$81(code)) {
       returnState = instruction;
       return lineEndingBefore(code);
     }
@@ -38156,7 +35012,7 @@ function tokenizeHtmlText$103(effects, ok, nok) {
    * @type {State}
    */
   function tagCloseBetween(code) {
-    if (markdownLineEnding$87(code)) {
+    if (markdownLineEnding$81(code)) {
       returnState = tagCloseBetween;
       return lineEndingBefore(code);
     }
@@ -38183,7 +35039,7 @@ function tokenizeHtmlText$103(effects, ok, nok) {
       effects.consume(code);
       return tagOpen;
     }
-    if (code === 47 || code === 62 || markdownLineEndingOrSpace$88(code)) {
+    if (code === 47 || code === 62 || markdownLineEndingOrSpace$82(code)) {
       return tagOpenBetween(code);
     }
     return nok(code);
@@ -38210,7 +35066,7 @@ function tokenizeHtmlText$103(effects, ok, nok) {
       effects.consume(code);
       return tagOpenAttributeName;
     }
-    if (markdownLineEnding$87(code)) {
+    if (markdownLineEnding$81(code)) {
       returnState = tagOpenBetween;
       return lineEndingBefore(code);
     }
@@ -38256,7 +35112,7 @@ function tokenizeHtmlText$103(effects, ok, nok) {
       effects.consume(code);
       return tagOpenAttributeValueBefore;
     }
-    if (markdownLineEnding$87(code)) {
+    if (markdownLineEnding$81(code)) {
       returnState = tagOpenAttributeNameAfter;
       return lineEndingBefore(code);
     }
@@ -38287,7 +35143,7 @@ function tokenizeHtmlText$103(effects, ok, nok) {
       marker = code;
       return tagOpenAttributeValueQuoted;
     }
-    if (markdownLineEnding$87(code)) {
+    if (markdownLineEnding$81(code)) {
       returnState = tagOpenAttributeValueBefore;
       return lineEndingBefore(code);
     }
@@ -38318,7 +35174,7 @@ function tokenizeHtmlText$103(effects, ok, nok) {
     if (code === null) {
       return nok(code);
     }
-    if (markdownLineEnding$87(code)) {
+    if (markdownLineEnding$81(code)) {
       returnState = tagOpenAttributeValueQuoted;
       return lineEndingBefore(code);
     }
@@ -38340,7 +35196,7 @@ function tokenizeHtmlText$103(effects, ok, nok) {
     if (code === null || code === 34 || code === 39 || code === 60 || code === 61 || code === 96) {
       return nok(code);
     }
-    if (code === 47 || code === 62 || markdownLineEndingOrSpace$88(code)) {
+    if (code === 47 || code === 62 || markdownLineEndingOrSpace$82(code)) {
       return tagOpenBetween(code);
     }
     effects.consume(code);
@@ -38359,7 +35215,7 @@ function tokenizeHtmlText$103(effects, ok, nok) {
    * @type {State}
    */
   function tagOpenAttributeValueQuotedAfter(code) {
-    if (code === 47 || code === 62 || markdownLineEndingOrSpace$88(code)) {
+    if (code === 47 || code === 62 || markdownLineEndingOrSpace$82(code)) {
       return tagOpenBetween(code);
     }
     return nok(code);
@@ -38594,27 +35450,27 @@ function resolveToLabelEnd(events, context) {
   ];
 
   // Opening marker.
-  media = push$85(media, events.slice(open + 1, open + offset + 3));
+  media = push$79(media, events.slice(open + 1, open + offset + 3));
 
   // Text open.
-  media = push$85(media, [['enter', text, context]]);
+  media = push$79(media, [['enter', text, context]]);
 
   // Always populated by defaults.
 
   // Between.
-  media = push$85(
+  media = push$79(
     media,
     resolveAll(context.parser.constructs.insideSpan.null, events.slice(open + offset + 4, close - 3), context)
   );
 
   // Text close, marker close, label close.
-  media = push$85(media, [['exit', text, context], events[close - 2], events[close - 1], ['exit', label, context]]);
+  media = push$79(media, [['exit', text, context], events[close - 2], events[close - 1], ['exit', label, context]]);
 
   // Reference, resource, or so.
-  media = push$85(media, events.slice(close + 1));
+  media = push$79(media, events.slice(close + 1));
 
   // Media close.
-  media = push$85(media, [['exit', group, context]]);
+  media = push$79(media, [['exit', group, context]]);
   splice(events, open, events.length, media);
   return events;
 }
@@ -38825,7 +35681,7 @@ function tokenizeResource(effects, ok, nok) {
    * @type {State}
    */
   function resourceBefore(code) {
-    return markdownLineEndingOrSpace$88(code) ? factoryWhitespace(effects, resourceOpen)(code) : resourceOpen(code);
+    return markdownLineEndingOrSpace$82(code) ? factoryWhitespace(effects, resourceOpen)(code) : resourceOpen(code);
   }
 
   /**
@@ -38866,7 +35722,7 @@ function tokenizeResource(effects, ok, nok) {
    * @type {State}
    */
   function resourceDestinationAfter(code) {
-    return markdownLineEndingOrSpace$88(code) ? factoryWhitespace(effects, resourceBetween)(code) : resourceEnd(code);
+    return markdownLineEndingOrSpace$82(code) ? factoryWhitespace(effects, resourceBetween)(code) : resourceEnd(code);
   }
 
   /**
@@ -38918,7 +35774,7 @@ function tokenizeResource(effects, ok, nok) {
    * @type {State}
    */
   function resourceTitleAfter(code) {
-    return markdownLineEndingOrSpace$88(code) ? factoryWhitespace(effects, resourceEnd)(code) : resourceEnd(code);
+    return markdownLineEndingOrSpace$82(code) ? factoryWhitespace(effects, resourceEnd)(code) : resourceEnd(code);
   }
 
   /**
@@ -39291,7 +36147,7 @@ function tokenizeLineEnding(effects, ok) {
 
 
 /** @type {Construct} */
-const thematicBreak$104 = {
+const thematicBreak$98 = {
   name: 'thematicBreak',
   tokenize: tokenizeThematicBreak,
 };
@@ -39353,7 +36209,7 @@ function tokenizeThematicBreak(effects, ok, nok) {
       effects.enter('thematicBreakSequence');
       return sequence(code);
     }
-    if (size >= 3 && (code === null || markdownLineEnding$87(code))) {
+    if (size >= 3 && (code === null || markdownLineEnding$81(code))) {
       effects.exit('thematicBreak');
       return ok(code);
     }
@@ -39400,7 +36256,7 @@ function tokenizeThematicBreak(effects, ok, nok) {
 
 
 /** @type {Construct} */
-const list$105 = {
+const list$99 = {
   continuation: {
     tokenize: tokenizeListContinuation,
   },
@@ -39418,7 +36274,7 @@ const listItemPrefixWhitespaceConstruct = {
 /** @type {Construct} */
 const indentConstruct = {
   partial: true,
-  tokenize: tokenizeIndent$106,
+  tokenize: tokenizeIndent$100,
 };
 
 // To do: `markdown-rs` parses list items on their own and later stitches them
@@ -39451,7 +36307,7 @@ function tokenizeListStart(effects, ok, nok) {
       }
       if (kind === 'listUnordered') {
         effects.enter('listItemPrefix');
-        return code === 42 || code === 45 ? effects.check(thematicBreak$104, nok, atMarker)(code) : atMarker(code);
+        return code === 42 || code === 45 ? effects.check(thematicBreak$98, nok, atMarker)(code) : atMarker(code);
       }
       if (!self.interrupt || code === 49) {
         effects.enter('listItemPrefix');
@@ -39561,7 +36417,7 @@ function tokenizeListContinuation(effects, ok, nok) {
 
     return factorySpace(
       effects,
-      effects.attempt(list$105, ok, nok),
+      effects.attempt(list$99, ok, nok),
       'linePrefix',
       self.parser.constructs.disable.null.includes('codeIndented') ? undefined : 4
     )(code);
@@ -39573,7 +36429,7 @@ function tokenizeListContinuation(effects, ok, nok) {
  *   Context.
  * @type {Tokenizer}
  */
-function tokenizeIndent$106(effects, ok, nok) {
+function tokenizeIndent$100(effects, ok, nok) {
   const self = this;
   return factorySpace(effects, afterPrefix, 'listItemIndent', self.containerState.size + 1);
 
@@ -39646,7 +36502,7 @@ const setextUnderline = {
 
 /** @type {Resolver} */
 function resolveToSetextUnderline(events, context) {
-  const editMap = new EditMap$90();
+  const editMap = new EditMap$84();
   let index = events.length;
   /** @type {number | undefined} */
   let content;
@@ -39807,7 +36663,7 @@ function tokenizeSetextUnderline(effects, ok, nok) {
    * @type {State}
    */
   function after(code) {
-    if (code === null || markdownLineEnding$87(code)) {
+    if (code === null || markdownLineEnding$81(code)) {
       effects.exit('setextHeadingLine');
       return ok(code);
     }
@@ -39855,7 +36711,7 @@ function tokenizeSetextUnderline(effects, ok, nok) {
 
 
 /** @type {InitialConstruct} */
-const flow$107 = {
+const flow$101 = {
   tokenize: initializeFlow,
 };
 
@@ -39877,7 +36733,7 @@ function initializeFlow(effects) {
       afterConstruct,
       factorySpace(
         effects,
-        effects.attempt(this.parser.constructs.flow, afterConstruct, effects.attempt(content$100, afterConstruct)),
+        effects.attempt(this.parser.constructs.flow, afterConstruct, effects.attempt(content$94, afterConstruct)),
         'linePrefix'
       )
     )
@@ -39928,8 +36784,8 @@ function initializeFlow(effects) {
 const resolver = {
   resolveAll: createResolver(),
 };
-const string$108 = initializeFactory('string');
-const text$109 = initializeFactory('text');
+const string$102 = initializeFactory('string');
+const text$103 = initializeFactory('text');
 
 /**
  * @param {'string' | 'text'} field
@@ -40058,7 +36914,7 @@ function createResolver(extraResolver) {
  * @type {Resolver}
  */
 function resolveAllLineSuffixes(events, context) {
-  const editMap = new EditMap$90();
+  const editMap = new EditMap$84();
   let eventIndex = 0; // Skip first.
 
   while (++eventIndex <= events.length) {
@@ -40146,26 +37002,26 @@ function resolveAllLineSuffixes(events, context) {
 
 
 /** @satisfies {Extension['document']} */
-const document$110 = {
-  [42]: list$105,
-  [43]: list$105,
-  [45]: list$105,
-  [48]: list$105,
-  [49]: list$105,
-  [50]: list$105,
-  [51]: list$105,
-  [52]: list$105,
-  [53]: list$105,
-  [54]: list$105,
-  [55]: list$105,
-  [56]: list$105,
-  [57]: list$105,
-  [62]: blockQuote$93,
+const document$104 = {
+  [42]: list$99,
+  [43]: list$99,
+  [45]: list$99,
+  [48]: list$99,
+  [49]: list$99,
+  [50]: list$99,
+  [51]: list$99,
+  [52]: list$99,
+  [53]: list$99,
+  [54]: list$99,
+  [55]: list$99,
+  [56]: list$99,
+  [57]: list$99,
+  [62]: blockQuote$87,
 };
 
 /** @satisfies {Extension['contentInitial']} */
 const contentInitial = {
-  [91]: definition$101,
+  [91]: definition$95,
 };
 
 /** @satisfies {Extension['flowInitial']} */
@@ -40176,46 +37032,46 @@ const flowInitial = {
 };
 
 /** @satisfies {Extension['flow']} */
-const flow$111 = {
+const flow$105 = {
   [35]: headingAtx,
-  [42]: thematicBreak$104,
-  [45]: [setextUnderline, thematicBreak$104],
+  [42]: thematicBreak$98,
+  [45]: [setextUnderline, thematicBreak$98],
   [60]: htmlFlow,
   [61]: setextUnderline,
-  [95]: thematicBreak$104,
+  [95]: thematicBreak$98,
   [96]: codeFenced,
   [126]: codeFenced,
 };
 
 /** @satisfies {Extension['string']} */
-const string$112 = {
+const string$106 = {
   [38]: characterReference,
   [92]: characterEscape,
 };
 
 /** @satisfies {Extension['text']} */
-const text$113 = {
+const text$107 = {
   [-5]: lineEnding,
   [-4]: lineEnding,
   [-3]: lineEnding,
   [33]: labelStartImage,
   [38]: characterReference,
   [42]: attention,
-  [60]: [autolink, htmlText$102],
+  [60]: [autolink, htmlText$96],
   [91]: labelStartLink,
   [92]: [hardBreakEscape, characterEscape],
   [93]: labelEnd,
   [95]: attention,
-  [96]: codeText$98,
+  [96]: codeText$92,
 };
 
 /** @satisfies {Extension['insideSpan']} */
-const insideSpan$114 = {
+const insideSpan$108 = {
   null: [attention, resolver],
 };
 
 /** @satisfies {Extension['attentionMarkers']} */
-const attentionMarkers$115 = {
+const attentionMarkers$109 = {
   null: [42, 95],
 };
 
@@ -40352,7 +37208,7 @@ function createTokenizer(parser, initialize, from) {
 
   /** @type {TokenizeContext['write']} */
   function write(slice) {
-    chunks = push$85(chunks, slice);
+    chunks = push$79(chunks, slice);
     main();
 
     // Exit if we’re not done, resolve might change stuff.
@@ -40447,7 +37303,7 @@ function createTokenizer(parser, initialize, from) {
 
   /** @type {Effects['consume']} */
   function consume(code) {
-    if (markdownLineEnding$87(code)) {
+    if (markdownLineEnding$81(code)) {
       point.line++;
       point.column = 1;
       point.offset += code === -3 ? 2 : 1;
@@ -40854,22 +37710,22 @@ function serializeChunks(chunks, expandTabs) {
  * @returns {ParseContext}
  *   Parser.
  */
-function parse$116(options) {
+function parse$110(options) {
   const settings = options || {};
   const constructs =
     /** @type {FullNormalizedExtension} */
-    combineExtensions([__namespace$158(), ...(settings.extensions || [])]);
+    combineExtensions([__namespace$152(), ...(settings.extensions || [])]);
 
   /** @type {ParseContext} */
   const parser = {
     constructs,
-    content: create(content$89),
+    content: create(content$83),
     defined: [],
-    document: create(document$92),
-    flow: create(flow$107),
+    document: create(document$86),
+    flow: create(flow$101),
     lazy: {},
-    string: create(string$108),
-    text: create(text$109),
+    string: create(string$102),
+    text: create(text$103),
   };
   return parser;
 
@@ -40902,7 +37758,7 @@ function parse$116(options) {
  * @returns {Array<Event>}
  *   Events.
  */
-function postprocess$117(events) {
+function postprocess$111(events) {
   while (!subtokenize(events)) {
     // Empty
   }
@@ -40934,7 +37790,7 @@ const search = /[\0\t\n\r]/g;
  * @returns {Preprocessor}
  *   Preprocess a value.
  */
-function preprocess$118() {
+function preprocess$112() {
   let column = 1;
   let buffer = '';
   /** @type {boolean | undefined} */
@@ -41205,17 +38061,17 @@ function stringifyPosition(value) {
 
   // Node.
   if ('position' in value || 'type' in value) {
-    return position$120(value.position);
+    return position$114(value.position);
   }
 
   // Position.
   if ('start' in value || 'end' in value) {
-    return position$120(value);
+    return position$114(value);
   }
 
   // Point.
   if ('line' in value || 'column' in value) {
-    return point$119(value);
+    return point$113(value);
   }
 
   // ?
@@ -41226,23 +38082,23 @@ function stringifyPosition(value) {
  * @param {Point | PointLike | null | undefined} point
  * @returns {string}
  */
-function point$119(point) {
-  return index$121(point && point.line) + ':' + index$121(point && point.column);
+function point$113(point) {
+  return index$115(point && point.line) + ':' + index$115(point && point.column);
 }
 
 /**
  * @param {Position | PositionLike | null | undefined} pos
  * @returns {string}
  */
-function position$120(pos) {
-  return point$119(pos && pos.start) + '-' + point$119(pos && pos.end);
+function position$114(pos) {
+  return point$113(pos && pos.start) + '-' + point$113(pos && pos.end);
 }
 
 /**
  * @param {number | null | undefined} value
  * @returns {number}
  */
-function index$121(value) {
+function index$115(value) {
   return value && typeof value === 'number' ? value : 1;
 }
 
@@ -41300,7 +38156,7 @@ function index$121(value) {
 
 
 
-const own$122 = {}.hasOwnProperty;
+const own$116 = {}.hasOwnProperty;
 
 /**
  * Turn markdown into a syntax tree.
@@ -41325,16 +38181,16 @@ const own$122 = {}.hasOwnProperty;
  * @returns {Root}
  *   mdast tree.
  */
-function fromMarkdown$123(value, encoding, options) {
+function fromMarkdown$117(value, encoding, options) {
   if (encoding && typeof encoding === 'object') {
     options = encoding;
     encoding = undefined;
   }
   return compiler(options)(
-    postprocess$117(
-      parse$116(options)
+    postprocess$111(
+      parse$110(options)
         .document()
-        .write(preprocess$118()(value, encoding, true))
+        .write(preprocess$112()(value, encoding, true))
     )
   );
 }
@@ -41493,7 +38349,7 @@ function compiler(options) {
     index = -1;
     while (++index < events.length) {
       const handler = config[events[index][0]];
-      if (own$122.call(handler, events[index][1].type)) {
+      if (own$116.call(handler, events[index][1].type)) {
         handler[events[index][1].type].call(
           Object.assign(
             {
@@ -41515,7 +38371,7 @@ function compiler(options) {
 
     // Figure out `root` position.
     tree.position = {
-      start: point$124(
+      start: point$118(
         events.length > 0
           ? events[0][1].start
           : {
@@ -41524,7 +38380,7 @@ function compiler(options) {
               offset: 0,
             }
       ),
-      end: point$124(
+      end: point$118(
         events.length > 0
           ? events[events.length - 2][1].end
           : {
@@ -41707,7 +38563,7 @@ function compiler(options) {
     this.stack.push(node);
     this.tokenStack.push([token, errorHandler || undefined]);
     node.position = {
-      start: point$124(token.start),
+      start: point$118(token.start),
       // @ts-expect-error: `end` will be patched later.
       end: undefined,
     };
@@ -41760,7 +38616,7 @@ function compiler(options) {
         handler.call(this, token, open[0]);
       }
     }
-    node.position.end = point$124(token.end);
+    node.position.end = point$118(token.end);
   }
 
   /**
@@ -41928,7 +38784,7 @@ function compiler(options) {
       // Add a new text node.
       tail = text();
       tail.position = {
-        start: point$124(token.start),
+        start: point$118(token.start),
         // @ts-expect-error: we’ll add `end` later.
         end: undefined,
       };
@@ -41945,7 +38801,7 @@ function compiler(options) {
   function onexitdata(token) {
     const tail = this.stack.pop();
     tail.value += this.sliceSerialize(token);
-    tail.position.end = point$124(token.end);
+    tail.position.end = point$118(token.end);
   }
 
   /**
@@ -41958,7 +38814,7 @@ function compiler(options) {
     // If we’re at a hard break, include the line ending in there.
     if (this.data.atHardBreak) {
       const tail = context.children[context.children.length - 1];
-      tail.position.end = point$124(token.end);
+      tail.position.end = point$118(token.end);
       this.data.atHardBreak = undefined;
       return;
     }
@@ -42194,7 +39050,7 @@ function compiler(options) {
    */
   function onexitcharacterreference(token) {
     const tail = this.stack.pop();
-    tail.position.end = point$124(token.end);
+    tail.position.end = point$118(token.end);
   }
 
   /**
@@ -42378,7 +39234,7 @@ function compiler(options) {
  * @returns {Point}
  *   unist point.
  */
-function point$124(d) {
+function point$118(d) {
   return {
     line: d.line,
     column: d.column,
@@ -42398,7 +39254,7 @@ function configure(combined, extensions) {
     if (Array.isArray(value)) {
       configure(combined, value);
     } else {
-      extension$125(combined, value);
+      extension$119(combined, value);
     }
   }
 }
@@ -42408,11 +39264,11 @@ function configure(combined, extensions) {
  * @param {Extension} extension
  * @returns {undefined}
  */
-function extension$125(combined, extension) {
+function extension$119(combined, extension) {
   /** @type {keyof Extension} */
   let key;
   for (key in extension) {
-    if (own$122.call(extension, key)) {
+    if (own$116.call(extension, key)) {
       switch (key) {
         case 'canContainEols': {
           const right = extension[key];
@@ -42483,7 +39339,7 @@ function defaultOnError(left, right) {
 
 
 // lib/default.js
-function ok$126() {}
+function ok$120() {}
 
 
 // lib/index.js
@@ -42571,7 +39427,7 @@ function mathFromMarkdown() {
   function exitMathFlowMeta() {
     const data = this.resume();
     const node = this.stack[this.stack.length - 1];
-    ok$126(node.type === 'math');
+    ok$120(node.type === 'math');
     node.meta = data;
   }
 
@@ -42593,13 +39449,13 @@ function mathFromMarkdown() {
   function exitMathFlow(token) {
     const data = this.resume().replace(/^(\r?\n|\r)|(\r?\n|\r)$/g, '');
     const node = this.stack[this.stack.length - 1];
-    ok$126(node.type === 'math');
+    ok$120(node.type === 'math');
     this.exit(token);
     node.value = data;
     // @ts-expect-error: we defined it in `enterMathFlow`.
     const code = /** @type {HastElement} */ (node.data.hChildren[0]);
-    ok$126(code.type === 'element');
-    ok$126(code.tagName === 'code');
+    ok$120(code.type === 'element');
+    ok$120(code.tagName === 'code');
     code.children.push({ type: 'text', value: data });
     this.data.mathFlowInside = undefined;
   }
@@ -42631,7 +39487,7 @@ function mathFromMarkdown() {
   function exitMathText(token) {
     const data = this.resume();
     const node = this.stack[this.stack.length - 1];
-    ok$126(node.type === 'inlineMath');
+    ok$120(node.type === 'inlineMath');
     this.exit(token);
     node.value = data;
     const children = /** @type {Array<HastElementContent>} */ (
@@ -42676,15 +39532,15 @@ const wwwPrefix = {
   tokenize: tokenizeWwwPrefix,
   partial: true,
 };
-const domain$127 = {
+const domain$121 = {
   tokenize: tokenizeDomain,
   partial: true,
 };
-const path$128 = {
+const path$122 = {
   tokenize: tokenizePath,
   partial: true,
 };
-const trail$129 = {
+const trail$123 = {
   tokenize: tokenizeTrail,
   partial: true,
 };
@@ -42709,7 +39565,7 @@ const emailAutolink = {
 };
 
 /** @type {ConstructRecord} */
-const text$130 = {};
+const text$124 = {};
 
 /**
  * Create an extension for `micromark` to support GitHub autolink literal
@@ -42721,28 +39577,28 @@ const text$130 = {};
  */
 function gfmAutolinkLiteral() {
   return {
-    text: text$130,
+    text: text$124,
   };
 }
 
 /** @type {Code} */
-let code$131 = 48;
+let code$125 = 48;
 
 // Add alphanumerics.
-while (code$131 < 123) {
-  text$130[code$131] = emailAutolink;
-  code$131++;
-  if (code$131 === 58) code$131 = 65;
-  else if (code$131 === 91) code$131 = 97;
+while (code$125 < 123) {
+  text$124[code$125] = emailAutolink;
+  code$125++;
+  if (code$125 === 58) code$125 = 65;
+  else if (code$125 === 91) code$125 = 97;
 }
-text$130[43] = emailAutolink;
-text$130[45] = emailAutolink;
-text$130[46] = emailAutolink;
-text$130[95] = emailAutolink;
-text$130[72] = [emailAutolink, protocolAutolink];
-text$130[104] = [emailAutolink, protocolAutolink];
-text$130[87] = [emailAutolink, wwwAutolink];
-text$130[119] = [emailAutolink, wwwAutolink];
+text$124[43] = emailAutolink;
+text$124[45] = emailAutolink;
+text$124[46] = emailAutolink;
+text$124[95] = emailAutolink;
+text$124[72] = [emailAutolink, protocolAutolink];
+text$124[104] = [emailAutolink, protocolAutolink];
+text$124[87] = [emailAutolink, wwwAutolink];
+text$124[119] = [emailAutolink, wwwAutolink];
 
 // To do: perform email autolink literals on events, afterwards.
 // That’s where `markdown-rs` and `cmark-gfm` perform it.
@@ -42917,7 +39773,7 @@ function tokenizeWwwAutolink(effects, ok, nok) {
     effects.enter('literalAutolinkWww');
     // Note: we *check*, so we can discard the `www.` we parsed.
     // If it worked, we consider it as a part of the domain.
-    return effects.check(wwwPrefix, effects.attempt(domain$127, effects.attempt(path$128, wwwAfter), nok), nok)(code);
+    return effects.check(wwwPrefix, effects.attempt(domain$121, effects.attempt(path$122, wwwAfter), nok), nok)(code);
   }
 
   /**
@@ -43044,11 +39900,11 @@ function tokenizeProtocolAutolink(effects, ok, nok) {
     // https://github.com/wooorm/markdown-rs/blob/b3a921c761309ae00a51fe348d8a43adbc54b518/src/construct/gfm_autolink_literal.rs#L172-L182
     return code === null ||
       asciiControl(code) ||
-      markdownLineEndingOrSpace$88(code) ||
+      markdownLineEndingOrSpace$82(code) ||
       unicodeWhitespace(code) ||
       unicodePunctuation(code)
       ? nok(code)
-      : effects.attempt(domain$127, effects.attempt(path$128, protocolAfter), nok)(code);
+      : effects.attempt(domain$121, effects.attempt(path$122, protocolAfter), nok)(code);
   }
 
   /**
@@ -43157,7 +40013,7 @@ function tokenizeDomain(effects, ok, nok) {
     // marker, optionally followed by more trailing markers, and then
     // followed by an end.
     if (code === 46 || code === 95) {
-      return effects.check(trail$129, domainAfter, domainAtPunctuation)(code);
+      return effects.check(trail$123, domainAfter, domainAtPunctuation)(code);
     }
 
     // GH documents that only alphanumerics (other than `-`, `.`, and `_`) can
@@ -43168,7 +40024,7 @@ function tokenizeDomain(effects, ok, nok) {
     // Source: <https://github.com/github/cmark-gfm/blob/ef1cfcb/extensions/autolink.c#L12>.
     if (
       code === null ||
-      markdownLineEndingOrSpace$88(code) ||
+      markdownLineEndingOrSpace$82(code) ||
       unicodeWhitespace(code) ||
       (code !== 45 && unicodePunctuation(code))
     ) {
@@ -43283,9 +40139,9 @@ function tokenizePath(effects, ok) {
       code === 95 ||
       code === 126
     ) {
-      return effects.check(trail$129, ok, pathAtPunctuation)(code);
+      return effects.check(trail$123, ok, pathAtPunctuation)(code);
     }
-    if (code === null || markdownLineEndingOrSpace$88(code) || unicodeWhitespace(code)) {
+    if (code === null || markdownLineEndingOrSpace$82(code) || unicodeWhitespace(code)) {
       return ok(code);
     }
     effects.consume(code);
@@ -43380,7 +40236,7 @@ function tokenizeTrail(effects, ok, nok) {
       code === 60 ||
       // So is whitespace.
       code === null ||
-      markdownLineEndingOrSpace$88(code) ||
+      markdownLineEndingOrSpace$82(code) ||
       unicodeWhitespace(code)
     ) {
       return ok(code);
@@ -43404,7 +40260,7 @@ function tokenizeTrail(effects, ok, nok) {
   function trailBracketAfter(code) {
     // Whitespace or something that could start a resource or reference is the end.
     // Switch back to trail otherwise.
-    if (code === null || code === 40 || code === 91 || markdownLineEndingOrSpace$88(code) || unicodeWhitespace(code)) {
+    if (code === null || code === 40 || code === 91 || markdownLineEndingOrSpace$82(code) || unicodeWhitespace(code)) {
       return ok(code);
     }
     return trail(code);
@@ -43516,7 +40372,7 @@ function previousWww(code) {
     code === 91 ||
     code === 93 ||
     code === 126 ||
-    markdownLineEndingOrSpace$88(code)
+    markdownLineEndingOrSpace$82(code)
   );
 }
 
@@ -43593,8 +40449,8 @@ function previousUnbalanced(events) {
 
 
 
-const indent$132 = {
-  tokenize: tokenizeIndent$133,
+const indent$126 = {
+  tokenize: tokenizeIndent$127,
   partial: true,
 };
 
@@ -43843,7 +40699,7 @@ function tokenizeGfmFootnoteCall(effects, ok, nok) {
       // `\n` and `[` not being supported makes sense.
       code === null ||
       code === 91 ||
-      markdownLineEndingOrSpace$88(code)
+      markdownLineEndingOrSpace$82(code)
     ) {
       return nok(code);
     }
@@ -43859,7 +40715,7 @@ function tokenizeGfmFootnoteCall(effects, ok, nok) {
       effects.exit('gfmFootnoteCall');
       return ok;
     }
-    if (!markdownLineEndingOrSpace$88(code)) {
+    if (!markdownLineEndingOrSpace$82(code)) {
       data = true;
     }
     size++;
@@ -43965,7 +40821,7 @@ function tokenizeDefinitionStart(effects, ok, nok) {
       // `\n` and `[` not being supported makes sense.
       code === null ||
       code === 91 ||
-      markdownLineEndingOrSpace$88(code)
+      markdownLineEndingOrSpace$82(code)
     ) {
       return nok(code);
     }
@@ -43979,7 +40835,7 @@ function tokenizeDefinitionStart(effects, ok, nok) {
       effects.exit('gfmFootnoteDefinitionLabel');
       return labelAfter;
     }
-    if (!markdownLineEndingOrSpace$88(code)) {
+    if (!markdownLineEndingOrSpace$82(code)) {
       data = true;
     }
     size++;
@@ -44066,7 +40922,7 @@ function tokenizeDefinitionContinuation(effects, ok, nok) {
   /// ```
   //
   // Either a blank line, which is okay, or an indented thing.
-  return effects.check(blankLine, ok, effects.attempt(indent$132, ok, nok));
+  return effects.check(blankLine, ok, effects.attempt(indent$126, ok, nok));
 }
 
 /** @type {Exiter} */
@@ -44078,7 +40934,7 @@ function gfmFootnoteDefinitionEnd(effects) {
  * @this {TokenizeContext}
  * @type {Tokenizer}
  */
-function tokenizeIndent$133(effects, ok, nok) {
+function tokenizeIndent$127(effects, ok, nok) {
   const self = this;
   return factorySpace(effects, afterPrefix, 'gfmFootnoteDefinitionIndent', 4 + 1);
 
@@ -44295,7 +41151,7 @@ function gfmStrikethrough(options) {
 /**
  * Tracks a bunch of edits.
  */
-class EditMap$134 {
+class EditMap$128 {
   /**
    * Create a new edit map.
    */
@@ -44329,7 +41185,7 @@ class EditMap$134 {
    *   Nothing.
    */
   add(index, remove, add) {
-    addImplementation$135(this, index, remove, add);
+    addImplementation$129(this, index, remove, add);
   }
 
   // To do: add this when moving to `micromark`.
@@ -44421,7 +41277,7 @@ class EditMap$134 {
  * @returns {undefined}
  *   Nothing.
  */
-function addImplementation$135(editMap, at, remove, add) {
+function addImplementation$129(editMap, at, remove, add) {
   /* c8 ignore next 3 -- `resolve` is never called without tables, so without edits. */
   if (remove === 0 && add.length === 0) {
     return;
@@ -44710,7 +41566,7 @@ function tokenizeTable(effects, ok, nok) {
       // Note: in `markdown-rs`, we need to reset, in `micromark-js` we don‘t.
       return nok(code);
     }
-    if (markdownLineEnding$87(code)) {
+    if (markdownLineEnding$81(code)) {
       // If anything other than one pipe (ignoring whitespace) was used, it’s fine.
       if (sizeB > 1) {
         sizeB = 0;
@@ -44766,7 +41622,7 @@ function tokenizeTable(effects, ok, nok) {
    * @type {State}
    */
   function headRowData(code) {
-    if (code === null || code === 124 || markdownLineEndingOrSpace$88(code)) {
+    if (code === null || code === 124 || markdownLineEndingOrSpace$82(code)) {
       effects.exit('data');
       return headRowBreak(code);
     }
@@ -44905,7 +41761,7 @@ function tokenizeTable(effects, ok, nok) {
       // To do: seems weird that this *isn’t* left aligned, but that state is used?
       return headDelimiterLeftAlignmentAfter(code);
     }
-    if (code === null || markdownLineEnding$87(code)) {
+    if (code === null || markdownLineEnding$81(code)) {
       return headDelimiterCellAfter(code);
     }
     return headDelimiterNok(code);
@@ -44995,7 +41851,7 @@ function tokenizeTable(effects, ok, nok) {
     if (code === 124) {
       return headDelimiterBefore(code);
     }
-    if (code === null || markdownLineEnding$87(code)) {
+    if (code === null || markdownLineEnding$81(code)) {
       // Exit when:
       // * there was no `:` or `|` at all (it’s a thematic break or setext
       //   underline instead)
@@ -45071,7 +41927,7 @@ function tokenizeTable(effects, ok, nok) {
       effects.exit('tableCellDivider');
       return bodyRowBreak;
     }
-    if (code === null || markdownLineEnding$87(code)) {
+    if (code === null || markdownLineEnding$81(code)) {
       effects.exit('tableRow');
       return ok(code);
     }
@@ -45097,7 +41953,7 @@ function tokenizeTable(effects, ok, nok) {
    * @type {State}
    */
   function bodyRowData(code) {
-    if (code === null || code === 124 || markdownLineEndingOrSpace$88(code)) {
+    if (code === null || code === 124 || markdownLineEndingOrSpace$82(code)) {
       effects.exit('data');
       return bodyRowBreak(code);
     }
@@ -45145,7 +42001,7 @@ function resolveTable(events, context) {
   let currentBody;
   /** @type {Token | undefined} */
   let currentCell;
-  const map = new EditMap$134();
+  const map = new EditMap$128();
   while (++index < events.length) {
     const event = events[index];
     const token = event[1];
@@ -45490,7 +42346,7 @@ function tokenizeTasklistCheck(effects, ok, nok) {
     // Currently we match how GH works in files.
     // To match how GH works in comments, use `markdownSpace` (`[\t ]`) instead
     // of `markdownLineEndingOrSpace` (`[\t\n\r ]`).
-    if (markdownLineEndingOrSpace$88(code)) {
+    if (markdownLineEndingOrSpace$82(code)) {
       effects.enter('taskListCheckValueUnchecked');
       effects.consume(code);
       effects.exit('taskListCheckValueUnchecked');
@@ -45531,7 +42387,7 @@ function tokenizeTasklistCheck(effects, ok, nok) {
    */
   function after(code) {
     // EOL in paragraph means there must be something else after it.
-    if (markdownLineEnding$87(code)) {
+    if (markdownLineEnding$81(code)) {
       return ok(code);
     }
 
@@ -45648,8 +42504,8 @@ const mathFlow = {
 };
 
 /** @type {Construct} */
-const nonLazyContinuation$136 = {
-  tokenize: tokenizeNonLazyContinuation$137,
+const nonLazyContinuation$130 = {
+  tokenize: tokenizeNonLazyContinuation$131,
   partial: true,
 };
 
@@ -45722,7 +42578,7 @@ function tokenizeMathFenced(effects, ok, nok) {
    */
 
   function metaBefore(code) {
-    if (code === null || markdownLineEnding$87(code)) {
+    if (code === null || markdownLineEnding$81(code)) {
       return metaAfter(code);
     }
     effects.enter('mathFlowFenceMeta');
@@ -45745,7 +42601,7 @@ function tokenizeMathFenced(effects, ok, nok) {
    * @type {State}
    */
   function meta(code) {
-    if (code === null || markdownLineEnding$87(code)) {
+    if (code === null || markdownLineEnding$81(code)) {
       effects.exit('chunkString');
       effects.exit('mathFlowFenceMeta');
       return metaAfter(code);
@@ -45775,7 +42631,7 @@ function tokenizeMathFenced(effects, ok, nok) {
     if (self.interrupt) {
       return ok(code);
     }
-    return effects.attempt(nonLazyContinuation$136, beforeNonLazyContinuation, after)(code);
+    return effects.attempt(nonLazyContinuation$130, beforeNonLazyContinuation, after)(code);
   }
 
   /**
@@ -45836,8 +42692,8 @@ function tokenizeMathFenced(effects, ok, nok) {
     if (code === null) {
       return after(code);
     }
-    if (markdownLineEnding$87(code)) {
-      return effects.attempt(nonLazyContinuation$136, beforeNonLazyContinuation, after)(code);
+    if (markdownLineEnding$81(code)) {
+      return effects.attempt(nonLazyContinuation$130, beforeNonLazyContinuation, after)(code);
     }
     effects.enter('mathFlowValue');
     return contentChunk(code);
@@ -45856,7 +42712,7 @@ function tokenizeMathFenced(effects, ok, nok) {
    * @type {State}
    */
   function contentChunk(code) {
-    if (code === null || markdownLineEnding$87(code)) {
+    if (code === null || markdownLineEnding$81(code)) {
       effects.exit('mathFlowValue');
       return beforeContentChunk(code);
     }
@@ -45957,7 +42813,7 @@ function tokenizeMathFenced(effects, ok, nok) {
      * @type {State}
      */
     function afterSequenceClose(code) {
-      if (code === null || markdownLineEnding$87(code)) {
+      if (code === null || markdownLineEnding$81(code)) {
         effects.exit('mathFlowFence');
         return ok(code);
       }
@@ -45970,7 +42826,7 @@ function tokenizeMathFenced(effects, ok, nok) {
  * @this {TokenizeContext}
  * @type {Tokenizer}
  */
-function tokenizeNonLazyContinuation$137(effects, ok, nok) {
+function tokenizeNonLazyContinuation$131(effects, ok, nok) {
   const self = this;
   return start;
 
@@ -46017,7 +42873,7 @@ function mathText(options) {
   return {
     tokenize: tokenizeMathText,
     resolve: resolveMathText,
-    previous: previous$138,
+    previous: previous$132,
     name: 'mathText',
   };
 
@@ -46104,7 +42960,7 @@ function mathText(options) {
         effects.exit('space');
         return between;
       }
-      if (markdownLineEnding$87(code)) {
+      if (markdownLineEnding$81(code)) {
         effects.enter('lineEnding');
         effects.consume(code);
         effects.exit('lineEnding');
@@ -46127,7 +42983,7 @@ function mathText(options) {
      * @type {State}
      */
     function data(code) {
-      if (code === null || code === 32 || code === 36 || markdownLineEnding$87(code)) {
+      if (code === null || code === 32 || code === 36 || markdownLineEnding$81(code)) {
         effects.exit('mathTextData');
         return between(code);
       }
@@ -46223,7 +43079,7 @@ function resolveMathText(events) {
  * @this {TokenizeContext}
  * @type {Previous}
  */
-function previous$138(code) {
+function previous$132(code) {
   // If there is a previous code, there will always be a tail.
   return code !== 36 || this.events[this.events.length - 1][1].type === 'characterEscape';
 }
@@ -46295,7 +43151,7 @@ function ccount(value, character) {
 
 
 // escape-string-regexp/index.js
-function escapeStringRegexp$139(string) {
+function escapeStringRegexp$133(string) {
   if (typeof string !== 'string') {
     throw new TypeError('Expected a string');
   }
@@ -46408,7 +43264,7 @@ const convert =
      */
     function (test) {
       if (test === null || test === undefined) {
-        return ok$140;
+        return ok$134;
       }
 
       if (typeof test === 'function') {
@@ -46528,7 +43384,7 @@ function castFactory(testFunction) {
   }
 }
 
-function ok$140() {
+function ok$134() {
   return true;
 }
 
@@ -47218,7 +44074,7 @@ function toPairs(tupleOrList) {
  *   Global expression.
  */
 function toExpression(find) {
-  return typeof find === 'string' ? new RegExp(escapeStringRegexp$139(find), 'g') : find;
+  return typeof find === 'string' ? new RegExp(escapeStringRegexp$133(find), 'g') : find;
 }
 
 /**
@@ -47333,7 +44189,7 @@ function exitLiteralAutolinkHttp(token) {
 function exitLiteralAutolinkWww(token) {
   this.config.exit.data.call(this, token);
   const node = this.stack[this.stack.length - 1];
-  ok$126(node.type === 'link');
+  ok$120(node.type === 'link');
   node.url = 'http://' + this.sliceSerialize(token);
 }
 
@@ -47379,7 +44235,7 @@ function findUrl(_, protocol, domain, path, match) {
   let prefix = '';
 
   // Not an expected previous character.
-  if (!previous$141(match)) {
+  if (!previous$135(match)) {
     return false;
   }
 
@@ -47424,7 +44280,7 @@ function findUrl(_, protocol, domain, path, match) {
 function findEmail(_, atext, label, match) {
   if (
     // Not an expected previous character.
-    !previous$141(match, true) ||
+    !previous$135(match, true) ||
     // Label ends in not allowed character.
     /[-\d_]$/.test(label)
   ) {
@@ -47490,7 +44346,7 @@ function splitUrl(url) {
  * @param {boolean | null | undefined} [email=false]
  * @returns {boolean}
  */
-function previous$141(match, email) {
+function previous$135(match, email) {
   const code = match.input.charCodeAt(match.index - 1);
 
   return (
@@ -47565,7 +44421,7 @@ function enterFootnoteDefinition(token) {
 function exitFootnoteCallString(token) {
   const label = this.resume();
   const node = this.stack[this.stack.length - 1];
-  ok$126(node.type === 'footnoteReference');
+  ok$120(node.type === 'footnoteReference');
   node.identifier = normalizeIdentifier(this.sliceSerialize(token)).toLowerCase();
   node.label = label;
 }
@@ -47585,7 +44441,7 @@ function exitFootnoteCall(token) {
 function exitFootnoteDefinitionLabelString(token) {
   const label = this.resume();
   const node = this.stack[this.stack.length - 1];
-  ok$126(node.type === 'footnoteDefinition');
+  ok$120(node.type === 'footnoteDefinition');
   node.identifier = normalizeIdentifier(this.sliceSerialize(token)).toLowerCase();
   node.label = label;
 }
@@ -47836,9 +44692,9 @@ function gfmTableFromMarkdown() {
     exit: {
       codeText: exitCodeText,
       table: exitTable,
-      tableData: exit$142,
-      tableHeader: exit$142,
-      tableRow: exit$142,
+      tableData: exit$136,
+      tableHeader: exit$136,
+      tableRow: exit$136,
     },
   };
 }
@@ -47849,7 +44705,7 @@ function gfmTableFromMarkdown() {
  */
 function enterTable(token) {
   const align = token._align;
-  ok$126(align, 'expected `_align` on table');
+  ok$120(align, 'expected `_align` on table');
   this.enter(
     {
       type: 'table',
@@ -47884,7 +44740,7 @@ function enterRow(token) {
  * @this {CompileContext}
  * @type {FromMarkdownHandle}
  */
-function exit$142(token) {
+function exit$136(token) {
   this.exit(token);
 }
 
@@ -47906,11 +44762,11 @@ function exitCodeText(token) {
   let value = this.resume();
 
   if (this.data.inTable) {
-    value = value.replace(/\\([\\|])/g, replace$143);
+    value = value.replace(/\\([\\|])/g, replace$137);
   }
 
   const node = this.stack[this.stack.length - 1];
-  ok$126(node.type === 'inlineCode');
+  ok$120(node.type === 'inlineCode');
   node.value = value;
   this.exit(token);
 }
@@ -47920,7 +44776,7 @@ function exitCodeText(token) {
  * @param {string} $1
  * @returns {string}
  */
-function replace$143($0, $1) {
+function replace$137($0, $1) {
   // Pipes work, backslashes don’t (but can’t escape pipes).
   return $1 === '|' ? $1 : $0;
 }
@@ -47986,7 +44842,7 @@ function gfmTaskListItemFromMarkdown() {
 function exitCheck(token) {
   // We’re always in a paragraph, in a list item.
   const node = this.stack[this.stack.length - 2];
-  ok$126(node.type === 'listItem');
+  ok$120(node.type === 'listItem');
   node.checked = token.type === 'taskListCheckValueChecked';
 }
 
@@ -47999,7 +44855,7 @@ function exitParagraphWithTaskListItem(token) {
 
   if (parent && parent.type === 'listItem' && typeof parent.checked === 'boolean') {
     const node = this.stack[this.stack.length - 1];
-    ok$126(node.type === 'paragraph');
+    ok$120(node.type === 'paragraph');
     const head = node.children[0];
 
     if (head && head.type === 'text') {
@@ -48065,7 +44921,7 @@ function exitParagraphWithTaskListItem(token) {
  *   Extension for `mdast-util-from-markdown` to enable GFM (autolink literals,
  *   footnotes, strikethrough, tables, tasklists).
  */
-function gfmFromMarkdown$144() {
+function gfmFromMarkdown$138() {
   return [
     gfmAutolinkLiteralFromMarkdown(),
     gfmFootnoteFromMarkdown(),
@@ -48106,8 +44962,8 @@ function gfmFromMarkdown$144() {
 /**
 @returns {Extension[]}
 */
-function gfmFromMarkdown$145() {
-  const mdastExtensions = gfmFromMarkdown$144();
+function gfmFromMarkdown$139() {
+  const mdastExtensions = gfmFromMarkdown$138();
   const autolinkExtension = mdastExtensions.find((extension) => extension.enter.literalAutolink);
 
   // Prevent the autolink extension generate nodes without position
@@ -48136,7 +44992,7 @@ function gfmFromMarkdown$145() {
  *
  * Unicode basic latin block.
  */
-const codes$146 = /** @type {const} */ ({
+const codes$140 = /** @type {const} */ ({
   carriageReturn: -5,
   lineFeed: -4,
   carriageReturnLineFeed: -3,
@@ -48339,7 +45195,7 @@ const constants = /** @type {const} */ ({
 
 // Note: when changing the next record, you must also change `TokenTypeMap`
 // in `micromark-util-types/index.d.ts`.
-const types$147 = /** @type {const} */ ({
+const types$141 = /** @type {const} */ ({
   // Generic type for data, such as in a title, a destination, etc.
   data: 'data',
 
@@ -48805,9 +45661,9 @@ const types$147 = /** @type {const} */ ({
 
 
 /** @type {Construct} */
-const htmlText$148 = {
+const htmlText$142 = {
   name: 'htmlText',
-  tokenize: tokenizeHtmlText$149,
+  tokenize: tokenizeHtmlText$143,
   add: 'before',
 };
 
@@ -48816,7 +45672,7 @@ const htmlText$148 = {
  *   Context.
  * @type {Tokenizer}
  */
-function tokenizeHtmlText$149(effects, ok, nok) {
+function tokenizeHtmlText$143(effects, ok, nok) {
   const self = this;
   /** @type {NonNullable<Code> | undefined} */
   let marker;
@@ -48838,9 +45694,9 @@ function tokenizeHtmlText$149(effects, ok, nok) {
    * @type {State}
    */
   function start(code) {
-    assert(code === codes$146.lessThan, 'expected `<`');
-    effects.enter(types$147.htmlText);
-    effects.enter(types$147.htmlTextData);
+    assert(code === codes$140.lessThan, 'expected `<`');
+    effects.enter(types$141.htmlText);
+    effects.enter(types$141.htmlTextData);
     effects.consume(code);
     return open;
   }
@@ -48860,17 +45716,17 @@ function tokenizeHtmlText$149(effects, ok, nok) {
    * @type {State}
    */
   function open(code) {
-    if (code === codes$146.exclamationMark) {
+    if (code === codes$140.exclamationMark) {
       effects.consume(code);
       return declarationOpen;
     }
 
-    if (code === codes$146.slash) {
+    if (code === codes$140.slash) {
       effects.consume(code);
       return tagCloseStart;
     }
 
-    if (code === codes$146.questionMark) {
+    if (code === codes$140.questionMark) {
       effects.consume(code);
       return instruction;
     }
@@ -48899,12 +45755,12 @@ function tokenizeHtmlText$149(effects, ok, nok) {
    * @type {State}
    */
   function declarationOpen(code) {
-    if (code === codes$146.dash) {
+    if (code === codes$140.dash) {
       effects.consume(code);
       return commentOpenInside;
     }
 
-    if (code === codes$146.leftSquareBracket) {
+    if (code === codes$140.leftSquareBracket) {
       effects.consume(code);
       index = 0;
       return cdataOpenInside;
@@ -48929,7 +45785,7 @@ function tokenizeHtmlText$149(effects, ok, nok) {
    * @type {State}
    */
   function commentOpenInside(code) {
-    if (code === codes$146.dash) {
+    if (code === codes$140.dash) {
       effects.consume(code);
       return commentEnd;
     }
@@ -48948,16 +45804,16 @@ function tokenizeHtmlText$149(effects, ok, nok) {
    * @type {State}
    */
   function comment(code) {
-    if (code === codes$146.eof) {
+    if (code === codes$140.eof) {
       return nok(code);
     }
 
-    if (code === codes$146.dash) {
+    if (code === codes$140.dash) {
       effects.consume(code);
       return commentClose;
     }
 
-    if (markdownLineEnding$87(code)) {
+    if (markdownLineEnding$81(code)) {
       returnState = comment;
       return lineEndingBefore(code);
     }
@@ -48977,7 +45833,7 @@ function tokenizeHtmlText$149(effects, ok, nok) {
    * @type {State}
    */
   function commentClose(code) {
-    if (code === codes$146.dash) {
+    if (code === codes$140.dash) {
       effects.consume(code);
       return commentEnd;
     }
@@ -48996,7 +45852,7 @@ function tokenizeHtmlText$149(effects, ok, nok) {
    * @type {State}
    */
   function commentEnd(code) {
-    return code === codes$146.greaterThan ? end(code) : code === codes$146.dash ? commentClose(code) : comment(code);
+    return code === codes$140.greaterThan ? end(code) : code === codes$140.dash ? commentClose(code) : comment(code);
   }
 
   /**
@@ -49031,16 +45887,16 @@ function tokenizeHtmlText$149(effects, ok, nok) {
    * @type {State}
    */
   function cdata(code) {
-    if (code === codes$146.eof) {
+    if (code === codes$140.eof) {
       return nok(code);
     }
 
-    if (code === codes$146.rightSquareBracket) {
+    if (code === codes$140.rightSquareBracket) {
       effects.consume(code);
       return cdataClose;
     }
 
-    if (markdownLineEnding$87(code)) {
+    if (markdownLineEnding$81(code)) {
       returnState = cdata;
       return lineEndingBefore(code);
     }
@@ -49060,7 +45916,7 @@ function tokenizeHtmlText$149(effects, ok, nok) {
    * @type {State}
    */
   function cdataClose(code) {
-    if (code === codes$146.rightSquareBracket) {
+    if (code === codes$140.rightSquareBracket) {
       effects.consume(code);
       return cdataEnd;
     }
@@ -49079,11 +45935,11 @@ function tokenizeHtmlText$149(effects, ok, nok) {
    * @type {State}
    */
   function cdataEnd(code) {
-    if (code === codes$146.greaterThan) {
+    if (code === codes$140.greaterThan) {
       return end(code);
     }
 
-    if (code === codes$146.rightSquareBracket) {
+    if (code === codes$140.rightSquareBracket) {
       effects.consume(code);
       return cdataEnd;
     }
@@ -49102,11 +45958,11 @@ function tokenizeHtmlText$149(effects, ok, nok) {
    * @type {State}
    */
   function declaration(code) {
-    if (code === codes$146.eof || code === codes$146.greaterThan) {
+    if (code === codes$140.eof || code === codes$140.greaterThan) {
       return end(code);
     }
 
-    if (markdownLineEnding$87(code)) {
+    if (markdownLineEnding$81(code)) {
       returnState = declaration;
       return lineEndingBefore(code);
     }
@@ -49126,16 +45982,16 @@ function tokenizeHtmlText$149(effects, ok, nok) {
    * @type {State}
    */
   function instruction(code) {
-    if (code === codes$146.eof) {
+    if (code === codes$140.eof) {
       return nok(code);
     }
 
-    if (code === codes$146.questionMark) {
+    if (code === codes$140.questionMark) {
       effects.consume(code);
       return instructionClose;
     }
 
-    if (markdownLineEnding$87(code)) {
+    if (markdownLineEnding$81(code)) {
       returnState = instruction;
       return lineEndingBefore(code);
     }
@@ -49155,7 +46011,7 @@ function tokenizeHtmlText$149(effects, ok, nok) {
    * @type {State}
    */
   function instructionClose(code) {
-    return code === codes$146.greaterThan ? end(code) : instruction(code);
+    return code === codes$140.greaterThan ? end(code) : instruction(code);
   }
 
   /**
@@ -49190,7 +46046,7 @@ function tokenizeHtmlText$149(effects, ok, nok) {
    */
   function tagClose(code) {
     // ASCII alphanumerical and `-`.
-    if (code === codes$146.dash || asciiAlphanumeric(code)) {
+    if (code === codes$140.dash || asciiAlphanumeric(code)) {
       effects.consume(code);
       return tagClose;
     }
@@ -49209,7 +46065,7 @@ function tokenizeHtmlText$149(effects, ok, nok) {
    * @type {State}
    */
   function tagCloseBetween(code) {
-    if (markdownLineEnding$87(code)) {
+    if (markdownLineEnding$81(code)) {
       returnState = tagCloseBetween;
       return lineEndingBefore(code);
     }
@@ -49234,12 +46090,12 @@ function tokenizeHtmlText$149(effects, ok, nok) {
    */
   function tagOpen(code) {
     // ASCII alphanumerical and `-`.
-    if (code === codes$146.dash || asciiAlphanumeric(code)) {
+    if (code === codes$140.dash || asciiAlphanumeric(code)) {
       effects.consume(code);
       return tagOpen;
     }
 
-    if (code === codes$146.slash || code === codes$146.greaterThan || markdownLineEndingOrSpace$88(code)) {
+    if (code === codes$140.slash || code === codes$140.greaterThan || markdownLineEndingOrSpace$82(code)) {
       return tagOpenBetween(code);
     }
 
@@ -49257,18 +46113,18 @@ function tokenizeHtmlText$149(effects, ok, nok) {
    * @type {State}
    */
   function tagOpenBetween(code) {
-    if (code === codes$146.slash) {
+    if (code === codes$140.slash) {
       effects.consume(code);
       return end;
     }
 
     // ASCII alphabetical and `:` and `_`.
-    if (code === codes$146.colon || code === codes$146.underscore || asciiAlpha(code)) {
+    if (code === codes$140.colon || code === codes$140.underscore || asciiAlpha(code)) {
       effects.consume(code);
       return tagOpenAttributeName;
     }
 
-    if (markdownLineEnding$87(code)) {
+    if (markdownLineEnding$81(code)) {
       returnState = tagOpenBetween;
       return lineEndingBefore(code);
     }
@@ -49294,10 +46150,10 @@ function tokenizeHtmlText$149(effects, ok, nok) {
   function tagOpenAttributeName(code) {
     // ASCII alphabetical and `-`, `.`, `:`, and `_`.
     if (
-      code === codes$146.dash ||
-      code === codes$146.dot ||
-      code === codes$146.colon ||
-      code === codes$146.underscore ||
+      code === codes$140.dash ||
+      code === codes$140.dot ||
+      code === codes$140.colon ||
+      code === codes$140.underscore ||
       asciiAlphanumeric(code)
     ) {
       effects.consume(code);
@@ -49319,12 +46175,12 @@ function tokenizeHtmlText$149(effects, ok, nok) {
    * @type {State}
    */
   function tagOpenAttributeNameAfter(code) {
-    if (code === codes$146.equalsTo) {
+    if (code === codes$140.equalsTo) {
       effects.consume(code);
       return tagOpenAttributeValueBefore;
     }
 
-    if (markdownLineEnding$87(code)) {
+    if (markdownLineEnding$81(code)) {
       returnState = tagOpenAttributeNameAfter;
       return lineEndingBefore(code);
     }
@@ -49350,22 +46206,22 @@ function tokenizeHtmlText$149(effects, ok, nok) {
    */
   function tagOpenAttributeValueBefore(code) {
     if (
-      code === codes$146.eof ||
-      code === codes$146.lessThan ||
-      code === codes$146.equalsTo ||
-      code === codes$146.greaterThan ||
-      code === codes$146.graveAccent
+      code === codes$140.eof ||
+      code === codes$140.lessThan ||
+      code === codes$140.equalsTo ||
+      code === codes$140.greaterThan ||
+      code === codes$140.graveAccent
     ) {
       return nok(code);
     }
 
-    if (code === codes$146.quotationMark || code === codes$146.apostrophe) {
+    if (code === codes$140.quotationMark || code === codes$140.apostrophe) {
       effects.consume(code);
       marker = code;
       return tagOpenAttributeValueQuoted;
     }
 
-    if (markdownLineEnding$87(code)) {
+    if (markdownLineEnding$81(code)) {
       returnState = tagOpenAttributeValueBefore;
       return lineEndingBefore(code);
     }
@@ -49396,11 +46252,11 @@ function tokenizeHtmlText$149(effects, ok, nok) {
       return tagOpenAttributeValueQuotedAfter;
     }
 
-    if (code === codes$146.eof) {
+    if (code === codes$140.eof) {
       return nok(code);
     }
 
-    if (markdownLineEnding$87(code)) {
+    if (markdownLineEnding$81(code)) {
       returnState = tagOpenAttributeValueQuoted;
       return lineEndingBefore(code);
     }
@@ -49421,17 +46277,17 @@ function tokenizeHtmlText$149(effects, ok, nok) {
    */
   function tagOpenAttributeValueUnquoted(code) {
     if (
-      code === codes$146.eof ||
-      code === codes$146.quotationMark ||
-      code === codes$146.apostrophe ||
-      code === codes$146.lessThan ||
-      code === codes$146.equalsTo ||
-      code === codes$146.graveAccent
+      code === codes$140.eof ||
+      code === codes$140.quotationMark ||
+      code === codes$140.apostrophe ||
+      code === codes$140.lessThan ||
+      code === codes$140.equalsTo ||
+      code === codes$140.graveAccent
     ) {
       return nok(code);
     }
 
-    if (code === codes$146.slash || code === codes$146.greaterThan || markdownLineEndingOrSpace$88(code)) {
+    if (code === codes$140.slash || code === codes$140.greaterThan || markdownLineEndingOrSpace$82(code)) {
       return tagOpenBetween(code);
     }
 
@@ -49451,7 +46307,7 @@ function tokenizeHtmlText$149(effects, ok, nok) {
    * @type {State}
    */
   function tagOpenAttributeValueQuotedAfter(code) {
-    if (code === codes$146.slash || code === codes$146.greaterThan || markdownLineEndingOrSpace$88(code)) {
+    if (code === codes$140.slash || code === codes$140.greaterThan || markdownLineEndingOrSpace$82(code)) {
       return tagOpenBetween(code);
     }
 
@@ -49469,10 +46325,10 @@ function tokenizeHtmlText$149(effects, ok, nok) {
    * @type {State}
    */
   function end(code) {
-    if (code === codes$146.greaterThan) {
+    if (code === codes$140.greaterThan) {
       effects.consume(code);
-      effects.exit(types$147.htmlTextData);
-      effects.exit(types$147.htmlText);
+      effects.exit(types$141.htmlTextData);
+      effects.exit(types$141.htmlText);
       return ok;
     }
 
@@ -49495,11 +46351,11 @@ function tokenizeHtmlText$149(effects, ok, nok) {
    */
   function lineEndingBefore(code) {
     assert(returnState, 'expected return state');
-    assert(markdownLineEnding$87(code), 'expected eol');
-    effects.exit(types$147.htmlTextData);
-    effects.enter(types$147.lineEnding);
+    assert(markdownLineEnding$81(code), 'expected eol');
+    effects.exit(types$141.htmlTextData);
+    effects.enter(types$141.lineEnding);
     effects.consume(code);
-    effects.exit(types$147.lineEnding);
+    effects.exit(types$141.lineEnding);
     return lineEndingAfter;
   }
 
@@ -49539,7 +46395,7 @@ function tokenizeHtmlText$149(effects, ok, nok) {
    * @type {State}
    */
   function lineEndingAfterPrefix(code) {
-    effects.enter(types$147.htmlTextData);
+    effects.enter(types$141.htmlTextData);
     return returnState(code);
   }
 }
@@ -49547,7 +46403,7 @@ function tokenizeHtmlText$149(effects, ok, nok) {
 function overrideHtmlTextSyntax() {
   return {
     text: {
-      [codes$146.lessThan]: htmlText$148,
+      [codes$140.lessThan]: htmlText$142,
     },
   };
 }
@@ -49573,23 +46429,23 @@ function assert(..._args) {
  * @typedef {import('../../parser/micromark-util-types/index.js').TokenizeContext} TokenizeContext
  */
 
-const nodeType$150 = 'liquidNode';
+const nodeType$144 = 'liquidNode';
 
 /**
  * @returns {FromMarkdownExtension}
  */
 function liquidFromMarkdown() {
   return {
-    canContainEols: [nodeType$150],
-    enter: { [nodeType$150]: enter },
-    exit: { [nodeType$150]: exit },
+    canContainEols: [nodeType$144],
+    enter: { [nodeType$144]: enter },
+    exit: { [nodeType$144]: exit },
   };
 
   /** @type {Handle} */
   function enter(token) {
     this.enter(
       // @ts-expect-error
-      { type: nodeType$150 },
+      { type: nodeType$144 },
       token
     );
     this.buffer();
@@ -49611,13 +46467,13 @@ function liquidFromMarkdown() {
 function liquidSyntax() {
   return {
     flow: {
-      [codes$146.leftCurlyBrace]: {
+      [codes$140.leftCurlyBrace]: {
         name: 'liquidFlow',
         tokenize: tokenizeFlow,
       },
     },
     text: {
-      [codes$146.leftCurlyBrace]: {
+      [codes$140.leftCurlyBrace]: {
         name: 'liquidText',
         tokenize: tokenizeText,
       },
@@ -49649,13 +46505,13 @@ function liquidSyntax() {
     /** @type {State} */
     function start(code) {
       effects.enter('liquidNode');
-      effects.enter(types$147.data);
+      effects.enter(types$141.data);
       effects.consume(code);
       return function (code) {
         switch (code) {
-          case codes$146.percentSign:
-          case codes$146.leftCurlyBrace:
-            closingCode = code === codes$146.percentSign ? codes$146.percentSign : codes$146.rightCurlyBrace;
+          case codes$140.percentSign:
+          case codes$140.leftCurlyBrace:
+            closingCode = code === codes$140.percentSign ? codes$140.percentSign : codes$140.rightCurlyBrace;
             effects.consume(code);
             return inside;
           default:
@@ -49670,18 +46526,18 @@ function liquidSyntax() {
         case closingCode:
           effects.consume(code);
           return mayClose;
-        case codes$146.eof:
+        case codes$140.eof:
           return nok(code);
         default:
-          if (markdownLineEnding$87(code)) {
-            effects.exit(types$147.data);
-            effects.enter(types$147.lineEnding);
+          if (markdownLineEnding$81(code)) {
+            effects.exit(types$141.data);
+            effects.enter(types$141.lineEnding);
             effects.consume(code);
-            effects.exit(types$147.lineEnding);
+            effects.exit(types$141.lineEnding);
             if (isFlow) {
               return afterLineEnding;
             }
-            effects.enter(types$147.data);
+            effects.enter(types$141.data);
             return inside;
           }
           effects.consume(code);
@@ -49695,23 +46551,23 @@ function liquidSyntax() {
         return nok(code);
       }
 
-      if (markdownLineEnding$87(code)) {
-        effects.enter(types$147.lineEnding);
+      if (markdownLineEnding$81(code)) {
+        effects.enter(types$141.lineEnding);
         effects.consume(code);
-        effects.exit(types$147.lineEnding);
+        effects.exit(types$141.lineEnding);
         return afterLineEnding;
       }
 
-      effects.enter(types$147.data);
+      effects.enter(types$141.data);
       return inside(code);
     }
 
     /** @type {State} */
     function mayClose(code) {
-      if (code === codes$146.rightCurlyBrace) {
+      if (code === codes$140.rightCurlyBrace) {
         effects.consume(code);
-        effects.exit(types$147.data);
-        effects.exit(nodeType$150);
+        effects.exit(types$141.data);
+        effects.exit(nodeType$144);
         return isFlow ? afterClose : ok;
       }
 
@@ -49721,7 +46577,7 @@ function liquidSyntax() {
     /** @type {State} */
     function afterClose(code) {
       if (markdownSpace(code)) {
-        effects.enter(types$147.whitespace);
+        effects.enter(types$141.whitespace);
         effects.consume(code);
         return afterWhitespace;
       }
@@ -49736,13 +46592,13 @@ function liquidSyntax() {
         return afterWhitespace;
       }
 
-      effects.exit(types$147.whitespace);
+      effects.exit(types$141.whitespace);
       return after(code);
     }
 
     /** @type {State} */
     function after(code) {
-      return code === codes$146.eof || markdownLineEnding$87(code) ? ok(code) : nok(code);
+      return code === codes$140.eof || markdownLineEnding$81(code) ? ok(code) : nok(code);
     }
   }
 }
@@ -49777,13 +46633,13 @@ function getMarkdownParseOptions() {
       liquidSyntax(),
       overrideHtmlTextSyntax(),
     ],
-    mdastExtensions: [gfmFromMarkdown$145(), mathFromMarkdown(), fromMarkdown$79(), liquidFromMarkdown()],
+    mdastExtensions: [gfmFromMarkdown$139(), mathFromMarkdown(), fromMarkdown$73(), liquidFromMarkdown()],
   });
 }
 
 function parseMarkdown(text) {
-  const { frontMatter, content } = parse$62(text);
-  const ast = fromMarkdown$123(content, getMarkdownParseOptions());
+  const { frontMatter, content } = parse$59(text);
+  const ast = fromMarkdown$117(content, getMarkdownParseOptions());
 
   if (frontMatter) {
     const [start, end] = [frontMatter.start, frontMatter.end].map(({ line, column, index }) => ({

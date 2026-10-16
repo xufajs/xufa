@@ -46,13 +46,14 @@
         <ul>
           <li><a href="#functions">Functions (10)</a></li>
           <li><a href="#classes">Classes (2)</a></li>
-          <li><a href="#constants">Constants (3)</a></li>
+          <li><a href="#constants">Constants (4)</a></li>
           <li><a href="#interfaces">Interfaces (8)</a></li>
           <li><a href="#types">Types (2)</a></li>
         </ul>
         <h4>Packages</h4>
         <ul>
           <li><a href="../websocket/index.html">@xufa/websocket</a></li>
+          <li><a href="../express/index.html">@xufa/express</a></li>
           <li><a href="../admin/index.html">@xufa/admin</a></li>
           <li><a href="../session/index.html">@xufa/session</a></li>
           <li><a href="../forms/index.html">@xufa/forms</a></li>
@@ -96,7 +97,7 @@
         </nav>
         <h1>Reference</h1>
         <p class="intro">
-          A linter with ESLint's recommended rules (ported, with their tests) and a formatter with prettier's output, on TypeScript's parser. Every declaration of its TypeScript declarations
+          A linter with ESLint's recommended rules (with their tests) and a formatter with prettier's output, on TypeScript's parser. Every declaration of its TypeScript declarations
           (<code>packages/lint/index.d.ts</code> or <code>index.d.cts</code>), as they are written, with their comments: made from them each time
           the docs are built. How to use them is in <a href="index.html">the overview</a>.
         </p>
@@ -183,7 +184,7 @@
           </div>
 
         <h2 id="constants">Constants</h2>
-        <p class="ref-index"><a href="#ref-formatters"><code>formatters</code></a>, <a href="#ref-globals"><code>globals</code></a>, <a href="#ref-configs"><code>configs</code></a></p>
+        <p class="ref-index"><a href="#ref-formatters"><code>formatters</code></a>, <a href="#ref-globals"><code>globals</code></a>, <a href="#ref-configs"><code>configs</code></a>, <a href="#ref-plugins"><code>plugins</code></a></p>
 
         <h3 id="ref-formatters"><code>formatters</code></h3>
         <pre><code class="language-ts">export declare const formatters: {
@@ -224,6 +225,12 @@
 
         <h3 id="ref-configs"><code>configs</code></h3>
         <pre><code class="language-ts">export declare const configs: { recommended: Config };</code></pre>
+
+        <h3 id="ref-plugins"><code>plugins</code></h3>
+        <pre><code class="language-ts">export declare const plugins: {
+  readonly jest: { meta: { name: string; version: string }; rules: Record&lt;string, Rule&gt; };
+};</code></pre>
+        <p>Plugins of rules ported: eslint-plugin-jest 29.12.2's 19 recommended rules.</p>
 
         <h2 id="interfaces">Interfaces</h2>
         <p class="ref-index"><a href="#ref-LanguageOptions"><code>LanguageOptions</code></a>, <a href="#ref-LinterOptions"><code>LinterOptions</code></a>, <a href="#ref-Config"><code>Config</code></a>, <a href="#ref-FormatOptions"><code>FormatOptions</code></a>, <a href="#ref-Fix"><code>Fix</code></a>, <a href="#ref-LintMessage"><code>LintMessage</code></a>, <a href="#ref-LintResult"><code>LintResult</code></a>, <a href="#ref-Rule"><code>Rule</code></a></p>
@@ -268,6 +275,7 @@
                 <tr><td><code>linterOptions?</code></td><td><code><a href="#ref-LinterOptions">LinterOptions</a></code></td><td></td></tr>
                 <tr><td><code>rules?</code></td><td><code>Record&lt;string, <a href="#ref-RuleSetting">RuleSetting</a>&gt;</code></td><td></td></tr>
                 <tr><td><code>settings?</code></td><td><code>Record&lt;string, unknown&gt;</code></td><td></td></tr>
+                <tr><td><code>plugins?</code></td><td><code>Record&lt;string, { rules?: Record&lt;string, <a href="#ref-Rule">Rule</a>&gt; }&gt;</code></td><td><p>Plugins whose rules are named <code>plugin/rule</code> (their rules only).</p></td></tr>
                 <tr><td><code>format?</code></td><td><code><a href="#ref-FormatOptions">FormatOptions</a> | false</code></td><td><p>The formatter's options for these files; false leaves them unformatted.</p></td></tr>
               </tbody>
             </table>

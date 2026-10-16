@@ -40,6 +40,7 @@ Read a topic with `xufa-test guide <topic>`, or open its file here. Generated fr
 - [Matchers](api/matchers.md) `api/matchers`: `expect(value, message?)` returns the matchers.
 - [HTTP matchers](api/http-matchers.md) `api/http-matchers`: 
 - [The api fixture](api/api-fixture.md) `api/api-fixture`: 
+- [supertest](api/supertest.md) `api/supertest`: `@xufa/test/supertest` is supertest 7's API, written anew: suites that use supertest switch by changing the `require` (or the import), and …
 - [Mock matchers](api/mock-matchers.md) `api/mock-matchers`: Jest's older names work too: `toBeCalled`, `toBeCalledTimes`, `toBeCalledWith`, `lastCalledWith`, `nthCalledWith`, `toReturn`, `toReturnTim…
 - [Snapshot matchers](api/snapshot-matchers.md) `api/snapshot-matchers`: Line endings of the values are written as `\n`, so a snapshot taken on Windows matches on Linux and the other way around.
 - [Asymmetric matchers](api/asymmetric.md) `api/asymmetric`: Used in expected values: they match any value that passes their check.

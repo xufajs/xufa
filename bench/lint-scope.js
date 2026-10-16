@@ -11,6 +11,7 @@
 
 const fs = require('node:fs');
 const path = require('node:path');
+const { pathToFileURL } = require('node:url');
 const { isDeepStrictEqual } = require('node:util');
 const { corpus } = require('./lint');
 const { watch, replace } = require('./lint-intercept');
@@ -185,7 +186,7 @@ async function main() {
   const { linterConfig } = require(path.join(LINT, 'lib/engine'));
   const linter = new Linter();
   const files = await corpus(true);
-  const { default: config } = await import(path.join(ROOT, 'xufa.lint.config.js'));
+  const { default: config } = await import(pathToFileURL(path.join(ROOT, 'xufa.lint.config.js')).href);
   const configs = new ConfigArray(config, ROOT);
   for (const file of files) {
     current = path.relative(ROOT, file);

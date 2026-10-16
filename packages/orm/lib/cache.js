@@ -6,23 +6,25 @@
 //   LocalCache    in each process, with invalidations sent to the others through the primary (reads do not leave
 //                 the process; writes reach every copy).
 //
-// Values are copied in and out (structured clone): the objects of the ORM cannot change what is cached.
+// Values are copied in and out (@xufa/marshal's clone): the objects of the ORM cannot change what is cached.
 
 import * as faultsModule from '@xufa/faults';
+import { clone } from '@xufa/marshal';
 
-// A copy of a value, as structuredClone makes it, without its cost for what needs none: primitives as they are, and
-// plain objects of primitives copied field by field (as the results of counts, { value: 5 }, and the versions of
-// models are).
+// A copy of a value: primitives as they are; plain objects of primitives copied field by field (the results of counts,
+// { value: 5 }, and the versions of models); anything else with @xufa/marshal's clone, which keeps the classes of
+// instances (a Date, an ObjectId; structuredClone gave them as plain objects), ~5x faster than structuredClone on a
+// document of a few KB with shared: false (values of caches have no shared objects: an object met twice is copied
+// twice; cycles are kept).
+const COPY = { shared: false };
+
 function copyOf(value) {
-  if (value === null) return value;
-  const type = typeof value;
-  if (type !== 'object') return type === 'symbol' || type === 'function' ? structuredClone(value) : value;
-  if (Object.getPrototypeOf(value) !== Object.prototype) return structuredClone(value);
+  if (value === null || typeof value !== 'object') return value;
+  if (Object.getPrototypeOf(value) !== Object.prototype) return clone(value, COPY);
   const copy = {};
   for (const key of Object.keys(value)) {
     const item = value[key];
-    const kind = typeof item;
-    if ((item !== null && kind === 'object') || kind === 'function' || kind === 'symbol') return structuredClone(value);
+    if (item !== null && typeof item === 'object') return clone(value, COPY);
     if (key === '__proto__') {
       Object.defineProperty(copy, key, { value: item, enumerable: true, writable: true, configurable: true });
     } else copy[key] = item;

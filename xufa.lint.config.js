@@ -5,6 +5,7 @@ import { configs, globals } from '@xufa/lint';
 const COMMONJS = [
   'packages/openapi/**/*.js',
   'packages/yaml/**/*.js',
+  'packages/lint/lib/plugins/**/*.js',
   'bench/**/*.js',
   'tools/fastify-plugins/**/*.js',
   'tools/node-test-to-xufa-test/**/*.js',
@@ -31,6 +32,14 @@ export default [
       'tools/sequelize-compat/.snapshot/**',
       // js-yaml 4.1.0 as it is (tools/port-yaml): its style is kept, so it can be ported again.
       'packages/yaml/lib/**',
+      // parse5 and entities as they are (tools/port-parse5), so they can be ported again.
+      'packages/html/lib/parse5/**',
+      'packages/html/lib/entities/**',
+      // DOMPurify as it is (tools/port-purify), so it can be ported again; and the names generated for the DOM.
+      'packages/purify/lib/**',
+      'packages/html/lib/dom/clobber-names.js',
+      // eslint-plugin-jest 29.12.2's rules, its published CommonJS as it is (ported): so it can be ported again.
+      'packages/lint/lib/plugins/jest/rules/**',
       // The formatter as one file and TypeScript's parser, built (scripts/build-format.mjs, build-typescript.mjs).
       'packages/lint/lib/prettier/dist/**',
       'packages/lint/lib/typescript/typescript.cjs',
@@ -54,8 +63,17 @@ export default [
         'tools/docs/pages/**',
         'tools/sequelize-compat/test/**',
         'tools/sequelize-compat/results/**',
+        // Ported as they are (tools/port-parse5): parse5 and entities.
+        'packages/html/lib/parse5/**',
+        'packages/html/lib/entities/**',
+        // Ported as it is (tools/port-purify): DOMPurify.
+        'packages/purify/lib/**',
+        // Generated from Chrome and jsdom (tools/port-purify/clobber-names.js).
+        'packages/html/lib/dom/clobber-names.js',
         // Ported as they are (tools/port-yaml): js-yaml 4.1.0.
         'packages/yaml/lib/**',
+        // Ported as it is: eslint-plugin-jest 29.12.2's rules (CommonJS).
+        'packages/lint/lib/plugins/jest/rules/**',
         'packages/yaml/index.js',
         // Ported as they are (tools/port-swagger): @fastify/swagger 9.9.1 (lib/xufa and lib/ui.js are ours).
         'packages/openapi/lib/constants.js',
@@ -66,6 +84,8 @@ export default [
         'packages/openapi/examples/**',
         // Generated from Unicode confusables.txt (packages/auth/scripts/generate-confusables.js).
         'packages/auth/lib/confusables-data.js',
+        // Generated from mime-db (tools/port-express/mime.js).
+        'packages/http/lib/mime-db.js',
         // The Django project ported by examples/locallibrary, kept as it is.
         'examples/django-locallibrary/**',
         // Templates of @xufa/template.

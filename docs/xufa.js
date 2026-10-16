@@ -125,7 +125,10 @@ class Engine {
     // cannot hide them); `modules`: what `import` of programs takes, (name) => the source of a module (a string, a
     // program compiled by this engine and run for each import with a context of its own) or what it exports (an object,
     // given by the host), or undefined (none); `tdz`: a let or const of a program used before its declaration runs is
-    // an error (as in JavaScript), not undefined.
+    // an error (as in JavaScript), not undefined. `methods`: functions by name (of an object or a module: what is not a
+    // function is left out) that values have as methods when they
+    // have none of that name: `prices.sum()` is methods.sum(prices) when prices.sum is undefined or null (a value's own
+    // methods first; `x.sum?.()` and `x['sum']()` are not looked up; null and undefined have none).
     constructor(options = {}) {
         const { globals = {}, builtins = true, filters = null, lenient = false, strict = false, bound = {} } = options;
         // (Programs change objects: Object.assign and Object.freeze too.)
@@ -135,7 +138,19 @@ class Engine {
         const defaults = options.statements ? globals_js_1.PROGRAM_GLOBALS : globals_js_1.GLOBALS;
         this.globals = Object.freeze({ ...(builtins ? defaults : {}), ...changers, ...globals });
         this.filters = filters ? Object.freeze({ ...filters }) : null;
-        this.lenient = Boolean(lenient);
+        // (true: both; 'members': members of null or undefined only; 'calls': calls of what is not a function only.)
+        if (![true, false, 'members', 'calls'].includes(lenient)) {
+            throw new TypeError(`lenient is true, false, 'members' or 'calls', not ${String(lenient)}`);
+        }
+        this.lenient = lenient;
+        const { methods = null } = options;
+        if (methods !== null && (typeof methods !== 'object' || Array.isArray(methods))) {
+            throw new TypeError('methods is an object of functions by name');
+        }
+        // (Its functions: a module of them can be given as it is, its other values left out.)
+        this.methods = methods
+            ? Object.freeze(Object.assign(Object.create(null), Object.fromEntries(Object.entries(methods).filter(([, fn]) => typeof fn === 'function'))))
+            : null;
         this.strict = Boolean(strict);
         this.tdz = Boolean(options.tdz);
         this.maxLength = options.maxLength === undefined ? 10000 : options.maxLength;
@@ -145,6 +160,21 @@ class Engine {
         this.cache = new Map();
         this.bound = Object.freeze(Object.assign(Object.create(null), bound));
         this.statements = Boolean(options.statements);
+        // scope: 'program' (a program's own names stay its own) or 'context' (the names declared or assigned at its top
+        // level are the context's properties, as those of the global object of a script; this there is context.this).
+        const scope = options.scope ?? 'program';
+        if (scope !== 'program' && scope !== 'context') {
+            throw new TypeError(`scope is 'program' or 'context', not ${String(scope)}`);
+        }
+        if (scope === 'context' && !this.statements)
+            throw new TypeError("scope: 'context' is of programs (statements: true)");
+        this.contextScope = scope === 'context';
+        // onError(error, { source, statement, context }): an error of a top-level statement is given to it, the
+        // statement's value is undefined, and the program goes on with the next one (limits still end the run).
+        if (options.onError !== undefined && options.onError !== null && typeof options.onError !== 'function') {
+            throw new TypeError('onError is a function');
+        }
+        this.onError = options.onError ?? null;
         this.maxSteps = options.maxSteps === undefined ? 10000000 : options.maxSteps;
         this.maxDepth = options.maxDepth === undefined ? 1000 : options.maxDepth;
         this.constructors = Object.freeze({ ...CONSTRUCTORS, ...(options.constructors ?? {}) });
@@ -233,7 +263,11 @@ class Engine {
     }
     parse(source) {
         this.check(source);
-        return (0, parser_js_1.parse)(source, { filters: Boolean(this.filters), statements: this.statements });
+        return (0, parser_js_1.parse)(source, {
+            filters: Boolean(this.filters),
+            statements: this.statements,
+            contextThis: this.contextScope,
+        });
     }
     check(source) {
         if (typeof source !== 'string')
@@ -529,7 +563,7 @@ const asyncStatements = {
         if (!containsAwait(node))
             return lift(this.compile(node, env));
         const compiler = this;
-        const { lenient } = this;
+        const { lenientMembers } = this;
         switch (node.type) {
             case 'AwaitExpression': {
                 const argument = this.aExpr(node.argument, env);
@@ -634,7 +668,7 @@ const asyncStatements = {
                     if (value === null || value === undefined) {
                         if (node.optional)
                             return short_js_1.SHORT;
-                        if (lenient)
+                        if (lenientMembers)
                             return undefined;
                         throw compiler.nullMember(node);
                     }
@@ -759,7 +793,7 @@ const asyncStatements = {
     },
     aCall(node, env) {
         const compiler = this;
-        const { lenient } = this;
+        const { lenientMembers, lenientCalls } = this;
         const args = this.aItems(node.arguments, env);
         const callOptional = node.optional;
         const { callee } = node;
@@ -771,7 +805,7 @@ const asyncStatements = {
                 // (The arguments before the check, as JavaScript does: what they do happens.)
                 const values = yield* args(s);
                 if (typeof fn !== 'function') {
-                    if (lenient)
+                    if (lenientCalls)
                         return undefined;
                     throw compiler.notFunction(node);
                 }
@@ -791,7 +825,7 @@ const asyncStatements = {
                 // (The arguments before the check, as JavaScript does: what they do happens.)
                 const values = yield* args(s);
                 if (typeof fn !== 'function') {
-                    if (lenient)
+                    if (lenientCalls)
                         return undefined;
                     throw compiler.notFunction(node);
                 }
@@ -807,7 +841,7 @@ const asyncStatements = {
                 if (target === null || target === undefined) {
                     if (callee.optional)
                         return short_js_1.SHORT;
-                    if (lenient)
+                    if (lenientMembers)
                         return undefined;
                     throw compiler.nullMember(callee);
                 }
@@ -817,7 +851,10 @@ const asyncStatements = {
                 // (The arguments before the check, as JavaScript does: what they do happens.)
                 const values = yield* args(s);
                 if (typeof fn !== 'function') {
-                    if (lenient)
+                    const method = callee.computed ? null : compiler.methodOf(callee.property, fn);
+                    if (method)
+                        return Reflect.apply(method, undefined, [target, ...values]);
+                    if (lenientCalls)
                         return undefined;
                     throw compiler.notFunction(node);
                 }
@@ -834,7 +871,7 @@ const asyncStatements = {
             // (The arguments before the check, as JavaScript does: what they do happens.)
             const values = yield* args(s);
             if (typeof fn !== 'function') {
-                if (lenient)
+                if (lenientCalls)
                     return undefined;
                 throw compiler.notFunction(node);
             }
@@ -1642,6 +1679,9 @@ const statementMethods = {
             if (entry)
                 return entry;
         }
+        // (With the context as the program's scope: the context's property, the context checked by CW at each write.)
+        if (this.compiler.contextScope && !name.startsWith('#'))
+            return { name, as: `CW(ctx)[${JSON.stringify(name)}]` };
         throw new Error(`${name} is not declared here`);
     },
     // The variable of a name of the frames around.
@@ -1669,11 +1709,12 @@ const statementMethods = {
         this.inFunction = 0;
         this.inProgram = true;
         const scanned = (0, statements_js_1.implicitNames)(tree);
-        const declared = (0, statements_js_1.declaredNames)(tree.body, true);
-        const implicit = scanned.filter((name) => !declared.includes(name));
+        const { contextScope, onError } = this.compiler;
+        const declared = (0, statements_js_1.contextFrame)((0, statements_js_1.declaredNames)(tree.body, true), contextScope);
+        const implicit = contextScope ? [] : scanned.filter((name) => !declared.includes(name));
         const frame = this.frameOf([...declared, ...implicit], declared.lexical);
         const env = [frame];
-        const body = this.list(tree.body, env);
+        const body = onError || contextScope ? this.topList(tree.body, env) : this.list(tree.body, env);
         const inits = implicit.map((name) => `${this.variableOf(name, env)} = IV(ctx, ${JSON.stringify(name)});`);
         const names = frame.length ? `let ${this.declare(frame)}; ` : '';
         return `${names}${inits.join(' ')} ${body} return last;`;
@@ -1684,6 +1725,28 @@ const statementMethods = {
             .filter((node) => node.type === 'FunctionDeclaration')
             .map((node) => `${this.variableOf(node.id, env)} = ${this.fn(node, env)};`);
         const rest = nodes.filter((node) => node.type !== 'FunctionDeclaration').map((node) => this.statement(node, env));
+        return [...hoisted, ...rest].join(' ');
+    },
+    // The statements of a program's top level as the closures run them (statements.js, topList): with onError, an error
+    // of one given to it (OE; limits go through), its value undefined; with the context as the scope, a declaration's
+    // value undefined.
+    topList(nodes, env) {
+        const { contextScope, onError } = this.compiler;
+        const hoisted = nodes
+            .filter((node) => node.type === 'FunctionDeclaration')
+            .map((node) => `${this.variableOf(node.id, env)} = ${this.fn(node, env)};`);
+        const rest = [];
+        nodes.forEach((node, index) => {
+            if (node.type === 'FunctionDeclaration')
+                return;
+            let code = this.statement(node, env);
+            if (onError) {
+                code = `try { ${code} } catch ($e) { if (LM($e)) throw $e; last = undefined; OE($e, ${this.at(node.expression ?? node)}, ${index}, ctx); }`;
+            }
+            if (contextScope && node.type === 'VariableDeclaration')
+                code += ' last = undefined;';
+            rest.push(code);
+        });
         return [...hoisted, ...rest].join(' ');
     },
     // A block: its names declared at its start (a binding of each run of it, as the frame of the closures).
@@ -2304,11 +2367,13 @@ class Generator {
             }
             const key = this.key(callee, env);
             // The method read here and called with its object (f.call: expressions cannot assign, so no call of a function
-            // is replaced but by the application); null objects and what is not a function by the helpers.
+            // is replaced but by the application); null objects and what is not a function by the helpers (MF: the
+            // engine's methods first).
             const t = this.temp();
             const f = this.temp();
+            const notFunction = this.compiler.methods && !callee.computed ? `MF(${index}, ${t}, ${f}, ${args})` : `(${args}, NF(${index}))`;
             return (`((${t} = ${object}) === null || ${t} === undefined ? CN(${index}) : ` +
-                `typeof (${f} = ${t}[${key}]) !== 'function' ? (${args}, NF(${index})) : ${f}.call(${t}${callArgs}))`);
+                `typeof (${f} = ${t}[${key}]) !== 'function' ? ${notFunction} : ${f}.call(${t}${callArgs}))`);
         }
         const fn = this.gen(callee, env, chain);
         if (chain)
@@ -2319,6 +2384,8 @@ class Generator {
     helpers(options) {
         const { compiler, nodes, SHORT } = this;
         const { globals, filters, lenient, strict } = options;
+        const lenientMembers = lenient === true || lenient === 'members';
+        const lenientCalls = lenient === true || lenient === 'calls';
         const RUNTIME = 'XUFA_EXPR_ERR_RUNTIME';
         const keyOf = (n) => compiler.keyOf(nodes[n]);
         const keys = new Map();
@@ -2347,13 +2414,13 @@ class Generator {
             },
             // A member of null or undefined: undefined (lenient) or the error.
             MN(n) {
-                if (lenient)
+                if (lenientMembers)
                     return undefined;
                 throw compiler.nullMember(nodes[n]);
             },
             // A method of null or undefined.
             CN(n) {
-                if (lenient)
+                if (lenientMembers)
                     return undefined;
                 throw compiler.nullMember(nodes[n].callee);
             },
@@ -2364,14 +2431,23 @@ class Generator {
             },
             // A call of what is not a function.
             NF(n) {
-                if (lenient)
+                if (lenientCalls)
+                    return undefined;
+                throw compiler.notFunction(nodes[n]);
+            },
+            // A call of a method that is not a function: the engine's of its name (with the object first), else NF.
+            MF(n, object, value, args) {
+                const method = compiler.methodOf(nodes[n].callee.property, value);
+                if (method)
+                    return Reflect.apply(method, undefined, [object, ...args]);
+                if (lenientCalls)
                     return undefined;
                 throw compiler.notFunction(nodes[n]);
             },
             RA: Reflect.apply,
             M(object, key, n) {
                 if (object === null || object === undefined) {
-                    if (lenient)
+                    if (lenientMembers)
                         return undefined;
                     throw compiler.nullMember(nodes[n]);
                 }
@@ -2383,7 +2459,7 @@ class Generator {
                 if (object === null || object === undefined) {
                     if (optional)
                         return SHORT;
-                    if (lenient)
+                    if (lenientMembers)
                         return undefined;
                     throw compiler.nullMember(nodes[n]);
                 }
@@ -2395,7 +2471,7 @@ class Generator {
                 if (object === null || object === undefined) {
                     if (memberOptional)
                         return SHORT;
-                    if (lenient)
+                    if (lenientMembers)
                         return undefined;
                     throw compiler.nullMember(nodes[n].callee);
                 }
@@ -2405,7 +2481,11 @@ class Generator {
                 // (The arguments before the check, as JavaScript does: what they do happens.)
                 const values = args();
                 if (typeof fn !== 'function') {
-                    if (lenient)
+                    const { callee } = nodes[n];
+                    const method = callee.computed ? null : compiler.methodOf(callee.property, fn);
+                    if (method)
+                        return Reflect.apply(method, undefined, [object, ...values]);
+                    if (lenientCalls)
                         return undefined;
                     throw compiler.notFunction(nodes[n]);
                 }
@@ -2413,7 +2493,7 @@ class Generator {
             },
             CF(fn, args, n) {
                 if (typeof fn !== 'function') {
-                    if (lenient)
+                    if (lenientCalls)
                         return undefined;
                     throw compiler.notFunction(nodes[n]);
                 }
@@ -2427,7 +2507,7 @@ class Generator {
                 // (The arguments before the check, as JavaScript does: what they do happens.)
                 const values = args();
                 if (typeof fn !== 'function') {
-                    if (lenient)
+                    if (lenientCalls)
                         return undefined;
                     throw compiler.notFunction(nodes[n]);
                 }
@@ -2444,6 +2524,10 @@ class Generator {
             LIM: (n) => compiler.limit(nodes[n]),
             DEEP: (n) => compiler.error(`Calls nested deeper than ${compiler.maxDepth}`, nodes[n], 'XUFA_EXPR_ERR_LIMIT'),
             LM: statements_js_1.isLimit,
+            // (Of programs whose scope is the context: the context, checked, where a name is written; an error of a
+            // top-level statement given to onError.)
+            CW: (ctx) => compiler.contextWritable(ctx, null),
+            OE: (error, n, index, ctx) => options.onError(error, { source: compiler.text(nodes[n]), statement: index, context: ctx }),
             IV(ctx, name) {
                 const value = ctx[name];
                 if (value !== undefined || name in ctx)
@@ -2475,7 +2559,7 @@ class Generator {
             SCL(home, key, self, args, n) {
                 const fn = Reflect.get(home, key, self);
                 if (typeof fn !== 'function') {
-                    if (lenient)
+                    if (lenientCalls)
                         return undefined;
                     throw compiler.notFunction(nodes[n]);
                 }
@@ -2502,7 +2586,7 @@ class Generator {
                 if (fn === SHORT)
                     return SHORT;
                 if (typeof fn !== 'function') {
-                    if (lenient)
+                    if (lenientCalls)
                         return undefined;
                     throw compiler.notFunction(nodes[n]);
                 }
@@ -2543,6 +2627,7 @@ const HELPERS = [
     'MN',
     'CN',
     'NF',
+    'MF',
     'RA',
     'U',
     'TDZ',
@@ -2559,6 +2644,8 @@ const HELPERS = [
     'DEEP',
     'LM',
     'IV',
+    'CW',
+    'OE',
     'MX',
     'MD',
     'CO',
@@ -2676,13 +2763,21 @@ class Compiler {
         this.bound = bound ?? {};
         this.guardedToo = guardedToo ?? null;
         this.filters = filters;
-        this.lenient = Boolean(lenient);
+        this.lenient = lenient ?? false;
+        // (lenient: true is both; 'members' or 'calls', one of them.)
+        this.lenientMembers = this.lenient === true || this.lenient === 'members';
+        this.lenientCalls = this.lenient === true || this.lenient === 'calls';
+        // (Functions by name that values have as methods when they have none: the engine's `methods`.)
+        this.methods = options.methods ?? null;
         this.strict = Boolean(strict);
         this.tdz = Boolean(options.tdz);
         this.maxSteps = maxSteps ?? Infinity;
         this.maxDepth = maxDepth ?? Infinity;
         this.constructors = constructors ?? {};
         this.guarded = guarded ?? new WeakSet();
+        // Programs: the context as their top-level scope (scope: 'context'), and onError for their top-level statements.
+        this.contextScope = Boolean(options.contextScope);
+        this.onError = options.onError ?? null;
         this.depth = 0;
         this.breakable = [];
         this.labels = [];
@@ -2817,8 +2912,8 @@ class Compiler {
         const keyOf = this.keyOf(node.property);
         return { home, self, key: (s) => keyOf(value(s)) };
     }
-    error(message, node, code = 'XUFA_EXPR_ERR_SYNTAX') {
-        return new errors_js_1.ExpressionError(message, { code, source: this.source, position: node ? node.start : undefined });
+    error(message, node, code = 'XUFA_EXPR_ERR_SYNTAX', reason = undefined) {
+        return new errors_js_1.ExpressionError(message, { code, source: this.source, position: node ? node.start : undefined, reason });
     }
     // The text of a node (of a tree made by another parser, without positions: made of its names).
     text(node) {
@@ -3156,12 +3251,12 @@ class Compiler {
     }
     nullMember(node) {
         const name = node.computed ? this.text(node.property) : node.property;
-        return this.error(`Cannot read ${name} of ${this.text(node.object)}, which is null or undefined`, node, 'XUFA_EXPR_ERR_RUNTIME');
+        return this.error(`Cannot read ${name} of ${this.text(node.object)}, which is null or undefined`, node, 'XUFA_EXPR_ERR_RUNTIME', 'nullMember');
     }
     member(node, env) {
         const { object, key, keyFn } = this.memberParts(node, env);
         const { optional } = node;
-        const { lenient } = this;
+        const { lenientMembers } = this;
         const compiler = this;
         return (s) => {
             const value = object(s);
@@ -3170,7 +3265,7 @@ class Compiler {
             if (value === null || value === undefined) {
                 if (optional)
                     return short_js_1.SHORT;
-                if (lenient)
+                if (lenientMembers)
                     return undefined;
                 throw compiler.nullMember(node);
             }
@@ -3202,12 +3297,18 @@ class Compiler {
             return result;
         };
     }
+    // The function of the engine's methods for a call of a method of a name whose value is undefined or null, or null.
+    methodOf(name, value) {
+        if (!this.methods || (value !== undefined && value !== null))
+            return null;
+        return Object.hasOwn(this.methods, name) ? this.methods[name] : null;
+    }
     notFunction(node) {
-        return this.error(`${this.text(node.callee)} is not a function`, node, 'XUFA_EXPR_ERR_RUNTIME');
+        return this.error(`${this.text(node.callee)} is not a function`, node, 'XUFA_EXPR_ERR_RUNTIME', 'notFunction');
     }
     call(node, env) {
         const args = this.argumentsOf(node.arguments, env);
-        const { lenient } = this;
+        const { lenientMembers, lenientCalls } = this;
         const compiler = this;
         const callOptional = node.optional;
         const { callee } = node;
@@ -3225,7 +3326,7 @@ class Compiler {
                 // (The arguments before the check, as JavaScript does: what they do happens.)
                 const values = args(s);
                 if (typeof fn !== 'function') {
-                    if (lenient)
+                    if (lenientCalls)
                         return undefined;
                     throw compiler.notFunction(node);
                 }
@@ -3241,7 +3342,7 @@ class Compiler {
                 // (The arguments before the check, as JavaScript does: what they do happens.)
                 const values = args(s);
                 if (typeof fn !== 'function') {
-                    if (lenient)
+                    if (lenientCalls)
                         return undefined;
                     throw compiler.notFunction(node);
                 }
@@ -3259,7 +3360,7 @@ class Compiler {
                 if (target === null || target === undefined) {
                     if (memberOptional)
                         return short_js_1.SHORT;
-                    if (lenient)
+                    if (lenientMembers)
                         return undefined;
                     throw compiler.nullMember(callee);
                 }
@@ -3269,7 +3370,11 @@ class Compiler {
                 // (The arguments before the check, as JavaScript does: what they do happens.)
                 const values = args(s);
                 if (typeof fn !== 'function') {
-                    if (lenient)
+                    // (A method of the engine's of that name: with the value first.)
+                    const method = keyFn ? null : compiler.methodOf(key, fn);
+                    if (method)
+                        return Reflect.apply(method, undefined, [target, ...values]);
+                    if (lenientCalls)
                         return undefined;
                     throw compiler.notFunction(node);
                 }
@@ -3286,7 +3391,7 @@ class Compiler {
             // (The arguments before the check, as JavaScript does: what they do happens.)
             const values = args(s);
             if (typeof fn !== 'function') {
-                if (lenient)
+                if (lenientCalls)
                     return undefined;
                 throw compiler.notFunction(node);
             }
@@ -3628,6 +3733,21 @@ function checkTree(tree, compiler) {
 // lib/codegen-statements.js for programs),
 // which costs more to make than a few runs: expressions run a few times do not pay it. The first functions are shared
 // by every expression, so V8 cannot specialize their reads; the one made reads each name and member where it is.
+// fn(context), its errors given to onError (limits aside) and undefined its value.
+function withOnError(run, onError, text) {
+    return (context) => {
+        try {
+            return run(context);
+        }
+        catch (error) {
+            if ((0, statements_js_1.isLimit)(error))
+                throw error;
+            const ctx = typeof context === 'object' && context !== null ? context : contextOf(context);
+            onError(error, { source: text, statement: 0, context: ctx });
+            return undefined;
+        }
+    };
+}
 function compileTree(tree, source, options) {
     if (tree.type === 'Program') {
         // A program of one expression (or a return of one) is that expression: compiled, and inlined, as one.
@@ -3636,8 +3756,11 @@ function compileTree(tree, source, options) {
             (only.type === 'ExpressionStatement' || (only.type === 'ReturnStatement' && only.argument))
             ? (only.expression ?? only.argument)
             : null;
-        if (expression && (0, statements_js_1.isExpressionOnly)(expression))
-            return compileTree(expression, source, options);
+        if (expression && (0, statements_js_1.isExpressionOnly)(expression)) {
+            const run = compileTree(expression, source, options);
+            // (With onError, the error of that only statement is given to it, as those of a program's statements.)
+            return options.onError ? withOnError(run, options.onError, source.slice(only.start, only.end)) : run;
+        }
         const compiler = new Compiler(source, options);
         const run = compiler.program(tree);
         const closures = (context) => run(typeof context === 'object' && context !== null ? context : contextOf(context));
@@ -3710,11 +3833,15 @@ function locate(source, position) {
     return { line, column };
 }
 class ExpressionError extends Error {
-    constructor(message, { code = 'XUFA_EXPR_ERR_SYNTAX', source, position } = {}) {
+    // `reason`, of some runtime errors: 'notFunction' (a call of what is not a function), 'nullMember' (a member of null or
+    // undefined), for hosts that treat them apart.
+    constructor(message, { code = 'XUFA_EXPR_ERR_SYNTAX', source, position, reason } = {}) {
         const at = source !== undefined && position !== undefined ? locate(source, position) : null;
         super(at ? `${message} (line ${at.line}, column ${at.column})` : message);
         this.name = 'ExpressionError';
         this.code = code;
+        if (reason !== undefined)
+            this.reason = reason;
         if (at) {
             this.position = position;
             this.line = at.line;
@@ -4050,6 +4177,8 @@ class Parser {
         this.index = 0;
         this.filters = Boolean(options.filters);
         this.statements = Boolean(options.statements);
+        // (Programs whose top-level scope is the context: this there is the context's this, a name read from it.)
+        this.contextThis = Boolean(options.contextThis);
         // (Shared with the parsers of the ${} of templates: names in between, and the functions they are declared in.)
         this.lowering = options.lowering ?? new patterns_js_1.Lowering();
         this.scopes = options.scopes ?? [[]];
@@ -4087,6 +4216,10 @@ class Parser {
     parseThis(token) {
         this.next();
         const context = this.context();
+        // (With the context as the program's scope: this of the program, and of its arrow functions, is context.this.)
+        if (this.contextThis && context.kind === 'program') {
+            return { type: 'Identifier', name: 'this', start: token.start, end: token.end };
+        }
         if (context.kind !== 'method' && context.kind !== 'constructor') {
             throw this.error('this is of the methods of classes and objects only', token);
         }
@@ -4766,6 +4899,7 @@ class Parser {
         return token.expressions.map((part) => {
             const parser = new Parser(this.source, part.tokens, {
                 statements: this.statements,
+                contextThis: this.contextThis,
                 lowering: this.lowering,
                 scopes: this.scopes,
                 contexts: this.contexts,
@@ -6127,6 +6261,7 @@ exports.SHORT = SHORT;
 "@xufa/expression/lib/statements.js": function (module, exports, require) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.NO_LABELS = exports.Jump = exports.CONTINUE = exports.BREAK = exports.Return = exports.isLimit = exports.statements = void 0;
+exports.contextFrame = contextFrame;
 exports.guardedOf = guardedOf;
 exports.isExpressionOnly = isExpressionOnly;
 exports.declaredNames = declaredNames;
@@ -6350,6 +6485,16 @@ function implicitNames(program) {
     IMPLICIT.set(program, implicit);
     return implicit;
 }
+// The frame of a program's top level: with the context as its scope (scope: 'context'), only its hidden names (#...:
+// of the compiler's own lowering), the names of the program being the context's properties.
+function contextFrame(frame, contextScope) {
+    if (!contextScope)
+        return frame;
+    const hidden = frame.filter((name) => name.startsWith('#'));
+    hidden.consts = new Set([...frame.consts].filter((name) => name.startsWith('#')));
+    hidden.lexical = new Set();
+    return hidden;
+}
 // The objects and functions the globals reach (to some depth): what a program can never change.
 function guardedOf(globals) {
     const guarded = new WeakSet();
@@ -6414,14 +6559,23 @@ const statements = {
         this.inProgram = true;
         // (The scan first: declaredNames reads the var it found.)
         const scanned = implicitNames(node);
-        const frame = declaredNames(node.body, true);
-        const implicit = scanned.filter((name) => !frame.includes(name));
+        const { contextScope } = this;
+        if (contextScope && node.async) {
+            throw this.error("A program whose scope is the context (scope: 'context') cannot await at its top", node);
+        }
+        // (With the context as its scope, the program's own names are the context's: its frame keeps the hidden ones.)
+        const frame = contextFrame(declaredNames(node.body, true), contextScope);
+        const implicit = contextScope ? [] : scanned.filter((name) => !frame.includes(name));
         for (const name of implicit)
             this.checkKey(name, node);
         const firstImplicit = frame.length;
         frame.push(...implicit);
         // (await at its top: an async program, run by the driver of async bodies; a promise of its value.)
-        const body = node.async ? this.aList(node.body, [frame]) : this.list(node.body, [frame]);
+        const body = node.async
+            ? this.aList(node.body, [frame])
+            : this.onError || contextScope
+                ? this.topList(node.body, [frame])
+                : this.list(node.body, [frame]);
         const size = frame.length;
         const { globals } = this;
         const { hasOwnProperty } = Object.prototype;
@@ -6506,7 +6660,69 @@ const statements = {
                 scope.frame[index] = value;
             };
         }
+        // (With the context as the program's scope: a name of the program is the context's property.)
+        if (this.contextScope && !name.startsWith('#')) {
+            this.checkKey(name, node);
+            const compiler = this;
+            return (s, value) => {
+                compiler.contextWritable(s.ctx, node)[name] = value;
+            };
+        }
         throw this.error(`${name} is not declared here`, node);
+    },
+    // The context, when a program writes a name of it: a plain object (not a value of the engine, as Math).
+    contextWritable(ctx, node) {
+        const proto = Object.getPrototypeOf(ctx);
+        if (this.guarded.has(ctx) || this.guardedToo?.has(ctx) || !(proto === Object.prototype || proto === null)) {
+            throw this.error('The context cannot be changed: only a plain object can', node, 'XUFA_EXPR_ERR_FORBIDDEN');
+        }
+        return ctx;
+    },
+    // The statements of a program's top level, with onError (an error of one is given to it, its value is undefined,
+    // and the next one runs; limits still end the run) and, with the context as its scope, a declaration's value
+    // undefined (the value of the program is that of its last statement).
+    topList(nodes, env) {
+        const hoisted = nodes
+            .filter((node) => node.type === 'FunctionDeclaration')
+            .map((node) => ({ set: this.setter(node.id, node, env, true), make: this.functionOf(node, env) }));
+        const top = [];
+        nodes.forEach((node, index) => {
+            if (node.type !== 'FunctionDeclaration') {
+                top.push({ step: this.statement(node, env), index, declares: node.type === 'VariableDeclaration', node });
+            }
+        });
+        const { onError, contextScope } = this;
+        const compiler = this;
+        const { length } = top;
+        return (s) => {
+            for (let i = 0; i < hoisted.length; i += 1)
+                hoisted[i].set(s, hoisted[i].make(s));
+            for (let i = 0; i < length; i += 1) {
+                const { step, index, declares, node } = top[i];
+                let completion;
+                if (onError) {
+                    try {
+                        completion = step(s);
+                    }
+                    catch (error) {
+                        if (isLimit(error))
+                            throw error;
+                        s.run.last = undefined;
+                        // (The source of the statement: of an expression statement, its expression.)
+                        onError(error, { source: compiler.text(node.expression ?? node), statement: index, context: s.ctx });
+                        continue;
+                    }
+                }
+                else {
+                    completion = step(s);
+                }
+                if (contextScope && declares)
+                    s.run.last = undefined;
+                if (completion !== undefined)
+                    return completion;
+            }
+            return undefined;
+        };
     },
     // A function (of a declaration, a function expression or an arrow function with a body of statements).
     functionOf(node, env) {
@@ -7475,50 +7691,127 @@ exports.clone = void 0;
 // in the process, the class is at hand), getters left out as structuredClone does, symbols that are global or not,
 // and functions (by reference). Shared objects and cycles are kept. Registered classes with encode/decode are copied
 // through them (for state in private fields).
+//
+// { shared: false }: faster (~1.5x), for data without shared objects (documents of a database, values of caches): an
+// object met twice is copied twice; cycles (through arrays and plain objects) are kept.
 const registry_js_1 = require("./registry.js");
 const errors_js_1 = require("./errors.js");
 const node_util_1 = require("node:util");
 // An error: native (Error.isError, or util.types before Node 24), or of a class that extends Error.
 const isNative = typeof Error.isError === 'function' ? Error.isError : node_util_1.types.isNativeError;
 const isError = (value) => isNative(value) || value instanceof Error;
-function clone(value, options = {}) {
-    const { registry = registry_js_1.registry, maxDepth = 1000 } = options;
-    const copies = new Map();
-    const define = (target, key, item) => Object.defineProperty(target, key, { value: item, enumerable: true, writable: true, configurable: true });
-    function copyFields(source, target, depth, own = Object.keys(source)) {
-        for (const key of own)
-            define(target, key, copy(source[key], depth));
+const keepIn = (copies, input, target) => {
+    copies.set(input, target);
+    return target;
+};
+const define = (target, key, item) => Object.defineProperty(target, key, { value: item, enumerable: true, writable: true, configurable: true });
+// The state of one clone(): the copies made (shared objects and cycles), the registry and the depth allowed. With
+// shared: false, only the path from the value to what is being copied is kept (its objects and their copies): a cycle
+// gets its copy, an object met elsewhere again is copied again (no map of every object: faster).
+class Cloner {
+    constructor(registry, maxDepth, shared) {
+        this.registry = registry;
+        this.maxDepth = maxDepth;
+        this.copies = shared ? new Map() : null;
+        // (Pairs: an object being copied, then its copy.)
+        this.path = shared ? null : [];
+        this.forIn = Object.keys(Object.prototype).length === 0;
+    }
+    // The fields of a plain object (a fresh {} or a null-prototype one): assigned, but __proto__ (a field, not the
+    // prototype).
+    // (for-in when Object.prototype has no enumerable properties: V8's cache of keys, no array of them; a polluted
+    // prototype would give its own, so then Object.keys.)
+    plainFields(source, target, depth) {
+        if (this.forIn) {
+            for (const key in source) {
+                const item = source[key];
+                const value = item === null || typeof item !== 'object' ? item : this.copy(item, depth);
+                if (key === '__proto__')
+                    define(target, key, value);
+                else
+                    target[key] = value;
+            }
+            return target;
+        }
+        const keys = Object.keys(source);
+        for (let i = 0; i < keys.length; i += 1) {
+            const key = keys[i];
+            const item = source[key];
+            const value = item === null || typeof item !== 'object' ? item : this.copy(item, depth);
+            if (key === '__proto__')
+                define(target, key, value);
+            else
+                target[key] = value;
+        }
         return target;
     }
-    function copy(input, depth) {
-        if (input === null || (typeof input !== 'object' && typeof input !== 'function'))
+    // The fields of an instance: defined (its prototype may have setters of them).
+    instanceFields(source, target, depth) {
+        const keys = Object.keys(source);
+        for (let i = 0; i < keys.length; i += 1)
+            define(target, keys[i], this.copy(source[keys[i]], depth));
+        return target;
+    }
+    copy(input, depth) {
+        if (input === null || typeof input !== 'object')
             return input;
-        if (typeof input === 'function')
-            return input;
-        const known = copies.get(input);
-        if (known !== undefined)
-            return known;
-        if (depth > maxDepth)
-            throw new errors_js_1.MarshalError(`Deeper than maxDepth (${maxDepth})`, 'XUFA_MARSHAL_ERR_DEPTH');
+        const { copies, path } = this;
+        if (copies !== null) {
+            const known = copies.get(input);
+            if (known !== undefined)
+                return known;
+        }
+        else if (path.length) {
+            const at = path.lastIndexOf(input);
+            if (at !== -1)
+                return path[at + 1];
+        }
+        if (depth > this.maxDepth) {
+            throw new errors_js_1.MarshalError(`Deeper than maxDepth (${this.maxDepth})`, 'XUFA_MARSHAL_ERR_DEPTH');
+        }
         const next = depth + 1;
-        const keep = (target) => {
-            copies.set(input, target);
-            return target;
-        };
         if (Array.isArray(input)) {
-            const array = keep(new Array(input.length));
-            for (let i = 0; i < input.length; i += 1)
-                if (i in input)
-                    array[i] = copy(input[i], next);
+            const array = new Array(input.length);
+            if (copies !== null)
+                copies.set(input, array);
+            else
+                path.push(input, array);
+            for (let i = 0; i < input.length; i += 1) {
+                if (i in input) {
+                    const item = input[i];
+                    array[i] = item === null || typeof item !== 'object' ? item : this.copy(item, next);
+                }
+            }
+            if (copies === null) {
+                path.pop();
+                path.pop();
+            }
             return array;
         }
         const proto = Object.getPrototypeOf(input);
         if (proto === Object.prototype || proto === null) {
-            return copyFields(input, keep(proto === null ? Object.create(null) : {}), next);
+            const target = proto === null ? Object.create(null) : {};
+            if (copies !== null)
+                return this.plainFields(input, keepIn(copies, input, target), next);
+            path.push(input, target);
+            this.plainFields(input, target, next);
+            path.pop();
+            path.pop();
+            return target;
         }
-        const entry = registry.byClass.get(proto.constructor);
+        return this.special(input, proto, next);
+    }
+    // Instances of classes: those of the registry with encode/decode, the built-in ones, errors and any other.
+    special(input, proto, next) {
+        const { copies } = this;
+        const keep = (target) => {
+            if (copies !== null)
+                copies.set(input, target);
+            return target;
+        };
+        const entry = this.registry.byClass.get(proto.constructor);
         if (entry && entry.encode && !isError(input)) {
-            return keep(entry.decode(copy(entry.encode(input), next)));
+            return keep(entry.decode(this.copy(entry.encode(input), next)));
         }
         if (node_util_1.types.isDate(input))
             return keep(new Date(input.getTime()));
@@ -7530,13 +7823,13 @@ function clone(value, options = {}) {
         if (node_util_1.types.isMap(input)) {
             const map = keep(new Map());
             for (const [key, item] of input)
-                map.set(copy(key, next), copy(item, next));
+                map.set(this.copy(key, next), this.copy(item, next));
             return map;
         }
         if (node_util_1.types.isSet(input)) {
             const set = keep(new Set());
             for (const item of input)
-                set.add(copy(item, next));
+                set.add(this.copy(item, next));
             return set;
         }
         if (typeof Buffer === 'function' && Buffer.isBuffer(input))
@@ -7564,7 +7857,7 @@ function clone(value, options = {}) {
             for (const key of ['message', 'stack', 'cause', 'errors']) {
                 if (Object.hasOwn(input, key)) {
                     Object.defineProperty(target, key, {
-                        value: copy(input[key], next),
+                        value: this.copy(input[key], next),
                         enumerable: false,
                         writable: true,
                         configurable: true,
@@ -7573,9 +7866,15 @@ function clone(value, options = {}) {
             }
         }
         // An instance of any class: its prototype, and a copy of its own enumerable fields.
-        return copyFields(input, target, next);
+        return this.instanceFields(input, target, next);
     }
-    return copy(value, 0);
+}
+// (Functions are kept by reference: copy() gives back what is not an object.)
+function clone(value, options = {}) {
+    const { registry = registry_js_1.registry, maxDepth = 1000, shared = true } = options;
+    if (value === null || typeof value !== 'object')
+        return value;
+    return new Cloner(registry, maxDepth, shared !== false).copy(value, 0);
 }
 const __clone = (0, errors_js_1.guard)(clone);
 exports.clone = __clone;
@@ -8012,6 +8311,9 @@ function encode(value, options, share) {
         if (unknown === 'error' || isOpaque(input)) {
             return fail(`${name} is not a registered class (registry.register(${name}))`, 'XUFA_MARSHAL_ERR_CLASS');
         }
+        // unknown: 'json': as JSON.stringify writes it, its toJSON() when it has one (an ObjectId as its hex).
+        if (unknown === 'json' && typeof input.toJSON === 'function')
+            return val(input.toJSON(), depth);
         // (Its own fields, as JSON writes them, unless the class says otherwise: toJSON.)
         return objectOf(input, depth, share && typeof input.toJSON !== 'function');
     }

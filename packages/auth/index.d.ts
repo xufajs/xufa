@@ -247,6 +247,19 @@ export function verifyTotp(
 ): number | null;
 /** The otpauth:// URI of a secret, for the QR code of authenticator apps. */
 export function totpUri(options: TotpOptions & { secret: string; label: string; issuer?: string }): string;
+/** An otpauth:// URI read back: its secret (base32), label, issuer and settings; a URIError or TypeError otherwise. */
+export function parseTotpUri(uri: string): {
+  type: 'totp' | 'hotp';
+  secret: string;
+  label: string;
+  issuer: string;
+  algorithm: string;
+  digits: number;
+  /** totp only (30 by default). */
+  period?: number;
+  /** hotp only. */
+  counter?: number;
+};
 export function generateRecoveryCodes(count?: number): string[];
 
 /** The error correction of a QR code: L (7%), M (15%), Q (25%), H (30%). */

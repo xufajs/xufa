@@ -41,11 +41,6 @@ function skip(characters) {
     return false;
   };
 }
-
-/**
- * @type {(text: string, startIndex: number | false, options?: SkipOptions) => number | false}
- */
-const skipWhitespace = skip(/\s/);
 /**
  * @type {(text: string, startIndex: number | false, options?: SkipOptions) => number | false}
  */
@@ -59,4 +54,4 @@ const skipToLineEnd = skip(',; \t');
  */
 const skipEverythingButNewLine = skip(/[^\n\r]/);
 
-export { skip, skipEverythingButNewLine, skipSpaces, skipToLineEnd, skipWhitespace };
+export { skipEverythingButNewLine, skipSpaces, skipToLineEnd };

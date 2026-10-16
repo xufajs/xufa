@@ -27,17 +27,19 @@ start({
 
 ## start(options)
 
-| Option               | Default                     | What it does                                                                                                               |
-| -------------------- | --------------------------- | -------------------------------------------------------------------------------------------------------------------------- |
-| `workers`            | `os.availableParallelism()` | How many workers; `0` (or `false`): one process, running both                                                              |
-| `primary(context)`   |                             | Runs in the primary, before the workers are forked                                                                         |
-| `worker(context)`    |                             | Runs in each worker                                                                                                        |
-| `shutdownTimeout`    | `10000`                     | Milliseconds a worker has to stop before it is killed                                                                      |
-| `restart`            | `true`                      | Workers that die are forked again                                                                                          |
-| `onWorkerExit(info)` |                             | `{ id, code, signal, delay }` when a worker dies                                                                           |
-| `signals`            | `true`                      | `SIGINT` and `SIGTERM` stop the cluster                                                                                    |
-| `env`, `exec`        |                             | Variables of the workers; another file for them                                                                            |
-| `marshal`            |                             | `true` or a Registry of @xufa/marshal: the data of the bus keeps its classes, and errors of handlers arrive as their class |
+| Option               | Default                     | What it does                                                                                                                                                                                                                                |
+| -------------------- | --------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `workers`            | `os.availableParallelism()` | How many workers; `0` (or `false`): one process, running both                                                                                                                                                                               |
+| `primary(context)`   |                             | Runs in the primary, before the workers are forked                                                                                                                                                                                          |
+| `worker(context)`    |                             | Runs in each worker                                                                                                                                                                                                                         |
+| `shutdownTimeout`    | `10000`                     | Milliseconds a worker has to stop before it is killed                                                                                                                                                                                       |
+| `restart`            | `true`                      | Workers that die are forked again                                                                                                                                                                                                           |
+| `onWorkerExit(info)` |                             | `{ id, code, signal, delay }` when a worker dies                                                                                                                                                                                            |
+| `signals`            | `true`                      | `SIGINT` and `SIGTERM` stop the cluster                                                                                                                                                                                                     |
+| `env`, `exec`        |                             | Variables of the workers; another file for them                                                                                                                                                                                             |
+| `serialization`      | `'advanced'`                | `'json'`: the IPC of Node's default, for apps whose own `process.send` messages expect it (a Date arrives as a string)                                                                                                                      |
+| `semiSpace`          | `32`                        | The young generation of V8 in the workers (MB a half); `false` leaves V8's                                                                                                                                                                  |
+| `marshal`            |                             | `true`, a Registry of @xufa/marshal, or its options (`{ registry, unknown: 'json', functions: 'skip' }`: what is not registered written as JSON would): the data of the bus keeps its classes, and errors of handlers arrive as their class |
 
 The context is `{ bus, id, isPrimary, isWorker, onShutdown }` (`id` 0 in the primary). `stop()`, `SIGINT` or `SIGTERM`
 stop the cluster: every worker runs its `onShutdown` functions (in reverse order of registration) and exits, those that
@@ -89,10 +91,14 @@ const result = await converters.use((node, { signal }) => post(`${node.meta.url}
   the one given work longest ago). Tickets wait while there are no nodes.
 - A slot comes back when the work ends, when its worker dies, when its node goes (`XUFA_POOL_NODE_DOWN`) and when
   its lease passes `leaseTimeout` (`XUFA_POOL_LEASE_TIMEOUT`): the last two abort the work's signal.
-- `acquire({ priority, exclude, signal })` gives a lease to `release()` by hand; `stats()` the nodes, slots, free
-  slots, leases running and tickets waiting. `waitTimeout` and `maxWaiting` reject tickets (503).
+- `acquire({ priority, exclude, signal, kind })` gives a lease to `release()` by hand; `stats()` the nodes, slots, free
+  slots, leases running and tickets waiting, and those of each `kind` (`use(fn, { kind: 'convert' })`):
+  `waitingByKind`, `runningByKind`. `waitTimeout` and `maxWaiting` reject tickets (503). The pool emits `grant`
+  (`{ node, worker, kind }`) when it gives a node.
 - `autoscale` wants `ceil((waiting + running) / perNode)` nodes, between `min` and `max`: up at once (then every
   `upEvery`), down only after the demand was lower for `downAfter`, so nodes running work are not taken away.
+  `pool.autoscaler` can change while it runs (`min`, `max`, `perNode`... then `evaluate(pool.stats())`), and
+  `active = false` stops it (a schedule of pods, a switch of operators).
 - Across machines: `shared: ormSlots(db, { ttl: '30s' })` keeps the slots in a database of [@xufa/orm](../orm)
   (any backend; table `xufa_pool_slots`), taken with an update only one machine can make, so a node never gets more
   works than its slots among every machine; those of a machine that died come back after `ttl`. With `notify` (a

@@ -7,7 +7,6 @@ import {
   join,
   label,
   lineSuffixBoundary,
-  mapDoc,
   printDocToString,
   softline,
 } from '../../document/index.js';
@@ -242,27 +241,6 @@ function printTemplateExpressions(path, options, print) {
   );
 }
 
-function printEmbeddedTemplateExpressions(path, options, print) {
-  return path.map(
-    () => printTemplateExpression(path, options, print, /* shouldPreserveIndentation */ false),
-    'expressions'
-  );
-}
-
-function escapeTemplateCharacters(doc, raw) {
-  return mapDoc(doc, (currentDoc) => {
-    if (typeof currentDoc === 'string') {
-      return raw ? currentDoc.replaceAll(/(\\*)`/g, '$1$1\\`') : uncookTemplateElementValue(currentDoc);
-    }
-
-    return currentDoc;
-  });
-}
-
-function uncookTemplateElementValue(cookedValue) {
-  return cookedValue.replaceAll(/([\\`]|\$\{)/g, String.raw`\$1`);
-}
-
 /**
  * describe.each`table`(name, fn)
  * describe.only.each`table`(name, fn)
@@ -291,10 +269,4 @@ function isJestEachTemplateLiteral({ node, parent }) {
   );
 }
 
-export {
-  escapeTemplateCharacters,
-  printEmbeddedTemplateExpressions,
-  printTaggedTemplateExpression,
-  printTemplateLiteral,
-  uncookTemplateElementValue,
-};
+export { printTaggedTemplateExpression, printTemplateLiteral };

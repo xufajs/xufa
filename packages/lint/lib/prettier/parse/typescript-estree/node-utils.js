@@ -2,7 +2,7 @@
 import ts from '#typescript';
 import { getModifiers } from './get-modifiers.js';
 import { xhtmlEntities } from './xhtml-entities.js';
-import { AST_NODE_TYPES, AST_TOKEN_TYPES } from './node-types.js';
+import { AST_NODE_TYPES } from './node-types.js';
 import { isAtLeast50, SyntaxKind } from './version.js';
 
 // The kinds of operators, made when first used: SyntaxKind is TypeScript's, there once a file is parsed.
@@ -70,11 +70,11 @@ function isAssignmentOperator(operator) {
 /**
  * Returns true if the given ts.Token is a logical operator
  */
-export function isLogicalOperator(operator) {
+function isLogicalOperator(operator) {
   if (!LOGICAL_OPERATORS) makeOperators();
   return LOGICAL_OPERATORS.has(operator.kind);
 }
-export function isESTreeBinaryOperator(operator) {
+function isESTreeBinaryOperator(operator) {
   if (!BINARY_OPERATORS) makeOperators();
   return BINARY_OPERATORS.has(operator.kind);
 }
@@ -113,18 +113,6 @@ export function getLastModifier(node) {
  */
 export function isComma(token) {
   return token.kind === SyntaxKind.CommaToken;
-}
-/**
- * Returns true if the given ts.Node is a comment
- */
-export function isComment(node) {
-  return node.kind === SyntaxKind.SingleLineCommentTrivia || node.kind === SyntaxKind.MultiLineCommentTrivia;
-}
-/**
- * Returns true if the given ts.Node is a JSDoc comment
- */
-function isJSDocComment(node) {
-  return node.kind === SyntaxKind.JSDocComment;
 }
 /**
  * Returns the binary expression type of the given ts.Token
@@ -198,18 +186,6 @@ export function getRange(node, ast) {
   return [node.getStart(ast), node.getEnd()];
 }
 /**
- * Returns true if a given ts.Node is a token
- */
-function isToken(node) {
-  return node.kind >= SyntaxKind.FirstToken && node.kind <= SyntaxKind.LastToken;
-}
-/**
- * Returns true if a given ts.Node is a JSX token
- */
-export function isJSXToken(node) {
-  return node.kind >= SyntaxKind.JsxElement && node.kind <= SyntaxKind.JsxAttribute;
-}
-/**
  * Returns the declaration kind of the given ts.Node
  */
 export function getDeclarationKind(node) {
@@ -271,28 +247,6 @@ export function findNextToken(previousToken, parent, ast) {
   }
 }
 /**
- * Find the first matching ancestor based on the given predicate function.
- * @param node The current ts.Node
- * @param predicate The predicate function to apply to each checked ancestor
- * @returns a matching parent ts.Node
- */
-export function findFirstMatchingAncestor(node, predicate) {
-  let current = node;
-  while (current) {
-    if (predicate(current)) {
-      return current;
-    }
-    current = current.parent;
-  }
-  return undefined;
-}
-/**
- * Returns true if a given ts.Node has a JSX token within its hierarchy
- */
-export function hasJSXAncestor(node) {
-  return !!findFirstMatchingAncestor(node, isJSXToken);
-}
-/**
  * Unescape the text content of string literals, e.g. &amp; -> &
  * @param text The escaped string literal text.
  * @returns The unescaped string literal text.
@@ -338,125 +292,7 @@ export function isChildUnwrappableOptionalChain(node, child) {
     node.expression.kind !== ts.SyntaxKind.ParenthesizedExpression
   );
 }
-/**
- * Returns the type of a given ts.Token
- */
-export function getTokenType(token) {
-  if (token.kind === SyntaxKind.NullKeyword) {
-    return AST_TOKEN_TYPES.Null;
-  }
-  if (token.kind >= SyntaxKind.FirstKeyword && token.kind <= SyntaxKind.LastFutureReservedWord) {
-    if (token.kind === SyntaxKind.FalseKeyword || token.kind === SyntaxKind.TrueKeyword) {
-      return AST_TOKEN_TYPES.Boolean;
-    }
-    return AST_TOKEN_TYPES.Keyword;
-  }
-  if (token.kind >= SyntaxKind.FirstPunctuation && token.kind <= SyntaxKind.LastPunctuation) {
-    return AST_TOKEN_TYPES.Punctuator;
-  }
-  if (token.kind >= SyntaxKind.NoSubstitutionTemplateLiteral && token.kind <= SyntaxKind.TemplateTail) {
-    return AST_TOKEN_TYPES.Template;
-  }
-  switch (token.kind) {
-    case SyntaxKind.NumericLiteral:
-    case SyntaxKind.BigIntLiteral:
-      return AST_TOKEN_TYPES.Numeric;
-    case SyntaxKind.PrivateIdentifier:
-      return AST_TOKEN_TYPES.PrivateIdentifier;
-    case SyntaxKind.JsxText:
-      return AST_TOKEN_TYPES.JSXText;
-    case SyntaxKind.StringLiteral:
-      // A TypeScript-StringLiteral token with a TypeScript-JsxAttribute or TypeScript-JsxElement parent,
-      // must actually be an ESTree-JSXText token
-      if (token.parent.kind === SyntaxKind.JsxAttribute || token.parent.kind === SyntaxKind.JsxElement) {
-        return AST_TOKEN_TYPES.JSXText;
-      }
-      return AST_TOKEN_TYPES.String;
-    case SyntaxKind.RegularExpressionLiteral:
-      return AST_TOKEN_TYPES.RegularExpression;
-    case SyntaxKind.Identifier:
-    case SyntaxKind.ConstructorKeyword:
-    case SyntaxKind.GetKeyword:
-    case SyntaxKind.SetKeyword:
-    // intentional fallthrough
-    default:
-  }
-  // Some JSX tokens have to be determined based on their parent
-  if (token.kind === SyntaxKind.Identifier) {
-    if (isJSXToken(token.parent)) {
-      return AST_TOKEN_TYPES.JSXIdentifier;
-    }
-    if (token.parent.kind === SyntaxKind.PropertyAccessExpression && hasJSXAncestor(token)) {
-      return AST_TOKEN_TYPES.JSXIdentifier;
-    }
-  }
-  return AST_TOKEN_TYPES.Identifier;
-}
-/**
- * Extends and formats a given ts.Token, for a given AST
- */
-export function convertToken(token, ast) {
-  const start = token.kind === SyntaxKind.JsxText ? token.getFullStart() : token.getStart(ast);
-  const end = token.getEnd();
-  const value = ast.text.slice(start, end);
-  const tokenType = getTokenType(token);
-  const range = [start, end];
-  const loc = getLocFor(range, ast);
-  if (tokenType === AST_TOKEN_TYPES.RegularExpression) {
-    return {
-      type: tokenType,
-      loc,
-      range,
-      regex: {
-        flags: value.slice(value.lastIndexOf('/') + 1),
-        pattern: value.slice(1, value.lastIndexOf('/')),
-      },
-      value,
-    };
-  }
-  if (tokenType === AST_TOKEN_TYPES.PrivateIdentifier) {
-    return {
-      type: tokenType,
-      loc,
-      range,
-      value: value.slice(1),
-    };
-  }
-  // @ts-expect-error TS is complaining about `value` not being the correct
-  // type but it is
-  return {
-    type: tokenType,
-    loc,
-    range,
-    value,
-  };
-}
-/**
- * Converts all tokens for the given AST
- * @param ast the AST object
- * @returns the converted Tokens
- */
-export function convertTokens(ast) {
-  const result = [];
-  /**
-   * @param node the ts.Node
-   */
-  function walk(node) {
-    // TypeScript generates tokens for types in JSDoc blocks. Comment tokens
-    // and their children should not be walked or added to the resulting tokens list.
-    if (isComment(node) || isJSDocComment(node)) {
-      return;
-    }
-    if (isToken(node) && node.kind !== SyntaxKind.EndOfFileToken) {
-      result.push(convertToken(node, ast));
-    } else {
-      node.getChildren(ast).forEach(walk);
-    }
-  }
-  walk(ast);
-  return result;
-}
-export class TSError extends Error {
+class TSError extends Error {
   fileName;
   location;
   name = 'TSError';
@@ -499,7 +335,7 @@ export function createError(node, message, sourceFile) {
   });
   return new TSError(message, sourceFile.fileName, { end, start });
 }
-export function nodeHasTokens(n, ast) {
+function nodeHasTokens(n, ast) {
   // If we have a token or node that has a non-zero width, it must have tokens.
   // Note: getWidth() does not take trivia into account.
   return n.kind === SyntaxKind.EndOfFileToken ? !!n.jsDoc : n.getWidth(ast) !== 0;
@@ -507,7 +343,7 @@ export function nodeHasTokens(n, ast) {
 /**
  * Like `forEach`, but suitable for use with numbers and strings (which may be falsy).
  */
-export function firstDefined(array, callback) {
+function firstDefined(array, callback) {
   if (array === undefined) {
     return undefined;
   }
@@ -519,7 +355,7 @@ export function firstDefined(array, callback) {
   }
   return undefined;
 }
-export function identifierIsThisKeyword(id) {
+function identifierIsThisKeyword(id) {
   return (
     (isAtLeast50
       ? ts.identifierToKeywordKind(id)

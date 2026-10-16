@@ -7,12 +7,30 @@ declare namespace explorer {
     routePrefix?: string;
     /** 'swagger' (the default), 'scalar' or 'redoc'. */
     ui?: 'swagger' | 'scalar' | 'redoc';
-    /** The CDN of the explorers ('https://cdn.jsdelivr.net/npm'). */
-    cdn?: string;
-    /** The version of the explorer on the CDN (VERSIONS by default). */
+    /**
+     * Where its files come from, one after another in the browser when one fails: names of CDNS ('jsdelivr',
+     * 'unpkg', 'npmmirror'), templates of {name}, {version} and {file}, or base URLs (<base>/<name>@<version>/<file>).
+     * ['jsdelivr', 'npmmirror'] by default.
+     */
+    cdn?: string | string[];
+    /** The version of the explorer on the CDNs (VERSIONS by default). */
     version?: string;
-    /** A folder of swagger-ui-dist served at <routePrefix>/static instead of the CDN (swagger only). */
+    /**
+     * The sha384 of its files the browser checks: true, those of the pinned versions; false, none; or file -> hash
+     * (over them).
+     */
+    integrity?: boolean | Record<string, string>;
+    /**
+     * A folder whose files are served at <routePrefix>/static and used instead of the CDNs', file by file (by their
+     * paths in the package: a copy of swagger-ui-dist, or a swagger-ui.css of yours).
+     */
     assets?: string | null;
+    /** CSS of yours, loaded after the explorer's (served at <routePrefix>/custom.css). */
+    css?: string | Buffer | null;
+    /** HTML put in the head of the page (a favicon, a font). */
+    head?: string;
+    /** The page as sent: the HTML made, changed by a function of yours. */
+    page?: ((html: string, request: XufaRequest, reply: XufaReply) => string | Promise<string>) | null;
     /** The title of the page (the title of the document by default). */
     title?: string;
     /** The configuration of the explorer, as JSON (functions cannot be sent to the browser). */
@@ -26,12 +44,14 @@ declare namespace explorer {
     transformSpecificationClone?: boolean;
     /** Hooks of its routes: to protect them. */
     uiHooks?: { onRequest?: onRequestHookHandler; preHandler?: preHandlerHookHandler };
-    /** A Content-Security-Policy for the page: true (its own and the CDN) or a policy of yours. */
+    /** A Content-Security-Policy for the page: true (its own origin and the CDNs') or a policy of yours. */
     csp?: boolean | string;
   }
 
-  /** The versions of the explorers on the CDN. */
+  /** The versions of the explorers on the CDNs. */
   export const VERSIONS: { swagger: string; scalar: string; redoc: string };
+  /** The CDNs by name: templates of {name}, {version} and {file}. */
+  export const CDNS: { jsdelivr: string; unpkg: string; npmmirror: string };
 }
 
 type Explorer = XufaPluginCallback<explorer.ExplorerOptions>;

@@ -1,0 +1,4 @@
+{
+  "source-files.test.ts": "it checks the characters of helmet's own source files",
+  "project-setups.test.ts": "it builds helmet's package with npm and type-checks projects of TypeScript that install it"
+}

@@ -24,6 +24,13 @@ export declare class Bus {
   broadcast(event: string, data?: unknown, options?: { except?: number; others?: boolean }): void;
   /** A request to the primary: the reply of its handler (timeout: 30 s, 0 for none). */
   request<T = any>(event: string, data?: unknown, options?: { timeout?: number }): Promise<T>;
+  /** request() with its reply to done(err, reply), called as it arrives (at once for a handler that answers at once). */
+  requestThen<T = any>(
+    event: string,
+    data: unknown,
+    options: { timeout?: number },
+    done: (err: Error | null, reply?: T) => void
+  ): void;
   /** Data written by @xufa/marshal: instances of registered classes arrive as themselves. */
   useMarshal(registry?: unknown): this;
 }
@@ -51,6 +58,11 @@ export interface StartOptions {
    * for no data; false leaves V8's. A --max-semi-space-size of execArgv or NODE_OPTIONS is kept.
    */
   semiSpace?: number | false;
+  /**
+   * The IPC of the workers: 'advanced' (structured clone: Dates, Maps, Sets... arrive as they are) or 'json' (Node's
+   * default, for apps whose own process.send messages expect it: a Date arrives as a string). 'advanced'.
+   */
+  serialization?: 'advanced' | 'json';
   primary?: (context: ClusterContext) => unknown;
   worker?: (context: ClusterContext) => unknown;
   /** Milliseconds a worker has to stop before it is killed (10000). */
@@ -62,7 +74,7 @@ export interface StartOptions {
   signals?: boolean;
   env?: Record<string, string | undefined>;
   exec?: string;
-  /** true, or a Registry of @xufa/marshal. */
+  /** true, a Registry of @xufa/marshal, or its options: { registry, unknown: 'json', functions: 'skip' }. */
   marshal?: boolean | unknown;
 }
 
@@ -121,6 +133,10 @@ export interface PoolStats {
   /** Tickets waiting for a node. */
   waiting: number;
   byNode: { id: string | number; slots: number; running: number; failures: number }[];
+  /** Tickets waiting, by their kind (use(fn, { kind })). */
+  waitingByKind: Record<string, number>;
+  /** Leases running, by their kind. */
+  runningByKind: Record<string, number>;
 }
 
 /** Scales the nodes by the demand (waiting plus running): up at once, down only after downAfter. */
@@ -137,6 +153,27 @@ export interface PoolAutoscale {
   downAfter?: Duration;
   /** The nodes there are when it starts (the nodes of the pool). */
   initial?: number;
+  /** false: the demand scales nothing until it is true again (true). */
+  active?: boolean;
+}
+
+/** The autoscaler of a pool: its settings can change while it runs (read at each change of the demand). */
+export interface PoolAutoscaler {
+  perNode: number;
+  min: number;
+  max: number;
+  /** In ms. */
+  upEvery: number;
+  /** In ms. */
+  downAfter: number;
+  /** false: the demand scales nothing. */
+  active: boolean;
+  /** The nodes it last asked for (or the pool's nodes). */
+  readonly current: number | undefined;
+  /** The nodes wanted for a demand. */
+  wanted(stats: Pick<PoolStats, 'waiting' | 'running'>): number;
+  /** Scales now if the demand asks for it (after its settings changed): stats(). */
+  evaluate(stats: PoolStats): void;
 }
 
 export interface PoolOptions {
@@ -195,6 +232,8 @@ export interface AcquireOptions {
   exclude?: (string | number)[];
   /** Stops waiting. */
   signal?: AbortSignal;
+  /** What the work is (a name), counted by stats(): waitingByKind, runningByKind. */
+  kind?: string;
 }
 
 export interface UseOptions extends AcquireOptions {
@@ -248,6 +287,8 @@ export declare class PoolClient<N extends PoolNode = PoolNode> {
 export declare class Pool<N extends PoolNode = PoolNode> extends EventEmitter {
   constructor(name: string, options: PoolOptions & { bus: Bus });
   readonly name: string;
+  /** With options.autoscale. */
+  readonly autoscaler?: PoolAutoscaler;
   /** Adds a node (or updates the one with its id). */
   add(node: string | number | N): this;
   /** Takes a node away: its leases are taken back. */
@@ -260,6 +301,8 @@ export declare class Pool<N extends PoolNode = PoolNode> extends EventEmitter {
   /** Rejects the tickets, takes the leases back and stops watching the nodes. */
   close(): void;
   on(event: 'demand', listener: (stats: PoolStats) => void): this;
+  /** A node given to a ticket (worker: its id, 0 in the primary; kind: use(fn, { kind })). */
+  on(event: 'grant', listener: (info: { node: N; worker: number; kind: string | null }) => void): this;
   on(event: 'scale', listener: (info: PoolStats & { from: number; to: number }) => void): this;
   on(event: 'up' | 'down', listener: (node: N) => void): this;
   on(event: 'revoke', listener: (info: { node: string | number; worker: number; reason: PoolError }) => void): this;

@@ -27,10 +27,18 @@ const pool = createPool<Converter>('converters', {
 });
 pool.on('demand', (stats) => expectTypeOf(stats.waiting).toEqualTypeOf<number>());
 expectTypeOf(pool.stats()).toEqualTypeOf<PoolStats>();
+expectTypeOf(pool.stats().waitingByKind).toEqualTypeOf<Record<string, number>>();
+if (pool.autoscaler) {
+  pool.autoscaler.min = 2;
+  pool.autoscaler.active = false;
+  expectTypeOf(pool.autoscaler.wanted({ waiting: 3, running: 1 })).toEqualTypeOf<number>();
+}
 
 const converters = usePool<Converter>('converters');
 expectTypeOf(converters.use((node, { signal, attempt }) => node.meta.url, { retries: 2 })).toEqualTypeOf<Promise<string>>();
 expectTypeOf(converters.acquire({ priority: 1 })).toEqualTypeOf<Promise<Lease<Converter>>>();
+converters.use((node) => node.id, { kind: 'convert' });
+new Bus().requestThen<number>('double', 2, {}, (err, reply) => expectTypeOf(reply).toEqualTypeOf<number | undefined>());
 // @ts-expect-error
 createPool('x', { slots: 'two' });
 expectTypeOf(new PoolError().statusCode).toEqualTypeOf<number>();

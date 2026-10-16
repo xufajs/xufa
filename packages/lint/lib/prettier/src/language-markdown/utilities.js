@@ -173,7 +173,7 @@ function splitText(text) {
 
 function getOrderedListItemInfo(orderListItem, options) {
   let text = options.originalText.slice(orderListItem.position.start.offset, orderListItem.position.end.offset);
-  if (options.parser !== 'mdx') {
+  {
     const firstChild = orderListItem.children[0];
     if (firstChild) {
       text = options.originalText.slice(orderListItem.position.start.offset, firstChild.position.start.offset);
@@ -203,22 +203,6 @@ function hasGitDiffFriendlyOrderedList(node, options) {
   }
 
   return node.children.length > 2 && getOrderedListItemInfo(node.children[2], options).number === 1;
-}
-
-// The final new line should not include in value
-// https://github.com/remarkjs/remark/issues/512
-// TODO[@fisker]: Use `node.value` directly when we update mdx to use latest remark
-function getFencedCodeBlockValue(node, originalText) {
-  const { value } = node;
-  if (
-    node.position.end.offset === originalText.length &&
-    value.endsWith('\n') &&
-    // Code block has no end mark
-    originalText.endsWith('\n')
-  ) {
-    return value.slice(0, -1);
-  }
-  return value;
 }
 
 function mapAst(ast, handler) {
@@ -298,7 +282,6 @@ function isSetextHeading(node) {
 const isNewLine = (node) => node?.type === 'whitespace' && node.value === '\n';
 
 export {
-  getFencedCodeBlockValue,
   getNthListSiblingIndex,
   getOrderedListItemInfo,
   hasGitDiffFriendlyOrderedList,

@@ -69,7 +69,6 @@ function handleOwnLineComment(context) {
     handleClassComments,
     handleForXStatementComments,
     handleUnionTypeComments,
-    handleMatchOrPatternComments,
     handleOnlyComments,
     handleModuleSpecifiersComments,
     handleAssignmentPatternComments,
@@ -229,14 +228,7 @@ function handleConditionalExpressionComments({ comment, precedingNode, enclosing
   return false;
 }
 
-const isClassLikeNode = createTypeCheckFunction([
-  'ClassDeclaration',
-  'ClassExpression',
-  'DeclareClass',
-  'DeclareInterface',
-  'InterfaceDeclaration',
-  'TSInterfaceDeclaration',
-]);
+const isClassLikeNode = createTypeCheckFunction(['ClassDeclaration', 'ClassExpression', 'TSInterfaceDeclaration']);
 function handleClassComments({ comment, precedingNode, enclosingNode, followingNode }) {
   if (isClassLikeNode(enclosingNode)) {
     // @ts-expect-error -- Safe
@@ -287,14 +279,12 @@ function handleClassComments({ comment, precedingNode, enclosingNode, followingN
 }
 
 const isPropertyLikeNode = createTypeCheckFunction([
-  'ClassMethod',
-  'ClassProperty',
   'PropertyDefinition',
   'TSAbstractPropertyDefinition',
   'TSAbstractMethodDefinition',
-  'TSDeclareMethod',
+
   'MethodDefinition',
-  'ClassAccessorProperty',
+
   'AccessorProperty',
   'TSAbstractAccessorProperty',
   'TSParameterProperty',
@@ -308,9 +298,7 @@ function handleMethodNameComments({ placement, comment, precedingNode, enclosing
     precedingNode &&
     getNextNonSpaceNonCommentCharacter(text, locEnd(comment)) === '(' &&
     // "MethodDefinition" is handled in `canAttachComment`
-    (enclosingNode.type === 'Property' ||
-      enclosingNode.type === 'TSDeclareMethod' ||
-      enclosingNode.type === 'TSAbstractMethodDefinition') &&
+    (enclosingNode.type === 'Property' || enclosingNode.type === 'TSAbstractMethodDefinition') &&
     precedingNode.type === 'Identifier' &&
     enclosingNode.key === precedingNode &&
     // special Property case: { key: /*comment*/(value) };
@@ -343,13 +331,7 @@ function handleMethodNameComments({ placement, comment, precedingNode, enclosing
   return false;
 }
 
-const isFunctionLikeNode = createTypeCheckFunction([
-  'FunctionDeclaration',
-  'FunctionExpression',
-  'ClassMethod',
-  'MethodDefinition',
-  'ObjectMethod',
-]);
+const isFunctionLikeNode = createTypeCheckFunction(['FunctionDeclaration', 'FunctionExpression', 'MethodDefinition']);
 function handleFunctionNameComments({ comment, precedingNode, enclosingNode, text }) {
   if (getNextNonSpaceNonCommentCharacter(text, locEnd(comment)) !== '(') {
     return false;
@@ -394,12 +376,6 @@ function isInArgumentOrParameterParentheses(node, comment, options) {
   );
 }
 
-const isFlowComponent = createTypeCheckFunction([
-  'ComponentDeclaration',
-  'DeclareComponent',
-  'ComponentTypeAnnotation',
-]);
-
 function handleCommentInEmptyParens({ comment, enclosingNode, options }) {
   if (!enclosingNode) {
     return false;
@@ -417,16 +393,13 @@ function handleCommentInEmptyParens({ comment, enclosingNode, options }) {
   // Only add dangling comments to fix the case when no params are present,
   // i.e. a function without any argument.
 
-  const functionNode =
-    isRealFunctionLikeNode(enclosingNode) ||
-    isFlowComponent(enclosingNode) ||
-    enclosingNode.type === 'HookTypeAnnotation'
-      ? enclosingNode
-      : enclosingNode.type === 'MethodDefinition' ||
-          enclosingNode.type === 'TSAbstractMethodDefinition' ||
-          (enclosingNode.type === 'Property' && isMethod(enclosingNode))
-        ? enclosingNode.value
-        : undefined;
+  const functionNode = isRealFunctionLikeNode(enclosingNode)
+    ? enclosingNode
+    : enclosingNode.type === 'MethodDefinition' ||
+        enclosingNode.type === 'TSAbstractMethodDefinition' ||
+        (enclosingNode.type === 'Property' && isMethod(enclosingNode))
+      ? enclosingNode.value
+      : undefined;
 
   if (
     functionNode &&
@@ -442,24 +415,8 @@ function handleCommentInEmptyParens({ comment, enclosingNode, options }) {
 
 function handleLastFunctionParameterComments({ comment, precedingNode, enclosingNode, followingNode, text }) {
   // Flow function type definitions
-  if (
-    precedingNode?.type === 'FunctionTypeParam' &&
-    enclosingNode?.type === 'FunctionTypeAnnotation' &&
-    followingNode?.type !== 'FunctionTypeParam'
-  ) {
-    addTrailingComment(precedingNode, comment);
-    return true;
-  }
 
   // "DeclareComponent" and "ComponentTypeAnnotation" definitions
-  if (
-    precedingNode?.type === 'ComponentTypeParameter' &&
-    (enclosingNode?.type === 'DeclareComponent' || enclosingNode?.type === 'ComponentTypeAnnotation') &&
-    followingNode?.type !== 'ComponentTypeParameter'
-  ) {
-    addTrailingComment(precedingNode, comment);
-    return true;
-  }
 
   // Real functions and TypeScript function type definitions
   if (
@@ -485,14 +442,6 @@ function handleLastFunctionParameterComments({ comment, precedingNode, enclosing
   }
 
   // "ComponentParameter" definitions
-  if (
-    (precedingNode?.type === 'ComponentParameter' || precedingNode?.type === 'RestElement') &&
-    (enclosingNode?.type === 'ComponentDeclaration' || enclosingNode?.type === 'DeclareComponent') &&
-    getNextNonSpaceNonCommentCharacter(text, locEnd(comment)) === ')'
-  ) {
-    addTrailingComment(precedingNode, comment);
-    return true;
-  }
 
   // Comment between function parameters parentheses and function body
   if (!isBlockComment(comment) && followingNode?.type === 'BlockStatement' && isFunctionLikeNode(enclosingNode)) {
@@ -546,27 +495,6 @@ function handleUnionTypeComments({ comment, precedingNode, enclosingNode, follow
 
   if (isUnionType(followingNode) && isPrettierIgnoreComment(comment)) {
     // @ts-expect-error -- Fix me
-    followingNode.types[0].prettierIgnore = true;
-    comment.unignore = true;
-  }
-
-  return false;
-}
-
-function handleMatchOrPatternComments({ comment, precedingNode, enclosingNode, followingNode }) {
-  if (enclosingNode && enclosingNode.type === 'MatchOrPattern') {
-    if (isPrettierIgnoreComment(comment)) {
-      followingNode.prettierIgnore = true;
-      comment.unignore = true;
-    }
-    if (precedingNode) {
-      addTrailingComment(precedingNode, comment);
-      return true;
-    }
-    return false;
-  }
-
-  if (followingNode && followingNode.type === 'MatchOrPattern' && isPrettierIgnoreComment(comment)) {
     followingNode.types[0].prettierIgnore = true;
     comment.unignore = true;
   }
@@ -636,7 +564,7 @@ function handleAssignmentPatternComments({ comment, enclosingNode }) {
 const isAssignmentLikeNode = createTypeCheckFunction([
   'VariableDeclarator',
   'AssignmentExpression',
-  'TypeAlias',
+
   'TSTypeAliasDeclaration',
 ]);
 
@@ -645,7 +573,7 @@ const isComplexExprNode = createTypeCheckFunction([
   'ArrayExpression',
   'TemplateLiteral',
   'TaggedTemplateExpression',
-  'ObjectTypeAnnotation',
+
   'TSTypeLiteral',
 ]);
 
@@ -839,7 +767,7 @@ function handleLastBinaryOperatorOperand({ comment, precedingNode, enclosingNode
 function handlePropertySignatureComments({ enclosingNode, followingNode, comment }) {
   if (
     enclosingNode &&
-    (enclosingNode.type === 'TSPropertySignature' || enclosingNode.type === 'ObjectTypeProperty') &&
+    enclosingNode.type === 'TSPropertySignature' &&
     (isUnionType(followingNode) || isIntersectionType(followingNode))
   ) {
     addLeadingComment(followingNode, comment);
@@ -946,16 +874,13 @@ const isRealFunctionLikeNode = createTypeCheckFunction([
   'ArrowFunctionExpression',
   'FunctionExpression',
   'FunctionDeclaration',
-  'ObjectMethod',
-  'ClassMethod',
+
   'TSDeclareFunction',
   'TSCallSignatureDeclaration',
   'TSConstructSignatureDeclaration',
   'TSMethodSignature',
   'TSConstructorType',
   'TSFunctionType',
-  'TSDeclareMethod',
-  'HookDeclaration',
 ]);
 
 const handleComments = {

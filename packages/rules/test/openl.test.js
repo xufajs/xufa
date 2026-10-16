@@ -578,7 +578,7 @@ describe('gaps and overlaps', () => {
     const [rate] = book.analyze('Rate');
     expect(rate.axes[1].gaps).toEqual([{ year: '<2025' }, { year: '>2026' }]);
     expect(rate.holes).toEqual([{ row: 2, column: 2, cell: { sheet: 'S', row: 19, column: 2 } }]);
-    expect(book.analyze().map((item) => item.table)).toEqual(['Discount', 'Rate', 'BasePremium']);
+    expect(book.analyze().map((item) => item.table)).toEqual(['Discount', 'BasePremium', 'Rate']);
   });
 });
 

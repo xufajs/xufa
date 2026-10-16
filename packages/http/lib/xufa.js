@@ -36,6 +36,9 @@ import * as healthModule from './health.js';
 import * as maintenanceModule from './maintenance.js';
 import * as formBodyModule from './form-body.js';
 import * as staticFilesModule from './static-files.js';
+import { helmet as helmetPlugin } from './response-headers.js';
+import { compress as compressPlugin } from './response-compress.js';
+import { etag as etagPlugin } from './response-etag.js';
 import * as errorPagesModule from './error-pages.js';
 import * as testClientModule from './test-client.js';
 
@@ -824,6 +827,9 @@ xufa.formBody = formBodyModule.formBody;
 const __formBody = xufa.formBody;
 xufa.staticFiles = staticFilesModule.staticFiles;
 const __staticFiles = xufa.staticFiles;
+xufa.helmet = helmetPlugin;
+xufa.compress = compressPlugin;
+xufa.etag = etagPlugin;
 xufa.errorPages = errorPagesModule.errorPages;
 const __errorPages = xufa.errorPages;
 xufa.TestClient = testClientModule.TestClient;
@@ -841,6 +847,9 @@ export {
   __maintenance as maintenance,
   __formBody as formBody,
   __staticFiles as staticFiles,
+  helmetPlugin as helmet,
+  compressPlugin as compress,
+  etagPlugin as etag,
   __errorPages as errorPages,
   __TestClient as TestClient,
   __textOf as textOf,

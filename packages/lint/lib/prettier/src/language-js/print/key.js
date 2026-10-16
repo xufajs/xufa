@@ -104,10 +104,7 @@ function isKeySafeToUnquote(node, options) {
   if (
     // With `--strictPropertyInitialization`, TS treats properties with quoted names differently than unquoted ones.
     // See https://github.com/microsoft/TypeScript/pull/20075
-    !(
-      (parser === 'babel-ts' && node.type === 'ClassProperty') ||
-      ((parser === 'typescript' || parser === 'oxc-ts' || parser === 'yuku-ts') && node.type === 'PropertyDefinition')
-    ) &&
+    !((parser === 'typescript' || parser === 'oxc-ts' || parser === 'yuku-ts') && node.type === 'PropertyDefinition') &&
     ES5_IDENTIFIER.test(value)
   ) {
     return true;

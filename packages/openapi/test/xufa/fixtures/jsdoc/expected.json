@@ -1,0 +1,204 @@
+{
+  "openapi": {
+    "openapi": "3.0.3",
+    "info": {
+      "title": "Library",
+      "version": "1.0.0"
+    },
+    "paths": {
+      "/books": {
+        "get": {
+          "summary": "Lists the books",
+          "tags": [
+            "Books"
+          ],
+          "parameters": [
+            {
+              "in": "query",
+              "name": "page",
+              "schema": {
+                "type": "integer"
+              },
+              "description": "The page, from 1"
+            },
+            {
+              "in": "query",
+              "name": "size"
+            }
+          ],
+          "responses": {
+            "200": {
+              "description": "The books",
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "array",
+                    "items": {
+                      "$ref": "#/components/schemas/Book"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "post": {
+          "summary": "Adds a book",
+          "tags": [
+            "Books"
+          ]
+        }
+      },
+      "/books/{id}": {
+        "get": {
+          "summary": "One book",
+          "parameters": [
+            {
+              "in": "path",
+              "name": "id",
+              "required": true
+            }
+          ],
+          "responses": {
+            "200": {
+              "description": "The book"
+            },
+            "404": {
+              "description": null
+            }
+          }
+        }
+      },
+      "/health": {
+        "get": {
+          "summary": "Health",
+          "responses": {
+            "200": {
+              "description": "Up"
+            }
+          }
+        }
+      },
+      "/legacy": {
+        "get": {
+          "summary": "From CoffeeScript"
+        }
+      },
+      "/authors/{authorId}": {
+        "get": {
+          "parameters": [
+            {
+              "in": "path",
+              "name": "authorId",
+              "required": true
+            }
+          ],
+          "responses": {
+            "200": {
+              "description": "The author"
+            }
+          }
+        }
+      }
+    },
+    "components": {
+      "schemas": {
+        "Book": {
+          "type": "object",
+          "properties": {
+            "title": {
+              "type": "string"
+            },
+            "published": {
+              "type": "string",
+              "example": "2024-01-31"
+            },
+            "active": {
+              "type": "boolean",
+              "example": "yes"
+            }
+          },
+          "required": [
+            "title"
+          ]
+        },
+        "Author": {
+          "type": "object"
+        }
+      },
+      "securitySchemes": {
+        "bearer": {
+          "type": "http",
+          "scheme": "bearer"
+        }
+      },
+      "parameters": {
+        "AuthorId": {
+          "in": "path",
+          "name": "authorId",
+          "required": true
+        }
+      }
+    },
+    "tags": [
+      {
+        "name": "Books",
+        "description": "The books of the library."
+      },
+      {
+        "name": "Authors"
+      }
+    ],
+    "x-webhooks": {
+      "newBook": {
+        "post": {
+          "summary": "A book was added"
+        }
+      }
+    }
+  },
+  "swagger2": {
+    "info": {
+      "title": "Library",
+      "version": "1.0.0"
+    },
+    "basePath": "/api",
+    "swagger": "2.0",
+    "paths": {
+      "/pets": {
+        "get": {
+          "produces": [
+            "application/json"
+          ],
+          "responses": {
+            "200": {
+              "description": "The pets",
+              "schema": {
+                "$ref": "#/definitions/Pet"
+              }
+            }
+          }
+        }
+      }
+    },
+    "definitions": {
+      "Pet": {
+        "type": "object"
+      }
+    },
+    "responses": {},
+    "parameters": {},
+    "securityDefinitions": {
+      "key": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "x-key"
+      }
+    },
+    "tags": [
+      {
+        "name": "Pets"
+      }
+    ]
+  }
+}

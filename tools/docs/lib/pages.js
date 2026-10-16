@@ -73,6 +73,7 @@ function httpErrorCodes() {
 const ORDER = [
   // [file, name, group]
   ['websocket.html', '@xufa/websocket', 'The framework'],
+  ['express.html', '@xufa/express', 'The framework'],
   ['admin.html', '@xufa/admin', 'The framework'],
   ['session.html', '@xufa/session', 'The framework'],
   ['forms.html', '@xufa/forms', 'The framework'],

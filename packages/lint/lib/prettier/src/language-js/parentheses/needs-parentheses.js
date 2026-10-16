@@ -1,6 +1,5 @@
 import { hasComment } from '../utilities/comments.js';
 import { createTypeCheckFunction } from '../utilities/create-type-check-function.js';
-import { getFunctionParameters } from '../utilities/function-parameters.js';
 import { getPrecedence } from '../utilities/get-precedence.js';
 import { isBitwiseOperator } from '../utilities/is-bitwise-operator.js';
 import { isNullishCoalescing } from '../utilities/is-nullish-coalescing.js';
@@ -8,7 +7,6 @@ import { isObjectProperty } from '../utilities/is-object-property.js';
 import {
   isArrayExpression,
   isBinaryCastExpression,
-  isCallExpression,
   isCallOrNewExpression,
   isConditionalType,
   isIntersectionType,
@@ -58,12 +56,7 @@ function needsParentheses(path, options) {
     return shouldAddParenthesesToIdentifier(path);
   }
 
-  if (
-    node.type === 'ObjectExpression' ||
-    node.type === 'FunctionExpression' ||
-    node.type === 'ClassExpression' ||
-    node.type === 'DoExpression'
-  ) {
+  if (node.type === 'ObjectExpression' || node.type === 'FunctionExpression' || node.type === 'ClassExpression') {
     const expression = path.findAncestor((node) => node.type === 'ExpressionStatement')?.expression;
     if (expression && startsWithNoLookaheadToken(expression, (leftmostNode) => leftmostNode === node)) {
       return true;
@@ -101,11 +94,7 @@ function needsParentheses(path, options) {
         case 'UnaryExpression':
           return node.operator === parent.operator && (node.operator === '+' || node.operator === '-');
 
-        case 'BindExpression':
-          return true;
-
         case 'MemberExpression':
-        case 'OptionalMemberExpression':
           return key === 'object';
 
         case 'TaggedTemplateExpression':
@@ -113,7 +102,6 @@ function needsParentheses(path, options) {
 
         case 'NewExpression':
         case 'CallExpression':
-        case 'OptionalCallExpression':
           return key === 'callee';
 
         case 'BinaryExpression':
@@ -158,16 +146,10 @@ function needsParentheses(path, options) {
     case 'TSTypeAssertion':
     case 'TSAsExpression':
     case 'TSSatisfiesExpression':
-    case 'AsExpression':
-    case 'AsConstExpression':
-    case 'SatisfiesExpression':
     case 'LogicalExpression':
       switch (parent.type) {
         case 'TSAsExpression':
         case 'TSSatisfiesExpression':
-        case 'AsExpression':
-        case 'AsConstExpression':
-        case 'SatisfiesExpression':
           // examples:
           //   foo as unknown as Bar
           //   foo satisfies unknown satisfies Bar
@@ -180,7 +162,6 @@ function needsParentheses(path, options) {
 
         case 'CallExpression':
         case 'NewExpression':
-        case 'OptionalCallExpression':
           return key === 'callee';
 
         case 'ClassExpression':
@@ -191,7 +172,6 @@ function needsParentheses(path, options) {
         case 'TaggedTemplateExpression':
         case 'JSXSpreadAttribute':
         case 'SpreadElement':
-        case 'BindExpression':
         case 'AwaitExpression':
         case 'TSNonNullExpression':
         case 'UpdateExpression':
@@ -204,7 +184,6 @@ function needsParentheses(path, options) {
           break;
 
         case 'MemberExpression':
-        case 'OptionalMemberExpression':
           return key === 'object';
 
         case 'AssignmentExpression':
@@ -284,19 +263,13 @@ function needsParentheses(path, options) {
         case 'TSAsExpression':
         case 'TSSatisfiesExpression':
         case 'TSNonNullExpression':
-        case 'AsExpression':
-        case 'AsConstExpression':
-        case 'SatisfiesExpression':
-        case 'BindExpression':
           return true;
 
         case 'MemberExpression':
-        case 'OptionalMemberExpression':
           return key === 'object';
 
         case 'NewExpression':
         case 'CallExpression':
-        case 'OptionalCallExpression':
           return key === 'callee';
 
         case 'ConditionalExpression':
@@ -326,22 +299,13 @@ function needsParentheses(path, options) {
     // fallthrough
     case 'TSConditionalType':
     case 'TSConstructorType':
-    case 'ConditionalTypeAnnotation':
       if (key === 'extendsType' && isConditionalType(node) && parent.type === node.type) {
         return true;
       }
 
       // `const foo = <Foo extends (Bar extends Baz ? A : B)>() => true;`
       //                            ^^^^^^^^^^^^^^^^^^^^^^^
-      if (
-        (key === 'constraint' && node.type === 'TSConditionalType' && parent.type === 'TSTypeParameter') ||
-        (key === 'typeAnnotation' &&
-          node.type === 'ConditionalTypeAnnotation' &&
-          parent.type === 'TypeAnnotation' &&
-          path.grandparent.type === 'TypeParameter' &&
-          path.grandparent.bound === parent &&
-          path.grandparent.usesExtendsBound)
-      ) {
+      if (key === 'constraint' && node.type === 'TSConditionalType' && parent.type === 'TSTypeParameter') {
         return true;
       }
 
@@ -399,124 +363,9 @@ function needsParentheses(path, options) {
         (key === 'elementType' && parent.type === 'TSArrayType')
       );
     // Same as `TSTypeOperator`, but for Flow syntax
-    case 'TypeOperator':
-      return (
-        parent.type === 'ArrayTypeAnnotation' ||
-        parent.type === 'NullableTypeAnnotation' ||
-        (key === 'objectType' &&
-          (parent.type === 'IndexedAccessType' || parent.type === 'OptionalIndexedAccessType')) ||
-        parent.type === 'TypeOperator'
-      );
     // Same as `TSTypeQuery`, but for Flow syntax
-    case 'TypeofTypeAnnotation':
-    case 'KeyofTypeAnnotation':
-      return (
-        (key === 'objectType' &&
-          (parent.type === 'IndexedAccessType' || parent.type === 'OptionalIndexedAccessType')) ||
-        (key === 'elementType' && parent.type === 'ArrayTypeAnnotation')
-      );
-    case 'ArrayTypeAnnotation':
-      return parent.type === 'NullableTypeAnnotation';
-
-    case 'IntersectionTypeAnnotation':
-    case 'UnionTypeAnnotation':
-      return (
-        parent.type === 'TypeOperator' ||
-        parent.type === 'KeyofTypeAnnotation' ||
-        parent.type === 'ArrayTypeAnnotation' ||
-        parent.type === 'NullableTypeAnnotation' ||
-        parent.type === 'IntersectionTypeAnnotation' ||
-        parent.type === 'UnionTypeAnnotation' ||
-        (key === 'objectType' && (parent.type === 'IndexedAccessType' || parent.type === 'OptionalIndexedAccessType'))
-      );
-    case 'InferTypeAnnotation':
-    case 'NullableTypeAnnotation':
-      if (
-        parent.type === 'ArrayTypeAnnotation' ||
-        (key === 'objectType' && (parent.type === 'IndexedAccessType' || parent.type === 'OptionalIndexedAccessType'))
-      ) {
-        return true;
-      }
-
-      break;
-
-    case 'ComponentTypeAnnotation':
-    case 'FunctionTypeAnnotation': {
-      if (node.type === 'ComponentTypeAnnotation' && (node.rendersType === null || node.rendersType === undefined)) {
-        return false;
-      }
-
-      if (
-        path.match(
-          undefined,
-          (node, key) => key === 'typeAnnotation' && node.type === 'TypeAnnotation',
-          (node, key) => key === 'returnType' && node.type === 'ArrowFunctionExpression'
-        )
-      ) {
-        return true;
-      }
-
-      // If the return type is a nullable arrow function, then we need a paren
-      // otherwise the inner => can be assumed to be for the outer one.
-      if (
-        path.match(
-          undefined,
-          (node, key) => key === 'typeAnnotation' && node.type === 'NullableTypeAnnotation',
-          (node, key) => key === 'typeAnnotation' && node.type === 'TypeAnnotation',
-          (node, key) => key === 'returnType' && node.type === 'ArrowFunctionExpression'
-        )
-      ) {
-        return true;
-      }
-
-      /*
-      Matches the following case in Flow:
-
-      ```
-      const a = (x: any): x is (number => string) => true;
-      ```
-
-      This case is not necessary in TS since `number => string` is not a valid
-      arrow type there.
-      */
-      if (
-        path.match(
-          undefined,
-          (node, key) => key === 'typeAnnotation' && node.type === 'TypePredicate',
-          (node, key) => key === 'typeAnnotation' && node.type === 'TypeAnnotation',
-          (node, key) => key === 'returnType' && node.type === 'ArrowFunctionExpression'
-        )
-      ) {
-        return true;
-      }
-
-      const ancestor = parent.type === 'NullableTypeAnnotation' ? path.grandparent : parent;
-
-      return (
-        ancestor.type === 'UnionTypeAnnotation' ||
-        ancestor.type === 'IntersectionTypeAnnotation' ||
-        ancestor.type === 'ArrayTypeAnnotation' ||
-        (key === 'objectType' &&
-          (ancestor.type === 'IndexedAccessType' || ancestor.type === 'OptionalIndexedAccessType')) ||
-        (key === 'checkType' && parent.type === 'ConditionalTypeAnnotation') ||
-        (key === 'extendsType' &&
-          parent.type === 'ConditionalTypeAnnotation' &&
-          node.returnType?.type === 'InferTypeAnnotation' &&
-          node.returnType.typeParameter.bound) ||
-        // We should check ancestor's parent to know whether the parentheses
-        // are really needed, but since ??T doesn't make sense this check
-        // will almost never be true.
-        ancestor.type === 'NullableTypeAnnotation' ||
-        // See #5283
-        (parent.type === 'FunctionTypeParam' &&
-          parent.name === null &&
-          getFunctionParameters(node).some((param) => param.typeAnnotation?.type === 'NullableTypeAnnotation'))
-      );
-    }
 
     // fallthrough
-    case 'OptionalIndexedAccessType':
-      return key === 'objectType' && parent.type === 'IndexedAccessType';
 
     case 'StringLiteral':
     case 'NumericLiteral':
@@ -571,14 +420,6 @@ function needsParentheses(path, options) {
         return false;
       }
 
-      if (parent.type === 'NGChainedExpression') {
-        return false;
-      }
-
-      if (key === 'node' && parent.type === 'JsExpressionRoot') {
-        return false;
-      }
-
       return true;
 
     case 'ConditionalExpression':
@@ -588,22 +429,16 @@ function needsParentheses(path, options) {
         case 'SpreadElement':
         case 'BinaryExpression':
         case 'LogicalExpression':
-        case 'NGPipeExpression':
         case 'AwaitExpression':
         case 'JSXSpreadAttribute':
         case 'TSTypeAssertion':
-        case 'TypeCastExpression':
         case 'TSAsExpression':
         case 'TSSatisfiesExpression':
-        case 'AsExpression':
-        case 'AsConstExpression':
-        case 'SatisfiesExpression':
         case 'TSNonNullExpression':
           return true;
 
         case 'NewExpression':
         case 'CallExpression':
-        case 'OptionalCallExpression':
           return key === 'callee';
 
         case 'ConditionalExpression':
@@ -614,7 +449,6 @@ function needsParentheses(path, options) {
           return false;
 
         case 'MemberExpression':
-        case 'OptionalMemberExpression':
           return key === 'object';
 
         default:
@@ -625,7 +459,6 @@ function needsParentheses(path, options) {
       switch (parent.type) {
         case 'NewExpression':
         case 'CallExpression':
-        case 'OptionalCallExpression':
           // Not always necessary, but it's clearer to the reader if IIFEs are wrapped in parentheses.
           // Is necessary if it is `expression` of `ExpressionStatement`.
           return key === 'callee';
@@ -643,26 +476,19 @@ function needsParentheses(path, options) {
           return parent.operator !== '|>' || node.extra?.parenthesized;
         case 'NewExpression':
         case 'CallExpression':
-        case 'OptionalCallExpression':
           return key === 'callee';
 
         case 'MemberExpression':
-        case 'OptionalMemberExpression':
           return key === 'object';
 
         case 'TSAsExpression':
         case 'TSSatisfiesExpression':
-        case 'AsExpression':
-        case 'AsConstExpression':
-        case 'SatisfiesExpression':
         case 'TSNonNullExpression':
-        case 'BindExpression':
         case 'TaggedTemplateExpression':
         case 'UnaryExpression':
         case 'LogicalExpression':
         case 'AwaitExpression':
         case 'TSTypeAssertion':
-        case 'MatchExpressionCase':
           return true;
 
         case 'TSInstantiationExpression':
@@ -684,8 +510,6 @@ function needsParentheses(path, options) {
         default:
           return false;
       }
-    case 'OptionalMemberExpression':
-    case 'OptionalCallExpression':
     case 'ChainExpression':
     case 'TSNonNullExpression':
       if (shouldAddParenthesesToChainElement(path)) {
@@ -697,7 +521,7 @@ function needsParentheses(path, options) {
     case 'MemberExpression':
     case 'TaggedTemplateExpression':
     case 'ImportExpression':
-      if (key === 'callee' && (parent.type === 'BindExpression' || parent.type === 'NewExpression')) {
+      if (key === 'callee' && parent.type === 'NewExpression') {
         let object = node;
         while (object) {
           switch (object.type) {
@@ -705,8 +529,6 @@ function needsParentheses(path, options) {
             case 'ImportExpression':
               return true;
             case 'MemberExpression':
-            case 'OptionalMemberExpression':
-            case 'BindExpression':
               object = object.object;
               break;
             // tagged templates are basically member expressions from a grammar perspective
@@ -725,27 +547,6 @@ function needsParentheses(path, options) {
 
       return false;
 
-    case 'BindExpression':
-      return (
-        (key === 'callee' && (parent.type === 'BindExpression' || parent.type === 'NewExpression')) ||
-        (key === 'object' && isMemberExpression(parent))
-      );
-    case 'NGPipeExpression':
-      if (
-        parent.type === 'NGRoot' ||
-        parent.type === 'NGMicrosyntaxExpression' ||
-        (parent.type === 'ObjectProperty' &&
-          // Preserve parens for compatibility with AngularJS expressions
-          !node.extra?.parenthesized) ||
-        isArrayExpression(parent) ||
-        (key === 'arguments' && isCallExpression(parent)) ||
-        (key === 'right' && parent.type === 'NGPipeExpression') ||
-        (key === 'property' && parent.type === 'MemberExpression') ||
-        parent.type === 'AssignmentExpression'
-      ) {
-        return false;
-      }
-      return true;
     case 'JSXFragment':
     case 'JSXElement':
       return (
@@ -758,7 +559,6 @@ function needsParentheses(path, options) {
           parent.type !== 'BinaryExpression' &&
           parent.type !== 'ConditionalExpression' &&
           parent.type !== 'ExpressionStatement' &&
-          parent.type !== 'JsExpressionRoot' &&
           parent.type !== 'JSXAttribute' &&
           parent.type !== 'JSXElement' &&
           parent.type !== 'JSXExpressionContainer' &&
@@ -767,18 +567,13 @@ function needsParentheses(path, options) {
           !isCallOrNewExpression(parent) &&
           !isObjectProperty(parent) &&
           !isReturnOrThrowStatement(parent) &&
-          parent.type !== 'TypeCastExpression' &&
           parent.type !== 'VariableDeclarator' &&
           parent.type !== 'YieldExpression' &&
-          parent.type !== 'MatchExpressionCase' &&
           !(key === 'declaration' && parent.type === 'ExportDefaultDeclaration'))
       );
 
     case 'TSInstantiationExpression':
       return key === 'object' && isMemberExpression(parent);
-
-    case 'MatchOrPattern':
-      return parent.type === 'MatchAsPattern';
   }
 
   return false;
@@ -787,29 +582,17 @@ function needsParentheses(path, options) {
 const isStatement = createTypeCheckFunction([
   'BlockStatement',
   'BreakStatement',
-  'ComponentDeclaration',
+
   'ClassBody',
   'ClassDeclaration',
-  'ClassMethod',
-  'ClassProperty',
+
   'PropertyDefinition',
-  'ClassPrivateProperty',
+
   'ContinueStatement',
   'DebuggerStatement',
-  'DeclareComponent',
-  'DeclareClass',
-  'DeclareExportAllDeclaration',
-  'DeclareExportDeclaration',
-  'DeclareFunction',
-  'DeclareHook',
-  'DeclareInterface',
-  'DeclareModule',
-  'DeclareModuleExports',
-  'DeclareNamespace',
-  'DeclareVariable',
-  'DeclareEnum',
+
   'DoWhileStatement',
-  'EnumDeclaration',
+
   'ExportAllDeclaration',
   'ExportDefaultDeclaration',
   'ExportNamedDeclaration',
@@ -818,10 +601,10 @@ const isStatement = createTypeCheckFunction([
   'ForOfStatement',
   'ForStatement',
   'FunctionDeclaration',
-  'HookDeclaration',
+
   'IfStatement',
   'ImportDeclaration',
-  'InterfaceDeclaration',
+
   'LabeledStatement',
   'MethodDefinition',
   'ReturnStatement',
@@ -834,7 +617,7 @@ const isStatement = createTypeCheckFunction([
   'TSInterfaceDeclaration',
   'TSModuleDeclaration',
   'TSNamespaceExportDeclaration',
-  'TypeAlias',
+
   'VariableDeclaration',
   'WhileStatement',
   'WithStatement',
@@ -869,11 +652,6 @@ function endsWithRightBracket(node) {
 function isFollowedByRightBracket(path) {
   const { parent, key } = path;
   switch (parent.type) {
-    case 'NGPipeExpression':
-      if (key === 'arguments' && path.isLast) {
-        return path.callParent(isFollowedByRightBracket);
-      }
-      break;
     case 'ObjectProperty':
       if (key === 'value') {
         return path.callParent(() => path.key === 'properties' && path.isLast);

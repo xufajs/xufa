@@ -33,9 +33,7 @@ function isLoneShortArgument(node, options) {
     return true;
   }
 
-  const regexpPattern =
-    (node.type === 'Literal' && 'regex' in node && node.regex.pattern) ||
-    (node.type === 'RegExpLiteral' && node.pattern);
+  const regexpPattern = (node.type === 'Literal' && 'regex' in node && node.regex.pattern) || false;
 
   if (regexpPattern) {
     return regexpPattern.length <= threshold;

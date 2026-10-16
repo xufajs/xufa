@@ -16,6 +16,7 @@ const { execFileSync } = require('node:child_process');
 const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
+const { pathToFileURL } = require('node:url');
 
 const ROOT = path.join(__dirname, '..');
 const TEST_IGNORES = new Set(['packages/*/test/**', 'tools/sequelize-compat/test/**']);
@@ -27,7 +28,7 @@ const argument = (name, fallback) => {
 
 // The config of the repository, as its file exports it; with tests, without the ignores of tests.
 async function repositoryConfig(tests) {
-  const { default: config } = await import(path.join(ROOT, 'xufa.lint.config.js'));
+  const { default: config } = await import(pathToFileURL(path.join(ROOT, 'xufa.lint.config.js')).href);
   if (!tests) return config;
   return config.map((entry) =>
     entry.ignores && Object.keys(entry).length === 1

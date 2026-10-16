@@ -45,10 +45,10 @@
         <h4>Reference</h4>
         <ul>
           <li><a href="#functions">Functions (29)</a></li>
-          <li><a href="#classes">Classes (31)</a></li>
+          <li><a href="#classes">Classes (32)</a></li>
           <li><a href="#constants">Constants (20)</a></li>
-          <li><a href="#interfaces">Interfaces (47)</a></li>
-          <li><a href="#types">Types (39)</a></li>
+          <li><a href="#interfaces">Interfaces (48)</a></li>
+          <li><a href="#types">Types (40)</a></li>
         </ul>
       </aside>
 
@@ -235,7 +235,7 @@
         <p>The lower case of a text field: unique without case in constraints, found without case in indexes.</p>
 
         <h2 id="classes">Classes</h2>
-        <p class="ref-index"><a href="#ref-Field"><code>Field</code></a>, <a href="#ref-ForeignKey"><code>ForeignKey</code></a>, <a href="#ref-ManyToManyField"><code>ManyToManyField</code></a>, <a href="#ref-SpecError"><code>SpecError</code></a>, <a href="#ref-Model"><code>Model</code></a>, <a href="#ref-JsonPath"><code>JsonPath</code></a>, <a href="#ref-Q"><code>Q</code></a>, <a href="#ref-QuerySet"><code>QuerySet</code></a>, <a href="#ref-RelatedSet"><code>RelatedSet</code></a>, <a href="#ref-BlobValue"><code>BlobValue</code></a>, <a href="#ref-AuditEntry"><code>AuditEntry</code></a>, <a href="#ref-Audit"><code>Audit</code></a>, <a href="#ref-MemoryCache"><code>MemoryCache</code></a>, <a href="#ref-SharedCache"><code>SharedCache</code></a>, <a href="#ref-LocalCache"><code>LocalCache</code></a>, <a href="#ref-Faults"><code>Faults</code></a>, <a href="#ref-FaultError"><code>FaultError</code></a>, <a href="#ref-Database"><code>Database</code></a>, <a href="#ref-Databases"><code>Databases</code></a>, <a href="#ref-Tenants"><code>Tenants</code></a>, <a href="#ref-Backend"><code>Backend</code></a>, <a href="#ref-Keyring"><code>Keyring</code></a>, <a href="#ref-Factory"><code>Factory</code></a>, <a href="#ref-CombinedQuerySet"><code>CombinedQuerySet</code></a>, <a href="#ref-InvalidPage"><code>InvalidPage</code></a>, <a href="#ref-PageNotAnInteger"><code>PageNotAnInteger</code></a>, <a href="#ref-EmptyPage"><code>EmptyPage</code></a>, <a href="#ref-Page"><code>Page</code></a>, <a href="#ref-Paginator"><code>Paginator</code></a>, <a href="#ref-KeysetPage"><code>KeysetPage</code></a>, <a href="#ref-KeysetPaginator"><code>KeysetPaginator</code></a></p>
+        <p class="ref-index"><a href="#ref-Field"><code>Field</code></a>, <a href="#ref-ForeignKey"><code>ForeignKey</code></a>, <a href="#ref-ManyToManyField"><code>ManyToManyField</code></a>, <a href="#ref-SpecError"><code>SpecError</code></a>, <a href="#ref-Model"><code>Model</code></a>, <a href="#ref-JsonPath"><code>JsonPath</code></a>, <a href="#ref-Q"><code>Q</code></a>, <a href="#ref-QuerySet"><code>QuerySet</code></a>, <a href="#ref-RelatedSet"><code>RelatedSet</code></a>, <a href="#ref-BlobValue"><code>BlobValue</code></a>, <a href="#ref-AuditEntry"><code>AuditEntry</code></a>, <a href="#ref-Audit"><code>Audit</code></a>, <a href="#ref-MemoryCache"><code>MemoryCache</code></a>, <a href="#ref-SharedCache"><code>SharedCache</code></a>, <a href="#ref-LocalCache"><code>LocalCache</code></a>, <a href="#ref-Faults"><code>Faults</code></a>, <a href="#ref-FaultError"><code>FaultError</code></a>, <a href="#ref-Documents"><code>Documents</code></a>, <a href="#ref-Database"><code>Database</code></a>, <a href="#ref-Databases"><code>Databases</code></a>, <a href="#ref-Tenants"><code>Tenants</code></a>, <a href="#ref-Backend"><code>Backend</code></a>, <a href="#ref-Keyring"><code>Keyring</code></a>, <a href="#ref-Factory"><code>Factory</code></a>, <a href="#ref-CombinedQuerySet"><code>CombinedQuerySet</code></a>, <a href="#ref-InvalidPage"><code>InvalidPage</code></a>, <a href="#ref-PageNotAnInteger"><code>PageNotAnInteger</code></a>, <a href="#ref-EmptyPage"><code>EmptyPage</code></a>, <a href="#ref-Page"><code>Page</code></a>, <a href="#ref-Paginator"><code>Paginator</code></a>, <a href="#ref-KeysetPage"><code>KeysetPage</code></a>, <a href="#ref-KeysetPaginator"><code>KeysetPaginator</code></a></p>
 
         <h3 id="ref-Field"><code>Field</code></h3>
         <pre><code class="language-ts">export declare class Field&lt;T = unknown, N extends boolean = false, O = { ... }</code></pre>
@@ -588,9 +588,47 @@
             </table>
           </div>
 
+        <h3 id="ref-Documents"><code>Documents</code></h3>
+        <pre><code class="language-ts">export declare class Documents&lt;T extends DocumentData = DocumentData&gt; { ... }</code></pre>
+        <p>A collection of MongoDB as it is: schemaless documents, MongoDB's filters (<code>id</code> as <code>_id</code>), the driver's options, the ORM's cache and write-behind.</p>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>readonly name</code></td><td><code>string</code></td><td></td></tr>
+                <tr><td><code>readonly db</code></td><td><code><a href="#ref-Database">Database</a></code></td><td></td></tr>
+                <tr><td><code>findById(id: string, options?: { projection?: Record&lt;string, 0 | 1 | boolean&gt; })</code></td><td><code>Promise&lt;T | null&gt;</code></td><td></td></tr>
+                <tr><td><code>findOne(filter?: Record&lt;string, any&gt;, options?: Record&lt;string, any&gt;)</code></td><td><code>Promise&lt;T | null&gt;</code></td><td></td></tr>
+                <tr><td><code>find(filter?: Record&lt;string, any&gt;, options?: Record&lt;string, any&gt;)</code></td><td><code>Promise&lt;T[]&gt;</code></td><td></td></tr>
+                <tr><td><code>cursor(filter?: Record&lt;string, any&gt;, options?: Record&lt;string, any&gt;)</code></td><td><code>Promise&lt;AsyncIterable&lt;T&gt; &amp; { next(): Promise&lt;T | null&gt;; toArray(): Promise&lt;T[]&gt;; close(): Promise&lt;void&gt; }&gt;</code></td><td></td></tr>
+                <tr><td><code>count(filter?: Record&lt;string, any&gt;, options?: { estimated?: boolean } &amp; Record&lt;string, any&gt;)</code></td><td><code>Promise&lt;number&gt;</code></td><td></td></tr>
+                <tr><td><code>aggregate&lt;R = Record&lt;string, any&gt;&gt;(pipeline: Record&lt;string, any&gt;[], options?: Record&lt;string, any&gt;)</code></td><td><code>Promise&lt;R[]&gt;</code></td><td></td></tr>
+                <tr><td><code>insertOne(doc: T)</code></td><td><code>Promise&lt;T &amp; { id: string }&gt;</code></td><td></td></tr>
+                <tr><td><code>insertMany(docs: T[])</code></td><td><code>Promise&lt;Array&lt;T &amp; { id: string }&gt;&gt;</code></td><td></td></tr>
+                <tr><td><code>update(doc: T &amp; { id: string })</code></td><td><code>Promise&lt;T | null&gt;</code></td><td><p>$set of its fields by its id: the document as it is now, or null.</p></td></tr>
+                <tr><td><code>replace(doc: T &amp; { id: string })</code></td><td><code>Promise&lt;T | null&gt;</code></td><td></td></tr>
+                <tr><td><code>save(doc: T)</code></td><td><code>Promise&lt;T &amp; { id: string }&gt;</code></td><td></td></tr>
+                <tr><td><code>updateMany(filter: Record&lt;string, any&gt;, update: Record&lt;string, any&gt; | Record&lt;string, any&gt;[], options?: Record&lt;string, any&gt;)</code></td><td><code>Promise&lt;{ matchedCount: number; modifiedCount: number; upsertedCount: number }&gt;</code></td><td></td></tr>
+                <tr><td><code>remove(filter?: Record&lt;string, any&gt;, options?: { justOne?: boolean })</code></td><td><code>Promise&lt;number&gt;</code></td><td><p>How many were deleted (justOne: the first).</p></td></tr>
+                <tr><td><code>removeById(id: string)</code></td><td><code>Promise&lt;number&gt;</code></td><td></td></tr>
+                <tr><td><code>findOneAndUpdate(filter: Record&lt;string, any&gt;, update: Record&lt;string, any&gt; | Record&lt;string, any&gt;[], options?: Record&lt;string, any&gt;)</code></td><td><code>Promise&lt;T | null&gt;</code></td><td></td></tr>
+                <tr><td><code>findOneAndReplace(filter: Record&lt;string, any&gt;, replacement: T, options?: Record&lt;string, any&gt;)</code></td><td><code>Promise&lt;T | null&gt;</code></td><td></td></tr>
+                <tr><td><code>findOneAndDelete(filter: Record&lt;string, any&gt;, options?: Record&lt;string, any&gt;)</code></td><td><code>Promise&lt;T | null&gt;</code></td><td></td></tr>
+                <tr><td><code>bulkWrite(operations: Record&lt;string, any&gt;[], options?: { ordered?: boolean })</code></td><td><code>Promise&lt;Record&lt;string, any&gt;&gt;</code></td><td></td></tr>
+                <tr><td><code>createIndex(keys: Record&lt;string, any&gt; | string, options?: Record&lt;string, any&gt;)</code></td><td><code>Promise&lt;string&gt;</code></td><td></td></tr>
+                <tr><td><code>dropIndex(name: string, options?: Record&lt;string, any&gt;)</code></td><td><code>Promise&lt;Record&lt;string, any&gt;&gt;</code></td><td></td></tr>
+                <tr><td><code>indexes()</code></td><td><code>Promise&lt;Record&lt;string, any&gt;[]&gt;</code></td><td></td></tr>
+                <tr><td><code>drop()</code></td><td><code>Promise&lt;boolean&gt;</code></td><td></td></tr>
+                <tr><td><code>rename(newName: string, options?: { dropTarget?: boolean })</code></td><td><code>Promise&lt;<a href="#ref-Documents">Documents</a>&lt;T&gt;&gt;</code></td><td></td></tr>
+                <tr><td><code>clearCache()</code></td><td><code>Promise&lt;void&gt;</code></td><td></td></tr>
+                <tr><td><code>pending()</code></td><td><code>Promise&lt;Record&lt;string, 'I' | 'U' | 'D'&gt;&gt;</code></td><td><p>The writes waiting for the database: { id: 'I' | 'U' | 'D' }.</p></td></tr>
+                <tr><td><code>synchronize()</code></td><td><code>Promise&lt;{ done: number; left: number; error: Error | null }&gt;</code></td><td><p>Writes what was written behind.</p></td></tr>
+              </tbody>
+            </table>
+          </div>
+
         <h3 id="ref-Database"><code>Database</code></h3>
         <pre><code class="language-ts">export declare class Database { ... }</code></pre>
-        <p>A database: its backend, the models registered in it, sync() and migrations, transactions, the audit log, caches and faults.</p>
         <div class="table-wrap">
             <table class="ref-members">
               <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
@@ -608,6 +646,7 @@
                 <tr><td><code>readonly models</code></td><td><code>Map&lt;string, <a href="#ref-ModelClass">ModelClass</a>&gt;</code></td><td></td></tr>
                 <tr><td><code>register(...models: ModelClass&lt;any&gt;[])</code></td><td><code>this</code></td><td></td></tr>
                 <tr><td><code>model&lt;M extends Model = Model&gt;(name: string)</code></td><td><code><a href="#ref-ModelClass">ModelClass</a>&lt;M&gt; | undefined</code></td><td></td></tr>
+                <tr><td><code>documents&lt;T extends DocumentData = DocumentData&gt;(name: string, options?: DocumentsOptions)</code></td><td><code><a href="#ref-Documents">Documents</a>&lt;T&gt;</code></td><td><p>A collection of MongoDB as it is (schemaless, MongoDB filters): the same one for a name, made again with options.</p></td></tr>
                 <tr><td><code>connect()</code></td><td><code>Promise&lt;this&gt;</code></td><td></td></tr>
                 <tr><td><code>close()</code></td><td><code>Promise&lt;void&gt;</code></td><td></td></tr>
                 <tr><td><code>ping()</code></td><td><code>Promise&lt;number&gt;</code></td><td><p>A round trip to the database (SELECT 1, MongoDB's ping; nothing for memory and files): its milliseconds. Throws when it does not answer.</p></td></tr>
@@ -1054,7 +1093,7 @@
         <p>The validation messages of the ORM, in English by key (required, maxLength, unique...); setTranslator(fn) makes them speak the language of each request (@xufa/i18n's translateOrm() does): fn(<code>orm.${key}</code>, params, english).</p>
 
         <h2 id="interfaces">Interfaces</h2>
-        <p class="ref-index"><a href="#ref-FieldOptions"><code>FieldOptions</code></a>, <a href="#ref-StringOptions"><code>StringOptions</code></a>, <a href="#ref-NumberOptions"><code>NumberOptions</code></a>, <a href="#ref-GeoJsonGeometry"><code>GeoJsonGeometry</code></a>, <a href="#ref-GeometryOptions"><code>GeometryOptions</code></a>, <a href="#ref-DateTimeOptions"><code>DateTimeOptions</code></a>, <a href="#ref-DecimalOptions"><code>DecimalOptions</code></a>, <a href="#ref-ForeignKeyOptions"><code>ForeignKeyOptions</code></a>, <a href="#ref-EncryptedOptions"><code>EncryptedOptions</code></a>, <a href="#ref-ManyToManyOptions"><code>ManyToManyOptions</code></a>, <a href="#ref-ModelClass"><code>ModelClass</code></a>, <a href="#ref-ModelOptions"><code>ModelOptions</code></a>, <a href="#ref-ModelCacheOptions"><code>ModelCacheOptions</code></a>, <a href="#ref-ModelSpec"><code>ModelSpec</code></a>, <a href="#ref-TransactionOptions"><code>TransactionOptions</code></a>, <a href="#ref-Meta"><code>Meta</code></a>, <a href="#ref-RawSql"><code>RawSql</code></a>, <a href="#ref-FExpression"><code>FExpression</code></a>, <a href="#ref-ExtractExpression"><code>ExtractExpression</code></a>, <a href="#ref-TruncExpression"><code>TruncExpression</code></a>, <a href="#ref-Aggregate"><code>Aggregate</code></a>, <a href="#ref-MigrationOperation"><code>MigrationOperation</code></a>, <a href="#ref-AuditOptions"><code>AuditOptions</code></a>, <a href="#ref-AuditChange"><code>AuditChange</code></a>, <a href="#ref-AuditContext"><code>AuditContext</code></a>, <a href="#ref-DatabaseOptions"><code>DatabaseOptions</code></a>, <a href="#ref-Cache"><code>Cache</code></a>, <a href="#ref-MemoryCacheOptions"><code>MemoryCacheOptions</code></a>, <a href="#ref-CacheBus"><code>CacheBus</code></a>, <a href="#ref-SharedCacheOptions"><code>SharedCacheOptions</code></a>, <a href="#ref-LocalCacheOptions"><code>LocalCacheOptions</code></a>, <a href="#ref-FaultOptions"><code>FaultOptions</code></a>, <a href="#ref-FailOptions"><code>FailOptions</code></a>, <a href="#ref-FaultRule"><code>FaultRule</code></a>, <a href="#ref-CachedOptions"><code>CachedOptions</code></a>, <a href="#ref-OrmError"><code>OrmError</code></a>, <a href="#ref-ValidationErrorInstance"><code>ValidationErrorInstance</code></a>, <a href="#ref-ProtectedErrorInstance"><code>ProtectedErrorInstance</code></a>, <a href="#ref-UniqueErrorInstance"><code>UniqueErrorInstance</code></a>, <a href="#ref-MailRejection"><code>MailRejection</code></a>, <a href="#ref-MailErrorInstance"><code>MailErrorInstance</code></a>, <a href="#ref-PluginOptions"><code>PluginOptions</code></a>, <a href="#ref-ResourceOptions"><code>ResourceOptions</code></a>, <a href="#ref-DatabaseHealthCheck"><code>DatabaseHealthCheck</code></a>, <a href="#ref-MaintenanceState"><code>MaintenanceState</code></a>, <a href="#ref-PaginatorOptions"><code>PaginatorOptions</code></a>, <a href="#ref-LowerField"><code>LowerField</code></a></p>
+        <p class="ref-index"><a href="#ref-FieldOptions"><code>FieldOptions</code></a>, <a href="#ref-StringOptions"><code>StringOptions</code></a>, <a href="#ref-NumberOptions"><code>NumberOptions</code></a>, <a href="#ref-GeoJsonGeometry"><code>GeoJsonGeometry</code></a>, <a href="#ref-GeometryOptions"><code>GeometryOptions</code></a>, <a href="#ref-DateTimeOptions"><code>DateTimeOptions</code></a>, <a href="#ref-DecimalOptions"><code>DecimalOptions</code></a>, <a href="#ref-ForeignKeyOptions"><code>ForeignKeyOptions</code></a>, <a href="#ref-EncryptedOptions"><code>EncryptedOptions</code></a>, <a href="#ref-ManyToManyOptions"><code>ManyToManyOptions</code></a>, <a href="#ref-ModelClass"><code>ModelClass</code></a>, <a href="#ref-ModelOptions"><code>ModelOptions</code></a>, <a href="#ref-ModelCacheOptions"><code>ModelCacheOptions</code></a>, <a href="#ref-ModelSpec"><code>ModelSpec</code></a>, <a href="#ref-TransactionOptions"><code>TransactionOptions</code></a>, <a href="#ref-Meta"><code>Meta</code></a>, <a href="#ref-RawSql"><code>RawSql</code></a>, <a href="#ref-FExpression"><code>FExpression</code></a>, <a href="#ref-ExtractExpression"><code>ExtractExpression</code></a>, <a href="#ref-TruncExpression"><code>TruncExpression</code></a>, <a href="#ref-Aggregate"><code>Aggregate</code></a>, <a href="#ref-MigrationOperation"><code>MigrationOperation</code></a>, <a href="#ref-AuditOptions"><code>AuditOptions</code></a>, <a href="#ref-AuditChange"><code>AuditChange</code></a>, <a href="#ref-AuditContext"><code>AuditContext</code></a>, <a href="#ref-DatabaseOptions"><code>DatabaseOptions</code></a>, <a href="#ref-Cache"><code>Cache</code></a>, <a href="#ref-MemoryCacheOptions"><code>MemoryCacheOptions</code></a>, <a href="#ref-CacheBus"><code>CacheBus</code></a>, <a href="#ref-SharedCacheOptions"><code>SharedCacheOptions</code></a>, <a href="#ref-LocalCacheOptions"><code>LocalCacheOptions</code></a>, <a href="#ref-FaultOptions"><code>FaultOptions</code></a>, <a href="#ref-FailOptions"><code>FailOptions</code></a>, <a href="#ref-FaultRule"><code>FaultRule</code></a>, <a href="#ref-DocumentsOptions"><code>DocumentsOptions</code></a>, <a href="#ref-CachedOptions"><code>CachedOptions</code></a>, <a href="#ref-OrmError"><code>OrmError</code></a>, <a href="#ref-ValidationErrorInstance"><code>ValidationErrorInstance</code></a>, <a href="#ref-ProtectedErrorInstance"><code>ProtectedErrorInstance</code></a>, <a href="#ref-UniqueErrorInstance"><code>UniqueErrorInstance</code></a>, <a href="#ref-MailRejection"><code>MailRejection</code></a>, <a href="#ref-MailErrorInstance"><code>MailErrorInstance</code></a>, <a href="#ref-PluginOptions"><code>PluginOptions</code></a>, <a href="#ref-ResourceOptions"><code>ResourceOptions</code></a>, <a href="#ref-DatabaseHealthCheck"><code>DatabaseHealthCheck</code></a>, <a href="#ref-MaintenanceState"><code>MaintenanceState</code></a>, <a href="#ref-PaginatorOptions"><code>PaginatorOptions</code></a>, <a href="#ref-LowerField"><code>LowerField</code></a></p>
 
         <h3 id="ref-FieldOptions"><code>FieldOptions</code></h3>
         <pre><code class="language-ts">export interface FieldOptions&lt;T&gt; { ... }</code></pre>
@@ -1609,6 +1648,21 @@
             </table>
           </div>
 
+        <h3 id="ref-DocumentsOptions"><code>DocumentsOptions</code></h3>
+        <pre><code class="language-ts">export interface DocumentsOptions { ... }</code></pre>
+        <p>Options of db.documents().</p>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>cache?</code></td><td><code>boolean | { indexes?: string[]; ttl?: number; store?: <a href="#ref-Cache">Cache</a> }</code></td><td><p>The cache: by id, and by the fields of <code>indexes</code> (unique values); ttl in ms; a store of its own (db.cache by default).</p></td></tr>
+                <tr><td><code>writeBehind?</code></td><td><code>boolean</code></td><td><p>Writes of single documents to the cache while the database is unavailable, written by synchronize() later.</p></td></tr>
+                <tr><td><code>available?</code></td><td><code>() =&gt; boolean | Promise&lt;boolean&gt;</code></td><td><p>Whether the database is available (asked before each write of writeBehind).</p></td></tr>
+                <tr><td><code>onUnavailable?</code></td><td><code>(err: Error) =&gt; unknown</code></td><td><p>Told of the writes that fail because the database is unavailable.</p></td></tr>
+              </tbody>
+            </table>
+          </div>
+
         <h3 id="ref-CachedOptions"><code>CachedOptions</code></h3>
         <pre><code class="language-ts">export interface CachedOptions&lt;A extends unknown[]&gt; { ... }</code></pre>
         <p>A database (or several) for each tenant, opened the first time it is used; code run in a tenant uses it.</p>
@@ -1815,7 +1869,7 @@
           </div>
 
         <h2 id="types">Types</h2>
-        <p class="ref-index"><a href="#ref-ValidationRule"><code>ValidationRule</code></a>, <a href="#ref-RuleSpec"><code>RuleSpec</code></a>, <a href="#ref-OnDelete"><code>OnDelete</code></a>, <a href="#ref-DbOnDelete"><code>DbOnDelete</code></a>, <a href="#ref-Nullable"><code>Nullable</code></a>, <a href="#ref-ModelRef"><code>ModelRef</code></a>, <a href="#ref-ExtendedFields"><code>ExtendedFields</code></a>, <a href="#ref-ValueOf"><code>ValueOf</code></a>, <a href="#ref-Fields"><code>Fields</code></a>, <a href="#ref-JsonValueOf"><code>JsonValueOf</code></a>, <a href="#ref-ChoiceOf"><code>ChoiceOf</code></a>, <a href="#ref-NotRequired"><code>NotRequired</code></a>, <a href="#ref-PropertyOf"><code>PropertyOf</code></a>, <a href="#ref-SchemaPropertyOf"><code>SchemaPropertyOf</code></a>, <a href="#ref-InSchema"><code>InSchema</code></a>, <a href="#ref-PrimaryKeyOf"><code>PrimaryKeyOf</code></a>, <a href="#ref-SimplifyProps"><code>SimplifyProps</code></a>, <a href="#ref-AutoIdOf"><code>AutoIdOf</code></a>, <a href="#ref-ModelSchemaProperties"><code>ModelSchemaProperties</code></a>, <a href="#ref-FieldSpec"><code>FieldSpec</code></a>, <a href="#ref-TestDatabases"><code>TestDatabases</code></a>, <a href="#ref-HookName"><code>HookName</code></a>, <a href="#ref-Conditions"><code>Conditions</code></a>, <a href="#ref-DatePart"><code>DatePart</code></a>, <a href="#ref-DateUnit"><code>DateUnit</code></a>, <a href="#ref-ValuesItem"><code>ValuesItem</code></a>, <a href="#ref-AggregateResult"><code>AggregateResult</code></a>, <a href="#ref-ScopeMethods"><code>ScopeMethods</code></a>, <a href="#ref-ScopedQuerySet"><code>ScopedQuerySet</code></a>, <a href="#ref-BlobBody"><code>BlobBody</code></a>, <a href="#ref-FaultOperation"><code>FaultOperation</code></a>, <a href="#ref-TenantConfig"><code>TenantConfig</code></a>, <a href="#ref-CachedFunction"><code>CachedFunction</code></a>, <a href="#ref-ErrorClass"><code>ErrorClass</code></a>, <a href="#ref-EncryptionKey"><code>EncryptionKey</code></a>, <a href="#ref-ResourceAction"><code>ResourceAction</code></a>, <a href="#ref-FactoryValue"><code>FactoryValue</code></a>, <a href="#ref-FactoryDefinition"><code>FactoryDefinition</code></a>, <a href="#ref-IndexField"><code>IndexField</code></a></p>
+        <p class="ref-index"><a href="#ref-ValidationRule"><code>ValidationRule</code></a>, <a href="#ref-RuleSpec"><code>RuleSpec</code></a>, <a href="#ref-OnDelete"><code>OnDelete</code></a>, <a href="#ref-DbOnDelete"><code>DbOnDelete</code></a>, <a href="#ref-Nullable"><code>Nullable</code></a>, <a href="#ref-ModelRef"><code>ModelRef</code></a>, <a href="#ref-ExtendedFields"><code>ExtendedFields</code></a>, <a href="#ref-ValueOf"><code>ValueOf</code></a>, <a href="#ref-Fields"><code>Fields</code></a>, <a href="#ref-JsonValueOf"><code>JsonValueOf</code></a>, <a href="#ref-ChoiceOf"><code>ChoiceOf</code></a>, <a href="#ref-NotRequired"><code>NotRequired</code></a>, <a href="#ref-PropertyOf"><code>PropertyOf</code></a>, <a href="#ref-SchemaPropertyOf"><code>SchemaPropertyOf</code></a>, <a href="#ref-InSchema"><code>InSchema</code></a>, <a href="#ref-PrimaryKeyOf"><code>PrimaryKeyOf</code></a>, <a href="#ref-SimplifyProps"><code>SimplifyProps</code></a>, <a href="#ref-AutoIdOf"><code>AutoIdOf</code></a>, <a href="#ref-ModelSchemaProperties"><code>ModelSchemaProperties</code></a>, <a href="#ref-FieldSpec"><code>FieldSpec</code></a>, <a href="#ref-TestDatabases"><code>TestDatabases</code></a>, <a href="#ref-HookName"><code>HookName</code></a>, <a href="#ref-Conditions"><code>Conditions</code></a>, <a href="#ref-DatePart"><code>DatePart</code></a>, <a href="#ref-DateUnit"><code>DateUnit</code></a>, <a href="#ref-ValuesItem"><code>ValuesItem</code></a>, <a href="#ref-AggregateResult"><code>AggregateResult</code></a>, <a href="#ref-ScopeMethods"><code>ScopeMethods</code></a>, <a href="#ref-ScopedQuerySet"><code>ScopedQuerySet</code></a>, <a href="#ref-BlobBody"><code>BlobBody</code></a>, <a href="#ref-FaultOperation"><code>FaultOperation</code></a>, <a href="#ref-DocumentData"><code>DocumentData</code></a>, <a href="#ref-TenantConfig"><code>TenantConfig</code></a>, <a href="#ref-CachedFunction"><code>CachedFunction</code></a>, <a href="#ref-ErrorClass"><code>ErrorClass</code></a>, <a href="#ref-EncryptionKey"><code>EncryptionKey</code></a>, <a href="#ref-ResourceAction"><code>ResourceAction</code></a>, <a href="#ref-FactoryValue"><code>FactoryValue</code></a>, <a href="#ref-FactoryDefinition"><code>FactoryDefinition</code></a>, <a href="#ref-IndexField"><code>IndexField</code></a></p>
 
         <h3 id="ref-ValidationRule"><code>ValidationRule</code></h3>
         <pre><code class="language-ts">export type ValidationRule&lt;S&gt; = string | ((subject: S) =&gt; string | boolean | void);</code></pre>
@@ -2015,6 +2069,10 @@
         <pre><code class="language-ts">export type FaultOperation =
   'select' | 'count' | 'aggregate' | 'insert' | 'update' | 'delete' | 'transaction' | 'connect';</code></pre>
         <p>The operations of a database that faults can affect.</p>
+
+        <h3 id="ref-DocumentData"><code>DocumentData</code></h3>
+        <pre><code class="language-ts">export type DocumentData = { id?: string; [field: string]: any };</code></pre>
+        <p>A document of db.documents(): schemaless, with <code>id</code> where MongoDB has <code>_id</code>.</p>
 
         <h3 id="ref-TenantConfig"><code>TenantConfig</code></h3>
         <pre><code class="language-ts">export type TenantConfig =

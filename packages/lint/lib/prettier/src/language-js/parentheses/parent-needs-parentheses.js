@@ -1,5 +1,4 @@
 import isNonEmptyArray from '../../utilities/is-non-empty-array.js';
-import { hasNode } from '../utilities/has-node.js';
 import { getLeftSidePathName, hasNakedLeftSide } from '../utilities/left-side.js';
 import { isCallExpression, isMemberExpression, isReturnOrThrowStatement } from '../utilities/node-types.js';
 import { returnArgumentHasLeadingComment } from '../utilities/return-statement-has-leading-comment.js';
@@ -65,22 +64,6 @@ function parentNeedsParentheses(path, options, needsParentheses) {
 
     case 'Decorator':
       if (key === 'expression' && !canDecoratorExpressionUnparenthesized(node)) {
-        return true;
-      }
-      break;
-
-    case 'TypeAnnotation':
-      if (
-        path.match(
-          undefined,
-          undefined,
-          (node, key) => key === 'returnType' && node.type === 'ArrowFunctionExpression'
-        ) &&
-        !(
-          node.type === 'NullableTypeAnnotation' && path.call(() => needsParentheses(path, options), 'typeAnnotation')
-        ) &&
-        includesFunctionTypeInObjectType(node)
-      ) {
         return true;
       }
       break;
@@ -194,13 +177,6 @@ function isDecoratorMemberExpression(node) {
   }
 
   return false;
-}
-
-function includesFunctionTypeInObjectType(node) {
-  return hasNode(
-    node,
-    (node) => node.type === 'ObjectTypeAnnotation' && hasNode(node, (node) => node.type === 'FunctionTypeAnnotation')
-  );
 }
 
 export { parentNeedsParentheses };

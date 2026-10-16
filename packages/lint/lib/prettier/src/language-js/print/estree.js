@@ -10,7 +10,6 @@ import { printArrowFunction } from './arrow-function.js';
 import { printAssignmentExpression, printVariableDeclarator } from './assignment.js';
 import { printAwaitExpression } from './await-expression.js';
 import { printBinaryishExpression } from './binaryish.js';
-import { printBindExpression } from './bind-expression.js';
 import { printBlock } from './block.js';
 import { printCallExpression } from './call-expression.js';
 import { printClass, printClassBody, printClassMethod, printClassProperty } from './class.js';
@@ -19,7 +18,6 @@ import { printExpressionStatement } from './expression-statement.js';
 import { printForStatement } from './for-statement.js';
 import { printForXStatement } from './for-x-statement.js';
 import { printFunction, printMethod } from './function.js';
-import { printHtmlBinding } from './html-binding.js';
 import { printIfStatement } from './if-statement.js';
 import { printLiteral } from './literal.js';
 import { printMemberExpression } from './member.js';
@@ -58,13 +56,8 @@ function printEstree(path, options, print, args) {
   }
 
   switch (node.type) {
-    case 'JsExpressionRoot':
-      return print('node');
     case 'JsonRoot':
       return [printDanglingComments(path, options), print('node'), hardline];
-    // Babel extension.
-    case 'File':
-      return printHtmlBinding(path, options, print) ?? print('program');
     case 'ExpressionStatement':
       return printExpressionStatement(path, options, print);
 
@@ -89,19 +82,14 @@ function printEstree(path, options, print, args) {
       return printBinaryishExpression(path, options, print);
     case 'AssignmentPattern':
       return [print('left'), ' = ', print('right')];
-    case 'OptionalMemberExpression':
     case 'MemberExpression':
       return printMemberExpression(path, options, print);
 
     case 'MetaProperty':
       return [print('meta'), '.', print('property')];
-    case 'BindExpression':
-      return printBindExpression(path, options, print);
     case 'Identifier':
       return [node.name, printOptionalToken(path), printDefiniteToken(path), printTypeAnnotationProperty(path, print)];
 
-    case 'V8IntrinsicIdentifier':
-      return ['%', node.name];
     case 'SpreadElement':
       return printSpreadElement(path, print);
     case 'RestElement':
@@ -125,9 +113,7 @@ function printEstree(path, options, print, args) {
     case 'ImportSpecifier':
     case 'ExportSpecifier':
     case 'ImportNamespaceSpecifier':
-    case 'ExportNamespaceSpecifier':
     case 'ImportDefaultSpecifier':
-    case 'ExportDefaultSpecifier':
       return printModuleSpecifier(path, options, print);
     case 'ImportAttribute':
       return printProperty(path, options, print);
@@ -144,7 +130,6 @@ function printEstree(path, options, print, args) {
       return printReturnStatement(path, options, print);
     case 'NewExpression':
     case 'ImportExpression':
-    case 'OptionalCallExpression':
     case 'CallExpression':
       return printCallExpression(path, options, print);
 
@@ -160,8 +145,6 @@ function printEstree(path, options, print, args) {
     case 'ObjectProperty':
       return printProperty(path, options, print);
     // Babel
-    case 'ObjectMethod':
-      return printMethod(path, options, print);
     case 'Decorator':
       return ['@', print('expression')];
     case 'ArrayExpression':
@@ -174,8 +157,6 @@ function printEstree(path, options, print, args) {
       return 'this';
     case 'Super':
       return 'super';
-    case 'Directive':
-      return [print('value'), printSemicolon(options)];
     case 'UnaryExpression': {
       const parts = [node.operator];
 
@@ -213,8 +194,6 @@ function printEstree(path, options, print, args) {
     case 'ForOfStatement':
       return printForXStatement(path, options, print);
 
-    case 'DoExpression':
-      return [node.async ? 'async ' : '', 'do ', print('body')];
     case 'BreakStatement':
     case 'ContinueStatement':
       return [
@@ -242,14 +221,9 @@ function printEstree(path, options, print, args) {
     case 'ClassDeclaration':
     case 'ClassExpression':
       return printClass(path, options, print);
-    case 'ClassMethod':
-    case 'ClassPrivateMethod':
     case 'MethodDefinition':
       return printClassMethod(path, options, print);
-    case 'ClassProperty':
     case 'PropertyDefinition':
-    case 'ClassPrivateProperty':
-    case 'ClassAccessorProperty':
     case 'AccessorProperty':
       return printClassProperty(path, options, print);
     case 'TemplateElement':
@@ -260,28 +234,12 @@ function printEstree(path, options, print, args) {
       return printTaggedTemplateExpression(path, options, print);
     case 'PrivateIdentifier':
       return ['#', node.name];
-    case 'PrivateName':
-      return ['#', print('id')];
-
-    // For hack-style pipeline
-    case 'TopicReference':
-      return '%';
-
-    case 'ArgumentPlaceholder':
-      return '?';
-
-    case 'ModuleExpression':
-      return ['module ', print('body')];
-
-    case 'VoidPattern':
-      return 'void';
 
     case 'EmptyStatement':
       if (isMeaningfulEmptyStatement(path)) {
         return ';';
       }
     // Fall through
-    case 'InterpreterDirective': // Printed as comment
     default:
       /* c8 ignore next */
       throw new UnexpectedNodeError(node, 'ESTree');

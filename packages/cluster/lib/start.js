@@ -71,8 +71,10 @@ function createStarter(bus) {
   async function startPrimary(options) {
     const count = options.workers ?? os.availableParallelism();
     const { shutdownTimeout = 10000, restart = true } = options;
+    // (serialization 'json': Node's default, for apps whose own messages (process.send) expect it: Dates as
+    // strings. The bus then carries what JSON does.)
     cluster.setupPrimary({
-      serialization: 'advanced',
+      serialization: options.serialization ?? 'advanced',
       execArgv: workerArgv(options.semiSpace),
       ...(options.exec ? { exec: options.exec } : {}),
     });
@@ -143,6 +145,13 @@ function createStarter(bus) {
   }
 
   async function start(options = {}) {
+    if (
+      options.serialization !== undefined &&
+      options.serialization !== 'advanced' &&
+      options.serialization !== 'json'
+    ) {
+      throw new TypeError(`serialization is 'advanced' or 'json', not ${String(options.serialization)}`);
+    }
     // Data written by @xufa/marshal (true: its default registry; or a Registry): classes arrive as themselves.
     if (options.marshal) bus.useMarshal(options.marshal === true ? undefined : options.marshal);
     if (options.signals !== false && cluster.isPrimary) {

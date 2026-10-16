@@ -1,0 +1,161 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>@xufa/purify · xufa</title>
+    <meta
+      name="description"
+      content="@xufa/purify: DOMPurify, the XSS sanitizer of HTML, with its tests, on the DOM of @xufa/html: ready in Node without jsdom."
+    />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%23d9502b'/%3E%3Ctext x='16' y='22.5' font-family='monospace' font-size='18' font-weight='700' fill='white' text-anchor='middle'%3Ex%3C/text%3E%3C/svg%3E"
+    />
+    <link rel="stylesheet" href="../style.css?v=0.1.0" />
+    <script src="../main.js?v=0.1.0"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js" defer></script>
+  </head>
+  <body>
+    <header class="header">
+      <div class="header-inner">
+        <a class="logo" href="../index.html"><span class="logo-mark">x</span>xufa</a>
+        <nav class="nav">
+          <a href="../guide.html">Guide</a>
+          <a href="../playground.html">Playground</a>
+          <a href="../http/index.html">HTTP</a>
+          <a href="../orm/index.html">ORM</a>
+          <a class="hide-small" href="../auth/index.html">Auth</a>
+          <a class="hide-small" href="../sequelize/index.html">Sequelize</a>
+          <a class="hide-small" href="../packages.html" aria-current="page">Packages</a>
+          <a class="hide-small" href="../benchmarks.html">Benchmarks</a>
+          <a href="https://github.com/xufajs/xufa">GitHub</a>
+          <button class="theme-toggle" type="button" aria-label="Switch between light and dark theme">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+              <path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z" />
+            </svg>
+          </button>
+        </nav>
+      </div>
+    </header>
+
+    <div class="docs">
+      <button class="menu-toggle" type="button" aria-expanded="false">☰ Contents</button>
+      <aside class="sidebar">
+        <h4>Using it</h4>
+        <ul>
+          <li><a href="#start">Quick start</a></li>
+          <li><a href="#api">Its API</a></li>
+          <li><a href="#checked">How it was checked</a></li>
+        </ul>
+        <h4>Packages</h4>
+        <ul>
+          <li><a href="../websocket/index.html">@xufa/websocket</a></li>
+          <li><a href="../express/index.html">@xufa/express</a></li>
+          <li><a href="../admin/index.html">@xufa/admin</a></li>
+          <li><a href="../session/index.html">@xufa/session</a></li>
+          <li><a href="../forms/index.html">@xufa/forms</a></li>
+          <li><a href="../views/index.html">@xufa/views</a></li>
+          <li><a href="../mail/index.html">@xufa/mail</a></li>
+          <li><a href="../i18n/index.html">@xufa/i18n</a></li>
+          <li><a href="../openapi/index.html">@xufa/openapi</a></li>
+          <li><a href="../client/index.html">@xufa/client</a></li>
+          <li><a href="../schema/index.html">@xufa/schema</a></li>
+          <li><a href="../pg/index.html">@xufa/pg</a></li>
+          <li><a href="../mongo/index.html">@xufa/mongo</a></li>
+          <li><a href="../expression/index.html">@xufa/expression</a></li>
+          <li><a href="../template/index.html">@xufa/template</a></li>
+          <li><a href="../cluster/index.html">@xufa/cluster</a></li>
+          <li><a href="../scheduler/index.html">@xufa/scheduler</a></li>
+          <li><a href="../queue/index.html">@xufa/queue</a></li>
+          <li><a href="../config/index.html">@xufa/config</a></li>
+          <li><a href="../discovery/index.html">@xufa/discovery</a></li>
+          <li><a href="../netcache/index.html">@xufa/netcache</a></li>
+          <li><a href="../faults/index.html">@xufa/faults</a></li>
+          <li><a href="../browser/index.html">@xufa/browser</a></li>
+          <li><a href="../bundle/index.html">@xufa/bundle</a></li>
+          <li><a href="../lint/index.html">@xufa/lint</a></li>
+          <li><a href="../marshal/index.html">@xufa/marshal</a></li>
+          <li><a href="../yaml/index.html">@xufa/yaml</a></li>
+          <li><a href="../jwt/index.html">@xufa/jwt</a></li>
+          <li><a href="../logger/index.html">@xufa/logger</a></li>
+          <li><a href="../router/index.html">@xufa/router</a></li>
+          <li><a href="../serializer/index.html">@xufa/serializer</a></li>
+          <li><a href="../inject/index.html">@xufa/inject</a></li>
+          <li><a href="../boot/index.html">@xufa/boot</a></li>
+          <li><a href="../errors/index.html">@xufa/errors</a></li>
+          <li><a href="../packages.html">All the packages</a></li>
+        </ul>
+      </aside>
+
+      <article class="content">
+        <nav class="package-tabs" aria-label="@xufa/purify">
+          <a href="index.html" aria-current="page">Overview</a>
+          <a href="reference.html">Reference</a>
+        </nav>
+        <h1>@xufa/purify</h1>
+        <p class="intro">
+          DOMPurify, the XSS sanitizer of HTML, on the DOM of <a href="../html/index.html">@xufa/html</a>: ready in Node with no
+          jsdom. Its library is DOMPurify's (3.3.3, ported), so it removes what DOMPurify removes, and its tests pass on it.
+          Ready in 48 ms with 6 MB of heap, where DOMPurify on jsdom took 760 ms and 28 MB; 7 to 13 times faster a
+          call; and steady, where DOMPurify on jsdom slows down and grows as it works.
+        </p>
+
+        <h2 id="start">Quick start</h2>
+        <pre><code class="language-sh">npm install @xufa/purify</code></pre>
+        <pre data-run="purify"><code class="language-js">import DOMPurify from '@xufa/purify'; // or require('@xufa/purify')
+
+console.log(DOMPurify.sanitize('&lt;img src=x onerror=alert(1)&gt;&lt;a href="javascript:alert(2)"&gt;Hi&lt;/a&gt;'));
+// Text only (no tags): what is shown in a page as text.
+console.log(DOMPurify.sanitize('&lt;p&gt;Hi &lt;b&gt;there&lt;/b&gt; &amp; &lt;script&gt;x&lt;/script&gt;&lt;/p&gt;', { ALLOWED_TAGS: [], KEEP_CONTENT: true }));</code></pre>
+        <pre data-output><code class="language-plaintext">&lt;img src="x"&gt;&lt;a&gt;Hi&lt;/a&gt;
+Hi there &amp;amp; </code></pre>
+
+        <h2 id="api">Its API</h2>
+        <p>
+          DOMPurify's as it is: <code>sanitize(dirty, config)</code> with all its options (<code>ALLOWED_TAGS</code>,
+          <code>ALLOWED_ATTR</code>, <code>FORBID_TAGS</code>, <code>ADD_ATTR</code>, <code>USE_PROFILES</code>,
+          <code>KEEP_CONTENT</code>, <code>WHOLE_DOCUMENT</code>, <code>RETURN_DOM</code>, <code>RETURN_DOM_FRAGMENT</code>,
+          <code>SAFE_FOR_TEMPLATES</code>, <code>SANITIZE_NAMED_PROPS</code>, <code>PARSER_MEDIA_TYPE</code>,
+          <code>NAMESPACE</code>, <code>IN_PLACE</code>, ...), <code>setConfig</code>, <code>clearConfig</code>,
+          <code>isValidAttribute</code>, hooks (<code>addHook</code>, <code>removeHook</code>), <code>removed</code>, and
+          <code>DOMPurify(window)</code> for another window. The nodes it returns are of <code>@xufa/html/dom</code>.
+        </p>
+<!--run-before: import DOMPurify from '@xufa/purify'; -->
+        <pre data-run="purify-hooks"><code class="language-js">DOMPurify.addHook('afterSanitizeAttributes', (node) =&gt; {
+  if (node.nodeName === 'A') node.setAttribute('rel', 'noopener');
+});
+console.log(DOMPurify.sanitize('&lt;a href="https://example.com" onclick="x()"&gt;link&lt;/a&gt;'));
+DOMPurify.removeAllHooks();
+const fragment = DOMPurify.sanitize('&lt;b&gt;bold&lt;/b&gt;&lt;iframe&gt;&lt;/iframe&gt;', { RETURN_DOM_FRAGMENT: true });
+console.log(fragment.childNodes.length, fragment.firstChild.nodeName);</code></pre>
+        <pre data-output><code class="language-plaintext">&lt;a href="https://example.com" rel="noopener"&gt;link&lt;/a&gt;
+1 B</code></pre>
+
+        <h2 id="checked">How it was checked</h2>
+        <ul>
+          <li>DOMPurify's own tests on it: 309 pass. Skipped: its tests that insert what it returns into a page and wait
+            for <code>alert()</code> (no scripts run here), and its bootstrap tests (they load it by a
+            <code>&lt;script&gt;</code>).</li>
+          <li>The same output as DOMPurify on jsdom 27 for its 216 XSS vectors with 12 configurations, and for 37,000
+            random markups. Where the two differed (text inside a <code>&lt;table&gt;</code>), DOMPurify in Chrome gives
+            ours.</li>
+          <li>It runs on a DOM whose parser passes html5lib's conformance suite and that has the live
+            <code>NodeIterator</code>, namespaces and attribute rules DOMPurify relies on: DOMPurify's README warns against
+            DOMs that do not (happy-dom).</li>
+        </ul>
+      </article>
+    </div>
+
+    <footer class="footer">
+      <div class="container">
+        <span>xufa is MIT licensed. &copy; Jes&uacute;s Seijas</span>
+        <span>
+          <a href="../guide.html">Guide</a> &middot; <a href="../playground.html">Playground</a> &middot; <a href="../http/index.html">HTTP</a> &middot; <a href="../orm/index.html">ORM</a> &middot; <a href="../auth/index.html">Auth</a> &middot;
+          <a href="../sequelize/index.html">Sequelize</a> &middot; <a href="../packages.html">Packages</a> &middot;
+          <a href="../benchmarks.html">Benchmarks</a> &middot; <a href="https://github.com/xufajs/xufa">GitHub</a>
+        </span>
+      </div>
+    </footer>
+  </body>
+</html>

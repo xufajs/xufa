@@ -15,7 +15,6 @@ import { getFunctionParameters } from '../utilities/function-parameters.js';
 import { isFunctionCompositionArguments } from '../utilities/is-function-composition-arguments.js';
 import { isLongCurriedCallExpression } from '../utilities/is-long-curried-call-expression.js';
 import { isNextLineEmpty } from '../utilities/is-next-line-empty.js';
-import { isObjectProperty } from '../utilities/is-object-property.js';
 import { isSimpleCallArgument } from '../utilities/is-simple-call-argument.js';
 import { isSimpleType } from '../utilities/is-simple-type.js';
 import {
@@ -27,7 +26,6 @@ import {
   isJsxElement,
   isObjectExpression,
   isRegExpLiteral,
-  isStringLiteral,
 } from '../utilities/node-types.js';
 import { stripChainElementWrappers } from '../utilities/strip-chain-element-wrappers.js';
 import { isConciselyPrintedArray } from './array.js';
@@ -85,11 +83,7 @@ function printCallArguments(path, options, print) {
 
   const trailingComma =
     // Angular does not allow trailing comma
-    path.root.type !== 'NGRoot' &&
-    // Dynamic imports cannot have trailing commas
-    node.type !== 'ImportExpression' &&
-    node.type !== 'TSImportType' &&
-    node.type !== 'TSExternalModuleReference'
+    node.type !== 'ImportExpression' && node.type !== 'TSImportType' && node.type !== 'TSExternalModuleReference'
       ? printTrailingComma(options, 'all')
       : '';
 
@@ -190,7 +184,7 @@ function couldExpandArg(arg, arrowChainRecursion = false) {
     return true;
   }
 
-  if (arg.type === 'FunctionExpression' || arg.type === 'DoExpression' || arg.type === 'ModuleExpression') {
+  if (arg.type === 'FunctionExpression') {
     return true;
   }
 
@@ -249,10 +243,6 @@ function shouldExpandFirstArg(args) {
 
   const [firstArg, secondArg] = args;
 
-  if (firstArg.type === 'ModuleExpression' && isTypeModuleObjectExpression(secondArg)) {
-    return true;
-  }
-
   return (
     !hasComment(firstArg) &&
     (firstArg.type === 'FunctionExpression' ||
@@ -275,11 +265,8 @@ function isHopefullyShortCallArgument(node) {
     return isHopefullyShortCallArgument(node.expression);
   }
 
-  if (isBinaryCastExpression(node) || node.type === 'TypeCastExpression') {
+  if (isBinaryCastExpression(node)) {
     let { typeAnnotation } = node;
-    if (typeAnnotation.type === 'TypeAnnotation') {
-      typeAnnotation = typeAnnotation.typeAnnotation;
-    }
 
     if (typeAnnotation.type === 'TSArrayType') {
       typeAnnotation = typeAnnotation.elementType;
@@ -288,9 +275,8 @@ function isHopefullyShortCallArgument(node) {
       }
     }
 
-    if (typeAnnotation.type === 'GenericTypeAnnotation' || typeAnnotation.type === 'TSTypeReference') {
-      const typeArguments =
-        typeAnnotation.type === 'GenericTypeAnnotation' ? typeAnnotation.typeParameters : typeAnnotation.typeArguments;
+    if (typeAnnotation.type === 'TSTypeReference') {
+      const typeArguments = typeAnnotation.typeArguments;
       if (typeArguments?.params.length === 1) {
         typeAnnotation = typeArguments.params[0];
       }
@@ -341,27 +327,6 @@ function isValidHookCallbackAndDepsFormat(args, baseIndex) {
     maybeArrowFunction.body.type === 'BlockStatement' &&
     maybeDepsArray.type === 'ArrayExpression' &&
     args.every((arg) => !hasComment(arg))
-  );
-}
-
-// `{ type: "module" }` and `{"type": "module"}`
-function isTypeModuleObjectExpression(node) {
-  if (!(node.type === 'ObjectExpression' && node.properties.length === 1)) {
-    return false;
-  }
-
-  const [property] = node.properties;
-
-  if (!isObjectProperty(property)) {
-    return false;
-  }
-
-  return (
-    !property.computed &&
-    ((property.key.type === 'Identifier' && property.key.name === 'type') ||
-      (isStringLiteral(property.key) && property.key.value === 'type')) &&
-    isStringLiteral(property.value) &&
-    property.value.value === 'module'
   );
 }
 

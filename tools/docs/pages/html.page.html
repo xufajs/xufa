@@ -1,0 +1,106 @@
+<!--{
+  "file": "html.html",
+  "name": "@xufa/html",
+  "title": "@xufa/html",
+  "description": "@xufa/html: HTML parsed as browsers parse it (parse5, the html5lib conformance suite), and a DOM of the DOM standard to read and change it. No dependencies.",
+  "groups": [
+    ["Using it", [["start", "Quick start"], ["parser", "The parser"], ["dom", "The DOM"]]],
+    ["More", [["xml", "XML"], ["checked", "How it was checked"]]]
+  ]
+}-->
+        <h1>@xufa/html</h1>
+        <p class="intro">
+          HTML parsed as browsers parse it, and a DOM to read and change what was parsed, with no dependencies. The parser
+          is parse5's, ported with its tests; <code>@xufa/html/dom</code> is a DOM of the DOM standard on it, for code made
+          for browsers that reads trees: a sanitizer (<a href="purify.html">@xufa/purify</a> runs DOMPurify on it), a
+          scraper, a test.
+        </p>
+
+        <h2 id="start">Quick start</h2>
+        <pre><code class="language-sh">npm install @xufa/html</code></pre>
+        <pre data-run="html"><code class="language-js">import { createWindow } from '@xufa/html/dom';
+
+const { document } = createWindow('&lt;ul id="list"&gt;&lt;li class="a"&gt;One&lt;li&gt;Two&lt;/ul&gt;&lt;p&gt;a&lt;b&gt;b&lt;i&gt;c&lt;/p&gt;d');
+console.log(document.querySelectorAll('#list &gt; li').length, document.querySelector('li.a').textContent);
+console.log(document.body.innerHTML);</code></pre>
+        <pre data-output><code class="language-plaintext">2 One
+&lt;ul id="list"&gt;&lt;li class="a"&gt;One&lt;/li&gt;&lt;li&gt;Two&lt;/li&gt;&lt;/ul&gt;&lt;p&gt;a&lt;b&gt;b&lt;i&gt;c&lt;/i&gt;&lt;/b&gt;&lt;/p&gt;&lt;b&gt;&lt;i&gt;d&lt;/i&gt;&lt;/b&gt;</code></pre>
+
+        <h2 id="parser">The parser</h2>
+        <p>
+          <code>parse(html, options)</code> gives a document and <code>parseFragment(html)</code> (or
+          <code>parseFragment(context, html)</code>) a fragment, as parse5 has them: a tree of plain objects, or of your own
+          with a <code>treeAdapter</code>. <code>serialize(node)</code> and <code>serializeOuter(node)</code> write them as
+          the HTML standard says. It is the HTML standard's tokenizer and tree construction: implied and misnested tags,
+          tables and what goes before them, templates, SVG and MathML with their names and attributes, character references.
+          <code>scriptingEnabled</code>, <code>sourceCodeLocationInfo</code>, <code>onParseError</code> and the
+          <code>Tokenizer</code> are parse5's.
+        </p>
+<!--run-before: import { parse, parseFragment, serialize } from '@xufa/html'; -->
+        <pre data-run="html-parser"><code class="language-js">const fragment = parseFragment('&lt;table&gt;x&lt;td&gt;y&lt;svg viewbox="0 0 1 1"&gt;&lt;foreignobject&gt;&lt;p&gt;&amp;notin;');
+console.log(serialize(fragment));
+console.log(parse('&lt;title&gt;T&lt;/title&gt;').childNodes[0].childNodes.map((node) =&gt; node.nodeName));</code></pre>
+        <pre data-output><code class="language-plaintext">x&lt;table&gt;&lt;tbody&gt;&lt;tr&gt;&lt;td&gt;y&lt;svg viewBox="0 0 1 1"&gt;&lt;foreignObject&gt;&lt;p&gt;∉&lt;/p&gt;&lt;/foreignObject&gt;&lt;/svg&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/tbody&gt;&lt;/table&gt;
+[ 'head', 'body' ]</code></pre>
+
+        <h2 id="dom">The DOM</h2>
+        <p>
+          <code>createWindow(html)</code> gives a window with its document and the interfaces of browsers
+          (<code>Node</code>, <code>Element</code>, <code>DOMParser</code>, <code>NodeFilter</code>, ...), as libraries made
+          for browsers take them. Documents are parsed with scripting disabled, as <code>DOMParser</code> does in browsers.
+          Elements of HTML (of their interfaces: <code>HTMLDivElement</code>, <code>HTMLHeadingElement</code>... and
+          <code>HTMLUnknownElement</code>), SVG and MathML, attributes (names checked as the DOM standard has them now,
+          lower-cased on HTML elements, namespaces), text, comments, CDATA, processing instructions, doctypes and fragments; <code>innerHTML</code> and
+          <code>outerHTML</code> both ways (templates in their content), <code>cloneNode</code>, <code>importNode</code>,
+          <code>adoptNode</code>, <code>querySelector</code> and <code>matches</code> (types, ids, classes, attributes,
+          <code>:not()</code>, first, last and only child, <code>:empty</code>, <code>:root</code>, <code>:scope</code>,
+          <code>:nth-child()</code> and <code>:nth-last-child()</code> (with <code>of S</code>), <code>:nth-of-type()</code>,
+          <code>:nth-last-of-type()</code>, the first, last and only of a type, <code>:is()</code>, <code>:where()</code>,
+          <code>:has()</code>, the namespace prefixes <code>*|</code> and <code>|</code>, the combinators, CSS escapes), <code>classList</code> and <code>relList</code>, <code>dataset</code>, the namespace lookups,
+          <code>isEqualNode</code>, <code>compareDocumentPosition</code>, and <code>href</code> and <code>src</code> of links
+          and images.
+        </p>
+        <p>
+          The <code>NodeIterator</code> is live: when nodes are removed, its reference moves as the standard says, so a tree
+          can be changed while it is walked, as a sanitizer does. Documents and forms have the names of the properties
+          browsers give them (<code>cookie</code>, <code>location</code>, <code>submit</code>, ...), so a sanitizer that
+          protects against DOM clobbering finds them. There are no events, layout, styles, scripts, timers or networking.
+        </p>
+<!--run-before: import { createWindow, NodeFilter } from '@xufa/html/dom'; -->
+        <pre data-run="html-iterator"><code class="language-js">const { document } = createWindow('&lt;div&gt;&lt;b&gt;1&lt;i&gt;2&lt;/i&gt;&lt;/b&gt;&lt;u&gt;3&lt;/u&gt;&lt;/div&gt;');
+const iterator = document.createNodeIterator(document.body, NodeFilter.SHOW_ELEMENT);
+const seen = [];
+for (let node = iterator.nextNode(); node; node = iterator.nextNode()) {
+  seen.push(node.nodeName);
+  // An element replaced by its children while it is walked: the walk goes through them.
+  if (node.nodeName === 'B') node.replaceWith(...node.childNodes);
+}
+console.log(seen.join(' '), document.body.innerHTML);</code></pre>
+        <pre data-output><code class="language-plaintext">BODY DIV B I U &lt;div&gt;1&lt;i&gt;2&lt;/i&gt;&lt;u&gt;3&lt;/u&gt;&lt;/div&gt;</code></pre>
+
+        <h2 id="xml">XML</h2>
+        <p>
+          <code>DOMParser</code> parses XML too (<code>application/xml</code>, <code>text/xml</code>,
+          <code>application/xhtml+xml</code>, <code>image/svg+xml</code>): namespaces, the five entities and character
+          references, CDATA sections, comments and processing instructions; a document that is not well formed is a
+          <code>&lt;parsererror&gt;</code> document, as in browsers. Elements of XML documents are serialized as the DOM
+          Parsing standard says (namespaces declared where needed, <code>&lt;br /&gt;</code> for void elements of XHTML),
+          and their <code>innerHTML</code> parses XML or throws a <code>SyntaxError</code>.
+        </p>
+
+        <h2 id="checked">How it was checked</h2>
+        <ul>
+          <li>parse5's tests, ported by <code>tools/port-parse5</code>: 10,596 pass (html5lib's tree construction and
+            tokenizer suites, its fork with codes of parse errors, serialization, source locations).</li>
+          <li>Its own tests: the live iterator, attributes and namespaces, <code>innerHTML</code>, templates, importing,
+            XML, selectors, <code>classList</code>, the names of document and forms.</li>
+          <li>The DOM standard's tests in web-platform-tests (nodes, traversal, collections, token lists: 410 pages, copied by
+            <code>tools/port-wpt</code>), run as a browser runs them with WPT's own <code>testharness.js</code>: 9,734
+            subtests pass. The others are listed with their reasons in <code>test/wpt-expected.json</code>: what this DOM
+            does not have (frames, events, <code>MutationObserver</code>, <code>Range</code>, shadow DOM,
+            <code>moveBefore()</code>, the selectors of states of forms and user input...), and
+            11 bugs still to fix.</li>
+          <li>DOMPurify's tests on it (in <a href="purify.html">@xufa/purify</a>), and the same output as DOMPurify on jsdom
+            for its XSS vectors and 37,000 random markups; where jsdom differs from Chrome (text inside a table), it is as
+            Chrome.</li>
+        </ul>

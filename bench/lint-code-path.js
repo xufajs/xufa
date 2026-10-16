@@ -10,6 +10,7 @@
 
 const fs = require('node:fs');
 const path = require('node:path');
+const { pathToFileURL } = require('node:url');
 const { isDeepStrictEqual } = require('node:util');
 const { corpus } = require('./lint');
 const { cases } = require('./lint-cases');
@@ -195,7 +196,7 @@ function check(label, text, given = {}) {
 async function main() {
   const { ConfigArray } = require(LINT);
   const { linterConfig } = require(path.join(LINT, 'lib/engine'));
-  const { default: config } = await import(path.join(ROOT, 'xufa.lint.config.js'));
+  const { default: config } = await import(pathToFileURL(path.join(ROOT, 'xufa.lint.config.js')).href);
   const configs = new ConfigArray(config, ROOT);
   const files = await corpus(true);
   for (const text of WRITTEN) {

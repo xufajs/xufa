@@ -1,78 +1,9 @@
-import { ConfigError } from '../common/errors.js';
 import { getOrInsertComputed } from '../utilities/get-or-insert.js';
 import createGetVisitorKeysFunction from './create-get-visitor-keys-function.js';
-import {
-  cleanFrontMatter,
-  isEmbedFrontMatter,
-  isFrontMatter,
-  printEmbedFrontMatter,
-  printFrontMatter,
-} from './front-matter/index.js';
-
-function getParserPluginByParserName(plugins, parserName) {
-  if (!parserName) {
-    throw new Error('parserName is required.');
-  }
-
-  /*
-  Loop from end to allow plugins override builtin plugins,
-  this is how `resolveParser` works in v2.
-  This is a temporarily solution, see #13729
-  */
-  const plugin = plugins.findLast((plugin) => plugin.parsers && Object.hasOwn(plugin.parsers, parserName));
-  if (plugin) {
-    return plugin;
-  }
-
-  let message = `Couldn't resolve parser "${parserName}".`;
-
-  throw new ConfigError(message);
-}
-
-function getPrinterPluginByAstFormat(plugins, astFormat) {
-  if (!astFormat) {
-    throw new Error('astFormat is required.');
-  }
-
-  // Loop from end to consistent with parser resolve logic
-  const plugin = plugins.findLast((plugin) => plugin.printers && Object.hasOwn(plugin.printers, astFormat));
-  if (plugin) {
-    return plugin;
-  }
-
-  let message = `Couldn't find plugin for AST format "${astFormat}".`;
-
-  throw new ConfigError(message);
-}
-
-function resolveParser({ plugins, parser }) {
-  const plugin = getParserPluginByParserName(plugins, parser);
-  return initParser(plugin, parser);
-}
-
-function initParser(plugin, parserName) {
-  const parserOrParserInitFunction = plugin.parsers[parserName];
-  return typeof parserOrParserInitFunction === 'function' ? parserOrParserInitFunction() : parserOrParserInitFunction;
-}
-
-async function initPrinter(plugin, astFormat) {
-  const printerOrPrinterInitFunction = plugin.printers[astFormat];
-  const printer =
-    typeof printerOrPrinterInitFunction === 'function'
-      ? await printerOrPrinterInitFunction()
-      : printerOrPrinterInitFunction;
-  return normalizePrinter(printer);
-}
+import { isEmbedFrontMatter, isFrontMatter, printEmbedFrontMatter, printFrontMatter } from './front-matter/index.js';
 
 function normalizePrinterWithoutCache(printer) {
-  let {
-    features,
-    getVisitorKeys,
-    embed: originalEmbed,
-    massageAstNode: originalCleanFunction,
-    print: originalPrint,
-    ...printerRestProperties
-  } = printer;
+  let { features, getVisitorKeys, embed: originalEmbed, print: originalPrint, ...printerRestProperties } = printer;
 
   features = normalizePrinterFeatures(features);
   const frontMatterSupport = features.experimental_frontMatterSupport;
@@ -83,16 +14,6 @@ function normalizePrinterWithoutCache(printer) {
       frontMatterSupport.embed ||
       frontMatterSupport.print
   );
-
-  let massageAstNode = originalCleanFunction;
-  if (originalCleanFunction && frontMatterSupport.massageAstNode) {
-    massageAstNode = new Proxy(originalCleanFunction, {
-      apply(target, thisArgument, argumentsList) {
-        cleanFrontMatter(...argumentsList);
-        return Reflect.apply(target, thisArgument, argumentsList);
-      },
-    });
-  }
 
   let embed = originalEmbed;
   if (originalEmbed) {
@@ -135,7 +56,6 @@ function normalizePrinterWithoutCache(printer) {
     features,
     getVisitorKeys,
     embed,
-    massageAstNode,
     print,
     ...printerRestProperties,
   };
@@ -167,11 +87,4 @@ function normalizePrinterFeatures(features) {
   };
 }
 
-export {
-  getParserPluginByParserName,
-  getPrinterPluginByAstFormat,
-  initParser,
-  initPrinter,
-  normalizePrinter,
-  resolveParser,
-};
+export { normalizePrinter };

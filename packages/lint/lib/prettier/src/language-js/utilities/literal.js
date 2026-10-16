@@ -46,10 +46,9 @@ function isNumericLiteral(node) {
  */
 function isRegExpLiteral(node) {
   return (
-    node.type === 'RegExpLiteral' ||
-    (node.type === 'Literal' &&
-      // @ts-expect-error -- Safe
-      Boolean(node.regex))
+    node.type === 'Literal' &&
+    // @ts-expect-error -- Safe
+    Boolean(node.regex)
   );
 }
 

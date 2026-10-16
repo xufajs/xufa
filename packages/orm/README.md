@@ -713,13 +713,50 @@ app.register(plugin, {
 - `with(context, fn)` merges with the context of the code that runs it; `actor` and `context` can be functions,
   asked when an entry is made. Blob backends have no audit log.
 
+## Documents (MongoDB collections as they are)
+
+For data that models do not describe (documents of many shapes, code written on a driver), `db.documents(name,
+options)` gives a collection of MongoDB as it is: schemaless documents, MongoDB's filters, updates and pipelines, and
+the options of the driver, with the ORM's cache and faults.
+
+```js
+const products = db.documents('products', { cache: { indexes: ['code'], ttl: 60_000 } });
+const pen = await products.insertOne({ code: 'P1', name: 'Pen' }); // { code, name, id: '65f…' }
+await products.findById(pen.id); // the cache, then the database
+await products.findOne({ code: 'P1' }); // the cache by an index, then the database
+await products.find({ price: { $gt: 3 } }, { sort: { price: 1 }, limit: 20, collation: { locale: 'en' } });
+for await (const doc of await products.cursor({}, { batchSize: 500 })) process(doc);
+await products.update({ id: pen.id, price: 4 }); // $set: the document as it is now, or null
+```
+
+- **Ids:** documents have `id` (a string) where MongoDB has `_id`. An id of 24 hex digits is an ObjectId in the
+  database; any other id is kept as it is. A filter on `id` is a filter on `_id`, with `$eq`, `$ne`, `$in` and `$nin`
+  too. Only the top level is mapped.
+- **Methods:**
+  - reads: `findById`, `findOne`, `find`, `cursor`, `count` (`{ estimated }`), `aggregate`;
+  - writes: `insertOne`, `insertMany`, `update` (`$set` by id), `replace`, `save`, `updateMany`, `remove`
+    (`{ justOne }`), `removeById`, `findOneAndUpdate` / `Replace` / `Delete`, `bulkWrite`;
+  - the collection: `createIndex`, `dropIndex`, `indexes`, `drop`, `rename`.
+- **The cache** (`cache: true` or `{ indexes, ttl, store }`): the database's cache, or a store of its own.
+  - `findById`, and a `findOne` of one equality on `id` or on a field of `indexes`, are answered from it.
+  - Every write keeps it right: documents written are kept, documents deleted are forgotten, and writes of many
+    documents forget the collection.
+  - Each document takes one entry, plus one for each index field: size `max` for that.
+- **Write-behind** (`writeBehind: true`, with `cache`): while the database is unavailable, writes of single documents
+  go to the cache and to a list of pending ids. "Unavailable" means a network error, no server, not connected, a
+  fault, or `available()` answering false.
+  - `synchronize()` writes them when the database is back. `pending()` lists them.
+  - Reads by id fall back to the cache when the database fails.
+  - `onUnavailable(err)` is told of every write that fails for unavailability.
+  - A duplicate key, or any other error of the write itself, is thrown.
+
 ## Caches
 
 A model with the option `cache` (`true`, or `{ ttl, indexes }`) answers `get()` by its primary key, or by a unique
 field of `indexes`, from the cache of its database (`cache` of the Database: a `MemoryCache({ max, ttl })` by
 default; a `SharedCache({ bus })` in the primary of a cluster, a `LocalCache({ bus })` in each process, or the
 `NetCache` of [@xufa/netcache](../netcache) between machines). Saving or deleting an object removes it. Values are
-copied in and out.
+copied in and out with @xufa/marshal's `clone`, which keeps Dates and the classes of instances.
 
 A cache that fails to read or to write (a NetCache that lost its peers, a bus that does not answer) is a miss: the
 database answers, and `onCacheError(err, { operation })` of the Database (or of `cached()`) is told; without it, a

@@ -1,0 +1,69 @@
+<!--{
+  "file": "express.html",
+  "name": "@xufa/express",
+  "title": "@xufa/express",
+  "description": "@xufa/express: Express 5's API on @xufa/http, implemented anew with no dependencies: Express's 1,238 tests pass, 1.3-1.5x Express's speed on small routes.",
+  "groups": [
+    ["Using it", [["start", "Quick start"], ["checked", "Checked"], ["routing", "How it routes"], ["adds", "What it adds"]]],
+    ["More", [["differs", "What differs"], ["tools", "Tests and tools"]]]
+  ]
+}-->
+        <h1>@xufa/express</h1>
+        <p class="intro">
+          Express 5's API on <a href="http.html">@xufa/http</a>, implemented anew with no dependencies: its own code, written to Express 5.2.1's
+          behaviour and checked by Express's own tests, with @xufa/router finding the route of each request. An app of Express runs as it is, with
+          all of Express's API and its types.
+        </p>
+
+        <h2 id="start">Quick start</h2>
+        <pre><code class="language-sh">npm install @xufa/express</code></pre>
+        <pre><code class="language-js">import express from '@xufa/express'; // or require('@xufa/express')
+
+const app = express();
+const router = express.Router();
+
+router.get('/books/:id', async (req, res) =&gt; {
+  const book = await books.find(req.params.id);
+  if (!book) return res.status(404).send('Not found');
+  return res.json(book);
+});
+
+app.use(express.json({ limit: '1mb' }));
+app.use('/api', router);
+app.listen(3000);</code></pre>
+
+        <h2 id="checked">Checked</h2>
+        <ul>
+          <li><strong>Express's own tests</strong>: its 1,238 tests pass, every request routed by @xufa/router.</li>
+          <li><strong>Against Express</strong>: the same apps built on Express 5.2.1 and on @xufa/express, the same requests sent to both (routes in every order, routers mounted on paths with params, sub-apps, <code>all()</code>, <code>route()</code>, <code>param()</code>, wildcards and optional parts, strict and case-sensitive routers, middlewares that change the url or the method, OPTIONS and HEAD), the same status, headers and body.</li>
+        </ul>
+
+        <h2 id="routing">How it routes</h2>
+        <p>
+          Every route of the app's routers whose path @xufa/router can match (static parts and <code>:params</code>) is one of its routes, with a
+          plan made once: for each router on the way, the layers that can meet its urls. Each router tries only those; the rest (not found,
+          wildcards, a request whose url or method a layer changed) goes through every layer, as in Express. Against Express 5.2.1 on the same
+          app (<code>bench/express.js</code>): 1.32–1.49x the requests a second on small routes, 1.85x on static files, 1.15x on large JSON, 1.14x
+          on not found, and 4.2x on the last router of a large app (40 routers on <code>/api</code>), where Express tries every layer before.
+        </p>
+
+        <h2 id="adds">What it adds</h2>
+        <ul>
+          <li><code>express({ server })</code>: options of @xufa/http for its instance.</li>
+          <li><code>app.server(options)</code>: that instance, not listening (<code>ready()</code>, <code>inject()</code>).</li>
+          <li><code>app.register(plugin, options)</code>: a plugin of @xufa/http with routes of its own (the explorer of <a href="openapi.html">@xufa/openapi</a>).</li>
+        </ul>
+
+        <h2 id="differs">What differs</h2>
+        <ul>
+          <li>Charsets of bodies: those of the WHATWG Encoding standard, latin-1 and utf-16 (iconv-lite's others are <code>415</code>).</li>
+          <li>No <code>DEBUG</code> traces nor deprecation warnings.</li>
+          <li><code>req.query</code> is parsed once for each url (the same object until <code>req.url</code> changes).</li>
+          <li>Requests and responses of other classes (<code>inject</code>'s) keep their prototype, with Express's members on one between.</li>
+        </ul>
+
+        <h2 id="tools">Tests and tools</h2>
+        <p>
+          <code>tools/port-express/port.js</code> ports Express's tests (mocha's made @xufa/test's) from a checkout of Express; <code>mime.js</code>
+          writes the table of mime-db.
+        </p>

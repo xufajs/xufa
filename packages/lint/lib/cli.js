@@ -14,7 +14,7 @@ const HELP = `Usage: xufa-lint [paths...] [options]
 
   --fix                Writes what the rules can fix
   --format <name>      stylish (the default) or json
-  --config <file>      The config (xufa.lint.config.js, found from the working folder up)
+  --config <file>      The config (xufa.lint.config.js or ESLint's, found from the working folder up)
   --max-warnings <n>   Fails with more warnings than n
   --quiet              Errors only
   --concurrency <n>    Workers: a number, auto (the default: up to 4) or off
@@ -70,7 +70,10 @@ async function main(
   }
   try {
     const file = options.config ? path.resolve(cwd, options.config) : findConfigFile(cwd);
-    if (!file) throw new Error('No xufa.lint.config.js was found (from the working folder up).');
+    if (!file)
+      throw new Error(
+        'No xufa.lint.config.js nor ESLint config (eslint.config.js, .eslintrc.*) was found (from the working folder up).'
+      );
     const configs = await loadConfig(file);
     const paths = options.paths.length
       ? options.paths.map((given) => path.resolve(cwd, given))

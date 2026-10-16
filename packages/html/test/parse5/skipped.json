@@ -1,0 +1,4 @@
+[
+  "it('Regression - HTML5 Legacy Doctype Misparsed with htmlparser2 tree adapter (GH-45)': htmlparser2 adapter",
+  "describe(\"Regression - Don't inherit from Object when creating collections (GH-119)\": htmlparser2 adapter"
+]

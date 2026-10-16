@@ -6,10 +6,8 @@ import { CommentCheckFlags, hasComment } from '../utilities/comments.js';
 import { createTypeCheckFunction } from '../utilities/create-type-check-function.js';
 import isIgnored from '../utilities/is-ignored.js';
 import { isIifeCalleeOrTaggedTemplateExpressionTag } from '../utilities/is-iife-callee-or-tagged-template-expression-tag.js';
-import { printAngular } from './angular.js';
 import { printDecorators } from './decorators.js';
 import { printEstree } from './estree.js';
-import { printFlow } from './flow.js';
 import { printIgnored } from './ignored.js';
 import { printJsx } from './jsx.js';
 import { printTypescript } from './typescript.js';
@@ -19,9 +17,9 @@ import { printTypescript } from './typescript.js';
  * @import {Doc} from "../../document/index.js"
  */
 
-const PRINTERS = [printAngular, printJsx, printFlow, printTypescript, printEstree];
+const PRINTERS = [printJsx, printTypescript, printEstree];
 // @xufa/lint: the printer of each type of node, from the first node of it printed. Which printer prints a node
-// depends on its type only (Angular, JSX and TypeScript by its prefix, Flow by a list of types, estree the rest), so
+// depends on its type only (JSX and TypeScript by its prefix, estree the rest), so
 // the others need not be asked again: they were asked for every node, a million times a round.
 const printerOfType = new Map();
 
@@ -42,18 +40,13 @@ function printWithoutParentheses(path, options, print, args) {
 
 // Their decorators are handled themselves, and they don't need parentheses or leading semicolons
 const shouldPrintDirectly = createTypeCheckFunction([
-  'ClassMethod',
-  'ClassPrivateMethod',
-  'ClassProperty',
-  'ClassAccessorProperty',
   'AccessorProperty',
   'TSAbstractAccessorProperty',
   'PropertyDefinition',
   'TSAbstractPropertyDefinition',
-  'ClassPrivateProperty',
+
   'MethodDefinition',
   'TSAbstractMethodDefinition',
-  'TSDeclareMethod',
 ]);
 
 /**

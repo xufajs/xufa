@@ -27,7 +27,6 @@ const getContentEnd = (node) => node.__contentEnd ?? locEndWithFullText(node);
 
 const nodeTypesWithContentEnd = /** @type {const} */ ([
   'ExpressionStatement',
-  'Directive',
   'ImportDeclaration',
   'ExportDefaultDeclaration',
   'ExportNamedDeclaration',

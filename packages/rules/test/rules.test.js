@@ -243,6 +243,29 @@ describe('constants, datatypes, methods and transforms', () => {
     expect(book.table('Customer').params.plan).toEqual({ name: 'plan', type: 'String', defValue: 'basic' });
   });
 
+  test('methods (option): functions values have as methods in the code of the book, its formulas and programs', () => {
+    const sheets = [
+      {
+        name: 'S',
+        rows: [
+          ['Method Number Total(list)', null],
+          ['return list.sum() + list.twice().length;', null],
+          [null, null],
+          ['Method Number Mean(list)', null],
+          ['list.sum() / list.length', null],
+        ],
+      },
+    ];
+    const methods = { sum: (list) => list.reduce((a, b) => a + b, 0), twice: (value) => [value, value] };
+    const book = RuleBook.fromSheets(sheets, { methods });
+    expect(book.call('Total', [1, 2, 3])).toBe(8);
+    expect(book.call('Mean', [2, 4])).toBe(3);
+    // (Copies from its JSON with the option: the same.)
+    expect(RuleBook.fromJSON(book.toJSON(), { methods }).call('Total', [5])).toBe(7);
+    // Without it, the values have no such methods (lenient: undefined, as calls of what is not a function).
+    expect(RuleBook.fromSheets(sheets).call('Mean', [2, 4])).toBeNaN();
+  });
+
   test('methods of statements run as programs of @xufa/expression: as safe as formulas, with a limit of steps', () => {
     const sheets = [
       {

@@ -191,7 +191,6 @@ function mayBreakAfterShortPrefix(functionBody, bodyDoc, options) {
     isArrayExpression(functionBody) ||
     isObjectExpression(functionBody) ||
     functionBody.type === 'ArrowFunctionExpression' ||
-    functionBody.type === 'DoExpression' ||
     functionBody.type === 'BlockStatement' ||
     isJsxElement(functionBody) ||
     (bodyDoc.label?.hug !== false &&

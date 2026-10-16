@@ -294,10 +294,7 @@ function printTernaryOld(path, options, print) {
   //   ? b
   //   : c
   // ).call()
-  const breakClosingParen =
-    !jsxMode &&
-    (isMemberExpression(parent) || (parent.type === 'NGPipeExpression' && parent.left === node)) &&
-    !parent.computed;
+  const breakClosingParen = !jsxMode && isMemberExpression(parent) && !parent.computed;
 
   const shouldExtraIndent = shouldExtraIndentForConditionalExpression(path);
 

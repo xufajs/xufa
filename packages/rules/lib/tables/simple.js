@@ -409,12 +409,16 @@ class MethodTable {
     try {
       run = /[;\n]|^\s*(if|for|while|const|let|var|function)\b/.test(source.trim())
         ? null
-        : compileExpression(source, where);
+        : compileExpression(source, where, this.book.options.methods);
     } catch {
       run = null;
     }
     // (Statements: a program.)
-    run ??= compileProgram(body, where, { modules: this.book.resolveModule, tdz: Boolean(this.book.options.tdz) });
+    run ??= compileProgram(body, where, {
+      modules: this.book.resolveModule,
+      tdz: Boolean(this.book.options.tdz),
+      methods: this.book.options.methods,
+    });
     const { params } = this;
     this.fn = (...args) => {
       const values = Object.create(null);
@@ -540,7 +544,10 @@ class TransformTable {
     let run = this.compiledCache.get(source);
     if (!run) {
       const where = `Transform ${this.name}`;
-      run = source.startsWith('@') ? compileExpression(source.slice(1), where) : compileTemplate(source, where);
+      const { methods } = this.book.options;
+      run = source.startsWith('@')
+        ? compileExpression(source.slice(1), where, methods)
+        : compileTemplate(source, where, methods);
       this.compiledCache.set(source, run);
     }
     return run;

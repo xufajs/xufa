@@ -1,0 +1,500 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>@xufa/fun: Reference · xufa</title>
+    <meta
+      name="description"
+      content="The reference of @xufa/fun: every function, class, interface and type it declares, made from its TypeScript declarations."
+    />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%23d9502b'/%3E%3Ctext x='16' y='22.5' font-family='monospace' font-size='18' font-weight='700' fill='white' text-anchor='middle'%3Ex%3C/text%3E%3C/svg%3E"
+    />
+    <link rel="stylesheet" href="../style.css?v=0.1.0" />
+    <script src="../main.js?v=0.1.0"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js" defer></script>
+  </head>
+  <body>
+    <header class="header">
+      <div class="header-inner">
+        <a class="logo" href="../index.html"><span class="logo-mark">x</span>xufa</a>
+        <nav class="nav">
+          <a href="../guide.html">Guide</a>
+          <a href="../playground.html">Playground</a>
+          <a href="../http/index.html">HTTP</a>
+          <a href="../orm/index.html">ORM</a>
+          <a class="hide-small" href="../auth/index.html">Auth</a>
+          <a class="hide-small" href="../sequelize/index.html">Sequelize</a>
+          <a class="hide-small" href="../packages.html" aria-current="page">Packages</a>
+          <a class="hide-small" href="../benchmarks.html">Benchmarks</a>
+          <a href="https://github.com/xufajs/xufa">GitHub</a>
+          <button class="theme-toggle" type="button" aria-label="Switch between light and dark theme">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+              <path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z" />
+            </svg>
+          </button>
+        </nav>
+      </div>
+    </header>
+
+    <div class="docs">
+      <button class="menu-toggle" type="button" aria-expanded="false">☰ Contents</button>
+      <aside class="sidebar">
+        <h4>Reference</h4>
+        <ul>
+          <li><a href="#functions">Functions (34)</a></li>
+          <li><a href="#constants">Constants (64)</a></li>
+          <li><a href="#interfaces">Interfaces (2)</a></li>
+          <li><a href="#types">Types (2)</a></li>
+        </ul>
+        <h4>Packages</h4>
+        <ul>
+          <li><a href="../websocket/index.html">@xufa/websocket</a></li>
+          <li><a href="../express/index.html">@xufa/express</a></li>
+          <li><a href="../admin/index.html">@xufa/admin</a></li>
+          <li><a href="../session/index.html">@xufa/session</a></li>
+          <li><a href="../forms/index.html">@xufa/forms</a></li>
+          <li><a href="../views/index.html">@xufa/views</a></li>
+          <li><a href="../mail/index.html">@xufa/mail</a></li>
+          <li><a href="../i18n/index.html">@xufa/i18n</a></li>
+          <li><a href="../openapi/index.html">@xufa/openapi</a></li>
+          <li><a href="../client/index.html">@xufa/client</a></li>
+          <li><a href="../schema/index.html">@xufa/schema</a></li>
+          <li><a href="../pg/index.html">@xufa/pg</a></li>
+          <li><a href="../mongo/index.html">@xufa/mongo</a></li>
+          <li><a href="../expression/index.html">@xufa/expression</a></li>
+          <li><a href="../template/index.html">@xufa/template</a></li>
+          <li><a href="../cluster/index.html">@xufa/cluster</a></li>
+          <li><a href="../scheduler/index.html">@xufa/scheduler</a></li>
+          <li><a href="../queue/index.html">@xufa/queue</a></li>
+          <li><a href="../config/index.html">@xufa/config</a></li>
+          <li><a href="../discovery/index.html">@xufa/discovery</a></li>
+          <li><a href="../netcache/index.html">@xufa/netcache</a></li>
+          <li><a href="../faults/index.html">@xufa/faults</a></li>
+          <li><a href="../browser/index.html">@xufa/browser</a></li>
+          <li><a href="../bundle/index.html">@xufa/bundle</a></li>
+          <li><a href="../lint/index.html">@xufa/lint</a></li>
+          <li><a href="../marshal/index.html">@xufa/marshal</a></li>
+          <li><a href="../yaml/index.html">@xufa/yaml</a></li>
+          <li><a href="../jwt/index.html">@xufa/jwt</a></li>
+          <li><a href="../logger/index.html">@xufa/logger</a></li>
+          <li><a href="../router/index.html">@xufa/router</a></li>
+          <li><a href="../serializer/index.html">@xufa/serializer</a></li>
+          <li><a href="../inject/index.html">@xufa/inject</a></li>
+          <li><a href="../boot/index.html">@xufa/boot</a></li>
+          <li><a href="../errors/index.html">@xufa/errors</a></li>
+          <li><a href="../packages.html">All the packages</a></li>
+        </ul>
+      </aside>
+
+      <article class="content">
+        <nav class="package-tabs" aria-label="@xufa/fun">
+          <a href="index.html">Overview</a>
+          <a href="reference.html" aria-current="page">Reference</a>
+        </nav>
+        <h1>Reference</h1>
+        <p class="intro">
+          A functional library of curried functions on any value (lists, strings, objects, iterables), with placeholders and operators classes take part in, with no dependencies. Every declaration of its TypeScript declarations
+          (<code>packages/fun/index.d.ts</code> or <code>index.d.cts</code>), as they are written, with their comments: made from them each time
+          the docs are built. How to use them is in <a href="index.html">the overview</a>.
+        </p>
+
+        <h2 id="functions">Functions</h2>
+        <p class="ref-index"><a href="#ref-isPlaceholder"><code>isPlaceholder</code></a>, <a href="#ref-curry2"><code>curry2</code></a>, <a href="#ref-curry3"><code>curry3</code></a>, <a href="#ref-curry"><code>curry</code></a>, <a href="#ref-isArrayLike"><code>isArrayLike</code></a>, <a href="#ref-isIterable"><code>isIterable</code></a>, <a href="#ref-isNull"><code>isNull</code></a>, <a href="#ref-isObject"><code>isObject</code></a>, <a href="#ref-isString"><code>isString</code></a>, <a href="#ref-isFunction"><code>isFunction</code></a>, <a href="#ref-isPromise"><code>isPromise</code></a>, <a href="#ref-identity"><code>identity</code></a>, <a href="#ref-len"><code>len</code></a>, <a href="#ref-atPath"><code>atPath</code></a>, <a href="#ref-asArrayLike"><code>asArrayLike</code></a>, <a href="#ref-boolDict"><code>boolDict</code></a>, <a href="#ref-range"><code>range</code></a>, <a href="#ref-fromPairs"><code>fromPairs</code></a>, <a href="#ref-subtractOp"><code>subtractOp</code></a>, <a href="#ref-multOp"><code>multOp</code></a>, <a href="#ref-divOp"><code>divOp</code></a>, <a href="#ref-modOp"><code>modOp</code></a>, <a href="#ref-powOp"><code>powOp</code></a>, <a href="#ref-negate"><code>negate</code></a>, <a href="#ref-andOp"><code>andOp</code></a>, <a href="#ref-orOp"><code>orOp</code></a>, <a href="#ref-not"><code>not</code></a>, <a href="#ref-approve"><code>approve</code></a>, <a href="#ref-sum"><code>sum</code></a>, <a href="#ref-mean"><code>mean</code></a>, <a href="#ref-median"><code>median</code></a>, <a href="#ref-pipe"><code>pipe</code></a>, <a href="#ref-always"><code>always</code></a>, <a href="#ref-merge"><code>merge</code></a></p>
+
+        <h3 id="ref-isPlaceholder"><code>isPlaceholder</code></h3>
+        <pre><code class="language-ts">export declare function isPlaceholder(value: unknown): boolean;</code></pre>
+
+        <h3 id="ref-curry2"><code>curry2</code></h3>
+        <pre><code class="language-ts">export declare function curry2&lt;A, B, R&gt;(fn: (a: A, b: B, ...rest: any[]) =&gt; R): Curried2&lt;A, B, R&gt;;</code></pre>
+
+        <h3 id="ref-curry3"><code>curry3</code></h3>
+        <pre><code class="language-ts">export declare function curry3&lt;A, B, C, R&gt;(fn: (a: A, b: B, c: C, ...rest: any[]) =&gt; R): Curried3&lt;A, B, C, R&gt;;</code></pre>
+
+        <h3 id="ref-curry"><code>curry</code></h3>
+        <pre><code class="language-ts">export declare function curry(fn: (...args: any[]) =&gt; any): (...args: any[]) =&gt; any;</code></pre>
+        <p>A function curried by the arguments it declares.</p>
+
+        <h3 id="ref-isArrayLike"><code>isArrayLike</code></h3>
+        <pre><code class="language-ts">export declare function isArrayLike(value: unknown): boolean;</code></pre>
+        <p>An array, or an object with a length whose first and last items are its own.</p>
+
+        <h3 id="ref-isIterable"><code>isIterable</code></h3>
+        <pre><code class="language-ts">export declare function isIterable(value: unknown): boolean;</code></pre>
+
+        <h3 id="ref-isNull"><code>isNull</code></h3>
+        <pre><code class="language-ts">export declare function isNull(value: unknown): value is null;</code></pre>
+
+        <h3 id="ref-isObject"><code>isObject</code></h3>
+        <pre><code class="language-ts">export declare function isObject(value: unknown): value is Record&lt;string, any&gt;;</code></pre>
+        <p>A plain object (or of a class): its toString tag is Object.</p>
+
+        <h3 id="ref-isString"><code>isString</code></h3>
+        <pre><code class="language-ts">export declare function isString(value: unknown): value is string;</code></pre>
+
+        <h3 id="ref-isFunction"><code>isFunction</code></h3>
+        <pre><code class="language-ts">export declare function isFunction(value: unknown): value is (...args: any[]) =&gt; any;</code></pre>
+
+        <h3 id="ref-isPromise"><code>isPromise</code></h3>
+        <pre><code class="language-ts">export declare function isPromise(value: unknown): boolean;</code></pre>
+
+        <h3 id="ref-identity"><code>identity</code></h3>
+        <pre><code class="language-ts">export declare function identity&lt;T&gt;(value: T): T;</code></pre>
+
+        <h3 id="ref-len"><code>len</code></h3>
+        <pre><code class="language-ts">export declare function len(value: unknown): number;</code></pre>
+        <p>Items of lists, keys of objects, size or count, items of iterables, else the length of its text.</p>
+
+        <h3 id="ref-atPath"><code>atPath</code></h3>
+        <pre><code class="language-ts">export declare function atPath(path: string): string[];</code></pre>
+        <p>The parts of a path: 'a.b[0]' is ['a', 'b', '[0]'].</p>
+
+        <h3 id="ref-asArrayLike"><code>asArrayLike</code></h3>
+        <pre><code class="language-ts">export declare function asArrayLike(value: unknown): ArrayLike&lt;any&gt; | string;</code></pre>
+
+        <h3 id="ref-boolDict"><code>boolDict</code></h3>
+        <pre><code class="language-ts">export declare function boolDict(value: unknown): Record&lt;string, true&gt;;</code></pre>
+
+        <h3 id="ref-range"><code>range</code></h3>
+        <pre><code class="language-ts">export declare function range(to: number): Iterable&lt;number&gt;;
+
+export declare function range(from: number, to: number, step?: number): Iterable&lt;number&gt;;</code></pre>
+        <p>The numbers from <code>from</code> (0) up to <code>to</code> (not included), by <code>step</code> (1).</p>
+
+        <h3 id="ref-fromPairs"><code>fromPairs</code></h3>
+        <pre><code class="language-ts">export declare function fromPairs(
+  pairs: Iterable&lt;[PropertyKey, any]&gt; | ArrayLike&lt;[PropertyKey, any]&gt;
+): Record&lt;string, any&gt;;</code></pre>
+
+        <h3 id="ref-subtractOp"><code>subtractOp</code></h3>
+        <pre><code class="language-ts">export declare function subtractOp(a: any, b: any): any;</code></pre>
+
+        <h3 id="ref-multOp"><code>multOp</code></h3>
+        <pre><code class="language-ts">export declare function multOp(a: any, b: any): any;</code></pre>
+
+        <h3 id="ref-divOp"><code>divOp</code></h3>
+        <pre><code class="language-ts">export declare function divOp(a: any, b: any): any;</code></pre>
+
+        <h3 id="ref-modOp"><code>modOp</code></h3>
+        <pre><code class="language-ts">export declare function modOp(a: any, b: any): any;</code></pre>
+
+        <h3 id="ref-powOp"><code>powOp</code></h3>
+        <pre><code class="language-ts">export declare function powOp(a: any, b: any): any;</code></pre>
+
+        <h3 id="ref-negate"><code>negate</code></h3>
+        <pre><code class="language-ts">export declare function negate(value: any): any;</code></pre>
+
+        <h3 id="ref-andOp"><code>andOp</code></h3>
+        <pre><code class="language-ts">export declare function andOp(a: any, b: any): any;</code></pre>
+
+        <h3 id="ref-orOp"><code>orOp</code></h3>
+        <pre><code class="language-ts">export declare function orOp(a: any, b: any): any;</code></pre>
+
+        <h3 id="ref-not"><code>not</code></h3>
+        <pre><code class="language-ts">export declare function not(value: any): any;</code></pre>
+
+        <h3 id="ref-approve"><code>approve</code></h3>
+        <pre><code class="language-ts">export declare function approve&lt;T&gt;(value: T): T;</code></pre>
+        <p>A copy of the value, or what its class approves of it.</p>
+
+        <h3 id="ref-sum"><code>sum</code></h3>
+        <pre><code class="language-ts">export declare function sum(...values: unknown[]): number;</code></pre>
+        <p>The sum of the values given, or of the items of the one given.</p>
+
+        <h3 id="ref-mean"><code>mean</code></h3>
+        <pre><code class="language-ts">export declare function mean(...values: unknown[]): number;</code></pre>
+
+        <h3 id="ref-median"><code>median</code></h3>
+        <pre><code class="language-ts">export declare function median(...values: unknown[]): number;</code></pre>
+
+        <h3 id="ref-pipe"><code>pipe</code></h3>
+        <pre><code class="language-ts">export declare function pipe(...fns: ((...args: any[]) =&gt; any)[]): (...args: any[]) =&gt; any;</code></pre>
+        <p>The functions one after the other: the first takes the arguments, each next one the result.</p>
+
+        <h3 id="ref-always"><code>always</code></h3>
+        <pre><code class="language-ts">export declare function always&lt;T&gt;(value: T): () =&gt; T;</code></pre>
+
+        <h3 id="ref-merge"><code>merge</code></h3>
+        <pre><code class="language-ts">export declare function merge&lt;T&gt;(first: T, ...others: unknown[]): T;</code></pre>
+        <p>A copy of the first object with the others merged into it, deeply.</p>
+
+        <h2 id="constants">Constants</h2>
+        <p class="ref-index"><a href="#ref-_"><code>_</code></a>, <a href="#ref-curryN"><code>curryN</code></a>, <a href="#ref-PLACEHOLDER_TAG"><code>PLACEHOLDER_TAG</code></a>, <a href="#ref-ADD_TAG"><code>ADD_TAG</code></a>, <a href="#ref-AND_TAG"><code>AND_TAG</code></a>, <a href="#ref-OR_TAG"><code>OR_TAG</code></a>, <a href="#ref-APPROVE_TAG"><code>APPROVE_TAG</code></a>, <a href="#ref-NEGATE_TAG"><code>NEGATE_TAG</code></a>, <a href="#ref-NOT_TAG"><code>NOT_TAG</code></a>, <a href="#ref-SUBTRACT_TAG"><code>SUBTRACT_TAG</code></a>, <a href="#ref-MULT_TAG"><code>MULT_TAG</code></a>, <a href="#ref-DIV_TAG"><code>DIV_TAG</code></a>, <a href="#ref-MOD_TAG"><code>MOD_TAG</code></a>, <a href="#ref-POW_TAG"><code>POW_TAG</code></a>, <a href="#ref-isArray"><code>isArray</code></a>, <a href="#ref-isInteger"><code>isInteger</code></a>, <a href="#ref-has"><code>has</code></a>, <a href="#ref-atIndex"><code>atIndex</code></a>, <a href="#ref-forEach"><code>forEach</code></a>, <a href="#ref-forEachRight"><code>forEachRight</code></a>, <a href="#ref-forWhile"><code>forWhile</code></a>, <a href="#ref-map"><code>map</code></a>, <a href="#ref-mapRight"><code>mapRight</code></a>, <a href="#ref-mapSrc"><code>mapSrc</code></a>, <a href="#ref-mapRightSrc"><code>mapRightSrc</code></a>, <a href="#ref-filter"><code>filter</code></a>, <a href="#ref-filterSrc"><code>filterSrc</code></a>, <a href="#ref-reduce"><code>reduce</code></a>, <a href="#ref-reduceRight"><code>reduceRight</code></a>, <a href="#ref-every"><code>every</code></a>, <a href="#ref-some"><code>some</code></a>, <a href="#ref-none"><code>none</code></a>, <a href="#ref-allowIndexes"><code>allowIndexes</code></a>, <a href="#ref-allowIndexesSrc"><code>allowIndexesSrc</code></a>, <a href="#ref-denyIndexes"><code>denyIndexes</code></a>, <a href="#ref-denyIndexesSrc"><code>denyIndexesSrc</code></a>, <a href="#ref-concat"><code>concat</code></a>, <a href="#ref-zip"><code>zip</code></a>, <a href="#ref-zipObj"><code>zipObj</code></a>, <a href="#ref-zipWith"><code>zipWith</code></a>, <a href="#ref-getAt"><code>getAt</code></a>, <a href="#ref-getAtPath"><code>getAtPath</code></a>, <a href="#ref-setAt"><code>setAt</code></a>, <a href="#ref-setAtPath"><code>setAtPath</code></a>, <a href="#ref-setAtPathMut"><code>setAtPathMut</code></a>, <a href="#ref-add"><code>add</code></a>, <a href="#ref-subtract"><code>subtract</code></a>, <a href="#ref-mult"><code>mult</code></a>, <a href="#ref-div"><code>div</code></a>, <a href="#ref-mod"><code>mod</code></a>, <a href="#ref-pow"><code>pow</code></a>, <a href="#ref-inc"><code>inc</code></a>, <a href="#ref-dec"><code>dec</code></a>, <a href="#ref-and"><code>and</code></a>, <a href="#ref-or"><code>or</code></a>, <a href="#ref-andFn"><code>andFn</code></a>, <a href="#ref-orFn"><code>orFn</code></a>, <a href="#ref-gt"><code>gt</code></a>, <a href="#ref-gte"><code>gte</code></a>, <a href="#ref-lt"><code>lt</code></a>, <a href="#ref-lte"><code>lte</code></a>, <a href="#ref-max"><code>max</code></a>, <a href="#ref-min"><code>min</code></a>, <a href="#ref-clamp"><code>clamp</code></a></p>
+
+        <h3 id="ref-_"><code>_</code></h3>
+        <pre><code class="language-ts">export declare const _: { readonly '@@fun/_': true };</code></pre>
+        <p>What holds an argument's place in a curried function: <code>subtract(_, 1)(5)</code> is 4.</p>
+
+        <h3 id="ref-curryN"><code>curryN</code></h3>
+        <pre><code class="language-ts">export declare const curryN: Curried2&lt;number, (...args: any[]) =&gt; any, (...args: any[]) =&gt; any&gt;;</code></pre>
+        <p>A function of <code>length</code> arguments, curried: the arguments given fill the places held first.</p>
+
+        <h3 id="ref-PLACEHOLDER_TAG"><code>PLACEHOLDER_TAG</code></h3>
+        <pre><code class="language-ts">export declare const PLACEHOLDER_TAG: '@@fun/_';</code></pre>
+        <p>The tags of the static methods classes define to take part in the operators.</p>
+
+        <h3 id="ref-ADD_TAG"><code>ADD_TAG</code></h3>
+        <pre><code class="language-ts">export declare const ADD_TAG: '@@fun/add';</code></pre>
+
+        <h3 id="ref-AND_TAG"><code>AND_TAG</code></h3>
+        <pre><code class="language-ts">export declare const AND_TAG: '@@fun/and';</code></pre>
+
+        <h3 id="ref-OR_TAG"><code>OR_TAG</code></h3>
+        <pre><code class="language-ts">export declare const OR_TAG: '@@fun/or';</code></pre>
+
+        <h3 id="ref-APPROVE_TAG"><code>APPROVE_TAG</code></h3>
+        <pre><code class="language-ts">export declare const APPROVE_TAG: '@@fun/approve';</code></pre>
+
+        <h3 id="ref-NEGATE_TAG"><code>NEGATE_TAG</code></h3>
+        <pre><code class="language-ts">export declare const NEGATE_TAG: '@@fun/negate';</code></pre>
+
+        <h3 id="ref-NOT_TAG"><code>NOT_TAG</code></h3>
+        <pre><code class="language-ts">export declare const NOT_TAG: '@@fun/not';</code></pre>
+
+        <h3 id="ref-SUBTRACT_TAG"><code>SUBTRACT_TAG</code></h3>
+        <pre><code class="language-ts">export declare const SUBTRACT_TAG: '@@fun/subtract';</code></pre>
+
+        <h3 id="ref-MULT_TAG"><code>MULT_TAG</code></h3>
+        <pre><code class="language-ts">export declare const MULT_TAG: '@@fun/mult';</code></pre>
+
+        <h3 id="ref-DIV_TAG"><code>DIV_TAG</code></h3>
+        <pre><code class="language-ts">export declare const DIV_TAG: '@@fun/div';</code></pre>
+
+        <h3 id="ref-MOD_TAG"><code>MOD_TAG</code></h3>
+        <pre><code class="language-ts">export declare const MOD_TAG: '@@fun/mod';</code></pre>
+
+        <h3 id="ref-POW_TAG"><code>POW_TAG</code></h3>
+        <pre><code class="language-ts">export declare const POW_TAG: '@@fun/pow';</code></pre>
+
+        <h3 id="ref-isArray"><code>isArray</code></h3>
+        <pre><code class="language-ts">export declare const isArray: (value: unknown) =&gt; value is any[];</code></pre>
+        <p>Values.</p>
+
+        <h3 id="ref-isInteger"><code>isInteger</code></h3>
+        <pre><code class="language-ts">export declare const isInteger: (value: unknown) =&gt; boolean;</code></pre>
+
+        <h3 id="ref-has"><code>has</code></h3>
+        <pre><code class="language-ts">export declare const has: Curried2&lt;object, PropertyKey, boolean&gt;;</code></pre>
+
+        <h3 id="ref-atIndex"><code>atIndex</code></h3>
+        <pre><code class="language-ts">export declare const atIndex: Curried2&lt;number, number | string, number&gt;;</code></pre>
+        <p>The position of an index in a list of a length (negative from the end; out of it: -1).</p>
+
+        <h3 id="ref-forEach"><code>forEach</code></h3>
+        <pre><code class="language-ts">export declare const forEach: Curried2&lt;unknown, Visitor, void&gt;;</code></pre>
+        <p>Walking and lists.</p>
+
+        <h3 id="ref-forEachRight"><code>forEachRight</code></h3>
+        <pre><code class="language-ts">export declare const forEachRight: Curried2&lt;unknown, Visitor, void&gt;;</code></pre>
+
+        <h3 id="ref-forWhile"><code>forWhile</code></h3>
+        <pre><code class="language-ts">export declare const forWhile: Curried2&lt;unknown, Visitor, void&gt;;</code></pre>
+        <p>forEach until fn gives false.</p>
+
+        <h3 id="ref-map"><code>map</code></h3>
+        <pre><code class="language-ts">export declare const map: Curried2&lt;unknown, Visitor, any[]&gt;;</code></pre>
+
+        <h3 id="ref-mapRight"><code>mapRight</code></h3>
+        <pre><code class="language-ts">export declare const mapRight: Curried2&lt;unknown, Visitor, any[]&gt;;</code></pre>
+
+        <h3 id="ref-mapSrc"><code>mapSrc</code></h3>
+        <pre><code class="language-ts">export declare const mapSrc: Curried2&lt;unknown, Visitor, any&gt;;</code></pre>
+        <p>map giving what the source is: a string, an object of the same keys, an array-like of its class.</p>
+
+        <h3 id="ref-mapRightSrc"><code>mapRightSrc</code></h3>
+        <pre><code class="language-ts">export declare const mapRightSrc: Curried2&lt;unknown, Visitor, any&gt;;</code></pre>
+
+        <h3 id="ref-filter"><code>filter</code></h3>
+        <pre><code class="language-ts">export declare const filter: Curried2&lt;unknown, Visitor, any[]&gt;;</code></pre>
+
+        <h3 id="ref-filterSrc"><code>filterSrc</code></h3>
+        <pre><code class="language-ts">export declare const filterSrc: Curried2&lt;unknown, Visitor, any&gt;;</code></pre>
+
+        <h3 id="ref-reduce"><code>reduce</code></h3>
+        <pre><code class="language-ts">export declare const reduce: Curried3&lt;
+  unknown,
+  (accumulated: any, value: any, index: any, source: any) =&gt; any,
+  unknown,
+  any
+&gt;;</code></pre>
+        <p>fn(accumulated, value, index, source) from the initial value.</p>
+
+        <h3 id="ref-reduceRight"><code>reduceRight</code></h3>
+        <pre><code class="language-ts">export declare const reduceRight: Curried3&lt;
+  unknown,
+  (accumulated: any, value: any, index: any, source: any) =&gt; any,
+  unknown,
+  any
+&gt;;</code></pre>
+
+        <h3 id="ref-every"><code>every</code></h3>
+        <pre><code class="language-ts">export declare const every: Curried2&lt;unknown, Visitor, boolean&gt;;</code></pre>
+
+        <h3 id="ref-some"><code>some</code></h3>
+        <pre><code class="language-ts">export declare const some: Curried2&lt;unknown, Visitor, boolean&gt;;</code></pre>
+
+        <h3 id="ref-none"><code>none</code></h3>
+        <pre><code class="language-ts">export declare const none: Curried2&lt;unknown, Visitor, boolean&gt;;</code></pre>
+
+        <h3 id="ref-allowIndexes"><code>allowIndexes</code></h3>
+        <pre><code class="language-ts">export declare const allowIndexes: Curried2&lt;unknown, unknown, any[]&gt;;</code></pre>
+
+        <h3 id="ref-allowIndexesSrc"><code>allowIndexesSrc</code></h3>
+        <pre><code class="language-ts">export declare const allowIndexesSrc: Curried2&lt;unknown, unknown, any&gt;;</code></pre>
+
+        <h3 id="ref-denyIndexes"><code>denyIndexes</code></h3>
+        <pre><code class="language-ts">export declare const denyIndexes: Curried2&lt;unknown, unknown, any[]&gt;;</code></pre>
+
+        <h3 id="ref-denyIndexesSrc"><code>denyIndexesSrc</code></h3>
+        <pre><code class="language-ts">export declare const denyIndexesSrc: Curried2&lt;unknown, unknown, any&gt;;</code></pre>
+
+        <h3 id="ref-concat"><code>concat</code></h3>
+        <pre><code class="language-ts">export declare const concat: Curried2&lt;unknown, unknown, any[]&gt;;</code></pre>
+
+        <h3 id="ref-zip"><code>zip</code></h3>
+        <pre><code class="language-ts">export declare const zip: Curried2&lt;unknown, unknown, [any, any][]&gt;;</code></pre>
+
+        <h3 id="ref-zipObj"><code>zipObj</code></h3>
+        <pre><code class="language-ts">export declare const zipObj: Curried2&lt;unknown, unknown, Record&lt;string, any&gt;&gt;;</code></pre>
+
+        <h3 id="ref-zipWith"><code>zipWith</code></h3>
+        <pre><code class="language-ts">export declare const zipWith: Curried3&lt;unknown, unknown, (a: any, b: any) =&gt; any, any[]&gt;;</code></pre>
+
+        <h3 id="ref-getAt"><code>getAt</code></h3>
+        <pre><code class="language-ts">export declare const getAt: Curried2&lt;unknown, number | string, any&gt;;</code></pre>
+        <p>Paths.</p>
+
+        <h3 id="ref-getAtPath"><code>getAtPath</code></h3>
+        <pre><code class="language-ts">export declare const getAtPath: Curried2&lt;unknown, string | string[], any&gt;;</code></pre>
+        <p>The value at a path ('a.b[0].c', or its parts); undefined when a step has none.</p>
+
+        <h3 id="ref-setAt"><code>setAt</code></h3>
+        <pre><code class="language-ts">export declare const setAt: Curried2&lt;unknown, number | string, any&gt;;</code></pre>
+
+        <h3 id="ref-setAtPath"><code>setAtPath</code></h3>
+        <pre><code class="language-ts">export declare const setAtPath: Curried3&lt;unknown, string | string[], unknown, any&gt;;</code></pre>
+        <p>A copy with a value at a path, the objects and arrays on the way made.</p>
+
+        <h3 id="ref-setAtPathMut"><code>setAtPathMut</code></h3>
+        <pre><code class="language-ts">export declare const setAtPathMut: Curried3&lt;unknown, string | string[], unknown, any&gt;;</code></pre>
+        <p>The object itself with a value at a path.</p>
+
+        <h3 id="ref-add"><code>add</code></h3>
+        <pre><code class="language-ts">export declare const add: Curried2&lt;any, any, any&gt;;</code></pre>
+        <p>Operators: of any number of values (add(1, 2, 3)), classes taking part by the tags.</p>
+
+        <h3 id="ref-subtract"><code>subtract</code></h3>
+        <pre><code class="language-ts">export declare const subtract: Curried2&lt;any, any, any&gt;;</code></pre>
+
+        <h3 id="ref-mult"><code>mult</code></h3>
+        <pre><code class="language-ts">export declare const mult: Curried2&lt;any, any, any&gt;;</code></pre>
+
+        <h3 id="ref-div"><code>div</code></h3>
+        <pre><code class="language-ts">export declare const div: Curried2&lt;any, any, any&gt;;</code></pre>
+
+        <h3 id="ref-mod"><code>mod</code></h3>
+        <pre><code class="language-ts">export declare const mod: Curried2&lt;any, any, any&gt;;</code></pre>
+
+        <h3 id="ref-pow"><code>pow</code></h3>
+        <pre><code class="language-ts">export declare const pow: Curried2&lt;any, any, any&gt;;</code></pre>
+
+        <h3 id="ref-inc"><code>inc</code></h3>
+        <pre><code class="language-ts">export declare const inc: (value: any) =&gt; any;</code></pre>
+
+        <h3 id="ref-dec"><code>dec</code></h3>
+        <pre><code class="language-ts">export declare const dec: (value: any) =&gt; any;</code></pre>
+
+        <h3 id="ref-and"><code>and</code></h3>
+        <pre><code class="language-ts">export declare const and: Curried2&lt;any, any, boolean&gt;;</code></pre>
+
+        <h3 id="ref-or"><code>or</code></h3>
+        <pre><code class="language-ts">export declare const or: Curried2&lt;any, any, boolean&gt;;</code></pre>
+
+        <h3 id="ref-andFn"><code>andFn</code></h3>
+        <pre><code class="language-ts">export declare const andFn: Curried2&lt;unknown, unknown, (...args: any[]) =&gt; boolean&gt;;</code></pre>
+        <p>A function true when every one of the functions (or values) is, for the same arguments.</p>
+
+        <h3 id="ref-orFn"><code>orFn</code></h3>
+        <pre><code class="language-ts">export declare const orFn: Curried2&lt;unknown, unknown, (...args: any[]) =&gt; boolean&gt;;</code></pre>
+
+        <h3 id="ref-gt"><code>gt</code></h3>
+        <pre><code class="language-ts">export declare const gt: Curried2&lt;any, any, boolean&gt;;</code></pre>
+
+        <h3 id="ref-gte"><code>gte</code></h3>
+        <pre><code class="language-ts">export declare const gte: Curried2&lt;any, any, boolean&gt;;</code></pre>
+
+        <h3 id="ref-lt"><code>lt</code></h3>
+        <pre><code class="language-ts">export declare const lt: Curried2&lt;any, any, boolean&gt;;</code></pre>
+
+        <h3 id="ref-lte"><code>lte</code></h3>
+        <pre><code class="language-ts">export declare const lte: Curried2&lt;any, any, boolean&gt;;</code></pre>
+
+        <h3 id="ref-max"><code>max</code></h3>
+        <pre><code class="language-ts">export declare const max: Curried2&lt;unknown, unknown, number&gt;;</code></pre>
+
+        <h3 id="ref-min"><code>min</code></h3>
+        <pre><code class="language-ts">export declare const min: Curried2&lt;unknown, unknown, number&gt;;</code></pre>
+
+        <h3 id="ref-clamp"><code>clamp</code></h3>
+        <pre><code class="language-ts">export declare const clamp: Curried3&lt;number, number, number, number&gt;;</code></pre>
+
+        <h2 id="interfaces">Interfaces</h2>
+        <p class="ref-index"><a href="#ref-Curried2"><code>Curried2</code></a>, <a href="#ref-Curried3"><code>Curried3</code></a></p>
+
+        <h3 id="ref-Curried2"><code>Curried2</code></h3>
+        <pre><code class="language-ts">export interface Curried2&lt;A, B, R&gt; { ... }</code></pre>
+        <p>A curried function of two arguments (more go to it as they are).</p>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>()</code></td><td><code><a href="#ref-Curried2">Curried2</a>&<a href="#ref-lt">lt</a>;A, B, R&<a href="#ref-gt">gt</a>;</code></td><td></td></tr>
+                <tr><td><code>(a: A)</code></td><td><code>(b: B, ...rest: any[]) =&<a href="#ref-gt">gt</a>; R</code></td><td></td></tr>
+                <tr><td><code>(a: Placeholder, b: B)</code></td><td><code>(a: A, ...rest: any[]) =&<a href="#ref-gt">gt</a>; R</code></td><td></td></tr>
+                <tr><td><code>(a: A, b: B, ...rest: any[])</code></td><td><code>R</code></td><td></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-Curried3"><code>Curried3</code></h3>
+        <pre><code class="language-ts">export interface Curried3&lt;A, B, C, R&gt; { ... }</code></pre>
+        <p>A curried function of three arguments.</p>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>()</code></td><td><code><a href="#ref-Curried3">Curried3</a>&<a href="#ref-lt">lt</a>;A, B, C, R&<a href="#ref-gt">gt</a>;</code></td><td></td></tr>
+                <tr><td><code>(a: A)</code></td><td><code><a href="#ref-Curried2">Curried2</a>&<a href="#ref-lt">lt</a>;B, C, R&<a href="#ref-gt">gt</a>;</code></td><td></td></tr>
+                <tr><td><code>(a: A, b: B)</code></td><td><code>(c: C, ...rest: any[]) =&<a href="#ref-gt">gt</a>; R</code></td><td></td></tr>
+                <tr><td><code>(a: A, b: B, c: C, ...rest: any[])</code></td><td><code>R</code></td><td></td></tr>
+                <tr><td><code>(a: Placeholder, b: B, c?: C)</code></td><td><code>(...rest: any[]) =&<a href="#ref-gt">gt</a>; any</code></td><td></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h2 id="types">Types</h2>
+        <p class="ref-index"><a href="#ref-Placeholder"><code>Placeholder</code></a>, <a href="#ref-Visitor"><code>Visitor</code></a></p>
+
+        <h3 id="ref-Placeholder"><code>Placeholder</code></h3>
+        <pre><code class="language-ts">export type Placeholder = typeof _;</code></pre>
+
+        <h3 id="ref-Visitor"><code>Visitor</code></h3>
+        <pre><code class="language-ts">export type Visitor&lt;R = unknown&gt; = (value: any, index: any, source: any) =&gt; R;</code></pre>
+        <p>fn(value, index or key, the value walked).</p>
+      </article>
+    </div>
+
+    <footer class="footer">
+      <div class="container">
+        <span>xufa is MIT licensed. &copy; Jes&uacute;s Seijas</span>
+        <span>
+          <a href="../guide.html">Guide</a> &middot; <a href="../playground.html">Playground</a> &middot; <a href="../http/index.html">HTTP</a> &middot; <a href="../orm/index.html">ORM</a> &middot; <a href="../auth/index.html">Auth</a> &middot;
+          <a href="../sequelize/index.html">Sequelize</a> &middot; <a href="../packages.html">Packages</a> &middot;
+          <a href="../benchmarks.html">Benchmarks</a> &middot; <a href="https://github.com/xufajs/xufa">GitHub</a>
+        </span>
+      </div>
+    </footer>
+  </body>
+</html>

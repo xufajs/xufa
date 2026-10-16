@@ -167,7 +167,7 @@ class Connection {
   command(doc, onReply, noResponse = false) {
     if (this.closed || !this.socket) return Promise.reject(new MongoNetworkError('The connection is closed'));
     // The header and the flags are written before the document, in the same buffer.
-    const message = serialize(doc, HEADER_SIZE + 5);
+    const message = serialize(doc, HEADER_SIZE + 5, this.options.ignoreUndefined !== false);
     message[20] = 0;
     // The commands of the handshake and the authentication are never compressed.
     const compress = this.compressor !== null && !UNCOMPRESSED.has(Object.keys(doc)[0]);

@@ -6,7 +6,7 @@
 // maxSteps, LIM), calls nested too deep, limits that no catch stops (LM), new of the constructors of the engine (CO).
 //
 // The tree was compiled to closures first: its names are declared, its keys, breaks and constructors checked.
-import { declaredNames, implicitNames } from './statements.js';
+import { declaredNames, implicitNames, contextFrame } from './statements.js';
 
 const ASSIGNMENTS = new Set([
   '=',
@@ -59,6 +59,8 @@ const statementMethods = {
       const entry = env[depth].find((item) => item.name === name);
       if (entry) return entry;
     }
+    // (With the context as the program's scope: the context's property, the context checked by CW at each write.)
+    if (this.compiler.contextScope && !name.startsWith('#')) return { name, as: `CW(ctx)[${JSON.stringify(name)}]` };
     throw new Error(`${name} is not declared here`);
   },
 
@@ -90,11 +92,12 @@ const statementMethods = {
     this.inFunction = 0;
     this.inProgram = true;
     const scanned = implicitNames(tree);
-    const declared = declaredNames(tree.body, true);
-    const implicit = scanned.filter((name) => !declared.includes(name));
+    const { contextScope, onError } = this.compiler;
+    const declared = contextFrame(declaredNames(tree.body, true), contextScope);
+    const implicit = contextScope ? [] : scanned.filter((name) => !declared.includes(name));
     const frame = this.frameOf([...declared, ...implicit], declared.lexical);
     const env = [frame];
-    const body = this.list(tree.body, env);
+    const body = onError || contextScope ? this.topList(tree.body, env) : this.list(tree.body, env);
     const inits = implicit.map((name) => `${this.variableOf(name, env)} = IV(ctx, ${JSON.stringify(name)});`);
     const names = frame.length ? `let ${this.declare(frame)}; ` : '';
     return `${names}${inits.join(' ')} ${body} return last;`;
@@ -106,6 +109,27 @@ const statementMethods = {
       .filter((node) => node.type === 'FunctionDeclaration')
       .map((node) => `${this.variableOf(node.id, env)} = ${this.fn(node, env)};`);
     const rest = nodes.filter((node) => node.type !== 'FunctionDeclaration').map((node) => this.statement(node, env));
+    return [...hoisted, ...rest].join(' ');
+  },
+
+  // The statements of a program's top level as the closures run them (statements.js, topList): with onError, an error
+  // of one given to it (OE; limits go through), its value undefined; with the context as the scope, a declaration's
+  // value undefined.
+  topList(nodes, env) {
+    const { contextScope, onError } = this.compiler;
+    const hoisted = nodes
+      .filter((node) => node.type === 'FunctionDeclaration')
+      .map((node) => `${this.variableOf(node.id, env)} = ${this.fn(node, env)};`);
+    const rest = [];
+    nodes.forEach((node, index) => {
+      if (node.type === 'FunctionDeclaration') return;
+      let code = this.statement(node, env);
+      if (onError) {
+        code = `try { ${code} } catch ($e) { if (LM($e)) throw $e; last = undefined; OE($e, ${this.at(node.expression ?? node)}, ${index}, ctx); }`;
+      }
+      if (contextScope && node.type === 'VariableDeclaration') code += ' last = undefined;';
+      rest.push(code);
+    });
     return [...hoisted, ...rest].join(' ');
   },
 

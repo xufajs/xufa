@@ -1,15 +1,6 @@
-/*
-- `TSRestType`(TypeScript)
-- `TupleTypeSpreadElement`(flow)
-*/
+// TSRestType.
 function printRestType(path, options, print) {
-  const { node } = path;
-
-  return [
-    '...',
-    ...(node.type === 'TupleTypeSpreadElement' && node.label ? [print('label'), ': '] : []),
-    print('typeAnnotation'),
-  ];
+  return ['...', print('typeAnnotation')];
 }
 
 export { printRestType };

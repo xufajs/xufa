@@ -28,6 +28,8 @@ export interface UnmarshalOptions {
 export interface CloneOptions {
   registry?: Registry;
   maxDepth?: number;
+  /** false: faster, for data without shared objects (an object met twice is copied twice; cycles through arrays and plain objects are kept). */
+  shared?: boolean;
 }
 
 export interface ClassOptions<T, D = unknown> {

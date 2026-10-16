@@ -222,7 +222,9 @@ declare namespace fastifySwagger {
   }
 
   export interface StaticDocumentSpec {
-    document: OpenAPIV2.Document | OpenAPIV3.Document;
+    /** The document, or (xufa) a function making it, called once when it is first needed. */
+    document:
+      OpenAPIV2.Document | OpenAPIV3.Document | (() => OpenAPIV2.Document | OpenAPIV3.Document | Record<string, any>);
   }
 
   export interface XufaStaticSwaggerOptions extends XufaSwaggerOptions {

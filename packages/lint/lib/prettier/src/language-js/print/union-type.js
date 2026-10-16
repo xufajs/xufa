@@ -2,7 +2,6 @@ import { align, group, ifBreak, indent, join, line, softline } from '../../docum
 import { printComments } from '../../main/comments/print.js';
 import needsParentheses from '../parentheses/needs-parentheses.js';
 import { CommentCheckFlags, hasComment } from '../utilities/comments.js';
-import { isFlowObjectTypePropertyAFunction } from '../utilities/is-flow-object-type-property-a-function.js';
 import { isConditionalType, isTupleType, isTypeParameterInstantiation } from '../utilities/node-types.js';
 import {
   isMultipleTupleTypeElement,
@@ -77,22 +76,7 @@ function shouldIndentUnionType(path) {
     (key === 'typeAnnotation' && parent.type === 'TSTypeAssertion') ||
     (key === 'elementTypes' && isTupleType(parent)) ||
     ((key === 'trueType' || key === 'falseType') && isConditionalType(parent)) ||
-    (key === 'params' && isTypeParameterInstantiation(parent)) ||
-    (key === 'typeAnnotation' &&
-      parent.type === 'FunctionTypeParam' &&
-      !parent.name &&
-      path.grandparent.this !== parent)
-  ) {
-    return false;
-  }
-
-  if (
-    path.match(
-      undefined,
-      (node, key) => key === 'typeAnnotation' && node.type === 'FunctionTypeParam',
-      (node, key) => key === 'params' && node.type === 'FunctionTypeAnnotation',
-      (node, key) => key === 'value' && node.type === 'ObjectTypeProperty' && isFlowObjectTypePropertyAFunction(node)
-    )
+    (key === 'params' && isTypeParameterInstantiation(parent))
   ) {
     return false;
   }

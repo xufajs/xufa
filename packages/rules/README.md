@@ -295,10 +295,18 @@ the title, saying where (`RULES!A24: Duplicated combination at table Covers`).
 
 ## Workbooks
 
-`readXlsx(bytes)` gives `{ sheets: [{ name, rows, merges }] }`: rows of values from A1 (texts, numbers, booleans,
-dates of cells of a date format, the last result of formulas). `writeXlsx({ sheets })` writes sheets of values or
-`{ value, style }` (`title`, `header`, `value`), merged ranges and widths of columns. `book.toXlsx()` writes each table
-at its place (new tables in a sheet of their kind).
+The workbooks are read and written by [@xufa/xlsx](../xlsx) (its `readXlsx`, `writeXlsx` and `patchXlsx` are exported
+here too, their errors as `RulesError`). `readXlsx(bytes)` gives `{ sheets: [{ name, rows, merges }] }`: rows of values
+from A1 (texts, numbers, booleans, dates of cells of a date format, the last result of formulas). `writeXlsx({ sheets })`
+writes sheets of values or `{ value, style }` (`title`, `header`, `value`, or a style of its own), merged ranges and
+widths of columns. `book.toXlsx()` writes each table at its place (new tables in a sheet of their kind).
+
+To change a workbook people keep editing, without losing what the book does not read (styles, comments, other sheets),
+patch it: `patchXlsx(bytes, sheet, { C7: 0.5 })` sets those cells and nothing else (a merged range whose cells get
+different values is split; a cell that loses its formula takes the calculation chain with it).
+`book.applyMatrix(bytes, 'Premium', matrix)` writes the cells of a table's matrix that change, the book read from those
+bytes. `blocksOf(sheet)` gives the blocks of a sheet as books find their tables, in the sheet's order. An error building
+a table says where (`message`), and keeps what was wrong (`reason`) and its first cell (`cell`) apart.
 
 ## Books of the engine this one follows
 
@@ -336,6 +344,10 @@ default it is `undefined`, so `const total = base * rate; const rate = 1.21;` gi
 book's tests may not notice. The option applies to every book of the store, also to books given to it already made (on
 a copy; the book given is not changed). Without a store, `RuleBook` takes the same `tdz` option. Code that declares
 its names before using them runs as always; formulas of OpenL are not affected.
+
+`RuleBook.fromSheets(sheets, { methods })` (or a store's `bookOptions`) gives the values of the book's JavaScript
+functions as methods: with `methods` of [@xufa/fun](../fun), `prices.sum()` and `doc.getAtPath('a.b')` work in its
+formulas and Methods (`methods` of [@xufa/expression](../expression)).
 
 Books import books: a Method of JavaScript takes the tables of another book by its name, and the store links the
 active version of it (of the same tenant) before the book runs, is tested or is inspected, and again each time it is

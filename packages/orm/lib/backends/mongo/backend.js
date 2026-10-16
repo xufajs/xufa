@@ -42,8 +42,13 @@ class MongoBackend extends Backend {
     this.ObjectId = mongo.ObjectId;
     this.Decimal128 = mongo.Decimal128;
     this.ownClient = !options.client;
+    // (Fields left undefined are not stored: the driver's ignoreUndefined, against its default of null.)
     this.client =
-      options.client || new mongo.MongoClient(options.url || 'mongodb://127.0.0.1:27017', options.clientOptions);
+      options.client ||
+      new mongo.MongoClient(options.url || 'mongodb://127.0.0.1:27017', {
+        ignoreUndefined: true,
+        ...options.clientOptions,
+      });
     this.databaseName = options.database;
     this.compiler = new MongoCompiler((field, value) => this.encode(field, value));
   }
@@ -284,7 +289,9 @@ class MongoBackend extends Backend {
   async createSchema(metas) {
     metas.forEach(noComposite);
     metas.forEach(decimalsFit);
-    const existing = new Set((await this.db.listCollections({}, { nameOnly: true })).map((item) => item.name));
+    const existing = new Set(
+      (await this.db.listCollections({}, { nameOnly: true }).toArray()).map((item) => item.name)
+    );
     for (let i = 0; i < metas.length; i += 1) {
       const meta = metas[i];
       if (!existing.has(meta.key)) await this.db.createCollection(meta.key);
@@ -316,7 +323,7 @@ class MongoBackend extends Backend {
       case 'createTable': {
         // A collection is named by the key of its table (schema.table when it has a schema).
         const name = tableKey(op.spec.table, op.spec.schema);
-        const existing = await this.db.listCollections({ name }, { nameOnly: true });
+        const existing = await this.db.listCollections({ name }, { nameOnly: true }).toArray();
         if (existing.length === 0) await this.db.createCollection(name);
         const indexes = this.compiler.indexesOf(op.spec);
         for (let i = 0; i < indexes.length; i += 1)

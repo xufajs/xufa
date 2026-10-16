@@ -166,13 +166,11 @@ function isNonCJKOrKoreanLetter(kind) {
  * @param {boolean} isLink
  * @returns {boolean}
  */
-function isBreakable(path, value, proseWrap, isLink, options) {
+function isBreakable(path, value, proseWrap, isLink) {
   if (
     proseWrap !== 'always' ||
     path.hasAncestor(
-      (node) =>
-        SINGLE_LINE_NODE_TYPES.has(node.type) ||
-        (node.type === 'heading' && (options.parser === 'mdx' || !isSetextHeading(node)))
+      (node) => SINGLE_LINE_NODE_TYPES.has(node.type) || (node.type === 'heading' && !isSetextHeading(node))
     )
   ) {
     return false;
@@ -236,14 +234,14 @@ function isBreakable(path, value, proseWrap, isLink, options) {
  * @param {any} options Special mode of (un)wrapping that preserves the
  * normalized form of link labels. https://spec.commonmark.org/0.30/#matches
  */
-function printWhitespace(path, value, proseWrap, isLink, options) {
+function printWhitespace(path, value, proseWrap, isLink) {
   if (proseWrap === 'preserve' && value === '\n') {
     return hardline;
   }
 
   const canBeSpace = value === ' ' || (value === '\n' && lineBreakCanBeConvertedToSpace(path, isLink));
 
-  if (isBreakable(path, value, proseWrap, isLink, options)) {
+  if (isBreakable(path, value, proseWrap, isLink)) {
     return canBeSpace ? line : softline;
   }
 

@@ -321,9 +321,13 @@ async function runOnce(argv, outcome = {}) {
   }
   const duration = realTimers.performanceNow() - start;
   const engineSummary = summarizeEngines(projects);
-  const passed = reporter.onFinish(duration, engineSummary.lines);
+  // As Jest: the coverage table before the summary, so the counts and the duration stay last on the screen (with a
+  // line of the coverage's totals among them).
   const coverage = collected.map((item) => item.coverage).filter(Boolean);
-  const covered = config.coverage ? reportCoverage(mergeCoverage(coverage), { ...config, testFiles: files }) : true;
+  const report = config.coverage ? reportCoverage(mergeCoverage(coverage), { ...config, testFiles: files }) : null;
+  const covered = report ? report.met : true;
+  const summaryLines = report ? [...engineSummary.lines, ['Coverage', report.line]] : engineSummary.lines;
+  const passed = reporter.onFinish(duration, summaryLines);
   // Fixtures shared by a worker end with it, after its files: their teardown errors belong to no file.
   const teardownErrors = collected.flatMap((item) => item?.errors ?? []);
   teardownErrors.forEach((error) => {

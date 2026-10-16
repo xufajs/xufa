@@ -37,6 +37,17 @@ function keyBytes(id, key) {
   return bytes;
 }
 
+// The bytes of a context (kept: a table has few columns, and the same ones come again and again).
+const aads = new Map();
+function aadOf(context) {
+  let aad = aads.get(context);
+  if (aad === undefined) {
+    aad = Buffer.from(context);
+    if (aads.size < 10000) aads.set(context, aad);
+  }
+  return aad;
+}
+
 const derive = (root, info) => Buffer.from(crypto.hkdfSync('sha256', root, Buffer.alloc(0), info, 32));
 
 class Keyring {
@@ -52,10 +63,11 @@ class Keyring {
     for (const id of ids) {
       if (!KEY_ID.test(id)) throw new EncryptionError(`The id of an encryption key is letters, digits, - and _: ${id}`);
       const root = keyBytes(id, set.keys[id]);
+      // (As KeyObjects: a cipher of a Buffer key makes one at every call, ~4x the cost of the encryption itself.)
       this.keys.set(id, {
         id,
-        encrypt: derive(root, 'xufa encrypted field'),
-        iv: derive(root, 'xufa deterministic iv'),
+        encrypt: crypto.createSecretKey(derive(root, 'xufa encrypted field')),
+        iv: crypto.createSecretKey(derive(root, 'xufa deterministic iv')),
       });
     }
     this.current = set.current === undefined ? ids[0] : set.current;
@@ -66,7 +78,7 @@ class Keyring {
   // The text of a value (bytes) encrypted with the current key, in its context.
   seal(plaintext, context, deterministic = false) {
     const key = this.keys.get(this.current);
-    const aad = Buffer.from(context);
+    const aad = aadOf(context);
     const iv = deterministic
       ? crypto
           .createHmac('sha256', key.iv)
@@ -95,7 +107,7 @@ class Keyring {
       throw new EncryptionError('The encrypted value is malformed');
     try {
       const decipher = crypto.createDecipheriv('aes-256-gcm', key.encrypt, iv);
-      decipher.setAAD(Buffer.from(context));
+      decipher.setAAD(aadOf(context));
       decipher.setAuthTag(data.subarray(data.length - TAG_BYTES));
       return Buffer.concat([decipher.update(data.subarray(0, data.length - TAG_BYTES)), decipher.final()]);
     } catch {

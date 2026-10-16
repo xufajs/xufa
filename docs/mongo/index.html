@@ -80,6 +80,7 @@
         <h4>Packages</h4>
         <ul>
           <li><a href="../websocket/index.html">@xufa/websocket</a></li>
+          <li><a href="../express/index.html">@xufa/express</a></li>
           <li><a href="../admin/index.html">@xufa/admin</a></li>
           <li><a href="../session/index.html">@xufa/session</a></li>
           <li><a href="../forms/index.html">@xufa/forms</a></li>
@@ -174,6 +175,7 @@ await client.close();</code></pre>
               <tr><td><code>username</code>, <code>password</code>, <code>authSource</code>, <code>authMechanism</code></td><td></td><td>See <a href="#security">Authentication</a>.</td></tr>
               <tr><td><code>tls</code>, <code>tlsOptions</code></td><td></td><td>TLS, and the options of <code>tls.connect</code>.</td></tr>
               <tr><td><code>appName</code></td><td></td><td>The name of the application, in the logs of the server.</td></tr>
+              <tr><td><code>ignoreUndefined</code></td><td><code>false</code></td><td>As the official driver, fields <code>undefined</code> in documents are written as <code>null</code>; <code>true</code> leaves them out (the ORM does).</td></tr>
             </tbody>
           </table>
         </div>
@@ -185,9 +187,10 @@ await client.close();</code></pre>
             <tbody>
               <tr><td><code>collection(name)</code></td><td>A collection.</td></tr>
               <tr><td><code>command(document, options)</code></td><td>Any command: <code>db.command({ ping: 1 })</code>.</td></tr>
-              <tr><td><code>listCollections(filter, { nameOnly })</code></td><td>The collections.</td></tr>
+              <tr><td><code>listCollections(filter, { nameOnly })</code></td><td>A cursor of the collections: <code>.toArray()</code>.</td></tr>
               <tr><td><code>createCollection(name, options)</code></td><td>A collection with options (capped, validators...).</td></tr>
               <tr><td><code>dropDatabase()</code></td><td>Drops the database.</td></tr>
+              <tr><td><code>admin()</code></td><td>The commands of the deployment: <code>command</code>, <code>listDatabases({ nameOnly })</code>, <code>ping</code>, <code>serverStatus</code>, <code>buildInfo</code>.</td></tr>
             </tbody>
           </table>
         </div>
@@ -197,15 +200,20 @@ await client.close();</code></pre>
           <table>
             <thead><tr><th>Method</th><th>Gives</th></tr></thead>
             <tbody>
-              <tr><td><code>find(filter, options)</code></td><td>A <a href="#cursors">cursor</a>; options <code>sort</code>, <code>skip</code>, <code>limit</code>, <code>projection</code>, <code>batchSize</code>, <code>hint</code>, <code>collation</code>, <code>readPreference</code>, <code>session</code>.</td></tr>
+              <tr><td><code>find(filter, options)</code></td><td>A <a href="#cursors">cursor</a>; options <code>sort</code>, <code>skip</code>, <code>limit</code>, <code>projection</code>, <code>batchSize</code>, <code>hint</code>, <code>collation</code>, <code>allowDiskUse</code>, <code>readPreference</code>, <code>session</code>.</td></tr>
               <tr><td><code>findOne(filter, options)</code></td><td>The document, or <code>null</code>.</td></tr>
               <tr><td><code>aggregate(pipeline, options)</code></td><td>A cursor; options <code>allowDiskUse</code>, <code>batchSize</code>, <code>hint</code>, <code>collation</code>...</td></tr>
-              <tr><td><code>countDocuments(filter, { skip, limit })</code></td><td>A number.</td></tr>
+              <tr><td><code>countDocuments(filter, { skip, limit })</code>, <code>estimatedDocumentCount()</code></td><td>A number (the estimate from the collection's metadata, without a filter).</td></tr>
               <tr><td><code>insertOne(doc)</code>, <code>insertMany(docs, { ordered })</code></td><td><code>{ insertedId }</code>, <code>{ insertedCount, insertedIds }</code>.</td></tr>
-              <tr><td><code>updateOne</code>, <code>updateMany</code> (<code>filter, update, { upsert, arrayFilters }</code>)</td><td><code>{ matchedCount, modifiedCount, upsertedId }</code>.</td></tr>
+              <tr><td><code>updateOne</code>, <code>updateMany</code> (<code>filter, update, { upsert, arrayFilters }</code>)</td><td><code>{ matchedCount, modifiedCount, upsertedCount, upsertedId }</code>.</td></tr>
               <tr><td><code>replaceOne(filter, doc, { upsert })</code></td><td>The same.</td></tr>
               <tr><td><code>deleteOne</code>, <code>deleteMany</code></td><td><code>{ deletedCount }</code>.</td></tr>
-              <tr><td><code>createIndex(keys, options)</code>, <code>dropIndex(name)</code>, <code>indexes()</code></td><td>The name of the index; the indexes.</td></tr>
+              <tr><td><code>findOneAndUpdate</code>, <code>findOneAndReplace</code>, <code>findOneAndDelete</code></td><td>The document before (or after: <code>returnDocument: 'after'</code>), or <code>null</code>; options <code>sort</code>, <code>projection</code>, <code>upsert</code>, <code>includeResultMetadata</code>.</td></tr>
+              <tr><td><code>bulkWrite(operations, { ordered })</code></td><td><code>insertOne</code>, <code>updateOne</code>, <code>updateMany</code>, <code>replaceOne</code>, <code>deleteOne</code>, <code>deleteMany</code> in as few commands as they go; the counts and the ids by index.</td></tr>
+              <tr><td><code>rename(newName, { dropTarget })</code></td><td>The collection of the new name.</td></tr>
+              <tr><td><code>createIndex(keys, options)</code>, <code>createIndexes(specs)</code></td><td>The names of the indexes.</td></tr>
+              <tr><td><code>dropIndex(name)</code>, <code>dropIndexes()</code></td><td>The reply of the server; <code>true</code>.</td></tr>
+              <tr><td><code>listIndexes()</code>, <code>indexes()</code>, <code>indexExists(names)</code></td><td>A cursor; the indexes; whether they all exist.</td></tr>
               <tr><td><code>drop()</code></td><td>Drops the collection.</td></tr>
             </tbody>
           </table>
@@ -219,8 +227,9 @@ const page = await cursor.toArray();
 for await (const user of users.find({}, { batchSize: 500 })) process(user); // batches as they are read
 const first = await users.find().sort({ _id: 1 }).next();</code></pre>
         <p>
-          <code>toArray()</code>, <code>next()</code>, <code>for await</code>, <code>sort</code>, <code>skip</code>,
-          <code>limit</code>, <code>project</code>, <code>batchSize</code> and <code>close()</code>. The next batch is asked
+          <code>toArray()</code>, <code>next()</code>, <code>hasNext()</code>, <code>forEach(fn)</code>, <code>for await</code>,
+          <code>sort</code>, <code>skip</code>, <code>limit</code>, <code>project</code>, <code>batchSize</code>,
+          <code>collation</code>, <code>map(fn)</code> (each document given through <code>fn</code>) and <code>close()</code>. The next batch is asked
           for while the one before is read (<code>prefetch: false</code> waits instead).
         </p>
 
@@ -354,7 +363,9 @@ new ObjectId('66f1c0ffee00000000000000').equals(id);</code></pre>
         <h2 id="errors">Errors</h2>
         <p>
           <code>MongoServerError</code>, with the <code>code</code> of the server (11000 for duplicate keys) and its
-          message; <code>MongoNetworkError</code> for connections; both are <code>MongoError</code>.
+          message; <code>MongoNetworkError</code> for connections; <code>MongoNotConnectedError</code> for commands after
+          <code>close()</code> (until <code>connect()</code> again: a client never connected connects at its first command); all
+          are <code>MongoError</code>.
         </p>
 
         <h2 id="performance">Performance</h2>

@@ -11,7 +11,7 @@ import { isMemberExpression } from './node-types.js';
  * @returns {boolean}
  */
 function isMemberish(node) {
-  return isMemberExpression(node) || (node.type === 'BindExpression' && Boolean(node.object));
+  return isMemberExpression(node) || false;
 }
 
 export { isMemberish };

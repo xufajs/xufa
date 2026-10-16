@@ -1,0 +1,63 @@
+[
+  {
+    "file": "adapters/http.test.js",
+    "test": "should wrap interceptor errors and keep stack",
+    "reason": "it counts the frames of its caller in a stack of 10 (Error.stackTraceLimit), which ends in the frames of the test runner: under @xufa/test they are cut elsewhere, and axios 1.14.0 fails it as well"
+  },
+  {
+    "file": "adapters/http.test.js",
+    "test": "SpecCompliant FormData",
+    "reason": "Node's global agent keeps alive a socket to the server of the test before, which that test closed: on Windows the request on it fails (write ECONNABORTED), with axios 1.14.0 as well (alone, or with an agent without keep-alive, it passes)",
+    "when": "process.platform === 'win32'"
+  },
+  {
+    "file": "helpers/bind.test.js",
+    "test": null,
+    "reason": "axios's own bind() helper: @xufa/client/axios binds with Function.prototype.bind"
+  },
+  {
+    "file": "regression.test.js",
+    "test": "client-side mode",
+    "reason": "axios's platform switched to a browser's (hasBrowserEnv, origin): @xufa/client/axios is of Node only"
+  },
+  {
+    "file": "utils/endsWith.test.js",
+    "test": null,
+    "reason": "a helper of axios's lib/utils.js that @xufa/client/axios does not have (not part of axios's API)"
+  },
+  {
+    "file": "utils/extend.test.js",
+    "test": null,
+    "reason": "a helper of axios's lib/utils.js that @xufa/client/axios does not have (not part of axios's API)"
+  },
+  {
+    "file": "utils/kindOfTest.test.js",
+    "test": null,
+    "reason": "a helper of axios's lib/utils.js that @xufa/client/axios does not have (not part of axios's API)"
+  },
+  {
+    "file": "utils/toArray.test.js",
+    "test": null,
+    "reason": "a helper of axios's lib/utils.js that @xufa/client/axios does not have (not part of axios's API)"
+  },
+  {
+    "file": "utils/trim.test.js",
+    "test": null,
+    "reason": "a helper of axios's lib/utils.js that @xufa/client/axios does not have (not part of axios's API)"
+  },
+  {
+    "file": "utils.test.js",
+    "test": "utils::isReactNativeBlob",
+    "reason": "a helper of axios's lib/utils.js that @xufa/client/axios does not have (not part of axios's API)"
+  },
+  {
+    "file": "utils.test.js",
+    "test": "utils::isReactNative",
+    "reason": "a helper of axios's lib/utils.js that @xufa/client/axios does not have (not part of axios's API)"
+  },
+  {
+    "file": "utils.test.js",
+    "test": "should handle large Buffer in isEmptyObject without RangeError",
+    "reason": "a helper of axios's lib/utils.js that @xufa/client/axios does not have (not part of axios's API)"
+  }
+]

@@ -54,6 +54,17 @@ libraries that read it.
 single quotes as written, unquoted with a comment after ` #`. `parseDotenv(text)` reads one, and
 `readConfigFile(file)` one file of JSON, YAML or JS as the layers read them.
 
+### dotenv's API
+
+Without `loadConfig()`, `@xufa/config/dotenv` (or `xufa/dotenv`) is dotenv's API, xufa's own implementation:
+`require('@xufa/config/dotenv').config()` where `require('dotenv').config()` was. `config()` (`path`: a file, a list
+where the first that sets a variable wins, or a URL; `override`, `processEnv`, `encoding`, `quiet`, `debug`), `parse()`,
+`populate()`, `decrypt()` and the `.env.vault` of `DOTENV_KEY`; `node -r @xufa/config/dotenv/config app.js` reads `.env`
+before the app (`DOTENV_CONFIG_*` variables, `dotenv_config_*=` arguments). Its parsing is dotenv's: the same values for
+600,000 random texts, and dotenv 17.2.3's 70 tests pass on it but the 2 of its tips (`tools/port-dotenv`). As dotenv 17,
+it logs one line of what it injected unless `quiet: true`, without tips (dotenv's are ads). A missing file is not an
+error: it is in the `error` of the result.
+
 ## Remote sources
 
 `loadRemoteConfig(options)` takes the options of `loadConfig()` and `remote`, sources read at once (it is async), and

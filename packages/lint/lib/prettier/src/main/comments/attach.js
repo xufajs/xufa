@@ -341,8 +341,4 @@ function findExpressionIndexForComment(quasis, comment, options) {
   return 0;
 }
 
-export {
-  attachComments,
-  // Shared with src/main/range.js, will remove later
-  childNodesCache,
-};
+export { attachComments };

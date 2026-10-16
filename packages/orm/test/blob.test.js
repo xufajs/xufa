@@ -296,6 +296,24 @@ describe('disk', () => {
     expect(fs.existsSync(path.join(dir, 'files'))).toBe(true);
   });
 
+  it('atomic: false writes in place; metadata: false keeps no files of it; storeExists; a folder removed is made again', async () => {
+    const plainDir = tempDir();
+    const store = new Database({ backend: 'disk', dir: plainDir, atomic: false, metadata: false }).backend;
+    expect(await store.storeExists('c', 'a.txt')).toBe(false);
+    const info = await store.storePut('c', 'a.txt', Buffer.from('hello'), { contentType: 'text/plain', metadata: { x: 1 } });
+    expect(info.size).toBe(5);
+    expect(fs.readFileSync(path.join(plainDir, 'c', 'a.txt'), 'utf8')).toBe('hello');
+    expect(fs.existsSync(path.join(plainDir, '.meta'))).toBe(false);
+    expect(await store.storeHead('c', 'a.txt')).toMatchObject({ contentType: null, metadata: {} });
+    expect(await store.storeExists('c', 'a.txt')).toBe(true);
+    fs.rmSync(path.join(plainDir, 'c'), { recursive: true });
+    await store.storePut('c', 'b.txt', Buffer.from('again'), {});
+    expect(fs.readFileSync(path.join(plainDir, 'c', 'b.txt'), 'utf8')).toBe('again');
+    await store.storeDrop('c');
+    await store.storePut('c', 'd/e.txt', Buffer.from('deep'), {});
+    expect(fs.readFileSync(path.join(plainDir, 'c', 'd', 'e.txt'), 'utf8')).toBe('deep');
+  });
+
   it('keys that would leave the folder are refused, to write, read or delete', async () => {
     const outside = path.join(path.dirname(dir), `${path.basename(dir)}-outside.txt`);
     fs.writeFileSync(outside, 'secret');

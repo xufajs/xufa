@@ -170,20 +170,3 @@ export const AST_NODE_TYPES = Object.freeze({
   TSUnknownKeyword: 'TSUnknownKeyword',
   TSVoidKeyword: 'TSVoidKeyword',
 });
-
-export const AST_TOKEN_TYPES = Object.freeze({
-  Boolean: 'Boolean',
-  Identifier: 'Identifier',
-  JSXIdentifier: 'JSXIdentifier',
-  PrivateIdentifier: 'PrivateIdentifier',
-  JSXText: 'JSXText',
-  Keyword: 'Keyword',
-  Null: 'Null',
-  Numeric: 'Numeric',
-  Punctuator: 'Punctuator',
-  RegularExpression: 'RegularExpression',
-  String: 'String',
-  Template: 'Template',
-  Block: 'Block',
-  Line: 'Line',
-});

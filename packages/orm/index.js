@@ -48,6 +48,7 @@ import { cached } from './lib/query-cache.js';
 import { factory, sequence, Factory } from './lib/factory.js';
 import { maintenance } from './lib/maintenance.js';
 import { CombinedQuerySet } from './lib/combine.js';
+import { Documents } from './lib/documents.js';
 // The backends: their drivers (@xufa/pg, @xufa/mongo) are loaded when a database of theirs connects.
 import { SqliteBackend } from './lib/backends/sqlite.js';
 import { MongoBackend } from './lib/backends/mongo/backend.js';
@@ -103,6 +104,7 @@ export {
   toHstore,
   parseHstore,
   Database,
+  Documents,
   Databases,
   Tenants,
   withSignal,

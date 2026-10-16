@@ -99,6 +99,15 @@ function fakeAzure({ account = 'devaccount', accountKey = Buffer.from('a key of 
           res.writeHead(200, { 'content-type': 'application/xml' });
           return res.end(xml(`<EnumerationResults><Prefix>${escape(prefix)}</Prefix><Blobs>${items}</Blobs>${marker ? `<NextMarker>${escape(marker)}</NextMarker>` : '<NextMarker/>'}</EnumerationResults>`));
         }
+        if (req.method === 'GET') {
+          res.writeHead(200, { etag: '"c"' });
+          return res.end();
+        }
+        if (req.method === 'DELETE') {
+          containers.delete(container);
+          res.writeHead(202);
+          return res.end();
+        }
         return fail(res, 400, 'UnsupportedHttpVerb');
       }
       if (!objects) return fail(res, 404, 'ContainerNotFound');
@@ -120,7 +129,7 @@ function fakeAzure({ account = 'devaccount', accountKey = Buffer.from('a key of 
         if (ids.some((id) => !uncommitted.has(id))) return fail(res, 400, 'InvalidBlockList');
         store(objects, blob, Buffer.concat(ids.map((id) => uncommitted.get(id))), req);
         blocks.delete(`${container}/${blob}`);
-        res.writeHead(201, { etag: `"${objects.get(blob).etag}"` });
+        res.writeHead(201, { etag: `"${objects.get(blob).etag}"`, 'last-modified': objects.get(blob).updatedAt.toUTCString() });
         return res.end();
       }
       if (req.method === 'PUT' && (comp === 'metadata' || comp === 'properties')) {
@@ -135,7 +144,7 @@ function fakeAzure({ account = 'devaccount', accountKey = Buffer.from('a key of 
         if (req.headers['x-ms-blob-type'] !== 'BlockBlob') return fail(res, 400, 'MissingRequiredHeader');
         if (refused) return fail(res, 409, 'BlobAlreadyExists');
         store(objects, blob, body, req);
-        res.writeHead(201, { etag: `"${objects.get(blob).etag}"` });
+        res.writeHead(201, { etag: `"${objects.get(blob).etag}"`, 'last-modified': objects.get(blob).updatedAt.toUTCString() });
         return res.end();
       }
       if (!existing) return fail(res, 404, 'BlobNotFound');

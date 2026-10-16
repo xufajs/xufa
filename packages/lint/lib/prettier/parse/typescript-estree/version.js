@@ -32,15 +32,3 @@ export function loadTypeScript() {
 function atLeast(wantedMajor, wantedMinor) {
   return major > wantedMajor || (major === wantedMajor && minor >= wantedMinor);
 }
-
-// typescriptVersionIsAtLeast['5.9'], as typescript-estree has it.
-export const typescriptVersionIsAtLeast = new Proxy(
-  {},
-  {
-    get(target, version) {
-      loadTypeScript();
-      const [wantedMajor, wantedMinor] = String(version).split('.').map(Number);
-      return atLeast(wantedMajor, wantedMinor);
-    },
-  }
-);

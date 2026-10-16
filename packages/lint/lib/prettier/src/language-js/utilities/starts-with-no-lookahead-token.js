@@ -24,10 +24,8 @@ function startsWithNoLookaheadToken(node, predicate) {
     case 'BinaryExpression':
     case 'LogicalExpression':
     case 'AssignmentExpression':
-    case 'NGPipeExpression':
       return startsWithNoLookaheadToken(node.left, predicate);
     case 'MemberExpression':
-    case 'OptionalMemberExpression':
       return startsWithNoLookaheadToken(node.object, predicate);
     case 'TaggedTemplateExpression':
       if (node.tag.type === 'FunctionExpression') {
@@ -36,7 +34,6 @@ function startsWithNoLookaheadToken(node, predicate) {
       }
       return startsWithNoLookaheadToken(node.tag, predicate);
     case 'CallExpression':
-    case 'OptionalCallExpression':
       if (node.callee.type === 'FunctionExpression') {
         // IIFEs are always already parenthesized
         return false;
@@ -46,17 +43,12 @@ function startsWithNoLookaheadToken(node, predicate) {
       return startsWithNoLookaheadToken(node.test, predicate);
     case 'UpdateExpression':
       return !node.prefix && startsWithNoLookaheadToken(node.argument, predicate);
-    case 'BindExpression':
-      return node.object && startsWithNoLookaheadToken(node.object, predicate);
     case 'SequenceExpression':
       return startsWithNoLookaheadToken(node.expressions[0], predicate);
     case 'ChainExpression':
     case 'TSNonNullExpression':
     case 'TSSatisfiesExpression':
     case 'TSAsExpression':
-    case 'AsExpression':
-    case 'AsConstExpression':
-    case 'SatisfiesExpression':
       return startsWithNoLookaheadToken(node.expression, predicate);
     default:
       return predicate(node);

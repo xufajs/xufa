@@ -19,6 +19,10 @@
     },
     "./engine": "./src/engine-api.js",
     "./tooling": "./src/tooling.js",
+    "./supertest": {
+      "types": "./supertest.d.ts",
+      "default": "./src/supertest/index.js"
+    },
     "./package.json": "./package.json"
   },
   "files": [
@@ -28,7 +32,8 @@
     "docs",
     "agents",
     "index.d.ts",
-    "globals.d.ts"
+    "globals.d.ts",
+    "supertest.d.ts"
   ],
   "scripts": {
     "test": "node bin/xufa-test.js",

@@ -16,32 +16,27 @@ export const isBinaryCastExpression = createTypeCheckFunction([
   // TS
   'TSAsExpression',
   'TSSatisfiesExpression',
-  // Flow
-  'AsExpression',
-  'AsConstExpression',
-  'SatisfiesExpression',
 ]);
 
-export const isSatisfiesExpression = createTypeCheckFunction(['SatisfiesExpression', 'TSSatisfiesExpression']);
+export const isSatisfiesExpression = createTypeCheckFunction(['TSSatisfiesExpression']);
 
-export const isUnionType = createTypeCheckFunction(['TSUnionType', 'UnionTypeAnnotation']);
+export const isUnionType = createTypeCheckFunction(['TSUnionType']);
 
-export const isIntersectionType = createTypeCheckFunction(['TSIntersectionType', 'IntersectionTypeAnnotation']);
+export const isIntersectionType = createTypeCheckFunction(['TSIntersectionType']);
 
-export const isTupleType = createTypeCheckFunction(['TupleTypeAnnotation', 'TSTupleType']);
+export const isTupleType = createTypeCheckFunction(['TSTupleType']);
 
-export const isConditionalType = createTypeCheckFunction(['TSConditionalType', 'ConditionalTypeAnnotation']);
+export const isConditionalType = createTypeCheckFunction(['TSConditionalType']);
 
-export const isTypeAlias = createTypeCheckFunction(['TSTypeAliasDeclaration', 'TypeAlias']);
+export const isTypeAlias = createTypeCheckFunction(['TSTypeAliasDeclaration']);
 
 export const isReturnOrThrowStatement = createTypeCheckFunction(['ReturnStatement', 'ThrowStatement']);
 
 export const isExportDeclaration = createTypeCheckFunction([
   'ExportDefaultDeclaration',
-  'DeclareExportDeclaration',
+
   'ExportNamedDeclaration',
   'ExportAllDeclaration',
-  'DeclareExportAllDeclaration',
 ]);
 
 // These two functions exists because we used support `recordAndTuple`
@@ -54,45 +49,33 @@ export const isLiteral = createTypeCheckFunction([
   'Literal',
   'BooleanLiteral',
   'BigIntLiteral', // Babel, flow use `BigIntLiteral` too
-  'DirectiveLiteral',
+
   'NullLiteral',
   'NumericLiteral',
-  'RegExpLiteral',
+
   'StringLiteral',
 ]);
 
-export const isObjectType = createTypeCheckFunction(['ObjectTypeAnnotation', 'TSTypeLiteral', 'TSMappedType']);
+export const isObjectType = createTypeCheckFunction(['TSTypeLiteral', 'TSMappedType']);
 
 export const isFunctionOrArrowExpression = createTypeCheckFunction(['FunctionExpression', 'ArrowFunctionExpression']);
 
 export const isJsxElement = createTypeCheckFunction(['JSXElement', 'JSXFragment']);
 
-export const isBinaryish = createTypeCheckFunction(['BinaryExpression', 'LogicalExpression', 'NGPipeExpression']);
+export const isBinaryish = createTypeCheckFunction(['BinaryExpression', 'LogicalExpression']);
 
-export const isCallExpression = createTypeCheckFunction(['CallExpression', 'OptionalCallExpression']);
+export const isCallExpression = createTypeCheckFunction(['CallExpression']);
 
-export const isMemberExpression = createTypeCheckFunction(['MemberExpression', 'OptionalMemberExpression']);
+export const isMemberExpression = createTypeCheckFunction(['MemberExpression']);
 
-export const isCallOrNewExpression = createTypeCheckFunction([
-  'CallExpression',
-  'OptionalCallExpression',
-  'NewExpression',
-]);
+export const isCallOrNewExpression = createTypeCheckFunction(['CallExpression', 'NewExpression']);
 
-export const isCallLikeExpression = createTypeCheckFunction([
-  'CallExpression',
-  'OptionalCallExpression',
-  'NewExpression',
-  'ImportExpression',
-]);
+export const isCallLikeExpression = createTypeCheckFunction(['CallExpression', 'NewExpression', 'ImportExpression']);
 
 export const isChainElementWrapper = createTypeCheckFunction(['ChainExpression', 'TSNonNullExpression']);
 
-export const isArrayType = createTypeCheckFunction(['TSArrayType', 'ArrayTypeAnnotation']);
+export const isArrayType = createTypeCheckFunction(['TSArrayType']);
 
-export const isTypeParameterInstantiation = createTypeCheckFunction([
-  'TSTypeParameterInstantiation',
-  'TypeParameterInstantiation',
-]);
+export const isTypeParameterInstantiation = createTypeCheckFunction(['TSTypeParameterInstantiation']);
 
 export * from './literal.js';

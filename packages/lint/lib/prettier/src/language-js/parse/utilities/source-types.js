@@ -1,5 +1,5 @@
-export const SOURCE_TYPE_MODULE = /** @type {const} */ ('module');
-export const SOURCE_TYPE_COMMONJS = /** @type {const} */ ('commonjs');
+const SOURCE_TYPE_MODULE = /** @type {const} */ ('module');
+const SOURCE_TYPE_COMMONJS = /** @type {const} */ ('commonjs');
 
 /** @type {readonly [SOURCE_TYPE_MODULE, SOURCE_TYPE_COMMONJS]} */
 export const SOURCE_TYPE_COMBINATIONS = [SOURCE_TYPE_MODULE, SOURCE_TYPE_COMMONJS];

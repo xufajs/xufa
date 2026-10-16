@@ -10,11 +10,23 @@
       "types": "./index.d.ts",
       "default": "./index.js"
     },
+    "./dotenv": {
+      "types": "./dotenv.d.cts",
+      "default": "./dotenv.js"
+    },
+    "./dotenv/config": {
+      "types": "./dotenv-config.d.ts",
+      "default": "./dotenv-config.js"
+    },
     "./package.json": "./package.json"
   },
   "files": [
     "index.js",
     "index.d.ts",
+    "dotenv.js",
+    "dotenv.d.cts",
+    "dotenv-config.js",
+    "dotenv-config.d.ts",
     "lib",
     "LICENSE"
   ],

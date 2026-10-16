@@ -11,6 +11,7 @@
 
 const fs = require('node:fs');
 const path = require('node:path');
+const { pathToFileURL } = require('node:url');
 const { corpus } = require('./corpus');
 
 const ROOT = path.join(__dirname, '..');
@@ -60,7 +61,7 @@ async function main() {
   const show = Number(argument('show', 5));
   const { Linter: TheirLinter } = require(ESLINT);
   const js = require(require.resolve('@eslint/js', { paths: [__dirname] }));
-  const { Linter, configs, globals } = await import(path.join(ROOT, 'packages/lint/index.js'));
+  const { Linter, configs, globals } = await import(pathToFileURL(path.join(ROOT, 'packages/lint/index.js')).href);
   const theirLinter = new TheirLinter({ configType: 'flat', cwd: ROOT });
   const ourLinter = new Linter();
   const theirRules = { ...js.configs.recommended.rules, 'no-unexpected-multiline': 'off' };
@@ -107,7 +108,7 @@ async function main() {
     // What one has and the other has not.
     const missing = theirs.problems.filter((problem) => !ours.problems.includes(problem));
     const extra = ours.problems.filter((problem) => !theirs.problems.includes(problem));
-    found.push({ key: `lint ${path.relative(STORE, file)}`, kind, missing, extra });
+    found.push({ key: `lint ${path.relative(STORE, file).split(path.sep).join('/')}`, kind, missing, extra });
   }
   const baseline = fs.existsSync(BASELINE) ? JSON.parse(fs.readFileSync(BASELINE, 'utf8')) : {};
   const known = new Set(Object.keys(baseline).filter((key) => key.startsWith('lint ')));

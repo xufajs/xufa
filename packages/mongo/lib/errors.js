@@ -36,4 +36,20 @@ class MongoServerError extends MongoError {
   }
 }
 
-export { MongoError, MongoNetworkError, MongoServerError };
+// A command on a client closed (as the official driver: one never connected connects at its first command).
+class MongoNotConnectedError extends MongoError {
+  constructor(message = 'Client must be connected before running operations') {
+    super(message);
+    this.name = 'MongoNotConnectedError';
+  }
+}
+
+// No server to send a command to, within serverSelectionTimeoutMS (the official driver's name).
+class MongoServerSelectionError extends MongoError {
+  constructor(message) {
+    super(message);
+    this.name = 'MongoServerSelectionError';
+  }
+}
+
+export { MongoError, MongoNetworkError, MongoServerError, MongoNotConnectedError, MongoServerSelectionError };

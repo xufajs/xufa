@@ -106,13 +106,73 @@ function verifyTotp(code, secret, options = {}) {
 function totpUri({ secret, label, issuer, ...options }) {
   if (!label) throw new TypeError('totpUri needs a label (the account: an email, a user name)');
   const { digits, period, algorithm } = settingsOf(options);
-  const name = issuer ? `${issuer}:${label}` : label;
-  const params = new URLSearchParams({ secret: String(secret).replace(/[\s=]/g, '').toUpperCase() });
-  if (issuer) params.set('issuer', issuer);
-  if (algorithm !== 'SHA1') params.set('algorithm', algorithm);
-  if (digits !== 6) params.set('digits', String(digits));
-  if (period !== 30) params.set('period', String(period));
-  return `otpauth://totp/${encodeURIComponent(name).replace(/%3A/g, ':')}?${params}`;
+  // Percent-encoded (a space is %20, as the apps read it), the issuer and the account each on its own, so that a ':'
+  // of either is not the one between them.
+  const e = encodeURIComponent;
+  const name = issuer ? `${e(issuer)}:${e(label)}` : e(label);
+  const params = [`secret=${e(String(secret).replace(/[\s=]/g, '').toUpperCase())}`];
+  if (issuer) params.push(`issuer=${e(issuer)}`);
+  if (algorithm !== 'SHA1') params.push(`algorithm=${algorithm}`);
+  if (digits !== 6) params.push(`digits=${digits}`);
+  if (period !== 30) params.push(`period=${period}`);
+  return `otpauth://totp/${name}?${params.join('&')}`;
+}
+
+const URI = /^otpauth:\/\/([ht]otp)\/(.+)\?([A-Z0-9.~_-]+=[^?&]*(?:&[A-Z0-9.~_-]+=[^?&]*)*)$/i;
+const SECRET = /^[2-7A-Z]+=*$/i;
+const ALGORITHM = /^SHA(?:1|224|256|384|512|3-224|3-256|3-384|3-512)$/i;
+const INTEGER = /^[+-]?\d+$/;
+const POSITIVE_INTEGER = /^\+?[1-9]\d*$/;
+
+/**
+ * An otpauth:// URI read back (the Key Uri Format, as authenticator apps and the otpauth package read it):
+ * { type: 'totp' | 'hotp', secret (base32), label, issuer, algorithm, digits, period (totp), counter (hotp) }, the
+ * settings it does not give at their defaults (SHA1, 6, 30). The issuer is the parameter, or the label's part before
+ * ':'. A URIError or TypeError when it is not one.
+ */
+function parseTotpUri(uri) {
+  const match = typeof uri === 'string' ? URI.exec(uri) : null;
+  if (!match) throw new URIError('Invalid URI format');
+  const type = match[1].toLowerCase();
+  const [first, account] = match[2].split(/(?::|%3A) *(.+)/i, 2).map(decodeURIComponent);
+  const params = {};
+  for (const pair of match[3].split('&')) {
+    const [key, value] = pair.split(/=(.*)/, 2).map(decodeURIComponent);
+    params[key.toLowerCase()] = value;
+  }
+  const result = { type, secret: '', label: '', issuer: '', algorithm: 'SHA1', digits: 6 };
+  if (type === 'hotp') {
+    if (params.counter === undefined || !INTEGER.test(params.counter)) {
+      throw new TypeError("Missing or invalid 'counter' parameter");
+    }
+    result.counter = parseInt(params.counter, 10);
+  } else {
+    result.period = 30;
+    if (params.period !== undefined) {
+      if (!POSITIVE_INTEGER.test(params.period)) throw new TypeError("Invalid 'period' parameter");
+      result.period = parseInt(params.period, 10);
+    }
+  }
+  if (params.issuer !== undefined) result.issuer = params.issuer;
+  if (account !== undefined) {
+    result.label = account;
+    if (result.issuer === '') result.issuer = first;
+  } else {
+    result.label = first;
+  }
+  if (params.secret === undefined || !SECRET.test(params.secret)) {
+    throw new TypeError("Missing or invalid 'secret' parameter");
+  }
+  result.secret = params.secret.toUpperCase();
+  if (params.algorithm !== undefined) {
+    if (!ALGORITHM.test(params.algorithm)) throw new TypeError("Invalid 'algorithm' parameter");
+    result.algorithm = params.algorithm.toUpperCase();
+  }
+  if (params.digits !== undefined) {
+    if (!POSITIVE_INTEGER.test(params.digits)) throw new TypeError("Invalid 'digits' parameter");
+    result.digits = parseInt(params.digits, 10);
+  }
+  return result;
 }
 
 // Codes to log in once without the app (when it is lost): `count` random codes as 'xxxx-xxxx' (base32 lower case).
@@ -138,6 +198,7 @@ export {
   totp,
   verifyTotp,
   totpUri,
+  parseTotpUri,
   generateRecoveryCodes,
   hashRecoveryCode,
 };

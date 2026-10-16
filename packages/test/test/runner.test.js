@@ -155,6 +155,10 @@ describe('typescript projects', () => {
   it('imports names of a CommonJS package that are reserved words in a declaration', () => {
     expect(statuses['typescript > imports names of a CommonJS package that are reserved words']).toBe('passed');
   });
+
+  it('hoists vi.mock() in a test file the TypeScript transformer compiles', () => {
+    expect(statuses['typescript mocks > hoists vi.mock() of a file compiled by the transformer']).toBe('passed');
+  });
 });
 
 describe('vitest config', () => {
@@ -205,6 +209,21 @@ describe('vitest config in a package with no type', () => {
   it('loads it as Vite would: an ES module with __dirname, and no warning from Node', () => {
     const { statuses } = runFixture('vitest-typeless');
     expect(statuses['reads a config that uses __dirname in a package with no type']).toBe('passed');
+  });
+});
+
+describe('require() of a project ES module, between files of one thread', () => {
+  // require-esm: a module with state, imported by an ES module test file and required by CommonJS ones (Node's
+  // require(esm) keeps one copy by file name, which files after the first got, with the marks of the others).
+  const { statuses } = runFixture('require-esm', ['--maxWorkers', '1']);
+
+  it('gives each file a copy of its own, the same by require() and import', () => {
+    expect(statuses).toEqual({
+      'esm: a copy of its own, the same by import and require': 'passed',
+      'cjs one: a copy of its own, the same by require and import': 'passed',
+      'cjs two: a copy of its own, the same by require and import': 'passed',
+      'cjs mocked: require() gives the mock': 'passed',
+    });
   });
 });
 

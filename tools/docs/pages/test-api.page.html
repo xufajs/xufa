@@ -6,7 +6,7 @@
   "description": "Every global, matcher, vi function, mock method, CLI flag and configuration option of @xufa/test.",
   "groups": [
     ["Tests",[["test","test and it"],["describe","describe"],["hooks","Hooks"],["context","Test context"]]],
-    ["expect",[["matchers","Matchers"],["http-matchers","HTTP matchers"],["api-fixture","The api fixture"],["mock-matchers","Mock matchers"],["snapshot-matchers","Snapshot matchers"],["asymmetric","Asymmetric matchers"],["expect-helpers","expect helpers"]]],
+    ["expect",[["matchers","Matchers"],["http-matchers","HTTP matchers"],["api-fixture","The api fixture"],["supertest","supertest"],["mock-matchers","Mock matchers"],["snapshot-matchers","Snapshot matchers"],["asymmetric","Asymmetric matchers"],["expect-helpers","expect helpers"]]],
     ["vi / jest",[["vi-mocks","Mocks and spies"],["mock-methods","Mock function methods"],["vi-modules","Module mocks"],["vi-timers","Fake timers"],["vi-other","Stubs and waiting"]]],
     ["Running",[["cli","Command line"],["exit-codes","Exit codes"],["config","Configuration"]]]
   ]
@@ -128,6 +128,29 @@
               <tr><td><code>api.request(method, path, options?)</code></td><td>Any method; <code>options.body</code> as above</td></tr>
               <tr><td><code>api.headers</code></td><td>Headers sent with every request of the test (<code>api.headers.authorization = ...</code>)</td></tr>
               <tr><td>The response</td><td><code>{ status, ok, headers, body, text, url, method, duration }</code>: <code>body</code> parsed when the response is JSON</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h2 id="supertest">supertest</h2>
+        <p><code>@xufa/test/supertest</code> is supertest 7's API, written anew: suites that use supertest switch by changing the <code>require</code> (or the import), and the package leaves their dependencies. It sends to an app of Express (or any request handler), a server of <code>node:http</code>, an instance of fastify or @xufa/http (made ready, its <code>app.server</code> served), or a URL.</p>
+        <pre><code>const request = require('@xufa/test/supertest');
+
+await request(app).post('/users').send({ name: 'ada' }).expect(201).expect('Content-Type', /json/);
+await request(app).post('/upload').field('title', 'photo').attach('file', 'test/photo.jpg').expect(200);</code></pre>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Member</th><th>What it does</th></tr></thead>
+            <tbody>
+              <tr><td><code>request(app, options?)[method](path)</code></td><td>A request: every method of <code>node:http</code>, and <code>del</code>. A handler gets a server of its own, closed after the request (<code>test._server</code>). <code>options.legacyPaths</code>: paths sent as supertest 6 sent them (dot segments kept)</td></tr>
+              <tr><td><code>.set(field, value)</code>, <code>.unset</code>, <code>.type</code>, <code>.accept</code>, <code>.auth(user, password)</code>, <code>.query(object | string)</code></td><td>Headers, basic authorization, the query string (objects as superagent writes them)</td></tr>
+              <tr><td><code>.send(data)</code>, <code>.write(chunk)</code></td><td>Objects as JSON (or a form, with <code>.type('form')</code>), strings as a form unless typed, Buffers as they are; <code>.write</code> streams the body</td></tr>
+              <tr><td><code>.field(name, value | object)</code>, <code>.attach(field, path | Buffer, filename | options)</code></td><td>multipart/form-data, as form-data writes it (the type of a file from its path, or from the filename)</td></tr>
+              <tr><td><code>.agent(httpAgent)</code>, <code>.redirects(n)</code>, <code>.timeout(ms)</code>, <code>.responseType(type)</code>, <code>.parse(fn)</code></td><td>Connections of an agent (keep-alive); redirects followed (none by default); a deadline; the body as a Buffer; a parser of your own</td></tr>
+              <tr><td><code>.expect(status[, body])</code>, <code>.expect(field, value)</code>, <code>.expect(body)</code>, <code>.expect(fn)</code></td><td>Checks, run when the request ends, with supertest's messages; a callback last ends the request</td></tr>
+              <tr><td><code>.end(fn)</code>, <code>await</code></td><td>Sends it: <code>fn(err, res)</code>, or the response (rejected when a check fails)</td></tr>
+              <tr><td>The response</td><td><code>status</code>, <code>ok</code>, <code>error</code>, <code>redirect</code>..., <code>headers</code>, <code>type</code>, <code>charset</code>, <code>links</code>, <code>text</code>, <code>body</code> (JSON and forms parsed, binary types a Buffer)</td></tr>
+              <tr><td><code>request.agent(app)</code></td><td>Requests that keep the cookies they are given, and what is set on the agent</td></tr>
             </tbody>
           </table>
         </div>

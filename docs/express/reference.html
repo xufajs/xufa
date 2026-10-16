@@ -1,0 +1,727 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>@xufa/express: Reference · xufa</title>
+    <meta
+      name="description"
+      content="The reference of @xufa/express: every function, class, interface and type it declares, made from its TypeScript declarations."
+    />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%23d9502b'/%3E%3Ctext x='16' y='22.5' font-family='monospace' font-size='18' font-weight='700' fill='white' text-anchor='middle'%3Ex%3C/text%3E%3C/svg%3E"
+    />
+    <link rel="stylesheet" href="../style.css?v=0.1.0" />
+    <script src="../main.js?v=0.1.0"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js" defer></script>
+  </head>
+  <body>
+    <header class="header">
+      <div class="header-inner">
+        <a class="logo" href="../index.html"><span class="logo-mark">x</span>xufa</a>
+        <nav class="nav">
+          <a href="../guide.html">Guide</a>
+          <a href="../playground.html">Playground</a>
+          <a href="../http/index.html">HTTP</a>
+          <a href="../orm/index.html">ORM</a>
+          <a class="hide-small" href="../auth/index.html">Auth</a>
+          <a class="hide-small" href="../sequelize/index.html">Sequelize</a>
+          <a class="hide-small" href="../packages.html" aria-current="page">Packages</a>
+          <a class="hide-small" href="../benchmarks.html">Benchmarks</a>
+          <a href="https://github.com/xufajs/xufa">GitHub</a>
+          <button class="theme-toggle" type="button" aria-label="Switch between light and dark theme">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+              <path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z" />
+            </svg>
+          </button>
+        </nav>
+      </div>
+    </header>
+
+    <div class="docs">
+      <button class="menu-toggle" type="button" aria-expanded="false">☰ Contents</button>
+      <aside class="sidebar">
+        <h4>Reference</h4>
+        <ul>
+          <li><a href="#functions">Functions (6)</a></li>
+          <li><a href="#constants">Constants (5)</a></li>
+          <li><a href="#interfaces">Interfaces (27)</a></li>
+          <li><a href="#types">Types (13)</a></li>
+        </ul>
+        <h4>Packages</h4>
+        <ul>
+          <li><a href="../websocket/index.html">@xufa/websocket</a></li>
+          <li><a href="index.html" aria-current="page">@xufa/express</a></li>
+          <li><a href="../admin/index.html">@xufa/admin</a></li>
+          <li><a href="../session/index.html">@xufa/session</a></li>
+          <li><a href="../forms/index.html">@xufa/forms</a></li>
+          <li><a href="../views/index.html">@xufa/views</a></li>
+          <li><a href="../mail/index.html">@xufa/mail</a></li>
+          <li><a href="../i18n/index.html">@xufa/i18n</a></li>
+          <li><a href="../openapi/index.html">@xufa/openapi</a></li>
+          <li><a href="../client/index.html">@xufa/client</a></li>
+          <li><a href="../schema/index.html">@xufa/schema</a></li>
+          <li><a href="../pg/index.html">@xufa/pg</a></li>
+          <li><a href="../mongo/index.html">@xufa/mongo</a></li>
+          <li><a href="../expression/index.html">@xufa/expression</a></li>
+          <li><a href="../template/index.html">@xufa/template</a></li>
+          <li><a href="../cluster/index.html">@xufa/cluster</a></li>
+          <li><a href="../scheduler/index.html">@xufa/scheduler</a></li>
+          <li><a href="../queue/index.html">@xufa/queue</a></li>
+          <li><a href="../config/index.html">@xufa/config</a></li>
+          <li><a href="../discovery/index.html">@xufa/discovery</a></li>
+          <li><a href="../netcache/index.html">@xufa/netcache</a></li>
+          <li><a href="../faults/index.html">@xufa/faults</a></li>
+          <li><a href="../browser/index.html">@xufa/browser</a></li>
+          <li><a href="../bundle/index.html">@xufa/bundle</a></li>
+          <li><a href="../lint/index.html">@xufa/lint</a></li>
+          <li><a href="../marshal/index.html">@xufa/marshal</a></li>
+          <li><a href="../yaml/index.html">@xufa/yaml</a></li>
+          <li><a href="../jwt/index.html">@xufa/jwt</a></li>
+          <li><a href="../logger/index.html">@xufa/logger</a></li>
+          <li><a href="../router/index.html">@xufa/router</a></li>
+          <li><a href="../serializer/index.html">@xufa/serializer</a></li>
+          <li><a href="../inject/index.html">@xufa/inject</a></li>
+          <li><a href="../boot/index.html">@xufa/boot</a></li>
+          <li><a href="../errors/index.html">@xufa/errors</a></li>
+          <li><a href="../packages.html">All the packages</a></li>
+        </ul>
+      </aside>
+
+      <article class="content">
+        <nav class="package-tabs" aria-label="@xufa/express">
+          <a href="index.html">Overview</a>
+          <a href="reference.html" aria-current="page">Reference</a>
+        </nav>
+        <h1>Reference</h1>
+        <p class="intro">
+          Express 5's API on @xufa/http, implemented anew with no dependencies: Express's own tests pass. Every declaration of its TypeScript declarations
+          (<code>packages/express/index.d.ts</code> or <code>index.d.cts</code>), as they are written, with their comments: made from them each time
+          the docs are built. How to use them is in <a href="index.html">the overview</a>.
+        </p>
+
+        <h2 id="functions">Functions</h2>
+        <p class="ref-index"><a href="#ref-e"><code>e</code></a>, <a href="#ref-json"><code>json</code></a>, <a href="#ref-raw"><code>raw</code></a>, <a href="#ref-text"><code>text</code></a>, <a href="#ref-urlencoded"><code>urlencoded</code></a>, <a href="#ref-Router"><code>Router</code></a></p>
+
+        <h3 id="ref-e"><code>e</code></h3>
+        <pre><code class="language-ts">declare function e(options?: e.ExpressOptions): e.Express;</code></pre>
+
+        <h3 id="ref-json"><code>json</code></h3>
+        <pre><code class="language-ts">function json(options?: JsonOptions): RequestHandler;</code></pre>
+
+        <h3 id="ref-raw"><code>raw</code></h3>
+        <pre><code class="language-ts">function raw(options?: ParserOptions): RequestHandler;</code></pre>
+
+        <h3 id="ref-text"><code>text</code></h3>
+        <pre><code class="language-ts">function text(options?: TextOptions): RequestHandler;</code></pre>
+
+        <h3 id="ref-urlencoded"><code>urlencoded</code></h3>
+        <pre><code class="language-ts">function urlencoded(options?: UrlencodedOptions): RequestHandler;</code></pre>
+
+        <h3 id="ref-Router"><code>Router</code></h3>
+        <pre><code class="language-ts">function Router(options?: RouterOptions): Router;</code></pre>
+
+        <h2 id="constants">Constants</h2>
+        <p class="ref-index"><a href="#ref-application"><code>application</code></a>, <a href="#ref-request"><code>request</code></a>, <a href="#ref-response"><code>response</code></a>, <a href="#ref-Route"><code>Route</code></a>, <a href="#ref-static"><code>static</code></a></p>
+
+        <h3 id="ref-application"><code>application</code></h3>
+        <pre><code class="language-ts">const application: Application;</code></pre>
+
+        <h3 id="ref-request"><code>request</code></h3>
+        <pre><code class="language-ts">const request: Request;</code></pre>
+
+        <h3 id="ref-response"><code>response</code></h3>
+        <pre><code class="language-ts">const response: Response;</code></pre>
+
+        <h3 id="ref-Route"><code>Route</code></h3>
+        <pre><code class="language-ts">const Route: new (path: string) =&gt; IRoute;</code></pre>
+
+        <h3 id="ref-static"><code>static</code></h3>
+        <pre><code class="language-ts">var static: (root: string, options?: ServeStaticOptions) =&gt; RequestHandler;</code></pre>
+        <p>The files of a folder (express.static).</p>
+
+        <h2 id="interfaces">Interfaces</h2>
+        <p class="ref-index"><a href="#ref-Request"><code>Request</code></a>, <a href="#ref-Response"><code>Response</code></a>, <a href="#ref-Locals"><code>Locals</code></a>, <a href="#ref-Application"><code>Application</code></a>, <a href="#ref-ParamsDictionary"><code>ParamsDictionary</code></a>, <a href="#ref-RangeOptions"><code>RangeOptions</code></a>, <a href="#ref-Ranges"><code>Ranges</code></a>, <a href="#ref-CookieOptions"><code>CookieOptions</code></a>, <a href="#ref-SendFileOptions"><code>SendFileOptions</code></a>, <a href="#ref-DownloadOptions"><code>DownloadOptions</code></a>, <a href="#ref-NextFunction"><code>NextFunction</code></a>, <a href="#ref-RequestHandler"><code>RequestHandler</code></a>, <a href="#ref-RouterMatcher"><code>RouterMatcher</code></a>, <a href="#ref-RouterHandler"><code>RouterHandler</code></a>, <a href="#ref-Use"><code>Use</code></a>, <a href="#ref-IRoute"><code>IRoute</code></a>, <a href="#ref-IRouter"><code>IRouter</code></a>, <a href="#ref-Router"><code>Router</code></a>, <a href="#ref-RouterOptions"><code>RouterOptions</code></a>, <a href="#ref-Express"><code>Express</code></a>, <a href="#ref-ExpressOptions"><code>ExpressOptions</code></a>, <a href="#ref-ParserOptions"><code>ParserOptions</code></a>, <a href="#ref-JsonOptions"><code>JsonOptions</code></a>, <a href="#ref-TextOptions"><code>TextOptions</code></a>, <a href="#ref-UrlencodedOptions"><code>UrlencodedOptions</code></a>, <a href="#ref-SendOptions"><code>SendOptions</code></a>, <a href="#ref-ServeStaticOptions"><code>ServeStaticOptions</code></a></p>
+
+        <h3 id="ref-Request"><code>Request</code></h3>
+        <pre><code class="language-ts">interface Request { ... }
+
+interface Request&lt;
+    P = ParamsDictionary,
+    ResBody = any,
+    ReqBody = any,
+    ReqQuery = Query,
+    LocalsObj extends Record&lt;string, any&gt; = Record&lt;string, any&gt;,
+  &gt;
+    extends http.IncomingMessage, Express.Request { ... }</code></pre>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>get(name: 'set-cookie')</code></td><td><code>string[] | undefined</code></td><td><p>A header (Referer and Referrer as one).</p></td></tr>
+                <tr><td><code>get(name: string)</code></td><td><code>string | undefined</code></td><td></td></tr>
+                <tr><td><code>header(name: 'set-cookie')</code></td><td><code>string[] | undefined</code></td><td></td></tr>
+                <tr><td><code>header(name: string)</code></td><td><code>string | undefined</code></td><td></td></tr>
+                <tr><td><code>accepts()</code></td><td><code>string[]</code></td><td><p>The type of those given the request prefers (false for none); all it accepts without types.</p></td></tr>
+                <tr><td><code>accepts(type: string)</code></td><td><code>string | false</code></td><td></td></tr>
+                <tr><td><code>accepts(type: string[])</code></td><td><code>string | false</code></td><td></td></tr>
+                <tr><td><code>accepts(...type: string[])</code></td><td><code>string | false</code></td><td></td></tr>
+                <tr><td><code>acceptsCharsets()</code></td><td><code>string[]</code></td><td></td></tr>
+                <tr><td><code>acceptsCharsets(charset: string)</code></td><td><code>string | false</code></td><td></td></tr>
+                <tr><td><code>acceptsCharsets(charset: string[])</code></td><td><code>string | false</code></td><td></td></tr>
+                <tr><td><code>acceptsCharsets(...charset: string[])</code></td><td><code>string | false</code></td><td></td></tr>
+                <tr><td><code>acceptsEncodings()</code></td><td><code>string[]</code></td><td></td></tr>
+                <tr><td><code>acceptsEncodings(encoding: string)</code></td><td><code>string | false</code></td><td></td></tr>
+                <tr><td><code>acceptsEncodings(encoding: string[])</code></td><td><code>string | false</code></td><td></td></tr>
+                <tr><td><code>acceptsEncodings(...encoding: string[])</code></td><td><code>string | false</code></td><td></td></tr>
+                <tr><td><code>acceptsLanguages()</code></td><td><code>string[]</code></td><td></td></tr>
+                <tr><td><code>acceptsLanguages(lang: string)</code></td><td><code>string | false</code></td><td></td></tr>
+                <tr><td><code>acceptsLanguages(lang: string[])</code></td><td><code>string | false</code></td><td></td></tr>
+                <tr><td><code>acceptsLanguages(...lang: string[])</code></td><td><code>string | false</code></td><td></td></tr>
+                <tr><td><code>range(size: number, options?: RangeOptions)</code></td><td><code><a href="#ref-Ranges">Ranges</a> | -1 | -2 | undefined</code></td><td><p>The ranges of the Range header for a size: -1 unsatisfiable, -2 not one.</p></td></tr>
+                <tr><td><code>is(type: string | string[])</code></td><td><code>string | false | null</code></td><td><p>The type of the body among those given (false for none), null without a body.</p></td></tr>
+                <tr><td><code>is(...type: string[])</code></td><td><code>string | false | null</code></td><td></td></tr>
+                <tr><td><code>readonly protocol</code></td><td><code>string</code></td><td></td></tr>
+                <tr><td><code>readonly secure</code></td><td><code>boolean</code></td><td></td></tr>
+                <tr><td><code>readonly ip</code></td><td><code>string | undefined</code></td><td></td></tr>
+                <tr><td><code>readonly ips</code></td><td><code>string[]</code></td><td></td></tr>
+                <tr><td><code>readonly subdomains</code></td><td><code>string[]</code></td><td></td></tr>
+                <tr><td><code>readonly path</code></td><td><code>string</code></td><td></td></tr>
+                <tr><td><code>readonly host</code></td><td><code>string</code></td><td></td></tr>
+                <tr><td><code>readonly hostname</code></td><td><code>string</code></td><td></td></tr>
+                <tr><td><code>readonly fresh</code></td><td><code>boolean</code></td><td></td></tr>
+                <tr><td><code>readonly stale</code></td><td><code>boolean</code></td><td></td></tr>
+                <tr><td><code>readonly xhr</code></td><td><code>boolean</code></td><td></td></tr>
+                <tr><td><code>body</code></td><td><code>ReqBody</code></td><td></td></tr>
+                <tr><td><code>cookies</code></td><td><code>any</code></td><td></td></tr>
+                <tr><td><code>signedCookies</code></td><td><code>any</code></td><td></td></tr>
+                <tr><td><code>method</code></td><td><code>string</code></td><td></td></tr>
+                <tr><td><code>params</code></td><td><code>P</code></td><td></td></tr>
+                <tr><td><code>query</code></td><td><code>ReqQuery</code></td><td></td></tr>
+                <tr><td><code>route</code></td><td><code>any</code></td><td></td></tr>
+                <tr><td><code>secret?</code></td><td><code>string | undefined</code></td><td></td></tr>
+                <tr><td><code>originalUrl</code></td><td><code>string</code></td><td></td></tr>
+                <tr><td><code>url</code></td><td><code>string</code></td><td></td></tr>
+                <tr><td><code>baseUrl</code></td><td><code>string</code></td><td></td></tr>
+                <tr><td><code>app</code></td><td><code><a href="#ref-Application">Application</a></code></td><td></td></tr>
+                <tr><td><code>res?</code></td><td><code><a href="#ref-Response">Response</a>&lt;ResBody, LocalsObj&gt; | undefined</code></td><td></td></tr>
+                <tr><td><code>next?</code></td><td><code><a href="#ref-NextFunction">NextFunction</a> | undefined</code></td><td></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-Response"><code>Response</code></h3>
+        <pre><code class="language-ts">interface Response { ... }
+
+interface Response&lt;
+    ResBody = any,
+    LocalsObj extends Record&lt;string, any&gt; = Record&lt;string, any&gt;,
+    StatusCode extends number = number,
+  &gt;
+    extends http.ServerResponse, Express.Response { ... }</code></pre>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>status(code: StatusCode)</code></td><td><code>this</code></td><td></td></tr>
+                <tr><td><code>sendStatus(code: StatusCode)</code></td><td><code>this</code></td><td></td></tr>
+                <tr><td><code>links(links: Record&lt;string, string | string[]&gt;)</code></td><td><code>this</code></td><td></td></tr>
+                <tr><td><code>send</code></td><td><code><a href="#ref-Send">Send</a>&lt;ResBody, this&gt;</code></td><td></td></tr>
+                <tr><td><code>json</code></td><td><code><a href="#ref-Send">Send</a>&lt;ResBody, this&gt;</code></td><td></td></tr>
+                <tr><td><code>jsonp</code></td><td><code><a href="#ref-Send">Send</a>&lt;ResBody, this&gt;</code></td><td></td></tr>
+                <tr><td><code>sendFile(path: string, fn?: Errback)</code></td><td><code>void</code></td><td></td></tr>
+                <tr><td><code>sendFile(path: string, options: SendFileOptions, fn?: Errback)</code></td><td><code>void</code></td><td></td></tr>
+                <tr><td><code>download(path: string, fn?: Errback)</code></td><td><code>void</code></td><td></td></tr>
+                <tr><td><code>download(path: string, filename: string, fn?: Errback)</code></td><td><code>void</code></td><td></td></tr>
+                <tr><td><code>download(path: string, filename: string, options: DownloadOptions, fn?: Errback)</code></td><td><code>void</code></td><td></td></tr>
+                <tr><td><code>contentType(type: string)</code></td><td><code>this</code></td><td></td></tr>
+                <tr><td><code>type(type: string)</code></td><td><code>this</code></td><td></td></tr>
+                <tr><td><code>format(handlers: Record&lt;string, (req: Request, res: Response, next: NextFunction) =&gt; void&gt;)</code></td><td><code>this</code></td><td></td></tr>
+                <tr><td><code>attachment(filename?: string)</code></td><td><code>this</code></td><td></td></tr>
+                <tr><td><code>set(field: Record&lt;string, string | string[]&gt;)</code></td><td><code>this</code></td><td></td></tr>
+                <tr><td><code>set(field: string, value?: string | string[])</code></td><td><code>this</code></td><td></td></tr>
+                <tr><td><code>header(field: Record&lt;string, string | string[]&gt;)</code></td><td><code>this</code></td><td></td></tr>
+                <tr><td><code>header(field: string, value?: string | string[])</code></td><td><code>this</code></td><td></td></tr>
+                <tr><td><code>headersSent</code></td><td><code>boolean</code></td><td></td></tr>
+                <tr><td><code>get(field: string)</code></td><td><code>string | undefined</code></td><td></td></tr>
+                <tr><td><code>clearCookie(name: string, options?: CookieOptions)</code></td><td><code>this</code></td><td></td></tr>
+                <tr><td><code>cookie(name: string, value: any, options?: CookieOptions)</code></td><td><code>this</code></td><td></td></tr>
+                <tr><td><code>location(url: string)</code></td><td><code>this</code></td><td></td></tr>
+                <tr><td><code>redirect(url: string)</code></td><td><code>void</code></td><td></td></tr>
+                <tr><td><code>redirect(status: number, url: string)</code></td><td><code>void</code></td><td></td></tr>
+                <tr><td><code>render(view: string, options?: object, callback?: (err: Error, html: string) =&gt; void)</code></td><td><code>void</code></td><td></td></tr>
+                <tr><td><code>render(view: string, callback?: (err: Error, html: string) =&gt; void)</code></td><td><code>void</code></td><td></td></tr>
+                <tr><td><code>locals</code></td><td><code>LocalsObj &amp; <a href="#ref-Locals">Locals</a></code></td><td></td></tr>
+                <tr><td><code>charset</code></td><td><code>string</code></td><td></td></tr>
+                <tr><td><code>vary(field: string)</code></td><td><code>this</code></td><td></td></tr>
+                <tr><td><code>app</code></td><td><code><a href="#ref-Application">Application</a></code></td><td></td></tr>
+                <tr><td><code>append(field: string, value?: string[] | string)</code></td><td><code>this</code></td><td></td></tr>
+                <tr><td><code>req</code></td><td><code><a href="#ref-Request">Request</a></code></td><td></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-Locals"><code>Locals</code></h3>
+        <pre><code class="language-ts">interface Locals { ... }
+
+interface Locals extends Express.Locals { ... }</code></pre>
+
+        <h3 id="ref-Application"><code>Application</code></h3>
+        <pre><code class="language-ts">interface Application { ... }
+
+interface Application&lt;LocalsObj extends Record&lt;string, any&gt; = Record&lt;string, any&gt;&gt;
+    extends EventEmitter, IRouter, Express.Application { ... }</code></pre>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>(req: http.IncomingMessage | Request, res: http.ServerResponse | Response)</code></td><td><code>any</code></td><td></td></tr>
+                <tr><td><code>(req: Request, res: Response, next: NextFunction)</code></td><td><code>void</code></td><td></td></tr>
+                <tr><td><code>init()</code></td><td><code>void</code></td><td></td></tr>
+                <tr><td><code>defaultConfiguration()</code></td><td><code>void</code></td><td></td></tr>
+                <tr><td><code>engine(ext: string, fn: (path: string, options: object, callback: (e: any, rendered?: string) =&gt; void) =&gt; void)</code></td><td><code>this</code></td><td></td></tr>
+                <tr><td><code>set(setting: string, value: any)</code></td><td><code>this</code></td><td></td></tr>
+                <tr><td><code>get</code></td><td><code>((name: string) =&gt; any) &amp; <a href="#ref-RouterMatcher">RouterMatcher</a>&lt;this&gt;</code></td><td></td></tr>
+                <tr><td><code>param(name: string | string[], handler: RequestParamHandler)</code></td><td><code>this</code></td><td></td></tr>
+                <tr><td><code>path()</code></td><td><code>string</code></td><td></td></tr>
+                <tr><td><code>enabled(setting: string)</code></td><td><code>boolean</code></td><td></td></tr>
+                <tr><td><code>disabled(setting: string)</code></td><td><code>boolean</code></td><td></td></tr>
+                <tr><td><code>enable(setting: string)</code></td><td><code>this</code></td><td></td></tr>
+                <tr><td><code>disable(setting: string)</code></td><td><code>this</code></td><td></td></tr>
+                <tr><td><code>render(name: string, options?: object, callback?: (err: Error, html: string) =&gt; void)</code></td><td><code>void</code></td><td></td></tr>
+                <tr><td><code>render(name: string, callback: (err: Error, html: string) =&gt; void)</code></td><td><code>void</code></td><td></td></tr>
+                <tr><td><code>listen(port: number, hostname: string, backlog: number, callback?: (error?: Error) =&gt; void)</code></td><td><code>http.Server</code></td><td></td></tr>
+                <tr><td><code>listen(port: number, hostname: string, callback?: (error?: Error) =&gt; void)</code></td><td><code>http.Server</code></td><td></td></tr>
+                <tr><td><code>listen(port: number, callback?: (error?: Error) =&gt; void)</code></td><td><code>http.Server</code></td><td></td></tr>
+                <tr><td><code>listen(callback?: (error?: Error) =&gt; void)</code></td><td><code>http.Server</code></td><td></td></tr>
+                <tr><td><code>listen(path: string, callback?: (error?: Error) =&gt; void)</code></td><td><code>http.Server</code></td><td></td></tr>
+                <tr><td><code>listen(handle: any, listeningListener?: (error?: Error) =&gt; void)</code></td><td><code>http.Server</code></td><td></td></tr>
+                <tr><td><code>router</code></td><td><code><a href="#ref-Router">Router</a></code></td><td></td></tr>
+                <tr><td><code>settings</code></td><td><code>any</code></td><td></td></tr>
+                <tr><td><code>resource</code></td><td><code>any</code></td><td></td></tr>
+                <tr><td><code>map</code></td><td><code>any</code></td><td></td></tr>
+                <tr><td><code>locals</code></td><td><code>LocalsObj &amp; <a href="#ref-Locals">Locals</a></code></td><td></td></tr>
+                <tr><td><code>routes</code></td><td><code>any</code></td><td></td></tr>
+                <tr><td><code>_router</code></td><td><code>any</code></td><td></td></tr>
+                <tr><td><code>use</code></td><td><code><a href="#ref-Use">Use</a>&lt;this&gt;</code></td><td></td></tr>
+                <tr><td><code>on</code></td><td><code>(event: string, callback: (parent: <a href="#ref-Application">Application</a>) =&gt; void) =&gt; this</code></td><td></td></tr>
+                <tr><td><code>mountpath</code></td><td><code>string | string[]</code></td><td></td></tr>
+                <tr><td><code>parent?</code></td><td><code><a href="#ref-Application">Application</a></code></td><td></td></tr>
+                <tr><td><code>request</code></td><td><code><a href="#ref-Request">Request</a></code></td><td></td></tr>
+                <tr><td><code>response</code></td><td><code><a href="#ref-Response">Response</a></code></td><td></td></tr>
+                <tr><td><code>server(options?: XufaHttpOptions&lt;any&gt;)</code></td><td><code>XufaInstance</code></td><td><p>The instance of</p></td></tr>
+                <tr><td><code>register&lt;Options extends XufaPluginOptions&gt;(plugin: XufaPluginAsync&lt;Options&gt;, options?: Options)</code></td><td><code>this</code></td><td><p>A plugin of</p></td></tr>
+                <tr><td><code>register&lt;Options extends XufaPluginOptions&gt;(plugin: XufaPluginCallback&lt;Options&gt;, options?: Options)</code></td><td><code>this</code></td><td></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-ParamsDictionary"><code>ParamsDictionary</code></h3>
+        <pre><code class="language-ts">interface ParamsDictionary { ... }</code></pre>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>[key: string]</code></td><td><code>string</code></td><td></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-RangeOptions"><code>RangeOptions</code></h3>
+        <pre><code class="language-ts">interface RangeOptions { ... }</code></pre>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>combine?</code></td><td><code>boolean</code></td><td><p>Ranges that overlap or touch as one.</p></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-Ranges"><code>Ranges</code></h3>
+        <pre><code class="language-ts">interface Ranges extends Array&lt; { ... }</code></pre>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>type</code></td><td><code>string</code></td><td></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-CookieOptions"><code>CookieOptions</code></h3>
+        <pre><code class="language-ts">interface CookieOptions { ... }</code></pre>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>maxAge?</code></td><td><code>number | undefined</code></td><td><p>Milliseconds (Max-Age and Expires from now).</p></td></tr>
+                <tr><td><code>signed?</code></td><td><code>boolean | undefined</code></td><td><p>Signed with req.secret (cookie-parser's).</p></td></tr>
+                <tr><td><code>expires?</code></td><td><code>Date | undefined</code></td><td></td></tr>
+                <tr><td><code>httpOnly?</code></td><td><code>boolean | undefined</code></td><td></td></tr>
+                <tr><td><code>path?</code></td><td><code>string | undefined</code></td><td></td></tr>
+                <tr><td><code>domain?</code></td><td><code>string | undefined</code></td><td></td></tr>
+                <tr><td><code>secure?</code></td><td><code>boolean | undefined</code></td><td></td></tr>
+                <tr><td><code>encode?</code></td><td><code>((value: string) =&gt; string) | undefined</code></td><td></td></tr>
+                <tr><td><code>sameSite?</code></td><td><code>boolean | 'lax' | 'strict' | 'none' | undefined</code></td><td></td></tr>
+                <tr><td><code>priority?</code></td><td><code>'low' | 'medium' | 'high'</code></td><td></td></tr>
+                <tr><td><code>partitioned?</code></td><td><code>boolean | undefined</code></td><td></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-SendFileOptions"><code>SendFileOptions</code></h3>
+        <pre><code class="language-ts">interface SendFileOptions extends SendOptions { ... }</code></pre>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>headers?</code></td><td><code>Record&lt;string, unknown&gt;</code></td><td></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-DownloadOptions"><code>DownloadOptions</code></h3>
+        <pre><code class="language-ts">interface DownloadOptions extends SendOptions { ... }</code></pre>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>headers?</code></td><td><code>Record&lt;string, unknown&gt;</code></td><td></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-NextFunction"><code>NextFunction</code></h3>
+        <pre><code class="language-ts">interface NextFunction { ... }</code></pre>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>(err?: any)</code></td><td><code>void</code></td><td></td></tr>
+                <tr><td><code>(deferToNext: 'route')</code></td><td><code>void</code></td><td><p>Leaves the route ('route') or the router ('router').</p></td></tr>
+                <tr><td><code>(deferToNext: 'router')</code></td><td><code>void</code></td><td></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-RequestHandler"><code>RequestHandler</code></h3>
+        <pre><code class="language-ts">interface RequestHandler&lt;
+    P = ParamsDictionary,
+    ResBody = any,
+    ReqBody = any,
+    ReqQuery = Query,
+    LocalsObj extends Record&lt;string, any&gt; = Record&lt;string, any&gt;,
+  &gt; { ... }</code></pre>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>(req: Request&lt;P, ResBody, ReqBody, ReqQuery, LocalsObj&gt;, res: Response&lt;ResBody, LocalsObj&gt;, next: NextFunction)</code></td><td><code>unknown</code></td><td></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-RouterMatcher"><code>RouterMatcher</code></h3>
+        <pre><code class="language-ts">interface RouterMatcher&lt;T&gt; { ... }</code></pre>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>(path: Path, ...handlers: Array&lt;RequestHandler&lt;P, ResBody, ReqBody, ReqQuery, LocalsObj&gt;&gt;)</code></td><td><code>T</code></td><td></td></tr>
+                <tr><td><code>(path: Path, ...handlers: Array&lt;RequestHandlerParams&lt;P, ResBody, ReqBody, ReqQuery, LocalsObj&gt;&gt;)</code></td><td><code>T</code></td><td></td></tr>
+                <tr><td><code>(path: PathParams, ...handlers: Array&lt;RequestHandlerParams&lt;P, ResBody, ReqBody, ReqQuery, LocalsObj&gt;&gt;)</code></td><td><code>T</code></td><td></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-RouterHandler"><code>RouterHandler</code></h3>
+        <pre><code class="language-ts">interface RouterHandler&lt;T, Path extends string = string&gt; { ... }</code></pre>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>(...handlers: Array&lt;RequestHandler&lt;RouteParameters&lt;Path&gt;&gt;&gt;)</code></td><td><code>T</code></td><td></td></tr>
+                <tr><td><code>(...handlers: Array&lt;RequestHandlerParams&lt;RouteParameters&lt;Path&gt;&gt;&gt;)</code></td><td><code>T</code></td><td></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-Use"><code>Use</code></h3>
+        <pre><code class="language-ts">interface Use&lt;T&gt; { ... }</code></pre>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>(...handlers: Array&lt;RequestHandler | ErrorRequestHandler | RequestHandlerParams&gt;)</code></td><td><code>T</code></td><td></td></tr>
+                <tr><td><code>(path: Path, ...handlers: Array&lt;RequestHandlerParams&lt;P&gt;&gt;)</code></td><td><code>T</code></td><td></td></tr>
+                <tr><td><code>(path: PathParams, ...handlers: Array&lt;RequestHandlerParams&gt;)</code></td><td><code>T</code></td><td></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-IRoute"><code>IRoute</code></h3>
+        <pre><code class="language-ts">interface IRoute&lt;Path extends string = string&gt; { ... }</code></pre>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>path</code></td><td><code>string</code></td><td></td></tr>
+                <tr><td><code>stack</code></td><td><code>any</code></td><td></td></tr>
+                <tr><td><code>all</code></td><td><code><a href="#ref-RouterHandler">RouterHandler</a>&lt;this, Path&gt;</code></td><td></td></tr>
+                <tr><td><code>get</code></td><td><code><a href="#ref-RouterHandler">RouterHandler</a>&lt;this, Path&gt;</code></td><td></td></tr>
+                <tr><td><code>post</code></td><td><code><a href="#ref-RouterHandler">RouterHandler</a>&lt;this, Path&gt;</code></td><td></td></tr>
+                <tr><td><code>put</code></td><td><code><a href="#ref-RouterHandler">RouterHandler</a>&lt;this, Path&gt;</code></td><td></td></tr>
+                <tr><td><code>delete</code></td><td><code><a href="#ref-RouterHandler">RouterHandler</a>&lt;this, Path&gt;</code></td><td></td></tr>
+                <tr><td><code>patch</code></td><td><code><a href="#ref-RouterHandler">RouterHandler</a>&lt;this, Path&gt;</code></td><td></td></tr>
+                <tr><td><code>options</code></td><td><code><a href="#ref-RouterHandler">RouterHandler</a>&lt;this, Path&gt;</code></td><td></td></tr>
+                <tr><td><code>head</code></td><td><code><a href="#ref-RouterHandler">RouterHandler</a>&lt;this, Path&gt;</code></td><td></td></tr>
+                <tr><td><code>query</code></td><td><code><a href="#ref-RouterHandler">RouterHandler</a>&lt;this, Path&gt;</code></td><td></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-IRouter"><code>IRouter</code></h3>
+        <pre><code class="language-ts">interface IRouter extends RequestHandler { ... }</code></pre>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>param(name: string, handler: RequestParamHandler)</code></td><td><code>this</code></td><td></td></tr>
+                <tr><td><code>all</code></td><td><code><a href="#ref-RouterMatcher">RouterMatcher</a>&lt;this&gt;</code></td><td></td></tr>
+                <tr><td><code>get</code></td><td><code><a href="#ref-RouterMatcher">RouterMatcher</a>&lt;this&gt;</code></td><td></td></tr>
+                <tr><td><code>post</code></td><td><code><a href="#ref-RouterMatcher">RouterMatcher</a>&lt;this&gt;</code></td><td></td></tr>
+                <tr><td><code>put</code></td><td><code><a href="#ref-RouterMatcher">RouterMatcher</a>&lt;this&gt;</code></td><td></td></tr>
+                <tr><td><code>delete</code></td><td><code><a href="#ref-RouterMatcher">RouterMatcher</a>&lt;this&gt;</code></td><td></td></tr>
+                <tr><td><code>patch</code></td><td><code><a href="#ref-RouterMatcher">RouterMatcher</a>&lt;this&gt;</code></td><td></td></tr>
+                <tr><td><code>options</code></td><td><code><a href="#ref-RouterMatcher">RouterMatcher</a>&lt;this&gt;</code></td><td></td></tr>
+                <tr><td><code>head</code></td><td><code><a href="#ref-RouterMatcher">RouterMatcher</a>&lt;this&gt;</code></td><td></td></tr>
+                <tr><td><code>query</code></td><td><code><a href="#ref-RouterMatcher">RouterMatcher</a>&lt;this&gt;</code></td><td></td></tr>
+                <tr><td><code>use</code></td><td><code><a href="#ref-Use">Use</a>&lt;this&gt;</code></td><td></td></tr>
+                <tr><td><code>route&lt;Path extends string&gt;(path: Path)</code></td><td><code><a href="#ref-IRoute">IRoute</a>&lt;Path&gt;</code></td><td></td></tr>
+                <tr><td><code>route(path: PathParams)</code></td><td><code><a href="#ref-IRoute">IRoute</a></code></td><td></td></tr>
+                <tr><td><code>stack</code></td><td><code>any[]</code></td><td></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-Router"><code>Router</code></h3>
+        <pre><code class="language-ts">interface Router extends IRouter { ... }</code></pre>
+
+        <h3 id="ref-RouterOptions"><code>RouterOptions</code></h3>
+        <pre><code class="language-ts">interface RouterOptions { ... }</code></pre>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>caseSensitive?</code></td><td><code>boolean | undefined</code></td><td></td></tr>
+                <tr><td><code>mergeParams?</code></td><td><code>boolean | undefined</code></td><td></td></tr>
+                <tr><td><code>strict?</code></td><td><code>boolean | undefined</code></td><td></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-Express"><code>Express</code></h3>
+        <pre><code class="language-ts">interface Express extends Application { ... }</code></pre>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>request</code></td><td><code><a href="#ref-Request">Request</a></code></td><td></td></tr>
+                <tr><td><code>response</code></td><td><code><a href="#ref-Response">Response</a></code></td><td></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-ExpressOptions"><code>ExpressOptions</code></h3>
+        <pre><code class="language-ts">interface ExpressOptions { ... }</code></pre>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>server?</code></td><td><code>XufaHttpOptions&lt;any&gt;</code></td><td><p>Options of</p></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-ParserOptions"><code>ParserOptions</code></h3>
+        <pre><code class="language-ts">interface ParserOptions { ... }</code></pre>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>inflate?</code></td><td><code>boolean | undefined</code></td><td><p>Inflate gzip, deflate and br bodies (true).</p></td></tr>
+                <tr><td><code>limit?</code></td><td><code>number | string | undefined</code></td><td><p>The largest body: bytes or '100kb' (100kb).</p></td></tr>
+                <tr><td><code>type?</code></td><td><code>string | string[] | ((req: http.IncomingMessage) =&gt; any) | undefined</code></td><td><p>The types to parse: a type, a list, or a function of the request.</p></td></tr>
+                <tr><td><code>verify?(req: http.IncomingMessage, res: http.ServerResponse, buf: Buffer, encoding: string)</code></td><td><code>void</code></td><td><p>May throw to refuse a body (403).</p></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-JsonOptions"><code>JsonOptions</code></h3>
+        <pre><code class="language-ts">interface JsonOptions extends ParserOptions { ... }</code></pre>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>reviver?(key: string, value: any)</code></td><td><code>any</code></td><td></td></tr>
+                <tr><td><code>strict?</code></td><td><code>boolean | undefined</code></td><td><p>Only objects and arrays (true).</p></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-TextOptions"><code>TextOptions</code></h3>
+        <pre><code class="language-ts">interface TextOptions extends ParserOptions { ... }</code></pre>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>defaultCharset?</code></td><td><code>string | undefined</code></td><td></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-UrlencodedOptions"><code>UrlencodedOptions</code></h3>
+        <pre><code class="language-ts">interface UrlencodedOptions extends ParserOptions { ... }</code></pre>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>extended?</code></td><td><code>boolean | undefined</code></td><td><p>Nested keys (a[b]=1), as qs (false).</p></td></tr>
+                <tr><td><code>parameterLimit?</code></td><td><code>number | undefined</code></td><td></td></tr>
+                <tr><td><code>depth?</code></td><td><code>number | undefined</code></td><td></td></tr>
+                <tr><td><code>defaultCharset?</code></td><td><code>string | undefined</code></td><td></td></tr>
+                <tr><td><code>charsetSentinel?</code></td><td><code>boolean | undefined</code></td><td></td></tr>
+                <tr><td><code>interpretNumericEntities?</code></td><td><code>boolean | undefined</code></td><td></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-SendOptions"><code>SendOptions</code></h3>
+        <pre><code class="language-ts">interface SendOptions { ... }</code></pre>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>acceptRanges?</code></td><td><code>boolean | undefined</code></td><td></td></tr>
+                <tr><td><code>cacheControl?</code></td><td><code>boolean | undefined</code></td><td></td></tr>
+                <tr><td><code>dotfiles?</code></td><td><code>'allow' | 'deny' | 'ignore' | undefined</code></td><td></td></tr>
+                <tr><td><code>end?</code></td><td><code>number | undefined</code></td><td></td></tr>
+                <tr><td><code>etag?</code></td><td><code>boolean | undefined</code></td><td></td></tr>
+                <tr><td><code>extensions?</code></td><td><code>string[] | string | boolean | undefined</code></td><td></td></tr>
+                <tr><td><code>immutable?</code></td><td><code>boolean | undefined</code></td><td></td></tr>
+                <tr><td><code>index?</code></td><td><code>string[] | string | boolean | undefined</code></td><td></td></tr>
+                <tr><td><code>lastModified?</code></td><td><code>boolean | undefined</code></td><td></td></tr>
+                <tr><td><code>maxAge?</code></td><td><code>string | number | undefined</code></td><td></td></tr>
+                <tr><td><code>root?</code></td><td><code>string | undefined</code></td><td></td></tr>
+                <tr><td><code>start?</code></td><td><code>number | undefined</code></td><td></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-ServeStaticOptions"><code>ServeStaticOptions</code></h3>
+        <pre><code class="language-ts">interface ServeStaticOptions&lt;R extends http.ServerResponse = http.ServerResponse&gt; extends SendOptions { ... }</code></pre>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>fallthrough?</code></td><td><code>boolean | undefined</code></td><td></td></tr>
+                <tr><td><code>redirect?</code></td><td><code>boolean | undefined</code></td><td></td></tr>
+                <tr><td><code>setHeaders?</code></td><td><code>((res: R, path: string, stat: Stats) =&gt; any) | undefined</code></td><td></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h2 id="types">Types</h2>
+        <p class="ref-index"><a href="#ref-ParamsFlatDictionary"><code>ParamsFlatDictionary</code></a>, <a href="#ref-Query"><code>Query</code></a>, <a href="#ref-Cut"><code>Cut</code></a>, <a href="#ref-ParamName"><code>ParamName</code></a>, <a href="#ref-ParseParams"><code>ParseParams</code></a>, <a href="#ref-RouteParameters"><code>RouteParameters</code></a>, <a href="#ref-Errback"><code>Errback</code></a>, <a href="#ref-Send"><code>Send</code></a>, <a href="#ref-ErrorRequestHandler"><code>ErrorRequestHandler</code></a>, <a href="#ref-RequestHandlerParams"><code>RequestHandlerParams</code></a>, <a href="#ref-Handler"><code>Handler</code></a>, <a href="#ref-RequestParamHandler"><code>RequestParamHandler</code></a>, <a href="#ref-PathParams"><code>PathParams</code></a></p>
+
+        <h3 id="ref-ParamsFlatDictionary"><code>ParamsFlatDictionary</code></h3>
+        <pre><code class="language-ts">type ParamsFlatDictionary = Record&lt;string | number, string&gt;;</code></pre>
+
+        <h3 id="ref-Query"><code>Query</code></h3>
+        <pre><code class="language-ts">type Query = Record&lt;string, unknown&gt;;</code></pre>
+
+        <h3 id="ref-Cut"><code>Cut</code></h3>
+        <pre><code class="language-ts">type Cut&lt;S extends string, Tail extends string&gt; = S extends `${infer Head}${Tail}` ? Head : S;</code></pre>
+        <p>The name of a param: up to the next '/', '-' or '.'.</p>
+
+        <h3 id="ref-ParamName"><code>ParamName</code></h3>
+        <pre><code class="language-ts">type ParamName&lt;S extends string&gt; = Cut&lt;Cut&lt;Cut&lt;S, `/${string}`&gt;, `-${string}`&gt;, `.${string}`&gt;;</code></pre>
+
+        <h3 id="ref-ParseParams"><code>ParseParams</code></h3>
+        <pre><code class="language-ts">type ParseParams&lt;Path extends string&gt; = string extends Path
+  ? ParamsDictionary
+  : Path extends `${string}:${infer Rest}`
+    ? { [K in ParamName&lt;Rest&gt;]: string } &amp; (Rest extends `${ParamName&lt;Rest&gt;}${infer Next}`
+        ? RouteParameters&lt;Next&gt;
+        : unknown)
+    : Path extends `${string}*${infer Rest}`
+      ? { [K in ParamName&lt;Rest&gt;]: string[] } &amp; (Rest extends `${ParamName&lt;Rest&gt;}${infer Next}`
+          ? RouteParameters&lt;Next&gt;
+          : unknown)
+      : {};</code></pre>
+
+        <h3 id="ref-RouteParameters"><code>RouteParameters</code></h3>
+        <pre><code class="language-ts">type RouteParameters&lt;Path extends string | RegExp&gt; = Path extends string
+  ? Path extends `${infer Required}{${infer Optional}}${infer Next}`
+    ? ParseParams&lt;Required&gt; &amp; Partial&lt;ParseParams&lt;Optional&gt;&gt; &amp; RouteParameters&lt;Next&gt;
+    : ParseParams&lt;Path&gt;
+  : ParamsFlatDictionary;</code></pre>
+        <p>The params of a path: ':id' a string, '*rest' an array of segments, those in '{...}' optional.</p>
+
+        <h3 id="ref-Errback"><code>Errback</code></h3>
+        <pre><code class="language-ts">type Errback = (err?: Error) =&gt; void;</code></pre>
+
+        <h3 id="ref-Send"><code>Send</code></h3>
+        <pre><code class="language-ts">type Send&lt;ResBody = any, T = Response&lt;ResBody&gt;&gt; = (body?: ResBody) =&gt; T;</code></pre>
+
+        <h3 id="ref-ErrorRequestHandler"><code>ErrorRequestHandler</code></h3>
+        <pre><code class="language-ts">type ErrorRequestHandler&lt;
+    P = ParamsDictionary,
+    ResBody = any,
+    ReqBody = any,
+    ReqQuery = Query,
+    LocalsObj extends Record&lt;string, any&gt; = Record&lt;string, any&gt;,
+  &gt; = (
+    err: any,
+    req: Request&lt;P, ResBody, ReqBody, ReqQuery, LocalsObj&gt;,
+    res: Response&lt;ResBody, LocalsObj&gt;,
+    next: NextFunction
+  ) =&gt; unknown;</code></pre>
+
+        <h3 id="ref-RequestHandlerParams"><code>RequestHandlerParams</code></h3>
+        <pre><code class="language-ts">type RequestHandlerParams&lt;
+    P = ParamsDictionary,
+    ResBody = any,
+    ReqBody = any,
+    ReqQuery = Query,
+    LocalsObj extends Record&lt;string, any&gt; = Record&lt;string, any&gt;,
+  &gt; =
+    | RequestHandler&lt;P, ResBody, ReqBody, ReqQuery, LocalsObj&gt;
+    | ErrorRequestHandler&lt;P, ResBody, ReqBody, ReqQuery, LocalsObj&gt;
+    | Array&lt;RequestHandler&lt;P&gt; | ErrorRequestHandler&lt;P&gt;&gt;;</code></pre>
+
+        <h3 id="ref-Handler"><code>Handler</code></h3>
+        <pre><code class="language-ts">type Handler = RequestHandler;</code></pre>
+
+        <h3 id="ref-RequestParamHandler"><code>RequestParamHandler</code></h3>
+        <pre><code class="language-ts">type RequestParamHandler = (req: Request, res: Response, next: NextFunction, value: any, name: string) =&gt; any;</code></pre>
+
+        <h3 id="ref-PathParams"><code>PathParams</code></h3>
+        <pre><code class="language-ts">type PathParams = string | RegExp | Array&lt;string | RegExp&gt;;</code></pre>
+      </article>
+    </div>
+
+    <footer class="footer">
+      <div class="container">
+        <span>xufa is MIT licensed. &copy; Jes&uacute;s Seijas</span>
+        <span>
+          <a href="../guide.html">Guide</a> &middot; <a href="../playground.html">Playground</a> &middot; <a href="../http/index.html">HTTP</a> &middot; <a href="../orm/index.html">ORM</a> &middot; <a href="../auth/index.html">Auth</a> &middot;
+          <a href="../sequelize/index.html">Sequelize</a> &middot; <a href="../packages.html">Packages</a> &middot;
+          <a href="../benchmarks.html">Benchmarks</a> &middot; <a href="https://github.com/xufajs/xufa">GitHub</a>
+        </span>
+      </div>
+    </footer>
+  </body>
+</html>

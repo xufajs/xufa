@@ -60,6 +60,7 @@
         <h4>Packages</h4>
         <ul>
           <li><a href="../websocket/index.html">@xufa/websocket</a></li>
+          <li><a href="../express/index.html">@xufa/express</a></li>
           <li><a href="../admin/index.html">@xufa/admin</a></li>
           <li><a href="../session/index.html">@xufa/session</a></li>
           <li><a href="../forms/index.html">@xufa/forms</a></li>
@@ -187,6 +188,7 @@ registry.register(Money); // or register(Money, { name: 'money', encode, decode 
               <tr><td><code>functions</code></td><td><code>'throw'</code></td><td>A function as a value: an error, or <code>'skip'</code> (a field left out).</td></tr>
               <tr><td><code>stack</code></td><td><code>true</code></td><td>Whether the stacks of errors are written (<code>false</code> for what goes to clients).</td></tr>
               <tr><td><code>maxDepth</code>, <code>maxNodes</code></td><td>1000, 10,000,000</td><td>Limits: deeper or larger values are a <code>MarshalError</code>.</td></tr>
+              <tr><td><code>shared</code></td><td><code>true</code></td><td><code>clone</code>: shared objects and cycles are kept. <code>false</code> is ~1.5x faster for data that has neither (documents of a database, values of caches): an object met twice is copied twice, a cycle is an error of <code>maxDepth</code>.</td></tr>
             </tbody>
           </table>
         </div>

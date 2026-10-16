@@ -31,15 +31,24 @@ await client.close();
   string): `maxPoolSize` (5 by server), `readPreference`, `retryWrites` and `retryReads` (true), `replicaSet`,
   `directConnection`, `heartbeatFrequencyMS` (10000), `serverSelectionTimeoutMS` (30000), `localThresholdMS` (15),
   `compressors` (`zstd`, `zlib`), `zlibCompressionLevel`, `authSource`, `authMechanism`, `tls`, `tlsOptions`,
-  `connectTimeoutMS`, `appName`.
-- `Db`: `collection()`, `command()`, `listCollections()`, `createCollection()`, `dropDatabase()`.
-- `Collection`: `find`, `findOne`, `aggregate`, `countDocuments`, `insertOne`, `insertMany`, `updateOne`,
-  `updateMany`, `replaceOne`, `deleteOne`, `deleteMany`, `createIndex`, `dropIndex`, `indexes`, `drop`. Every one
+  `connectTimeoutMS`, `appName`, `ignoreUndefined` (false: as the official driver, fields `undefined` in documents
+  are written as null; true leaves them out, as the ORM does). `MongoClient.connect(url, options)` gives a client
+  connected. A client connects at its first command; after `close()`, commands throw `MongoNotConnectedError` until
+  `connect()` again.
+- `Db`: `collection()`, `command()`, `listCollections()` (a cursor), `createCollection()`, `dropDatabase()`,
+  `admin()` (`command`, `listDatabases`, `ping`, `serverStatus`, `buildInfo`).
+- `Collection`: `find`, `findOne`, `aggregate`, `countDocuments`, `estimatedDocumentCount`, `insertOne`,
+  `insertMany`, `updateOne`, `updateMany`, `replaceOne`, `deleteOne`, `deleteMany`, `findOneAndUpdate`,
+  `findOneAndReplace`, `findOneAndDelete` (`returnDocument`, `includeResultMetadata`), `bulkWrite` (ordered: runs of
+  the same kind in one command, stopping at the first error; unordered: inserts, then updates, then deletes),
+  `rename`, `createIndex`, `createIndexes`, `dropIndex`, `dropIndexes`, `listIndexes`, `indexes`, `indexExists`,
+  `drop`. Every one
   takes `{ session }`; reads take `{ readPreference }`, and writes `{ writeConcern }`. As in the official driver, `insertOne` and `insertMany` set `_id` on the documents without
   one. `insertMany` sends its documents in messages of a few megabytes (any number of them), encoding the next
   while the server inserts one; with `{ ordered: false }`, a large insert is cut in parts that the connections of
   the pool send at the same time, inserted by the server in parallel.
-- Cursors: `toArray()`, `next()`, `for await`, `sort`, `skip`, `limit`, `project`, `batchSize`, `close()`.
+- Cursors: `toArray()`, `next()`, `hasNext()`, `forEach()`, `for await`, `sort`, `skip`, `limit`, `project`,
+  `batchSize`, `collation`, `map`, `close()`. `find` also takes `collation`, `hint` and `allowDiskUse`.
 - BSON: `serialize`, `deserialize`, `ObjectId`, `Binary`, `Timestamp`, `Decimal128`, `Int32`, `Double`, `MinKey`,
   `MaxKey`. Integers that fit are int32 and the rest of numbers doubles; bigints are int64, and int64 values are
   numbers when they are safe integers.
@@ -74,6 +83,8 @@ The tests that need a server use `XUFA_MONGO_URL` (`mongodb://127.0.0.1:27017/xu
 skip them) and only touch the collections they create in that database. Those of replica sets (failover, read
 preferences, transactions) use `XUFA_MONGO_RS_URL` (a replica set `rs3` of three members on 27031 to 27033 by
 default: `npm run mongo:rs` at the root of the repository starts it), and are skipped when it cannot be reached.
+`test/compat.test.js` runs the same operations with the official driver (a devDependency) and this one, and expects
+the same results.
 
 ## License
 

@@ -87,6 +87,7 @@
         <h4>Packages</h4>
         <ul>
           <li><a href="../websocket/index.html">@xufa/websocket</a></li>
+          <li><a href="../express/index.html">@xufa/express</a></li>
           <li><a href="../admin/index.html">@xufa/admin</a></li>
           <li><a href="../session/index.html">@xufa/session</a></li>
           <li><a href="../forms/index.html">@xufa/forms</a></li>
@@ -990,6 +991,12 @@ console.log(tier.axes[0].overlaps, tier.axes[0].shadowed); // rule 3 never wins:
           themselves: texts, numbers, booleans, dates (cells of a date format), the last result of formulas, merged
           ranges; written cells can be <code>{ value, style }</code> (<code>title</code>, <code>header</code>,
           <code>value</code>).
+        </p>
+        <p>
+          A workbook people keep editing is patched, not written again: <code>patchXlsx(bytes, sheet, { C7: 0.5 })</code>
+          sets those cells and keeps the rest (styles, comments, other sheets); a merged range whose cells get different
+          values is split. <code>book.applyMatrix(bytes, name, matrix)</code> writes the cells of a table's matrix that
+          change, and <code>blocksOf(sheet)</code> gives the blocks of a sheet as books find their tables.
         </p>
         <pre data-run="rules-xlsx"><code class="language-js">import { RuleBook, readXlsx } from '@xufa/rules';
 

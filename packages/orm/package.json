@@ -48,6 +48,7 @@
     "@xufa/errors": "workspace:*",
     "@xufa/expression": "workspace:*",
     "@xufa/faults": "workspace:*",
+    "@xufa/marshal": "workspace:*",
     "@xufa/mongo": "workspace:*",
     "@xufa/pg": "workspace:*",
     "@xufa/schema": "workspace:*"

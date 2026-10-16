@@ -58,11 +58,7 @@ function hasNewlineBetweenOrAfterDecorators(node, options) {
 }
 
 function hasDecoratorsBeforeExport(node) {
-  if (
-    node.type !== 'ExportDefaultDeclaration' &&
-    node.type !== 'ExportNamedDeclaration' &&
-    node.type !== 'DeclareExportDeclaration'
-  ) {
+  if (node.type !== 'ExportDefaultDeclaration' && node.type !== 'ExportNamedDeclaration') {
     return false;
   }
 

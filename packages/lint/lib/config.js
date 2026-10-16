@@ -1,7 +1,8 @@
-// Configs: xufa.lint.config.js (or .mjs, .cjs) exports a list of config objects, as ESLint's flat config does.
+// Configs: xufa.lint.config.js (or .mjs, .cjs) exports a list of config objects, as ESLint's flat config does; without
+// one, ESLint's config of the project is read (./eslint-config.js).
 //
 //   { files, ignores, languageOptions: { ecmaVersion, sourceType, globals, parserOptions }, linterOptions, rules,
-//     settings, format }
+//     settings, format, plugins }
 //
 // format holds the options of the formatter (prettier's: printWidth, singleQuote, trailingComma...), merged as the rest;
 // format: false leaves the files of its object unformatted, and format.ignores (of any object) are files never formatted. The files formatted are those of JavaScript, TypeScript,
@@ -11,11 +12,21 @@
 // with ignores alone ignores those files everywhere (node_modules and .git are ignored too). The objects that apply to
 // a file are merged in order: languageOptions and settings deeply, rules by rule (a rule given only a severity keeps
 // the options before it). The files to lint are those that match a files pattern: .js, .mjs and .cjs by default.
+// plugins, as ESLint's ({ jest: { rules } }), name their rules `jest/rule` (rules only: no processors or configs).
 
 import fs from 'node:fs';
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { matches, ignored } from './glob.js';
+import { defineRule } from './rules/index.js';
+import {
+  ESLINT_FLAT_FILES,
+  eslintrcIn,
+  isEslintrcFile,
+  isFlatFile,
+  loadEslintFlat,
+  loadEslintrc,
+} from './eslint-config.js';
 
 const CONFIG_FILES = ['xufa.lint.config.js', 'xufa.lint.config.mjs', 'xufa.lint.config.cjs'];
 const DEFAULT_FILES = ['**/*.js', '**/*.mjs', '**/*.cjs'];
@@ -46,13 +57,19 @@ function mergeRules(base, extra) {
   return out;
 }
 
-/** The config file of a folder, or of the nearest folder above it that has one; null when none. */
+/**
+ * The config file of a folder, or of the nearest folder above it that has one; null when none. In each folder:
+ * xufa.lint.config.js (.mjs, .cjs), else ESLint's flat config (eslint.config.js, .mjs, .cjs, .ts, .mts, .cts), else
+ * ESLint's config of before ESLint 9 (.eslintrc.js, .cjs, .yaml, .yml, .json, .eslintrc, package.json's eslintConfig).
+ */
 function findConfigFile(from = process.cwd()) {
   for (let dir = path.resolve(from); ; dir = path.dirname(dir)) {
-    for (const name of CONFIG_FILES) {
+    for (const name of [...CONFIG_FILES, ...ESLINT_FLAT_FILES]) {
       const file = path.join(dir, name);
       if (fs.existsSync(file)) return file;
     }
+    const eslintrc = eslintrcIn(dir);
+    if (eslintrc) return eslintrc;
     if (path.dirname(dir) === dir) return null;
   }
 }
@@ -70,6 +87,9 @@ class ConfigArray {
     this.base = base;
     this.globalIgnores = [...DEFAULT_IGNORES];
     for (const config of this.configs) {
+      for (const [namespace, plugin] of Object.entries(config.plugins ?? {})) {
+        for (const [name, rule] of Object.entries(plugin?.rules ?? {})) defineRule(`${namespace}/${name}`, rule);
+      }
       const keys = Object.keys(config).filter((key) => key !== 'name');
       if (keys.length === 1 && keys[0] === 'ignores') this.globalIgnores.push(...config.ignores);
     }
@@ -153,10 +173,14 @@ function mergeConfigs(configs) {
 
 /** Loads a config file (its default export, a list or a function that gives one): a ConfigArray. */
 async function loadConfig(file) {
-  const module = await import(pathToFileURL(path.resolve(file)).href);
+  const resolved = path.resolve(file);
+  const base = path.dirname(resolved);
+  if (isFlatFile(resolved)) return new ConfigArray(await loadEslintFlat(resolved), base);
+  if (isEslintrcFile(resolved)) return new ConfigArray(await loadEslintrc(resolved), base);
+  const module = await import(pathToFileURL(resolved).href);
   let configs = module.default ?? module;
   if (typeof configs === 'function') configs = await configs();
-  return new ConfigArray(Array.isArray(configs) ? configs : [configs], path.dirname(path.resolve(file)));
+  return new ConfigArray(Array.isArray(configs) ? configs : [configs], base);
 }
 
 export { ConfigArray, loadConfig, findConfigFile, CONFIG_FILES };

@@ -918,6 +918,100 @@ console.log(upload.body);</code></pre>
           (1000); past one, the answer is 413 (too large) or 400. <code>multipart: false</code> parses urlencoded bodies
           only. Keys of prototypes (<code>__proto__</code>) are dropped.
         </p>
+        <p>
+          Multipart bodies are read as they come, by xufa's own parser (busboy's rules, without busboy).
+          <code>@xufa/http/multer</code> is multer's API on it, for Express (and <a href="../express/index.html">@xufa/express</a>)
+          or any Node server: <code>single</code>, <code>array</code>, <code>fields</code>, <code>any</code>,
+          <code>none</code>, <code>memoryStorage</code> and <code>diskStorage</code> (or a storage of your own),
+          <code>limits</code>, <code>fileFilter</code> and <code>MulterError</code>; multer 2.1.1's tests pass on it. The
+          names of files are read as latin1, as multer reads them; <code>defParamCharset: 'utf8'</code> reads them as
+          browsers send them.
+        </p>
+<!--run-before: import http from 'node:http'; -->
+        <pre data-run="multer"><code class="language-js">import multer from '@xufa/http/multer';
+
+const upload = multer({ limits: { fileSize: 5 * 1024 * 1024 }, defParamCharset: 'utf8' }).single('cover');
+const server = http.createServer((req, res) =&gt; {
+  upload(req, res, (err) =&gt; {
+    if (err) {
+      res.statusCode = 400;
+      return res.end(err.code);
+    }
+    const { originalname, mimetype, size } = req.file;
+    res.end(JSON.stringify({ title: req.body.title, cover: [originalname, mimetype, size] }));
+  });
+});
+await new Promise((resolve) =&gt; server.listen(0, resolve));
+
+const form = new FormData();
+form.append('title', 'Dune');
+form.append('cover', new Blob(['PNG...'], { type: 'image/png' }), 'portada é.png');
+const response = await fetch(`http://localhost:${server.address().port}/books`, { method: 'POST', body: form });
+console.log(await response.text());
+server.close();</code></pre>
+        <pre data-output><code class="language-plaintext">{"title":"Dune","cover":["portada é.png","image/png",6]}</code></pre>
+        <p>
+          To send forms, <code>@xufa/http/form-data</code> is the API of the form-data package: <code>append()</code>
+          (texts, Buffers, streams of files and responses; a filename, <code>contentType</code>,
+          <code>knownLength</code>), <code>getHeaders()</code>, <code>getLength()</code>, <code>getBuffer()</code>,
+          <code>submit(url)</code> and <code>pipe()</code>, so axios sends it as it sends form-data. form-data 4.0.5's
+          tests pass on it. The types of files come from @xufa/http's mime table, and a file stream with an
+          <code>end</code> and no <code>start</code> counts the range it reads.
+        </p>
+<!--run-before: import http from 'node:http'; import multer from '@xufa/http/multer'; -->
+        <pre data-run="form-data"><code class="language-js">import FormData from '@xufa/http/form-data';
+
+const upload = multer({ defParamCharset: 'utf8' }).any();
+const server = http.createServer((req, res) =&gt;
+  upload(req, res, () =&gt; res.end(JSON.stringify([req.body, req.files.map((f) =&gt; [f.originalname, f.mimetype])])))
+);
+await new Promise((resolve) =&gt; server.listen(0, resolve));
+
+const form = new FormData();
+form.append('title', 'Dune');
+form.append('cover', Buffer.from('PNG...'), 'portada é.png');
+form.submit(`http://localhost:${server.address().port}/books`, (err, res) =&gt; {
+  res.on('data', (chunk) =&gt; console.log(String(chunk)));
+  res.on('end', () =&gt; server.close());
+});</code></pre>
+        <pre data-output><code class="language-plaintext">[{"title":"Dune"},[["portada é.png","image/png"]]]</code></pre>
+
+        <p>
+          For Express apps and other Node servers, <code>@xufa/http/compression</code> is compression's API (1.8.2):
+          <code>app.use(compression({ threshold: 256 }))</code> compresses answers with brotli, gzip or deflate as the
+          request accepts, when their type is compressible and from the threshold; <code>filter</code>,
+          <code>enforceEncoding</code>, <code>brotli</code>, zlib's options and <code>res.flush()</code> as in
+          compression, whose tests pass on it.
+        </p>
+        <p>
+          <code>@xufa/http/helmet</code> is helmet's API (8.3.0) for the same servers: <code>app.use(helmet(options))</code>
+          sets the security headers of responses (Content-Security-Policy, Strict-Transport-Security, X-Frame-Options, the
+          Cross-Origin policies...), each middleware on its own too; <code>staticHeaders(options)</code> gives what it sets
+          on every response. helmet's tests pass on it.
+        </p>
+
+        <h3 id="response-plugins">Security headers, compression and ETags</h3>
+        <p>
+          Three plugins give the routes what helmet, compression and Express's ETags give an Express app, with the same
+          options and the same answers: <code>xufa.helmet</code> (helmet's options; the headers set at once when they are
+          known, the policy computed per request when it has a nonce), <code>xufa.compress</code> (compression's rules:
+          brotli, gzip or deflate as the request prefers, from <code>threshold</code>, streams too) and
+          <code>xufa.etag</code> (Express's weak ETag of each body, and 304 when the client has it). Registered in this
+          order, the ETag is of the body before it is compressed, as in Express.
+        </p>
+<!--run-before: import xufa from '@xufa/http'; const app = xufa(); -->
+        <pre data-run="response-plugins"><code class="language-js">app.register(xufa.helmet, { contentSecurityPolicy: { directives: { scriptSrc: ["'self'", 'cdn.example.com'] } } });
+app.register(xufa.etag);
+app.register(xufa.compress, { threshold: 256 });
+app.get('/books', async () =&gt; ({ books: Array.from({ length: 50 }, (_, i) =&gt; `Book ${i}`) }));
+await app.ready();
+
+const res = await app.inject({ url: '/books', headers: { 'accept-encoding': 'gzip, br' } });
+console.log(res.statusCode, res.headers['content-encoding'], res.headers['x-frame-options'], res.headers.vary);
+const again = await app.inject({ url: '/books', headers: { 'if-none-match': res.headers.etag } });
+console.log(again.statusCode, again.body === '');</code></pre>
+        <pre data-output><code class="language-plaintext">200 br SAMEORIGIN Accept-Encoding
+304 true</code></pre>
 
         <h3 id="static">Static files</h3>
         <p>

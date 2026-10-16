@@ -10,6 +10,7 @@
 
 const fs = require('node:fs');
 const path = require('node:path');
+const { pathToFileURL } = require('node:url');
 const { corpus } = require('./corpus');
 
 const ROOT = path.join(__dirname, '..');
@@ -34,7 +35,7 @@ async function main() {
   const only = argument('only', null);
   const show = Number(argument('show', 5));
   const prettier = require(require.resolve('prettier', { paths: [__dirname] }));
-  const { format } = await import(path.join(ROOT, 'packages/lint/index.js'));
+  const { format } = await import(pathToFileURL(path.join(ROOT, 'packages/lint/index.js')).href);
   const files = Object.entries(corpus())
     .filter(([kind]) => !only || kind === only)
     .flatMap(([, list]) => list);
@@ -52,7 +53,11 @@ async function main() {
       else kind = ours.output === theirs.output ? 'same' : 'differs';
       counts[kind] += 1;
       if (kind !== 'same' && kind !== 'both reject') {
-        found.push({ key: `format ${set} ${path.relative(STORE, file)}`, kind, error: ours.error ?? theirs.error });
+        found.push({
+          key: `format ${set} ${path.relative(STORE, file).split(path.sep).join('/')}`,
+          kind,
+          error: ours.error ?? theirs.error,
+        });
       }
     }
   }

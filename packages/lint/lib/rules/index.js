@@ -1,5 +1,5 @@
-// The rules: the 60 of ESLint's recommended set, each in its file here (reporting what ESLint 9.39.5's does), loaded
-// when first used. The other names of ESLint's rules are known: comments may disable them, and configuring one is an
+// The rules: the 60 of ESLint's recommended set, each in its file here (reporting what ESLint 9.39.5's does), and 100
+// more ported from ESLint 9.39.5's code (PORTED), loaded when first used. The other names of ESLint's rules are known: comments may disable them, and configuring one is an
 // error that says it is not in @xufa/lint.
 
 import NAMES from '../data/rule-names.json' with { type: 'json' };
@@ -7,7 +7,8 @@ import { createRequire } from 'node:module';
 
 const require = createRequire(import.meta.url);
 
-const RULES = new Set([
+// ESLint's recommended set (configs.recommended).
+const RECOMMENDED = new Set([
   'constructor-super',
   'for-direction',
   'getter-return',
@@ -70,6 +71,111 @@ const RULES = new Set([
   'valid-typeof',
 ]);
 
+// ESLint 9.39.5's rules ported from its code (each file says so), with ast-utils and the helpers they use.
+const PORTED = [
+  'array-callback-return',
+  'block-scoped-var',
+  'camelcase',
+  'class-methods-use-this',
+  'consistent-return',
+  'curly',
+  'default-case',
+  'default-case-last',
+  'default-param-last',
+  'dot-notation',
+  'eqeqeq',
+  'func-names',
+  'global-require',
+  'grouped-accessor-pairs',
+  'guard-for-in',
+  'lines-around-directive',
+  'lines-between-class-members',
+  'max-classes-per-file',
+  'new-cap',
+  'no-alert',
+  'no-array-constructor',
+  'no-await-in-loop',
+  'no-bitwise',
+  'no-buffer-constructor',
+  'no-caller',
+  'no-console',
+  'no-constructor-return',
+  'no-continue',
+  'no-div-regex',
+  'no-else-return',
+  'no-empty-function',
+  'no-eval',
+  'no-extend-native',
+  'no-extra-bind',
+  'no-extra-label',
+  'no-implied-eval',
+  'no-inner-declarations',
+  'no-iterator',
+  'no-label-var',
+  'no-labels',
+  'no-lone-blocks',
+  'no-lonely-if',
+  'no-loop-func',
+  'no-multi-assign',
+  'no-multi-str',
+  'no-new',
+  'no-new-func',
+  'no-new-object',
+  'no-new-require',
+  'no-new-symbol',
+  'no-new-wrappers',
+  'no-octal-escape',
+  'no-path-concat',
+  'no-plusplus',
+  'no-promise-executor-return',
+  'no-proto',
+  'no-restricted-exports',
+  'no-restricted-globals',
+  'no-restricted-properties',
+  'no-restricted-syntax',
+  'no-return-assign',
+  'no-return-await',
+  'no-script-url',
+  'no-self-compare',
+  'no-sequences',
+  'no-shadow',
+  'no-template-curly-in-string',
+  'no-throw-literal',
+  'no-undef-init',
+  'no-underscore-dangle',
+  'no-unneeded-ternary',
+  'no-unreachable-loop',
+  'no-unused-expressions',
+  'no-use-before-define',
+  'no-useless-computed-key',
+  'no-useless-concat',
+  'no-useless-constructor',
+  'no-useless-rename',
+  'no-useless-return',
+  'no-var',
+  'no-void',
+  'object-shorthand',
+  'one-var',
+  'operator-assignment',
+  'prefer-const',
+  'prefer-destructuring',
+  'prefer-exponentiation-operator',
+  'prefer-numeric-literals',
+  'prefer-object-spread',
+  'prefer-promise-reject-errors',
+  'prefer-regex-literals',
+  'prefer-rest-params',
+  'prefer-spread',
+  'prefer-template',
+  'radix',
+  'spaced-comment',
+  'symbol-description',
+  'unicode-bom',
+  'vars-on-top',
+  'yoda',
+];
+const RULES = new Set([...RECOMMENDED, ...PORTED]);
+
 const KNOWN = new Set(NAMES);
 const loaded = new Map();
 const custom = new Map();
@@ -90,4 +196,4 @@ function defineRule(id, rule) {
   custom.set(id, rule);
 }
 
-export { getRule, isKnownRule, defineRule, RULES };
+export { getRule, isKnownRule, defineRule, RULES, RECOMMENDED };

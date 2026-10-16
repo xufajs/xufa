@@ -1,0 +1,52 @@
+{
+  "name": "@xufa/fun",
+  "version": "0.1.0",
+  "description": "A functional library of curried functions on any value (lists, strings, objects, iterables), with placeholders and operators classes take part in, with no dependencies",
+  "main": "./index.js",
+  "types": "./index.d.ts",
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./index.d.ts",
+      "default": "./index.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "index.js",
+    "index.d.ts",
+    "lib"
+  ],
+  "scripts": {
+    "test": "xufa-test",
+    "test:types": "xufa-test --typecheck.only"
+  },
+  "keywords": [
+    "functional",
+    "curry",
+    "fp",
+    "lists",
+    "paths",
+    "utilities"
+  ],
+  "author": "Jesús Seijas <jseijas@gmail.com>",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/xufajs/xufa.git",
+    "directory": "packages/fun"
+  },
+  "homepage": "https://github.com/xufajs/xufa/tree/main/packages/fun#readme",
+  "bugs": {
+    "url": "https://github.com/xufajs/xufa/issues"
+  },
+  "engines": {
+    "node": "^22.22.3 || ^24.15.0 || >=25.7.0"
+  },
+  "devDependencies": {
+    "@xufa/test": "workspace:^"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}

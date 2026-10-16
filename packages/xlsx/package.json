@@ -1,0 +1,51 @@
+{
+  "name": "@xufa/xlsx",
+  "version": "0.1.0",
+  "description": "Excel workbooks (.xlsx) read into values and written from them (styles, merged cells, widths), and cells patched in place keeping the rest, with no dependencies",
+  "main": "./index.js",
+  "types": "./index.d.ts",
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./index.d.ts",
+      "default": "./index.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "index.js",
+    "index.d.ts",
+    "lib"
+  ],
+  "scripts": {
+    "test": "xufa-test",
+    "test:types": "xufa-test --typecheck.only"
+  },
+  "keywords": [
+    "excel",
+    "xlsx",
+    "spreadsheet",
+    "workbook",
+    "export"
+  ],
+  "author": "Jesús Seijas <jseijas@gmail.com>",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/xufajs/xufa.git",
+    "directory": "packages/xlsx"
+  },
+  "homepage": "https://github.com/xufajs/xufa/tree/main/packages/xlsx#readme",
+  "bugs": {
+    "url": "https://github.com/xufajs/xufa/issues"
+  },
+  "engines": {
+    "node": "^22.22.3 || ^24.15.0 || >=25.7.0"
+  },
+  "devDependencies": {
+    "@xufa/test": "workspace:^"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}

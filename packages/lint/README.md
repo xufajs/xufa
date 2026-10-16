@@ -3,7 +3,13 @@
 A linter with ESLint's recommended rules and a formatter with prettier's output, on TypeScript's parser (its own copy:
 TypeScript need not be installed): the linter is @xufa/lint's own code, reporting what ESLint 9.39.5 reports, and the
 formatter is prettier 3.9.9's, ported. The rules pass ESLint's tests of them; the formatter writes what prettier writes.
-Configs are ESLint's flat configs, in `xufa.lint.config.js`.
+Configs are ESLint's flat configs, in `xufa.lint.config.js`. A project without one is linted with its ESLint config, in
+each folder from the working one up: `eslint.config.js` (`.mjs`, `.cjs`, `.ts`, `.mts`, `.cts`) as it is, or the config
+of before ESLint 9 (`.eslintrc.js`, `.cjs`, `.yaml`, `.yml`, `.json`, `.eslintrc`, `eslintConfig` of `package.json`)
+made a flat one: `env`, `globals`, `parserOptions`, `extends` (`eslint:recommended`, `plugin:...`, shareable configs and
+paths), `plugins`, `overrides`, `ignorePatterns`, `.eslintignore`, the folders above up to `root: true`, and the
+eslintrc of folders below, each for the files of its folder. Rules of
+ESLint that @xufa/lint does not have are reported as missing; parsers are not used (TypeScript's parses every file).
 
 ```sh
 npm install --save-dev @xufa/lint

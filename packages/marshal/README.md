@@ -72,14 +72,15 @@ as `{ registry }`) keep apart the classes of different parts of an app.
 | `unmarshal(data, options)`  | The value again.                                                                  |
 | `clone(value, options)`     | A deep copy, in the process: every class keeps its prototype, functions are kept. |
 
-| Option      | Default    | What it does                                                                           |
-| ----------- | ---------- | -------------------------------------------------------------------------------------- |
-| `registry`  | `registry` | The classes that come back as themselves.                                              |
-| `unknown`   | `'object'` | Instances of classes not registered: their fields as a plain object, or `'error'`.     |
-| `functions` | `'throw'`  | A function as a value: an error, or `'skip'` (a field left out, `undefined` in lists). |
-| `stack`     | `true`     | Whether the stacks of errors are written (`false` for what goes to clients).           |
-| `maxDepth`  | `1000`     | Deeper values are an error (`XUFA_MARSHAL_ERR_DEPTH`).                                 |
-| `maxNodes`  | 10,000,000 | More values is an error when parsing (`XUFA_MARSHAL_ERR_SIZE`).                        |
+| Option      | Default    | What it does                                                                                                                                                          |
+| ----------- | ---------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `registry`  | `registry` | The classes that come back as themselves.                                                                                                                             |
+| `unknown`   | `'object'` | Instances of classes not registered: their fields as a plain object, `'json'` (as JSON.stringify writes them: their `toJSON()` when they have one), or `'error'`.     |
+| `functions` | `'throw'`  | A function as a value: an error, or `'skip'` (a field left out, `undefined` in lists).                                                                                |
+| `stack`     | `true`     | Whether the stacks of errors are written (`false` for what goes to clients).                                                                                          |
+| `maxDepth`  | `1000`     | Deeper values are an error (`XUFA_MARSHAL_ERR_DEPTH`).                                                                                                                |
+| `shared`    | `true`     | `clone`: shared objects kept shared; `false` is faster for data without them (an object met twice is copied twice; cycles through arrays and plain objects are kept). |
+| `maxNodes`  | 10,000,000 | More values is an error when parsing (`XUFA_MARSHAL_ERR_SIZE`).                                                                                                       |
 
 ## The format
 

@@ -53,6 +53,7 @@
         <h4>Packages</h4>
         <ul>
           <li><a href="../websocket/index.html">@xufa/websocket</a></li>
+          <li><a href="../express/index.html">@xufa/express</a></li>
           <li><a href="../admin/index.html">@xufa/admin</a></li>
           <li><a href="../session/index.html">@xufa/session</a></li>
           <li><a href="../forms/index.html">@xufa/forms</a></li>
@@ -130,7 +131,7 @@
                 <tr><td><code>new (options?: EngineOptions)</code></td><td></td><td></td></tr>
                 <tr><td><code>readonly globals</code></td><td><code>Readonly&lt;Record&lt;string, unknown&gt;&gt;</code></td><td></td></tr>
                 <tr><td><code>readonly filters</code></td><td><code>Readonly&lt;Record&lt;string, <a href="#ref-Filter">Filter</a>&gt;&gt; | null</code></td><td></td></tr>
-                <tr><td><code>readonly lenient</code></td><td><code>boolean</code></td><td></td></tr>
+                <tr><td><code>readonly lenient</code></td><td><code>boolean | 'members' | 'calls'</code></td><td></td></tr>
                 <tr><td><code>readonly strict</code></td><td><code>boolean</code></td><td></td></tr>
                 <tr><td><code>readonly statements</code></td><td><code>boolean</code></td><td></td></tr>
                 <tr><td><code>readonly maxSteps</code></td><td><code>number</code></td><td></td></tr>
@@ -151,8 +152,9 @@
             <table class="ref-members">
               <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
               <tbody>
-                <tr><td><code>new (message: string, options?: { code?: ExpressionErrorCode; source?: string; position?: number })</code></td><td></td><td></td></tr>
+                <tr><td><code>new (message: string, options?: { code?: ExpressionErrorCode; source?: string; position?: number; reason?: 'notFunction' | 'nullMember' })</code></td><td></td><td></td></tr>
                 <tr><td><code>code</code></td><td><code><a href="#ref-ExpressionErrorCode">ExpressionErrorCode</a></code></td><td></td></tr>
+                <tr><td><code>reason?</code></td><td><code>'notFunction' | 'nullMember'</code></td><td><p>Of some runtime errors: a call of what is not a function, a member of null or undefined.</p></td></tr>
                 <tr><td><code>position?</code></td><td><code>number</code></td><td><p>Where in the source (from 0), and its line and column (from 1).</p></td></tr>
                 <tr><td><code>line?</code></td><td><code>number</code></td><td></td></tr>
                 <tr><td><code>column?</code></td><td><code>number</code></td><td></td></tr>
@@ -200,14 +202,17 @@
                 <tr><td><code>globals?</code></td><td><code>Record&lt;string, unknown&gt;</code></td><td><p>Names over the default globals (Math, JSON, Number...).</p></td></tr>
                 <tr><td><code>builtins?</code></td><td><code>boolean</code></td><td><p>false: no default globals, only those given.</p></td></tr>
                 <tr><td><code>filters?</code></td><td><code>Record&lt;string, <a href="#ref-Filter">Filter</a>&gt; | null</code></td><td><p>Functions by name: <code>|</code> separates them in expressions (<code>price | round(2)</code>, the value first).</p></td></tr>
-                <tr><td><code>lenient?</code></td><td><code>boolean</code></td><td><p>Members of null or undefined, and calls of what is not a function, give undefined (not errors).</p></td></tr>
+                <tr><td><code>lenient?</code></td><td><code>boolean | 'members' | 'calls'</code></td><td><p>Members of null or undefined, and calls of what is not a function, give undefined (not errors); 'members' or 'calls': only those.</p></td></tr>
                 <tr><td><code>strict?</code></td><td><code>boolean</code></td><td><p>Names that are not in the context nor the globals are errors (not undefined).</p></td></tr>
+                <tr><td><code>methods?</code></td><td><code>Record&lt;string, unknown&gt; | null</code></td><td><p>Functions by name that values have as methods when they have none of that name: <code>prices.sum()</code> is <code>methods.sum(prices)</code> when <code>prices.sum</code> is undefined or null. An object or a module (what is not a function is left out); <code>x['sum']()</code>, <code>x.sum?.()</code> and null or undefined values are not looked up.</p></td></tr>
                 <tr><td><code>tdz?</code></td><td><code>boolean</code></td><td><p>Programs: a <code>let</code>, <code>const</code> or class used before its declaration runs is an error (<code>XUFA_EXPR_ERR_RUNTIME</code>), as in JavaScript; by default it is undefined.</p></td></tr>
                 <tr><td><code>maxLength?</code></td><td><code>number</code></td><td><p>The longest source compiled (10000).</p></td></tr>
                 <tr><td><code>cacheSize?</code></td><td><code>number</code></td><td><p>How many expressions compiled are kept (1000; 0 for none).</p></td></tr>
                 <tr><td><code>inline?</code></td><td><code>boolean</code></td><td><p>false: expressions stay closures (by default, those run often become one function of JavaScript).</p></td></tr>
                 <tr><td><code>inlineAfter?</code></td><td><code>number</code></td><td><p>Runs before an expression becomes one function of JavaScript (64; 0: at once).</p></td></tr>
                 <tr><td><code>statements?</code></td><td><code>boolean</code></td><td><p>Sources are programs: statements (let, const, if, for, for...of, while, switch, return, throw, try, functions), assignments of names and of members of plain objects and arrays, ++, --, delete, new and comments. Their value is that of their return, or of the last expression statement run.</p></td></tr>
+                <tr><td><code>scope?</code></td><td><code>'program' | 'context'</code></td><td><p>Programs: 'program' (the default: the names a program declares or assigns are its own) or 'context' (those of its top level are the context's properties, as those of the global object of a script; <code>this</code> there is <code>context.this</code>). A program that writes the context needs a plain object.</p></td></tr>
+                <tr><td><code>onError?</code></td><td><code>(error: unknown, details: { source: string; statement: number; context: Record&lt;string, unknown&gt; }) =&gt; void</code></td><td><p>Programs: an error of a top-level statement is given to it, the statement's value is undefined, and the program goes on with the next one. Limits (XUFA_EXPR_ERR_LIMIT) still end the run; syntax errors still throw.</p></td></tr>
                 <tr><td><code>maxSteps?</code></td><td><code>number</code></td><td><p>The loop turns and calls of functions of a run of a program (10 million): past them, XUFA_EXPR_ERR_LIMIT.</p></td></tr>
                 <tr><td><code>maxDepth?</code></td><td><code>number</code></td><td><p>How deep calls of a program's functions can nest (1000): deeper, XUFA_EXPR_ERR_LIMIT.</p></td></tr>
                 <tr><td><code>constructors?</code></td><td><code>Record&lt;string, new (...args: any[]) =&gt; unknown&gt;</code></td><td><p>What <code>new</code> makes in programs, by name, over the default ones (Date, Map, Set, Error, TypeError, RangeError).</p></td></tr>

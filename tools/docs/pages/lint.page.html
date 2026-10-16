@@ -181,7 +181,7 @@ const { output } = linter.verifyAndFix('if (!!a) b();', configs.recommended, 'a.
         <h2 id="speed">Speed</h2>
         <p>
           The formatter against prettier 3.9.9, on the files of this repository that
-          <code>xufa-format</code> formats (1,594), each in a process of its own (<code>node bench/format.js</code>),
+          <code>xufa-format</code> formats (1,711), each in a process of its own (<code>node bench/format.js</code>),
           with the same output for every file. In kilobytes formatted a second, more is better. Warm is the median of 9
           passes after the first (an editor, a watcher); the first pass is what a command does, loading included.
         </p>
@@ -189,47 +189,47 @@ const { output } = linter.verifyAndFix('if (!!a) b();', configs.recommended, 'a.
         <p class="legend"><span class="us">@xufa/lint</span><span>prettier</span></p>
         <div class="pairs">
           <div class="pair win">
-            <div class="head"><span>JavaScript, 1,326 files</span><span class="times">1.78&times;</span></div>
-            <div class="chart-row us"><span class="name">@xufa/lint</span><span class="track"><span class="fill" style="width: 100.0%"></span></span><span class="value">1.48k KB/s</span></div>
-            <div class="chart-row"><span class="name">prettier</span><span class="track"><span class="fill" style="width: 56.1%"></span></span><span class="value">829 KB/s</span></div>
+            <div class="head"><span>JavaScript, 1,426 files</span><span class="times">1.52&times;</span></div>
+            <div class="chart-row us"><span class="name">@xufa/lint</span><span class="track"><span class="fill" style="width: 100.0%"></span></span><span class="value">2.10k KB/s</span></div>
+            <div class="chart-row"><span class="name">prettier</span><span class="track"><span class="fill" style="width: 66.0%"></span></span><span class="value">1.39k KB/s</span></div>
           </div>
           <div class="pair win">
-            <div class="head"><span>TypeScript, 144 files</span><span class="times">1.87&times;</span></div>
-            <div class="chart-row us"><span class="name">@xufa/lint</span><span class="track"><span class="fill" style="width: 100.0%"></span></span><span class="value">2.89k KB/s</span></div>
-            <div class="chart-row"><span class="name">prettier</span><span class="track"><span class="fill" style="width: 53.4%"></span></span><span class="value">1.55k KB/s</span></div>
+            <div class="head"><span>TypeScript, 144 files</span><span class="times">1.75&times;</span></div>
+            <div class="chart-row us"><span class="name">@xufa/lint</span><span class="track"><span class="fill" style="width: 100.0%"></span></span><span class="value">2.32k KB/s</span></div>
+            <div class="chart-row"><span class="name">prettier</span><span class="track"><span class="fill" style="width: 57.2%"></span></span><span class="value">1.33k KB/s</span></div>
           </div>
           <div class="pair win">
-            <div class="head"><span>JSON, 67 files</span><span class="times">3.29&times;</span></div>
-            <div class="chart-row us"><span class="name">@xufa/lint</span><span class="track"><span class="fill" style="width: 100.0%"></span></span><span class="value">23.7k KB/s</span></div>
-            <div class="chart-row"><span class="name">prettier</span><span class="track"><span class="fill" style="width: 30.4%"></span></span><span class="value">7.20k KB/s</span></div>
+            <div class="head"><span>JSON, 69 files</span><span class="times">3.57&times;</span></div>
+            <div class="chart-row us"><span class="name">@xufa/lint</span><span class="track"><span class="fill" style="width: 100.0%"></span></span><span class="value">22.2k KB/s</span></div>
+            <div class="chart-row"><span class="name">prettier</span><span class="track"><span class="fill" style="width: 28.0%"></span></span><span class="value">6.22k KB/s</span></div>
           </div>
           <div class="pair win">
-            <div class="head"><span>markdown, 59 files</span><span class="times">2.26&times;</span></div>
-            <div class="chart-row us"><span class="name">@xufa/lint</span><span class="track"><span class="fill" style="width: 100.0%"></span></span><span class="value">963 KB/s</span></div>
-            <div class="chart-row"><span class="name">prettier</span><span class="track"><span class="fill" style="width: 44.3%"></span></span><span class="value">426 KB/s</span></div>
+            <div class="head"><span>markdown, 72 files</span><span class="times">1.52&times;</span></div>
+            <div class="chart-row us"><span class="name">@xufa/lint</span><span class="track"><span class="fill" style="width: 100.0%"></span></span><span class="value">961 KB/s</span></div>
+            <div class="chart-row"><span class="name">prettier</span><span class="track"><span class="fill" style="width: 66.0%"></span></span><span class="value">634 KB/s</span></div>
           </div>
         </div>
         <h3>The first pass</h3>
         <div class="pairs">
           <div class="pair win">
-            <div class="head"><span>JavaScript, 1,326 files</span><span class="times">1.37&times;</span></div>
-            <div class="chart-row us"><span class="name">@xufa/lint</span><span class="track"><span class="fill" style="width: 100.0%"></span></span><span class="value">1.12k KB/s</span></div>
-            <div class="chart-row"><span class="name">prettier</span><span class="track"><span class="fill" style="width: 73.1%"></span></span><span class="value">819 KB/s</span></div>
+            <div class="head"><span>JavaScript, 1,426 files</span><span class="times">1.37&times;</span></div>
+            <div class="chart-row us"><span class="name">@xufa/lint</span><span class="track"><span class="fill" style="width: 100.0%"></span></span><span class="value">1.62k KB/s</span></div>
+            <div class="chart-row"><span class="name">prettier</span><span class="track"><span class="fill" style="width: 73.2%"></span></span><span class="value">1.18k KB/s</span></div>
           </div>
           <div class="pair win">
-            <div class="head"><span>TypeScript, 144 files</span><span class="times">1.47&times;</span></div>
-            <div class="chart-row us"><span class="name">@xufa/lint</span><span class="track"><span class="fill" style="width: 100.0%"></span></span><span class="value">1.36k KB/s</span></div>
-            <div class="chart-row"><span class="name">prettier</span><span class="track"><span class="fill" style="width: 68.2%"></span></span><span class="value">930 KB/s</span></div>
+            <div class="head"><span>TypeScript, 144 files</span><span class="times">1.35&times;</span></div>
+            <div class="chart-row us"><span class="name">@xufa/lint</span><span class="track"><span class="fill" style="width: 100.0%"></span></span><span class="value">1.13k KB/s</span></div>
+            <div class="chart-row"><span class="name">prettier</span><span class="track"><span class="fill" style="width: 73.8%"></span></span><span class="value">837 KB/s</span></div>
           </div>
           <div class="pair win">
-            <div class="head"><span>JSON, 67 files</span><span class="times">1.94&times;</span></div>
-            <div class="chart-row us"><span class="name">@xufa/lint</span><span class="track"><span class="fill" style="width: 100.0%"></span></span><span class="value">5.34k KB/s</span></div>
-            <div class="chart-row"><span class="name">prettier</span><span class="track"><span class="fill" style="width: 51.7%"></span></span><span class="value">2.76k KB/s</span></div>
+            <div class="head"><span>JSON, 69 files</span><span class="times">1.78&times;</span></div>
+            <div class="chart-row us"><span class="name">@xufa/lint</span><span class="track"><span class="fill" style="width: 100.0%"></span></span><span class="value">4.86k KB/s</span></div>
+            <div class="chart-row"><span class="name">prettier</span><span class="track"><span class="fill" style="width: 56.1%"></span></span><span class="value">2.73k KB/s</span></div>
           </div>
           <div class="pair win">
-            <div class="head"><span>markdown, 59 files</span><span class="times">1.34&times;</span></div>
-            <div class="chart-row us"><span class="name">@xufa/lint</span><span class="track"><span class="fill" style="width: 100.0%"></span></span><span class="value">567 KB/s</span></div>
-            <div class="chart-row"><span class="name">prettier</span><span class="track"><span class="fill" style="width: 74.7%"></span></span><span class="value">423 KB/s</span></div>
+            <div class="head"><span>markdown, 72 files</span><span class="times">1.44&times;</span></div>
+            <div class="chart-row us"><span class="name">@xufa/lint</span><span class="track"><span class="fill" style="width: 100.0%"></span></span><span class="value">594 KB/s</span></div>
+            <div class="chart-row"><span class="name">prettier</span><span class="track"><span class="fill" style="width: 69.4%"></span></span><span class="value">412 KB/s</span></div>
           </div>
         </div>
         <h3>The command</h3>
@@ -246,16 +246,63 @@ const { output } = linter.verifyAndFix('if (!!a) b();', configs.recommended, 'a.
           </tbody>
         </table>
         <p>
-          The machine was busy in these runs (prettier's TypeScript took 0.7 to 1.2 s warm from one run to another):
-          read the ratios as ranges. The formatter parses JavaScript and TypeScript with its own copy of TypeScript's
+          The charts are the median of three runs of October 13 (bench/results/format-8.md: a run varies by 10–20% here;
+          the repository has 1,426 files of JavaScript now, the linter's own code with them); the commands
+          above, an earlier run on a busy machine (format-3). The formatter parses JavaScript and TypeScript with its own copy of TypeScript's
           parser, what the parser needs of typescript.js (973 KB of 8.9 MB): it loads in 8 ms, against 45 ms for
           TypeScript, which is why one file is faster too; JSON has a parser of its own and loads none of it.
-          All numbers, and what made it faster: <code>bench/results/format-1.md</code> to <code>format-4.md</code>.
+          All numbers, and what made it faster: <code>bench/results/format-1.md</code> to <code>format-6.md</code> (format-5: the code for syntax the parsers never make, 3,972 lines, out, at the same speed).
         </p>
+        <h3>The linter</h3>
         <p>
-          The linter against ESLint 9.39.5, on 2,425 files with problems (the same 40,779 problems found): 19 s against
-          31 s, 1.6 times as fast. The <a href="../benchmarks.html#formatter">benchmarks</a> have the rest of xufa.
+          The linter against ESLint 9.39.5 with the repository's config, reporting the same problems (every check of
+          <code>bench/lint-*.js</code> finds no difference). <code>node bench/lint.js</code>: each in a process of its own,
+          the repository's code (1,470 files) and with its tests (2,573), in files linted a second (more is better).
+          Measured on a Mac (Apple M4 Max, Node.js 22.22): <code>bench/results/lint-14.md</code>.
         </p>
+        <p class="legend"><span class="us">@xufa/lint</span><span>ESLint</span></p>
+        <div class="pairs">
+          <div class="pair win">
+            <div class="head"><span>The code, cold</span><span class="times">1.73&times;</span></div>
+            <div class="chart-row us"><span class="name">@xufa/lint</span><span class="track"><span class="fill" style="width: 100.0%"></span></span><span class="value">661 files/s</span></div>
+            <div class="chart-row"><span class="name">ESLint</span><span class="track"><span class="fill" style="width: 57.6%"></span></span><span class="value">381 files/s</span></div>
+          </div>
+          <div class="pair win">
+            <div class="head"><span>The code, warm</span><span class="times">1.86&times;</span></div>
+            <div class="chart-row us"><span class="name">@xufa/lint</span><span class="track"><span class="fill" style="width: 100.0%"></span></span><span class="value">824 files/s</span></div>
+            <div class="chart-row"><span class="name">ESLint</span><span class="track"><span class="fill" style="width: 53.8%"></span></span><span class="value">443 files/s</span></div>
+          </div>
+          <div class="pair win">
+            <div class="head"><span>With the tests, cold</span><span class="times">1.81&times;</span></div>
+            <div class="chart-row us"><span class="name">@xufa/lint</span><span class="track"><span class="fill" style="width: 100.0%"></span></span><span class="value">763 files/s</span></div>
+            <div class="chart-row"><span class="name">ESLint</span><span class="track"><span class="fill" style="width: 55.2%"></span></span><span class="value">421 files/s</span></div>
+          </div>
+          <div class="pair win">
+            <div class="head"><span>With the tests, warm</span><span class="times">1.92&times;</span></div>
+            <div class="chart-row us"><span class="name">@xufa/lint</span><span class="track"><span class="fill" style="width: 100.0%"></span></span><span class="value">880 files/s</span></div>
+            <div class="chart-row"><span class="name">ESLint</span><span class="track"><span class="fill" style="width: 52.1%"></span></span><span class="value">458 files/s</span></div>
+          </div>
+        </div>
+        <h3>The commands</h3>
+        <p>
+          The commands as they are run (<code>node bench/commands.js</code>, the median of 3 runs): the linter and the
+          formatter give the files to up to 4 workers (<code>--concurrency n|auto|off</code>); <code>xufa-check</code>
+          lints and formats each file in one pass, the formatter taking the tree the linter parsed. ESLint's own
+          <code>--concurrency auto</code> is in the table too. On the same Mac: <code>bench/results/commands-1.md</code>,
+          <code>lint-14.md</code> and <code>check-1.md</code>.
+        </p>
+        <table>
+          <thead>
+            <tr><th>Command</th><th>The original</th><th>@xufa/lint</th><th>Speed</th></tr>
+          </thead>
+          <tbody>
+            <tr><td><code>xufa-lint</code> against <code>eslint</code></td><td>3.89 s</td><td>1.16 s</td><td>3.35&times;</td></tr>
+            <tr><td><code>xufa-lint</code> against <code>eslint --concurrency auto</code></td><td>1.93 s</td><td>1.16 s</td><td>1.66&times;</td></tr>
+            <tr><td><code>xufa-format --check</code> against <code>prettier --check</code></td><td>7.05 s</td><td>2.29 s</td><td>3.08&times;</td></tr>
+            <tr><td><code>xufa-check</code> against <code>eslint</code> + <code>prettier --check</code></td><td>10.89 s</td><td>3.17 s</td><td>3.43&times;</td></tr>
+          </tbody>
+        </table>
+        <p>The <a href="../benchmarks.html#linter">benchmarks</a> have the rest of xufa.</p>
 
         <h2 id="from-eslint">Coming from ESLint</h2>
         <p>

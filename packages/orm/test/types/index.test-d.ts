@@ -803,3 +803,17 @@ auditResource({});
   Lower(7);
   expectTypeOf(Genre).toEqualTypeOf<typeof Genre>();
 }
+
+// db.documents(): schemaless documents.
+async function documents(): Promise<void> {
+  const db = new Database({ backend: 'mongodb', url: 'mongodb://localhost/app' });
+  const products = db.documents<{ id?: string; code: string; price?: number }>('products', { cache: { indexes: ['code'] }, writeBehind: true });
+  const pen = await products.insertOne({ code: 'P1' });
+  expectTypeOf(pen.id).toEqualTypeOf<string>();
+  expectTypeOf(await products.findOne({ code: 'P1' })).toEqualTypeOf<{ id?: string; code: string; price?: number } | null>();
+  expectTypeOf(await products.count({}, { estimated: true })).toEqualTypeOf<number>();
+  expectTypeOf((await products.synchronize()).done).toEqualTypeOf<number>();
+  for await (const doc of await products.cursor({ price: { $gt: 1 } })) expectTypeOf(doc.code).toEqualTypeOf<string>();
+}
+
+void documents;

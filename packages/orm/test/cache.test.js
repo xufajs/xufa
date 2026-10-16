@@ -215,3 +215,36 @@ describe('caches of clusters', () => {
     expect(lines).toContainEqual({ local: 'Ada L.', invalidated: true });
   }, 60000);
 });
+
+describe('the copies of MemoryCache', () => {
+  it('copy nested values, keeping Dates, the classes of instances and cycles', async () => {
+    const cache = new MemoryCache();
+    const when = new Date('2026-10-14T10:00:00Z');
+    class Point {
+      constructor() {
+        this.x = 1;
+      }
+    }
+    const value = JSON.parse('{"__proto__": {"polluted": true}}');
+    Object.assign(value, { when, list: [{ a: 1 }, [2]], nested: { deep: { deeper: 'x' } }, point: new Point() });
+    await cache.set('k', value);
+    const copy = await cache.get('k');
+    expect(copy).toEqual(value);
+    expect(copy.when).toBeInstanceOf(Date);
+    expect(copy.when).not.toBe(when);
+    expect(copy.point).toBeInstanceOf(Point);
+    expect(copy.point).not.toBe(value.point);
+    expect(Object.getOwnPropertyNames(copy)).toContain('__proto__');
+    expect({}.polluted).toBeUndefined();
+    copy.nested.deep.deeper = 'changed';
+    copy.list[0].a = 2;
+    expect(await cache.get('k')).toMatchObject({ nested: { deep: { deeper: 'x' } }, list: [{ a: 1 }, [2]] });
+    // (A value with a cycle is kept, its copy with the same cycle, as every copy of @xufa/marshal.)
+    const cycle = { nested: {} };
+    cycle.nested.back = cycle;
+    await cache.set('c', cycle);
+    const back = await cache.get('c');
+    expect(back).not.toBe(cycle);
+    expect(back.nested.back).toBe(back);
+  });
+});

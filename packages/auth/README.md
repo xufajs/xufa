@@ -147,7 +147,9 @@ const step = auth.verifyTotp(code, secret); // null, or the time step to keep wi
 clock difference) and returns the step of the code; a code of the step `after` or before is refused, so keeping the
 step of each login (`login.onTotp`, `login.lastTotpStep`) makes each code work once. `totp()` and `hotp()` give codes
 (RFC 6238 and RFC 4226: SHA1, SHA256 or SHA512, 6 to 10 digits, any period); `base32Encode()` and `base32Decode()`
-convert secrets. `generateRecoveryCodes(n)` gives codes to log in without the app (keep `hashRecoveryCode(code)` of
+convert secrets. `parseTotpUri(uri)` reads an otpauth:// URI back (`{ type, secret, label, issuer, algorithm, digits,
+period }`, as authenticator apps and the otpauth package read it: the same results on 20,000 random URIs).
+`generateRecoveryCodes(n)` gives codes to log in without the app (keep `hashRecoveryCode(code)` of
 each, and compare the hash of the one given). `qrSvg(text, { level, border, size, dark, light })` draws a QR code
 (no dependencies: byte mode, versions 1 to 40, levels L, M, Q, H); `qrCode(text)` gives its matrix
 (`{ version, size, modules }`), and a text too long throws `QrError`.

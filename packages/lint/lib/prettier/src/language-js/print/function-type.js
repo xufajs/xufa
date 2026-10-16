@@ -1,6 +1,4 @@
 import { group } from '../../document/index.js';
-import { hasSameLocStart } from '../location/index.js';
-import { isFlowObjectTypePropertyAFunction } from '../utilities/is-flow-object-type-property-a-function.js';
 import { printClassMemberSemicolon } from './class.js';
 import { printFunctionParameters, shouldGroupFunctionParameters } from './function-parameters.js';
 import { printAbstractToken } from './miscellaneous.js';
@@ -40,9 +38,7 @@ function printFunctionType(path, options, print) {
   const returnTypeDoc = [];
   // `flow` doesn't wrap the `returnType` with `TypeAnnotation`, so the colon
   // needs to be added separately.
-  if (node.type === 'FunctionTypeAnnotation') {
-    returnTypeDoc.push(isFlowArrowFunctionTypeAnnotation(path) ? ' => ' : ': ', print('returnType'));
-  } else {
+  {
     returnTypeDoc.push(printTypeAnnotationProperty(path, print, 'returnType'));
   }
 
@@ -58,27 +54,6 @@ function printFunctionType(path, options, print) {
       ? printClassMemberSemicolon(path, options)
       : '',
   ];
-}
-
-/*
-`FunctionTypeAnnotation` is ambiguous:
-- `declare function foo(a: B): void;`
-- `var A: (a: B) => void;`
-*/
-function isFlowArrowFunctionTypeAnnotation(path) {
-  const { node, parent } = path;
-  return (
-    node.type === 'FunctionTypeAnnotation' &&
-    (isFlowObjectTypePropertyAFunction(parent) ||
-      !(
-        ((parent.type === 'ObjectTypeProperty' || parent.type === 'ObjectTypeInternalSlot') &&
-          !parent.variance &&
-          !parent.optional &&
-          hasSameLocStart(parent, node)) ||
-        parent.type === 'ObjectTypeCallProperty' ||
-        path.getParentNode(2)?.type === 'DeclareFunction'
-      ))
-  );
 }
 
 export { printFunctionType };

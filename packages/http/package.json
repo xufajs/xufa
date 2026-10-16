@@ -12,11 +12,35 @@
       "require": "./index.js",
       "default": "./index.js"
     },
+    "./multer": {
+      "types": "./multer.d.cts",
+      "default": "./multer.js"
+    },
+    "./form-data": {
+      "types": "./form-data.d.cts",
+      "default": "./form-data.js"
+    },
+    "./compression": {
+      "types": "./compression.d.cts",
+      "default": "./compression.js"
+    },
+    "./helmet": {
+      "types": "./helmet.d.cts",
+      "default": "./helmet.js"
+    },
     "./lib/*": "./lib/*.js",
     "./package.json": "./package.json"
   },
   "files": [
     "index.js",
+    "multer.js",
+    "multer.d.cts",
+    "form-data.js",
+    "form-data.d.cts",
+    "compression.js",
+    "compression.d.cts",
+    "helmet.js",
+    "helmet.d.cts",
     "lib",
     "index.d.cts",
     "types"

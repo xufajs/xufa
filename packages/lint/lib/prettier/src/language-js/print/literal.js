@@ -10,8 +10,6 @@ function printLiteral(path, options /* , print*/) {
   const { node } = path;
 
   switch (node.type) {
-    case 'RegExpLiteral': // Babel
-      return printRegex(node);
     case 'BigIntLiteral': // Babel
       return printBigInt(node.extra.raw);
     case 'NumericLiteral': // Babel
@@ -22,8 +20,6 @@ function printLiteral(path, options /* , print*/) {
       return 'null';
     case 'BooleanLiteral': // Babel
       return String(node.value);
-    case 'DirectiveLiteral':
-      return printDirective(node.extra.raw, options);
     case 'Literal': {
       if (node.regex) {
         return printRegex(node.regex);
@@ -85,4 +81,4 @@ function printDirective(rawText, options) {
   return rawText;
 }
 
-export { printBigInt, printLiteral };
+export { printLiteral };

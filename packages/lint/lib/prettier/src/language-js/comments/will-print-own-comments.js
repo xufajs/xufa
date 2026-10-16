@@ -13,9 +13,7 @@ import { shouldUnionTypePrintOwnComments } from '../utilities/union-type-print.j
 const isClassOrInterface = createTypeCheckFunction([
   'ClassDeclaration',
   'ClassExpression',
-  'DeclareClass',
-  'DeclareInterface',
-  'InterfaceDeclaration',
+
   'TSInterfaceDeclaration',
   // Can't have `id` or `typeParameters`
   // "InterfaceTypeAnnotation",
@@ -33,8 +31,6 @@ function willPrintOwnComments(path, options) {
     (key === 'expression' && parent.type === 'JSXSpreadChild') ||
     (key === 'superClass' && (parent.type === 'ClassDeclaration' || parent.type === 'ClassExpression')) ||
     ((key === 'id' || key === 'typeParameters') && isClassOrInterface(parent)) ||
-    // Not tested, don't know how to
-    (key === 'patterns' && parent.type === 'MatchOrPattern') ||
     isIifeCalleeOrTaggedTemplateExpressionTag(path)
   ) {
     return true;

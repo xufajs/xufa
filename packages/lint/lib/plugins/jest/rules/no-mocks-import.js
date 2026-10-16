@@ -1,0 +1,48 @@
+// no-mocks-import of eslint-plugin-jest 29.12.2 (MIT, see NOTICE.md), its published CommonJS as it is but for what it required
+// of @typescript-eslint/utils (../typescript-eslint-utils.js) and its package.json.
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports.default = void 0;
+var _path = require("path");
+var _utils = require("./utils");
+const mocksDirName = '__mocks__';
+const isMockPath = path => path.split(_path.posix.sep).includes(mocksDirName);
+const isMockImportLiteral = expression => (0, _utils.isStringNode)(expression) && isMockPath((0, _utils.getStringValue)(expression));
+var _default = exports.default = (0, _utils.createRule)({
+  name: __filename,
+  meta: {
+    type: 'problem',
+    docs: {
+      description: 'Disallow manually importing from `__mocks__`'
+    },
+    messages: {
+      noManualImport: `Mocks should not be manually imported from a ${mocksDirName} directory. Instead use \`jest.mock\` and import from the original module path`
+    },
+    schema: []
+  },
+  defaultOptions: [],
+  create(context) {
+    return {
+      ImportDeclaration(node) {
+        if (isMockImportLiteral(node.source)) {
+          context.report({
+            node,
+            messageId: 'noManualImport'
+          });
+        }
+      },
+      'CallExpression[callee.name="require"]'(node) {
+        const [arg] = node.arguments;
+        if (arg && isMockImportLiteral(arg)) {
+          context.report({
+            node: arg,
+            messageId: 'noManualImport'
+          });
+        }
+      }
+    };
+  }
+});

@@ -46,17 +46,20 @@
         <ul>
           <li><a href="#how">How they are measured</a></li>
           <li><a href="#orm">ORM and Sequelize</a></li>
+          <li><a href="#linter">Linter</a></li>
           <li><a href="#formatter">Formatter</a></li>
           <li><a href="#pg">PostgreSQL driver</a></li>
           <li><a href="#mongo">MongoDB driver</a></li>
           <li><a href="#http">HTTP</a></li>
           <li><a href="#openapi">OpenAPI routes</a></li>
+          <li><a href="#express">Express apps</a></li>
           <li><a href="#router">Router</a></li>
           <li><a href="#logger">Logger</a></li>
           <li><a href="#serializer">Serializer</a></li>
           <li><a href="#schema">Schema validation</a></li>
           <li><a href="#jwt">JWT</a></li>
           <li><a href="#websocket">WebSocket</a></li>
+          <li><a href="#replaced">Packages replaced</a></li>
           <li><a href="#expressions">Expressions</a></li>
           <li><a href="#templates">Templates</a></li>
           <li><a href="#views">Large pages</a></li>
@@ -168,10 +171,60 @@
           make sure only one matches (as Django does).
         </p>
 
+        <h2 id="linter">Linter</h2>
+        <p>
+          The linter against ESLint 9.39.5 with the repository's config, reporting the same problems (every check of
+          <code>bench/lint-*.js</code> finds no difference). <code>node bench/lint.js</code>: each in a process of its own,
+          the repository's code (1,470 files) and with its tests (2,573), in files linted a second (more is better).
+          Measured on a Mac (Apple M4 Max, Node.js 22.22): <code>bench/results/lint-14.md</code>.
+        </p>
+        <p class="legend"><span class="us">@xufa/lint</span><span>ESLint</span></p>
+        <div class="pairs">
+          <div class="pair win">
+            <div class="head"><span>The code, cold</span><span class="times">1.73&times;</span></div>
+            <div class="chart-row us"><span class="name">@xufa/lint</span><span class="track"><span class="fill" style="width: 100.0%"></span></span><span class="value">661 files/s</span></div>
+            <div class="chart-row"><span class="name">ESLint</span><span class="track"><span class="fill" style="width: 57.6%"></span></span><span class="value">381 files/s</span></div>
+          </div>
+          <div class="pair win">
+            <div class="head"><span>The code, warm</span><span class="times">1.86&times;</span></div>
+            <div class="chart-row us"><span class="name">@xufa/lint</span><span class="track"><span class="fill" style="width: 100.0%"></span></span><span class="value">824 files/s</span></div>
+            <div class="chart-row"><span class="name">ESLint</span><span class="track"><span class="fill" style="width: 53.8%"></span></span><span class="value">443 files/s</span></div>
+          </div>
+          <div class="pair win">
+            <div class="head"><span>With the tests, cold</span><span class="times">1.81&times;</span></div>
+            <div class="chart-row us"><span class="name">@xufa/lint</span><span class="track"><span class="fill" style="width: 100.0%"></span></span><span class="value">763 files/s</span></div>
+            <div class="chart-row"><span class="name">ESLint</span><span class="track"><span class="fill" style="width: 55.2%"></span></span><span class="value">421 files/s</span></div>
+          </div>
+          <div class="pair win">
+            <div class="head"><span>With the tests, warm</span><span class="times">1.92&times;</span></div>
+            <div class="chart-row us"><span class="name">@xufa/lint</span><span class="track"><span class="fill" style="width: 100.0%"></span></span><span class="value">880 files/s</span></div>
+            <div class="chart-row"><span class="name">ESLint</span><span class="track"><span class="fill" style="width: 52.1%"></span></span><span class="value">458 files/s</span></div>
+          </div>
+        </div>
+        <h3>The commands</h3>
+        <p>
+          The commands as they are run (<code>node bench/commands.js</code>, the median of 3 runs): the linter and the
+          formatter give the files to up to 4 workers (<code>--concurrency n|auto|off</code>); <code>xufa-check</code>
+          lints and formats each file in one pass, the formatter taking the tree the linter parsed. ESLint's own
+          <code>--concurrency auto</code> is in the table too. On the same Mac: <code>bench/results/commands-1.md</code>,
+          <code>lint-14.md</code> and <code>check-1.md</code>.
+        </p>
+        <table>
+          <thead>
+            <tr><th>Command</th><th>The original</th><th>@xufa/lint</th><th>Speed</th></tr>
+          </thead>
+          <tbody>
+            <tr><td><code>xufa-lint</code> against <code>eslint</code></td><td>3.89 s</td><td>1.16 s</td><td>3.35&times;</td></tr>
+            <tr><td><code>xufa-lint</code> against <code>eslint --concurrency auto</code></td><td>1.93 s</td><td>1.16 s</td><td>1.66&times;</td></tr>
+            <tr><td><code>xufa-format --check</code> against <code>prettier --check</code></td><td>7.05 s</td><td>2.29 s</td><td>3.08&times;</td></tr>
+            <tr><td><code>xufa-check</code> against <code>eslint</code> + <code>prettier --check</code></td><td>10.89 s</td><td>3.17 s</td><td>3.43&times;</td></tr>
+          </tbody>
+        </table>
+
         <h2 id="formatter">Formatter</h2>
         <p>
           <code>@xufa/lint</code>'s formatter against prettier 3.9.9 on the files of this repository that
-          <code>xufa-format</code> formats (1,594), each in a process of its own (<code>node bench/format.js</code>),
+          <code>xufa-format</code> formats (1,711), each in a process of its own (<code>node bench/format.js</code>),
           with the same output for every file. In kilobytes formatted a second, more is better. Warm is the median of 9
           passes after the first (an editor, a watcher); the first pass is what a command does, loading included.
         </p>
@@ -179,47 +232,47 @@
         <p class="legend"><span class="us">@xufa/lint</span><span>prettier</span></p>
         <div class="pairs">
           <div class="pair win">
-            <div class="head"><span>JavaScript, 1,326 files</span><span class="times">1.78&times;</span></div>
-            <div class="chart-row us"><span class="name">@xufa/lint</span><span class="track"><span class="fill" style="width: 100.0%"></span></span><span class="value">1.48k KB/s</span></div>
-            <div class="chart-row"><span class="name">prettier</span><span class="track"><span class="fill" style="width: 56.1%"></span></span><span class="value">829 KB/s</span></div>
+            <div class="head"><span>JavaScript, 1,426 files</span><span class="times">1.52&times;</span></div>
+            <div class="chart-row us"><span class="name">@xufa/lint</span><span class="track"><span class="fill" style="width: 100.0%"></span></span><span class="value">2.10k KB/s</span></div>
+            <div class="chart-row"><span class="name">prettier</span><span class="track"><span class="fill" style="width: 66.0%"></span></span><span class="value">1.39k KB/s</span></div>
           </div>
           <div class="pair win">
-            <div class="head"><span>TypeScript, 144 files</span><span class="times">1.87&times;</span></div>
-            <div class="chart-row us"><span class="name">@xufa/lint</span><span class="track"><span class="fill" style="width: 100.0%"></span></span><span class="value">2.89k KB/s</span></div>
-            <div class="chart-row"><span class="name">prettier</span><span class="track"><span class="fill" style="width: 53.4%"></span></span><span class="value">1.55k KB/s</span></div>
+            <div class="head"><span>TypeScript, 144 files</span><span class="times">1.75&times;</span></div>
+            <div class="chart-row us"><span class="name">@xufa/lint</span><span class="track"><span class="fill" style="width: 100.0%"></span></span><span class="value">2.32k KB/s</span></div>
+            <div class="chart-row"><span class="name">prettier</span><span class="track"><span class="fill" style="width: 57.2%"></span></span><span class="value">1.33k KB/s</span></div>
           </div>
           <div class="pair win">
-            <div class="head"><span>JSON, 67 files</span><span class="times">3.29&times;</span></div>
-            <div class="chart-row us"><span class="name">@xufa/lint</span><span class="track"><span class="fill" style="width: 100.0%"></span></span><span class="value">23.7k KB/s</span></div>
-            <div class="chart-row"><span class="name">prettier</span><span class="track"><span class="fill" style="width: 30.4%"></span></span><span class="value">7.20k KB/s</span></div>
+            <div class="head"><span>JSON, 69 files</span><span class="times">3.57&times;</span></div>
+            <div class="chart-row us"><span class="name">@xufa/lint</span><span class="track"><span class="fill" style="width: 100.0%"></span></span><span class="value">22.2k KB/s</span></div>
+            <div class="chart-row"><span class="name">prettier</span><span class="track"><span class="fill" style="width: 28.0%"></span></span><span class="value">6.22k KB/s</span></div>
           </div>
           <div class="pair win">
-            <div class="head"><span>markdown, 59 files</span><span class="times">2.26&times;</span></div>
-            <div class="chart-row us"><span class="name">@xufa/lint</span><span class="track"><span class="fill" style="width: 100.0%"></span></span><span class="value">963 KB/s</span></div>
-            <div class="chart-row"><span class="name">prettier</span><span class="track"><span class="fill" style="width: 44.3%"></span></span><span class="value">426 KB/s</span></div>
+            <div class="head"><span>markdown, 72 files</span><span class="times">1.52&times;</span></div>
+            <div class="chart-row us"><span class="name">@xufa/lint</span><span class="track"><span class="fill" style="width: 100.0%"></span></span><span class="value">961 KB/s</span></div>
+            <div class="chart-row"><span class="name">prettier</span><span class="track"><span class="fill" style="width: 66.0%"></span></span><span class="value">634 KB/s</span></div>
           </div>
         </div>
         <h3>Cold: the first pass</h3>
         <div class="pairs">
           <div class="pair win">
-            <div class="head"><span>JavaScript, 1,326 files</span><span class="times">1.37&times;</span></div>
-            <div class="chart-row us"><span class="name">@xufa/lint</span><span class="track"><span class="fill" style="width: 100.0%"></span></span><span class="value">1.12k KB/s</span></div>
-            <div class="chart-row"><span class="name">prettier</span><span class="track"><span class="fill" style="width: 73.1%"></span></span><span class="value">819 KB/s</span></div>
+            <div class="head"><span>JavaScript, 1,426 files</span><span class="times">1.37&times;</span></div>
+            <div class="chart-row us"><span class="name">@xufa/lint</span><span class="track"><span class="fill" style="width: 100.0%"></span></span><span class="value">1.62k KB/s</span></div>
+            <div class="chart-row"><span class="name">prettier</span><span class="track"><span class="fill" style="width: 73.2%"></span></span><span class="value">1.18k KB/s</span></div>
           </div>
           <div class="pair win">
-            <div class="head"><span>TypeScript, 144 files</span><span class="times">1.47&times;</span></div>
-            <div class="chart-row us"><span class="name">@xufa/lint</span><span class="track"><span class="fill" style="width: 100.0%"></span></span><span class="value">1.36k KB/s</span></div>
-            <div class="chart-row"><span class="name">prettier</span><span class="track"><span class="fill" style="width: 68.2%"></span></span><span class="value">930 KB/s</span></div>
+            <div class="head"><span>TypeScript, 144 files</span><span class="times">1.35&times;</span></div>
+            <div class="chart-row us"><span class="name">@xufa/lint</span><span class="track"><span class="fill" style="width: 100.0%"></span></span><span class="value">1.13k KB/s</span></div>
+            <div class="chart-row"><span class="name">prettier</span><span class="track"><span class="fill" style="width: 73.8%"></span></span><span class="value">837 KB/s</span></div>
           </div>
           <div class="pair win">
-            <div class="head"><span>JSON, 67 files</span><span class="times">1.94&times;</span></div>
-            <div class="chart-row us"><span class="name">@xufa/lint</span><span class="track"><span class="fill" style="width: 100.0%"></span></span><span class="value">5.34k KB/s</span></div>
-            <div class="chart-row"><span class="name">prettier</span><span class="track"><span class="fill" style="width: 51.7%"></span></span><span class="value">2.76k KB/s</span></div>
+            <div class="head"><span>JSON, 69 files</span><span class="times">1.78&times;</span></div>
+            <div class="chart-row us"><span class="name">@xufa/lint</span><span class="track"><span class="fill" style="width: 100.0%"></span></span><span class="value">4.86k KB/s</span></div>
+            <div class="chart-row"><span class="name">prettier</span><span class="track"><span class="fill" style="width: 56.1%"></span></span><span class="value">2.73k KB/s</span></div>
           </div>
           <div class="pair win">
-            <div class="head"><span>markdown, 59 files</span><span class="times">1.34&times;</span></div>
-            <div class="chart-row us"><span class="name">@xufa/lint</span><span class="track"><span class="fill" style="width: 100.0%"></span></span><span class="value">567 KB/s</span></div>
-            <div class="chart-row"><span class="name">prettier</span><span class="track"><span class="fill" style="width: 74.7%"></span></span><span class="value">423 KB/s</span></div>
+            <div class="head"><span>markdown, 72 files</span><span class="times">1.44&times;</span></div>
+            <div class="chart-row us"><span class="name">@xufa/lint</span><span class="track"><span class="fill" style="width: 100.0%"></span></span><span class="value">594 KB/s</span></div>
+            <div class="chart-row"><span class="name">prettier</span><span class="track"><span class="fill" style="width: 69.4%"></span></span><span class="value">412 KB/s</span></div>
           </div>
         </div>
         <h3>The command</h3>
@@ -236,20 +289,21 @@
           </tbody>
         </table>
         <p>
-          The machine was busy in these runs (prettier's TypeScript took 0.7 to 1.2 s warm from one run to another):
-          read the ratios as ranges. The formatter parses JavaScript and TypeScript with its own copy of TypeScript's
+          The charts are the median of three runs of October 13 (bench/results/format-8.md: a run varies by 10–20% here;
+          the repository has 1,426 files of JavaScript now, the linter's own code with them); the commands
+          above, an earlier run on a busy machine (format-3). The formatter parses JavaScript and TypeScript with its own copy of TypeScript's
           parser, what the parser needs of typescript.js (973 KB of 8.9 MB): it loads in 8 ms, against 45 ms for
           TypeScript, which is why one file is faster too; JSON has a parser of its own and loads none of it.
-          All numbers, and what made it faster: <code>bench/results/format-1.md</code> to <code>format-4.md</code>.
+          All numbers, and what made it faster: <code>bench/results/format-1.md</code> to <code>format-6.md</code> (format-5: the code for syntax the parsers never make, 3,972 lines, out, at the same speed).
         </p>
         <details class="raw">
-          <summary>All numbers (bench/results/format-3.md)</summary>
+          <summary>All numbers (bench/results/format-8.md)</summary>
           <pre><code>| Language | Files | KB | prettier cold | xufa cold | speed | prettier warm | xufa warm | speed |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| JavaScript | 1,326 | 8,327 | 10,171 ms | 7,436 ms | 1.37x | 10,039 ms | 5,632 ms | 1.78x |
-| TypeScript | 144 | 1,088 | 1,170 ms | 798 ms | 1.47x | 704 ms | 376 ms | 1.87x |
-| JSON | 67 | 497 | 180 ms | 93 ms | 1.93x | 69 ms | 21 ms | 3.37x |
-| markdown | 59 | 569 | 1,344 ms | 1,004 ms | 1.34x | 1,335 ms | 591 ms | 2.26x |</code></pre>
+| JavaScript | 1,426 | 8,884 | 7,498 ms | 5,485 ms | 1.37x | 6,401 ms | 4,223 ms | 1.52x |
+| TypeScript | 144 | 1,088 | 1,300 ms | 960 ms | 1.35x | 820 ms | 469 ms | 1.75x |
+| JSON | 69 | 510 | 187 ms | 105 ms | 1.78x | 82 ms | 23 ms | 3.57x |
+| markdown | 72 | 663 | 1,608 ms | 1,116 ms | 1.44x | 1,046 ms | 690 ms | 1.52x |</code></pre>
         </details>
 
         <h2 id="pg">PostgreSQL driver</h2>
@@ -822,6 +876,93 @@ Server processor time per request (lower is better):
 | openapi-invalid | 16 / 20 | 24 / 31 |</code></pre>
         </details>
 
+        <h2 id="express">Express apps</h2>
+        <p>
+          <code>@xufa/express</code> (Express 5's API, written anew, Express's own 1,238 tests passing) against Express
+          5.2.1, on the same app: a route for each case, ten middlewares, a router in a router, and a large app of 40
+          routers of 10 routes mounted on <code>/api</code>. Requests a second over the loopback on Windows (more is better),
+          each case on one and the other in turn; the badge is the median of five rounds' pairs (run express-6). The
+          same code on both sides reads 0.92 to 1.07 here, the noise of the machine.
+        </p>
+        <p class="legend"><span class="us">@xufa/express</span><span>Express 5.2.1</span></p>
+        <div class="pairs">
+          <div class="pair win">
+            <div class="head"><span>Hello (text)</span><span class="times">1.35&times;</span></div>
+            <div class="chart-row us"><span class="name">@xufa/express</span><span class="track"><span class="fill" style="width: 100.0%"></span></span><span class="value">25k</span></div>
+            <div class="chart-row"><span class="name">Express</span><span class="track"><span class="fill" style="width: 72.8%"></span></span><span class="value">18k</span></div>
+          </div>
+          <div class="pair win">
+            <div class="head"><span>Small JSON</span><span class="times">1.48&times;</span></div>
+            <div class="chart-row us"><span class="name">@xufa/express</span><span class="track"><span class="fill" style="width: 100.0%"></span></span><span class="value">24k</span></div>
+            <div class="chart-row"><span class="name">Express</span><span class="track"><span class="fill" style="width: 68.0%"></span></span><span class="value">16k</span></div>
+          </div>
+          <div class="pair win">
+            <div class="head"><span>Two params</span><span class="times">1.48&times;</span></div>
+            <div class="chart-row us"><span class="name">@xufa/express</span><span class="track"><span class="fill" style="width: 100.0%"></span></span><span class="value">25k</span></div>
+            <div class="chart-row"><span class="name">Express</span><span class="track"><span class="fill" style="width: 66.8%"></span></span><span class="value">17k</span></div>
+          </div>
+          <div class="pair win">
+            <div class="head"><span>Query string</span><span class="times">1.49&times;</span></div>
+            <div class="chart-row us"><span class="name">@xufa/express</span><span class="track"><span class="fill" style="width: 100.0%"></span></span><span class="value">25k</span></div>
+            <div class="chart-row"><span class="name">Express</span><span class="track"><span class="fill" style="width: 66.8%"></span></span><span class="value">16k</span></div>
+          </div>
+          <div class="pair win">
+            <div class="head"><span>JSON body (1 KB)</span><span class="times">1.32&times;</span></div>
+            <div class="chart-row us"><span class="name">@xufa/express</span><span class="track"><span class="fill" style="width: 100.0%"></span></span><span class="value">17k</span></div>
+            <div class="chart-row"><span class="name">Express</span><span class="track"><span class="fill" style="width: 76.4%"></span></span><span class="value">13k</span></div>
+          </div>
+          <div class="pair win">
+            <div class="head"><span>Ten middlewares first</span><span class="times">1.37&times;</span></div>
+            <div class="chart-row us"><span class="name">@xufa/express</span><span class="track"><span class="fill" style="width: 100.0%"></span></span><span class="value">23k</span></div>
+            <div class="chart-row"><span class="name">Express</span><span class="track"><span class="fill" style="width: 72.1%"></span></span><span class="value">17k</span></div>
+          </div>
+          <div class="pair win">
+            <div class="head"><span>Large app, first router</span><span class="times">1.46&times;</span></div>
+            <div class="chart-row us"><span class="name">@xufa/express</span><span class="track"><span class="fill" style="width: 100.0%"></span></span><span class="value">24k</span></div>
+            <div class="chart-row"><span class="name">Express</span><span class="track"><span class="fill" style="width: 69.8%"></span></span><span class="value">17k</span></div>
+          </div>
+          <div class="pair win">
+            <div class="head"><span>Large app, 40th router</span><span class="times">4.24&times;</span></div>
+            <div class="chart-row us"><span class="name">@xufa/express</span><span class="track"><span class="fill" style="width: 100.0%"></span></span><span class="value">24k</span></div>
+            <div class="chart-row"><span class="name">Express</span><span class="track"><span class="fill" style="width: 23.7%"></span></span><span class="value">5.6k</span></div>
+          </div>
+          <div class="pair win">
+            <div class="head"><span>Router in a router</span><span class="times">1.43&times;</span></div>
+            <div class="chart-row us"><span class="name">@xufa/express</span><span class="track"><span class="fill" style="width: 100.0%"></span></span><span class="value">22k</span></div>
+            <div class="chart-row"><span class="name">Express</span><span class="track"><span class="fill" style="width: 68.2%"></span></span><span class="value">15k</span></div>
+          </div>
+          <div class="pair win">
+            <div class="head"><span>200 objects as JSON</span><span class="times">1.15&times;</span></div>
+            <div class="chart-row us"><span class="name">@xufa/express</span><span class="track"><span class="fill" style="width: 100.0%"></span></span><span class="value">6.3k</span></div>
+            <div class="chart-row"><span class="name">Express</span><span class="track"><span class="fill" style="width: 87.3%"></span></span><span class="value">5.5k</span></div>
+          </div>
+          <div class="pair win">
+            <div class="head"><span>Static file</span><span class="times">1.85&times;</span></div>
+            <div class="chart-row us"><span class="name">@xufa/express</span><span class="track"><span class="fill" style="width: 100.0%"></span></span><span class="value">10k</span></div>
+            <div class="chart-row"><span class="name">Express</span><span class="track"><span class="fill" style="width: 53.5%"></span></span><span class="value">5.4k</span></div>
+          </div>
+          <div class="pair win">
+            <div class="head"><span>Not found (404)</span><span class="times">1.14&times;</span></div>
+            <div class="chart-row us"><span class="name">@xufa/express</span><span class="track"><span class="fill" style="width: 100.0%"></span></span><span class="value">26k</span></div>
+            <div class="chart-row"><span class="name">Express</span><span class="track"><span class="fill" style="width: 86.8%"></span></span><span class="value">22k</span></div>
+          </div>
+          <div class="pair win">
+            <div class="head"><span>Thrown error (500)</span><span class="times">1.34&times;</span></div>
+            <div class="chart-row us"><span class="name">@xufa/express</span><span class="track"><span class="fill" style="width: 100.0%"></span></span><span class="value">15k</span></div>
+            <div class="chart-row"><span class="name">Express</span><span class="track"><span class="fill" style="width: 73.0%"></span></span><span class="value">11k</span></div>
+          </div>
+        </div>
+        <p>
+          Profiled under load, a small request over the loopback costs the server about 30 µs of processor on Windows and 15
+          µs on Linux (Ubuntu in WSL 2, the same laptop): the write of the response to the socket is 15 to 22 µs of it on
+          Windows (its loopback runs the whole TCP stack in that system call) and 4 to 11 µs on Linux; Node.js's HTTP is 5 to
+          7 µs on both, and @xufa/express's own code 1.5 to 4 µs. Its router tries only the layers a request can meet (found
+          with @xufa/router first), so the 40th router of the large app costs what the first does, where Express walks every
+          layer before it. Params are objects V8 keeps fast (not <code>Object.create(null)</code>), the types of
+          <code>res.type()</code> and the ETag of the last text sent are kept, and <code>req.fresh</code> reads no response
+          header for a request that is not conditional.
+        </p>
+
         <h2 id="router">Router</h2>
         <p>
           <code>@xufa/router</code> against find-my-way 9.9.0 on the routes of a typical API (10 resources, 74 routes),
@@ -1390,6 +1531,267 @@ Server processor time per request (lower is better):
 | text 16 KB, deflate | 7,659 | 7,687 | 7,624 | 7,661 | 1.00x | 1.00x |
 | binary 1 MB, fragments | 456 | 500 | 223 | 482 | 2.05x | 1.04x |
 | binary 256 KB, deflate | 149 | 149 | 142 | 151 | 1.05x | 0.99x |</code></pre>
+        </details>
+
+        <h2 id="replaced">Packages replaced</h2>
+        <p>
+          Libraries of npm that xufa's packages replace, with the same API, each measured against the one it replaces
+          (<code>bench/micro</code>): each library and case in a process of its own, the libraries taking
+          turns, the best of 5 rounds, on the P-cores of the laptop. A badge is the times xufa's is as fast; in the cases
+          in ms (less is better), it is the other's time over xufa's.
+        </p>
+        <h3 id="replaced-multer">Uploads: @xufa/http/multer against multer</h3>
+        <p>
+          Uploads of multipart/form-data over the loopback to a server of the same process (memoryStorage,
+          <code>.single()</code>, 8 at a time, the body sent in chunks of 64 KiB), and the parsers alone on a body of 5 MB:
+          busboy 1.6.0, multer's, against @xufa/http's. The parser scans each chunk where it is, keeps only a tail that
+          really begins a boundary, and looks characters up in a table instead of a regular expression: 2.0 to 2.3
+          times as fast in every run. Over HTTP the socket takes most of the time of an upload, and the client and the
+          server share the process, so the runs differ: the one before this (results/multer-1) read 1.44&times; for 1 KB
+          and 0.94&times; for 100 KB.
+        </p>
+        <div class="pairs">
+          <div class="pair even">
+            <div class="head"><span>upload 1 KB (uploads/s)</span><span class="times">1.02&times;</span></div>
+            <div class="chart-row us"><span class="name">@xufa/http/multer</span><span class="track"><span class="fill" style="width: 100.0%"></span></span><span class="value">6.4k</span></div>
+            <div class="chart-row"><span class="name">multer 2.1.1</span><span class="track"><span class="fill" style="width: 97.9%"></span></span><span class="value">6.3k</span></div>
+          </div>
+          <div class="pair win">
+            <div class="head"><span>upload 100 KB (uploads/s)</span><span class="times">1.09&times;</span></div>
+            <div class="chart-row us"><span class="name">@xufa/http/multer</span><span class="track"><span class="fill" style="width: 100.0%"></span></span><span class="value">2.4k</span></div>
+            <div class="chart-row"><span class="name">multer 2.1.1</span><span class="track"><span class="fill" style="width: 92.1%"></span></span><span class="value">2.3k</span></div>
+          </div>
+          <div class="pair win">
+            <div class="head"><span>upload 5 MB (uploads/s)</span><span class="times">1.21&times;</span></div>
+            <div class="chart-row us"><span class="name">@xufa/http/multer</span><span class="track"><span class="fill" style="width: 100.0%"></span></span><span class="value">116</span></div>
+            <div class="chart-row"><span class="name">multer 2.1.1</span><span class="track"><span class="fill" style="width: 82.6%"></span></span><span class="value">96</span></div>
+          </div>
+          <div class="pair win">
+            <div class="head"><span>parse a body of 5 MB, the parser alone (MB/s)</span><span class="times">2.29&times;</span></div>
+            <div class="chart-row us"><span class="name">@xufa/http/multer</span><span class="track"><span class="fill" style="width: 100.0%"></span></span><span class="value">4.7k</span></div>
+            <div class="chart-row"><span class="name">multer 2.1.1</span><span class="track"><span class="fill" style="width: 43.6%"></span></span><span class="value">2.0k</span></div>
+          </div>
+        </div>
+        <details class="raw">
+          <summary>All numbers (bench/results/multer-2.md)</summary>
+          <pre><code>| Case | multer 2.1.1 | @xufa/http/multer | @xufa/http/multer / multer 2.1.1 |
+| --- | ---: | ---: | ---: |
+| upload 1 KB (uploads/s) | 6,279 | 6,414 | 1.02x |
+| upload 100 KB (uploads/s) | 2,253 | 2,447 | 1.09x |
+| upload 5 MB (uploads/s) | 95.84 | 116 | 1.21x |
+| parse a body of 5 MB, the parser alone (MB/s) | 2,028 | 4,653 | 2.29x |</code></pre>
+        </details>
+        <details class="raw">
+          <summary>All numbers (bench/results/multer-1.md)</summary>
+          <pre><code>| Case | multer 2.1.1 | @xufa/http/multer | @xufa/http/multer / multer 2.1.1 |
+| --- | ---: | ---: | ---: |
+| upload 1 KB (uploads/s) | 3,847 | 5,557 | 1.44x |
+| upload 100 KB (uploads/s) | 2,127 | 2,001 | 0.94x |
+| upload 5 MB (uploads/s) | 92.71 | 97.39 | 1.05x |
+| parse a body of 5 MB, the parser alone (MB/s) | 2,184 | 4,361 | 2.00x |</code></pre>
+        </details>
+
+        <h3 id="replaced-xlsx">Excel workbooks: @xufa/xlsx against exceljs</h3>
+        <p>
+          A catalog of 2 sheets of 2,500 rows and 8 columns (texts, numbers, dates; a bold header with a fill and borders,
+          a merged title, widths) written to a .xlsx, and read back to its values. @xufa/xlsx writes the XML of the
+          sheets as text and zips it with node:zlib; exceljs builds an object for every cell, row and style first.
+        </p>
+        <div class="pairs">
+          <div class="pair win">
+            <div class="head"><span>write a workbook of 5,000 rows (workbooks/s)</span><span class="times">6.72&times;</span></div>
+            <div class="chart-row us"><span class="name">@xufa/xlsx</span><span class="track"><span class="fill" style="width: 100.0%"></span></span><span class="value">24</span></div>
+            <div class="chart-row"><span class="name">exceljs 4.4.0</span><span class="track"><span class="fill" style="width: 14.9%"></span></span><span class="value">3.6</span></div>
+          </div>
+          <div class="pair win">
+            <div class="head"><span>read it back (workbooks/s)</span><span class="times">1.36&times;</span></div>
+            <div class="chart-row us"><span class="name">@xufa/xlsx</span><span class="track"><span class="fill" style="width: 100.0%"></span></span><span class="value">12</span></div>
+            <div class="chart-row"><span class="name">exceljs 4.4.0</span><span class="track"><span class="fill" style="width: 73.5%"></span></span><span class="value">8.9</span></div>
+          </div>
+        </div>
+        <details class="raw">
+          <summary>All numbers (bench/results/xlsx-1.md)</summary>
+          <pre><code>| Case | exceljs 4.4.0 | @xufa/xlsx | @xufa/xlsx / exceljs 4.4.0 |
+| --- | ---: | ---: | ---: |
+| write a workbook of 5,000 rows (workbooks/s) | 3.62 | 24.31 | 6.72x |
+| read it back (workbooks/s) | 8.91 | 12.13 | 1.36x |</code></pre>
+        </details>
+
+        <h3 id="replaced-form-data">Forms sent: @xufa/http/form-data against form-data</h3>
+        <p>
+          A form of 10 text fields and a file of 64 KB from a Buffer, and the same with a file of 1 MB read from the disk:
+          built, its length counted and streamed to its end. The same work: even, as it should be (it was written for
+          its API, its 27 tests and its types of files, not for speed).
+        </p>
+        <div class="pairs">
+          <div class="pair even">
+            <div class="head"><span>10 fields and a Buffer of 64 KB (forms/s)</span><span class="times">1.01&times;</span></div>
+            <div class="chart-row us"><span class="name">@xufa/http/form-data</span><span class="track"><span class="fill" style="width: 100.0%"></span></span><span class="value">42k</span></div>
+            <div class="chart-row"><span class="name">form-data 4.0.5</span><span class="track"><span class="fill" style="width: 99.2%"></span></span><span class="value">42k</span></div>
+          </div>
+          <div class="pair win">
+            <div class="head"><span>and a file of 1 MB from the disk (forms/s)</span><span class="times">1.07&times;</span></div>
+            <div class="chart-row us"><span class="name">@xufa/http/form-data</span><span class="track"><span class="fill" style="width: 100.0%"></span></span><span class="value">760</span></div>
+            <div class="chart-row"><span class="name">form-data 4.0.5</span><span class="track"><span class="fill" style="width: 93.3%"></span></span><span class="value">709</span></div>
+          </div>
+        </div>
+        <details class="raw">
+          <summary>All numbers (bench/results/form-data-1.md)</summary>
+          <pre><code>| Case | form-data 4.0.5 | @xufa/http/form-data | @xufa/http/form-data / form-data 4.0.5 |
+| --- | ---: | ---: | ---: |
+| 10 fields and a Buffer of 64 KB (forms/s) | 41,713 | 42,051 | 1.01x |
+| and a file of 1 MB from the disk (forms/s) | 709 | 760 | 1.07x |</code></pre>
+        </details>
+
+        <h3 id="replaced-purify">Sanitizing HTML: @xufa/purify against DOMPurify on jsdom</h3>
+        <p>
+          DOMPurify needs a DOM, and in Node.js that is jsdom. @xufa/purify is DOMPurify's own code (its tests pass) on the
+          DOM of @xufa/html: parse5's parser and the parts of the DOM standard DOMPurify reads, no more. With a
+          configuration that keeps the text only: the first call (loaded, a window made, one text sanitized: ms, less
+          is better), and calls a second on texts of 60 characters, 1 KB and 10 KB. jsdom also slows down as it works:
+          its calls take longer and its heap grows over thousands of them; @xufa/purify keeps its time and memory.
+        </p>
+        <div class="pairs">
+          <div class="pair win">
+            <div class="head"><span>the first call: loaded and one text sanitized (ms)</span><span class="times">15.01&times;</span></div>
+            <div class="chart-row us"><span class="name">@xufa/purify</span><span class="track"><span class="fill" style="width: 6.7%"></span></span><span class="value">68 ms</span></div>
+            <div class="chart-row"><span class="name">DOMPurify 3.3.3 + jsdom 27.4.0</span><span class="track"><span class="fill" style="width: 100.0%"></span></span><span class="value">1.0k ms</span></div>
+          </div>
+          <div class="pair win">
+            <div class="head"><span>an error text (60 characters) (calls/s)</span><span class="times">88.83&times;</span></div>
+            <div class="chart-row us"><span class="name">@xufa/purify</span><span class="track"><span class="fill" style="width: 100.0%"></span></span><span class="value">77k</span></div>
+            <div class="chart-row"><span class="name">DOMPurify 3.3.3 + jsdom 27.4.0</span><span class="track"><span class="fill" style="width: 1.1%"></span></span><span class="value">871</span></div>
+          </div>
+          <div class="pair win">
+            <div class="head"><span>a message of 1 KB (calls/s)</span><span class="times">11.28&times;</span></div>
+            <div class="chart-row us"><span class="name">@xufa/purify</span><span class="track"><span class="fill" style="width: 100.0%"></span></span><span class="value">6.3k</span></div>
+            <div class="chart-row"><span class="name">DOMPurify 3.3.3 + jsdom 27.4.0</span><span class="track"><span class="fill" style="width: 8.9%"></span></span><span class="value">562</span></div>
+          </div>
+          <div class="pair win">
+            <div class="head"><span>a message of 10 KB (calls/s)</span><span class="times">13.27&times;</span></div>
+            <div class="chart-row us"><span class="name">@xufa/purify</span><span class="track"><span class="fill" style="width: 100.0%"></span></span><span class="value">484</span></div>
+            <div class="chart-row"><span class="name">DOMPurify 3.3.3 + jsdom 27.4.0</span><span class="track"><span class="fill" style="width: 7.5%"></span></span><span class="value">36</span></div>
+          </div>
+        </div>
+        <details class="raw">
+          <summary>All numbers (bench/results/purify-1.md)</summary>
+          <pre><code>| Case | DOMPurify 3.3.3 + jsdom 27.4.0 | @xufa/purify | @xufa/purify / DOMPurify 3.3.3 + jsdom 27.4.0 |
+| --- | ---: | ---: | ---: |
+| the first call: loaded and one text sanitized (ms) | 1,022 | 68.14 | 15.01x |
+| an error text (60 characters) (calls/s) | 871 | 77,361 | 88.83x |
+| a message of 1 KB (calls/s) | 562 | 6,332 | 11.28x |
+| a message of 10 KB (calls/s) | 36.45 | 484 | 13.27x |</code></pre>
+        </details>
+
+        <h3 id="replaced-axios">HTTP calls: @xufa/client/axios against axios</h3>
+        <p>
+          The work of the library alone (an instance with a base URL, a header and two interceptors, and an adapter that
+          answers at once: the config merged, the headers, the transforms), GETs over the loopback (keep-alive, 8 at a
+          time, 2 KB of JSON), where the socket is most of the time, and loading it (ms, less is better): it has no
+          dependencies, axios loads follow-redirects, form-data and proxy-from-env.
+        </p>
+        <div class="pairs">
+          <div class="pair win">
+            <div class="head"><span>a GET, the work of the library (calls/s)</span><span class="times">1.08&times;</span></div>
+            <div class="chart-row us"><span class="name">@xufa/client/axios</span><span class="track"><span class="fill" style="width: 100.0%"></span></span><span class="value">51k</span></div>
+            <div class="chart-row"><span class="name">axios 1.14.0</span><span class="track"><span class="fill" style="width: 92.8%"></span></span><span class="value">47k</span></div>
+          </div>
+          <div class="pair win">
+            <div class="head"><span>a POST of JSON, the work of the library (calls/s)</span><span class="times">1.13&times;</span></div>
+            <div class="chart-row us"><span class="name">@xufa/client/axios</span><span class="track"><span class="fill" style="width: 100.0%"></span></span><span class="value">47k</span></div>
+            <div class="chart-row"><span class="name">axios 1.14.0</span><span class="track"><span class="fill" style="width: 88.4%"></span></span><span class="value">41k</span></div>
+          </div>
+          <div class="pair win">
+            <div class="head"><span>a GET over the loopback (requests/s)</span><span class="times">1.12&times;</span></div>
+            <div class="chart-row us"><span class="name">@xufa/client/axios</span><span class="track"><span class="fill" style="width: 100.0%"></span></span><span class="value">5.7k</span></div>
+            <div class="chart-row"><span class="name">axios 1.14.0</span><span class="track"><span class="fill" style="width: 89.4%"></span></span><span class="value">5.1k</span></div>
+          </div>
+          <div class="pair win">
+            <div class="head"><span>loaded (ms)</span><span class="times">1.68&times;</span></div>
+            <div class="chart-row us"><span class="name">@xufa/client/axios</span><span class="track"><span class="fill" style="width: 59.3%"></span></span><span class="value">90 ms</span></div>
+            <div class="chart-row"><span class="name">axios 1.14.0</span><span class="track"><span class="fill" style="width: 100.0%"></span></span><span class="value">151 ms</span></div>
+          </div>
+        </div>
+        <details class="raw">
+          <summary>All numbers (bench/results/axios-1.md)</summary>
+          <pre><code>| Case | axios 1.14.0 | @xufa/client/axios | @xufa/client/axios / axios 1.14.0 |
+| --- | ---: | ---: | ---: |
+| a GET, the work of the library (calls/s) | 47,380 | 51,042 | 1.08x |
+| a POST of JSON, the work of the library (calls/s) | 41,207 | 46,633 | 1.13x |
+| a GET over the loopback (requests/s) | 5,097 | 5,699 | 1.12x |
+| loaded (ms) | 151 | 89.6 | 1.68x |</code></pre>
+        </details>
+
+        <h3 id="replaced-helmet">Security headers: @xufa/http/helmet against helmet</h3>
+        <p>
+          The middleware on a response (node:http's, no network): its defaults, a policy of its own, and a policy with a
+          nonce made for each request. Headers known when it is made are set in one loop instead of a chain of 13
+          middlewares; with a nonce, only the directive that has it is computed for each request (helmet writes all of
+          them again). Node.js's checks of each header in <code>setHeader</code> are most of the time of both.
+        </p>
+        <div class="pairs">
+          <div class="pair win">
+            <div class="head"><span>the defaults (responses/s)</span><span class="times">1.11&times;</span></div>
+            <div class="chart-row us"><span class="name">@xufa/http/helmet</span><span class="track"><span class="fill" style="width: 100.0%"></span></span><span class="value">487k</span></div>
+            <div class="chart-row"><span class="name">helmet 8.3.0</span><span class="track"><span class="fill" style="width: 89.8%"></span></span><span class="value">438k</span></div>
+          </div>
+          <div class="pair win">
+            <div class="head"><span>a policy of 4 directives (responses/s)</span><span class="times">1.09&times;</span></div>
+            <div class="chart-row us"><span class="name">@xufa/http/helmet</span><span class="track"><span class="fill" style="width: 100.0%"></span></span><span class="value">487k</span></div>
+            <div class="chart-row"><span class="name">helmet 8.3.0</span><span class="track"><span class="fill" style="width: 91.3%"></span></span><span class="value">445k</span></div>
+          </div>
+          <div class="pair win">
+            <div class="head"><span>a nonce for each request (responses/s)</span><span class="times">1.22&times;</span></div>
+            <div class="chart-row us"><span class="name">@xufa/http/helmet</span><span class="track"><span class="fill" style="width: 100.0%"></span></span><span class="value">188k</span></div>
+            <div class="chart-row"><span class="name">helmet 8.3.0</span><span class="track"><span class="fill" style="width: 82.0%"></span></span><span class="value">154k</span></div>
+          </div>
+        </div>
+        <details class="raw">
+          <summary>All numbers (bench/results/helmet-1.md)</summary>
+          <pre><code>| Case | helmet 8.3.0 | @xufa/http/helmet | @xufa/http/helmet / helmet 8.3.0 |
+| --- | ---: | ---: | ---: |
+| the defaults (responses/s) | 437,514 | 487,029 | 1.11x |
+| a policy of 4 directives (responses/s) | 445,010 | 487,233 | 1.09x |
+| a nonce for each request (responses/s) | 154,156 | 187,886 | 1.22x |</code></pre>
+        </details>
+
+        <h3 id="replaced-compression">Compressed answers: @xufa/http/compression against compression</h3>
+        <p>
+          The work of the middleware for one response, on a response whose socket drops what it is given: JSON of 3 KB
+          compressed with brotli and with gzip (zlib is most of it, the same on both), an answer under the threshold,
+          and a request that accepts no encoding. Under the threshold it is faster: it keeps what the filter said of each
+          type of content, and sets Vary at once when the response has none.
+        </p>
+        <div class="pairs">
+          <div class="pair even">
+            <div class="head"><span>JSON of 3 KB, brotli (responses/s)</span><span class="times">1.01&times;</span></div>
+            <div class="chart-row us"><span class="name">@xufa/http/compression</span><span class="track"><span class="fill" style="width: 100.0%"></span></span><span class="value">6.2k</span></div>
+            <div class="chart-row"><span class="name">compression 1.8.2</span><span class="track"><span class="fill" style="width: 99.4%"></span></span><span class="value">6.2k</span></div>
+          </div>
+          <div class="pair win">
+            <div class="head"><span>JSON of 3 KB, gzip (responses/s)</span><span class="times">1.16&times;</span></div>
+            <div class="chart-row us"><span class="name">@xufa/http/compression</span><span class="track"><span class="fill" style="width: 100.0%"></span></span><span class="value">7.9k</span></div>
+            <div class="chart-row"><span class="name">compression 1.8.2</span><span class="track"><span class="fill" style="width: 85.9%"></span></span><span class="value">6.8k</span></div>
+          </div>
+          <div class="pair win">
+            <div class="head"><span>JSON under the threshold (responses/s)</span><span class="times">1.11&times;</span></div>
+            <div class="chart-row us"><span class="name">@xufa/http/compression</span><span class="track"><span class="fill" style="width: 100.0%"></span></span><span class="value">302k</span></div>
+            <div class="chart-row"><span class="name">compression 1.8.2</span><span class="track"><span class="fill" style="width: 90.1%"></span></span><span class="value">272k</span></div>
+          </div>
+          <div class="pair even">
+            <div class="head"><span>JSON, no encoding accepted (responses/s)</span><span class="times">1.03&times;</span></div>
+            <div class="chart-row us"><span class="name">@xufa/http/compression</span><span class="track"><span class="fill" style="width: 100.0%"></span></span><span class="value">135k</span></div>
+            <div class="chart-row"><span class="name">compression 1.8.2</span><span class="track"><span class="fill" style="width: 96.6%"></span></span><span class="value">130k</span></div>
+          </div>
+        </div>
+        <details class="raw">
+          <summary>All numbers (bench/results/compression-1.md)</summary>
+          <pre><code>| Case | compression 1.8.2 | @xufa/http/compression | @xufa/http/compression / compression 1.8.2 |
+| --- | ---: | ---: | ---: |
+| JSON of 3 KB, brotli (responses/s) | 6,208 | 6,246 | 1.01x |
+| JSON of 3 KB, gzip (responses/s) | 6,818 | 7,935 | 1.16x |
+| JSON under the threshold (responses/s) | 272,494 | 302,354 | 1.11x |
+| JSON, no encoding accepted (responses/s) | 130,199 | 134,735 | 1.03x |</code></pre>
         </details>
 
         <h2 id="expressions">Expressions</h2>

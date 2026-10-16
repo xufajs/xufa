@@ -1,0 +1,62 @@
+{
+  "name": "@xufa/html",
+  "version": "0.1.0",
+  "description": "HTML parsed as browsers parse it (the HTML standard: tokenizer, tree construction, foreign content) and serialized, with no dependencies",
+  "main": "./index.js",
+  "types": "./index.d.ts",
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./index.d.ts",
+      "default": "./index.js"
+    },
+    "./dom": {
+      "types": "./dom.d.ts",
+      "default": "./dom.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "index.js",
+    "index.d.ts",
+    "dom.js",
+    "dom.d.ts",
+    "lib",
+    "LICENSE",
+    "LICENSE.parse5",
+    "LICENSE.entities"
+  ],
+  "scripts": {
+    "test": "xufa-test",
+    "test:types": "xufa-test --typecheck.only"
+  },
+  "keywords": [
+    "html",
+    "parser",
+    "html5",
+    "serializer",
+    "dom"
+  ],
+  "author": "Jesús Seijas <jseijas@gmail.com>",
+  "license": "MIT AND BSD-2-Clause",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/xufajs/xufa.git",
+    "directory": "packages/html"
+  },
+  "homepage": "https://github.com/xufajs/xufa/tree/main/packages/html#readme",
+  "bugs": {
+    "url": "https://github.com/xufajs/xufa/issues"
+  },
+  "engines": {
+    "node": "^22.22.3 || ^24.15.0 || >=25.7.0"
+  },
+  "devDependencies": {
+    "@xufa/browser": "workspace:^",
+    "@xufa/bundle": "workspace:^",
+    "@xufa/test": "workspace:^"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}

@@ -13,7 +13,6 @@ import { isShorthandSpecifier } from '../utilities/is-shorthand-specifier.js';
 
 const isNodeCantAttachComment = createTypeCheckFunction([
   // Babel only
-  'File',
   'TemplateElement',
   // There is no similar node in Babel AST
   // ```ts
@@ -33,8 +32,6 @@ const isNodeCantAttachComment = createTypeCheckFunction([
 @returns {boolean}
 */
 const isChildWontPrint = (node, [parent]) =>
-  (parent?.type === 'ComponentParameter' && parent.shorthand && parent.name === node && parent.local !== parent.name) ||
-  (parent?.type === 'MatchObjectPatternProperty' && parent.shorthand && parent.key === node) ||
   (parent?.type === 'ObjectProperty' && parent.shorthand && parent.key === node && parent.value !== parent.key) ||
   (parent?.type === 'Property' &&
     parent.shorthand &&

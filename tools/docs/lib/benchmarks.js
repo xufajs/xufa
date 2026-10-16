@@ -537,7 +537,197 @@ const websocketPairs = (column) =>
     )
     .join('\n');
 
-const partsSections = `        <h2 id="router">Router</h2>
+// Express apps: @xufa/express against Express 5.2.1 on the same app (bench/express.js, run express-6, Windows):
+// [scenario, @xufa/express, Express] requests a second, the ratio the median of the rounds' pairs.
+const EXPRESS_RUN = 'express-6';
+const EXPRESS_LABELS = {
+  hello: 'Hello (text)',
+  json: 'Small JSON',
+  params: 'Two params',
+  query: 'Query string',
+  body: 'JSON body (1 KB)',
+  middleware: 'Ten middlewares first',
+  'large-first': 'Large app, first router',
+  'large-last': 'Large app, 40th router',
+  nested: 'Router in a router',
+  'big-json': '200 objects as JSON',
+  static: 'Static file',
+  'not-found': 'Not found (404)',
+  error: 'Thrown error (500)',
+};
+const expressRows = JSON.parse(fs.readFileSync(`${RESULTS}${EXPRESS_RUN}.json`, 'utf8')).rows;
+const expressSection = `        <h2 id="express">Express apps</h2>
+        <p>
+          <code>@xufa/express</code> (Express 5's API, written anew, Express's own 1,238 tests passing) against Express
+          5.2.1, on the same app: a route for each case, ten middlewares, a router in a router, and a large app of 40
+          routers of 10 routes mounted on <code>/api</code>. Requests a second over the loopback on Windows (more is better),
+          each case on one and the other in turn; the badge is the median of five rounds' pairs (run ${EXPRESS_RUN}). The
+          same code on both sides reads 0.92 to 1.07 here, the noise of the machine.
+        </p>
+        <p class="legend"><span class="us">@xufa/express</span><span>Express 5.2.1</span></p>
+        <div class="pairs">
+${expressRows
+  .map((r) =>
+    pair(
+      EXPRESS_LABELS[r.scenario] || r.scenario,
+      [
+        { name: '@xufa/express', value: r['@xufa/express'], kind: 'us' },
+        { name: 'Express', value: r['Express 5'] },
+      ],
+      r.ratio
+    )
+  )
+  .join('\n')}
+        </div>
+        <p>
+          Profiled under load, a small request over the loopback costs the server about 30 µs of processor on Windows and 15
+          µs on Linux (Ubuntu in WSL 2, the same laptop): the write of the response to the socket is 15 to 22 µs of it on
+          Windows (its loopback runs the whole TCP stack in that system call) and 4 to 11 µs on Linux; Node.js's HTTP is 5 to
+          7 µs on both, and @xufa/express's own code 1.5 to 4 µs. Its router tries only the layers a request can meet (found
+          with @xufa/router first), so the 40th router of the large app costs what the first does, where Express walks every
+          layer before it. Params are objects V8 keeps fast (not <code>Object.create(null)</code>), the types of
+          <code>res.type()</code> and the ETag of the last text sent are kept, and <code>req.fresh</code> reads no response
+          header for a request that is not conditional.
+        </p>
+`;
+
+// The rows of a table of bench/lib/versus.js: [case, theirs, ours, times] (n/a as NaN).
+function versusRows(file) {
+  const number = (text) => Number(text.replace(/,/g, ''));
+  return fs
+    .readFileSync(RESULTS + file, 'utf8')
+    .split('\n')
+    .filter((line) => line.startsWith('| ') && !line.startsWith('| Case') && !line.startsWith('| ---'))
+    .map((line) => {
+      const [name, theirs, ours, times] = line
+        .split('|')
+        .slice(1, -1)
+        .map((cell) => cell.trim());
+      return [name, number(theirs), number(ours), Number(times.replace('x', ''))];
+    });
+}
+
+// Libraries of npm that xufa's own code replaced (bench/micro, each with bench/lib/versus.js): what each measures, and
+// what makes the difference.
+const REPLACED = [
+  {
+    id: 'replaced-multer',
+    title: 'Uploads: @xufa/http/multer against multer',
+    file: 'multer-2.md',
+    more: ['multer-1.md'],
+    ours: '@xufa/http/multer',
+    theirs: 'multer 2.1.1',
+    text: `Uploads of multipart/form-data over the loopback to a server of the same process (memoryStorage,
+          <code>.single()</code>, 8 at a time, the body sent in chunks of 64 KiB), and the parsers alone on a body of 5 MB:
+          busboy 1.6.0, multer's, against @xufa/http's. The parser scans each chunk where it is, keeps only a tail that
+          really begins a boundary, and looks characters up in a table instead of a regular expression: 2.0 to 2.3
+          times as fast in every run. Over HTTP the socket takes most of the time of an upload, and the client and the
+          server share the process, so the runs differ: the one before this (results/multer-1) read 1.44&times; for 1 KB
+          and 0.94&times; for 100 KB.`,
+  },
+  {
+    id: 'replaced-xlsx',
+    title: 'Excel workbooks: @xufa/xlsx against exceljs',
+    file: 'xlsx-1.md',
+    ours: '@xufa/xlsx',
+    theirs: 'exceljs 4.4.0',
+    text: `A catalog of 2 sheets of 2,500 rows and 8 columns (texts, numbers, dates; a bold header with a fill and borders,
+          a merged title, widths) written to a .xlsx, and read back to its values. @xufa/xlsx writes the XML of the
+          sheets as text and zips it with node:zlib; exceljs builds an object for every cell, row and style first.`,
+  },
+  {
+    id: 'replaced-form-data',
+    title: 'Forms sent: @xufa/http/form-data against form-data',
+    file: 'form-data-1.md',
+    ours: '@xufa/http/form-data',
+    theirs: 'form-data 4.0.5',
+    text: `A form of 10 text fields and a file of 64 KB from a Buffer, and the same with a file of 1 MB read from the disk:
+          built, its length counted and streamed to its end. The same work: even, as it should be (it was written for
+          its API, its 27 tests and its types of files, not for speed).`,
+  },
+  {
+    id: 'replaced-purify',
+    title: 'Sanitizing HTML: @xufa/purify against DOMPurify on jsdom',
+    file: 'purify-1.md',
+    ours: '@xufa/purify',
+    theirs: 'DOMPurify 3.3.3 + jsdom 27.4.0',
+    text: `DOMPurify needs a DOM, and in Node.js that is jsdom. @xufa/purify is DOMPurify's own code (its tests pass) on the
+          DOM of @xufa/html: parse5's parser and the parts of the DOM standard DOMPurify reads, no more. With a
+          configuration that keeps the text only: the first call (loaded, a window made, one text sanitized: ms, less
+          is better), and calls a second on texts of 60 characters, 1 KB and 10 KB. jsdom also slows down as it works:
+          its calls take longer and its heap grows over thousands of them; @xufa/purify keeps its time and memory.`,
+  },
+  {
+    id: 'replaced-axios',
+    title: 'HTTP calls: @xufa/client/axios against axios',
+    file: 'axios-1.md',
+    ours: '@xufa/client/axios',
+    theirs: 'axios 1.14.0',
+    text: `The work of the library alone (an instance with a base URL, a header and two interceptors, and an adapter that
+          answers at once: the config merged, the headers, the transforms), GETs over the loopback (keep-alive, 8 at a
+          time, 2 KB of JSON), where the socket is most of the time, and loading it (ms, less is better): it has no
+          dependencies, axios loads follow-redirects, form-data and proxy-from-env.`,
+  },
+  {
+    id: 'replaced-helmet',
+    title: 'Security headers: @xufa/http/helmet against helmet',
+    file: 'helmet-1.md',
+    ours: '@xufa/http/helmet',
+    theirs: 'helmet 8.3.0',
+    text: `The middleware on a response (node:http's, no network): its defaults, a policy of its own, and a policy with a
+          nonce made for each request. Headers known when it is made are set in one loop instead of a chain of 13
+          middlewares; with a nonce, only the directive that has it is computed for each request (helmet writes all of
+          them again). Node.js's checks of each header in <code>setHeader</code> are most of the time of both.`,
+  },
+  {
+    id: 'replaced-compression',
+    title: 'Compressed answers: @xufa/http/compression against compression',
+    file: 'compression-1.md',
+    ours: '@xufa/http/compression',
+    theirs: 'compression 1.8.2',
+    text: `The work of the middleware for one response, on a response whose socket drops what it is given: JSON of 3 KB
+          compressed with brotli and with gzip (zlib is most of it, the same on both), an answer under the threshold,
+          and a request that accepts no encoding. Under the threshold it is faster: it keeps what the filter said of each
+          type of content, and sets Vary at once when the response has none.`,
+  },
+];
+
+function replacedSection() {
+  const parts = REPLACED.map(({ id, title, file, more = [], ours, theirs, text }) => {
+    const cards = versusRows(file).map(([name, theirsValue, oursValue, times]) => {
+      const lower = /\(ms\)$/.test(name);
+      const label = (value) => (lower ? `${fmt(value)} ms` : fmt(value));
+      return pair(
+        esc(name),
+        [
+          { name: ours, value: oursValue, kind: 'us', label: label(oursValue) },
+          { name: theirs, value: theirsValue, label: label(theirsValue) },
+        ],
+        Number.isNaN(times) ? null : times
+      );
+    });
+    return `        <h3 id="${id}">${title}</h3>
+        <p>
+          ${text}
+        </p>
+        <div class="pairs">
+${cards.join('\n')}
+        </div>
+${[file, ...more].map((name) => rawTable(name)).join('\n')}`;
+  });
+  return `        <h2 id="replaced">Packages replaced</h2>
+        <p>
+          Libraries of npm that xufa's packages replace, with the same API, each measured against the one it replaces
+          (<code>bench/micro</code>): each library and case in a process of its own, the libraries taking
+          turns, the best of 5 rounds, on the P-cores of the laptop. A badge is the times xufa's is as fast; in the cases
+          in ms (less is better), it is the other's time over xufa's.
+        </p>
+${parts.join('\n\n')}
+`;
+}
+
+const partsSections = `${expressSection}
+        <h2 id="router">Router</h2>
         <p>
           <code>@xufa/router</code> against find-my-way 9.9.0 on the routes of a typical API (10 resources, 74 routes),
           in routes found a second (more is better): <code>match()</code>, what xufa calls for every request, and
@@ -688,6 +878,7 @@ ${websocketPairs(2)}
         </p>
 ${rawTable('websocket-4.md')}
 
+${replacedSection()}
 `;
 
 const sections = `        <h2 id="pg">PostgreSQL driver</h2>

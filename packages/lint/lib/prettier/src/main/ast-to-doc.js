@@ -162,4 +162,4 @@ async function prepareToPrint(ast, options) {
   return { ast, comments };
 }
 
-export { prepareToPrint, printAstToDoc };
+export { printAstToDoc };

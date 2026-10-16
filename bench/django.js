@@ -16,6 +16,7 @@ const crypto = require('node:crypto');
 const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
+const { pathToFileURL } = require('node:url');
 const autocannon = require('autocannon');
 
 const ROOT = path.join(__dirname, '..');
@@ -631,7 +632,7 @@ async function main() {
   const pg = postgres();
   console.log(`django: PostgreSQL ${pg.version}, Python ${versions.python}, Django ${versions.django}`);
   const seeded = databases(pg);
-  const { PASSWORD } = await import(path.join(__dirname, 'django', 'data.mjs'));
+  const { PASSWORD } = await import(pathToFileURL(path.join(__dirname, 'django', 'data.mjs')).href);
 
   const results = Object.fromEntries(args.servers.map((name) => [name, {}]));
   const memory = Object.fromEntries(args.servers.map((name) => [name, []]));

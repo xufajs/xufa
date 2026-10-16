@@ -388,7 +388,12 @@ function writeString(value) {
   pos += 1;
 }
 
-function writeDocument(doc, isArray) {
+// undefined values: skipped (ignoreUndefined), or written as null (the official driver's default) when this is true.
+let undefinedAsNull = false;
+
+// (command: the body of a command, whose undefined fields are options not given, left out always.)
+function writeDocument(doc, isArray, command = false) {
+  const asNull = undefinedAsNull && !command;
   if (pos + 5 > out.length) grow(5);
   const start = pos;
   pos += 4;
@@ -401,19 +406,24 @@ function writeDocument(doc, isArray) {
   } else if (doc instanceof Map) {
     doc.forEach((value, key) => {
       if (value !== undefined) writeElement(key, value);
+      else if (asNull) writeElement(key, null);
     });
   } else if (plainForIn && Object.getPrototypeOf(doc) === Object.prototype) {
     // The properties of plain objects are read fast with for-in (its enum cache), when Object.prototype has no
     // enumerable properties (for-in would give them: a polluted prototype must not reach the database).
     for (const key in doc) {
       const value = doc[key];
-      if (value !== undefined && typeof value !== 'function') writeElement(key, value);
+      if (value === undefined) {
+        if (asNull) writeElement(key, null);
+      } else if (typeof value !== 'function') writeElement(key, value);
     }
   } else {
     const keys = Object.keys(doc);
     for (let i = 0; i < keys.length; i += 1) {
       const value = doc[keys[i]];
-      if (value !== undefined && typeof value !== 'function') writeElement(keys[i], value);
+      if (value === undefined) {
+        if (asNull) writeElement(keys[i], null);
+      } else if (typeof value !== 'function') writeElement(keys[i], value);
     }
   }
   if (pos + 1 > out.length) grow(1);
@@ -524,12 +534,14 @@ const DIGITS = Array.from({ length: 100 }, (_, i) => String(i));
 function encoding(fn) {
   const outerOut = out;
   const outerPos = pos;
+  const outerUndefined = undefinedAsNull;
   const nested = outerPos !== -1;
   if (nested) out = Buffer.allocUnsafeSlow(1024);
   plainForIn = Object.keys(Object.prototype).length === 0;
   try {
     return fn();
   } finally {
+    undefinedAsNull = outerUndefined;
     if (nested) {
       out = outerOut;
       pos = outerPos;
@@ -548,11 +560,13 @@ function copyOut() {
 }
 
 // Encodes a document after `reserve` bytes left to the caller (the header of a message), in a buffer of its own.
-function serialize(doc, reserve = 0) {
+// ignoreUndefined: false writes undefined values as null (the official driver's default); true leaves them out.
+function serialize(doc, reserve = 0, ignoreUndefined = true) {
   return encoding(() => {
     pos = reserve;
+    undefinedAsNull = !ignoreUndefined;
     if (pos + 4 > out.length) grow(4);
-    writeDocument(doc, false);
+    writeDocument(doc, false, true);
     return copyOut();
   });
 }
@@ -560,13 +574,14 @@ function serialize(doc, reserve = 0) {
 // Encodes the sections of an OP_MSG after `reserve` bytes: the body (kind 0), and the documents of `docs` from
 // `start` as a document sequence (kind 1) named `identifier`, as many as fit in `maxBytes` (the whole message) and
 // `maxCount` (one at least). Gives the message and the index of the first document left out.
-function serializeSections(body, identifier, docs, start, reserve, maxBytes, maxCount) {
+function serializeSections(body, identifier, docs, start, reserve, maxBytes, maxCount, ignoreUndefined = true) {
   return encoding(() => {
     pos = reserve;
+    undefinedAsNull = !ignoreUndefined;
     if (pos + 1 > out.length) grow(1);
     out[pos] = 0;
     pos += 1;
-    writeDocument(body, false);
+    writeDocument(body, false, true);
     if (pos + 5 > out.length) grow(5);
     out[pos] = 1;
     const sectionStart = pos + 1;

@@ -25,11 +25,7 @@ function printOptionalToken(path) {
   ) {
     return '';
   }
-  if (
-    isCallExpression(node) ||
-    (isMemberExpression(node) && node.computed) ||
-    node.type === 'OptionalIndexedAccessType'
-  ) {
+  if (isCallExpression(node) || (isMemberExpression(node) && node.computed)) {
     return '?.';
   }
   return '?';
@@ -46,30 +42,8 @@ function printDefiniteToken(path) {
     : '';
 }
 
-const isFlowDeclareNode = createTypeCheckFunction([
-  'DeclareClass',
-  'DeclareComponent',
-  'DeclareFunction',
-  'DeclareHook',
-  'DeclareVariable',
-  'DeclareExportDeclaration',
-  'DeclareExportAllDeclaration',
-  'DeclareOpaqueType',
-  'DeclareTypeAlias',
-  'DeclareEnum',
-  'DeclareInterface',
-]);
-
 const shouldPrintDeclareToken = (path) => {
   const { node } = path;
-
-  if (isFlowDeclareNode(node)) {
-    return (
-      path.parent.type !== 'DeclareExportDeclaration' &&
-      // @ts-expect-error -- hermes doesn't support yet
-      !node.implicitDeclare
-    );
-  }
 
   // TypeScript
   return node.declare;

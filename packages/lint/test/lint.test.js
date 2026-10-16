@@ -192,6 +192,6 @@ describe('xufa-lint', () => {
     const dir = project({ 'a.js': '' });
     const { code, err } = await run(dir, []);
     expect(code).toBe(2);
-    expect(err).toContain('No xufa.lint.config.js was found');
+    expect(err).toContain('No xufa.lint.config.js nor ESLint config');
   });
 });

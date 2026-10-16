@@ -7,7 +7,7 @@
 //   const errors = await book.test();             // its Test tables (and Check tables, with check functions)
 //   const json = book.toJSON();                   // to keep it (RuleBook.fromJSON(json) gives it back)
 //   fs.writeFileSync('out.xlsx', book.toXlsx());
-import { readXlsx, writeXlsx } from './xlsx.js';
+import { readXlsx, writeXlsx, refOf, patchXlsx } from './xlsx.js';
 import { blocksOf } from './blocks.js';
 import { testCaseOf } from './test-case.js';
 import { Fun } from './helpers.js';
@@ -403,10 +403,14 @@ class RuleBook {
           }
           if (properties) table.ownProperties = properties;
         } catch (err) {
-          throw new RulesError(
+          // (What was wrong, and where, apart too: reason and cell.)
+          const error = new RulesError(
             `Error building table at ${position.sheet}!${cellName(position)}: ${err.message}`,
             err.code
           );
+          error.reason = err.message;
+          error.cell = { sheet: position.sheet, row: position.row, column: position.column };
+          throw error;
         }
         book.add(table);
       }
@@ -757,7 +761,7 @@ class RuleBook {
   compile(source, where, { types, names, dialect } = {}) {
     const openl = (dialect ?? this.dialect) === 'openl';
     const inOpenL = () => compileOpenL(String(source), { book: this, where, types, names });
-    const inJs = () => compileExpression(source, where);
+    const inJs = () => compileExpression(source, where, this.options.methods);
     const [first, second] = openl ? [inOpenL, inJs] : [inJs, inOpenL];
     try {
       return first();
@@ -1061,6 +1065,39 @@ class RuleBook {
   toXlsx() {
     const sheets = this.toSheets();
     return writeXlsx({ sheets: sheets.length ? sheets : [{ name: 'RULES', rows: [] }] });
+  }
+
+  // The workbook of the book (its bytes) with the matrix of a table changed in place: the cells that change, and
+  // nothing else of the workbook (patchXlsx). The book must have been read from that workbook (its tables know their
+  // place) and the matrix be of the same size.
+  applyMatrix(bytes, name, matrix) {
+    const table = this.byName.get(name);
+    if (!table) throw new RulesError(`Table ${name} not found`, 'XUFA_RULES_ERR_TABLE');
+    if (!table.matrix || typeof table.sheetCell !== 'function') {
+      throw new RulesError(`Table ${name} does not have a matrix`, 'XUFA_RULES_ERR_TABLE');
+    }
+    if (matrix.length !== table.matrix.length || matrix[0]?.length !== table.matrix[0]?.length) {
+      throw new RulesError(`Matrix size does not match table ${name} size`, 'XUFA_RULES_ERR_TABLE');
+    }
+    const first = table.sheetCell(0, 0);
+    if (!first.sheet) {
+      throw new RulesError(
+        `Table ${name} has no place in a sheet: read the book from its workbook`,
+        'XUFA_RULES_ERR_TABLE'
+      );
+    }
+    const whole = new Map();
+    const changed = new Map();
+    matrix.forEach((line, i) =>
+      line.forEach((value, j) => {
+        const ref = refOf(first.row + i, first.column + j);
+        whole.set(ref, value);
+        const old = table.matrix[i][j];
+        const same = old instanceof Date && value instanceof Date ? old.getTime() === value.getTime() : old === value;
+        if (!same) changed.set(ref, value);
+      })
+    );
+    return changed.size ? patchXlsx(bytes, first.sheet, changed, { whole }) : Buffer.from(bytes);
   }
 }
 

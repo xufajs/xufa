@@ -48,6 +48,23 @@ The requests are given to the request listener of the server with node's own `In
 `ServerResponse`, over sockets that discard what is written: no network, no HTTP parsing. The difference between a
 framework and `node:http` here is the cost of the framework. Rounds more than 10% apart are marked ⚠.
 
+## Express: `express.js`
+
+```sh
+node bench/express.js [--rounds 5] [--duration 5] [--warmup 1] [--connections 50] [--scenarios hello,json,...]
+                      [--out results/express-2] [--profile <scenario>] [--same 1]
+```
+
+Express 5.2.1 against `@xufa/express` (its own implementation of Express's API) on the same app (`express/app.js`): small
+routes (hello, json, params, query, a JSON body, ten middlewares), a large app (40 routers of 10 routes mounted on
+`/api`: its first route and its last), a router in a router, a large JSON reply, a static file, not found and a thrown
+error. Each server in a process of its own; each scenario loaded on one and the other in turn, the order changing
+every round. The ratio is the median of each round's pair (adjacent in time: what the machine drifts between rounds
+cancels), with the spread of the pairs. It checks first that both give the same answer to each scenario.
+`--profile <scenario>` runs @xufa/express alone with `--cpu-prof` (into `results/profiles`); `--same 1` runs Express
+in both places, to see how far apart the same code reads (the noise of the machine). On Windows the servers run on
+logical CPUs 0-3 and the driver on 4-7.
+
 ## Libraries: `micro/`
 
 ```sh
@@ -62,7 +79,18 @@ node bench/micro/jwt-async.js   # node:crypto signing and verifying, synchronous
 node bench/micro/marshal.js     # @xufa/marshal against JSON, v8.serialize (and the serializer of Agentic, given its path)
 node bench/micro/websocket.js   # @xufa/websocket against ws, each without and with bufferutil
 node bench/micro/s3.js          # the s3 backend of @xufa/orm against the AWS SDK v3 (XUFA_S3_URL: a store of your own)
+node bench/micro/multer.js      # @xufa/http/multer against multer (uploads over HTTP), its parser against busboy
+node bench/micro/xlsx.js        # @xufa/xlsx against exceljs: a workbook of 5,000 rows written and read
+node bench/micro/form-data.js   # @xufa/http/form-data against form-data: forms built and streamed
+node bench/micro/purify.js      # @xufa/purify against DOMPurify on jsdom: the first call, and calls a second
+node bench/micro/axios.js       # @xufa/client/axios against axios: its own work, GETs over the loopback, loading it
+node bench/micro/compression.js # @xufa/http/compression against compression: the middleware's work for a response
+node bench/micro/helmet.js      # @xufa/http/helmet against helmet: the security headers of a response
 ```
+
+The last seven run on `bench/lib/versus.js`: each library and case in a process of its own, the libraries taking turns,
+the best of `[rounds]` (5) kept, a table of Markdown on stdout (`results/multer-1`, `xlsx-1`, `form-data-1`,
+`purify-1`, `axios-1`, `compression-1`, `helmet-1`, run on the P-cores: `start /wait /b /affinity FF` on that laptop).
 
 `expression.js`, `expression-programs.js` and `template.js` take `[ms per measure] [rounds]` (1000 and 3) and run each engine and case in a process
 of its own, the median of the rounds shown; each result is checked (against JavaScript, or against the output of

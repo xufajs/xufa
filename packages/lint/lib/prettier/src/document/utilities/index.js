@@ -201,8 +201,12 @@ function propagateBreaks(doc) {
       continue;
     }
     if (Array.isArray(current)) {
+      // (Strings, most of the parts, are not pushed: there is nothing in them to propagate.)
       for (let index = current.length - 1; index >= 0; index--) {
-        stack.push(current[index]);
+        const part = current[index];
+        if (typeof part !== 'string') {
+          stack.push(part);
+        }
       }
       continue;
     }

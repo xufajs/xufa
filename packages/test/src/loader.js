@@ -97,6 +97,8 @@ function hookCjs() {
   };
   installAssetExtensions();
   installCjsLoader();
+  // (Before the mocking hooks wrap Module._load: a mocked module's require() finds its mock first.)
+  installRequireCopies();
 }
 
 // ES modules can not be evicted from the cache, so each test file imports its own copy of the project modules,
@@ -107,16 +109,100 @@ function isIsolatedDependency(location) {
   return isolatedDependencies.some((name) => location.includes(`${path.sep}node_modules${path.sep}${name}${path.sep}`));
 }
 
+const isIsolated = (url) =>
+  url.startsWith('file:') &&
+  !url.startsWith(RUNTIME_URL) &&
+  !url.includes('xufa-test=') &&
+  (!url.includes('/node_modules/') || isIsolatedDependency(fileURLToPath(url)));
+
 function isolatedUrl(url, conditions) {
-  const isolated =
-    url.startsWith('file:') &&
-    !url.startsWith(RUNTIME_URL) &&
-    !url.includes('xufa-test=') &&
-    (!url.includes('/node_modules/') || isIsolatedDependency(fileURLToPath(url)));
-  if (!isolated || state.generation === 0 || !conditions.includes('import')) {
+  if (!isIsolated(url) || state.generation === 0 || !conditions.includes('import')) {
     return url;
   }
   return `${url}${url.includes('?') ? '&' : '?'}xufa-test=${state.generation}`;
+}
+
+// require() of a project ES module (Node's require(esm)) after the first test file of a worker. Node keeps such a
+// module by its file name, whatever query a hook adds: require() gave the copy an earlier file loaded (with its
+// state), and a copy other than the file's own import() of it. require() (Module._load, not the resolution:
+// require.resolve() and the keys of mocks keep the file's name) loads a module of a name of its own for each test
+// file instead, which re-exports the copy import() gives (the hooks of the ES modules serve it: REQUIRE_COPY).
+const REQUIRE_COPY = /\.xufa-test-require-(\d+)\.mjs$/;
+// (A default export only when the module has one: require() returns the namespace, whose keys a test may read.)
+const DEFAULT_EXPORT = /\bexport\s+default\b|\bas\s+default\b|\bexport\s*\{\s*default\b/;
+// The config of the files loaded (loadModule()): the copies are served by the hooks of ES modules, which a suite of
+// CommonJS files does not have until it requires an ES module of its own.
+let loadedConfig = null;
+
+// Whether a file is an ES module of the project's own (by file: whether it is does not change during a run). Only
+// those: packages linked from elsewhere, outside node_modules once resolved, stay shared, as they were for require().
+const ownEsm = new Map();
+
+function isOwnEsm(file) {
+  let own = ownEsm.get(file);
+  if (own === undefined) {
+    const relative = path.relative(loadedConfig.rootDir ?? process.cwd(), file);
+    own =
+      !relative.startsWith('..') && !path.isAbsolute(relative) && isIsolated(pathToFileURL(file).href) && isEsm(file);
+    ownEsm.set(file, own);
+  }
+  return own;
+}
+
+function requireCopyFile(file) {
+  if (loadedConfig.isolate === false || REQUIRE_COPY.test(file) || !isOwnEsm(file)) {
+    return null;
+  }
+  hookEsm(loadedConfig);
+  return hooked.esm ? `${file}.xufa-test-require-${state.generation}.mjs` : null;
+}
+
+function requireCopySource(url) {
+  const match = REQUIRE_COPY.exec(url);
+  const target = JSON.stringify(`${url.slice(0, match.index)}?xufa-test=${match[1]}`);
+  const source = fs.readFileSync(fileURLToPath(url.slice(0, match.index)), 'utf8');
+  return [`export * from ${target};`, DEFAULT_EXPORT.test(source) ? `export { default } from ${target};` : ''].join(
+    '\n'
+  );
+}
+
+// The own ES module a require() from a directory leads to, or null: resolved once (Module._load resolves it again).
+const requireTargets = new Map();
+
+function ownEsmRequired(request, parent, rest) {
+  const key = `${parent?.filename ? path.dirname(parent.filename) : ''}\0${request}`;
+  let file = requireTargets.get(key);
+  if (file === undefined) {
+    try {
+      const resolved = Module._resolveFilename(request, parent, ...rest);
+      file = path.isAbsolute(resolved) && isOwnEsm(resolved) ? resolved : null;
+    } catch {
+      // (Module._load throws the error.)
+      file = null;
+    }
+    requireTargets.set(key, file);
+  }
+  return file;
+}
+
+function installRequireCopies() {
+  const load = Module._load;
+  Module._load = function xufaTestLoadCopy(request, parent, ...rest) {
+    if (
+      loadedConfig &&
+      state.generation > 0 &&
+      !request.startsWith('node:') &&
+      !Module.isBuiltin(request) &&
+      !parent?.filename?.includes(NODE_MODULES)
+    ) {
+      const file = ownEsmRequired(request, parent, rest);
+      const copy = file ? requireCopyFile(file) : null;
+      if (copy) {
+        return load.call(this, copy, parent, ...rest);
+      }
+    }
+    return load.call(this, request, parent, ...rest);
+  };
 }
 
 const IDENTIFIER = /^[A-Za-z_$][\w$]*$/;
@@ -226,6 +312,12 @@ function typelessModule(file) {
 
 const resolutions = new Map();
 
+// The mock calls of a test file compiled by the hook below hoisted (modules/hooks.js), once a file mocks.
+function withHoistedMocks(file, source) {
+  const hooks = require.cache[require.resolve('./modules/hooks')];
+  return hooks ? hooks.exports.hoistedSource(file, source) : source;
+}
+
 function hookEsm(config) {
   if (hooked.esm || typeof Module.registerHooks !== 'function') {
     return;
@@ -242,6 +334,11 @@ function hookEsm(config) {
       if (ALIASES.has(specifier)) {
         const url = context.conditions.includes('require') ? pathToFileURL(ENTRY_CJS).href : ENTRY_ESM;
         return { url, shortCircuit: true };
+      }
+      // The copy of an ES module that require() loads (installRequireCopies()).
+      if (REQUIRE_COPY.test(specifier)) {
+        const url = specifier.startsWith('file:') ? specifier : pathToFileURL(specifier).href;
+        return { url, format: 'module', shortCircuit: true };
       }
       // Vite plugins' resolveId: a path, or a virtual module served by their load hook.
       const importer = context.parentURL?.startsWith('file:') ? fileURLToPath(context.parentURL) : undefined;
@@ -264,6 +361,7 @@ function hookEsm(config) {
       // mocked, Node resolves them, through that hook. Nor is what it answers then kept: it may be a mock (a
       // xufa-test-mock: URL), which the files after this one, which do not mock it, would import.
       const mocking = registry.mocks.size > 0;
+      // The copy of a project module for this test file: by a query, or, for require() of an ES module, by a name.
       let result = key && !mocking ? resolutions.get(key) : undefined;
       if (result) {
         const url = isolate ? isolatedUrl(result.url, context.conditions) : result.url;
@@ -293,6 +391,9 @@ function hookEsm(config) {
         }
         return { format: 'module', source: applyPlugins(code, id), shortCircuit: true };
       }
+      if (REQUIRE_COPY.test(url)) {
+        return { format: 'module', source: requireCopySource(url), shortCircuit: true };
+      }
       if (!url.startsWith('file:')) {
         return nextLoad(url, context);
       }
@@ -321,7 +422,7 @@ function hookEsm(config) {
       if (loadedByPlugin !== null) {
         return {
           format: 'module',
-          source: transform(loadedByPlugin, file) ?? applyPlugins(loadedByPlugin, file),
+          source: withHoistedMocks(file, transform(loadedByPlugin, file) ?? applyPlugins(loadedByPlugin, file)),
           shortCircuit: true,
         };
       }
@@ -339,10 +440,11 @@ function hookEsm(config) {
           ? { format: 'module', source: commonJsInterop(file), shortCircuit: true }
           : loaded;
       }
-      const source = transform(fs.readFileSync(file, 'utf8'), file);
-      if (source === null) {
+      const compiled = transform(fs.readFileSync(file, 'utf8'), file);
+      if (compiled === null) {
         return nextLoad(url, context);
       }
+      const source = withHoistedMocks(file, compiled);
       // Node has no format for .tsx or .jsx and would refuse the file; the transform leaves ES modules.
       return { format: 'module', source: isSpyable(file) ? makeSpyable(source, url) : source, shortCircuit: true };
     },
@@ -417,6 +519,7 @@ function checkSupported(file) {
 
 // Loads a test or setup file. `fresh` evaluates it again even when it is cached (setup files run for every file).
 async function loadModule(file, config, fresh) {
+  loadedConfig = config;
   isolatedDependencies = (config.isolateDependencies ?? []).map((name) => name.split('/').join(path.sep));
   configureResolution(config);
   configureTransform(config);

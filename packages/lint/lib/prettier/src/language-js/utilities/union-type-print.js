@@ -2,18 +2,12 @@ import { hasComment } from './comments.js';
 import { createTypeCheckFunction } from './create-type-check-function.js';
 import { isIntersectionType, isTupleType, isUnionType } from './node-types.js';
 
-const isVoidType = createTypeCheckFunction([
-  'VoidTypeAnnotation',
-  'TSVoidKeyword',
-  'NullLiteralTypeAnnotation',
-  'TSNullKeyword',
-]);
+const isVoidType = createTypeCheckFunction(['TSVoidKeyword', 'TSNullKeyword']);
 
 const isObjectLikeType = createTypeCheckFunction([
-  'ObjectTypeAnnotation',
   'TSTypeLiteral',
   // This is a bit aggressive but captures Array<{x}>
-  'GenericTypeAnnotation',
+
   'TSTypeReference',
 ]);
 

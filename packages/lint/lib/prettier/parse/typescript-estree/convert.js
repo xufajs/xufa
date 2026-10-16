@@ -33,7 +33,7 @@ import { SyntaxKind } from './version.js';
 // The types of the nodes prettier's postprocessing of a tree changes (src/language-js/parse/postprocess): the end of
 // statements' content before their semicolon, the ranges of template parts, unions and intersections of one type,
 // parenthesized types and expressions, and chains of && or || leaning right.
-export const POSTPROCESSED_TYPES = new Set([
+const POSTPROCESSED_TYPES = new Set([
   'ExpressionStatement',
   'Directive',
   'ImportDeclaration',

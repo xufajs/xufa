@@ -335,6 +335,29 @@ describe('classes', () => {
     expect(() => parse(text, { unknown: 'error' })).toThrow(/Point is not a registered class/);
   });
 
+  it("classes not registered as JSON.stringify writes them (unknown: json): toJSON() when they have one", () => {
+    class Id {
+      constructor(hex) {
+        this.hex = hex;
+      }
+
+      toJSON() {
+        return `id:${this.hex}`;
+      }
+    }
+    class Loose {
+      constructor() {
+        this.a = new Id('cd');
+      }
+    }
+    const value = { id: new Id('ab'), loose: new Loose(), when: new Date(0) };
+    const back = parse(stringify(value, { unknown: 'json' }));
+    expect(back).toEqual({ id: 'id:ab', loose: { a: 'id:cd' }, when: new Date(0) });
+    expect(back.when).toBeInstanceOf(Date);
+    // Registered classes still come back as themselves.
+    expect(parse(stringify(new Point(1, 2), { ...opts, unknown: 'json' }), opts)).toBeInstanceOf(Point);
+  });
+
   it('a field that is a function: an error, or left out (functions: skip)', () => {
     const value = { a: 1, f() {}, list: [() => 1] };
     expect(() => stringify(value)).toThrow(/function/);
@@ -504,5 +527,31 @@ describe('clone()', () => {
     expect(copy.e).toBeInstanceOf(RangeError);
     expect([copy.e.message, copy.e.cause, copy.e.code]).toEqual(['r', 1, 'C']);
     expect(1 in copy.holes).toBe(false);
+  });
+
+  it('with shared: false, copies an object met twice twice, and keeps cycles; classes and dates are kept', () => {
+    class Point {
+      constructor(x) {
+        this.x = x;
+      }
+    }
+    const inner = { n: 1 };
+    const value = { a: inner, b: inner, point: new Point(2), when: new Date(5), list: [inner], ['__proto__']: 1 };
+    const copy = clone(value, { shared: false });
+    expect(copy).toEqual(value);
+    expect(copy.a).not.toBe(copy.b);
+    expect(copy.point).toBeInstanceOf(Point);
+    expect(copy.when).toBeInstanceOf(Date);
+    expect(Object.getOwnPropertyNames(copy)).toContain('__proto__');
+    const cycle = { name: 'c' };
+    cycle.self = cycle;
+    const copied = clone(cycle, { shared: false });
+    expect(copied.self).toBe(copied);
+    expect(copied).not.toBe(cycle);
+    const list = [1];
+    list.push(list);
+    const copiedList = clone({ list }, { shared: false }).list;
+    expect(copiedList[1]).toBe(copiedList);
+    expect(clone(cycle).self.self.name).toBe('c');
   });
 });

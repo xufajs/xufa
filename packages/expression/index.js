@@ -78,7 +78,10 @@ class Engine {
   // cannot hide them); `modules`: what `import` of programs takes, (name) => the source of a module (a string, a
   // program compiled by this engine and run for each import with a context of its own) or what it exports (an object,
   // given by the host), or undefined (none); `tdz`: a let or const of a program used before its declaration runs is
-  // an error (as in JavaScript), not undefined.
+  // an error (as in JavaScript), not undefined. `methods`: functions by name (of an object or a module: what is not a
+  // function is left out) that values have as methods when they
+  // have none of that name: `prices.sum()` is methods.sum(prices) when prices.sum is undefined or null (a value's own
+  // methods first; `x.sum?.()` and `x['sum']()` are not looked up; null and undefined have none).
   constructor(options = {}) {
     const { globals = {}, builtins = true, filters = null, lenient = false, strict = false, bound = {} } = options;
     // (Programs change objects: Object.assign and Object.freeze too.)
@@ -89,7 +92,24 @@ class Engine {
     const defaults = options.statements ? PROGRAM_GLOBALS : GLOBALS;
     this.globals = Object.freeze({ ...(builtins ? defaults : {}), ...changers, ...globals });
     this.filters = filters ? Object.freeze({ ...filters }) : null;
-    this.lenient = Boolean(lenient);
+    // (true: both; 'members': members of null or undefined only; 'calls': calls of what is not a function only.)
+    if (![true, false, 'members', 'calls'].includes(lenient)) {
+      throw new TypeError(`lenient is true, false, 'members' or 'calls', not ${String(lenient)}`);
+    }
+    this.lenient = lenient;
+    const { methods = null } = options;
+    if (methods !== null && (typeof methods !== 'object' || Array.isArray(methods))) {
+      throw new TypeError('methods is an object of functions by name');
+    }
+    // (Its functions: a module of them can be given as it is, its other values left out.)
+    this.methods = methods
+      ? Object.freeze(
+          Object.assign(
+            Object.create(null),
+            Object.fromEntries(Object.entries(methods).filter(([, fn]) => typeof fn === 'function'))
+          )
+        )
+      : null;
     this.strict = Boolean(strict);
     this.tdz = Boolean(options.tdz);
     this.maxLength = options.maxLength === undefined ? 10000 : options.maxLength;
@@ -99,6 +119,21 @@ class Engine {
     this.cache = new Map();
     this.bound = Object.freeze(Object.assign(Object.create(null), bound));
     this.statements = Boolean(options.statements);
+    // scope: 'program' (a program's own names stay its own) or 'context' (the names declared or assigned at its top
+    // level are the context's properties, as those of the global object of a script; this there is context.this).
+    const scope = options.scope ?? 'program';
+    if (scope !== 'program' && scope !== 'context') {
+      throw new TypeError(`scope is 'program' or 'context', not ${String(scope)}`);
+    }
+    if (scope === 'context' && !this.statements)
+      throw new TypeError("scope: 'context' is of programs (statements: true)");
+    this.contextScope = scope === 'context';
+    // onError(error, { source, statement, context }): an error of a top-level statement is given to it, the
+    // statement's value is undefined, and the program goes on with the next one (limits still end the run).
+    if (options.onError !== undefined && options.onError !== null && typeof options.onError !== 'function') {
+      throw new TypeError('onError is a function');
+    }
+    this.onError = options.onError ?? null;
     this.maxSteps = options.maxSteps === undefined ? 10_000_000 : options.maxSteps;
     this.maxDepth = options.maxDepth === undefined ? 1000 : options.maxDepth;
     this.constructors = Object.freeze({ ...CONSTRUCTORS, ...(options.constructors ?? {}) });
@@ -183,7 +218,11 @@ class Engine {
 
   parse(source) {
     this.check(source);
-    return parse(source, { filters: Boolean(this.filters), statements: this.statements });
+    return parse(source, {
+      filters: Boolean(this.filters),
+      statements: this.statements,
+      contextThis: this.contextScope,
+    });
   }
 
   check(source) {

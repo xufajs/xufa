@@ -156,29 +156,60 @@ tree comes from a prototype).
 `new Engine(options)` makes an engine of its own (`compile`, `evaluate`, `parse`); the module's functions use a default
 one.
 
-| Option         | Default                | What it does                                                                            |
-| -------------- | ---------------------- | --------------------------------------------------------------------------------------- |
-| `globals`      | `{}`                   | Names over the default globals (`{ tax: (v) => v * 1.21 }`); the context goes over them |
-| `builtins`     | `true`                 | `false`: only the globals given                                                         |
-| `filters`      | `null`                 | Functions by name: `\|` separates them, `price \| round(2) \| money` (the value first)  |
-| `lenient`      | `false`                | Members of `null` or `undefined`, and calls of what is not a function, give `undefined` |
-| `strict`       | `false`                | Names that are not in the context nor the globals are errors (by default, `undefined`)  |
-| `tdz`          | `false`                | Programs: a `let` or `const` used before its declaration runs is an error               |
-| `maxLength`    | `10000`                | The longest source (`XUFA_EXPR_ERR_LENGTH`)                                             |
-| `cacheSize`    | `1000`                 | Expressions compiled kept (by source)                                                   |
-| `inline`       | `true`                 | Expressions run often become one function of JavaScript (`false`: closures always)      |
-| `inlineAfter`  | `64`                   | Runs before an expression becomes that function (`0`: at once)                          |
-| `statements`   | `false`                | Sources are programs (see Programs)                                                     |
-| `maxSteps`     | `1e7`                  | Loop turns and calls of a run of a program                                              |
-| `maxDepth`     | `1000`                 | Calls of a program's functions nested                                                   |
-| `constructors` | Date, Map, Set, errors | What `new` makes in programs, by name                                                   |
+| Option         | Default                | What it does                                                                                                                   |
+| -------------- | ---------------------- | ------------------------------------------------------------------------------------------------------------------------------ |
+| `globals`      | `{}`                   | Names over the default globals (`{ tax: (v) => v * 1.21 }`); the context goes over them                                        |
+| `builtins`     | `true`                 | `false`: only the globals given                                                                                                |
+| `filters`      | `null`                 | Functions by name: `\|` separates them, `price \| round(2) \| money` (the value first)                                         |
+| `lenient`      | `false`                | Members of `null` or `undefined`, and calls of what is not a function, give `undefined` (`'members'` or `'calls'`: only those) |
+| `strict`       | `false`                | Names that are not in the context nor the globals are errors (by default, `undefined`)                                         |
+| `methods`      | `null`                 | Functions by name that values have as methods when they have none: `prices.sum()` is `methods.sum(prices)` (see below)         |
+| `tdz`          | `false`                | Programs: a `let` or `const` used before its declaration runs is an error                                                      |
+| `maxLength`    | `10000`                | The longest source (`XUFA_EXPR_ERR_LENGTH`)                                                                                    |
+| `cacheSize`    | `1000`                 | Expressions compiled kept (by source)                                                                                          |
+| `inline`       | `true`                 | Expressions run often become one function of JavaScript (`false`: closures always)                                             |
+| `inlineAfter`  | `64`                   | Runs before an expression becomes that function (`0`: at once)                                                                 |
+| `statements`   | `false`                | Sources are programs (see Programs)                                                                                            |
+| `maxSteps`     | `1e7`                  | Loop turns and calls of a run of a program                                                                                     |
+| `maxDepth`     | `1000`                 | Calls of a program's functions nested                                                                                          |
+| `constructors` | Date, Map, Set, errors | What `new` makes in programs, by name                                                                                          |
+| `scope`        | `'program'`            | Programs: `'context'` makes the context their top-level scope (see below)                                                      |
+| `onError`      | `null`                 | Programs: an error of a top-level statement goes to it, and the next statement runs                                            |
 
 With filters, `|` is not the bitwise or.
+
+With `methods` (an object of functions, or a module: what is not a function is left out), a call `value.name(...)`
+whose value has no `name` (undefined or null) calls `methods.name(value, ...)`: `prices.sum()`, `doc.getAtPath('a.b')`.
+A value's own methods go first; `value['name']()`, `value.name?.()` and null or undefined values are not looked up.
+[@xufa/fun](../fun) is a library made to be given here.
+
+## The context as the scope of programs
+
+`scope: 'context'` makes a program's top level work on the context, as a script works on its global object: the names it
+declares or assigns there (`x = 1`, `var`, `let`, `const`, `function`) are the context's properties, and `this` there is
+`context.this`. Names of blocks and functions stay theirs. With `onError`, a top-level statement that fails does not end
+the run: its error goes to `onError`, its value is `undefined`, and the next statement runs. Together they run
+formulas and scripts written for interpreters that work so, with the safety of the rest of this page:
+
+```js
+const engine = new Engine({
+  statements: true,
+  scope: 'context',
+  onError: (error, { source, context }) => (context.errors ??= []).push({ source, message: error.message }),
+});
+const context = { price: 10, rate: 0.21 };
+engine.evaluate('tax = price * rate; total = price + tax; discount.amount', context); // undefined: the last failed
+context; // { price: 10, rate: 0.21, tax: 2.1, total: 12.1, errors: [{ source: 'discount.amount', ... }] }
+```
+
+A program that writes the context needs a plain object (not a `Map`, a frozen object or a value of the engine); one that
+only reads runs on any. `__proto__`, `constructor` and `prototype` are never written. Limits still end a run, and syntax
+errors still throw when it compiles. Async programs cannot use `scope: 'context'`.
 
 ## Errors
 
 `ExpressionError` with `code`: `XUFA_EXPR_ERR_SYNTAX`, `XUFA_EXPR_ERR_FORBIDDEN`, `XUFA_EXPR_ERR_RUNTIME` (reading a
-member of `null`, calling what is not a function), `XUFA_EXPR_ERR_LENGTH` or `XUFA_EXPR_ERR_LIMIT` (a program past its steps
+member of `null`, calling what is not a function: their `reason` is `'nullMember'` or `'notFunction'`), `XUFA_EXPR_ERR_LENGTH` or `XUFA_EXPR_ERR_LIMIT` (a program past its steps
 or its depth), and `position`, `line` and `column`. The
 errors of the functions called go through as they are.
 

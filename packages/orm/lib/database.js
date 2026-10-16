@@ -15,6 +15,7 @@ import * as modelCache from './model-cache.js';
 import { followWrites, inTransaction } from './query-cache.js';
 import * as auditModule from './audit.js';
 import * as faultsModule from './faults.js';
+import { Documents } from './documents.js';
 
 const backends = new Map();
 let nextName = 0;
@@ -208,6 +209,18 @@ class Database {
 
   model(name) {
     return this.models.get(name);
+  }
+
+  // A collection of documents as they are (lib/documents.js; MongoDB): the same one for a name, made again when
+  // options are given.
+  documents(name, options) {
+    if (!this.documentsOf) this.documentsOf = new Map();
+    let documents = this.documentsOf.get(name);
+    if (!documents || options) {
+      documents = new Documents(this, name, options);
+      this.documentsOf.set(name, documents);
+    }
+    return documents;
   }
 
   changedOutside(tables) {

@@ -1,7 +1,6 @@
 import { hardline, markAsRoot, replaceEndOfLine } from '../document/index.js';
 import getMaxContinuousCount from '../utilities/get-max-continuous-count.js';
 import inferParser from '../utilities/infer-parser.js';
-import { getFencedCodeBlockValue } from './utilities.js';
 
 function embed(path, options) {
   const { node } = path;
@@ -40,10 +39,7 @@ function embed(path, options) {
           textToDocOptions.filepath = 'dummy.tsx';
         }
 
-        const doc = await textToDoc(
-          options.parser === 'mdx' ? getFencedCodeBlockValue(node, options.originalText) : node.value,
-          textToDocOptions
-        );
+        const doc = await textToDoc(node.value, textToDocOptions);
 
         const styleUnit = options.__inJsTemplate ? '~' : '`';
         const style = styleUnit.repeat(Math.max(3, getMaxContinuousCount(node.value, styleUnit) + 1));

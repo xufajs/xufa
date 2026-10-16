@@ -1,38 +1,22 @@
 import { printComments, printLeadingComments } from '../../main/comments/print.js';
 import {
-  isSingleHtmlEventHandlerExpressionStatement,
   isSingleJsxExpressionStatementInMarkdown,
-  isSingleVueEventBindingExpressionStatement,
   shouldExpressionStatementPrintLeadingSemicolon,
 } from '../semicolon/semicolon.js';
 import { CommentCheckFlags, getComments } from '../utilities/comments.js';
 import { shouldExpressionStatementPrintOwnComments } from '../utilities/should-expression-statement-print-own-comments.js';
-import {
-  isVueEventBindingFunctionExpression,
-  isVueEventBindingMemberExpression,
-  unwrapVueEventBindingTsNode,
-} from '../utilities/vue-event-binding.js';
 
 /**
 @import {Doc} from "../../document/index.js"
 */
 
 function shouldPrintSemicolon(path, options) {
-  if (isSingleVueEventBindingExpressionStatement(path, options)) {
-    const expression = unwrapVueEventBindingTsNode(path.node.expression);
-    return isVueEventBindingFunctionExpression(expression) || isVueEventBindingMemberExpression(expression);
-  }
-
   if (!options.semi) {
     return false;
   }
 
-  if (
-    // Do not append semicolon after the only JSX element in a program
-    isSingleJsxExpressionStatementInMarkdown(path, options) ||
-    // Do not append semicolon after the only HTML event binding expression in a program
-    isSingleHtmlEventHandlerExpressionStatement(path, options)
-  ) {
+  // Do not append semicolon after the only JSX element in a program
+  if (isSingleJsxExpressionStatementInMarkdown(path, options)) {
     return false;
   }
 

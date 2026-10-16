@@ -10,12 +10,7 @@ function shouldExpressionStatementPrintLeadingSemicolon(path, options) {
 
   const { node } = path;
 
-  if (
-    node.type !== 'ExpressionStatement' ||
-    isSingleJsxExpressionStatementInMarkdown(path, options) ||
-    isSingleVueEventBindingExpressionStatement(path, options) ||
-    isSingleHtmlEventHandlerExpressionStatement(path, options)
-  ) {
+  if (node.type !== 'ExpressionStatement' || isSingleJsxExpressionStatementInMarkdown(path, options)) {
     return false;
   }
 
@@ -40,13 +35,11 @@ function expressionNeedsAsiProtection(path, options) {
   const { node } = path;
   switch (node.type) {
     case 'ParenthesizedExpression':
-    case 'TypeCastExpression':
     case 'TSTypeAssertion':
     case 'ArrayExpression':
     case 'ArrayPattern':
     case 'TemplateLiteral':
     case 'TemplateElement':
-    case 'RegExpLiteral':
       return true;
 
     case 'ArrowFunctionExpression':
@@ -62,11 +55,6 @@ function expressionNeedsAsiProtection(path, options) {
       }
       break;
     }
-    case 'BindExpression':
-      if (!node.object) {
-        return true;
-      }
-      break;
 
     case 'Literal':
       if (node.regex) {
@@ -99,27 +87,7 @@ const isSingleExpressionStatement = ({ node, parent }) =>
   ((Array.isArray(parent.directives) && parent.directives.length === 0) || !parent.directives);
 
 function isSingleJsxExpressionStatementInMarkdown(path, options) {
-  return (
-    (options.parentParser === 'markdown' || options.parentParser === 'mdx') &&
-    isSingleExpressionStatement(path) &&
-    isJsxElement(path.node.expression)
-  );
+  return options.parentParser === 'markdown' && isSingleExpressionStatement(path) && isJsxElement(path.node.expression);
 }
 
-function isSingleHtmlEventHandlerExpressionStatement(path, options) {
-  return options.__isHtmlInlineEventHandler && isSingleExpressionStatement(path);
-}
-
-function isSingleVueEventBindingExpressionStatement(path, options) {
-  return (
-    (options.parser === '__vue_event_binding' || options.parser === '__vue_ts_event_binding') &&
-    isSingleExpressionStatement(path)
-  );
-}
-
-export {
-  isSingleHtmlEventHandlerExpressionStatement,
-  isSingleJsxExpressionStatementInMarkdown,
-  isSingleVueEventBindingExpressionStatement,
-  shouldExpressionStatementPrintLeadingSemicolon,
-};
+export { isSingleJsxExpressionStatementInMarkdown, shouldExpressionStatementPrintLeadingSemicolon };

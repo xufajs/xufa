@@ -13,6 +13,17 @@ app.register(ui, {
   transformSpecification: (document, request) => ({ ...document, host: request.hostname }),
   uiHooks: { onRequest: async () => {} },
 });
+app.register(ui, {
+  cdn: ['npmmirror', 'https://cdn.example/{name}/{version}/{file}'],
+  integrity: { 'swagger-ui-bundle.js': 'sha384-x' },
+  css: '.topbar { display: none }',
+  head: '<link rel="icon" href="/favicon.png">',
+  page: (html, request) => html.replace('</body>', `<p>${request.url}</p></body>`),
+});
+app.register(ui, { cdn: 'unpkg', integrity: false, page: async (html) => html });
+expectTypeOf(ui.CDNS.npmmirror).toEqualTypeOf<string>();
+// @ts-expect-error: a page hook gives the HTML
+app.register(ui, { page: () => 1 });
 // @ts-expect-error
 app.register(ui, { ui: 'graphiql' });
 // @ts-expect-error

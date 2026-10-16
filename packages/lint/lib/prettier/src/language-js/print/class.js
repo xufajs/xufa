@@ -29,12 +29,7 @@ import { printTypeAnnotationProperty } from './type-annotation.js';
 
 const getHeritageGroupId = createGroupIdMapper('heritageGroup');
 
-const isInterface = createTypeCheckFunction([
-  'TSInterfaceDeclaration',
-  'DeclareInterface',
-  'InterfaceDeclaration',
-  'InterfaceTypeAnnotation',
-]);
+const isInterface = createTypeCheckFunction(['TSInterfaceDeclaration']);
 
 /*
 - `ClassDeclaration`
@@ -62,7 +57,7 @@ function printClass(path, options, print) {
 function printClassWithoutDecorators(path, options, print) {
   const { node } = path;
   const isPrintingInterface = isInterface(node);
-  const isPrintingRecord = node.type === 'RecordDeclaration';
+  const isPrintingRecord = false;
 
   const keyword = isPrintingInterface ? 'interface' : isPrintingRecord ? 'record' : 'class';
 
@@ -76,7 +71,7 @@ function printClassWithoutDecorators(path, options, print) {
   const partsGroup = [];
   const extendsParts = [];
 
-  if (node.type !== 'InterfaceTypeAnnotation') {
+  {
     if (node.id) {
       partsGroup.push(' ');
     }
@@ -176,12 +171,9 @@ function shouldPrintClassInGroupModeWithoutCache(path) {
 
   const groupMode =
     // `ClassImplements` seem not allow `QualifiedTypeIdentifier`
-    (heritage.type === 'InterfaceExtends' &&
-      heritage.id.type === 'QualifiedTypeIdentifier' &&
-      !heritage.typeParameters) ||
-    ((heritage.type === 'TSClassImplements' || heritage.type === 'TSInterfaceHeritage') &&
-      isMemberExpression(heritage.expression) &&
-      !heritage.typeArguments);
+    (heritage.type === 'TSClassImplements' || heritage.type === 'TSInterfaceHeritage') &&
+    isMemberExpression(heritage.expression) &&
+    !heritage.typeArguments;
 
   return groupMode;
 }
@@ -291,11 +283,7 @@ function printClassProperty(path, options, print) {
   if (node.variance) {
     parts.push(print('variance'));
   }
-  if (
-    node.type === 'ClassAccessorProperty' ||
-    node.type === 'AccessorProperty' ||
-    node.type === 'TSAbstractAccessorProperty'
-  ) {
+  if (node.type === 'AccessorProperty' || node.type === 'TSAbstractAccessorProperty') {
     parts.push('accessor ');
   }
   parts.push(

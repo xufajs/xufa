@@ -1,6 +1,6 @@
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
-import { Bus } from '../index.js';
+import { Bus, start } from '../index.js';
 
 const fixture = path.join(import.meta.dirname, 'fixtures', 'app.js');
 
@@ -68,6 +68,28 @@ describe('bus in one process', () => {
     });
     await expect(bus.request('fails')).rejects.toThrow('bad');
   });
+
+  it('requestThen() answers to a callback: at once for a handler that answers at once, else with its promise', async () => {
+    const bus = new Bus();
+    bus.on('double', (n) => n * 2);
+    bus.on('later', async (n) => n + 1);
+    bus.on('fails', () => {
+      throw new Error('bad');
+    });
+    bus.on('two', () => 1).on('two', async () => 2);
+    const answers = [];
+    bus.requestThen('double', 21, {}, (err, value) => answers.push(['double', err, value]));
+    // (At once: before this line.)
+    expect(answers).toEqual([['double', null, 42]]);
+    const settled = (event, data) =>
+      new Promise((resolve) => {
+        bus.requestThen(event, data, {}, (err, value) => resolve([err && err.message, value]));
+      });
+    expect(await settled('later', 1)).toEqual([null, 2]);
+    expect(await settled('fails')).toEqual(['bad', undefined]);
+    expect(await settled('two')).toEqual([null, 2]);
+    expect(await settled('nobody')).toEqual([null, undefined]);
+  });
 });
 
 describe('start({ marshal })', () => {
@@ -91,5 +113,39 @@ describe('start({ marshal })', () => {
         sharedKept: true,
       });
     }
+  });
+});
+
+describe('start({ marshal: options })', () => {
+  it("writes what is not registered as JSON would, with unknown 'json' and functions 'skip'", () => {
+    const fixture = path.join(import.meta.dirname, 'fixtures', 'marshal-options.js');
+    const result = spawnSync(process.execPath, [fixture], { timeout: 30000 });
+    expect(result.status).toBe(0);
+    expect(JSON.parse(result.stdout.toString().trim())).toEqual({
+      dateIsDate: true,
+      time: 0,
+      id: 'id:ab',
+      hasFn: false,
+      list: [1, null],
+    });
+  });
+});
+
+describe('start({ serialization })', () => {
+  const run = (serialization) => {
+    const result = spawnSync(process.execPath, [path.join(import.meta.dirname, 'fixtures', 'serialization.js'), serialization], {
+      timeout: 30000,
+    });
+    expect(result.status).toBe(0);
+    return JSON.parse(result.stdout.toString().trim());
+  };
+
+  it("'advanced' (the default) keeps Dates; 'json' makes them strings, on the bus and in the app's own messages", () => {
+    expect(run('advanced')).toEqual({ bus: 'Date', own: 'Date' });
+    expect(run('json')).toEqual({ bus: 'string', own: 'string' });
+  });
+
+  it('refuses other values', async () => {
+    await expect(start({ serialization: 'yaml', workers: 0 })).rejects.toThrow(TypeError);
   });
 });

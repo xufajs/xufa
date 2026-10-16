@@ -1,0 +1,176 @@
+const fs = require('node:fs');
+const path = require('node:path');
+const { Session } = require('node:inspector');
+const { fileURLToPath } = require('node:url');
+const { remapCoverage, remapBundle } = require('./remap');
+
+const RUNTIME_DIR = path.join(__dirname, '..');
+const NODE_MODULES = `${path.sep}node_modules${path.sep}`;
+
+function realPath(file) {
+  try {
+    return fs.realpathSync.native(file);
+  } catch {
+    return file;
+  }
+}
+
+function toPath(url) {
+  // (The module require() of an ES module is given after a worker's first file: it only re-exports the file's copy.)
+  if (/\.xufa-test-require-\d+\.mjs$/.test(url)) {
+    return null;
+  }
+  if (!url.startsWith('file:')) {
+    return path.isAbsolute(url) ? url : null;
+  }
+  try {
+    return fileURLToPath(url.replace(/\?.*$/, ''));
+  } catch {
+    return null;
+  }
+}
+
+// Count of every character of a script: its ranges applied from the outermost to the innermost. V8 leaves out the
+// nested ranges with the same count as their parent, so ranges can only be merged once resolved like this.
+function characterCounts(length, ranges) {
+  const counts = new Float64Array(length);
+  [...ranges]
+    .sort((a, b) => a.startOffset - b.startOffset || b.endOffset - a.endOffset)
+    .forEach(({ startOffset, endOffset, count }) => {
+      counts.fill(count, startOffset, Math.min(endOffset, length));
+    });
+  return counts;
+}
+
+// The coverage of a file: { counts, functions: Map, blocks: Map }, the maps keyed by "start:end".
+function emptyCoverage(length) {
+  return { counts: new Float64Array(length), functions: new Map(), blocks: new Map() };
+}
+
+// Adds b into a, growing a when b is longer.
+function addCounts(a, b) {
+  const target = a.length >= b.length ? a : Float64Array.from({ length: b.length }, (_, i) => a[i] ?? 0);
+  for (let i = 0; i < b.length; i += 1) {
+    target[i] += b[i];
+  }
+  return target;
+}
+
+function addScript(files, file, functions) {
+  const ranges = functions.flatMap((fn) => fn.ranges);
+  const length = Math.max(...ranges.map((range) => range.endOffset));
+  const coverage = files.get(file) ?? emptyCoverage(length);
+  coverage.counts = addCounts(coverage.counts, characterCounts(length, ranges));
+  functions.forEach(({ functionName, ranges: [first, ...blocks] }) => {
+    coverage.functions.set(`${first.startOffset}:${first.endOffset}`, {
+      name: functionName,
+      startOffset: first.startOffset,
+      endOffset: first.endOffset,
+    });
+    blocks.forEach(({ startOffset, endOffset }) => {
+      coverage.blocks.set(`${startOffset}:${endOffset}`, { startOffset, endOffset });
+    });
+  });
+  files.set(file, coverage);
+}
+
+// Project files only: not dependencies, not @xufa/test, not the test files themselves.
+function projectFile(file, { rootDir, realRoot, testFiles }) {
+  return (
+    file !== null &&
+    (file.startsWith(rootDir) || file.startsWith(realRoot)) &&
+    !file.includes(NODE_MODULES) &&
+    !file.startsWith(RUNTIME_DIR) &&
+    !testFiles.has(file)
+  );
+}
+
+// V8's precise coverage of the code this thread runs: no instrumentation, V8 counts the blocks it executes.
+class CoverageCollector {
+  constructor({ rootDir, testFiles = [] }) {
+    this.rootDir = rootDir;
+    // V8 names scripts by their real path: a root reached through a symlink (macOS's /var) is matched both ways.
+    this.realRoot = realPath(rootDir);
+    this.testFiles = new Set(testFiles.flatMap((file) => [file, realPath(file)]));
+    this.session = new Session();
+    this.files = new Map();
+  }
+
+  post(method, params = {}) {
+    const { promise, resolve, reject } = Promise.withResolvers();
+    this.session.post(method, params, (error, result) => (error ? reject(error) : resolve(result)));
+    return promise;
+  }
+
+  async start() {
+    this.session.connect();
+    await this.post('Profiler.enable');
+    await this.post('Profiler.startPreciseCoverage', { callCount: true, detailed: true });
+  }
+
+  includes(file) {
+    return projectFile(file, this);
+  }
+
+  // Takes the counts so far, which V8 then resets. Called after every test file, as the copies of the modules it
+  // loaded are released.
+  async take() {
+    const { result } = await this.post('Profiler.takePreciseCoverage');
+    result.forEach(({ url, functions }) => {
+      const file = toPath(url);
+      if (this.includes(file) && functions.length > 0) {
+        addScript(this.files, file, functions);
+      }
+    });
+  }
+
+  async stop() {
+    await this.take();
+    await this.post('Profiler.stopPreciseCoverage');
+    this.session.disconnect();
+    // Compiled files on their source: their maps are in this thread's compile caches.
+    this.files.forEach((coverage, file) => {
+      const remapped = remapCoverage(file, coverage);
+      if (remapped) {
+        this.files.set(file, remapped);
+      }
+    });
+    return serialize(this.files);
+  }
+}
+
+// For postMessage: plain objects and arrays.
+function serialize(files) {
+  return Object.fromEntries(
+    [...files].map(([file, { counts, functions, blocks }]) => [
+      file,
+      { counts, functions: [...functions.values()], blocks: [...blocks.values()] },
+    ])
+  );
+}
+
+// The coverage of a browser page (browser mode): V8's, of the bundle it ran (code, with its source map, sources as
+// paths), on the project files the bundle was built from.
+function bundleCoverage(code, map, functions, { rootDir, testFiles = [] }) {
+  const scripts = new Map();
+  addScript(scripts, 'bundle', functions);
+  const scope = { rootDir, realRoot: realPath(rootDir), testFiles: new Set(testFiles.flatMap((file) => [file, realPath(file)])) };
+  return serialize(remapBundle(code, map, scripts.get('bundle'), (file) => projectFile(file, scope)));
+}
+
+// Merges the coverage of several threads.
+function mergeCoverage(results) {
+  const files = new Map();
+  results.forEach((result) => {
+    Object.entries(result).forEach(([file, { counts, functions, blocks }]) => {
+      const coverage = files.get(file) ?? emptyCoverage(counts.length);
+      coverage.counts = addCounts(coverage.counts, counts);
+      functions.forEach((fn) => coverage.functions.set(`${fn.startOffset}:${fn.endOffset}`, fn));
+      blocks.forEach((block) => coverage.blocks.set(`${block.startOffset}:${block.endOffset}`, block));
+      files.set(file, coverage);
+    });
+  });
+  return serialize(files);
+}
+
+module.exports = { CoverageCollector, mergeCoverage, bundleCoverage, realPath };

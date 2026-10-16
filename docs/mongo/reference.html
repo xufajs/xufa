@@ -44,14 +44,15 @@
       <aside class="sidebar">
         <h4>Reference</h4>
         <ul>
-          <li><a href="#functions">Functions (3)</a></li>
-          <li><a href="#classes">Classes (16)</a></li>
-          <li><a href="#interfaces">Interfaces (11)</a></li>
-          <li><a href="#types">Types (3)</a></li>
+          <li><a href="#functions">Functions (4)</a></li>
+          <li><a href="#classes">Classes (19)</a></li>
+          <li><a href="#interfaces">Interfaces (13)</a></li>
+          <li><a href="#types">Types (4)</a></li>
         </ul>
         <h4>Packages</h4>
         <ul>
           <li><a href="../websocket/index.html">@xufa/websocket</a></li>
+          <li><a href="../express/index.html">@xufa/express</a></li>
           <li><a href="../admin/index.html">@xufa/admin</a></li>
           <li><a href="../session/index.html">@xufa/session</a></li>
           <li><a href="../forms/index.html">@xufa/forms</a></li>
@@ -101,7 +102,7 @@
         </p>
 
         <h2 id="functions">Functions</h2>
-        <p class="ref-index"><a href="#ref-parseUrl"><code>parseUrl</code></a>, <a href="#ref-serialize"><code>serialize</code></a>, <a href="#ref-deserialize"><code>deserialize</code></a></p>
+        <p class="ref-index"><a href="#ref-parseUrl"><code>parseUrl</code></a>, <a href="#ref-registerBsonTypes"><code>registerBsonTypes</code></a>, <a href="#ref-serialize"><code>serialize</code></a>, <a href="#ref-deserialize"><code>deserialize</code></a></p>
 
         <h3 id="ref-parseUrl"><code>parseUrl</code></h3>
         <pre><code class="language-ts">export declare function parseUrl(url: string): {
@@ -114,6 +115,12 @@
 };</code></pre>
         <p>The parts of a connection string (mongodb:// or mongodb+srv://): the hosts, the credentials, the database and the options.</p>
 
+        <h3 id="ref-registerBsonTypes"><code>registerBsonTypes</code></h3>
+        <pre><code class="language-ts">export declare function registerBsonTypes&lt;R extends { register(Class: Function, options?: object): unknown }&gt;(
+  registry: R
+): R;</code></pre>
+        <p>Registers the types of BSON in a registry of</p>
+
         <h3 id="ref-serialize"><code>serialize</code></h3>
         <pre><code class="language-ts">export declare function serialize(doc: Document, reserve?: number): Buffer;</code></pre>
         <p>A document as BSON bytes.</p>
@@ -123,7 +130,7 @@
         <p>The document of BSON bytes (from offset).</p>
 
         <h2 id="classes">Classes</h2>
-        <p class="ref-index"><a href="#ref-Cursor"><code>Cursor</code></a>, <a href="#ref-Collection"><code>Collection</code></a>, <a href="#ref-Db"><code>Db</code></a>, <a href="#ref-ClientSession"><code>ClientSession</code></a>, <a href="#ref-MongoClient"><code>MongoClient</code></a>, <a href="#ref-ObjectId"><code>ObjectId</code></a>, <a href="#ref-Binary"><code>Binary</code></a>, <a href="#ref-Timestamp"><code>Timestamp</code></a>, <a href="#ref-Decimal128"><code>Decimal128</code></a>, <a href="#ref-MinKey"><code>MinKey</code></a>, <a href="#ref-MaxKey"><code>MaxKey</code></a>, <a href="#ref-Int32"><code>Int32</code></a>, <a href="#ref-Double"><code>Double</code></a>, <a href="#ref-MongoError"><code>MongoError</code></a>, <a href="#ref-MongoNetworkError"><code>MongoNetworkError</code></a>, <a href="#ref-MongoServerError"><code>MongoServerError</code></a></p>
+        <p class="ref-index"><a href="#ref-Cursor"><code>Cursor</code></a>, <a href="#ref-Collection"><code>Collection</code></a>, <a href="#ref-Db"><code>Db</code></a>, <a href="#ref-Admin"><code>Admin</code></a>, <a href="#ref-ClientSession"><code>ClientSession</code></a>, <a href="#ref-MongoClient"><code>MongoClient</code></a>, <a href="#ref-ObjectId"><code>ObjectId</code></a>, <a href="#ref-Binary"><code>Binary</code></a>, <a href="#ref-Timestamp"><code>Timestamp</code></a>, <a href="#ref-Decimal128"><code>Decimal128</code></a>, <a href="#ref-MinKey"><code>MinKey</code></a>, <a href="#ref-MaxKey"><code>MaxKey</code></a>, <a href="#ref-Int32"><code>Int32</code></a>, <a href="#ref-Double"><code>Double</code></a>, <a href="#ref-MongoError"><code>MongoError</code></a>, <a href="#ref-MongoNetworkError"><code>MongoNetworkError</code></a>, <a href="#ref-MongoNotConnectedError"><code>MongoNotConnectedError</code></a>, <a href="#ref-MongoServerSelectionError"><code>MongoServerSelectionError</code></a>, <a href="#ref-MongoServerError"><code>MongoServerError</code></a></p>
 
         <h3 id="ref-Cursor"><code>Cursor</code></h3>
         <pre><code class="language-ts">export declare class Cursor&lt;T = Document&gt; implements AsyncIterable&lt;T&gt; { ... }</code></pre>
@@ -137,7 +144,11 @@
                 <tr><td><code>limit(count: number)</code></td><td><code>this</code></td><td></td></tr>
                 <tr><td><code>project(projection: Record&lt;string, 0 | 1 | boolean&gt;)</code></td><td><code>this</code></td><td></td></tr>
                 <tr><td><code>batchSize(size: number)</code></td><td><code>this</code></td><td></td></tr>
+                <tr><td><code>collation(collation: Document)</code></td><td><code>this</code></td><td></td></tr>
+                <tr><td><code>map&lt;R&gt;(transform: (doc: T) =&gt; R)</code></td><td><code><a href="#ref-Cursor">Cursor</a>&lt;R&gt;</code></td><td><p>A cursor giving transform(doc) instead of each document (in next, toArray and for await).</p></td></tr>
                 <tr><td><code>next()</code></td><td><code>Promise&lt;T | null&gt;</code></td><td></td></tr>
+                <tr><td><code>hasNext()</code></td><td><code>Promise&lt;boolean&gt;</code></td><td></td></tr>
+                <tr><td><code>forEach(fn: (doc: T) =&gt; boolean | void)</code></td><td><code>Promise&lt;void&gt;</code></td><td><p>fn with each document, until there are no more or it returns false.</p></td></tr>
                 <tr><td><code>toArray()</code></td><td><code>Promise&lt;T[]&gt;</code></td><td></td></tr>
                 <tr><td><code>close()</code></td><td><code>Promise&lt;void&gt;</code></td><td></td></tr>
                 <tr><td><code>[Symbol.asyncIterator]()</code></td><td><code>AsyncIterator&lt;T&gt;</code></td><td></td></tr>
@@ -154,10 +165,13 @@
               <tbody>
                 <tr><td><code>readonly name</code></td><td><code>string</code></td><td></td></tr>
                 <tr><td><code>readonly db</code></td><td><code><a href="#ref-Db">Db</a></code></td><td></td></tr>
+                <tr><td><code>readonly collectionName</code></td><td><code>string</code></td><td><p>The official driver's names: the collection's and its database's.</p></td></tr>
+                <tr><td><code>readonly dbName</code></td><td><code>string</code></td><td></td></tr>
                 <tr><td><code>find(filter?: Filter&lt;T&gt;, options?: FindOptions&lt;T&gt;)</code></td><td><code><a href="#ref-Cursor">Cursor</a>&lt;T&gt;</code></td><td></td></tr>
                 <tr><td><code>findOne(filter?: Filter&lt;T&gt;, options?: FindOptions&lt;T&gt;)</code></td><td><code>Promise&lt;T | null&gt;</code></td><td></td></tr>
                 <tr><td><code>aggregate&lt;R = Document&gt;(pipeline: Document[], options?: AggregateOptions)</code></td><td><code><a href="#ref-Cursor">Cursor</a>&lt;R&gt;</code></td><td></td></tr>
                 <tr><td><code>countDocuments(filter?: Filter&lt;T&gt;, options?: ReadOptions &amp; { skip?: number; limit?: number })</code></td><td><code>Promise&lt;number&gt;</code></td><td></td></tr>
+                <tr><td><code>estimatedDocumentCount(options?: ReadOptions)</code></td><td><code>Promise&lt;number&gt;</code></td><td><p>The count of the collection's metadata: fast, without a filter.</p></td></tr>
                 <tr><td><code>insertOne(doc: T, options?: WriteOptions)</code></td><td><code>Promise&lt;<a href="#ref-InsertOneResult">InsertOneResult</a>&gt;</code></td><td></td></tr>
                 <tr><td><code>insertMany(docs: T[], options?: WriteOptions &amp; { ordered?: boolean })</code></td><td><code>Promise&lt;<a href="#ref-InsertManyResult">InsertManyResult</a>&gt;</code></td><td></td></tr>
                 <tr><td><code>updateOne(filter: Filter&lt;T&gt;, update: Document, options?: WriteOptions &amp; { upsert?: boolean; arrayFilters?: Document[] })</code></td><td><code>Promise&lt;<a href="#ref-UpdateResult">UpdateResult</a>&gt;</code></td><td></td></tr>
@@ -165,9 +179,18 @@
                 <tr><td><code>replaceOne(filter: Filter&lt;T&gt;, replacement: T, options?: WriteOptions &amp; { upsert?: boolean })</code></td><td><code>Promise&lt;<a href="#ref-UpdateResult">UpdateResult</a>&gt;</code></td><td></td></tr>
                 <tr><td><code>deleteOne(filter: Filter&lt;T&gt;, options?: WriteOptions)</code></td><td><code>Promise&lt;<a href="#ref-DeleteResult">DeleteResult</a>&gt;</code></td><td></td></tr>
                 <tr><td><code>deleteMany(filter: Filter&lt;T&gt;, options?: WriteOptions)</code></td><td><code>Promise&lt;<a href="#ref-DeleteResult">DeleteResult</a>&gt;</code></td><td></td></tr>
-                <tr><td><code>createIndex(keys: Record&lt;string, 1 | -1 | string&gt;, options?: SessionOption &amp; Document)</code></td><td><code>Promise&lt;string&gt;</code></td><td></td></tr>
-                <tr><td><code>dropIndex(name: string, options?: SessionOption)</code></td><td><code>Promise&lt;void&gt;</code></td><td></td></tr>
+                <tr><td><code>findOneAndUpdate(filter: Filter&lt;T&gt;, update: Document, options?: FindOneAndOptions &amp; { upsert?: boolean; arrayFilters?: Document[] })</code></td><td><code>Promise&lt;T | null&gt;</code></td><td></td></tr>
+                <tr><td><code>findOneAndReplace(filter: Filter&lt;T&gt;, replacement: T, options?: FindOneAndOptions &amp; { upsert?: boolean })</code></td><td><code>Promise&lt;T | null&gt;</code></td><td></td></tr>
+                <tr><td><code>findOneAndDelete(filter: Filter&lt;T&gt;, options?: FindOneAndOptions)</code></td><td><code>Promise&lt;T | null&gt;</code></td><td></td></tr>
+                <tr><td><code>bulkWrite(operations: AnyBulkWriteOperation&lt;T&gt;[], options?: WriteOptions &amp; { ordered?: boolean })</code></td><td><code>Promise&lt;<a href="#ref-BulkWriteResult">BulkWriteResult</a>&gt;</code></td><td><p>Ordered (the default): in order, stopping at the first error; unordered: inserts, then updates, then deletes.</p></td></tr>
+                <tr><td><code>rename(newName: string, options?: SessionOption &amp; { dropTarget?: boolean })</code></td><td><code>Promise&lt;<a href="#ref-Collection">Collection</a>&lt;T&gt;&gt;</code></td><td><p>Renames the collection (dropTarget: replacing one of that name), giving the collection of the new name.</p></td></tr>
+                <tr><td><code>createIndex(keys: Record&lt;string, 1 | -1 | string&gt; | string | Array&lt;string | [string, 1 | -1 | string]&gt;, options?: SessionOption &amp; Document)</code></td><td><code>Promise&lt;string&gt;</code></td><td><p>keys: { field: 1 }, 'field' or [['field', 1], ...]; the name of the index.</p></td></tr>
+                <tr><td><code>createIndexes(specs: Array&lt;{ key: Record&lt;string, 1 | -1 | string&gt;; name?: string } &amp; Document&gt;, options?: SessionOption &amp; Document)</code></td><td><code>Promise&lt;string[]&gt;</code></td><td></td></tr>
+                <tr><td><code>dropIndex(name: string, options?: WriteOptions)</code></td><td><code>Promise&lt;<a href="#ref-Document">Document</a>&gt;</code></td><td><p>The reply of the server: { nIndexesWas, ok }.</p></td></tr>
+                <tr><td><code>dropIndexes(options?: WriteOptions)</code></td><td><code>Promise&lt;boolean&gt;</code></td><td><p>Every index but _id's.</p></td></tr>
+                <tr><td><code>listIndexes(options?: ReadOptions &amp; { batchSize?: number })</code></td><td><code><a href="#ref-Cursor">Cursor</a>&lt;<a href="#ref-Document">Document</a>&gt;</code></td><td></td></tr>
                 <tr><td><code>indexes(options?: ReadOptions)</code></td><td><code>Promise&lt;<a href="#ref-Document">Document</a>[]&gt;</code></td><td></td></tr>
+                <tr><td><code>indexExists(names: string | string[], options?: ReadOptions)</code></td><td><code>Promise&lt;boolean&gt;</code></td><td></td></tr>
                 <tr><td><code>drop(options?: SessionOption)</code></td><td><code>Promise&lt;boolean&gt;</code></td><td></td></tr>
               </tbody>
             </table>
@@ -181,12 +204,30 @@
               <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
               <tbody>
                 <tr><td><code>readonly name</code></td><td><code>string</code></td><td></td></tr>
+                <tr><td><code>readonly databaseName</code></td><td><code>string</code></td><td></td></tr>
                 <tr><td><code>readonly client</code></td><td><code><a href="#ref-MongoClient">MongoClient</a></code></td><td></td></tr>
                 <tr><td><code>collection&lt;T extends Document = Document&gt;(name: string)</code></td><td><code><a href="#ref-Collection">Collection</a>&lt;T&gt;</code></td><td></td></tr>
                 <tr><td><code>command(command: Document, options?: ReadOptions)</code></td><td><code>Promise&lt;<a href="#ref-Document">Document</a>&gt;</code></td><td></td></tr>
-                <tr><td><code>listCollections(filter?: Document, options?: { nameOnly?: boolean; readPreference?: ReadPreference })</code></td><td><code>Promise&lt;<a href="#ref-Document">Document</a>[]&gt;</code></td><td></td></tr>
+                <tr><td><code>listCollections(filter?: Document, options?: { nameOnly?: boolean; readPreference?: ReadPreference; batchSize?: number } &amp; SessionOption)</code></td><td><code><a href="#ref-Cursor">Cursor</a>&lt;<a href="#ref-Document">Document</a>&gt;</code></td><td></td></tr>
                 <tr><td><code>createCollection&lt;T extends Document = Document&gt;(name: string, options?: Document)</code></td><td><code>Promise&lt;<a href="#ref-Collection">Collection</a>&lt;T&gt;&gt;</code></td><td></td></tr>
                 <tr><td><code>dropDatabase()</code></td><td><code>Promise&lt;void&gt;</code></td><td></td></tr>
+                <tr><td><code>admin()</code></td><td><code><a href="#ref-Admin">Admin</a></code></td><td></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-Admin"><code>Admin</code></h3>
+        <pre><code class="language-ts">export declare class Admin { ... }</code></pre>
+        <p>The commands of the deployment, on the admin database.</p>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>command(command: Document, options?: ReadOptions)</code></td><td><code>Promise&lt;<a href="#ref-Document">Document</a>&gt;</code></td><td></td></tr>
+                <tr><td><code>listDatabases(options?: SessionOption &amp; { nameOnly?: boolean })</code></td><td><code>Promise&lt;{ databases: Array&lt;{ name: string; sizeOnDisk?: number; empty?: boolean }&gt;; totalSize?: number; ok: number; }&gt;</code></td><td></td></tr>
+                <tr><td><code>ping(options?: ReadOptions)</code></td><td><code>Promise&lt;<a href="#ref-Document">Document</a>&gt;</code></td><td></td></tr>
+                <tr><td><code>serverStatus(options?: ReadOptions)</code></td><td><code>Promise&lt;<a href="#ref-Document">Document</a>&gt;</code></td><td></td></tr>
+                <tr><td><code>buildInfo(options?: ReadOptions)</code></td><td><code>Promise&lt;<a href="#ref-Document">Document</a>&gt;</code></td><td></td></tr>
               </tbody>
             </table>
           </div>
@@ -217,6 +258,7 @@
               <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
               <tbody>
                 <tr><td><code>new (url?: string, options?: MongoClientOptions)</code></td><td></td><td></td></tr>
+                <tr><td><code>static connect(url?: string, options?: MongoClientOptions)</code></td><td><code>Promise&lt;<a href="#ref-MongoClient">MongoClient</a>&gt;</code></td><td><p>A client, connected.</p></td></tr>
                 <tr><td><code>readonly supportsTransactions</code></td><td><code>boolean</code></td><td></td></tr>
                 <tr><td><code>connect()</code></td><td><code>Promise&lt;this&gt;</code></td><td></td></tr>
                 <tr><td><code>db(name?: string)</code></td><td><code><a href="#ref-Db">Db</a></code></td><td></td></tr>
@@ -344,6 +386,14 @@
         <pre><code class="language-ts">export declare class MongoNetworkError extends MongoError { ... }</code></pre>
         <p>An error of the connection to a server (it could not connect, or the connection was lost).</p>
 
+        <h3 id="ref-MongoNotConnectedError"><code>MongoNotConnectedError</code></h3>
+        <pre><code class="language-ts">export declare class MongoNotConnectedError extends MongoError { ... }</code></pre>
+        <p>A command on a client closed (until connect() again).</p>
+
+        <h3 id="ref-MongoServerSelectionError"><code>MongoServerSelectionError</code></h3>
+        <pre><code class="language-ts">export declare class MongoServerSelectionError extends MongoError { ... }</code></pre>
+        <p>No server to send a command to within serverSelectionTimeoutMS.</p>
+
         <h3 id="ref-MongoServerError"><code>MongoServerError</code></h3>
         <pre><code class="language-ts">export declare class MongoServerError extends MongoError { ... }</code></pre>
         <p>An error the server answered, with its code and codeName (11000: a duplicate key).</p>
@@ -360,7 +410,7 @@
           </div>
 
         <h2 id="interfaces">Interfaces</h2>
-        <p class="ref-index"><a href="#ref-WriteConcern"><code>WriteConcern</code></a>, <a href="#ref-MongoClientOptions"><code>MongoClientOptions</code></a>, <a href="#ref-SessionOption"><code>SessionOption</code></a>, <a href="#ref-ReadOptions"><code>ReadOptions</code></a>, <a href="#ref-WriteOptions"><code>WriteOptions</code></a>, <a href="#ref-FindOptions"><code>FindOptions</code></a>, <a href="#ref-AggregateOptions"><code>AggregateOptions</code></a>, <a href="#ref-InsertOneResult"><code>InsertOneResult</code></a>, <a href="#ref-InsertManyResult"><code>InsertManyResult</code></a>, <a href="#ref-UpdateResult"><code>UpdateResult</code></a>, <a href="#ref-DeleteResult"><code>DeleteResult</code></a></p>
+        <p class="ref-index"><a href="#ref-WriteConcern"><code>WriteConcern</code></a>, <a href="#ref-MongoClientOptions"><code>MongoClientOptions</code></a>, <a href="#ref-SessionOption"><code>SessionOption</code></a>, <a href="#ref-ReadOptions"><code>ReadOptions</code></a>, <a href="#ref-WriteOptions"><code>WriteOptions</code></a>, <a href="#ref-FindOptions"><code>FindOptions</code></a>, <a href="#ref-AggregateOptions"><code>AggregateOptions</code></a>, <a href="#ref-InsertOneResult"><code>InsertOneResult</code></a>, <a href="#ref-InsertManyResult"><code>InsertManyResult</code></a>, <a href="#ref-UpdateResult"><code>UpdateResult</code></a>, <a href="#ref-FindOneAndOptions"><code>FindOneAndOptions</code></a>, <a href="#ref-BulkWriteResult"><code>BulkWriteResult</code></a>, <a href="#ref-DeleteResult"><code>DeleteResult</code></a></p>
 
         <h3 id="ref-WriteConcern"><code>WriteConcern</code></h3>
         <pre><code class="language-ts">export interface WriteConcern { ... }</code></pre>
@@ -383,6 +433,7 @@
             <table class="ref-members">
               <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
               <tbody>
+                <tr><td><code>ignoreUndefined?</code></td><td><code>boolean</code></td><td><p>true: fields undefined are left out of the documents; false (the default, as the official driver): written as null.</p></td></tr>
                 <tr><td><code>maxPoolSize?</code></td><td><code>number</code></td><td></td></tr>
                 <tr><td><code>readPreference?</code></td><td><code><a href="#ref-ReadPreference">ReadPreference</a></code></td><td></td></tr>
                 <tr><td><code>retryWrites?</code></td><td><code>boolean</code></td><td></td></tr>
@@ -456,6 +507,7 @@
                 <tr><td><code>batchSize?</code></td><td><code>number</code></td><td></td></tr>
                 <tr><td><code>hint?</code></td><td><code>string | <a href="#ref-Document">Document</a></code></td><td></td></tr>
                 <tr><td><code>collation?</code></td><td><code><a href="#ref-Document">Document</a></code></td><td></td></tr>
+                <tr><td><code>allowDiskUse?</code></td><td><code>boolean</code></td><td></td></tr>
                 <tr><td><code>prefetch?</code></td><td><code>boolean</code></td><td><p>false: the next batch is not asked for before the one before is read.</p></td></tr>
                 <tr><td><code>readonly __type?</code></td><td><code>T</code></td><td></td></tr>
               </tbody>
@@ -515,7 +567,44 @@
                 <tr><td><code>acknowledged</code></td><td><code>boolean</code></td><td></td></tr>
                 <tr><td><code>matchedCount</code></td><td><code>number</code></td><td></td></tr>
                 <tr><td><code>modifiedCount</code></td><td><code>number</code></td><td></td></tr>
+                <tr><td><code>upsertedCount</code></td><td><code>number</code></td><td></td></tr>
                 <tr><td><code>upsertedId</code></td><td><code>any</code></td><td></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-FindOneAndOptions"><code>FindOneAndOptions</code></h3>
+        <pre><code class="language-ts">export interface FindOneAndOptions extends WriteOptions { ... }</code></pre>
+        <p>Options of findOneAndUpdate / Replace / Delete.</p>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>sort?</code></td><td><code>Record&lt;string, 1 | -1&gt;</code></td><td></td></tr>
+                <tr><td><code>projection?</code></td><td><code>Record&lt;string, 0 | 1 | boolean&gt;</code></td><td></td></tr>
+                <tr><td><code>hint?</code></td><td><code>string | <a href="#ref-Document">Document</a></code></td><td></td></tr>
+                <tr><td><code>collation?</code></td><td><code><a href="#ref-Document">Document</a></code></td><td></td></tr>
+                <tr><td><code>returnDocument?</code></td><td><code>'before' | 'after'</code></td><td><p>'before' (the default) or 'after' the change.</p></td></tr>
+                <tr><td><code>includeResultMetadata?</code></td><td><code>boolean</code></td><td><p>true: the command's result ({ value, ok, lastErrorObject }) instead of the document.</p></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-BulkWriteResult"><code>BulkWriteResult</code></h3>
+        <pre><code class="language-ts">export interface BulkWriteResult { ... }</code></pre>
+        <p>The result of bulkWrite(): the counts, and the _ids inserted and upserted by the operation's index.</p>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>acknowledged</code></td><td><code>boolean</code></td><td></td></tr>
+                <tr><td><code>insertedCount</code></td><td><code>number</code></td><td></td></tr>
+                <tr><td><code>matchedCount</code></td><td><code>number</code></td><td></td></tr>
+                <tr><td><code>modifiedCount</code></td><td><code>number</code></td><td></td></tr>
+                <tr><td><code>deletedCount</code></td><td><code>number</code></td><td></td></tr>
+                <tr><td><code>upsertedCount</code></td><td><code>number</code></td><td></td></tr>
+                <tr><td><code>insertedIds</code></td><td><code>Record&lt;number, any&gt;</code></td><td></td></tr>
+                <tr><td><code>upsertedIds</code></td><td><code>Record&lt;number, any&gt;</code></td><td></td></tr>
               </tbody>
             </table>
           </div>
@@ -534,7 +623,7 @@
           </div>
 
         <h2 id="types">Types</h2>
-        <p class="ref-index"><a href="#ref-Document"><code>Document</code></a>, <a href="#ref-Filter"><code>Filter</code></a>, <a href="#ref-ReadPreference"><code>ReadPreference</code></a></p>
+        <p class="ref-index"><a href="#ref-Document"><code>Document</code></a>, <a href="#ref-Filter"><code>Filter</code></a>, <a href="#ref-ReadPreference"><code>ReadPreference</code></a>, <a href="#ref-AnyBulkWriteOperation"><code>AnyBulkWriteOperation</code></a></p>
 
         <h3 id="ref-Document"><code>Document</code></h3>
         <pre><code class="language-ts">export type Document = Record&lt;string, any&gt;;</code></pre>
@@ -547,6 +636,42 @@
         <h3 id="ref-ReadPreference"><code>ReadPreference</code></h3>
         <pre><code class="language-ts">export type ReadPreference = 'primary' | 'primaryPreferred' | 'secondary' | 'secondaryPreferred' | 'nearest';</code></pre>
         <p>Which members of a replica set the reads go to: the primary (the default) or its secondaries.</p>
+
+        <h3 id="ref-AnyBulkWriteOperation"><code>AnyBulkWriteOperation</code></h3>
+        <pre><code class="language-ts">export type AnyBulkWriteOperation&lt;T = Document&gt; =
+  | { insertOne: { document: T } }
+  | {
+      updateOne: {
+        filter: Filter&lt;T&gt;;
+        update: Document;
+        upsert?: boolean;
+        arrayFilters?: Document[];
+        collation?: Document;
+        hint?: string | Document;
+      };
+    }
+  | {
+      updateMany: {
+        filter: Filter&lt;T&gt;;
+        update: Document;
+        upsert?: boolean;
+        arrayFilters?: Document[];
+        collation?: Document;
+        hint?: string | Document;
+      };
+    }
+  | {
+      replaceOne: {
+        filter: Filter&lt;T&gt;;
+        replacement: T;
+        upsert?: boolean;
+        collation?: Document;
+        hint?: string | Document;
+      };
+    }
+  | { deleteOne: { filter: Filter&lt;T&gt;; collation?: Document; hint?: string | Document } }
+  | { deleteMany: { filter: Filter&lt;T&gt;; collation?: Document; hint?: string | Document } };</code></pre>
+        <p>An operation of bulkWrite(), as the official driver has them.</p>
       </article>
     </div>
 

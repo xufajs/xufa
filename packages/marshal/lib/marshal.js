@@ -367,6 +367,8 @@ function encode(value, options, share) {
     if (unknown === 'error' || isOpaque(input)) {
       return fail(`${name} is not a registered class (registry.register(${name}))`, 'XUFA_MARSHAL_ERR_CLASS');
     }
+    // unknown: 'json': as JSON.stringify writes it, its toJSON() when it has one (an ObjectId as its hex).
+    if (unknown === 'json' && typeof input.toJSON === 'function') return val(input.toJSON(), depth);
     // (Its own fields, as JSON writes them, unless the class says otherwise: toJSON.)
     return objectOf(input, depth, share && typeof input.toJSON !== 'function');
   }

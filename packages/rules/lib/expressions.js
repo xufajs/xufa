@@ -20,15 +20,45 @@ const OPENL = Object.fromEntries(
     .map(([name, fn]) => [name, (...args) => fn(args, [])])
 );
 
-const engine = new Engine({ globals: { ...OPENL, Fun, error }, lenient: true, cacheSize: 5000 });
-const programs = new Engine({ globals: { ...OPENL, Fun, error }, lenient: true, cacheSize: 1000, statements: true });
-// (Of books with tdz: a let or const used before its declaration runs is an error, as in JavaScript. Made when used.)
-let checked = null;
-const programsOf = (tdz) => {
-  if (!tdz) return programs;
-  checked ??= new Engine({ globals: { ...OPENL, Fun, error }, lenient: true, cacheSize: 1000, statements: true, tdz });
-  return checked;
-};
+// The engines of a book's code: of expressions, of programs, and of programs with tdz (a let or const used before its
+// declaration runs is an error, as in JavaScript), each made when used. Books with methods (functions values have as
+// methods: list.sum()) have engines of their own, by their methods.
+function enginesWith(methods) {
+  const options = { globals: { ...OPENL, Fun, error }, lenient: true, methods };
+  let expressions = null;
+  let programs = null;
+  let checked = null;
+  return {
+    get expressions() {
+      expressions ??= new Engine({ ...options, cacheSize: 5000 });
+      return expressions;
+    },
+    programs(tdz) {
+      if (tdz) {
+        checked ??= new Engine({ ...options, cacheSize: 1000, statements: true, tdz });
+        return checked;
+      }
+      programs ??= new Engine({ ...options, cacheSize: 1000, statements: true });
+      return programs;
+    },
+  };
+}
+
+const plain = enginesWith(null);
+const byMethods = new WeakMap();
+function enginesOf(methods) {
+  if (!methods) return plain;
+  let engines = byMethods.get(methods);
+  if (!engines) {
+    engines = enginesWith(methods);
+    byMethods.set(methods, engines);
+  }
+  return engines;
+}
+
+// (The plain engines: what the book and its checks parse with, the names a program imports.)
+const engine = plain.expressions;
+const programs = plain.programs(false);
 
 // `this` out of strings and templates -> $this.
 function rewriteThis(source) {
@@ -67,10 +97,10 @@ const clean = (source) =>
       .replace(/;+\s*$/, '')
   );
 
-// (context) => value of a source; where says where it is (Table X, Sheet!B4) in the errors.
-function compileExpression(source, where) {
+// (context) => value of a source; where says where it is (Table X, Sheet!B4) in the errors; methods: of its book.
+function compileExpression(source, where, methods = null) {
   try {
-    const run = engine.compile(clean(source));
+    const run = enginesOf(methods).expressions.compile(clean(source));
     return (context) => run(context);
   } catch (err) {
     throw new RulesError(`${where}: ${err.message}`, 'XUFA_RULES_ERR_EXPRESSION');
@@ -150,7 +180,7 @@ const evaluateLiteral = (source, where) => compileExpression(source, where)(Obje
 
 // Templates of texts: "Hello {{ user.name }}" and blocks repeated for the items of a list, {{#items}}...{{/#}} (an item
 // is the context of its block, with _parent_ and _current_). A template of one {{ }} alone gives its value as it is.
-function compileTemplate(text, where) {
+function compileTemplate(text, where, methods = null) {
   const program = { type: 'program', blocks: [], parent: null };
   let block = program;
   const pattern = /{{([\s\S]*?)}}/g;
@@ -162,11 +192,11 @@ function compileTemplate(text, where) {
     if (inner.startsWith('/#')) {
       block = block.parent || program;
     } else if (inner.startsWith('#')) {
-      const loop = { type: 'each', run: compileExpression(inner.slice(1), where), blocks: [], parent: block };
+      const loop = { type: 'each', run: compileExpression(inner.slice(1), where, methods), blocks: [], parent: block };
       block.blocks.push(loop);
       block = loop;
     } else {
-      block.blocks.push({ type: 'value', run: compileExpression(inner, where) });
+      block.blocks.push({ type: 'value', run: compileExpression(inner, where, methods) });
     }
     last = match.index + match[0].length;
     match = pattern.exec(text);
@@ -196,10 +226,13 @@ function compileTemplate(text, where) {
 
 // (context) => value of a program (the body of a Method: statements of JavaScript); its value is that of its return,
 // or of its last expression statement, as in the engine this one follows. modules: what its imports take (the
-// resolver of its book: the tables of other books); tdz: a let or const used before its declaration is an error.
-function compileProgram(source, where, { modules, tdz = false } = {}) {
+// resolver of its book: the tables of other books); tdz: a let or const used before its declaration is an error;
+// methods: of its book.
+function compileProgram(source, where, { modules, tdz = false, methods = null } = {}) {
   try {
-    const run = programsOf(tdz).compile(rewriteThis(String(source)), { modules });
+    const run = enginesOf(methods)
+      .programs(tdz)
+      .compile(rewriteThis(String(source)), { modules });
     return (context) => run(context);
   } catch (err) {
     throw new RulesError(`${where}: ${err.message}`, 'XUFA_RULES_ERR_EXPRESSION');

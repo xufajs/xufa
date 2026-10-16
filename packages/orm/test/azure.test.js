@@ -187,6 +187,23 @@ describe('azure-blob backend, against a server of the API of Azure Blob', () => 
     expect(azure.containers.get(`c${count}`).size).toBe(0);
   });
 
+  it('the container itself (exists, made, deleted), and objects at its root (a table of "")', async () => {
+    const backend = new AzureBackend({ container: 'rooted', connectionString: azure.connectionString });
+    expect(await backend.containerExists()).toBe(false);
+    expect(await backend.containerCreate()).toBe(true);
+    expect(await backend.containerCreate()).toBe(false);
+    expect(await backend.containerExists()).toBe(true);
+    await backend.storePut('', 'file.txt', Buffer.from('hi'), {});
+    expect([...azure.containers.get('rooted').keys()]).toEqual(['file.txt']);
+    expect((await backend.storeHead('', 'file.txt')).info.size).toBe(2);
+    expect(await backend.storeDelete('', 'file.txt')).toBe(true);
+    expect(await backend.storeDelete('', 'file.txt')).toBe(false);
+    expect(await backend.containerDelete()).toBe(true);
+    expect(await backend.containerDelete()).toBe(false);
+    expect(await backend.containerExists()).toBe(false);
+    await backend.close();
+  });
+
   it('a SAS token instead of the key: sent in the query of every request, and the URL of url()', async () => {
     const backend = new AzureBackend({ container: 'c', account: azure.account, endpoint: azure.endpoint, sasToken: '?sv=2021-12-02&sig=abc' });
     expect(await backend.storeUrl('upload', 'x.txt')).toBe(`${azure.endpoint}/c/upload/x.txt?sv=2021-12-02&sig=abc`);

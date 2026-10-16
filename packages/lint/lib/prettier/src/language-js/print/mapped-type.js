@@ -6,42 +6,6 @@ import { locEnd, locStart } from '../location/index.js';
 import { isLineComment } from '../utilities/comment-types.js';
 import { CommentCheckFlags, getComments } from '../utilities/comments.js';
 import { stripComments } from '../utilities/strip-comments.js';
-import { printClassMemberSemicolon } from './class.js';
-
-/**
-@import {Doc} from "../../document/index.js"
-*/
-
-/**
- * @param {string | null} optional
- * @returns {string}
- */
-function printFlowMappedTypeOptionalModifier(optional) {
-  switch (optional) {
-    case null:
-      return '';
-    case 'PlusOptional':
-      return '+?';
-    case 'MinusOptional':
-      return '-?';
-    case 'Optional':
-      return '?';
-  }
-}
-
-function printFlowMappedTypeProperty(path, options, print) {
-  const { node } = path;
-  return [
-    group([
-      node.variance ? print('variance') : '',
-      group(['[', indent([softline, print('keyTparam'), ' in ', print('sourceType')]), softline, ']']),
-      printFlowMappedTypeOptionalModifier(node.optional),
-      ': ',
-      print('propType'),
-    ]),
-    printClassMemberSemicolon(path, options),
-  ];
-}
 
 /**
  * @param {string} tokenNode
@@ -117,4 +81,4 @@ function printTypeScriptMappedType(path, options, print) {
   );
 }
 
-export { printFlowMappedTypeProperty, printTypeScriptMappedType };
+export { printTypeScriptMappedType };

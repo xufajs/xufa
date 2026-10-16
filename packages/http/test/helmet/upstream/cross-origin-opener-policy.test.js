@@ -1,0 +1,43 @@
+// Ported from helmet's test/cross-origin-opener-policy.test.ts (MIT License) by tools/port-helmet/port.js: do not edit, change the tool.
+import assert from "node:assert/strict";
+import { describe, it } from '@xufa/test';
+import { crossOriginOpenerPolicy } from '../../../lib/helmet.js';
+import { check } from './helpers.js';
+describe("Cross-Origin-Opener-Policy middleware", () => {
+    it('sets "Cross-Origin-Opener-Policy: same-origin" when called with no policy', async () => {
+        const expectedHeaders = {
+            "cross-origin-opener-policy": "same-origin",
+        };
+        await check(crossOriginOpenerPolicy(), expectedHeaders);
+        await check(crossOriginOpenerPolicy({}), expectedHeaders);
+        await check(crossOriginOpenerPolicy(Object.create(null)), expectedHeaders);
+        await check(crossOriginOpenerPolicy({ policy: undefined }), expectedHeaders);
+    });
+    [
+        "same-origin",
+        "same-origin-allow-popups",
+        "noopener-allow-popups",
+        "unsafe-none",
+    ].forEach((policy) => {
+        it(`sets "Cross-Origin-Opener-Policy: ${policy}" when told to`, async () => {
+            await check(crossOriginOpenerPolicy({ policy }), {
+                "cross-origin-opener-policy": policy,
+            });
+        });
+    });
+    it("throws when setting the policy to an invalid value", () => {
+        const invalidValues = [
+            "",
+            "foo",
+            "SAME-ORIGIN",
+            123,
+            null,
+            new String("same-origin"),
+        ];
+        for (const policy of invalidValues) {
+            assert.throws(() => crossOriginOpenerPolicy({ policy: policy }), {
+                message: /^Cross-Origin-Opener-Policy does not support /,
+            });
+        }
+    });
+});

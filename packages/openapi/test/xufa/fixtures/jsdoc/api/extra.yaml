@@ -1,0 +1,12 @@
+paths:
+  /health:
+    get:
+      summary: Health
+      responses:
+        '200':
+          description: Up
+components:
+  securitySchemes:
+    bearer:
+      type: http
+      scheme: bearer

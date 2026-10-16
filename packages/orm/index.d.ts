@@ -1227,6 +1227,71 @@ export declare class FaultError extends Error {
  * A database: its backend, the models registered in it, sync() and migrations, transactions, the audit log, caches and
  * faults.
  */
+/** A document of db.documents(): schemaless, with `id` where MongoDB has `_id`. */
+export type DocumentData = { id?: string; [field: string]: any };
+
+/** Options of db.documents(). */
+export interface DocumentsOptions {
+  /** The cache: by id, and by the fields of `indexes` (unique values); ttl in ms; a store of its own (db.cache by default). */
+  cache?: boolean | { indexes?: string[]; ttl?: number; store?: Cache };
+  /** Writes of single documents to the cache while the database is unavailable, written by synchronize() later. */
+  writeBehind?: boolean;
+  /** Whether the database is available (asked before each write of writeBehind). */
+  available?: () => boolean | Promise<boolean>;
+  /** Told of the writes that fail because the database is unavailable. */
+  onUnavailable?: (err: Error) => unknown;
+}
+
+/**
+ * A collection of MongoDB as it is: schemaless documents, MongoDB's filters (`id` as `_id`), the driver's options,
+ * the ORM's cache and write-behind.
+ */
+export declare class Documents<T extends DocumentData = DocumentData> {
+  readonly name: string;
+  readonly db: Database;
+  findById(id: string, options?: { projection?: Record<string, 0 | 1 | boolean> }): Promise<T | null>;
+  findOne(filter?: Record<string, any>, options?: Record<string, any>): Promise<T | null>;
+  find(filter?: Record<string, any>, options?: Record<string, any>): Promise<T[]>;
+  cursor(
+    filter?: Record<string, any>,
+    options?: Record<string, any>
+  ): Promise<AsyncIterable<T> & { next(): Promise<T | null>; toArray(): Promise<T[]>; close(): Promise<void> }>;
+  count(filter?: Record<string, any>, options?: { estimated?: boolean } & Record<string, any>): Promise<number>;
+  aggregate<R = Record<string, any>>(pipeline: Record<string, any>[], options?: Record<string, any>): Promise<R[]>;
+  insertOne(doc: T): Promise<T & { id: string }>;
+  insertMany(docs: T[]): Promise<Array<T & { id: string }>>;
+  /** $set of its fields by its id: the document as it is now, or null. */
+  update(doc: T & { id: string }): Promise<T | null>;
+  replace(doc: T & { id: string }): Promise<T | null>;
+  save(doc: T): Promise<T & { id: string }>;
+  updateMany(
+    filter: Record<string, any>,
+    update: Record<string, any> | Record<string, any>[],
+    options?: Record<string, any>
+  ): Promise<{ matchedCount: number; modifiedCount: number; upsertedCount: number }>;
+  /** How many were deleted (justOne: the first). */
+  remove(filter?: Record<string, any>, options?: { justOne?: boolean }): Promise<number>;
+  removeById(id: string): Promise<number>;
+  findOneAndUpdate(
+    filter: Record<string, any>,
+    update: Record<string, any> | Record<string, any>[],
+    options?: Record<string, any>
+  ): Promise<T | null>;
+  findOneAndReplace(filter: Record<string, any>, replacement: T, options?: Record<string, any>): Promise<T | null>;
+  findOneAndDelete(filter: Record<string, any>, options?: Record<string, any>): Promise<T | null>;
+  bulkWrite(operations: Record<string, any>[], options?: { ordered?: boolean }): Promise<Record<string, any>>;
+  createIndex(keys: Record<string, any> | string, options?: Record<string, any>): Promise<string>;
+  dropIndex(name: string, options?: Record<string, any>): Promise<Record<string, any>>;
+  indexes(): Promise<Record<string, any>[]>;
+  drop(): Promise<boolean>;
+  rename(newName: string, options?: { dropTarget?: boolean }): Promise<Documents<T>>;
+  clearCache(): Promise<void>;
+  /** The writes waiting for the database: { id: 'I' | 'U' | 'D' }. */
+  pending(): Promise<Record<string, 'I' | 'U' | 'D'>>;
+  /** Writes what was written behind. */
+  synchronize(): Promise<{ done: number; left: number; error: Error | null }>;
+}
+
 export declare class Database {
   /** The module of the ORM of this database (Model, fields, Paginator...): what packages that take a database make their models with. */
   readonly orm: typeof import('./index.js');
@@ -1248,6 +1313,8 @@ export declare class Database {
   readonly models: Map<string, ModelClass>;
   register(...models: ModelClass<any>[]): this;
   model<M extends Model = Model>(name: string): ModelClass<M> | undefined;
+  /** A collection of MongoDB as it is (schemaless, MongoDB filters): the same one for a name, made again with options. */
+  documents<T extends DocumentData = DocumentData>(name: string, options?: DocumentsOptions): Documents<T>;
   connect(): Promise<this>;
   close(): Promise<void>;
   /** A round trip to the database (SELECT 1, MongoDB's ping; nothing for memory and files): its milliseconds. Throws when it does not answer. */

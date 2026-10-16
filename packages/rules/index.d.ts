@@ -1,35 +1,24 @@
 // @xufa/rules: business rules in workbooks of Excel run as functions.
 
-/** A value of a cell, as readXlsx gives it. */
-export type CellValue = string | number | boolean | Date | null;
+/** The workbooks of the books are @xufa/xlsx's (its errors come as RulesError: XUFA_RULES_ERR_XLSX and _ZIP). */
+import type { CellValue, Range, Sheet, WritableSheet } from '@xufa/xlsx';
+export type { CellValue, Cell, CellStyle, Range, Sheet, WritableSheet } from '@xufa/xlsx';
+export { readXlsx, writeXlsx, patchXlsx } from '@xufa/xlsx';
 
-/** A cell to write: a value, or a value and the style of its place in a table. */
-export type Cell = CellValue | { value: CellValue; style?: 'title' | 'header' | 'value' };
-
-export interface Range {
-  top: number;
-  left: number;
-  bottom: number;
-  right: number;
+/** A block of a sheet: cells apart from the others by empty rows or columns (a table when its first cell names one). */
+export interface Block {
+  /** Its rows of values (null where empty; the cells of a merged range have its value). */
+  rows: CellValue[][];
+  sheet: string;
+  /** Its first cell, from 0. */
+  row: number;
+  column: number;
+  /** The merged ranges inside it, from its first cell. */
+  merges: Range[];
 }
 
-export interface Sheet<C = CellValue> {
-  name: string;
-  /** Rows of cells from A1 (null where empty). */
-  rows: C[][];
-  merges?: Range[];
-}
-
-export interface WritableSheet extends Sheet<Cell> {
-  /** Widths of the columns, in characters. */
-  widths?: number[];
-}
-
-/** The sheets of the bytes of a .xlsx. */
-export function readXlsx(bytes: Uint8Array): { sheets: Required<Sheet>[] };
-
-/** The bytes of a .xlsx of these sheets. */
-export function writeXlsx(workbook: { sheets: WritableSheet[] }): Buffer;
+/** The blocks of a sheet, as books find their tables. */
+export function blocksOf(sheet: Sheet): Block[];
 
 export interface RuleBookOptions {
   /** Told of the steps of spreadsheets that fail (they are left). */
@@ -44,6 +33,11 @@ export interface RuleBookOptions {
    * used before its declaration`), as in JavaScript; by default it is undefined.
    */
   tdz?: boolean;
+  /**
+   * Functions by name that values have as methods in the code of the book (JavaScript): `prices.sum()` is
+   * `methods.sum(prices)` when prices has no sum (@xufa/expression's `methods`; @xufa/fun is made for it).
+   */
+  methods?: Record<string, unknown> | null;
   /**
    * The messages of msg(code, arguments...), by locale ('' the default, 'fr', 'de_DE'): code -> text with {0}, {1}...
    * (parseProperties gives them of the .properties files of OpenL's i18n folder). The locale is that of the runtime
@@ -280,6 +274,11 @@ export class RuleBook {
   /** The sheets of the book, each table at its place. */
   toSheets(): WritableSheet[];
   toXlsx(): Buffer;
+  /**
+   * The workbook the book was read from (its bytes) with the matrix of a table changed in place (patchXlsx): only the
+   * cells that change. The matrix must be of the table's size.
+   */
+  applyMatrix(bytes: Uint8Array, name: string, matrix: CellValue[][]): Buffer;
 }
 
 export class RulesError extends Error {
@@ -295,6 +294,10 @@ export class RulesError extends Error {
     | 'XUFA_RULES_ERR_MISS'
     | 'XUFA_RULES_ERR_TESTS'
     | (string & {});
+  /** Of an error building a table: what was wrong, without where. */
+  reason?: string;
+  /** Of an error building a table: its first cell (row and column from 0). */
+  cell?: { sheet: string; row: number; column: number };
 }
 
 /** Texts as tables compare them: without accents, zero-width spaces nor the spaces around. */

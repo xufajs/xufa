@@ -1,0 +1,270 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>@xufa/xlsx: Reference · xufa</title>
+    <meta
+      name="description"
+      content="The reference of @xufa/xlsx: every function, class, interface and type it declares, made from its TypeScript declarations."
+    />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%23d9502b'/%3E%3Ctext x='16' y='22.5' font-family='monospace' font-size='18' font-weight='700' fill='white' text-anchor='middle'%3Ex%3C/text%3E%3C/svg%3E"
+    />
+    <link rel="stylesheet" href="../style.css?v=0.1.0" />
+    <script src="../main.js?v=0.1.0"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js" defer></script>
+  </head>
+  <body>
+    <header class="header">
+      <div class="header-inner">
+        <a class="logo" href="../index.html"><span class="logo-mark">x</span>xufa</a>
+        <nav class="nav">
+          <a href="../guide.html">Guide</a>
+          <a href="../playground.html">Playground</a>
+          <a href="../http/index.html">HTTP</a>
+          <a href="../orm/index.html">ORM</a>
+          <a class="hide-small" href="../auth/index.html">Auth</a>
+          <a class="hide-small" href="../sequelize/index.html">Sequelize</a>
+          <a class="hide-small" href="../packages.html" aria-current="page">Packages</a>
+          <a class="hide-small" href="../benchmarks.html">Benchmarks</a>
+          <a href="https://github.com/xufajs/xufa">GitHub</a>
+          <button class="theme-toggle" type="button" aria-label="Switch between light and dark theme">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+              <path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z" />
+            </svg>
+          </button>
+        </nav>
+      </div>
+    </header>
+
+    <div class="docs">
+      <button class="menu-toggle" type="button" aria-expanded="false">☰ Contents</button>
+      <aside class="sidebar">
+        <h4>Reference</h4>
+        <ul>
+          <li><a href="#functions">Functions (9)</a></li>
+          <li><a href="#classes">Classes (2)</a></li>
+          <li><a href="#interfaces">Interfaces (4)</a></li>
+          <li><a href="#types">Types (3)</a></li>
+        </ul>
+        <h4>Packages</h4>
+        <ul>
+          <li><a href="../websocket/index.html">@xufa/websocket</a></li>
+          <li><a href="../express/index.html">@xufa/express</a></li>
+          <li><a href="../admin/index.html">@xufa/admin</a></li>
+          <li><a href="../session/index.html">@xufa/session</a></li>
+          <li><a href="../forms/index.html">@xufa/forms</a></li>
+          <li><a href="../views/index.html">@xufa/views</a></li>
+          <li><a href="../mail/index.html">@xufa/mail</a></li>
+          <li><a href="../i18n/index.html">@xufa/i18n</a></li>
+          <li><a href="../openapi/index.html">@xufa/openapi</a></li>
+          <li><a href="../client/index.html">@xufa/client</a></li>
+          <li><a href="../schema/index.html">@xufa/schema</a></li>
+          <li><a href="../pg/index.html">@xufa/pg</a></li>
+          <li><a href="../mongo/index.html">@xufa/mongo</a></li>
+          <li><a href="../expression/index.html">@xufa/expression</a></li>
+          <li><a href="../template/index.html">@xufa/template</a></li>
+          <li><a href="../cluster/index.html">@xufa/cluster</a></li>
+          <li><a href="../scheduler/index.html">@xufa/scheduler</a></li>
+          <li><a href="../queue/index.html">@xufa/queue</a></li>
+          <li><a href="../config/index.html">@xufa/config</a></li>
+          <li><a href="../discovery/index.html">@xufa/discovery</a></li>
+          <li><a href="../netcache/index.html">@xufa/netcache</a></li>
+          <li><a href="../faults/index.html">@xufa/faults</a></li>
+          <li><a href="../browser/index.html">@xufa/browser</a></li>
+          <li><a href="../bundle/index.html">@xufa/bundle</a></li>
+          <li><a href="../lint/index.html">@xufa/lint</a></li>
+          <li><a href="../marshal/index.html">@xufa/marshal</a></li>
+          <li><a href="../yaml/index.html">@xufa/yaml</a></li>
+          <li><a href="../jwt/index.html">@xufa/jwt</a></li>
+          <li><a href="../logger/index.html">@xufa/logger</a></li>
+          <li><a href="../router/index.html">@xufa/router</a></li>
+          <li><a href="../serializer/index.html">@xufa/serializer</a></li>
+          <li><a href="../inject/index.html">@xufa/inject</a></li>
+          <li><a href="../boot/index.html">@xufa/boot</a></li>
+          <li><a href="../errors/index.html">@xufa/errors</a></li>
+          <li><a href="../packages.html">All the packages</a></li>
+        </ul>
+      </aside>
+
+      <article class="content">
+        <nav class="package-tabs" aria-label="@xufa/xlsx">
+          <a href="index.html">Overview</a>
+          <a href="reference.html" aria-current="page">Reference</a>
+        </nav>
+        <h1>Reference</h1>
+        <p class="intro">
+          Excel workbooks (.xlsx) read into values and written from them (styles, merged cells, widths), and cells patched in place keeping the rest, with no dependencies. Every declaration of its TypeScript declarations
+          (<code>packages/xlsx/index.d.ts</code> or <code>index.d.cts</code>), as they are written, with their comments: made from them each time
+          the docs are built. How to use them is in <a href="index.html">the overview</a>.
+        </p>
+
+        <h2 id="functions">Functions</h2>
+        <p class="ref-index"><a href="#ref-readXlsx"><code>readXlsx</code></a>, <a href="#ref-writeXlsx"><code>writeXlsx</code></a>, <a href="#ref-patchXlsx"><code>patchXlsx</code></a>, <a href="#ref-cellAt"><code>cellAt</code></a>, <a href="#ref-columnName"><code>columnName</code></a>, <a href="#ref-refOf"><code>refOf</code></a>, <a href="#ref-excelDate"><code>excelDate</code></a>, <a href="#ref-unzip"><code>unzip</code></a>, <a href="#ref-zip"><code>zip</code></a></p>
+
+        <h3 id="ref-readXlsx"><code>readXlsx</code></h3>
+        <pre><code class="language-ts">export function readXlsx(bytes: Uint8Array): { sheets: Required&lt;Sheet&gt;[] };</code></pre>
+        <p>The sheets of the bytes of a .xlsx.</p>
+
+        <h3 id="ref-writeXlsx"><code>writeXlsx</code></h3>
+        <pre><code class="language-ts">export function writeXlsx(workbook: { sheets: WritableSheet[] }): Buffer;</code></pre>
+        <p>The bytes of a .xlsx of these sheets.</p>
+
+        <h3 id="ref-patchXlsx"><code>patchXlsx</code></h3>
+        <pre><code class="language-ts">export function patchXlsx(
+  bytes: Uint8Array,
+  sheetName: string,
+  values: Record&lt;string, CellValue&gt; | Map&lt;string, CellValue&gt;,
+  options?: { whole?: Record&lt;string, CellValue&gt; | Map&lt;string, CellValue&gt; }
+): Buffer;</code></pre>
+        <p>The bytes of a .xlsx with some cells of one sheet set ({ C7: 0.5 } or a Map), nothing else of it changed (styles, other sheets, comments are kept). Merged ranges whose cells get different values are split; whole: the values of the whole area the cells are of (a table's matrix), which tells which merges are cut.</p>
+
+        <h3 id="ref-cellAt"><code>cellAt</code></h3>
+        <pre><code class="language-ts">export function cellAt(ref: string): { row: number; column: number };</code></pre>
+        <p>'C7' -&gt; { row: 6, column: 2 }.</p>
+
+        <h3 id="ref-columnName"><code>columnName</code></h3>
+        <pre><code class="language-ts">export function columnName(index: number): string;</code></pre>
+        <p>2 -&gt; 'C'.</p>
+
+        <h3 id="ref-refOf"><code>refOf</code></h3>
+        <pre><code class="language-ts">export function refOf(row: number, column: number): string;</code></pre>
+        <p>(6, 2) -&gt; 'C7'.</p>
+
+        <h3 id="ref-excelDate"><code>excelDate</code></h3>
+        <pre><code class="language-ts">export function excelDate(serial: number, date1904?: boolean): Date;</code></pre>
+        <p>The date of a serial number of Excel (of the 1904 system with date1904).</p>
+
+        <h3 id="ref-unzip"><code>unzip</code></h3>
+        <pre><code class="language-ts">export function unzip(bytes: Uint8Array): Map&lt;string, Buffer&gt;;</code></pre>
+        <p>The files of a zip: name -&gt; its bytes (folders left out).</p>
+
+        <h3 id="ref-zip"><code>zip</code></h3>
+        <pre><code class="language-ts">export function zip(entries: readonly (readonly [string, Buffer | string])[]): Buffer;</code></pre>
+        <p>A zip of entries [name, bytes or text (UTF-8)], deflated (the same entries give the same bytes).</p>
+
+        <h2 id="classes">Classes</h2>
+        <p class="ref-index"><a href="#ref-XlsxError"><code>XlsxError</code></a>, <a href="#ref-ZipError"><code>ZipError</code></a></p>
+
+        <h3 id="ref-XlsxError"><code>XlsxError</code></h3>
+        <pre><code class="language-ts">export class XlsxError extends Error { ... }</code></pre>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>name</code></td><td><code>'<a href="#ref-XlsxError">XlsxError</a>' | '<a href="#ref-ZipError">ZipError</a>'</code></td><td></td></tr>
+                <tr><td><code>code</code></td><td><code>'XUFA_XLSX_ERR' | 'XUFA_XLSX_ERR_ZIP'</code></td><td></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-ZipError"><code>ZipError</code></h3>
+        <pre><code class="language-ts">export class ZipError extends XlsxError { ... }</code></pre>
+        <p>Bytes that are not a zip (an .xlsx is one).</p>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>name</code></td><td><code>'<a href="#ref-ZipError">ZipError</a>'</code></td><td></td></tr>
+                <tr><td><code>code</code></td><td><code>'XUFA_XLSX_ERR_ZIP'</code></td><td></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h2 id="interfaces">Interfaces</h2>
+        <p class="ref-index"><a href="#ref-CellStyle"><code>CellStyle</code></a>, <a href="#ref-Range"><code>Range</code></a>, <a href="#ref-Sheet"><code>Sheet</code></a>, <a href="#ref-WritableSheet"><code>WritableSheet</code></a></p>
+
+        <h3 id="ref-CellStyle"><code>CellStyle</code></h3>
+        <pre><code class="language-ts">export interface CellStyle { ... }</code></pre>
+        <p>The look of a cell. Colors are RGB hex: '1F4E78', '#1F4E78', or with alpha 'FF1F4E78'.</p>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>bold?</code></td><td><code>boolean</code></td><td></td></tr>
+                <tr><td><code>italic?</code></td><td><code>boolean</code></td><td></td></tr>
+                <tr><td><code>underline?</code></td><td><code>boolean</code></td><td></td></tr>
+                <tr><td><code>size?</code></td><td><code>number</code></td><td><p>In points (11).</p></td></tr>
+                <tr><td><code>font?</code></td><td><code>string</code></td><td><p>The name of the font (Calibri).</p></td></tr>
+                <tr><td><code>color?</code></td><td><code>string</code></td><td></td></tr>
+                <tr><td><code>fill?</code></td><td><code>string</code></td><td><p>The color it is filled with.</p></td></tr>
+                <tr><td><code>border?</code></td><td><code>boolean | <a href="#ref-BorderLine">BorderLine</a> | { top?: <a href="#ref-BorderLine">BorderLine</a>; right?: <a href="#ref-BorderLine">BorderLine</a>; bottom?: <a href="#ref-BorderLine">BorderLine</a>; left?: <a href="#ref-BorderLine">BorderLine</a> }</code></td><td><p>true is thin on every side.</p></td></tr>
+                <tr><td><code>align?</code></td><td><code>'left' | 'center' | 'right' | 'fill' | 'justify'</code></td><td></td></tr>
+                <tr><td><code>valign?</code></td><td><code>'top' | 'middle' | 'bottom'</code></td><td></td></tr>
+                <tr><td><code>wrap?</code></td><td><code>boolean</code></td><td></td></tr>
+                <tr><td><code>format?</code></td><td><code>string | number</code></td><td><p>A code of a format of numbers ('0.00%', 'yyyy-mm-dd') or the id of a built-in one; dates take 14 by default.</p></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-Range"><code>Range</code></h3>
+        <pre><code class="language-ts">export interface Range { ... }</code></pre>
+        <p>Cells from (top, left) to (bottom, right), from 0.</p>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>top</code></td><td><code>number</code></td><td></td></tr>
+                <tr><td><code>left</code></td><td><code>number</code></td><td></td></tr>
+                <tr><td><code>bottom</code></td><td><code>number</code></td><td></td></tr>
+                <tr><td><code>right</code></td><td><code>number</code></td><td></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-Sheet"><code>Sheet</code></h3>
+        <pre><code class="language-ts">export interface Sheet&lt;C = CellValue&gt; { ... }</code></pre>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>name</code></td><td><code>string</code></td><td></td></tr>
+                <tr><td><code>rows</code></td><td><code>C[][]</code></td><td><p>Rows of cells from A1 (null where empty).</p></td></tr>
+                <tr><td><code>merges?</code></td><td><code><a href="#ref-Range">Range</a>[]</code></td><td></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-WritableSheet"><code>WritableSheet</code></h3>
+        <pre><code class="language-ts">export interface WritableSheet extends Sheet&lt;Cell&gt; { ... }</code></pre>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>widths?</code></td><td><code>number[]</code></td><td><p>Widths of the columns, in characters.</p></td></tr>
+                <tr><td><code>defaultWidth?</code></td><td><code>number</code></td><td><p>The width of the columns without one.</p></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h2 id="types">Types</h2>
+        <p class="ref-index"><a href="#ref-CellValue"><code>CellValue</code></a>, <a href="#ref-BorderLine"><code>BorderLine</code></a>, <a href="#ref-Cell"><code>Cell</code></a></p>
+
+        <h3 id="ref-CellValue"><code>CellValue</code></h3>
+        <pre><code class="language-ts">export type CellValue = string | number | boolean | Date | null;</code></pre>
+        <p>A value of a cell, as readXlsx gives it.</p>
+
+        <h3 id="ref-BorderLine"><code>BorderLine</code></h3>
+        <pre><code class="language-ts">export type BorderLine = 'thin' | 'medium' | 'thick' | 'dashed' | 'dotted' | 'double' | 'hair';</code></pre>
+        <p>A line of a border.</p>
+
+        <h3 id="ref-Cell"><code>Cell</code></h3>
+        <pre><code class="language-ts">export type Cell = CellValue | { value: CellValue; style?: 'title' | 'header' | 'value' | CellStyle };</code></pre>
+        <p>A cell to write: a value, or a value and its style: one of its own, or the looks of the tables of</p>
+      </article>
+    </div>
+
+    <footer class="footer">
+      <div class="container">
+        <span>xufa is MIT licensed. &copy; Jes&uacute;s Seijas</span>
+        <span>
+          <a href="../guide.html">Guide</a> &middot; <a href="../playground.html">Playground</a> &middot; <a href="../http/index.html">HTTP</a> &middot; <a href="../orm/index.html">ORM</a> &middot; <a href="../auth/index.html">Auth</a> &middot;
+          <a href="../sequelize/index.html">Sequelize</a> &middot; <a href="../packages.html">Packages</a> &middot;
+          <a href="../benchmarks.html">Benchmarks</a> &middot; <a href="https://github.com/xufajs/xufa">GitHub</a>
+        </span>
+      </div>
+    </footer>
+  </body>
+</html>

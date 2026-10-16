@@ -3,7 +3,7 @@ import { isCallOrNewExpression, isMemberExpression, isSatisfiesExpression } from
 
 function printBinaryCastExpression(path, options, print) {
   const { parent, node, key } = path;
-  const isFlowAsConstExpression = node.type === 'AsConstExpression';
+  const isFlowAsConstExpression = false;
   const typeAnnotationDoc = isFlowAsConstExpression ? 'const' : print('typeAnnotation');
 
   const parts = [print('expression'), ' ', isSatisfiesExpression(node) ? 'satisfies' : 'as', ' ', typeAnnotationDoc];

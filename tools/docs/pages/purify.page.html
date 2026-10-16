@@ -1,0 +1,60 @@
+<!--{
+  "file": "purify.html",
+  "name": "@xufa/purify",
+  "title": "@xufa/purify",
+  "description": "@xufa/purify: DOMPurify, the XSS sanitizer of HTML, with its tests, on the DOM of @xufa/html: ready in Node without jsdom.",
+  "groups": [
+    ["Using it", [["start", "Quick start"], ["api", "Its API"], ["checked", "How it was checked"]]]
+  ]
+}-->
+        <h1>@xufa/purify</h1>
+        <p class="intro">
+          DOMPurify, the XSS sanitizer of HTML, on the DOM of <a href="html.html">@xufa/html</a>: ready in Node with no
+          jsdom. Its library is DOMPurify's (3.3.3, ported), so it removes what DOMPurify removes, and its tests pass on it.
+          Ready in 48 ms with 6 MB of heap, where DOMPurify on jsdom took 760 ms and 28 MB; 7 to 13 times faster a
+          call; and steady, where DOMPurify on jsdom slows down and grows as it works.
+        </p>
+
+        <h2 id="start">Quick start</h2>
+        <pre><code class="language-sh">npm install @xufa/purify</code></pre>
+        <pre data-run="purify"><code class="language-js">import DOMPurify from '@xufa/purify'; // or require('@xufa/purify')
+
+console.log(DOMPurify.sanitize('&lt;img src=x onerror=alert(1)&gt;&lt;a href="javascript:alert(2)"&gt;Hi&lt;/a&gt;'));
+// Text only (no tags): what is shown in a page as text.
+console.log(DOMPurify.sanitize('&lt;p&gt;Hi &lt;b&gt;there&lt;/b&gt; &amp; &lt;script&gt;x&lt;/script&gt;&lt;/p&gt;', { ALLOWED_TAGS: [], KEEP_CONTENT: true }));</code></pre>
+        <pre data-output><code class="language-plaintext">&lt;img src="x"&gt;&lt;a&gt;Hi&lt;/a&gt;
+Hi there &amp;amp; </code></pre>
+
+        <h2 id="api">Its API</h2>
+        <p>
+          DOMPurify's as it is: <code>sanitize(dirty, config)</code> with all its options (<code>ALLOWED_TAGS</code>,
+          <code>ALLOWED_ATTR</code>, <code>FORBID_TAGS</code>, <code>ADD_ATTR</code>, <code>USE_PROFILES</code>,
+          <code>KEEP_CONTENT</code>, <code>WHOLE_DOCUMENT</code>, <code>RETURN_DOM</code>, <code>RETURN_DOM_FRAGMENT</code>,
+          <code>SAFE_FOR_TEMPLATES</code>, <code>SANITIZE_NAMED_PROPS</code>, <code>PARSER_MEDIA_TYPE</code>,
+          <code>NAMESPACE</code>, <code>IN_PLACE</code>, ...), <code>setConfig</code>, <code>clearConfig</code>,
+          <code>isValidAttribute</code>, hooks (<code>addHook</code>, <code>removeHook</code>), <code>removed</code>, and
+          <code>DOMPurify(window)</code> for another window. The nodes it returns are of <code>@xufa/html/dom</code>.
+        </p>
+<!--run-before: import DOMPurify from '@xufa/purify'; -->
+        <pre data-run="purify-hooks"><code class="language-js">DOMPurify.addHook('afterSanitizeAttributes', (node) =&gt; {
+  if (node.nodeName === 'A') node.setAttribute('rel', 'noopener');
+});
+console.log(DOMPurify.sanitize('&lt;a href="https://example.com" onclick="x()"&gt;link&lt;/a&gt;'));
+DOMPurify.removeAllHooks();
+const fragment = DOMPurify.sanitize('&lt;b&gt;bold&lt;/b&gt;&lt;iframe&gt;&lt;/iframe&gt;', { RETURN_DOM_FRAGMENT: true });
+console.log(fragment.childNodes.length, fragment.firstChild.nodeName);</code></pre>
+        <pre data-output><code class="language-plaintext">&lt;a href="https://example.com" rel="noopener"&gt;link&lt;/a&gt;
+1 B</code></pre>
+
+        <h2 id="checked">How it was checked</h2>
+        <ul>
+          <li>DOMPurify's own tests on it: 309 pass. Skipped: its tests that insert what it returns into a page and wait
+            for <code>alert()</code> (no scripts run here), and its bootstrap tests (they load it by a
+            <code>&lt;script&gt;</code>).</li>
+          <li>The same output as DOMPurify on jsdom 27 for its 216 XSS vectors with 12 configurations, and for 37,000
+            random markups. Where the two differed (text inside a <code>&lt;table&gt;</code>), DOMPurify in Chrome gives
+            ours.</li>
+          <li>It runs on a DOM whose parser passes html5lib's conformance suite and that has the live
+            <code>NodeIterator</code>, namespaces and attribute rules DOMPurify relies on: DOMPurify's README warns against
+            DOMs that do not (happy-dom).</li>
+        </ul>

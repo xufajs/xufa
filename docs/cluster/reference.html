@@ -47,12 +47,13 @@
           <li><a href="#functions">Functions (5)</a></li>
           <li><a href="#classes">Classes (6)</a></li>
           <li><a href="#constants">Constants (3)</a></li>
-          <li><a href="#interfaces">Interfaces (14)</a></li>
+          <li><a href="#interfaces">Interfaces (15)</a></li>
           <li><a href="#types">Types (3)</a></li>
         </ul>
         <h4>Packages</h4>
         <ul>
           <li><a href="../websocket/index.html">@xufa/websocket</a></li>
+          <li><a href="../express/index.html">@xufa/express</a></li>
           <li><a href="../admin/index.html">@xufa/admin</a></li>
           <li><a href="../session/index.html">@xufa/session</a></li>
           <li><a href="../forms/index.html">@xufa/forms</a></li>
@@ -154,6 +155,7 @@
                 <tr><td><code>sendTo(workerId: number, event: string, data?: unknown)</code></td><td><code>void</code></td><td><p>An event to one worker (in the primary).</p></td></tr>
                 <tr><td><code>broadcast(event: string, data?: unknown, options?: { except?: number; others?: boolean })</code></td><td><code>void</code></td><td><p>An event to every worker: from the primary, or from a worker (others: but itself).</p></td></tr>
                 <tr><td><code>request&lt;T = any&gt;(event: string, data?: unknown, options?: { timeout?: number })</code></td><td><code>Promise&lt;T&gt;</code></td><td><p>A request to the primary: the reply of its handler (timeout: 30 s, 0 for none).</p></td></tr>
+                <tr><td><code>requestThen&lt;T = any&gt;(event: string, data: unknown, options: { timeout?: number }, done: (err: Error | null, reply?: T) =&gt; void)</code></td><td><code>void</code></td><td><p>request() with its reply to done(err, reply), called as it arrives (at once for a handler that answers at once).</p></td></tr>
                 <tr><td><code>useMarshal(registry?: unknown)</code></td><td><code>this</code></td><td><p>Data written by</p></td></tr>
               </tbody>
             </table>
@@ -210,6 +212,7 @@
               <tbody>
                 <tr><td><code>new (name: string, options: PoolOptions &amp; { bus: Bus })</code></td><td></td><td></td></tr>
                 <tr><td><code>readonly name</code></td><td><code>string</code></td><td></td></tr>
+                <tr><td><code>readonly autoscaler?</code></td><td><code><a href="#ref-PoolAutoscaler">PoolAutoscaler</a></code></td><td><p>With options.autoscale.</p></td></tr>
                 <tr><td><code>add(node: string | number | N)</code></td><td><code>this</code></td><td><p>Adds a node (or updates the one with its id).</p></td></tr>
                 <tr><td><code>remove(id: string | number)</code></td><td><code>this</code></td><td><p>Takes a node away: its leases are taken back.</p></td></tr>
                 <tr><td><code>stats()</code></td><td><code><a href="#ref-PoolStats">PoolStats</a></code></td><td></td></tr>
@@ -218,6 +221,7 @@
                 <tr><td><code>use&lt;T&gt;(fn: (node: N, context: UseContext) =&gt; T | Promise&lt;T&gt;, options?: UseOptions)</code></td><td><code>Promise&lt;T&gt;</code></td><td></td></tr>
                 <tr><td><code>close()</code></td><td><code>void</code></td><td><p>Rejects the tickets, takes the leases back and stops watching the nodes.</p></td></tr>
                 <tr><td><code>on(event: 'demand', listener: (stats: PoolStats) =&gt; void)</code></td><td><code>this</code></td><td></td></tr>
+                <tr><td><code>on(event: 'grant', listener: (info: { node: N; worker: number; kind: string | null }) =&gt; void)</code></td><td><code>this</code></td><td><p>A node given to a ticket (worker: its id, 0 in the primary; kind: use(fn, { kind })).</p></td></tr>
                 <tr><td><code>on(event: 'scale', listener: (info: PoolStats &amp; { from: number; to: number }) =&gt; void)</code></td><td><code>this</code></td><td></td></tr>
                 <tr><td><code>on(event: 'up' | 'down', listener: (node: N) =&gt; void)</code></td><td><code>this</code></td><td></td></tr>
                 <tr><td><code>on(event: 'revoke', listener: (info: { node: string | number; worker: number; reason: PoolError }) =&gt; void)</code></td><td><code>this</code></td><td></td></tr>
@@ -254,7 +258,7 @@
         <pre><code class="language-ts">export declare const isWorker: boolean;</code></pre>
 
         <h2 id="interfaces">Interfaces</h2>
-        <p class="ref-index"><a href="#ref-ClusterContext"><code>ClusterContext</code></a>, <a href="#ref-StartOptions"><code>StartOptions</code></a>, <a href="#ref-PoolNode"><code>PoolNode</code></a>, <a href="#ref-PoolNodeSource"><code>PoolNodeSource</code></a>, <a href="#ref-PoolHealthCheck"><code>PoolHealthCheck</code></a>, <a href="#ref-PoolHealthOptions"><code>PoolHealthOptions</code></a>, <a href="#ref-PoolStats"><code>PoolStats</code></a>, <a href="#ref-PoolAutoscale"><code>PoolAutoscale</code></a>, <a href="#ref-PoolOptions"><code>PoolOptions</code></a>, <a href="#ref-AcquireOptions"><code>AcquireOptions</code></a>, <a href="#ref-UseOptions"><code>UseOptions</code></a>, <a href="#ref-UseContext"><code>UseContext</code></a>, <a href="#ref-PoolNotifier"><code>PoolNotifier</code></a>, <a href="#ref-SlotStore"><code>SlotStore</code></a></p>
+        <p class="ref-index"><a href="#ref-ClusterContext"><code>ClusterContext</code></a>, <a href="#ref-StartOptions"><code>StartOptions</code></a>, <a href="#ref-PoolNode"><code>PoolNode</code></a>, <a href="#ref-PoolNodeSource"><code>PoolNodeSource</code></a>, <a href="#ref-PoolHealthCheck"><code>PoolHealthCheck</code></a>, <a href="#ref-PoolHealthOptions"><code>PoolHealthOptions</code></a>, <a href="#ref-PoolStats"><code>PoolStats</code></a>, <a href="#ref-PoolAutoscale"><code>PoolAutoscale</code></a>, <a href="#ref-PoolAutoscaler"><code>PoolAutoscaler</code></a>, <a href="#ref-PoolOptions"><code>PoolOptions</code></a>, <a href="#ref-AcquireOptions"><code>AcquireOptions</code></a>, <a href="#ref-UseOptions"><code>UseOptions</code></a>, <a href="#ref-UseContext"><code>UseContext</code></a>, <a href="#ref-PoolNotifier"><code>PoolNotifier</code></a>, <a href="#ref-SlotStore"><code>SlotStore</code></a></p>
 
         <h3 id="ref-ClusterContext"><code>ClusterContext</code></h3>
         <pre><code class="language-ts">export interface ClusterContext { ... }</code></pre>
@@ -280,6 +284,7 @@
               <tbody>
                 <tr><td><code>workers?</code></td><td><code>number | false</code></td><td><p>os.availableParallelism() by default; 0 (or false) runs everything in one process.</p></td></tr>
                 <tr><td><code>semiSpace?</code></td><td><code>number | false</code></td><td><p>The young generation of V8 in each worker, MB of each half (32): V8 grows it to 64 under load, 128 MB a worker for no data; false leaves V8's. A --max-semi-space-size of execArgv or NODE_OPTIONS is kept.</p></td></tr>
+                <tr><td><code>serialization?</code></td><td><code>'advanced' | 'json'</code></td><td><p>The IPC of the workers: 'advanced' (structured clone: Dates, Maps, Sets... arrive as they are) or 'json' (Node's default, for apps whose own process.send messages expect it: a Date arrives as a string). 'advanced'.</p></td></tr>
                 <tr><td><code>primary?</code></td><td><code>(context: <a href="#ref-ClusterContext">ClusterContext</a>) =&gt; unknown</code></td><td></td></tr>
                 <tr><td><code>worker?</code></td><td><code>(context: <a href="#ref-ClusterContext">ClusterContext</a>) =&gt; unknown</code></td><td></td></tr>
                 <tr><td><code>shutdownTimeout?</code></td><td><code>number</code></td><td><p>Milliseconds a worker has to stop before it is killed (10000).</p></td></tr>
@@ -288,7 +293,7 @@
                 <tr><td><code>signals?</code></td><td><code>boolean</code></td><td><p>SIGINT and SIGTERM stop the cluster (true).</p></td></tr>
                 <tr><td><code>env?</code></td><td><code>Record&lt;string, string | undefined&gt;</code></td><td></td></tr>
                 <tr><td><code>exec?</code></td><td><code>string</code></td><td></td></tr>
-                <tr><td><code>marshal?</code></td><td><code>boolean | unknown</code></td><td><p>true, or a Registry of</p></td></tr>
+                <tr><td><code>marshal?</code></td><td><code>boolean | unknown</code></td><td><p>true, a Registry of</p></td></tr>
               </tbody>
             </table>
           </div>
@@ -361,6 +366,8 @@
                 <tr><td><code>running</code></td><td><code>number</code></td><td><p>Leases given (works running).</p></td></tr>
                 <tr><td><code>waiting</code></td><td><code>number</code></td><td><p>Tickets waiting for a node.</p></td></tr>
                 <tr><td><code>byNode</code></td><td><code>{ id: string | number; slots: number; running: number; failures: number }[]</code></td><td></td></tr>
+                <tr><td><code>waitingByKind</code></td><td><code>Record&lt;string, number&gt;</code></td><td><p>Tickets waiting, by their kind (use(fn, { kind })).</p></td></tr>
+                <tr><td><code>runningByKind</code></td><td><code>Record&lt;string, number&gt;</code></td><td><p>Leases running, by their kind.</p></td></tr>
               </tbody>
             </table>
           </div>
@@ -379,6 +386,27 @@
                 <tr><td><code>upEvery?</code></td><td><code><a href="#ref-Duration">Duration</a></code></td><td><p>The least time between scale ups ('10s').</p></td></tr>
                 <tr><td><code>downAfter?</code></td><td><code><a href="#ref-Duration">Duration</a></code></td><td><p>How long the demand is lower before scaling down ('10m').</p></td></tr>
                 <tr><td><code>initial?</code></td><td><code>number</code></td><td><p>The nodes there are when it starts (the nodes of the pool).</p></td></tr>
+                <tr><td><code>active?</code></td><td><code>boolean</code></td><td><p>false: the demand scales nothing until it is true again (true).</p></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+        <h3 id="ref-PoolAutoscaler"><code>PoolAutoscaler</code></h3>
+        <pre><code class="language-ts">export interface PoolAutoscaler { ... }</code></pre>
+        <p>The autoscaler of a pool: its settings can change while it runs (read at each change of the demand).</p>
+        <div class="table-wrap">
+            <table class="ref-members">
+              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><code>perNode</code></td><td><code>number</code></td><td></td></tr>
+                <tr><td><code>min</code></td><td><code>number</code></td><td></td></tr>
+                <tr><td><code>max</code></td><td><code>number</code></td><td></td></tr>
+                <tr><td><code>upEvery</code></td><td><code>number</code></td><td><p>In ms.</p></td></tr>
+                <tr><td><code>downAfter</code></td><td><code>number</code></td><td><p>In ms.</p></td></tr>
+                <tr><td><code>active</code></td><td><code>boolean</code></td><td><p>false: the demand scales nothing.</p></td></tr>
+                <tr><td><code>readonly current</code></td><td><code>number | undefined</code></td><td><p>The nodes it last asked for (or the pool's nodes).</p></td></tr>
+                <tr><td><code>wanted(stats: Pick&lt;PoolStats, 'waiting' | 'running'&gt;)</code></td><td><code>number</code></td><td><p>The nodes wanted for a demand.</p></td></tr>
+                <tr><td><code>evaluate(stats: PoolStats)</code></td><td><code>void</code></td><td><p>Scales now if the demand asks for it (after its settings changed): stats().</p></td></tr>
               </tbody>
             </table>
           </div>
@@ -414,6 +442,7 @@
                 <tr><td><code>priority?</code></td><td><code>number</code></td><td><p>Higher first (0).</p></td></tr>
                 <tr><td><code>exclude?</code></td><td><code>(string | number)[]</code></td><td><p>Ids of nodes to avoid while there are others.</p></td></tr>
                 <tr><td><code>signal?</code></td><td><code>AbortSignal</code></td><td><p>Stops waiting.</p></td></tr>
+                <tr><td><code>kind?</code></td><td><code>string</code></td><td><p>What the work is (a name), counted by stats(): waitingByKind, runningByKind.</p></td></tr>
               </tbody>
             </table>
           </div>

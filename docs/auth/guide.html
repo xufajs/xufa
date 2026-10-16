@@ -656,7 +656,8 @@ const step = auth.verifyTotp(code, secret); // null, or the time step to keep wi
           <code>verifyTotp(code, secret, { window, after })</code> takes the codes of <code>window</code> steps around now
           and returns the step of the code; codes of the step <code>after</code> or before are refused, so keeping the step
           of each login makes each code work once. <code>totp()</code> and <code>hotp()</code> follow RFC 6238 and RFC 4226
-          (SHA1, SHA256 or SHA512, 6 to 10 digits). <code>generateRecoveryCodes(n)</code> gives codes to log in without the
+          (SHA1, SHA256 or SHA512, 6 to 10 digits); <code>parseTotpUri(uri)</code> reads an otpauth:// URI back, as the apps
+          read it. <code>generateRecoveryCodes(n)</code> gives codes to log in without the
           app; keep their <code>hashRecoveryCode()</code>. <code>qrSvg(text, { level, border, size })</code> draws the QR
           code of the URI with no dependencies (<code>qrCode(text)</code> gives its matrix). Keep the secrets of TOTP encrypted (they are passwords that never
           change), in <a href="../orm/guide.html#encrypted"><code>fields.encrypted()</code></a> of the ORM, as in the example.

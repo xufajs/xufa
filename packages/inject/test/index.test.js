@@ -10,7 +10,8 @@ import multer from 'multer';
 import inject from '../index.js';
 import { parseURL } from '../lib/url.js';
 
-import NpmFormData from 'form-data';
+// (The form-data package's API: @xufa/http's, by its path; @xufa/http depends on this package.)
+import NpmFormData from '../../http/form-data.js';
 import formAutoContent from 'form-auto-content';
 import { createRequire } from 'node:module';
 

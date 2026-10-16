@@ -44,7 +44,8 @@
     "node": "^22.22.3 || ^24.15.0 || >=25.7.0"
   },
   "dependencies": {
-    "@xufa/expression": "workspace:*"
+    "@xufa/expression": "workspace:*",
+    "@xufa/xlsx": "workspace:*"
   },
   "devDependencies": {
     "@xufa/http": "workspace:*",

@@ -7,10 +7,7 @@ import {
   hasRestParameter,
   iterateFunctionParametersPath,
 } from '../utilities/function-parameters.js';
-import { isFlowObjectTypePropertyAFunction } from '../utilities/is-flow-object-type-property-a-function.js';
 import { isNextLineEmpty } from '../utilities/is-next-line-empty.js';
-import { isSimpleType } from '../utilities/is-simple-type.js';
-import { isTypeAnnotationAFunction } from '../utilities/is-type-annotation-a-function.js';
 import { isArrayExpression, isObjectExpression, isObjectType } from '../utilities/node-types.js';
 import { isTestCall } from '../utilities/test-libraries.js';
 import { printDanglingCommentsInList, printTrailingComma } from './miscellaneous.js';
@@ -118,24 +115,10 @@ function printFunctionParameters(path, options, print, shouldExpandParameters, s
     return [typeParametersDoc, '(', ...printed, ')'];
   }
 
-  const isFlowShorthandWithOneArg =
-    (isFlowObjectTypePropertyAFunction(parent) ||
-      isTypeAnnotationAFunction(parent) ||
-      parent.type === 'TypeAlias' ||
-      parent.type === 'UnionTypeAnnotation' ||
-      parent.type === 'IntersectionTypeAnnotation' ||
-      (parent.type === 'FunctionTypeAnnotation' && parent.returnType === functionNode)) &&
-    parameters.length === 1 &&
-    parameters[0].name === null &&
-    // `type q = (this: string) => void;`
-    functionNode.this !== parameters[0] &&
-    parameters[0].typeAnnotation &&
-    functionNode.typeParameters === null &&
-    isSimpleType(parameters[0].typeAnnotation) &&
-    !functionNode.rest;
+  const isFlowShorthandWithOneArg = false;
 
   if (isFlowShorthandWithOneArg) {
-    if (options.arrowParens === 'always' || functionNode.type === 'HookTypeAnnotation') {
+    if (options.arrowParens === 'always') {
       return ['(', ...printed, ')'];
     }
     return printed;
@@ -145,11 +128,7 @@ function printFunctionParameters(path, options, print, shouldExpandParameters, s
     typeParametersDoc,
     '(',
     indent([softline, ...printed]),
-    !hasRestParameter(functionNode) &&
-    // Angular does not allow trailing comma
-    path.root.type !== 'NGRoot'
-      ? printTrailingComma(options, 'all')
-      : '',
+    !hasRestParameter(functionNode) ? printTrailingComma(options, 'all') : '',
     softline,
     ')',
   ];
@@ -170,9 +149,8 @@ function shouldHugTheOnlyFunctionParameter(node) {
       parameter.type === 'ArrayPattern' ||
       (parameter.type === 'Identifier' &&
         parameter.typeAnnotation &&
-        (parameter.typeAnnotation.type === 'TypeAnnotation' || parameter.typeAnnotation.type === 'TSTypeAnnotation') &&
+        parameter.typeAnnotation.type === 'TSTypeAnnotation' &&
         isObjectType(parameter.typeAnnotation.typeAnnotation)) ||
-      (parameter.type === 'FunctionTypeParam' && isObjectType(parameter.typeAnnotation) && parameter !== node.rest) ||
       (parameter.type === 'AssignmentPattern' &&
         (parameter.left.type === 'ObjectPattern' || parameter.left.type === 'ArrayPattern') &&
         (parameter.right.type === 'Identifier' ||

@@ -35,6 +35,26 @@
       "types": "./expression.d.ts",
       "default": "./expression.js"
     },
+    "./fun": {
+      "types": "./fun.d.ts",
+      "default": "./fun.js"
+    },
+    "./xlsx": {
+      "types": "./xlsx.d.ts",
+      "default": "./xlsx.js"
+    },
+    "./html": {
+      "types": "./html.d.ts",
+      "default": "./html.js"
+    },
+    "./html/dom": {
+      "types": "./html-dom.d.ts",
+      "default": "./html-dom.js"
+    },
+    "./purify": {
+      "types": "./purify.d.ts",
+      "default": "./purify.js"
+    },
     "./rules": {
       "types": "./rules.d.ts",
       "default": "./rules.js"
@@ -64,6 +84,10 @@
       "types": "./client.d.ts",
       "default": "./client.js"
     },
+    "./axios": {
+      "types": "./axios.d.cts",
+      "default": "./axios.js"
+    },
     "./scheduler": {
       "types": "./scheduler.d.ts",
       "default": "./scheduler.js"
@@ -75,6 +99,14 @@
     "./config": {
       "types": "./config.d.ts",
       "default": "./config.js"
+    },
+    "./dotenv": {
+      "types": "./dotenv.d.cts",
+      "default": "./dotenv.js"
+    },
+    "./dotenv/config": {
+      "types": "./dotenv-config.d.ts",
+      "default": "./dotenv-config.js"
     },
     "./schema": {
       "types": "./schema.d.ts",
@@ -126,6 +158,16 @@
     "session.d.ts",
     "expression.js",
     "expression.d.ts",
+    "fun.js",
+    "fun.d.ts",
+    "xlsx.js",
+    "xlsx.d.ts",
+    "html.js",
+    "html.d.ts",
+    "html-dom.js",
+    "html-dom.d.ts",
+    "purify.js",
+    "purify.d.ts",
     "rules.js",
     "rules.d.ts",
     "template.js",
@@ -148,6 +190,8 @@
     "openapi.d.cts",
     "openapi-ui.js",
     "openapi-ui.d.cts",
+    "axios.js",
+    "axios.d.cts",
     "client.js",
     "client.d.ts",
     "scheduler.js",
@@ -156,6 +200,10 @@
     "queue.d.ts",
     "config.js",
     "config.d.ts",
+    "dotenv.js",
+    "dotenv.d.cts",
+    "dotenv-config.js",
+    "dotenv-config.d.ts",
     "schema.js",
     "schema.d.ts",
     "faults.js",
@@ -201,11 +249,14 @@
     "@xufa/expression": "workspace:*",
     "@xufa/faults": "workspace:*",
     "@xufa/forms": "workspace:*",
+    "@xufa/fun": "workspace:*",
+    "@xufa/html": "workspace:*",
     "@xufa/http": "workspace:*",
     "@xufa/i18n": "workspace:*",
     "@xufa/mail": "workspace:*",
     "@xufa/openapi": "workspace:*",
     "@xufa/orm": "workspace:*",
+    "@xufa/purify": "workspace:*",
     "@xufa/queue": "workspace:*",
     "@xufa/rules": "workspace:*",
     "@xufa/scheduler": "workspace:*",
@@ -213,6 +264,7 @@
     "@xufa/session": "workspace:*",
     "@xufa/template": "workspace:*",
     "@xufa/views": "workspace:*",
+    "@xufa/xlsx": "workspace:*",
     "@xufa/yaml": "workspace:*"
   },
   "devDependencies": {

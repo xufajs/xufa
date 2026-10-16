@@ -10,11 +10,17 @@
       "types": "./index.d.ts",
       "default": "./index.js"
     },
+    "./axios": {
+      "types": "./axios.d.cts",
+      "default": "./axios.js"
+    },
     "./package.json": "./package.json"
   },
   "files": [
     "index.js",
     "index.d.ts",
+    "axios.js",
+    "axios.d.cts",
     "lib",
     "LICENSE"
   ],
@@ -28,7 +34,8 @@
     "fetch",
     "retry",
     "rest",
-    "api"
+    "api",
+    "axios"
   ],
   "author": "Jesús Seijas <jseijas@gmail.com>",
   "license": "MIT",
@@ -44,16 +51,25 @@
   "engines": {
     "node": "^22.22.3 || ^24.15.0 || >=25.7.0"
   },
+  "dependencies": {
+    "@xufa/faults": "workspace:*"
+  },
+  "peerDependencies": {
+    "@xufa/http": "workspace:*"
+  },
+  "peerDependenciesMeta": {
+    "@xufa/http": {
+      "optional": true
+    }
+  },
   "devDependencies": {
+    "@xufa/express": "workspace:*",
     "@xufa/http": "workspace:*",
     "@xufa/logger": "workspace:*",
     "@xufa/test": "workspace:^"
   },
   "publishConfig": {
     "access": "public"
-  },
-  "dependencies": {
-    "@xufa/faults": "workspace:*"
   },
   "xufaTest": {
     "setupFiles": [

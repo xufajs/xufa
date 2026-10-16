@@ -4,7 +4,7 @@
 // with their keys as their own properties (a key __proto__ is refused).
 import { ExpressionError } from './errors.js';
 import { generate, generateProgram } from './codegen.js';
-import { statements, isExpressionOnly } from './statements.js';
+import { statements, isExpressionOnly, isLimit } from './statements.js';
 import { asyncStatements } from './async.js';
 import { FORBIDDEN } from './forbidden.js';
 import { intrinsicsOf, INTRINSICS, templateStrings } from './intrinsics.js';
@@ -45,13 +45,21 @@ class Compiler {
     this.bound = bound ?? {};
     this.guardedToo = guardedToo ?? null;
     this.filters = filters;
-    this.lenient = Boolean(lenient);
+    this.lenient = lenient ?? false;
+    // (lenient: true is both; 'members' or 'calls', one of them.)
+    this.lenientMembers = this.lenient === true || this.lenient === 'members';
+    this.lenientCalls = this.lenient === true || this.lenient === 'calls';
+    // (Functions by name that values have as methods when they have none: the engine's `methods`.)
+    this.methods = options.methods ?? null;
     this.strict = Boolean(strict);
     this.tdz = Boolean(options.tdz);
     this.maxSteps = maxSteps ?? Infinity;
     this.maxDepth = maxDepth ?? Infinity;
     this.constructors = constructors ?? {};
     this.guarded = guarded ?? new WeakSet();
+    // Programs: the context as their top-level scope (scope: 'context'), and onError for their top-level statements.
+    this.contextScope = Boolean(options.contextScope);
+    this.onError = options.onError ?? null;
     this.depth = 0;
     this.breakable = [];
     this.labels = [];
@@ -187,8 +195,8 @@ class Compiler {
     return { home, self, key: (s) => keyOf(value(s)) };
   }
 
-  error(message, node, code = 'XUFA_EXPR_ERR_SYNTAX') {
-    return new ExpressionError(message, { code, source: this.source, position: node ? node.start : undefined });
+  error(message, node, code = 'XUFA_EXPR_ERR_SYNTAX', reason = undefined) {
+    return new ExpressionError(message, { code, source: this.source, position: node ? node.start : undefined, reason });
   }
 
   // The text of a node (of a tree made by another parser, without positions: made of its names).
@@ -515,21 +523,22 @@ class Compiler {
     return this.error(
       `Cannot read ${name} of ${this.text(node.object)}, which is null or undefined`,
       node,
-      'XUFA_EXPR_ERR_RUNTIME'
+      'XUFA_EXPR_ERR_RUNTIME',
+      'nullMember'
     );
   }
 
   member(node, env) {
     const { object, key, keyFn } = this.memberParts(node, env);
     const { optional } = node;
-    const { lenient } = this;
+    const { lenientMembers } = this;
     const compiler = this;
     return (s) => {
       const value = object(s);
       if (value === SHORT) return SHORT;
       if (value === null || value === undefined) {
         if (optional) return SHORT;
-        if (lenient) return undefined;
+        if (lenientMembers) return undefined;
         throw compiler.nullMember(node);
       }
       return value[keyFn ? keyFn(s) : key];
@@ -561,13 +570,19 @@ class Compiler {
     };
   }
 
+  // The function of the engine's methods for a call of a method of a name whose value is undefined or null, or null.
+  methodOf(name, value) {
+    if (!this.methods || (value !== undefined && value !== null)) return null;
+    return Object.hasOwn(this.methods, name) ? this.methods[name] : null;
+  }
+
   notFunction(node) {
-    return this.error(`${this.text(node.callee)} is not a function`, node, 'XUFA_EXPR_ERR_RUNTIME');
+    return this.error(`${this.text(node.callee)} is not a function`, node, 'XUFA_EXPR_ERR_RUNTIME', 'notFunction');
   }
 
   call(node, env) {
     const args = this.argumentsOf(node.arguments, env);
-    const { lenient } = this;
+    const { lenientMembers, lenientCalls } = this;
     const compiler = this;
     const callOptional = node.optional;
     const { callee } = node;
@@ -583,7 +598,7 @@ class Compiler {
         // (The arguments before the check, as JavaScript does: what they do happens.)
         const values = args(s);
         if (typeof fn !== 'function') {
-          if (lenient) return undefined;
+          if (lenientCalls) return undefined;
           throw compiler.notFunction(node);
         }
         return Reflect.apply(fn, target, values);
@@ -598,7 +613,7 @@ class Compiler {
         // (The arguments before the check, as JavaScript does: what they do happens.)
         const values = args(s);
         if (typeof fn !== 'function') {
-          if (lenient) return undefined;
+          if (lenientCalls) return undefined;
           throw compiler.notFunction(node);
         }
         return Reflect.apply(fn, target, values);
@@ -613,7 +628,7 @@ class Compiler {
         if (target === SHORT) return SHORT;
         if (target === null || target === undefined) {
           if (memberOptional) return SHORT;
-          if (lenient) return undefined;
+          if (lenientMembers) return undefined;
           throw compiler.nullMember(callee);
         }
         const fn = target[keyFn ? keyFn(s) : key];
@@ -621,7 +636,10 @@ class Compiler {
         // (The arguments before the check, as JavaScript does: what they do happens.)
         const values = args(s);
         if (typeof fn !== 'function') {
-          if (lenient) return undefined;
+          // (A method of the engine's of that name: with the value first.)
+          const method = keyFn ? null : compiler.methodOf(key, fn);
+          if (method) return Reflect.apply(method, undefined, [target, ...values]);
+          if (lenientCalls) return undefined;
           throw compiler.notFunction(node);
         }
         return Reflect.apply(fn, target, values);
@@ -635,7 +653,7 @@ class Compiler {
       // (The arguments before the check, as JavaScript does: what they do happens.)
       const values = args(s);
       if (typeof fn !== 'function') {
-        if (lenient) return undefined;
+        if (lenientCalls) return undefined;
         throw compiler.notFunction(node);
       }
       return Reflect.apply(fn, undefined, values);
@@ -953,6 +971,20 @@ function checkTree(tree, compiler) {
 // lib/codegen-statements.js for programs),
 // which costs more to make than a few runs: expressions run a few times do not pay it. The first functions are shared
 // by every expression, so V8 cannot specialize their reads; the one made reads each name and member where it is.
+// fn(context), its errors given to onError (limits aside) and undefined its value.
+function withOnError(run, onError, text) {
+  return (context) => {
+    try {
+      return run(context);
+    } catch (error) {
+      if (isLimit(error)) throw error;
+      const ctx = typeof context === 'object' && context !== null ? context : contextOf(context);
+      onError(error, { source: text, statement: 0, context: ctx });
+      return undefined;
+    }
+  };
+}
+
 function compileTree(tree, source, options) {
   if (tree.type === 'Program') {
     // A program of one expression (or a return of one) is that expression: compiled, and inlined, as one.
@@ -962,7 +994,11 @@ function compileTree(tree, source, options) {
       (only.type === 'ExpressionStatement' || (only.type === 'ReturnStatement' && only.argument))
         ? (only.expression ?? only.argument)
         : null;
-    if (expression && isExpressionOnly(expression)) return compileTree(expression, source, options);
+    if (expression && isExpressionOnly(expression)) {
+      const run = compileTree(expression, source, options);
+      // (With onError, the error of that only statement is given to it, as those of a program's statements.)
+      return options.onError ? withOnError(run, options.onError, source.slice(only.start, only.end)) : run;
+    }
     const compiler = new Compiler(source, options);
     const run = compiler.program(tree);
     const closures = (context) => run(typeof context === 'object' && context !== null ? context : contextOf(context));

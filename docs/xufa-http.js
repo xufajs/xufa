@@ -1059,6 +1059,326 @@ var xufa_js_2 = require("./lib/xufa.js");
 Object.defineProperty(exports, "module.exports", { enumerable: true, get: function () { return __importDefault(xufa_js_2).default; } });
 
 },
+"@xufa/http/lib/compression.js": function (module, exports, require) {
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.noTransform = void 0;
+exports.compression = compression;
+exports.shouldCompress = shouldCompress;
+exports.compressible = compressible;
+exports.negotiateEncoding = negotiateEncoding;
+exports.acceptedEncoding = acceptedEncoding;
+exports.parseBytes = parseBytes;
+// compression's API (1.8.2), xufa's own implementation: a middleware of node:http (Express, connect, @xufa/express)
+// that compresses answers with brotli, gzip or deflate as the request accepts (Accept-Encoding, brotli and gzip
+// preferred when the q are equal), when their type is compressible (mime-db, or text/* and +json/+text/+xml), they are
+// not under the threshold (1kb), not encoded already, not HEAD, and Cache-Control has no no-transform. res.flush()
+// sends what is compressed so far (server-sent events). The stream of zlib is let go when the response closes.
+//
+//   app.use(compression({ threshold: 256 }));
+const node_zlib_1 = __importDefault(require("node:zlib"));
+const mime_db_js_1 = require("./mime-db.js");
+const vary_js_1 = require("./vary.js");
+const NO_TRANSFORM = /(?:^|,)\s*?no-transform\s*?(?:,|$)/i;
+const SUPPORTED_ENCODINGS = ['br', 'gzip', 'deflate', 'identity'];
+const PREFERRED_ENCODINGS = ['br', 'gzip'];
+const ENFORCEABLE = ['gzip', 'deflate', 'identity', 'br'];
+// bytes.parse: a number, or a text of a size ('1kb', '1.5mb', '100'); null when it is none.
+const UNITS = { b: 1, kb: 1 << 10, mb: 1 << 20, gb: 1 << 30, tb: 1024 ** 4, pb: 1024 ** 5 };
+const SIZE = /^((-|\+)?(\d+(?:\.\d+)?)) *(kb|mb|gb|tb|pb)$/i;
+function parseBytes(value) {
+    if (typeof value === 'number' && !Number.isNaN(value))
+        return value;
+    if (typeof value !== 'string')
+        return null;
+    const match = SIZE.exec(value);
+    const amount = match ? parseFloat(match[1]) : parseInt(value, 10);
+    if (Number.isNaN(amount))
+        return null;
+    return Math.floor(UNITS[match ? match[4].toLowerCase() : 'b'] * amount);
+}
+const MEDIA_TYPE = /^\s*([^;\s]*)(?:;|\s|$)/;
+const COMPRESSIBLE_NAME = /^text\/|\+(?:json|text|xml)$/i;
+/** Whether a Content-Type is compressible: mime-db's word, or by its name; undefined when unknown. */
+function compressible(type) {
+    if (!type || typeof type !== 'string')
+        return false;
+    const match = MEDIA_TYPE.exec(type);
+    const mime = match && match[1].toLowerCase();
+    const known = mime_db_js_1.COMPRESSIBLE[mime];
+    if (known !== undefined)
+        return known;
+    return COMPRESSIBLE_NAME.test(mime) || undefined;
+}
+// The encodings of an Accept-Encoding: { encoding, q, i } (identity added with the lowest q when not named).
+const ENCODING = /^\s*([^\s;]+)\s*(?:;(.*))?$/;
+function parseAcceptEncoding(header) {
+    const parts = header.split(',');
+    const accepted = [];
+    let hasIdentity = false;
+    let minQuality = 1;
+    for (let i = 0; i < parts.length; i++) {
+        const match = ENCODING.exec(parts[i].trim());
+        if (!match)
+            continue;
+        let q = 1;
+        if (match[2]) {
+            for (const param of match[2].split(';')) {
+                const [name, value] = param.trim().split('=');
+                if (name === 'q') {
+                    q = parseFloat(value);
+                    break;
+                }
+            }
+        }
+        const entry = { encoding: match[1], q, i };
+        accepted.push(entry);
+        hasIdentity || (hasIdentity = specify('identity', entry) !== null);
+        minQuality = Math.min(minQuality, q || 1);
+    }
+    if (!hasIdentity)
+        accepted.push({ encoding: 'identity', q: minQuality, i: parts.length });
+    return accepted;
+}
+function specify(encoding, spec, index) {
+    let s = 0;
+    if (spec.encoding.toLowerCase() === encoding.toLowerCase())
+        s |= 1;
+    else if (spec.encoding !== '*')
+        return null;
+    return { encoding, i: index, o: spec.i, q: spec.q, s };
+}
+/** negotiator's encoding(): the encoding offered the request prefers (by q, then `preferred`), or undefined. */
+function negotiateEncoding(header, offered, preferred) {
+    const accepted = parseAcceptEncoding(header || '');
+    const priorities = offered.map((encoding, index) => {
+        let priority = { encoding, o: -1, q: 0, s: 0 };
+        for (const spec of accepted) {
+            const match = specify(encoding, spec, index);
+            if (match && (priority.s - match.s || priority.q - match.q || priority.o - match.o) < 0)
+                priority = match;
+        }
+        return priority;
+    });
+    const compare = (a, b) => {
+        if (a.q !== b.q)
+            return b.q - a.q;
+        const aPreferred = preferred.indexOf(a.encoding);
+        const bPreferred = preferred.indexOf(b.encoding);
+        if (aPreferred === -1 && bPreferred === -1)
+            return b.s - a.s || a.o - b.o || a.i - b.i;
+        if (aPreferred !== -1 && bPreferred !== -1)
+            return aPreferred - bPreferred;
+        return aPreferred === -1 ? 1 : -1;
+    };
+    const best = priorities.filter((priority) => priority.q > 0).sort(compare)[0];
+    return best && offered[priorities.indexOf(best)];
+}
+// The answers of the filter by Content-Type, up to 100 of them: an app sends the same few types again and again.
+const compressibleTypes = new Map();
+/** The default filter: a Content-Type that is compressible. */
+function shouldCompress(req, res) {
+    const type = res.getHeader('Content-Type');
+    if (type === undefined)
+        return false;
+    let answer = compressibleTypes.get(type);
+    if (answer === undefined) {
+        answer = !!compressible(type);
+        if (typeof type === 'string') {
+            if (compressibleTypes.size >= 100)
+                compressibleTypes.clear();
+            compressibleTypes.set(type, answer);
+        }
+    }
+    return answer;
+}
+/** Whether a Cache-Control has no-transform (the answer is then sent as it is). */
+const noTransform = (cacheControl) => !!cacheControl && NO_TRANSFORM.test(cacheControl);
+exports.noTransform = noTransform;
+const shouldTransform = (req, res) => !noTransform(res.getHeader('Cache-Control'));
+/** The encoding the middleware uses for an Accept-Encoding ('br', 'gzip' or 'deflate'), or null for none. */
+function acceptedEncoding(header, enforceEncoding = 'identity') {
+    let method = negotiateEncoding(header, SUPPORTED_ENCODINGS, PREFERRED_ENCODINGS);
+    if (!header && ENFORCEABLE.includes(enforceEncoding))
+        method = enforceEncoding;
+    return method && method !== 'identity' ? method : null;
+}
+const chunkLength = (chunk, encoding) => {
+    if (!chunk)
+        return 0;
+    return Buffer.isBuffer(chunk) ? chunk.length : Buffer.byteLength(chunk, encoding);
+};
+const toBuffer = (chunk, encoding) => (Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk, encoding));
+const headersSent = (res) => (typeof res.headersSent !== 'boolean' ? Boolean(res._header) : res.headersSent);
+// on-headers: the listener runs once, right before the headers of the response are written (writeHead, its headers
+// given as an object or arrays set first, so that the listener sees them).
+function onHeaders(res, listener) {
+    const writeHead = res.writeHead;
+    let fired = false;
+    res.writeHead = function (_statusCode) {
+        const args = setWriteHeadHeaders.apply(this, arguments);
+        if (!fired) {
+            fired = true;
+            listener.call(this);
+            if (typeof args[0] === 'number' && this.statusCode !== args[0]) {
+                args[0] = this.statusCode;
+                args.length = 1;
+            }
+        }
+        return writeHead.apply(this, args);
+    };
+}
+function setWriteHeadHeaders(statusCode) {
+    const { length } = arguments;
+    const headerIndex = length > 1 && typeof arguments[1] === 'string' ? 2 : 1;
+    const headers = length >= headerIndex + 1 ? arguments[headerIndex] : undefined;
+    this.statusCode = statusCode;
+    if (Array.isArray(headers)) {
+        if (headers.length && Array.isArray(headers[0])) {
+            for (const [name, value] of headers)
+                if (name)
+                    this.setHeader(name, value);
+        }
+        else {
+            if (headers.length % 2 !== 0)
+                throw new TypeError('headers array is malformed');
+            // Repeated names: appended (Set-Cookie twice is two of them).
+            for (let i = 0; i < headers.length; i += 2)
+                this.removeHeader(headers[i]);
+            for (let i = 0; i < headers.length; i += 2)
+                if (headers[i])
+                    this.appendHeader(headers[i], headers[i + 1]);
+        }
+    }
+    else if (headers) {
+        for (const name of Object.keys(headers))
+            if (name)
+                this.setHeader(name, headers[name]);
+    }
+    const args = new Array(Math.min(length, headerIndex));
+    for (let i = 0; i < args.length; i++)
+        args[i] = arguments[i];
+    return args;
+}
+/**
+ * The middleware: options { filter(req, res), threshold (bytes or '1kb'; 1kb by default), enforceEncoding (for
+ * requests without Accept-Encoding: 'identity' by default), brotli (options of zlib's brotli; quality 4 by default),
+ * and zlib's options for gzip and deflate (level, memLevel, chunkSize, windowBits, strategy...) }.
+ */
+function compression(options) {
+    const opts = options || {};
+    const brotliOptions = { ...opts.brotli };
+    brotliOptions.params = { [node_zlib_1.default.constants.BROTLI_PARAM_QUALITY]: 4, ...brotliOptions.params };
+    const filter = opts.filter || shouldCompress;
+    let threshold = parseBytes(opts.threshold);
+    if (threshold == null)
+        threshold = 1024;
+    const enforceEncoding = opts.enforceEncoding || 'identity';
+    return function compression(req, res, next) {
+        let ended = false;
+        let length;
+        let listeners = [];
+        let stream;
+        let closed = false;
+        const end = res.end;
+        const on = res.on;
+        const write = res.write;
+        res.flush = function flush() {
+            if (stream)
+                stream.flush();
+        };
+        res.write = function (chunk, encoding) {
+            if (ended)
+                return false;
+            if (!headersSent(res))
+                this.writeHead(this.statusCode);
+            return stream ? stream.write(toBuffer(chunk, encoding)) : write.call(this, chunk, encoding);
+        };
+        res.end = function (chunk, encoding) {
+            if (ended)
+                return false;
+            if (!headersSent(res)) {
+                // The length, when the whole body is given here.
+                if (!this.getHeader('Content-Length'))
+                    length = chunkLength(chunk, encoding);
+                this.writeHead(this.statusCode);
+            }
+            if (!stream)
+                return end.call(this, chunk, encoding);
+            ended = true;
+            return chunk ? stream.end(toBuffer(chunk, encoding)) : stream.end();
+        };
+        // 'drain' listeners go to the stream when there is one (kept until it is known).
+        res.on = function (type, listener) {
+            if (!listeners || type !== 'drain')
+                return on.call(this, type, listener);
+            if (stream)
+                return stream.on(type, listener);
+            listeners.push([type, listener]);
+            return this;
+        };
+        const nocompress = () => {
+            for (const [type, listener] of listeners)
+                on.call(res, type, listener);
+            listeners = null;
+        };
+        // The stream of zlib let go when the response closes (a client gone before the end too).
+        on.call(res, 'close', () => {
+            closed = true;
+            if (stream)
+                stream.destroy();
+        });
+        onHeaders(res, () => {
+            if (!filter(req, res))
+                return nocompress();
+            if (!shouldTransform(req, res))
+                return nocompress();
+            // (No Vary yet, the most often: set as it is.)
+            if (res.getHeader('Vary') === undefined)
+                res.setHeader('Vary', 'Accept-Encoding');
+            else
+                (0, vary_js_1.vary)(res, 'Accept-Encoding');
+            if (Number(res.getHeader('Content-Length')) < threshold || length < threshold)
+                return nocompress();
+            if ((res.getHeader('Content-Encoding') || 'identity') !== 'identity')
+                return nocompress();
+            if (req.method === 'HEAD')
+                return nocompress();
+            const method = acceptedEncoding(req.headers['accept-encoding'], enforceEncoding);
+            if (!method)
+                return nocompress();
+            stream =
+                method === 'gzip'
+                    ? node_zlib_1.default.createGzip(opts)
+                    : method === 'br'
+                        ? node_zlib_1.default.createBrotliCompress(brotliOptions)
+                        : node_zlib_1.default.createDeflate(opts);
+            // A response closed already: no stream, and what is written goes to the response.
+            if (closed) {
+                stream.destroy();
+                stream = null;
+                return undefined;
+            }
+            for (const [type, listener] of listeners)
+                stream.on(type, listener);
+            res.setHeader('Content-Encoding', method);
+            res.removeHeader('Content-Length');
+            stream.on('data', (chunk) => {
+                if (write.call(res, chunk) === false)
+                    stream.pause();
+            });
+            stream.on('end', () => end.call(res));
+            on.call(res, 'drain', () => stream.resume());
+            return undefined;
+        });
+        next();
+    };
+}
+compression.filter = shouldCompress;
+
+},
 "@xufa/http/lib/config.js": function (module, exports, require) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.utils = exports.defaultInitOptions = void 0;
@@ -2932,7 +3252,6 @@ function fastHead(res, req, statusCode, headers, length) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.formBody = formBody;
 exports.parseUrlencoded = parseUrlencoded;
-exports.parseMultipart = parseMultipart;
 // The bodies of HTML forms (as Django's request.POST and request.FILES, and @fastify/formbody with a multipart parser):
 // application/x-www-form-urlencoded and multipart/form-data become request.body, an object of the fields. A field
 // given more than once, or whose name ends with [], is a list; the files of a multipart body are objects
@@ -2944,6 +3263,7 @@ exports.parseMultipart = parseMultipart;
 // Options: bodyLimit (the most bytes of a body: 1 MiB for urlencoded bodies, 20 MiB for multipart ones), and limits
 // of multipart bodies: files (10), fileSize (10 MiB), fields (1000), fieldSize (1 MiB), parts (1000). Past a limit the
 // answer is 413 (a file or a body too large) or 400 (too many parts, or a body that is not well made).
+const multipart_js_1 = require("./multipart.js");
 // An error of a body: its status (400, 413) and a code.
 function createError(statusCode, message) {
     const err = new Error(message);
@@ -2971,114 +3291,636 @@ function parseUrlencoded(text) {
         put(body, name, value);
     return body;
 }
-// The value of a parameter of a header (name="x"; filename="y"), with quotes and RFC 5987 (filename*=UTF-8''...).
-function paramOf(header, param) {
-    const star = new RegExp(`(?:^|;)\\s*${param}\\*=([^;]*)`, 'i').exec(header);
-    if (star) {
-        const value = star[1].trim().replace(/^"|"$/g, '');
-        const match = /^([\w-]+)'[^']*'(.*)$/.exec(value);
-        try {
-            return decodeURIComponent(match ? match[2] : value);
-        }
-        catch {
-            return match ? match[2] : value;
-        }
-    }
-    const quoted = new RegExp(`(?:^|;)\\s*${param}="((?:[^"\\\\]|\\\\.)*)"`, 'i').exec(header);
-    if (quoted)
-        return quoted[1].replace(/\\(.)/g, '$1');
-    const plain = new RegExp(`(?:^|;)\\s*${param}=([^;\\s]*)`, 'i').exec(header);
-    return plain ? plain[1] : null;
-}
-// A multipart body (RFC 7578) of a boundary: its fields and files into an object.
-function parseMultipart(buffer, boundary, limits) {
+// A multipart body (RFC 7578) read as it comes (./multipart.js): its fields and files into an object; past a limit,
+// or a body not well made, the error (and the rest of the body is not read).
+function readMultipart(request, payload, limits, bodyLimit, next) {
     const body = {};
-    const delimiter = Buffer.from(`--${boundary}`);
-    let at = buffer.indexOf(delimiter);
-    if (at === -1)
-        throw createError(400, 'The multipart body has no boundary');
     let parts = 0;
     let files = 0;
     let fields = 0;
-    for (;;) {
-        at += delimiter.length;
-        // The last boundary ends with --.
-        if (buffer[at] === 0x2d && buffer[at + 1] === 0x2d)
-            return body;
-        if (buffer[at] === 0x0d && buffer[at + 1] === 0x0a)
-            at += 2;
-        else
-            throw createError(400, 'A part of the multipart body is not well made');
-        const headersEnd = buffer.indexOf('\r\n\r\n', at);
-        if (headersEnd === -1)
-            throw createError(400, 'A part of the multipart body has no end of its headers');
-        const headers = {};
-        for (const line of buffer.toString('utf8', at, headersEnd).split('\r\n')) {
-            const colon = line.indexOf(':');
-            if (colon > 0)
-                headers[line.slice(0, colon).trim().toLowerCase()] = line.slice(colon + 1).trim();
+    let bytes = 0;
+    let failed = false;
+    let parser;
+    const fail = (err) => {
+        if (failed)
+            return;
+        failed = true;
+        payload.unpipe(parser);
+        parser.destroy();
+        payload.resume();
+        next(err);
+    };
+    try {
+        // (Limits one past ours: busboy's tell of a value as long as the limit; ours refuse what passes it.)
+        parser = new multipart_js_1.MultipartParser({
+            headers: request.headers,
+            limits: { fileSize: limits.fileSize + 1, fieldSize: limits.fieldSize + 1 },
+            defParamCharset: 'utf8',
+        });
+    }
+    catch {
+        payload.resume();
+        return next(createError(400, 'A multipart body needs the boundary of its content type'));
+    }
+    const counted = (name) => {
+        if (name === undefined) {
+            fail(createError(400, 'A part of the multipart body has no name'));
+            return false;
         }
-        const next = buffer.indexOf(Buffer.concat([Buffer.from('\r\n'), delimiter]), headersEnd + 4);
-        if (next === -1)
-            throw createError(400, 'The multipart body ends before its last boundary');
-        const data = buffer.subarray(headersEnd + 4, next);
         parts += 1;
-        if (parts > limits.parts)
-            throw createError(400, `A multipart body has at most ${limits.parts} parts`);
-        const disposition = headers['content-disposition'] || '';
-        const name = paramOf(disposition, 'name');
-        if (name === null)
-            throw createError(400, 'A part of the multipart body has no name');
-        const filename = paramOf(disposition, 'filename');
-        if (filename !== null) {
+        if (parts > limits.parts) {
+            fail(createError(400, `A multipart body has at most ${limits.parts} parts`));
+            return false;
+        }
+        return true;
+    };
+    const field = (name, value) => {
+        fields += 1;
+        if (fields > limits.fields)
+            return fail(createError(400, `A form sends at most ${limits.fields} fields`));
+        if (Buffer.byteLength(value) > limits.fieldSize) {
+            return fail(createError(413, `A field has at most ${limits.fieldSize} bytes`));
+        }
+        return put(body, name, value);
+    };
+    parser.on('field', (name, value, { valueTruncated }) => {
+        if (!counted(name))
+            return;
+        if (valueTruncated) {
+            fail(createError(413, `A field has at most ${limits.fieldSize} bytes`));
+            return;
+        }
+        field(name, value);
+    });
+    parser.on('file', (name, stream, { filename, contentType }) => {
+        if (!counted(name)) {
+            stream.resume();
+            return;
+        }
+        const chunks = [];
+        let size = 0;
+        stream.on('data', (chunk) => {
+            chunks.push(chunk);
+            size += chunk.length;
+        });
+        stream.on('limit', () => fail(createError(413, `A file has at most ${limits.fileSize} bytes`)));
+        // (Its stream ends with an error when the form stops: the first error is the answer.)
+        stream.on('error', (err) => fail(err));
+        stream.on('end', () => {
+            if (failed)
+                return;
+            // (A part of application/octet-stream without a name of a file is a field.)
+            if (filename === undefined) {
+                field(name, Buffer.concat(chunks).toString('utf8'));
+                return;
+            }
             files += 1;
-            if (files > limits.files)
-                throw createError(413, `A form sends at most ${limits.files} files`);
-            if (data.length > limits.fileSize)
-                throw createError(413, `A file has at most ${limits.fileSize} bytes`);
+            if (files > limits.files) {
+                fail(createError(413, `A form sends at most ${limits.files} files`));
+                return;
+            }
             // An input of a file left empty sends a part with no name of a file and no data: no file.
-            if (filename !== '' || data.length > 0) {
+            if (filename !== '' || size > 0) {
                 put(body, name, {
                     filename,
-                    contentType: headers['content-type'] || 'application/octet-stream',
-                    size: data.length,
-                    data: Buffer.from(data),
+                    contentType: contentType || 'application/octet-stream',
+                    size,
+                    data: Buffer.concat(chunks, size),
                 });
             }
+        });
+    });
+    parser.on('error', (err) => {
+        const message = /end of form/.test(err.message)
+            ? 'The multipart body ends before its last boundary'
+            : 'A part of the multipart body is not well made';
+        fail(createError(400, parser.parts < 0 ? 'The multipart body has no boundary' : message));
+    });
+    parser.on('close', () => {
+        if (!failed && parser.writableFinished) {
+            failed = true;
+            next(null, body);
         }
-        else {
-            fields += 1;
-            if (fields > limits.fields)
-                throw createError(400, `A form sends at most ${limits.fields} fields`);
-            if (data.length > limits.fieldSize)
-                throw createError(413, `A field has at most ${limits.fieldSize} bytes`);
-            put(body, name, data.toString('utf8'));
-        }
-        at = next + 2;
-    }
+    });
+    payload.on('data', (chunk) => {
+        bytes += chunk.length;
+        if (bytes > bodyLimit)
+            fail(createError(413, 'Request body is too large'));
+    });
+    payload.on('error', (err) => fail(err));
+    payload.pipe(parser);
+    return undefined;
 }
 function formBody(app, options, done) {
     const { bodyLimit, multipart = true, files = 10, fileSize = 10 * MIB, fields = 1000, fieldSize = MIB, parts = 1000, } = options || {};
     const limits = { files, fileSize, fields, fieldSize, parts };
     app.addContentTypeParser('application/x-www-form-urlencoded', { parseAs: 'string', bodyLimit: bodyLimit || MIB }, (request, text, next) => next(null, parseUrlencoded(text)));
     if (multipart) {
-        app.addContentTypeParser('multipart/form-data', { parseAs: 'buffer', bodyLimit: bodyLimit || 20 * MIB }, (request, buffer, next) => {
-            const boundary = paramOf(request.headers['content-type'] || '', 'boundary');
-            if (!boundary)
-                return next(createError(400, 'A multipart body needs the boundary of its content type'));
-            try {
-                return next(null, parseMultipart(buffer, boundary, limits));
-            }
-            catch (err) {
-                return next(err);
-            }
-        });
+        app.addContentTypeParser('multipart/form-data', (request, payload, next) => readMultipart(request, payload, limits, bodyLimit || 20 * MIB, next));
     }
     done();
 }
 formBody[Symbol.for('skip-override')] = true;
 formBody[Symbol.for('fastify.display-name')] = 'formBody';
 formBody[Symbol.for('plugin-meta')] = { name: 'formBody' };
+
+},
+"@xufa/http/lib/form-data.js": function (module, exports, require) {
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.FormData = void 0;
+// The API of the form-data package (as of form-data 4.0.5), xufa's own implementation: forms of multipart/form-data
+// written as a stream, to send to a server (submit(), pipe(), or as the body of axios and other clients). Its parts are
+// texts, Buffers, and streams (files, HTTP responses, any Readable) read when their turn comes; the stream is the old
+// kind form-data is (a 'data' listener does not start it: pipe() or resume() do), so what listens before it is piped
+// misses nothing.
+//
+//   const form = new FormData();
+//   form.append('title', 'Dune');
+//   form.append('cover', fs.createReadStream('cover.png')); // its name and type from its path
+//   form.append('notes', buffer, 'notes.txt');
+//   axios.post(url, form, { headers: form.getHeaders() });
+//
+// The types of files come from @xufa/http's mime table (mime-db 1.54, as mime-types 3 reads it; form-data reads mime-db
+// 1.52 with mime-types 2: newer types, and .js text/javascript). form-data's own tests pass on it
+// (tools/port-form-data).
+const node_crypto_1 = __importDefault(require("node:crypto"));
+const node_fs_1 = __importDefault(require("node:fs"));
+const node_http_1 = __importDefault(require("node:http"));
+const node_https_1 = __importDefault(require("node:https"));
+const node_path_1 = __importDefault(require("node:path"));
+const node_stream_1 = require("node:stream");
+const mime_js_1 = require("./mime.js");
+const LINE_BREAK = '\r\n';
+const DEFAULT_CONTENT_TYPE = 'application/octet-stream';
+const hasOwn = (object, key) => Object.prototype.hasOwnProperty.call(object, key);
+// A stream of a part (strings, Buffers, numbers, booleans and functions are not).
+const isStreamLike = (value) => typeof value !== 'function' &&
+    typeof value !== 'string' &&
+    typeof value !== 'boolean' &&
+    typeof value !== 'number' &&
+    !Buffer.isBuffer(value);
+// A stream appended, held until its turn: what it says (data, end, errors) is kept and said again then, so a stream
+// that runs before (an old one, a response) loses nothing. (delayed-stream's way, which form-data's streams have.)
+class HeldStream extends node_stream_1.Stream {
+    constructor(source, pause) {
+        super();
+        this.source = source;
+        this.dataSize = 0;
+        this.released = false;
+        this.events = [];
+        const emit = source.emit;
+        const held = this;
+        source.emit = function (...args) {
+            held.heard(args);
+            return emit.apply(source, args);
+        };
+        // (Its errors are said by this stream, when its turn comes.)
+        source.on('error', () => { });
+        if (pause)
+            source.pause();
+    }
+    get readable() {
+        return this.source.readable;
+    }
+    heard(args) {
+        if (this.released) {
+            this.emit(...args);
+            return;
+        }
+        if (args[0] === 'data')
+            this.dataSize += args[1].length;
+        this.events.push(args);
+    }
+    setEncoding(...args) {
+        return this.source.setEncoding(...args);
+    }
+    resume() {
+        if (!this.released) {
+            this.released = true;
+            for (const args of this.events)
+                this.emit(...args);
+            this.events = [];
+        }
+        this.source.resume();
+    }
+    pause() {
+        this.source.pause();
+    }
+    pipe(...args) {
+        const dest = node_stream_1.Stream.prototype.pipe.apply(this, args);
+        this.resume();
+        return dest;
+    }
+}
+class FormData extends node_stream_1.Stream {
+    // options: properties of the form (maxDataSize: what streams may say before their turn, 2 MiB; pauseStreams).
+    constructor(options = {}) {
+        super();
+        this.writable = false;
+        this.readable = true;
+        this.dataSize = 0;
+        this.maxDataSize = 2 * 1024 * 1024;
+        this.pauseStreams = true;
+        this._released = false;
+        this._streams = [];
+        this._currentStream = null;
+        this._insideLoop = false;
+        this._pendingNext = false;
+        this._overheadLength = 0;
+        this._valueLength = 0;
+        this._valuesToMeasure = [];
+        for (const option in options)
+            this[option] = options[option];
+    }
+    // A part: a text (numbers, null and undefined as text), a Buffer or a stream; options its filename (a string is
+    // one), filepath (a name with its folders), contentType, knownLength, or header (an object of headers to add, or the
+    // whole header as a string).
+    append(field, value, options = {}) {
+        const opts = typeof options === 'string' ? { filename: options } : options || {};
+        let part = value;
+        if (typeof part === 'number' || part == null)
+            part = String(part);
+        if (Array.isArray(part)) {
+            this._error(new Error('Arrays are not supported.'));
+            return;
+        }
+        const header = this._multiPartHeader(field, part, opts);
+        this.add(header);
+        this.add(part);
+        this.add(this._multiPartFooter());
+        this._trackLength(header, part, opts);
+    }
+    add(part) {
+        let stream = part;
+        if (isStreamLike(stream)) {
+            if (!(stream instanceof HeldStream)) {
+                const held = new HeldStream(stream, this.pauseStreams);
+                stream.on('data', () => this.checkDataSize());
+                stream = held;
+            }
+            stream.on('error', (err) => this.emitError(err));
+            if (this.pauseStreams)
+                stream.pause();
+        }
+        this._streams.push(stream);
+        return this;
+    }
+    _trackLength(header, value, options) {
+        let valueLength = 0;
+        if (options.knownLength != null)
+            valueLength += Number(options.knownLength);
+        else if (Buffer.isBuffer(value))
+            valueLength = value.length;
+        else if (typeof value === 'string')
+            valueLength = Buffer.byteLength(value);
+        this._valueLength += valueLength;
+        this._overheadLength += Buffer.byteLength(header) + LINE_BREAK.length;
+        // (A stream of a file, a response or any other: its length is asked for, unless known.)
+        if (!value || (!value.path && !(value.readable && hasOwn(value, 'httpVersion')) && !(value instanceof node_stream_1.Stream)))
+            return;
+        if (!options.knownLength)
+            this._valuesToMeasure.push(value);
+    }
+    // The length of a stream: of its file (the range of it read: from start, 0 without one, to end or the end of the
+    // file), of a response, of a response to come (request's streams); 'Unknown stream' for others. (form-data counted
+    // the whole file for a stream with an end and no start, as Node once read them: a request of that length waits for
+    // bytes that never come.)
+    _lengthRetriever(value, callback) {
+        if (hasOwn(value, 'fd')) {
+            node_fs_1.default.stat(value.path, (err, stat) => {
+                if (err) {
+                    callback(err);
+                    return;
+                }
+                const start = value.start || 0;
+                const last = value.end === undefined || value.end === Infinity ? stat.size - 1 : Math.min(value.end, stat.size - 1);
+                callback(null, Math.max(0, last - start + 1));
+            });
+        }
+        else if (hasOwn(value, 'httpVersion')) {
+            callback(null, Number(value.headers['content-length']));
+        }
+        else if (hasOwn(value, 'httpModule')) {
+            value.on('response', (response) => {
+                value.pause();
+                callback(null, Number(response.headers['content-length']));
+            });
+            value.resume();
+        }
+        else {
+            callback('Unknown stream');
+        }
+    }
+    _multiPartHeader(field, value, options) {
+        if (typeof options.header === 'string')
+            return options.header;
+        const disposition = this._getContentDisposition(value, options);
+        const type = this._getContentType(value, options);
+        const headers = {
+            'Content-Disposition': ['form-data', `name="${field}"`].concat(disposition || []),
+            'Content-Type': [].concat(type || []),
+        };
+        // (Headers of the options fill those that are not there.)
+        if (typeof options.header === 'object') {
+            for (const name of Object.keys(options.header))
+                headers[name] = headers[name] || options.header[name];
+        }
+        let contents = '';
+        for (const name of Object.keys(headers)) {
+            let header = headers[name];
+            if (header == null)
+                continue;
+            if (!Array.isArray(header))
+                header = [header];
+            if (header.length)
+                contents += `${name}: ${header.join('; ')}${LINE_BREAK}`;
+        }
+        return `--${this.getBoundary()}${LINE_BREAK}${contents}${LINE_BREAK}`;
+    }
+    // filename="..." of the options (filepath keeps its folders), of the value (a name, a path), or of the path of the
+    // request of a response.
+    _getContentDisposition(value, options) {
+        let filename;
+        if (typeof options.filepath === 'string') {
+            filename = node_path_1.default.normalize(options.filepath).replace(/\\/g, '/');
+        }
+        else if (options.filename || (value && (value.name || value.path))) {
+            filename = node_path_1.default.basename(options.filename || (value && (value.name || value.path)));
+        }
+        else if (value && value.readable && hasOwn(value, 'httpVersion')) {
+            filename = node_path_1.default.basename(value.client._httpMessage.path || '');
+        }
+        return filename ? `filename="${filename}"` : undefined;
+    }
+    // The type of the options, of the name or path of the value, of a response, of the filename; or
+    // application/octet-stream for a value that is not text.
+    _getContentType(value, options) {
+        let type = options.contentType;
+        if (!type && value && value.name)
+            type = (0, mime_js_1.lookup)(value.name);
+        if (!type && value && value.path)
+            type = (0, mime_js_1.lookup)(value.path);
+        if (!type && value && value.readable && hasOwn(value, 'httpVersion'))
+            type = value.headers['content-type'];
+        if (!type && (options.filepath || options.filename))
+            type = (0, mime_js_1.lookup)(options.filepath || options.filename);
+        if (!type && value && typeof value === 'object')
+            type = DEFAULT_CONTENT_TYPE;
+        return type;
+    }
+    // The end of a part, and of the form after its last part.
+    _multiPartFooter() {
+        return (next) => {
+            let footer = LINE_BREAK;
+            if (this._streams.length === 0)
+                footer += this._lastBoundary();
+            next(footer);
+        };
+    }
+    _lastBoundary() {
+        return `--${this.getBoundary()}--${LINE_BREAK}`;
+    }
+    // Its Content-Type, and the headers given (names in lowercase).
+    getHeaders(userHeaders) {
+        const headers = { 'content-type': `multipart/form-data; boundary=${this.getBoundary()}` };
+        for (const name in userHeaders) {
+            if (hasOwn(userHeaders, name))
+                headers[name.toLowerCase()] = userHeaders[name];
+        }
+        return headers;
+    }
+    setBoundary(boundary) {
+        if (typeof boundary !== 'string')
+            throw new TypeError('FormData boundary must be a string');
+        this._boundary = boundary;
+    }
+    // 26 dashes and 24 random hex digits (crypto's: a boundary nobody can guess, to put in a value).
+    getBoundary() {
+        if (!this._boundary)
+            this._boundary = `--------------------------${node_crypto_1.default.randomBytes(12).toString('hex')}`;
+        return this._boundary;
+    }
+    // The form at once, of its texts and Buffers (streams are left out).
+    getBuffer() {
+        const boundary = this.getBoundary();
+        const chunks = [];
+        for (const part of this._streams) {
+            if (typeof part === 'function')
+                continue;
+            chunks.push(Buffer.isBuffer(part) ? part : Buffer.from(part));
+            if (typeof part !== 'string' || part.substring(2, boundary.length + 2) !== boundary) {
+                chunks.push(Buffer.from(LINE_BREAK));
+            }
+        }
+        chunks.push(Buffer.from(this._lastBoundary()));
+        return Buffer.concat(chunks);
+    }
+    // The length of the form without streams of unknown length (an error says it when there are).
+    getLengthSync() {
+        let length = this._overheadLength + this._valueLength;
+        if (this._streams.length)
+            length += this._lastBoundary().length;
+        if (!this.hasKnownLength())
+            this._error(new Error('Cannot calculate proper length in synchronous way.'));
+        return length;
+    }
+    hasKnownLength() {
+        return this._valuesToMeasure.length === 0;
+    }
+    // callback(err, length): with the lengths of its streams.
+    getLength(callback) {
+        let length = this._overheadLength + this._valueLength;
+        if (this._streams.length)
+            length += this._lastBoundary().length;
+        if (!this._valuesToMeasure.length) {
+            process.nextTick(callback.bind(this, null, length));
+            return;
+        }
+        const values = this._valuesToMeasure;
+        const lengths = new Array(values.length);
+        let left = values.length;
+        let failed = false;
+        values.forEach((value, i) => {
+            this._lengthRetriever(value, (err, size) => {
+                if (failed)
+                    return;
+                if (err) {
+                    failed = true;
+                    callback(err);
+                    return;
+                }
+                lengths[i] = size;
+                left -= 1;
+                if (left === 0)
+                    callback(null, lengths.reduce((sum, n) => sum + n, length));
+            });
+        });
+    }
+    // A POST of the form to a URL (or to options of http.request, protocol 'https:' for HTTPS): the request, and
+    // callback(err, response).
+    submit(params, callback) {
+        let options;
+        if (typeof params === 'string') {
+            const url = new URL(params);
+            options = {
+                port: url.port || null,
+                path: url.pathname,
+                host: url.hostname.replace(/^\[(.*)\]$/, '$1'),
+                protocol: url.protocol,
+                method: 'post',
+            };
+        }
+        else {
+            options = { ...params };
+            if (!options.method)
+                options.method = 'post';
+            if (!options.port)
+                options.port = options.protocol === 'https:' ? 443 : 80;
+        }
+        options.headers = this.getHeaders(params.headers);
+        const request = options.protocol === 'https:' ? node_https_1.default.request(options) : node_http_1.default.request(options);
+        this.getLength((err, length) => {
+            if (err && err !== 'Unknown stream') {
+                this._error(err);
+                return;
+            }
+            if (length)
+                request.setHeader('Content-Length', length);
+            this.pipe(request);
+            if (callback) {
+                const done = (error, response) => {
+                    request.removeListener('error', done);
+                    request.removeListener('response', onResponse);
+                    return callback.call(this, error, response);
+                };
+                const onResponse = (response) => done(null, response);
+                request.on('error', done);
+                request.on('response', onResponse);
+            }
+        });
+        return request;
+    }
+    _error(err) {
+        if (!this.error) {
+            this.error = err;
+            this.pause();
+            this.emit('error', err);
+        }
+    }
+    toString() {
+        return '[object FormData]';
+    }
+    get [Symbol.toStringTag]() {
+        return 'FormData';
+    }
+    // The stream of the parts, one after the other.
+    pipe(dest, options) {
+        node_stream_1.Stream.prototype.pipe.call(this, dest, options);
+        this.resume();
+        return dest;
+    }
+    getNext() {
+        this._currentStream = null;
+        if (this._insideLoop) {
+            this._pendingNext = true;
+            return;
+        }
+        this._insideLoop = true;
+        try {
+            do {
+                this._pendingNext = false;
+                this.nextPart();
+            } while (this._pendingNext);
+        }
+        finally {
+            this._insideLoop = false;
+        }
+    }
+    nextPart() {
+        const part = this._streams.shift();
+        if (part === undefined) {
+            this.end();
+            return;
+        }
+        if (typeof part !== 'function') {
+            this.sendPart(part);
+            return;
+        }
+        part((value) => {
+            if (isStreamLike(value)) {
+                value.on('data', () => this.checkDataSize());
+                value.on('error', (err) => this.emitError(err));
+            }
+            this.sendPart(value);
+        });
+    }
+    sendPart(part) {
+        this._currentStream = part;
+        if (isStreamLike(part)) {
+            part.on('end', () => this.getNext());
+            part.pipe(this, { end: false });
+            return;
+        }
+        this.write(part);
+        this.getNext();
+    }
+    write(data) {
+        this.emit('data', data);
+    }
+    pause() {
+        if (!this.pauseStreams)
+            return;
+        if (this._currentStream && typeof this._currentStream.pause === 'function')
+            this._currentStream.pause();
+        this.emit('pause');
+    }
+    resume() {
+        if (!this._released) {
+            this._released = true;
+            this.writable = true;
+            this.getNext();
+        }
+        if (this.pauseStreams && this._currentStream && typeof this._currentStream.resume === 'function') {
+            this._currentStream.resume();
+        }
+        this.emit('resume');
+    }
+    end() {
+        this.reset();
+        this.emit('end');
+    }
+    destroy() {
+        this.reset();
+        this.emit('close');
+    }
+    reset() {
+        this.writable = false;
+        this._streams = [];
+        this._currentStream = null;
+    }
+    // What streams said before their turn, past maxDataSize: an error.
+    checkDataSize() {
+        this.dataSize = 0;
+        for (const part of this._streams)
+            if (part.dataSize)
+                this.dataSize += part.dataSize;
+        if (this._currentStream && this._currentStream.dataSize)
+            this.dataSize += this._currentStream.dataSize;
+        if (this.dataSize > this.maxDataSize) {
+            this.emitError(new Error(`DelayedStream#maxDataSize of ${this.maxDataSize} bytes exceeded.`));
+        }
+    }
+    emitError(err) {
+        this.reset();
+        this.emit('error', err);
+    }
+}
+exports.FormData = FormData;
+FormData.LINE_BREAK = LINE_BREAK;
+FormData.DEFAULT_CONTENT_TYPE = DEFAULT_CONTENT_TYPE;
 
 },
 "@xufa/http/lib/four-oh-four.js": function (module, exports, require) {
@@ -3197,6 +4039,54 @@ function fourOhFour(options) {
     return { router, setNotFoundHandler, setContext, arrange404 };
 }
 exports.default = fourOhFour;
+
+},
+"@xufa/http/lib/fresh.js": function (module, exports, require) {
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.parseHttpDate = parseHttpDate;
+exports.fresh = fresh;
+exports.entityTag = entityTag;
+// Freshness, as Express answers 304 (fresh 2, etag 1.8): whether the client's copy (If-None-Match, If-Modified-Since)
+// is the response's, and the ETag of a body. For xufa.etag and @xufa/express.
+const node_crypto_1 = __importDefault(require("node:crypto"));
+const vary_js_1 = require("./vary.js");
+function parseHttpDate(date) {
+    const time = date && Date.parse(date);
+    return typeof time === 'number' ? time : NaN;
+}
+const NO_CACHE = /(?:^|,)\s*?no-cache\s*?(?:,|$)/;
+// fresh: whether the client's copy (If-None-Match, If-Modified-Since) is the response's (etag, last-modified).
+function fresh(reqHeaders, etag, lastModified) {
+    const modifiedSince = reqHeaders['if-modified-since'];
+    const noneMatch = reqHeaders['if-none-match'];
+    if (!modifiedSince && !noneMatch)
+        return false;
+    const cacheControl = reqHeaders['cache-control'];
+    if (cacheControl && NO_CACHE.test(cacheControl))
+        return false;
+    if (noneMatch) {
+        if (noneMatch === '*')
+            return true;
+        if (!etag)
+            return false;
+        return (0, vary_js_1.tokens)(noneMatch).some((match) => match === etag || match === `W/${etag}` || `W/${match}` === etag);
+    }
+    return Boolean(lastModified) && parseHttpDate(lastModified) <= parseHttpDate(modifiedSince);
+}
+// An ETag of a body (its length and SHA-1), strong or weak.
+function entityTag(body, weak) {
+    let tag;
+    if (body.length === 0)
+        tag = '"0-2jmj7l5rSw0yVb/vlWAYkK/YBwk"';
+    else {
+        const length = typeof body === 'string' ? Buffer.byteLength(body, 'utf8') : body.length;
+        tag = `"${length.toString(16)}-${node_crypto_1.default.hash('sha1', body, 'base64').substring(0, 27)}"`;
+    }
+    return weak ? `W/${tag}` : tag;
+}
 
 },
 "@xufa/http/lib/handle-request.js": function (module, exports, require) {
@@ -3688,6 +4578,490 @@ function health(app, options, done) {
 }
 health[Symbol.for('skip-override')] = true;
 health[Symbol.for('fastify.display-name')] = 'xufa.health';
+
+},
+"@xufa/http/lib/helmet.js": function (module, exports, require) {
+// helmet's API (8.3.0), xufa's own implementation: middlewares of node:http (Express, connect, @xufa/express) that set
+// the security headers of responses: Content-Security-Policy, Cross-Origin-*-Policy, Origin-Agent-Cluster,
+// Referrer-Policy, Strict-Transport-Security, X-Content-Type-Options, X-DNS-Prefetch-Control, X-Download-Options,
+// X-Frame-Options, X-Permitted-Cross-Domain-Policies, X-XSS-Protection, and X-Powered-By removed. Options are checked
+// when the middleware is made (an error then, as helmet throws), so a request only sets headers.
+//
+//   app.use(helmet({ contentSecurityPolicy: { directives: { scriptSrc: ["'self'", 'cdn.example.com'] } } }));
+//
+// staticHeaders(options) gives what helmet() would do to every response (headers set and removed), when no directive
+// of the policy is a function: native routes set them at once.
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.getDefaultDirectives = exports.dangerouslyDisableDefaultSrc = exports.xXssProtection = exports.xDownloadOptions = exports.xDnsPrefetchControl = exports.xContentTypeOptions = exports.originAgentCluster = void 0;
+exports.helmet = helmet;
+exports.staticHeaders = staticHeaders;
+exports.contentSecurityPolicy = contentSecurityPolicy;
+exports.crossOriginEmbedderPolicy = crossOriginEmbedderPolicy;
+exports.crossOriginOpenerPolicy = crossOriginOpenerPolicy;
+exports.crossOriginResourcePolicy = crossOriginResourcePolicy;
+exports.referrerPolicy = referrerPolicy;
+exports.strictTransportSecurity = strictTransportSecurity;
+exports.xFrameOptions = xFrameOptions;
+exports.xPermittedCrossDomainPolicies = xPermittedCrossDomainPolicies;
+exports.xPoweredBy = xPoweredBy;
+// --- Content-Security-Policy ----------------------------------------------------------------------------------------
+const dangerouslyDisableDefaultSrc = Symbol('dangerouslyDisableDefaultSrc');
+exports.dangerouslyDisableDefaultSrc = dangerouslyDisableDefaultSrc;
+const SHOULD_BE_QUOTED = new Set([
+    'none',
+    'self',
+    'strict-dynamic',
+    'report-sample',
+    'inline-speculation-rules',
+    'unsafe-inline',
+    'unsafe-eval',
+    'unsafe-hashes',
+    'wasm-unsafe-eval',
+]);
+/** The directives of the default policy (a new copy each time). */
+const getDefaultDirectives = () => ({
+    'default-src': ["'self'"],
+    'base-uri': ["'self'"],
+    'font-src': ["'self'", 'https:', 'data:'],
+    'form-action': ["'self'"],
+    'frame-ancestors': ["'self'"],
+    'img-src': ["'self'", 'data:'],
+    'object-src': ["'none'"],
+    'script-src': ["'self'"],
+    'script-src-attr': ["'none'"],
+    'style-src': ["'self'", 'https:', "'unsafe-inline'"],
+    'upgrade-insecure-requests': [],
+});
+exports.getDefaultDirectives = getDefaultDirectives;
+const dashify = (name) => name.replace(/[A-Z]/g, (letter) => `-${letter.toLowerCase()}`);
+function parseDirectiveName(raw) {
+    if (raw.length === 0 || !/^[a-z](?:[a-zA-Z0-9-]*[a-zA-Z0-9])?$/.test(raw)) {
+        throw new Error(`Content-Security-Policy received an invalid directive name ${JSON.stringify(raw)}`);
+    }
+    return dashify(raw);
+}
+// A value with ';' or ',' would end the directive (or the policy).
+const valueError = (name, value) => /;|,/.test(value)
+    ? new Error(`Content-Security-Policy received an invalid directive value for ${JSON.stringify(name)}`)
+    : null;
+// Keywords, nonces and hashes are quoted ("'self'"); unquoted they would be host names.
+const entryError = (name, entry) => SHOULD_BE_QUOTED.has(entry) ||
+    entry.startsWith('nonce-') ||
+    entry.startsWith('sha256-') ||
+    entry.startsWith('sha384-') ||
+    entry.startsWith('sha512-')
+    ? new Error(`Content-Security-Policy received an invalid directive value for ${JSON.stringify(name)}. ${JSON.stringify(entry)} should be quoted`)
+    : null;
+// The text of a value whose entries are all strings, or null (some are functions of the request).
+function stringifyValue(value) {
+    if (Array.isArray(value))
+        return value.every((entry) => typeof entry === 'string') ? value.join(' ') : null;
+    if (value instanceof Set)
+        return stringifyValue(Array.from(value));
+    return null;
+}
+// The policy as its header (a string), or a Map of its directives when some value is computed per request.
+function parseDirectives({ useDefaults = true, directives: rawDirectives = {} }) {
+    const result = new Map(useDefaults ? Object.entries(getDefaultDirectives()) : []);
+    let hasDisabledDefaultSrc = false;
+    const seen = new Set();
+    for (const rawName in rawDirectives) {
+        if (!Object.hasOwn(rawDirectives, rawName))
+            continue;
+        const name = parseDirectiveName(rawName);
+        if (seen.has(name))
+            throw new Error(`Content-Security-Policy received a duplicate directive ${JSON.stringify(name)}`);
+        seen.add(name);
+        const raw = rawDirectives[rawName];
+        let value;
+        if (raw === null) {
+            if (name === 'default-src') {
+                throw new Error('Content-Security-Policy needs a default-src but it was set to `null`. If you really want to disable it, set it to `contentSecurityPolicy.dangerouslyDisableDefaultSrc`.');
+            }
+            result.delete(name);
+            continue;
+        }
+        else if (typeof raw === 'string') {
+            value = [raw];
+        }
+        else if (raw === dangerouslyDisableDefaultSrc) {
+            if (name !== 'default-src') {
+                throw new Error(`Content-Security-Policy: tried to disable ${JSON.stringify(name)} as if it were default-src; simply omit the key`);
+            }
+            hasDisabledDefaultSrc = true;
+            result.delete(name);
+            continue;
+        }
+        else if (raw) {
+            value = raw;
+        }
+        else {
+            throw new Error(`Content-Security-Policy received an invalid directive value for ${JSON.stringify(name)}`);
+        }
+        for (const entry of value) {
+            if (typeof entry !== 'string')
+                continue;
+            const err = valueError(name, entry) ?? entryError(name, entry);
+            if (err)
+                throw err;
+        }
+        result.set(name, value);
+    }
+    if (!result.size)
+        throw new Error('Content-Security-Policy has no directives. Either set some or disable the header');
+    if (!result.has('default-src') && !hasDisabledDefaultSrc) {
+        throw new Error('Content-Security-Policy needs a default-src but none was provided. If you really want to disable it, set it to `contentSecurityPolicy.dangerouslyDisableDefaultSrc`.');
+    }
+    const parts = [];
+    for (const [name, value] of result) {
+        const text = stringifyValue(value);
+        if (text === null)
+            return result;
+        parts.push(text ? `${name} ${text}` : name);
+    }
+    return parts.join(';');
+}
+// The directives of a policy with functions: the text of each one whose values are all strings, made once (as helmet
+// does for a policy of strings only), and [name, values] of the others, computed for each request.
+function planOf(directives) {
+    const plan = [];
+    for (const [name, raw] of directives) {
+        const text = stringifyValue(raw);
+        plan.push(text === null ? [name, raw] : text ? `${name} ${text}` : name);
+    }
+    return plan;
+}
+// The header of a request, with the values its functions give (or the error of one).
+function headerOf(req, res, plan) {
+    const parts = [];
+    for (const step of plan) {
+        if (typeof step === 'string') {
+            parts.push(step);
+            continue;
+        }
+        const [name, raw] = step;
+        let value = '';
+        for (const entry of raw) {
+            if (typeof entry === 'function') {
+                let computed;
+                try {
+                    computed = entry(req, res);
+                }
+                catch (err) {
+                    return err instanceof Error ? err : new Error(String(err));
+                }
+                const err = entryError(name, computed);
+                if (err)
+                    return err;
+                value += ` ${computed}`;
+            }
+            else {
+                value += ` ${entry}`;
+            }
+        }
+        if (value) {
+            const err = valueError(name, value);
+            if (err)
+                return err;
+            parts.push(`${name}${value}`);
+        }
+        else {
+            parts.push(name);
+        }
+    }
+    return parts.join(';');
+}
+/**
+ * Content-Security-Policy: helmet's default policy, `directives` (camelCase or dashed names; null removes one of the
+ * defaults; values are arrays or Sets of strings or functions of (req, res)), `useDefaults: false` for only the
+ * directives given, `reportOnly` for the Report-Only header.
+ */
+function contentSecurityPolicy(options = {}) {
+    const headerName = options.reportOnly ? 'Content-Security-Policy-Report-Only' : 'Content-Security-Policy';
+    const parsed = parseDirectives(options);
+    if (typeof parsed === 'string') {
+        const middleware = function contentSecurityPolicyMiddleware(req, res, next) {
+            res.setHeader(headerName, parsed);
+            next();
+        };
+        middleware.headers = { [headerName]: parsed };
+        return middleware;
+    }
+    const plan = planOf(parsed);
+    return function contentSecurityPolicyMiddleware(req, res, next) {
+        const result = headerOf(req, res, plan);
+        if (result instanceof Error) {
+            next(result);
+        }
+        else {
+            res.setHeader(headerName, result);
+            next();
+        }
+    };
+}
+contentSecurityPolicy.getDefaultDirectives = getDefaultDirectives;
+contentSecurityPolicy.dangerouslyDisableDefaultSrc = dangerouslyDisableDefaultSrc;
+// --- The other headers ----------------------------------------------------------------------------------------------
+// A middleware that sets one header to a value known when it is made (its `headers` say which).
+function setting(functionName, name, value) {
+    const middleware = {
+        [functionName](req, res, next) {
+            res.setHeader(name, value);
+            next();
+        },
+    }[functionName];
+    middleware.headers = { [name]: value };
+    return middleware;
+}
+// A policy of a set of allowed ones.
+function policyOf(header, allowed, policy) {
+    if (allowed.has(policy))
+        return policy;
+    throw new Error(`${header} does not support the ${JSON.stringify(policy)} policy`);
+}
+const EMBEDDER_POLICIES = new Set(['require-corp', 'credentialless', 'unsafe-none']);
+const OPENER_POLICIES = new Set(['same-origin', 'same-origin-allow-popups', 'noopener-allow-popups', 'unsafe-none']);
+const RESOURCE_POLICIES = new Set(['same-origin', 'same-site', 'cross-origin']);
+function crossOriginEmbedderPolicy({ policy = 'require-corp' } = {}) {
+    const value = policyOf('Cross-Origin-Embedder-Policy', EMBEDDER_POLICIES, policy);
+    return setting('crossOriginEmbedderPolicyMiddleware', 'Cross-Origin-Embedder-Policy', value);
+}
+function crossOriginOpenerPolicy({ policy = 'same-origin' } = {}) {
+    const value = policyOf('Cross-Origin-Opener-Policy', OPENER_POLICIES, policy);
+    return setting('crossOriginOpenerPolicyMiddleware', 'Cross-Origin-Opener-Policy', value);
+}
+function crossOriginResourcePolicy({ policy = 'same-origin' } = {}) {
+    const value = policyOf('Cross-Origin-Resource-Policy', RESOURCE_POLICIES, policy);
+    return setting('crossOriginResourcePolicyMiddleware', 'Cross-Origin-Resource-Policy', value);
+}
+const originAgentCluster = () => setting('originAgentClusterMiddleware', 'Origin-Agent-Cluster', '?1');
+exports.originAgentCluster = originAgentCluster;
+const REFERRER_TOKENS = new Set([
+    'no-referrer',
+    'no-referrer-when-downgrade',
+    'same-origin',
+    'origin',
+    'strict-origin',
+    'origin-when-cross-origin',
+    'strict-origin-when-cross-origin',
+    'unsafe-url',
+    '',
+]);
+function referrerPolicy({ policy = ['no-referrer'] } = {}) {
+    const tokens = typeof policy === 'string' ? [policy] : policy;
+    if (tokens.length === 0)
+        throw new Error('Referrer-Policy received no policy tokens');
+    const seen = new Set();
+    tokens.forEach((token) => {
+        if (!REFERRER_TOKENS.has(token)) {
+            throw new Error(`Referrer-Policy received an unexpected policy token ${JSON.stringify(token)}`);
+        }
+        else if (seen.has(token)) {
+            throw new Error(`Referrer-Policy received a duplicate policy token ${JSON.stringify(token)}`);
+        }
+        seen.add(token);
+    });
+    return setting('referrerPolicyMiddleware', 'Referrer-Policy', tokens.join(','));
+}
+const DEFAULT_MAX_AGE = 365 * 24 * 60 * 60;
+function strictTransportSecurity(options = {}) {
+    if ('maxage' in options) {
+        throw new Error('Strict-Transport-Security received an unsupported property, `maxage`. Did you mean to pass `maxAge`?');
+    }
+    if ('includeSubdomains' in options) {
+        throw new Error('Strict-Transport-Security middleware should use `includeSubDomains` instead of `includeSubdomains`. (The correct one has an uppercase "D".)');
+    }
+    const { maxAge = DEFAULT_MAX_AGE } = options;
+    if (!(maxAge >= 0 && Number.isFinite(maxAge))) {
+        throw new Error(`Strict-Transport-Security: ${JSON.stringify(maxAge)} is not a valid value for maxAge. Please choose a positive integer.`);
+    }
+    const directives = [`max-age=${Math.floor(maxAge)}`];
+    if (options.includeSubDomains === undefined || options.includeSubDomains)
+        directives.push('includeSubDomains');
+    if (options.preload)
+        directives.push('preload');
+    return setting('strictTransportSecurityMiddleware', 'Strict-Transport-Security', directives.join('; '));
+}
+const xContentTypeOptions = () => setting('xContentTypeOptionsMiddleware', 'X-Content-Type-Options', 'nosniff');
+exports.xContentTypeOptions = xContentTypeOptions;
+const xDnsPrefetchControl = (options = {}) => setting('xDnsPrefetchControlMiddleware', 'X-DNS-Prefetch-Control', options.allow ? 'on' : 'off');
+exports.xDnsPrefetchControl = xDnsPrefetchControl;
+const xDownloadOptions = () => setting('xDownloadOptionsMiddleware', 'X-Download-Options', 'noopen');
+exports.xDownloadOptions = xDownloadOptions;
+function xFrameOptions({ action = 'sameorigin' } = {}) {
+    const normalized = typeof action === 'string' ? action.toUpperCase() : action;
+    let value;
+    if (normalized === 'SAME-ORIGIN')
+        value = 'SAMEORIGIN';
+    else if (normalized === 'DENY' || normalized === 'SAMEORIGIN')
+        value = normalized;
+    else
+        throw new Error(`X-Frame-Options received an invalid action ${JSON.stringify(action)}`);
+    return setting('xFrameOptionsMiddleware', 'X-Frame-Options', value);
+}
+const PERMITTED_POLICIES = new Set(['none', 'master-only', 'by-content-type', 'all']);
+function xPermittedCrossDomainPolicies({ permittedPolicies = 'none' } = {}) {
+    if (!PERMITTED_POLICIES.has(permittedPolicies)) {
+        throw new Error(`X-Permitted-Cross-Domain-Policies does not support ${JSON.stringify(permittedPolicies)}`);
+    }
+    return setting('xPermittedCrossDomainPoliciesMiddleware', 'X-Permitted-Cross-Domain-Policies', permittedPolicies);
+}
+function xPoweredBy() {
+    const middleware = function xPoweredByMiddleware(req, res, next) {
+        res.removeHeader('X-Powered-By');
+        next();
+    };
+    middleware.removes = ['X-Powered-By'];
+    return middleware;
+}
+// X-XSS-Protection: 0 turns off the filters of old browsers (which made pages vulnerable).
+const xXssProtection = () => setting('xXssProtectionMiddleware', 'X-XSS-Protection', '0');
+exports.xXssProtection = xXssProtection;
+// --- helmet() -------------------------------------------------------------------------------------------------------
+// Each header: its option (and the old name of it), its middleware, whether it is on by default, and whether it takes
+// options (those that do not warn when given some).
+const HEADERS = [
+    ['contentSecurityPolicy', null, contentSecurityPolicy, true, true],
+    ['crossOriginEmbedderPolicy', null, crossOriginEmbedderPolicy, false, true],
+    ['crossOriginOpenerPolicy', null, crossOriginOpenerPolicy, true, true],
+    ['crossOriginResourcePolicy', null, crossOriginResourcePolicy, true, true],
+    ['originAgentCluster', null, originAgentCluster, true, false, 'Origin-Agent-Cluster'],
+    ['referrerPolicy', null, referrerPolicy, true, true],
+    ['strictTransportSecurity', 'hsts', strictTransportSecurity, true, true, 'Strict-Transport-Security'],
+    ['xContentTypeOptions', 'noSniff', xContentTypeOptions, true, false, 'X-Content-Type-Options'],
+    ['xDnsPrefetchControl', 'dnsPrefetchControl', xDnsPrefetchControl, true, true, 'X-DNS-Prefetch-Control'],
+    ['xDownloadOptions', 'ieNoOpen', xDownloadOptions, true, false, 'X-Download-Options'],
+    ['xFrameOptions', 'frameguard', xFrameOptions, true, true, 'X-Frame-Options'],
+    [
+        'xPermittedCrossDomainPolicies',
+        'permittedCrossDomainPolicies',
+        xPermittedCrossDomainPolicies,
+        true,
+        true,
+        'X-Permitted-Cross-Domain-Policies',
+    ],
+    ['xPoweredBy', 'hidePoweredBy', xPoweredBy, true, false, 'X-Powered-By'],
+    ['xXssProtection', 'xssFilter', xXssProtection, true, false, 'X-XSS-Protection'],
+];
+// The middlewares of helmet's options, in helmet's order.
+function middlewaresOf(options) {
+    const result = [];
+    for (const [name, alias, make, byDefault, takesOptions, header] of HEADERS) {
+        if (alias && name in options && alias in options) {
+            throw new Error(`${header} option was specified twice. Remove the \`${alias}\` option to fix this error.`);
+        }
+        const option = alias ? (options[name] ?? options[alias]) : options[name];
+        if (option === false || (option === undefined && !byDefault))
+            continue;
+        if (option === undefined || option === true) {
+            result.push(make());
+        }
+        else if (takesOptions) {
+            result.push(make(option));
+        }
+        else {
+            console.warn(`${header} does not take options. Remove the property to silence this warning.`);
+            result.push(make());
+        }
+    }
+    return result;
+}
+/** The middleware of all the headers, each on by default (Cross-Origin-Embedder-Policy off) or as its option says. */
+function helmet(options = {}) {
+    if (options.constructor?.name === 'IncomingMessage') {
+        throw new Error('It appears you have done something like `app.use(helmet)`, but it should be `app.use(helmet())`.');
+    }
+    const middlewares = middlewaresOf(options);
+    const fixed = fixedOf(middlewares);
+    // Headers known when made (the policy has no functions), as most are: set them in one loop, no chain of calls.
+    if (fixed) {
+        // In helmet's order: [name, value] to set, [name] to remove.
+        const { steps } = fixed;
+        return function helmetMiddleware(req, res, next) {
+            for (let i = 0; i < steps.length; i++) {
+                const step = steps[i];
+                if (step.length === 2)
+                    res.setHeader(step[0], step[1]);
+                else
+                    res.removeHeader(step[0]);
+            }
+            next();
+        };
+    }
+    return function helmetMiddleware(req, res, next) {
+        let index = 0;
+        (function internalNext(err) {
+            if (err) {
+                next(err);
+                return;
+            }
+            const middleware = middlewares[index];
+            if (middleware) {
+                index++;
+                middleware(req, res, internalNext);
+            }
+            else {
+                next();
+            }
+        })();
+    };
+}
+// The headers of middlewares that all know theirs when made: { set, removed }, or null.
+function fixedOf(middlewares) {
+    const set = {};
+    const removed = [];
+    const steps = [];
+    for (const middleware of middlewares) {
+        if (middleware.removes) {
+            removed.push(...middleware.removes);
+            for (const name of middleware.removes)
+                steps.push([name]);
+        }
+        else if (middleware.headers) {
+            Object.assign(set, middleware.headers);
+            for (const entry of Object.entries(middleware.headers))
+                steps.push(entry);
+        }
+        else {
+            return null;
+        }
+    }
+    // (A header set and then removed is not set: only X-Powered-By is removed, and none sets it.)
+    return { set, removed, steps };
+}
+/** What helmet(options) does to every response: { set: { header: value }, removed: [header] }; null when the
+ * policy has values computed per request. For servers that set headers their own way (native routes). */
+function staticHeaders(options = {}) {
+    const fixed = fixedOf(middlewaresOf(options));
+    return fixed && { set: fixed.set, removed: fixed.removed };
+}
+Object.assign(helmet, {
+    contentSecurityPolicy,
+    crossOriginEmbedderPolicy,
+    crossOriginOpenerPolicy,
+    crossOriginResourcePolicy,
+    originAgentCluster,
+    referrerPolicy,
+    strictTransportSecurity,
+    xContentTypeOptions,
+    xDnsPrefetchControl,
+    xDownloadOptions,
+    xFrameOptions,
+    xPermittedCrossDomainPolicies,
+    xPoweredBy,
+    xXssProtection,
+    // The old names.
+    dnsPrefetchControl: xDnsPrefetchControl,
+    xssFilter: xXssProtection,
+    permittedCrossDomainPolicies: xPermittedCrossDomainPolicies,
+    ieNoOpen: xDownloadOptions,
+    noSniff: xContentTypeOptions,
+    frameguard: xFrameOptions,
+    hidePoweredBy: xPoweredBy,
+    hsts: strictTransportSecurity,
+    // xufa's: what it sets on every response.
+    staticHeaders,
+});
 
 },
 "@xufa/http/lib/hooks.js": function (module, exports, require) {
@@ -4435,6 +5809,4298 @@ function maintenance(app, options, done) {
 }
 maintenance[Symbol.for('skip-override')] = true;
 maintenance[Symbol.for('fastify.display-name')] = 'xufa.maintenance';
+
+},
+"@xufa/http/lib/mime-db.js": function (module, exports, require) {
+// Generated by tools/port-express/mime.js from mime-db 1.54.0 (MIT License, (c) Jonathan Ong and Douglas
+// Christopher Wilson) as mime-types 3.0.2 reads it: do not edit, run the tool.
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.COMPRESSIBLE = exports.CHARSETS = exports.EXTENSIONS = exports.TYPES = void 0;
+// The type of each extension.
+exports.TYPES = {
+    "123": "application/vnd.lotus-1-2-3",
+    "1km": "application/vnd.1000minds.decision-model+xml",
+    "210": "model/step",
+    "3dml": "text/vnd.in3d.3dml",
+    "3ds": "image/x-3ds",
+    "3g2": "video/3gpp2",
+    "3gp": "video/3gpp",
+    "3gpp": "video/3gpp",
+    "3mf": "model/3mf",
+    "7z": "application/x-7z-compressed",
+    "aab": "application/x-authorware-bin",
+    "aac": "audio/aac",
+    "aam": "application/x-authorware-map",
+    "aas": "application/x-authorware-seg",
+    "abw": "application/x-abiword",
+    "ac": "application/pkix-attr-cert",
+    "acc": "application/vnd.americandynamics.acc",
+    "ace": "application/x-ace-compressed",
+    "acu": "application/vnd.acucobol",
+    "acutc": "application/vnd.acucorp",
+    "adp": "audio/adpcm",
+    "adts": "audio/aac",
+    "aep": "application/vnd.audiograph",
+    "afm": "application/x-font-type1",
+    "afp": "application/vnd.ibm.modcap",
+    "age": "application/vnd.age",
+    "ahead": "application/vnd.ahead.space",
+    "ai": "application/postscript",
+    "aif": "audio/x-aiff",
+    "aifc": "audio/x-aiff",
+    "aiff": "audio/x-aiff",
+    "air": "application/vnd.adobe.air-application-installer-package+zip",
+    "ait": "application/vnd.dvb.ait",
+    "ami": "application/vnd.amiga.ami",
+    "aml": "application/automationml-aml+xml",
+    "amlx": "application/automationml-amlx+zip",
+    "amr": "audio/amr",
+    "apk": "application/vnd.android.package-archive",
+    "apng": "image/apng",
+    "appcache": "text/cache-manifest",
+    "appinstaller": "application/appinstaller",
+    "application": "application/x-ms-application",
+    "appx": "application/appx",
+    "appxbundle": "application/appxbundle",
+    "apr": "application/vnd.lotus-approach",
+    "arc": "application/x-freearc",
+    "arj": "application/x-arj",
+    "asc": "application/pgp-keys",
+    "asf": "video/x-ms-asf",
+    "asm": "text/x-asm",
+    "aso": "application/vnd.accpac.simply.aso",
+    "asx": "video/x-ms-asf",
+    "atc": "application/vnd.acucorp",
+    "atom": "application/atom+xml",
+    "atomcat": "application/atomcat+xml",
+    "atomdeleted": "application/atomdeleted+xml",
+    "atomsvc": "application/atomsvc+xml",
+    "atx": "application/vnd.antix.game-component",
+    "au": "audio/basic",
+    "avci": "image/avci",
+    "avcs": "image/avcs",
+    "avi": "video/x-msvideo",
+    "avif": "image/avif",
+    "aw": "application/applixware",
+    "azf": "application/vnd.airzip.filesecure.azf",
+    "azs": "application/vnd.airzip.filesecure.azs",
+    "azv": "image/vnd.airzip.accelerator.azv",
+    "azw": "application/vnd.amazon.ebook",
+    "b16": "image/vnd.pco.b16",
+    "bary": "model/vnd.bary",
+    "bat": "application/x-msdownload",
+    "bcpio": "application/x-bcpio",
+    "bdf": "application/x-font-bdf",
+    "bdm": "application/vnd.syncml.dm+wbxml",
+    "bdo": "application/vnd.nato.bindingdataobject+xml",
+    "bdoc": "application/bdoc",
+    "bed": "application/vnd.realvnc.bed",
+    "bh2": "application/vnd.fujitsu.oasysprs",
+    "bin": "application/octet-stream",
+    "blb": "application/x-blorb",
+    "blend": "application/x-blender",
+    "blorb": "application/x-blorb",
+    "bmi": "application/vnd.bmi",
+    "bmml": "application/vnd.balsamiq.bmml+xml",
+    "bmp": "image/bmp",
+    "book": "application/vnd.framemaker",
+    "box": "application/vnd.previewsystems.box",
+    "boz": "application/x-bzip2",
+    "bpk": "application/octet-stream",
+    "brush": "application/vnd.procreate.brush",
+    "brushset": "application/vnd.procrate.brushset",
+    "bsp": "model/vnd.valve.source.compiled-map",
+    "btf": "image/prs.btif",
+    "btif": "image/prs.btif",
+    "buffer": "application/octet-stream",
+    "bz": "application/x-bzip",
+    "bz2": "application/x-bzip2",
+    "c": "text/x-c",
+    "c11amc": "application/vnd.cluetrust.cartomobile-config",
+    "c11amz": "application/vnd.cluetrust.cartomobile-config-pkg",
+    "c4d": "application/vnd.clonk.c4group",
+    "c4f": "application/vnd.clonk.c4group",
+    "c4g": "application/vnd.clonk.c4group",
+    "c4p": "application/vnd.clonk.c4group",
+    "c4u": "application/vnd.clonk.c4group",
+    "cab": "application/vnd.ms-cab-compressed",
+    "caf": "audio/x-caf",
+    "cap": "application/vnd.tcpdump.pcap",
+    "car": "application/vnd.curl.car",
+    "cat": "application/vnd.ms-pki.seccat",
+    "cb7": "application/x-cbr",
+    "cba": "application/x-cbr",
+    "cbr": "application/x-cbr",
+    "cbt": "application/x-cbr",
+    "cbz": "application/x-cbr",
+    "cc": "text/x-c",
+    "cco": "application/x-cocoa",
+    "cct": "application/x-director",
+    "ccxml": "application/ccxml+xml",
+    "cdbcmsg": "application/vnd.contact.cmsg",
+    "cdf": "application/x-netcdf",
+    "cdfx": "application/cdfx+xml",
+    "cdkey": "application/vnd.mediastation.cdkey",
+    "cdmia": "application/cdmi-capability",
+    "cdmic": "application/cdmi-container",
+    "cdmid": "application/cdmi-domain",
+    "cdmio": "application/cdmi-object",
+    "cdmiq": "application/cdmi-queue",
+    "cdx": "chemical/x-cdx",
+    "cdxml": "application/vnd.chemdraw+xml",
+    "cdy": "application/vnd.cinderella",
+    "cer": "application/pkix-cert",
+    "cfs": "application/x-cfs-compressed",
+    "cgm": "image/cgm",
+    "chat": "application/x-chat",
+    "chm": "application/vnd.ms-htmlhelp",
+    "chrt": "application/vnd.kde.kchart",
+    "cif": "chemical/x-cif",
+    "cii": "application/vnd.anser-web-certificate-issue-initiation",
+    "cil": "application/vnd.ms-artgalry",
+    "cjs": "application/node",
+    "cla": "application/vnd.claymore",
+    "class": "application/java-vm",
+    "cld": "model/vnd.cld",
+    "clkk": "application/vnd.crick.clicker.keyboard",
+    "clkp": "application/vnd.crick.clicker.palette",
+    "clkt": "application/vnd.crick.clicker.template",
+    "clkw": "application/vnd.crick.clicker.wordbank",
+    "clkx": "application/vnd.crick.clicker",
+    "clp": "application/x-msclip",
+    "cmc": "application/vnd.cosmocaller",
+    "cmdf": "chemical/x-cmdf",
+    "cml": "chemical/x-cml",
+    "cmp": "application/vnd.yellowriver-custom-menu",
+    "cmx": "image/x-cmx",
+    "cod": "application/vnd.rim.cod",
+    "coffee": "text/coffeescript",
+    "com": "application/x-msdownload",
+    "conf": "text/plain",
+    "cpio": "application/x-cpio",
+    "cpl": "application/cpl+xml",
+    "cpp": "text/x-c",
+    "cpt": "application/mac-compactpro",
+    "crd": "application/x-mscardfile",
+    "crl": "application/pkix-crl",
+    "crt": "application/x-x509-ca-cert",
+    "crx": "application/x-chrome-extension",
+    "cryptonote": "application/vnd.rig.cryptonote",
+    "csh": "application/x-csh",
+    "csl": "application/vnd.citationstyles.style+xml",
+    "csml": "chemical/x-csml",
+    "csp": "application/vnd.commonspace",
+    "css": "text/css",
+    "cst": "application/x-director",
+    "csv": "text/csv",
+    "cu": "application/cu-seeme",
+    "curl": "text/vnd.curl",
+    "cwl": "application/cwl",
+    "cww": "application/prs.cww",
+    "cxt": "application/x-director",
+    "cxx": "text/x-c",
+    "dae": "model/vnd.collada+xml",
+    "daf": "application/vnd.mobius.daf",
+    "dart": "application/vnd.dart",
+    "dataless": "application/vnd.fdsn.seed",
+    "davmount": "application/davmount+xml",
+    "dbf": "application/vnd.dbf",
+    "dbk": "application/docbook+xml",
+    "dcm": "application/dicom",
+    "dcmp": "application/vnd.dcmp+xml",
+    "dcr": "application/x-director",
+    "dcurl": "text/vnd.curl.dcurl",
+    "dd2": "application/vnd.oma.dd2+xml",
+    "ddd": "application/vnd.fujixerox.ddd",
+    "ddf": "application/vnd.syncml.dmddf+xml",
+    "dds": "image/vnd.ms-dds",
+    "deb": "application/x-debian-package",
+    "def": "text/plain",
+    "deploy": "application/octet-stream",
+    "der": "application/x-x509-ca-cert",
+    "dfac": "application/vnd.dreamfactory",
+    "dgc": "application/x-dgc-compressed",
+    "dib": "image/bmp",
+    "dic": "text/x-c",
+    "dir": "application/x-director",
+    "dis": "application/vnd.mobius.dis",
+    "disposition-notification": "message/disposition-notification",
+    "dist": "application/octet-stream",
+    "distz": "application/octet-stream",
+    "djv": "image/vnd.djvu",
+    "djvu": "image/vnd.djvu",
+    "dll": "application/x-msdownload",
+    "dmg": "application/x-apple-diskimage",
+    "dmp": "application/vnd.tcpdump.pcap",
+    "dms": "application/octet-stream",
+    "dna": "application/vnd.dna",
+    "dng": "image/x-adobe-dng",
+    "doc": "application/msword",
+    "docm": "application/vnd.ms-word.document.macroenabled.12",
+    "docx": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    "dot": "application/msword",
+    "dotm": "application/vnd.ms-word.template.macroenabled.12",
+    "dotx": "application/vnd.openxmlformats-officedocument.wordprocessingml.template",
+    "dp": "application/vnd.osgi.dp",
+    "dpg": "application/vnd.dpgraph",
+    "dpx": "image/dpx",
+    "dra": "audio/vnd.dra",
+    "drle": "image/dicom-rle",
+    "drm": "application/vnd.procreate.dream",
+    "dsc": "text/prs.lines.tag",
+    "dssc": "application/dssc+der",
+    "dtb": "application/x-dtbook+xml",
+    "dtd": "application/xml-dtd",
+    "dts": "audio/vnd.dts",
+    "dtshd": "audio/vnd.dts.hd",
+    "dump": "application/octet-stream",
+    "dvb": "video/vnd.dvb.file",
+    "dvi": "application/x-dvi",
+    "dwd": "application/atsc-dwd+xml",
+    "dwf": "model/vnd.dwf",
+    "dwg": "image/vnd.dwg",
+    "dxf": "image/vnd.dxf",
+    "dxp": "application/vnd.spotfire.dxp",
+    "dxr": "application/x-director",
+    "ear": "application/java-archive",
+    "ecelp4800": "audio/vnd.nuera.ecelp4800",
+    "ecelp7470": "audio/vnd.nuera.ecelp7470",
+    "ecelp9600": "audio/vnd.nuera.ecelp9600",
+    "ecma": "application/ecmascript",
+    "edm": "application/vnd.novadigm.edm",
+    "edx": "application/vnd.novadigm.edx",
+    "efif": "application/vnd.picsel",
+    "ei6": "application/vnd.pg.osasli",
+    "elc": "application/octet-stream",
+    "emf": "image/emf",
+    "eml": "message/rfc822",
+    "emma": "application/emma+xml",
+    "emotionml": "application/emotionml+xml",
+    "emz": "application/x-msmetafile",
+    "eol": "audio/vnd.digital-winds",
+    "eot": "application/vnd.ms-fontobject",
+    "eps": "application/postscript",
+    "epub": "application/epub+zip",
+    "es3": "application/vnd.eszigno3+xml",
+    "esa": "application/vnd.osgi.subsystem",
+    "esf": "application/vnd.epson.esf",
+    "et3": "application/vnd.eszigno3+xml",
+    "etx": "text/x-setext",
+    "eva": "application/x-eva",
+    "evy": "application/x-envoy",
+    "exe": "application/x-msdos-program",
+    "exi": "application/exi",
+    "exp": "application/express",
+    "exr": "image/aces",
+    "ext": "application/vnd.novadigm.ext",
+    "ez": "application/andrew-inset",
+    "ez2": "application/vnd.ezpix-album",
+    "ez3": "application/vnd.ezpix-package",
+    "f": "text/x-fortran",
+    "f4v": "video/x-f4v",
+    "f77": "text/x-fortran",
+    "f90": "text/x-fortran",
+    "fbs": "image/vnd.fastbidsheet",
+    "fbx": "application/vnd.autodesk.fbx",
+    "fcdt": "application/vnd.adobe.formscentral.fcdt",
+    "fcs": "application/vnd.isac.fcs",
+    "fdf": "application/fdf",
+    "fdt": "application/fdt+xml",
+    "fe_launch": "application/vnd.denovo.fcselayout-link",
+    "fg5": "application/vnd.fujitsu.oasysgp",
+    "fgd": "application/x-director",
+    "fh": "image/x-freehand",
+    "fh4": "image/x-freehand",
+    "fh5": "image/x-freehand",
+    "fh7": "image/x-freehand",
+    "fhc": "image/x-freehand",
+    "fig": "application/x-xfig",
+    "fits": "image/fits",
+    "flac": "audio/x-flac",
+    "fli": "video/x-fli",
+    "flo": "application/vnd.micrografx.flo",
+    "flv": "video/x-flv",
+    "flw": "application/vnd.kde.kivio",
+    "flx": "text/vnd.fmi.flexstor",
+    "fly": "text/vnd.fly",
+    "fm": "application/vnd.framemaker",
+    "fnc": "application/vnd.frogans.fnc",
+    "fo": "application/vnd.software602.filler.form+xml",
+    "for": "text/x-fortran",
+    "fpx": "image/vnd.fpx",
+    "frame": "application/vnd.framemaker",
+    "fsc": "application/vnd.fsc.weblaunch",
+    "fst": "image/vnd.fst",
+    "ftc": "application/vnd.fluxtime.clip",
+    "fti": "application/vnd.anser-web-funds-transfer-initiation",
+    "fvt": "video/vnd.fvt",
+    "fxp": "application/vnd.adobe.fxp",
+    "fxpl": "application/vnd.adobe.fxp",
+    "fzs": "application/vnd.fuzzysheet",
+    "g2w": "application/vnd.geoplan",
+    "g3": "image/g3fax",
+    "g3w": "application/vnd.geospace",
+    "gac": "application/vnd.groove-account",
+    "gam": "application/x-tads",
+    "gbr": "application/rpki-ghostbusters",
+    "gca": "application/x-gca-compressed",
+    "gdl": "model/vnd.gdl",
+    "gdoc": "application/vnd.google-apps.document",
+    "gdraw": "application/vnd.google-apps.drawing",
+    "ged": "text/vnd.familysearch.gedcom",
+    "geo": "application/vnd.dynageo",
+    "geojson": "application/geo+json",
+    "gex": "application/vnd.geometry-explorer",
+    "gform": "application/vnd.google-apps.form",
+    "ggb": "application/vnd.geogebra.file",
+    "ggs": "application/vnd.geogebra.slides",
+    "ggt": "application/vnd.geogebra.tool",
+    "ghf": "application/vnd.groove-help",
+    "gif": "image/gif",
+    "gim": "application/vnd.groove-identity-message",
+    "gjam": "application/vnd.google-apps.jam",
+    "glb": "model/gltf-binary",
+    "gltf": "model/gltf+json",
+    "gmap": "application/vnd.google-apps.map",
+    "gml": "application/gml+xml",
+    "gmx": "application/vnd.gmx",
+    "gnumeric": "application/x-gnumeric",
+    "gph": "application/vnd.flographit",
+    "gpx": "application/gpx+xml",
+    "gqf": "application/vnd.grafeq",
+    "gqs": "application/vnd.grafeq",
+    "gram": "application/srgs",
+    "gramps": "application/x-gramps-xml",
+    "gre": "application/vnd.geometry-explorer",
+    "grv": "application/vnd.groove-injector",
+    "grxml": "application/srgs+xml",
+    "gscript": "application/vnd.google-apps.script",
+    "gsf": "application/x-font-ghostscript",
+    "gsheet": "application/vnd.google-apps.spreadsheet",
+    "gsite": "application/vnd.google-apps.site",
+    "gslides": "application/vnd.google-apps.presentation",
+    "gtar": "application/x-gtar",
+    "gtm": "application/vnd.groove-tool-message",
+    "gtw": "model/vnd.gtw",
+    "gv": "text/vnd.graphviz",
+    "gxf": "application/gxf",
+    "gxt": "application/vnd.geonext",
+    "gz": "application/gzip",
+    "h": "text/x-c",
+    "h261": "video/h261",
+    "h263": "video/h263",
+    "h264": "video/h264",
+    "hal": "application/vnd.hal+xml",
+    "hbci": "application/vnd.hbci",
+    "hbs": "text/x-handlebars-template",
+    "hdd": "application/x-virtualbox-hdd",
+    "hdf": "application/x-hdf",
+    "heic": "image/heic",
+    "heics": "image/heic-sequence",
+    "heif": "image/heif",
+    "heifs": "image/heif-sequence",
+    "hej2": "image/hej2k",
+    "held": "application/atsc-held+xml",
+    "hh": "text/x-c",
+    "hjson": "application/hjson",
+    "hlp": "application/winhlp",
+    "hpgl": "application/vnd.hp-hpgl",
+    "hpid": "application/vnd.hp-hpid",
+    "hps": "application/vnd.hp-hps",
+    "hqx": "application/mac-binhex40",
+    "htc": "text/x-component",
+    "htke": "application/vnd.kenameaapp",
+    "htm": "text/html",
+    "html": "text/html",
+    "hvd": "application/vnd.yamaha.hv-dic",
+    "hvp": "application/vnd.yamaha.hv-voice",
+    "hvs": "application/vnd.yamaha.hv-script",
+    "i2g": "application/vnd.intergeo",
+    "icc": "application/vnd.iccprofile",
+    "ice": "x-conference/x-cooltalk",
+    "icm": "application/vnd.iccprofile",
+    "ico": "image/vnd.microsoft.icon",
+    "ics": "text/calendar",
+    "ief": "image/ief",
+    "ifb": "text/calendar",
+    "ifm": "application/vnd.shana.informed.formdata",
+    "iges": "model/iges",
+    "igl": "application/vnd.igloader",
+    "igm": "application/vnd.insors.igm",
+    "igs": "model/iges",
+    "igx": "application/vnd.micrografx.igx",
+    "iif": "application/vnd.shana.informed.interchange",
+    "img": "application/octet-stream",
+    "imp": "application/vnd.accpac.simply.imp",
+    "ims": "application/vnd.ms-ims",
+    "in": "text/plain",
+    "ini": "text/plain",
+    "ink": "application/inkml+xml",
+    "inkml": "application/inkml+xml",
+    "install": "application/x-install-instructions",
+    "iota": "application/vnd.astraea-software.iota",
+    "ipfix": "application/ipfix",
+    "ipk": "application/vnd.shana.informed.package",
+    "ipynb": "application/x-ipynb+json",
+    "irm": "application/vnd.ibm.rights-management",
+    "irp": "application/vnd.irepository.package+xml",
+    "iso": "application/x-iso9660-image",
+    "itp": "application/vnd.shana.informed.formtemplate",
+    "its": "application/its+xml",
+    "ivp": "application/vnd.immervision-ivp",
+    "ivu": "application/vnd.immervision-ivu",
+    "jad": "text/vnd.sun.j2me.app-descriptor",
+    "jade": "text/jade",
+    "jaii": "image/jaii",
+    "jais": "image/jais",
+    "jam": "application/vnd.jam",
+    "jar": "application/java-archive",
+    "jardiff": "application/x-java-archive-diff",
+    "java": "text/x-java-source",
+    "jfif": "image/pjpeg",
+    "jhc": "image/jphc",
+    "jisp": "application/vnd.jisp",
+    "jls": "image/jls",
+    "jlt": "application/vnd.hp-jlyt",
+    "jng": "image/x-jng",
+    "jnlp": "application/x-java-jnlp-file",
+    "joda": "application/vnd.joost.joda-archive",
+    "jp2": "image/jp2",
+    "jpe": "image/jpeg",
+    "jpeg": "image/jpeg",
+    "jpf": "image/jpx",
+    "jpg": "image/jpeg",
+    "jpg2": "image/jp2",
+    "jpgm": "image/jpm",
+    "jpgv": "video/jpeg",
+    "jph": "image/jph",
+    "jpm": "image/jpm",
+    "jpx": "image/jpx",
+    "js": "text/javascript",
+    "json": "application/json",
+    "json5": "application/json5",
+    "jsonld": "application/ld+json",
+    "jsonml": "application/jsonml+json",
+    "jsx": "text/jsx",
+    "jt": "model/jt",
+    "jxl": "image/jxl",
+    "jxr": "image/jxr",
+    "jxra": "image/jxra",
+    "jxrs": "image/jxrs",
+    "jxs": "image/jxs",
+    "jxsc": "image/jxsc",
+    "jxsi": "image/jxsi",
+    "jxss": "image/jxss",
+    "kar": "audio/midi",
+    "karbon": "application/vnd.kde.karbon",
+    "kdbx": "application/x-keepass2",
+    "key": "application/vnd.apple.keynote",
+    "kfo": "application/vnd.kde.kformula",
+    "kia": "application/vnd.kidspiration",
+    "kml": "application/vnd.google-earth.kml+xml",
+    "kmz": "application/vnd.google-earth.kmz",
+    "kne": "application/vnd.kinar",
+    "knp": "application/vnd.kinar",
+    "kon": "application/vnd.kde.kontour",
+    "kpr": "application/vnd.kde.kpresenter",
+    "kpt": "application/vnd.kde.kpresenter",
+    "kpxx": "application/vnd.ds-keypoint",
+    "ksp": "application/vnd.kde.kspread",
+    "ktr": "application/vnd.kahootz",
+    "ktx": "image/ktx",
+    "ktx2": "image/ktx2",
+    "ktz": "application/vnd.kahootz",
+    "kwd": "application/vnd.kde.kword",
+    "kwt": "application/vnd.kde.kword",
+    "lasxml": "application/vnd.las.las+xml",
+    "latex": "application/x-latex",
+    "lbd": "application/vnd.llamagraphics.life-balance.desktop",
+    "lbe": "application/vnd.llamagraphics.life-balance.exchange+xml",
+    "les": "application/vnd.hhe.lesson-player",
+    "less": "text/less",
+    "lgr": "application/lgr+xml",
+    "lha": "application/x-lzh-compressed",
+    "link66": "application/vnd.route66.link66+xml",
+    "list": "text/plain",
+    "list3820": "application/vnd.ibm.modcap",
+    "listafp": "application/vnd.ibm.modcap",
+    "litcoffee": "text/coffeescript",
+    "lnk": "application/x-ms-shortcut",
+    "log": "text/plain",
+    "lostxml": "application/lost+xml",
+    "lottie": "application/zip+dotlottie",
+    "lrf": "application/octet-stream",
+    "lrm": "application/vnd.ms-lrm",
+    "ltf": "application/vnd.frogans.ltf",
+    "lua": "text/x-lua",
+    "luac": "application/x-lua-bytecode",
+    "lvp": "audio/vnd.lucent.voice",
+    "lwp": "application/vnd.lotus-wordpro",
+    "lzh": "application/x-lzh-compressed",
+    "m13": "application/x-msmediaview",
+    "m14": "application/x-msmediaview",
+    "m1v": "video/mpeg",
+    "m21": "application/mp21",
+    "m2a": "audio/mpeg",
+    "m2t": "video/mp2t",
+    "m2ts": "video/mp2t",
+    "m2v": "video/mpeg",
+    "m3a": "audio/mpeg",
+    "m3u": "audio/x-mpegurl",
+    "m3u8": "application/vnd.apple.mpegurl",
+    "m4a": "audio/mp4",
+    "m4b": "audio/mp4",
+    "m4p": "application/mp4",
+    "m4s": "video/iso.segment",
+    "m4u": "video/vnd.mpegurl",
+    "m4v": "video/x-m4v",
+    "ma": "application/mathematica",
+    "mads": "application/mads+xml",
+    "maei": "application/mmt-aei+xml",
+    "mag": "application/vnd.ecowin.chart",
+    "maker": "application/vnd.framemaker",
+    "man": "text/troff",
+    "manifest": "text/cache-manifest",
+    "map": "application/json",
+    "mar": "application/octet-stream",
+    "markdown": "text/markdown",
+    "mathml": "application/mathml+xml",
+    "mb": "application/mathematica",
+    "mbk": "application/vnd.mobius.mbk",
+    "mbox": "application/mbox",
+    "mc1": "application/vnd.medcalcdata",
+    "mcd": "application/vnd.mcd",
+    "mcurl": "text/vnd.curl.mcurl",
+    "md": "text/markdown",
+    "mdb": "application/x-msaccess",
+    "mdi": "image/vnd.ms-modi",
+    "mdx": "text/mdx",
+    "me": "text/troff",
+    "mesh": "model/mesh",
+    "meta4": "application/metalink4+xml",
+    "metalink": "application/metalink+xml",
+    "mets": "application/mets+xml",
+    "mfm": "application/vnd.mfmp",
+    "mft": "application/rpki-manifest",
+    "mgp": "application/vnd.osgeo.mapguide.package",
+    "mgz": "application/vnd.proteus.magazine",
+    "mht": "message/rfc822",
+    "mhtml": "message/rfc822",
+    "mid": "audio/midi",
+    "midi": "audio/midi",
+    "mie": "application/x-mie",
+    "mif": "application/vnd.mif",
+    "mime": "message/rfc822",
+    "mj2": "video/mj2",
+    "mjp2": "video/mj2",
+    "mjs": "text/javascript",
+    "mk3d": "video/x-matroska",
+    "mka": "audio/x-matroska",
+    "mkd": "text/x-markdown",
+    "mks": "video/x-matroska",
+    "mkv": "video/x-matroska",
+    "mlp": "application/vnd.dolby.mlp",
+    "mmd": "application/vnd.chipnuts.karaoke-mmd",
+    "mmf": "application/vnd.smaf",
+    "mml": "text/mathml",
+    "mmr": "image/vnd.fujixerox.edmics-mmr",
+    "mng": "video/x-mng",
+    "mny": "application/x-msmoney",
+    "mobi": "application/x-mobipocket-ebook",
+    "mods": "application/mods+xml",
+    "mov": "video/quicktime",
+    "movie": "video/x-sgi-movie",
+    "mp2": "audio/mpeg",
+    "mp21": "application/mp21",
+    "mp2a": "audio/mpeg",
+    "mp3": "audio/mpeg",
+    "mp4": "video/mp4",
+    "mp4a": "audio/mp4",
+    "mp4s": "application/mp4",
+    "mp4v": "video/mp4",
+    "mpc": "application/vnd.mophun.certificate",
+    "mpd": "application/dash+xml",
+    "mpe": "video/mpeg",
+    "mpeg": "video/mpeg",
+    "mpf": "application/media-policy-dataset+xml",
+    "mpg": "video/mpeg",
+    "mpg4": "video/mp4",
+    "mpga": "audio/mpeg",
+    "mpkg": "application/vnd.apple.installer+xml",
+    "mpm": "application/vnd.blueice.multipass",
+    "mpn": "application/vnd.mophun.application",
+    "mpp": "application/dash-patch+xml",
+    "mpt": "application/vnd.ms-project",
+    "mpy": "application/vnd.ibm.minipay",
+    "mqy": "application/vnd.mobius.mqy",
+    "mrc": "application/marc",
+    "mrcx": "application/marcxml+xml",
+    "ms": "text/troff",
+    "mscml": "application/mediaservercontrol+xml",
+    "mseed": "application/vnd.fdsn.mseed",
+    "mseq": "application/vnd.mseq",
+    "msf": "application/vnd.epson.msf",
+    "msg": "application/vnd.ms-outlook",
+    "msh": "model/mesh",
+    "msi": "application/x-msdownload",
+    "msix": "application/msix",
+    "msixbundle": "application/msixbundle",
+    "msl": "application/vnd.mobius.msl",
+    "msm": "application/octet-stream",
+    "msp": "application/octet-stream",
+    "msty": "application/vnd.muvee.style",
+    "mtl": "model/mtl",
+    "mts": "video/mp2t",
+    "mus": "application/vnd.musician",
+    "musd": "application/mmt-usd+xml",
+    "musicxml": "application/vnd.recordare.musicxml+xml",
+    "mvb": "application/x-msmediaview",
+    "mvt": "application/vnd.mapbox-vector-tile",
+    "mwf": "application/vnd.mfer",
+    "mxf": "application/mxf",
+    "mxl": "application/vnd.recordare.musicxml",
+    "mxmf": "audio/mobile-xmf",
+    "mxml": "application/xv+xml",
+    "mxs": "application/vnd.triscape.mxs",
+    "mxu": "video/vnd.mpegurl",
+    "n-gage": "application/vnd.nokia.n-gage.symbian.install",
+    "n3": "text/n3",
+    "nb": "application/mathematica",
+    "nbp": "application/vnd.wolfram.player",
+    "nc": "application/x-netcdf",
+    "ncx": "application/x-dtbncx+xml",
+    "nfo": "text/x-nfo",
+    "ngdat": "application/vnd.nokia.n-gage.data",
+    "nitf": "application/vnd.nitf",
+    "nlu": "application/vnd.neurolanguage.nlu",
+    "nml": "application/vnd.enliven",
+    "nnd": "application/vnd.noblenet-directory",
+    "nns": "application/vnd.noblenet-sealer",
+    "nnw": "application/vnd.noblenet-web",
+    "npx": "image/vnd.net-fpx",
+    "nq": "application/n-quads",
+    "nsc": "application/x-conference",
+    "nsf": "application/vnd.lotus-notes",
+    "nt": "application/n-triples",
+    "ntf": "application/vnd.nitf",
+    "numbers": "application/vnd.apple.numbers",
+    "nzb": "application/x-nzb",
+    "oa2": "application/vnd.fujitsu.oasys2",
+    "oa3": "application/vnd.fujitsu.oasys3",
+    "oas": "application/vnd.fujitsu.oasys",
+    "obd": "application/x-msbinder",
+    "obgx": "application/vnd.openblox.game+xml",
+    "obj": "model/obj",
+    "oda": "application/oda",
+    "odb": "application/vnd.oasis.opendocument.database",
+    "odc": "application/vnd.oasis.opendocument.chart",
+    "odf": "application/vnd.oasis.opendocument.formula",
+    "odft": "application/vnd.oasis.opendocument.formula-template",
+    "odg": "application/vnd.oasis.opendocument.graphics",
+    "odi": "application/vnd.oasis.opendocument.image",
+    "odm": "application/vnd.oasis.opendocument.text-master",
+    "odp": "application/vnd.oasis.opendocument.presentation",
+    "ods": "application/vnd.oasis.opendocument.spreadsheet",
+    "odt": "application/vnd.oasis.opendocument.text",
+    "oga": "audio/ogg",
+    "ogex": "model/vnd.opengex",
+    "ogg": "audio/ogg",
+    "ogv": "video/ogg",
+    "ogx": "application/ogg",
+    "omdoc": "application/omdoc+xml",
+    "one": "application/onenote",
+    "onea": "application/onenote",
+    "onepkg": "application/onenote",
+    "onetmp": "application/onenote",
+    "onetoc": "application/onenote",
+    "onetoc2": "application/onenote",
+    "opf": "application/oebps-package+xml",
+    "opml": "text/x-opml",
+    "oprc": "application/vnd.palm",
+    "opus": "audio/ogg",
+    "org": "application/vnd.lotus-organizer",
+    "osf": "application/vnd.yamaha.openscoreformat",
+    "osfpvg": "application/vnd.yamaha.openscoreformat.osfpvg+xml",
+    "osm": "application/vnd.openstreetmap.data+xml",
+    "otc": "application/vnd.oasis.opendocument.chart-template",
+    "otf": "font/otf",
+    "otg": "application/vnd.oasis.opendocument.graphics-template",
+    "oth": "application/vnd.oasis.opendocument.text-web",
+    "oti": "application/vnd.oasis.opendocument.image-template",
+    "otp": "application/vnd.oasis.opendocument.presentation-template",
+    "ots": "application/vnd.oasis.opendocument.spreadsheet-template",
+    "ott": "application/vnd.oasis.opendocument.text-template",
+    "ova": "application/x-virtualbox-ova",
+    "ovf": "application/x-virtualbox-ovf",
+    "owl": "application/rdf+xml",
+    "oxps": "application/oxps",
+    "oxt": "application/vnd.openofficeorg.extension",
+    "p": "text/x-pascal",
+    "p10": "application/pkcs10",
+    "p12": "application/x-pkcs12",
+    "p21": "model/step",
+    "p7b": "application/x-pkcs7-certificates",
+    "p7c": "application/pkcs7-mime",
+    "p7m": "application/pkcs7-mime",
+    "p7r": "application/x-pkcs7-certreqresp",
+    "p7s": "application/pkcs7-signature",
+    "p8": "application/pkcs8",
+    "pac": "application/x-ns-proxy-autoconfig",
+    "pages": "application/vnd.apple.pages",
+    "pas": "text/x-pascal",
+    "paw": "application/vnd.pawaafile",
+    "pbd": "application/vnd.powerbuilder6",
+    "pbm": "image/x-portable-bitmap",
+    "pcap": "application/vnd.tcpdump.pcap",
+    "pcf": "application/x-font-pcf",
+    "pcl": "application/vnd.hp-pcl",
+    "pclxl": "application/vnd.hp-pclxl",
+    "pct": "image/x-pict",
+    "pcurl": "application/vnd.curl.pcurl",
+    "pcx": "image/vnd.zbrush.pcx",
+    "pdb": "application/vnd.palm",
+    "pde": "text/x-processing",
+    "pdf": "application/pdf",
+    "pem": "application/x-x509-ca-cert",
+    "pfa": "application/x-font-type1",
+    "pfb": "application/x-font-type1",
+    "pfm": "application/x-font-type1",
+    "pfr": "application/font-tdpfr",
+    "pfx": "application/x-pkcs12",
+    "pgm": "image/x-portable-graymap",
+    "pgn": "application/x-chess-pgn",
+    "pgp": "application/pgp-encrypted",
+    "php": "application/x-httpd-php",
+    "pic": "image/x-pict",
+    "pkg": "application/octet-stream",
+    "pki": "application/pkixcmp",
+    "pkipath": "application/pkix-pkipath",
+    "pkpass": "application/vnd.apple.pkpass",
+    "pl": "application/x-perl",
+    "plb": "application/vnd.3gpp.pic-bw-large",
+    "plc": "application/vnd.mobius.plc",
+    "plf": "application/vnd.pocketlearn",
+    "pls": "application/pls+xml",
+    "pm": "application/x-perl",
+    "pml": "application/vnd.ctc-posml",
+    "png": "image/png",
+    "pnm": "image/x-portable-anymap",
+    "portpkg": "application/vnd.macports.portpkg",
+    "pot": "application/vnd.ms-powerpoint",
+    "potm": "application/vnd.ms-powerpoint.template.macroenabled.12",
+    "potx": "application/vnd.openxmlformats-officedocument.presentationml.template",
+    "ppam": "application/vnd.ms-powerpoint.addin.macroenabled.12",
+    "ppd": "application/vnd.cups-ppd",
+    "ppm": "image/x-portable-pixmap",
+    "pps": "application/vnd.ms-powerpoint",
+    "ppsm": "application/vnd.ms-powerpoint.slideshow.macroenabled.12",
+    "ppsx": "application/vnd.openxmlformats-officedocument.presentationml.slideshow",
+    "ppt": "application/vnd.ms-powerpoint",
+    "pptm": "application/vnd.ms-powerpoint.presentation.macroenabled.12",
+    "pptx": "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+    "pqa": "application/vnd.palm",
+    "prc": "model/prc",
+    "pre": "application/vnd.lotus-freelance",
+    "prf": "application/pics-rules",
+    "provx": "application/provenance+xml",
+    "ps": "application/postscript",
+    "psb": "application/vnd.3gpp.pic-bw-small",
+    "psd": "image/vnd.adobe.photoshop",
+    "psf": "application/x-font-linux-psf",
+    "pskcxml": "application/pskc+xml",
+    "pti": "image/prs.pti",
+    "ptid": "application/vnd.pvi.ptid1",
+    "pub": "application/x-mspublisher",
+    "pvb": "application/vnd.3gpp.pic-bw-var",
+    "pwn": "application/vnd.3m.post-it-notes",
+    "pya": "audio/vnd.ms-playready.media.pya",
+    "pyo": "model/vnd.pytha.pyox",
+    "pyox": "model/vnd.pytha.pyox",
+    "pyv": "video/vnd.ms-playready.media.pyv",
+    "qam": "application/vnd.epson.quickanime",
+    "qbo": "application/vnd.intu.qbo",
+    "qfx": "application/vnd.intu.qfx",
+    "qps": "application/vnd.publishare-delta-tree",
+    "qt": "video/quicktime",
+    "qwd": "application/vnd.quark.quarkxpress",
+    "qwt": "application/vnd.quark.quarkxpress",
+    "qxb": "application/vnd.quark.quarkxpress",
+    "qxd": "application/vnd.quark.quarkxpress",
+    "qxl": "application/vnd.quark.quarkxpress",
+    "qxt": "application/vnd.quark.quarkxpress",
+    "ra": "audio/x-pn-realaudio",
+    "ram": "audio/x-pn-realaudio",
+    "raml": "application/raml+yaml",
+    "rapd": "application/route-apd+xml",
+    "rar": "application/vnd.rar",
+    "ras": "image/x-cmu-raster",
+    "rcprofile": "application/vnd.ipunplugged.rcprofile",
+    "rdf": "application/rdf+xml",
+    "rdz": "application/vnd.data-vision.rdz",
+    "relo": "application/p2p-overlay+xml",
+    "rep": "application/vnd.businessobjects",
+    "res": "application/x-dtbresource+xml",
+    "rgb": "image/x-rgb",
+    "rif": "application/reginfo+xml",
+    "rip": "audio/vnd.rip",
+    "ris": "application/x-research-info-systems",
+    "rl": "application/resource-lists+xml",
+    "rlc": "image/vnd.fujixerox.edmics-rlc",
+    "rld": "application/resource-lists-diff+xml",
+    "rm": "application/vnd.rn-realmedia",
+    "rmi": "audio/midi",
+    "rmp": "audio/x-pn-realaudio-plugin",
+    "rms": "application/vnd.jcp.javame.midlet-rms",
+    "rmvb": "application/vnd.rn-realmedia-vbr",
+    "rnc": "application/relax-ng-compact-syntax",
+    "rng": "application/xml",
+    "roa": "application/rpki-roa",
+    "roff": "text/troff",
+    "rp9": "application/vnd.cloanto.rp9",
+    "rpm": "application/x-redhat-package-manager",
+    "rpss": "application/vnd.nokia.radio-presets",
+    "rpst": "application/vnd.nokia.radio-preset",
+    "rq": "application/sparql-query",
+    "rs": "application/rls-services+xml",
+    "rsat": "application/atsc-rsat+xml",
+    "rsd": "application/rsd+xml",
+    "rsheet": "application/urc-ressheet+xml",
+    "rss": "application/rss+xml",
+    "rtf": "application/rtf",
+    "rtx": "text/richtext",
+    "run": "application/x-makeself",
+    "rusd": "application/route-usd+xml",
+    "s": "text/x-asm",
+    "s3m": "audio/s3m",
+    "saf": "application/vnd.yamaha.smaf-audio",
+    "sass": "text/x-sass",
+    "sbml": "application/sbml+xml",
+    "sc": "application/vnd.ibm.secure-container",
+    "scd": "application/x-msschedule",
+    "scm": "application/vnd.lotus-screencam",
+    "scq": "application/scvp-cv-request",
+    "scs": "application/scvp-cv-response",
+    "scss": "text/x-scss",
+    "scurl": "text/vnd.curl.scurl",
+    "sda": "application/vnd.stardivision.draw",
+    "sdc": "application/vnd.stardivision.calc",
+    "sdd": "application/vnd.stardivision.impress",
+    "sdkd": "application/vnd.solent.sdkm+xml",
+    "sdkm": "application/vnd.solent.sdkm+xml",
+    "sdp": "application/sdp",
+    "sdw": "application/vnd.stardivision.writer",
+    "sea": "application/x-sea",
+    "see": "application/vnd.seemail",
+    "seed": "application/vnd.fdsn.seed",
+    "sema": "application/vnd.sema",
+    "semd": "application/vnd.semd",
+    "semf": "application/vnd.semf",
+    "senmlx": "application/senml+xml",
+    "sensmlx": "application/sensml+xml",
+    "ser": "application/java-serialized-object",
+    "setpay": "application/set-payment-initiation",
+    "setreg": "application/set-registration-initiation",
+    "sfd-hdstx": "application/vnd.hydrostatix.sof-data",
+    "sfs": "application/vnd.spotfire.sfs",
+    "sfv": "text/x-sfv",
+    "sgi": "image/sgi",
+    "sgl": "application/vnd.stardivision.writer-global",
+    "sgm": "text/sgml",
+    "sgml": "text/sgml",
+    "sh": "application/x-sh",
+    "shar": "application/x-shar",
+    "shex": "text/shex",
+    "shf": "application/shf+xml",
+    "shtml": "text/html",
+    "sid": "image/x-mrsid-image",
+    "sieve": "application/sieve",
+    "sig": "application/pgp-signature",
+    "sil": "audio/silk",
+    "silo": "model/mesh",
+    "sis": "application/vnd.symbian.install",
+    "sisx": "application/vnd.symbian.install",
+    "sit": "application/x-stuffit",
+    "sitx": "application/x-stuffitx",
+    "siv": "application/sieve",
+    "skd": "application/vnd.koan",
+    "skm": "application/vnd.koan",
+    "skp": "application/vnd.koan",
+    "skt": "application/vnd.koan",
+    "sldm": "application/vnd.ms-powerpoint.slide.macroenabled.12",
+    "sldx": "application/vnd.openxmlformats-officedocument.presentationml.slide",
+    "slim": "text/slim",
+    "slm": "text/slim",
+    "sls": "application/route-s-tsid+xml",
+    "slt": "application/vnd.epson.salt",
+    "sm": "application/vnd.stepmania.stepchart",
+    "smf": "application/vnd.stardivision.math",
+    "smi": "application/smil+xml",
+    "smil": "application/smil+xml",
+    "smv": "video/x-smv",
+    "smzip": "application/vnd.stepmania.package",
+    "snd": "audio/basic",
+    "snf": "application/x-font-snf",
+    "so": "application/octet-stream",
+    "spc": "application/x-pkcs7-certificates",
+    "spdx": "text/spdx",
+    "spf": "application/vnd.yamaha.smaf-phrase",
+    "spl": "application/x-futuresplash",
+    "spot": "text/vnd.in3d.spot",
+    "spp": "application/scvp-vp-response",
+    "spq": "application/scvp-vp-request",
+    "spx": "audio/ogg",
+    "sql": "application/sql",
+    "src": "application/x-wais-source",
+    "srt": "application/x-subrip",
+    "sru": "application/sru+xml",
+    "srx": "application/sparql-results+xml",
+    "ssdl": "application/ssdl+xml",
+    "sse": "application/vnd.kodak-descriptor",
+    "ssf": "application/vnd.epson.ssf",
+    "ssml": "application/ssml+xml",
+    "st": "application/vnd.sailingtracker.track",
+    "stc": "application/vnd.sun.xml.calc.template",
+    "std": "application/vnd.sun.xml.draw.template",
+    "step": "model/step",
+    "stf": "application/vnd.wt.stf",
+    "sti": "application/vnd.sun.xml.impress.template",
+    "stk": "application/hyperstudio",
+    "stl": "model/stl",
+    "stp": "model/step",
+    "stpnc": "model/step",
+    "stpx": "model/step+xml",
+    "stpxz": "model/step-xml+zip",
+    "stpz": "model/step+zip",
+    "str": "application/vnd.pg.format",
+    "stw": "application/vnd.sun.xml.writer.template",
+    "styl": "text/stylus",
+    "stylus": "text/stylus",
+    "sub": "text/vnd.dvb.subtitle",
+    "sus": "application/vnd.sus-calendar",
+    "susp": "application/vnd.sus-calendar",
+    "sv4cpio": "application/x-sv4cpio",
+    "sv4crc": "application/x-sv4crc",
+    "svc": "application/vnd.dvb.service",
+    "svd": "application/vnd.svd",
+    "svg": "image/svg+xml",
+    "svgz": "image/svg+xml",
+    "swa": "application/x-director",
+    "swf": "application/x-shockwave-flash",
+    "swi": "application/vnd.aristanetworks.swi",
+    "swidtag": "application/swid+xml",
+    "sxc": "application/vnd.sun.xml.calc",
+    "sxd": "application/vnd.sun.xml.draw",
+    "sxg": "application/vnd.sun.xml.writer.global",
+    "sxi": "application/vnd.sun.xml.impress",
+    "sxm": "application/vnd.sun.xml.math",
+    "sxw": "application/vnd.sun.xml.writer",
+    "t": "text/troff",
+    "t3": "application/x-t3vm-image",
+    "t38": "image/t38",
+    "taglet": "application/vnd.mynfc",
+    "tao": "application/vnd.tao.intent-module-archive",
+    "tap": "image/vnd.tencent.tap",
+    "tar": "application/x-tar",
+    "tcap": "application/vnd.3gpp2.tcap",
+    "tcl": "application/x-tcl",
+    "td": "application/urc-targetdesc+xml",
+    "teacher": "application/vnd.smart.teacher",
+    "tei": "application/tei+xml",
+    "teicorpus": "application/tei+xml",
+    "tex": "application/x-tex",
+    "texi": "application/x-texinfo",
+    "texinfo": "application/x-texinfo",
+    "text": "text/plain",
+    "tfi": "application/thraud+xml",
+    "tfm": "application/x-tex-tfm",
+    "tfx": "image/tiff-fx",
+    "tga": "image/x-tga",
+    "thmx": "application/vnd.ms-officetheme",
+    "tif": "image/tiff",
+    "tiff": "image/tiff",
+    "tk": "application/x-tcl",
+    "tmo": "application/vnd.tmobile-livetv",
+    "toml": "application/toml",
+    "torrent": "application/x-bittorrent",
+    "tpl": "application/vnd.groove-tool-template",
+    "tpt": "application/vnd.trid.tpt",
+    "tr": "text/troff",
+    "tra": "application/vnd.trueapp",
+    "trig": "application/trig",
+    "trm": "application/x-msterminal",
+    "ts": "video/mp2t",
+    "tsd": "application/timestamped-data",
+    "tsv": "text/tab-separated-values",
+    "ttc": "font/collection",
+    "ttf": "font/ttf",
+    "ttl": "text/turtle",
+    "ttml": "application/ttml+xml",
+    "twd": "application/vnd.simtech-mindmapper",
+    "twds": "application/vnd.simtech-mindmapper",
+    "txd": "application/vnd.genomatix.tuxedo",
+    "txf": "application/vnd.mobius.txf",
+    "txt": "text/plain",
+    "u32": "application/x-authorware-bin",
+    "u3d": "model/u3d",
+    "u8dsn": "message/global-delivery-status",
+    "u8hdr": "message/global-headers",
+    "u8mdn": "message/global-disposition-notification",
+    "u8msg": "message/global",
+    "ubj": "application/ubjson",
+    "udeb": "application/x-debian-package",
+    "ufd": "application/vnd.ufdl",
+    "ufdl": "application/vnd.ufdl",
+    "ulx": "application/x-glulx",
+    "umj": "application/vnd.umajin",
+    "unityweb": "application/vnd.unity",
+    "uo": "application/vnd.uoml+xml",
+    "uoml": "application/vnd.uoml+xml",
+    "uri": "text/uri-list",
+    "uris": "text/uri-list",
+    "urls": "text/uri-list",
+    "usda": "model/vnd.usda",
+    "usdz": "model/vnd.usdz+zip",
+    "ustar": "application/x-ustar",
+    "utz": "application/vnd.uiq.theme",
+    "uu": "text/x-uuencode",
+    "uva": "audio/vnd.dece.audio",
+    "uvd": "application/vnd.dece.data",
+    "uvf": "application/vnd.dece.data",
+    "uvg": "image/vnd.dece.graphic",
+    "uvh": "video/vnd.dece.hd",
+    "uvi": "image/vnd.dece.graphic",
+    "uvm": "video/vnd.dece.mobile",
+    "uvp": "video/vnd.dece.pd",
+    "uvs": "video/vnd.dece.sd",
+    "uvt": "application/vnd.dece.ttml+xml",
+    "uvu": "video/vnd.uvvu.mp4",
+    "uvv": "video/vnd.dece.video",
+    "uvva": "audio/vnd.dece.audio",
+    "uvvd": "application/vnd.dece.data",
+    "uvvf": "application/vnd.dece.data",
+    "uvvg": "image/vnd.dece.graphic",
+    "uvvh": "video/vnd.dece.hd",
+    "uvvi": "image/vnd.dece.graphic",
+    "uvvm": "video/vnd.dece.mobile",
+    "uvvp": "video/vnd.dece.pd",
+    "uvvs": "video/vnd.dece.sd",
+    "uvvt": "application/vnd.dece.ttml+xml",
+    "uvvu": "video/vnd.uvvu.mp4",
+    "uvvv": "video/vnd.dece.video",
+    "uvvx": "application/vnd.dece.unspecified",
+    "uvvz": "application/vnd.dece.zip",
+    "uvx": "application/vnd.dece.unspecified",
+    "uvz": "application/vnd.dece.zip",
+    "vbox": "application/x-virtualbox-vbox",
+    "vbox-extpack": "application/x-virtualbox-vbox-extpack",
+    "vcard": "text/vcard",
+    "vcd": "application/x-cdlink",
+    "vcf": "text/x-vcard",
+    "vcg": "application/vnd.groove-vcard",
+    "vcs": "text/x-vcalendar",
+    "vcx": "application/vnd.vcx",
+    "vdi": "application/x-virtualbox-vdi",
+    "vds": "model/vnd.sap.vds",
+    "vdx": "application/vnd.ms-visio.viewer",
+    "vhd": "application/x-virtualbox-vhd",
+    "vis": "application/vnd.visionary",
+    "viv": "video/vnd.vivo",
+    "vmdk": "application/x-virtualbox-vmdk",
+    "vob": "video/x-ms-vob",
+    "vor": "application/vnd.stardivision.writer",
+    "vox": "application/x-authorware-bin",
+    "vrml": "model/vrml",
+    "vsd": "application/vnd.visio",
+    "vsdx": "application/vnd.visio",
+    "vsf": "application/vnd.vsf",
+    "vss": "application/vnd.visio",
+    "vst": "application/vnd.visio",
+    "vsw": "application/vnd.visio",
+    "vtf": "image/vnd.valve.source.texture",
+    "vtt": "text/vtt",
+    "vtu": "model/vnd.vtu",
+    "vtx": "application/vnd.visio",
+    "vxml": "application/voicexml+xml",
+    "w3d": "application/x-director",
+    "wad": "application/x-doom",
+    "wadl": "application/vnd.sun.wadl+xml",
+    "war": "application/java-archive",
+    "wasm": "application/wasm",
+    "wav": "audio/wav",
+    "wax": "audio/x-ms-wax",
+    "wbmp": "image/vnd.wap.wbmp",
+    "wbs": "application/vnd.criticaltools.wbs+xml",
+    "wbxml": "application/vnd.wap.wbxml",
+    "wcm": "application/vnd.ms-works",
+    "wdb": "application/vnd.ms-works",
+    "wdp": "image/vnd.ms-photo",
+    "weba": "audio/webm",
+    "webapp": "application/x-web-app-manifest+json",
+    "webm": "video/webm",
+    "webmanifest": "application/manifest+json",
+    "webp": "image/webp",
+    "wg": "application/vnd.pmi.widget",
+    "wgsl": "text/wgsl",
+    "wgt": "application/widget",
+    "wif": "application/watcherinfo+xml",
+    "wks": "application/vnd.ms-works",
+    "wm": "video/x-ms-wm",
+    "wma": "audio/x-ms-wma",
+    "wmd": "application/x-ms-wmd",
+    "wmf": "image/wmf",
+    "wml": "text/vnd.wap.wml",
+    "wmlc": "application/vnd.wap.wmlc",
+    "wmls": "text/vnd.wap.wmlscript",
+    "wmlsc": "application/vnd.wap.wmlscriptc",
+    "wmv": "video/x-ms-wmv",
+    "wmx": "video/x-ms-wmx",
+    "wmz": "application/x-ms-wmz",
+    "woff": "font/woff",
+    "woff2": "font/woff2",
+    "wpd": "application/vnd.wordperfect",
+    "wpl": "application/vnd.ms-wpl",
+    "wps": "application/vnd.ms-works",
+    "wqd": "application/vnd.wqd",
+    "wri": "application/x-mswrite",
+    "wrl": "model/vrml",
+    "wsc": "message/vnd.wfa.wsc",
+    "wsdl": "application/wsdl+xml",
+    "wspolicy": "application/wspolicy+xml",
+    "wtb": "application/vnd.webturbo",
+    "wvx": "video/x-ms-wvx",
+    "x32": "application/x-authorware-bin",
+    "x3d": "model/x3d+xml",
+    "x3db": "model/x3d+fastinfoset",
+    "x3dbz": "model/x3d+binary",
+    "x3dv": "model/x3d-vrml",
+    "x3dvz": "model/x3d+vrml",
+    "x3dz": "model/x3d+xml",
+    "x_b": "model/vnd.parasolid.transmit.binary",
+    "x_t": "model/vnd.parasolid.transmit.text",
+    "xaml": "application/xaml+xml",
+    "xap": "application/x-silverlight-app",
+    "xar": "application/vnd.xara",
+    "xav": "application/xcap-att+xml",
+    "xbap": "application/x-ms-xbap",
+    "xbd": "application/vnd.fujixerox.docuworks.binder",
+    "xbm": "image/x-xbitmap",
+    "xca": "application/xcap-caps+xml",
+    "xcs": "application/calendar+xml",
+    "xdcf": "application/vnd.gov.sk.xmldatacontainer+xml",
+    "xdf": "application/xcap-diff+xml",
+    "xdm": "application/vnd.syncml.dm+xml",
+    "xdp": "application/vnd.adobe.xdp+xml",
+    "xdssc": "application/dssc+xml",
+    "xdw": "application/vnd.fujixerox.docuworks",
+    "xel": "application/xcap-el+xml",
+    "xenc": "application/xenc+xml",
+    "xer": "application/patch-ops-error+xml",
+    "xfdf": "application/xfdf",
+    "xfdl": "application/vnd.xfdl",
+    "xht": "application/xhtml+xml",
+    "xhtm": "application/vnd.pwg-xhtml-print+xml",
+    "xhtml": "application/xhtml+xml",
+    "xhvml": "application/xv+xml",
+    "xif": "image/vnd.xiff",
+    "xla": "application/vnd.ms-excel",
+    "xlam": "application/vnd.ms-excel.addin.macroenabled.12",
+    "xlc": "application/vnd.ms-excel",
+    "xlf": "application/xliff+xml",
+    "xlm": "application/vnd.ms-excel",
+    "xls": "application/vnd.ms-excel",
+    "xlsb": "application/vnd.ms-excel.sheet.binary.macroenabled.12",
+    "xlsm": "application/vnd.ms-excel.sheet.macroenabled.12",
+    "xlsx": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    "xlt": "application/vnd.ms-excel",
+    "xltm": "application/vnd.ms-excel.template.macroenabled.12",
+    "xltx": "application/vnd.openxmlformats-officedocument.spreadsheetml.template",
+    "xlw": "application/vnd.ms-excel",
+    "xm": "audio/xm",
+    "xml": "application/xml",
+    "xns": "application/xcap-ns+xml",
+    "xo": "application/vnd.olpc-sugar",
+    "xop": "application/xop+xml",
+    "xpi": "application/x-xpinstall",
+    "xpl": "application/xproc+xml",
+    "xpm": "image/x-xpixmap",
+    "xpr": "application/vnd.is-xpr",
+    "xps": "application/vnd.ms-xpsdocument",
+    "xpw": "application/vnd.intercon.formnet",
+    "xpx": "application/vnd.intercon.formnet",
+    "xsd": "application/xml",
+    "xsf": "application/prs.xsf+xml",
+    "xsl": "application/xml",
+    "xslt": "application/xslt+xml",
+    "xsm": "application/vnd.syncml+xml",
+    "xspf": "application/xspf+xml",
+    "xul": "application/vnd.mozilla.xul+xml",
+    "xvm": "application/xv+xml",
+    "xvml": "application/xv+xml",
+    "xwd": "image/x-xwindowdump",
+    "xyz": "chemical/x-xyz",
+    "xz": "application/x-xz",
+    "yaml": "text/yaml",
+    "yang": "application/yang",
+    "yin": "application/yin+xml",
+    "yml": "text/yaml",
+    "ymp": "text/x-suse-ymp",
+    "z1": "application/x-zmachine",
+    "z2": "application/x-zmachine",
+    "z3": "application/x-zmachine",
+    "z4": "application/x-zmachine",
+    "z5": "application/x-zmachine",
+    "z6": "application/x-zmachine",
+    "z7": "application/x-zmachine",
+    "z8": "application/x-zmachine",
+    "zaz": "application/vnd.zzazz.deck+xml",
+    "zip": "application/zip",
+    "zir": "application/vnd.zul",
+    "zirz": "application/vnd.zul",
+    "zmm": "application/vnd.handheld-entertainment+xml",
+};
+// The extensions of each type, the first the one mime-types gives (extension()).
+exports.EXTENSIONS = {
+    "application/andrew-inset": ["ez"],
+    "application/appinstaller": ["appinstaller"],
+    "application/applixware": ["aw"],
+    "application/appx": ["appx"],
+    "application/appxbundle": ["appxbundle"],
+    "application/atom+xml": ["atom"],
+    "application/atomcat+xml": ["atomcat"],
+    "application/atomdeleted+xml": ["atomdeleted"],
+    "application/atomsvc+xml": ["atomsvc"],
+    "application/atsc-dwd+xml": ["dwd"],
+    "application/atsc-held+xml": ["held"],
+    "application/atsc-rsat+xml": ["rsat"],
+    "application/automationml-aml+xml": ["aml"],
+    "application/automationml-amlx+zip": ["amlx"],
+    "application/bdoc": ["bdoc"],
+    "application/calendar+xml": ["xcs"],
+    "application/ccxml+xml": ["ccxml"],
+    "application/cdfx+xml": ["cdfx"],
+    "application/cdmi-capability": ["cdmia"],
+    "application/cdmi-container": ["cdmic"],
+    "application/cdmi-domain": ["cdmid"],
+    "application/cdmi-object": ["cdmio"],
+    "application/cdmi-queue": ["cdmiq"],
+    "application/cpl+xml": ["cpl"],
+    "application/cu-seeme": ["cu"],
+    "application/cwl": ["cwl"],
+    "application/dash+xml": ["mpd"],
+    "application/dash-patch+xml": ["mpp"],
+    "application/davmount+xml": ["davmount"],
+    "application/dicom": ["dcm"],
+    "application/docbook+xml": ["dbk"],
+    "application/dssc+der": ["dssc"],
+    "application/dssc+xml": ["xdssc"],
+    "application/ecmascript": ["ecma"],
+    "application/emma+xml": ["emma"],
+    "application/emotionml+xml": ["emotionml"],
+    "application/epub+zip": ["epub"],
+    "application/exi": ["exi"],
+    "application/express": ["exp"],
+    "application/fdf": ["fdf"],
+    "application/fdt+xml": ["fdt"],
+    "application/font-tdpfr": ["pfr"],
+    "application/geo+json": ["geojson"],
+    "application/gml+xml": ["gml"],
+    "application/gpx+xml": ["gpx"],
+    "application/gxf": ["gxf"],
+    "application/gzip": ["gz"],
+    "application/hjson": ["hjson"],
+    "application/hyperstudio": ["stk"],
+    "application/inkml+xml": ["ink", "inkml"],
+    "application/ipfix": ["ipfix"],
+    "application/its+xml": ["its"],
+    "application/java-archive": ["jar", "war", "ear"],
+    "application/java-serialized-object": ["ser"],
+    "application/java-vm": ["class"],
+    "application/javascript": ["js"],
+    "application/json": ["json", "map"],
+    "application/json5": ["json5"],
+    "application/jsonml+json": ["jsonml"],
+    "application/ld+json": ["jsonld"],
+    "application/lgr+xml": ["lgr"],
+    "application/lost+xml": ["lostxml"],
+    "application/mac-binhex40": ["hqx"],
+    "application/mac-compactpro": ["cpt"],
+    "application/mads+xml": ["mads"],
+    "application/manifest+json": ["webmanifest"],
+    "application/marc": ["mrc"],
+    "application/marcxml+xml": ["mrcx"],
+    "application/mathematica": ["ma", "nb", "mb"],
+    "application/mathml+xml": ["mathml"],
+    "application/mbox": ["mbox"],
+    "application/media-policy-dataset+xml": ["mpf"],
+    "application/mediaservercontrol+xml": ["mscml"],
+    "application/metalink+xml": ["metalink"],
+    "application/metalink4+xml": ["meta4"],
+    "application/mets+xml": ["mets"],
+    "application/mmt-aei+xml": ["maei"],
+    "application/mmt-usd+xml": ["musd"],
+    "application/mods+xml": ["mods"],
+    "application/mp21": ["m21", "mp21"],
+    "application/mp4": ["mp4", "mpg4", "mp4s", "m4p"],
+    "application/msix": ["msix"],
+    "application/msixbundle": ["msixbundle"],
+    "application/msword": ["doc", "dot"],
+    "application/mxf": ["mxf"],
+    "application/n-quads": ["nq"],
+    "application/n-triples": ["nt"],
+    "application/node": ["cjs"],
+    "application/octet-stream": ["bin", "dms", "lrf", "mar", "so", "dist", "distz", "pkg", "bpk", "dump", "elc", "deploy", "exe", "dll", "deb", "dmg", "iso", "img", "msi", "msp", "msm", "buffer"],
+    "application/oda": ["oda"],
+    "application/oebps-package+xml": ["opf"],
+    "application/ogg": ["ogx"],
+    "application/omdoc+xml": ["omdoc"],
+    "application/onenote": ["onetoc", "onetoc2", "onetmp", "onepkg", "one", "onea"],
+    "application/oxps": ["oxps"],
+    "application/p2p-overlay+xml": ["relo"],
+    "application/patch-ops-error+xml": ["xer"],
+    "application/pdf": ["pdf"],
+    "application/pgp-encrypted": ["pgp"],
+    "application/pgp-keys": ["asc"],
+    "application/pgp-signature": ["sig", "asc"],
+    "application/pics-rules": ["prf"],
+    "application/pkcs10": ["p10"],
+    "application/pkcs7-mime": ["p7m", "p7c"],
+    "application/pkcs7-signature": ["p7s"],
+    "application/pkcs8": ["p8"],
+    "application/pkix-attr-cert": ["ac"],
+    "application/pkix-cert": ["cer"],
+    "application/pkix-crl": ["crl"],
+    "application/pkix-pkipath": ["pkipath"],
+    "application/pkixcmp": ["pki"],
+    "application/pls+xml": ["pls"],
+    "application/postscript": ["ai", "eps", "ps"],
+    "application/provenance+xml": ["provx"],
+    "application/prs.cww": ["cww"],
+    "application/prs.xsf+xml": ["xsf"],
+    "application/pskc+xml": ["pskcxml"],
+    "application/raml+yaml": ["raml"],
+    "application/rdf+xml": ["rdf", "owl"],
+    "application/reginfo+xml": ["rif"],
+    "application/relax-ng-compact-syntax": ["rnc"],
+    "application/resource-lists+xml": ["rl"],
+    "application/resource-lists-diff+xml": ["rld"],
+    "application/rls-services+xml": ["rs"],
+    "application/route-apd+xml": ["rapd"],
+    "application/route-s-tsid+xml": ["sls"],
+    "application/route-usd+xml": ["rusd"],
+    "application/rpki-ghostbusters": ["gbr"],
+    "application/rpki-manifest": ["mft"],
+    "application/rpki-roa": ["roa"],
+    "application/rsd+xml": ["rsd"],
+    "application/rss+xml": ["rss"],
+    "application/rtf": ["rtf"],
+    "application/sbml+xml": ["sbml"],
+    "application/scvp-cv-request": ["scq"],
+    "application/scvp-cv-response": ["scs"],
+    "application/scvp-vp-request": ["spq"],
+    "application/scvp-vp-response": ["spp"],
+    "application/sdp": ["sdp"],
+    "application/senml+xml": ["senmlx"],
+    "application/sensml+xml": ["sensmlx"],
+    "application/set-payment-initiation": ["setpay"],
+    "application/set-registration-initiation": ["setreg"],
+    "application/shf+xml": ["shf"],
+    "application/sieve": ["siv", "sieve"],
+    "application/smil+xml": ["smi", "smil"],
+    "application/sparql-query": ["rq"],
+    "application/sparql-results+xml": ["srx"],
+    "application/sql": ["sql"],
+    "application/srgs": ["gram"],
+    "application/srgs+xml": ["grxml"],
+    "application/sru+xml": ["sru"],
+    "application/ssdl+xml": ["ssdl"],
+    "application/ssml+xml": ["ssml"],
+    "application/swid+xml": ["swidtag"],
+    "application/tei+xml": ["tei", "teicorpus"],
+    "application/thraud+xml": ["tfi"],
+    "application/timestamped-data": ["tsd"],
+    "application/toml": ["toml"],
+    "application/trig": ["trig"],
+    "application/ttml+xml": ["ttml"],
+    "application/ubjson": ["ubj"],
+    "application/urc-ressheet+xml": ["rsheet"],
+    "application/urc-targetdesc+xml": ["td"],
+    "application/vnd.1000minds.decision-model+xml": ["1km"],
+    "application/vnd.3gpp.pic-bw-large": ["plb"],
+    "application/vnd.3gpp.pic-bw-small": ["psb"],
+    "application/vnd.3gpp.pic-bw-var": ["pvb"],
+    "application/vnd.3gpp2.tcap": ["tcap"],
+    "application/vnd.3m.post-it-notes": ["pwn"],
+    "application/vnd.accpac.simply.aso": ["aso"],
+    "application/vnd.accpac.simply.imp": ["imp"],
+    "application/vnd.acucobol": ["acu"],
+    "application/vnd.acucorp": ["atc", "acutc"],
+    "application/vnd.adobe.air-application-installer-package+zip": ["air"],
+    "application/vnd.adobe.formscentral.fcdt": ["fcdt"],
+    "application/vnd.adobe.fxp": ["fxp", "fxpl"],
+    "application/vnd.adobe.xdp+xml": ["xdp"],
+    "application/vnd.adobe.xfdf": ["xfdf"],
+    "application/vnd.age": ["age"],
+    "application/vnd.ahead.space": ["ahead"],
+    "application/vnd.airzip.filesecure.azf": ["azf"],
+    "application/vnd.airzip.filesecure.azs": ["azs"],
+    "application/vnd.amazon.ebook": ["azw"],
+    "application/vnd.americandynamics.acc": ["acc"],
+    "application/vnd.amiga.ami": ["ami"],
+    "application/vnd.android.package-archive": ["apk"],
+    "application/vnd.anser-web-certificate-issue-initiation": ["cii"],
+    "application/vnd.anser-web-funds-transfer-initiation": ["fti"],
+    "application/vnd.antix.game-component": ["atx"],
+    "application/vnd.apple.installer+xml": ["mpkg"],
+    "application/vnd.apple.keynote": ["key"],
+    "application/vnd.apple.mpegurl": ["m3u8"],
+    "application/vnd.apple.numbers": ["numbers"],
+    "application/vnd.apple.pages": ["pages"],
+    "application/vnd.apple.pkpass": ["pkpass"],
+    "application/vnd.aristanetworks.swi": ["swi"],
+    "application/vnd.astraea-software.iota": ["iota"],
+    "application/vnd.audiograph": ["aep"],
+    "application/vnd.autodesk.fbx": ["fbx"],
+    "application/vnd.balsamiq.bmml+xml": ["bmml"],
+    "application/vnd.blueice.multipass": ["mpm"],
+    "application/vnd.bmi": ["bmi"],
+    "application/vnd.businessobjects": ["rep"],
+    "application/vnd.chemdraw+xml": ["cdxml"],
+    "application/vnd.chipnuts.karaoke-mmd": ["mmd"],
+    "application/vnd.cinderella": ["cdy"],
+    "application/vnd.citationstyles.style+xml": ["csl"],
+    "application/vnd.claymore": ["cla"],
+    "application/vnd.cloanto.rp9": ["rp9"],
+    "application/vnd.clonk.c4group": ["c4g", "c4d", "c4f", "c4p", "c4u"],
+    "application/vnd.cluetrust.cartomobile-config": ["c11amc"],
+    "application/vnd.cluetrust.cartomobile-config-pkg": ["c11amz"],
+    "application/vnd.commonspace": ["csp"],
+    "application/vnd.contact.cmsg": ["cdbcmsg"],
+    "application/vnd.cosmocaller": ["cmc"],
+    "application/vnd.crick.clicker": ["clkx"],
+    "application/vnd.crick.clicker.keyboard": ["clkk"],
+    "application/vnd.crick.clicker.palette": ["clkp"],
+    "application/vnd.crick.clicker.template": ["clkt"],
+    "application/vnd.crick.clicker.wordbank": ["clkw"],
+    "application/vnd.criticaltools.wbs+xml": ["wbs"],
+    "application/vnd.ctc-posml": ["pml"],
+    "application/vnd.cups-ppd": ["ppd"],
+    "application/vnd.curl.car": ["car"],
+    "application/vnd.curl.pcurl": ["pcurl"],
+    "application/vnd.dart": ["dart"],
+    "application/vnd.data-vision.rdz": ["rdz"],
+    "application/vnd.dbf": ["dbf"],
+    "application/vnd.dcmp+xml": ["dcmp"],
+    "application/vnd.dece.data": ["uvf", "uvvf", "uvd", "uvvd"],
+    "application/vnd.dece.ttml+xml": ["uvt", "uvvt"],
+    "application/vnd.dece.unspecified": ["uvx", "uvvx"],
+    "application/vnd.dece.zip": ["uvz", "uvvz"],
+    "application/vnd.denovo.fcselayout-link": ["fe_launch"],
+    "application/vnd.dna": ["dna"],
+    "application/vnd.dolby.mlp": ["mlp"],
+    "application/vnd.dpgraph": ["dpg"],
+    "application/vnd.dreamfactory": ["dfac"],
+    "application/vnd.ds-keypoint": ["kpxx"],
+    "application/vnd.dvb.ait": ["ait"],
+    "application/vnd.dvb.service": ["svc"],
+    "application/vnd.dynageo": ["geo"],
+    "application/vnd.ecowin.chart": ["mag"],
+    "application/vnd.enliven": ["nml"],
+    "application/vnd.epson.esf": ["esf"],
+    "application/vnd.epson.msf": ["msf"],
+    "application/vnd.epson.quickanime": ["qam"],
+    "application/vnd.epson.salt": ["slt"],
+    "application/vnd.epson.ssf": ["ssf"],
+    "application/vnd.eszigno3+xml": ["es3", "et3"],
+    "application/vnd.ezpix-album": ["ez2"],
+    "application/vnd.ezpix-package": ["ez3"],
+    "application/vnd.fdf": ["fdf"],
+    "application/vnd.fdsn.mseed": ["mseed"],
+    "application/vnd.fdsn.seed": ["seed", "dataless"],
+    "application/vnd.flographit": ["gph"],
+    "application/vnd.fluxtime.clip": ["ftc"],
+    "application/vnd.framemaker": ["fm", "frame", "maker", "book"],
+    "application/vnd.frogans.fnc": ["fnc"],
+    "application/vnd.frogans.ltf": ["ltf"],
+    "application/vnd.fsc.weblaunch": ["fsc"],
+    "application/vnd.fujitsu.oasys": ["oas"],
+    "application/vnd.fujitsu.oasys2": ["oa2"],
+    "application/vnd.fujitsu.oasys3": ["oa3"],
+    "application/vnd.fujitsu.oasysgp": ["fg5"],
+    "application/vnd.fujitsu.oasysprs": ["bh2"],
+    "application/vnd.fujixerox.ddd": ["ddd"],
+    "application/vnd.fujixerox.docuworks": ["xdw"],
+    "application/vnd.fujixerox.docuworks.binder": ["xbd"],
+    "application/vnd.fuzzysheet": ["fzs"],
+    "application/vnd.genomatix.tuxedo": ["txd"],
+    "application/vnd.geogebra.file": ["ggb"],
+    "application/vnd.geogebra.slides": ["ggs"],
+    "application/vnd.geogebra.tool": ["ggt"],
+    "application/vnd.geometry-explorer": ["gex", "gre"],
+    "application/vnd.geonext": ["gxt"],
+    "application/vnd.geoplan": ["g2w"],
+    "application/vnd.geospace": ["g3w"],
+    "application/vnd.gmx": ["gmx"],
+    "application/vnd.google-apps.document": ["gdoc"],
+    "application/vnd.google-apps.drawing": ["gdraw"],
+    "application/vnd.google-apps.form": ["gform"],
+    "application/vnd.google-apps.jam": ["gjam"],
+    "application/vnd.google-apps.map": ["gmap"],
+    "application/vnd.google-apps.presentation": ["gslides"],
+    "application/vnd.google-apps.script": ["gscript"],
+    "application/vnd.google-apps.site": ["gsite"],
+    "application/vnd.google-apps.spreadsheet": ["gsheet"],
+    "application/vnd.google-earth.kml+xml": ["kml"],
+    "application/vnd.google-earth.kmz": ["kmz"],
+    "application/vnd.gov.sk.xmldatacontainer+xml": ["xdcf"],
+    "application/vnd.grafeq": ["gqf", "gqs"],
+    "application/vnd.groove-account": ["gac"],
+    "application/vnd.groove-help": ["ghf"],
+    "application/vnd.groove-identity-message": ["gim"],
+    "application/vnd.groove-injector": ["grv"],
+    "application/vnd.groove-tool-message": ["gtm"],
+    "application/vnd.groove-tool-template": ["tpl"],
+    "application/vnd.groove-vcard": ["vcg"],
+    "application/vnd.hal+xml": ["hal"],
+    "application/vnd.handheld-entertainment+xml": ["zmm"],
+    "application/vnd.hbci": ["hbci"],
+    "application/vnd.hhe.lesson-player": ["les"],
+    "application/vnd.hp-hpgl": ["hpgl"],
+    "application/vnd.hp-hpid": ["hpid"],
+    "application/vnd.hp-hps": ["hps"],
+    "application/vnd.hp-jlyt": ["jlt"],
+    "application/vnd.hp-pcl": ["pcl"],
+    "application/vnd.hp-pclxl": ["pclxl"],
+    "application/vnd.hydrostatix.sof-data": ["sfd-hdstx"],
+    "application/vnd.ibm.minipay": ["mpy"],
+    "application/vnd.ibm.modcap": ["afp", "listafp", "list3820"],
+    "application/vnd.ibm.rights-management": ["irm"],
+    "application/vnd.ibm.secure-container": ["sc"],
+    "application/vnd.iccprofile": ["icc", "icm"],
+    "application/vnd.igloader": ["igl"],
+    "application/vnd.immervision-ivp": ["ivp"],
+    "application/vnd.immervision-ivu": ["ivu"],
+    "application/vnd.insors.igm": ["igm"],
+    "application/vnd.intercon.formnet": ["xpw", "xpx"],
+    "application/vnd.intergeo": ["i2g"],
+    "application/vnd.intu.qbo": ["qbo"],
+    "application/vnd.intu.qfx": ["qfx"],
+    "application/vnd.ipunplugged.rcprofile": ["rcprofile"],
+    "application/vnd.irepository.package+xml": ["irp"],
+    "application/vnd.is-xpr": ["xpr"],
+    "application/vnd.isac.fcs": ["fcs"],
+    "application/vnd.jam": ["jam"],
+    "application/vnd.jcp.javame.midlet-rms": ["rms"],
+    "application/vnd.jisp": ["jisp"],
+    "application/vnd.joost.joda-archive": ["joda"],
+    "application/vnd.kahootz": ["ktz", "ktr"],
+    "application/vnd.kde.karbon": ["karbon"],
+    "application/vnd.kde.kchart": ["chrt"],
+    "application/vnd.kde.kformula": ["kfo"],
+    "application/vnd.kde.kivio": ["flw"],
+    "application/vnd.kde.kontour": ["kon"],
+    "application/vnd.kde.kpresenter": ["kpr", "kpt"],
+    "application/vnd.kde.kspread": ["ksp"],
+    "application/vnd.kde.kword": ["kwd", "kwt"],
+    "application/vnd.kenameaapp": ["htke"],
+    "application/vnd.kidspiration": ["kia"],
+    "application/vnd.kinar": ["kne", "knp"],
+    "application/vnd.koan": ["skp", "skd", "skt", "skm"],
+    "application/vnd.kodak-descriptor": ["sse"],
+    "application/vnd.las.las+xml": ["lasxml"],
+    "application/vnd.llamagraphics.life-balance.desktop": ["lbd"],
+    "application/vnd.llamagraphics.life-balance.exchange+xml": ["lbe"],
+    "application/vnd.lotus-1-2-3": ["123"],
+    "application/vnd.lotus-approach": ["apr"],
+    "application/vnd.lotus-freelance": ["pre"],
+    "application/vnd.lotus-notes": ["nsf"],
+    "application/vnd.lotus-organizer": ["org"],
+    "application/vnd.lotus-screencam": ["scm"],
+    "application/vnd.lotus-wordpro": ["lwp"],
+    "application/vnd.macports.portpkg": ["portpkg"],
+    "application/vnd.mapbox-vector-tile": ["mvt"],
+    "application/vnd.mcd": ["mcd"],
+    "application/vnd.medcalcdata": ["mc1"],
+    "application/vnd.mediastation.cdkey": ["cdkey"],
+    "application/vnd.mfer": ["mwf"],
+    "application/vnd.mfmp": ["mfm"],
+    "application/vnd.micrografx.flo": ["flo"],
+    "application/vnd.micrografx.igx": ["igx"],
+    "application/vnd.mif": ["mif"],
+    "application/vnd.mobius.daf": ["daf"],
+    "application/vnd.mobius.dis": ["dis"],
+    "application/vnd.mobius.mbk": ["mbk"],
+    "application/vnd.mobius.mqy": ["mqy"],
+    "application/vnd.mobius.msl": ["msl"],
+    "application/vnd.mobius.plc": ["plc"],
+    "application/vnd.mobius.txf": ["txf"],
+    "application/vnd.mophun.application": ["mpn"],
+    "application/vnd.mophun.certificate": ["mpc"],
+    "application/vnd.mozilla.xul+xml": ["xul"],
+    "application/vnd.ms-artgalry": ["cil"],
+    "application/vnd.ms-cab-compressed": ["cab"],
+    "application/vnd.ms-excel": ["xls", "xlm", "xla", "xlc", "xlt", "xlw"],
+    "application/vnd.ms-excel.addin.macroenabled.12": ["xlam"],
+    "application/vnd.ms-excel.sheet.binary.macroenabled.12": ["xlsb"],
+    "application/vnd.ms-excel.sheet.macroenabled.12": ["xlsm"],
+    "application/vnd.ms-excel.template.macroenabled.12": ["xltm"],
+    "application/vnd.ms-fontobject": ["eot"],
+    "application/vnd.ms-htmlhelp": ["chm"],
+    "application/vnd.ms-ims": ["ims"],
+    "application/vnd.ms-lrm": ["lrm"],
+    "application/vnd.ms-officetheme": ["thmx"],
+    "application/vnd.ms-outlook": ["msg"],
+    "application/vnd.ms-pki.seccat": ["cat"],
+    "application/vnd.ms-pki.stl": ["stl"],
+    "application/vnd.ms-powerpoint": ["ppt", "pps", "pot"],
+    "application/vnd.ms-powerpoint.addin.macroenabled.12": ["ppam"],
+    "application/vnd.ms-powerpoint.presentation.macroenabled.12": ["pptm"],
+    "application/vnd.ms-powerpoint.slide.macroenabled.12": ["sldm"],
+    "application/vnd.ms-powerpoint.slideshow.macroenabled.12": ["ppsm"],
+    "application/vnd.ms-powerpoint.template.macroenabled.12": ["potm"],
+    "application/vnd.ms-project": ["mpp", "mpt"],
+    "application/vnd.ms-visio.viewer": ["vdx"],
+    "application/vnd.ms-word.document.macroenabled.12": ["docm"],
+    "application/vnd.ms-word.template.macroenabled.12": ["dotm"],
+    "application/vnd.ms-works": ["wps", "wks", "wcm", "wdb"],
+    "application/vnd.ms-wpl": ["wpl"],
+    "application/vnd.ms-xpsdocument": ["xps"],
+    "application/vnd.mseq": ["mseq"],
+    "application/vnd.musician": ["mus"],
+    "application/vnd.muvee.style": ["msty"],
+    "application/vnd.mynfc": ["taglet"],
+    "application/vnd.nato.bindingdataobject+xml": ["bdo"],
+    "application/vnd.neurolanguage.nlu": ["nlu"],
+    "application/vnd.nitf": ["ntf", "nitf"],
+    "application/vnd.noblenet-directory": ["nnd"],
+    "application/vnd.noblenet-sealer": ["nns"],
+    "application/vnd.noblenet-web": ["nnw"],
+    "application/vnd.nokia.n-gage.ac+xml": ["ac"],
+    "application/vnd.nokia.n-gage.data": ["ngdat"],
+    "application/vnd.nokia.n-gage.symbian.install": ["n-gage"],
+    "application/vnd.nokia.radio-preset": ["rpst"],
+    "application/vnd.nokia.radio-presets": ["rpss"],
+    "application/vnd.novadigm.edm": ["edm"],
+    "application/vnd.novadigm.edx": ["edx"],
+    "application/vnd.novadigm.ext": ["ext"],
+    "application/vnd.oasis.opendocument.chart": ["odc"],
+    "application/vnd.oasis.opendocument.chart-template": ["otc"],
+    "application/vnd.oasis.opendocument.database": ["odb"],
+    "application/vnd.oasis.opendocument.formula": ["odf"],
+    "application/vnd.oasis.opendocument.formula-template": ["odft"],
+    "application/vnd.oasis.opendocument.graphics": ["odg"],
+    "application/vnd.oasis.opendocument.graphics-template": ["otg"],
+    "application/vnd.oasis.opendocument.image": ["odi"],
+    "application/vnd.oasis.opendocument.image-template": ["oti"],
+    "application/vnd.oasis.opendocument.presentation": ["odp"],
+    "application/vnd.oasis.opendocument.presentation-template": ["otp"],
+    "application/vnd.oasis.opendocument.spreadsheet": ["ods"],
+    "application/vnd.oasis.opendocument.spreadsheet-template": ["ots"],
+    "application/vnd.oasis.opendocument.text": ["odt"],
+    "application/vnd.oasis.opendocument.text-master": ["odm"],
+    "application/vnd.oasis.opendocument.text-template": ["ott"],
+    "application/vnd.oasis.opendocument.text-web": ["oth"],
+    "application/vnd.olpc-sugar": ["xo"],
+    "application/vnd.oma.dd2+xml": ["dd2"],
+    "application/vnd.openblox.game+xml": ["obgx"],
+    "application/vnd.openofficeorg.extension": ["oxt"],
+    "application/vnd.openstreetmap.data+xml": ["osm"],
+    "application/vnd.openxmlformats-officedocument.presentationml.presentation": ["pptx"],
+    "application/vnd.openxmlformats-officedocument.presentationml.slide": ["sldx"],
+    "application/vnd.openxmlformats-officedocument.presentationml.slideshow": ["ppsx"],
+    "application/vnd.openxmlformats-officedocument.presentationml.template": ["potx"],
+    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": ["xlsx"],
+    "application/vnd.openxmlformats-officedocument.spreadsheetml.template": ["xltx"],
+    "application/vnd.openxmlformats-officedocument.wordprocessingml.document": ["docx"],
+    "application/vnd.openxmlformats-officedocument.wordprocessingml.template": ["dotx"],
+    "application/vnd.osgeo.mapguide.package": ["mgp"],
+    "application/vnd.osgi.dp": ["dp"],
+    "application/vnd.osgi.subsystem": ["esa"],
+    "application/vnd.palm": ["pdb", "pqa", "oprc"],
+    "application/vnd.pawaafile": ["paw"],
+    "application/vnd.pg.format": ["str"],
+    "application/vnd.pg.osasli": ["ei6"],
+    "application/vnd.picsel": ["efif"],
+    "application/vnd.pmi.widget": ["wg"],
+    "application/vnd.pocketlearn": ["plf"],
+    "application/vnd.powerbuilder6": ["pbd"],
+    "application/vnd.previewsystems.box": ["box"],
+    "application/vnd.procrate.brushset": ["brushset"],
+    "application/vnd.procreate.brush": ["brush"],
+    "application/vnd.procreate.dream": ["drm"],
+    "application/vnd.proteus.magazine": ["mgz"],
+    "application/vnd.publishare-delta-tree": ["qps"],
+    "application/vnd.pvi.ptid1": ["ptid"],
+    "application/vnd.pwg-xhtml-print+xml": ["xhtm"],
+    "application/vnd.quark.quarkxpress": ["qxd", "qxt", "qwd", "qwt", "qxl", "qxb"],
+    "application/vnd.rar": ["rar"],
+    "application/vnd.realvnc.bed": ["bed"],
+    "application/vnd.recordare.musicxml": ["mxl"],
+    "application/vnd.recordare.musicxml+xml": ["musicxml"],
+    "application/vnd.rig.cryptonote": ["cryptonote"],
+    "application/vnd.rim.cod": ["cod"],
+    "application/vnd.rn-realmedia": ["rm"],
+    "application/vnd.rn-realmedia-vbr": ["rmvb"],
+    "application/vnd.route66.link66+xml": ["link66"],
+    "application/vnd.sailingtracker.track": ["st"],
+    "application/vnd.seemail": ["see"],
+    "application/vnd.sema": ["sema"],
+    "application/vnd.semd": ["semd"],
+    "application/vnd.semf": ["semf"],
+    "application/vnd.shana.informed.formdata": ["ifm"],
+    "application/vnd.shana.informed.formtemplate": ["itp"],
+    "application/vnd.shana.informed.interchange": ["iif"],
+    "application/vnd.shana.informed.package": ["ipk"],
+    "application/vnd.simtech-mindmapper": ["twd", "twds"],
+    "application/vnd.smaf": ["mmf"],
+    "application/vnd.smart.teacher": ["teacher"],
+    "application/vnd.software602.filler.form+xml": ["fo"],
+    "application/vnd.solent.sdkm+xml": ["sdkm", "sdkd"],
+    "application/vnd.spotfire.dxp": ["dxp"],
+    "application/vnd.spotfire.sfs": ["sfs"],
+    "application/vnd.stardivision.calc": ["sdc"],
+    "application/vnd.stardivision.draw": ["sda"],
+    "application/vnd.stardivision.impress": ["sdd"],
+    "application/vnd.stardivision.math": ["smf"],
+    "application/vnd.stardivision.writer": ["sdw", "vor"],
+    "application/vnd.stardivision.writer-global": ["sgl"],
+    "application/vnd.stepmania.package": ["smzip"],
+    "application/vnd.stepmania.stepchart": ["sm"],
+    "application/vnd.sun.wadl+xml": ["wadl"],
+    "application/vnd.sun.xml.calc": ["sxc"],
+    "application/vnd.sun.xml.calc.template": ["stc"],
+    "application/vnd.sun.xml.draw": ["sxd"],
+    "application/vnd.sun.xml.draw.template": ["std"],
+    "application/vnd.sun.xml.impress": ["sxi"],
+    "application/vnd.sun.xml.impress.template": ["sti"],
+    "application/vnd.sun.xml.math": ["sxm"],
+    "application/vnd.sun.xml.writer": ["sxw"],
+    "application/vnd.sun.xml.writer.global": ["sxg"],
+    "application/vnd.sun.xml.writer.template": ["stw"],
+    "application/vnd.sus-calendar": ["sus", "susp"],
+    "application/vnd.svd": ["svd"],
+    "application/vnd.symbian.install": ["sis", "sisx"],
+    "application/vnd.syncml+xml": ["xsm"],
+    "application/vnd.syncml.dm+wbxml": ["bdm"],
+    "application/vnd.syncml.dm+xml": ["xdm"],
+    "application/vnd.syncml.dmddf+xml": ["ddf"],
+    "application/vnd.tao.intent-module-archive": ["tao"],
+    "application/vnd.tcpdump.pcap": ["pcap", "cap", "dmp"],
+    "application/vnd.tmobile-livetv": ["tmo"],
+    "application/vnd.trid.tpt": ["tpt"],
+    "application/vnd.triscape.mxs": ["mxs"],
+    "application/vnd.trueapp": ["tra"],
+    "application/vnd.ufdl": ["ufd", "ufdl"],
+    "application/vnd.uiq.theme": ["utz"],
+    "application/vnd.umajin": ["umj"],
+    "application/vnd.unity": ["unityweb"],
+    "application/vnd.uoml+xml": ["uoml", "uo"],
+    "application/vnd.vcx": ["vcx"],
+    "application/vnd.visio": ["vsd", "vst", "vss", "vsw", "vsdx", "vtx"],
+    "application/vnd.visionary": ["vis"],
+    "application/vnd.vsf": ["vsf"],
+    "application/vnd.wap.wbxml": ["wbxml"],
+    "application/vnd.wap.wmlc": ["wmlc"],
+    "application/vnd.wap.wmlscriptc": ["wmlsc"],
+    "application/vnd.webturbo": ["wtb"],
+    "application/vnd.wolfram.player": ["nbp"],
+    "application/vnd.wordperfect": ["wpd"],
+    "application/vnd.wqd": ["wqd"],
+    "application/vnd.wt.stf": ["stf"],
+    "application/vnd.xara": ["xar"],
+    "application/vnd.xfdl": ["xfdl"],
+    "application/vnd.yamaha.hv-dic": ["hvd"],
+    "application/vnd.yamaha.hv-script": ["hvs"],
+    "application/vnd.yamaha.hv-voice": ["hvp"],
+    "application/vnd.yamaha.openscoreformat": ["osf"],
+    "application/vnd.yamaha.openscoreformat.osfpvg+xml": ["osfpvg"],
+    "application/vnd.yamaha.smaf-audio": ["saf"],
+    "application/vnd.yamaha.smaf-phrase": ["spf"],
+    "application/vnd.yellowriver-custom-menu": ["cmp"],
+    "application/vnd.zul": ["zir", "zirz"],
+    "application/vnd.zzazz.deck+xml": ["zaz"],
+    "application/voicexml+xml": ["vxml"],
+    "application/wasm": ["wasm"],
+    "application/watcherinfo+xml": ["wif"],
+    "application/widget": ["wgt"],
+    "application/winhlp": ["hlp"],
+    "application/wsdl+xml": ["wsdl"],
+    "application/wspolicy+xml": ["wspolicy"],
+    "application/x-7z-compressed": ["7z"],
+    "application/x-abiword": ["abw"],
+    "application/x-ace-compressed": ["ace"],
+    "application/x-apple-diskimage": ["dmg"],
+    "application/x-arj": ["arj"],
+    "application/x-authorware-bin": ["aab", "x32", "u32", "vox"],
+    "application/x-authorware-map": ["aam"],
+    "application/x-authorware-seg": ["aas"],
+    "application/x-bcpio": ["bcpio"],
+    "application/x-bdoc": ["bdoc"],
+    "application/x-bittorrent": ["torrent"],
+    "application/x-blender": ["blend"],
+    "application/x-blorb": ["blb", "blorb"],
+    "application/x-bzip": ["bz"],
+    "application/x-bzip2": ["bz2", "boz"],
+    "application/x-cbr": ["cbr", "cba", "cbt", "cbz", "cb7"],
+    "application/x-cdlink": ["vcd"],
+    "application/x-cfs-compressed": ["cfs"],
+    "application/x-chat": ["chat"],
+    "application/x-chess-pgn": ["pgn"],
+    "application/x-chrome-extension": ["crx"],
+    "application/x-cocoa": ["cco"],
+    "application/x-compressed": ["rar"],
+    "application/x-conference": ["nsc"],
+    "application/x-cpio": ["cpio"],
+    "application/x-csh": ["csh"],
+    "application/x-debian-package": ["deb", "udeb"],
+    "application/x-dgc-compressed": ["dgc"],
+    "application/x-director": ["dir", "dcr", "dxr", "cst", "cct", "cxt", "w3d", "fgd", "swa"],
+    "application/x-doom": ["wad"],
+    "application/x-dtbncx+xml": ["ncx"],
+    "application/x-dtbook+xml": ["dtb"],
+    "application/x-dtbresource+xml": ["res"],
+    "application/x-dvi": ["dvi"],
+    "application/x-envoy": ["evy"],
+    "application/x-eva": ["eva"],
+    "application/x-font-bdf": ["bdf"],
+    "application/x-font-ghostscript": ["gsf"],
+    "application/x-font-linux-psf": ["psf"],
+    "application/x-font-pcf": ["pcf"],
+    "application/x-font-snf": ["snf"],
+    "application/x-font-type1": ["pfa", "pfb", "pfm", "afm"],
+    "application/x-freearc": ["arc"],
+    "application/x-futuresplash": ["spl"],
+    "application/x-gca-compressed": ["gca"],
+    "application/x-glulx": ["ulx"],
+    "application/x-gnumeric": ["gnumeric"],
+    "application/x-gramps-xml": ["gramps"],
+    "application/x-gtar": ["gtar"],
+    "application/x-hdf": ["hdf"],
+    "application/x-httpd-php": ["php"],
+    "application/x-install-instructions": ["install"],
+    "application/x-ipynb+json": ["ipynb"],
+    "application/x-iso9660-image": ["iso"],
+    "application/x-iwork-keynote-sffkey": ["key"],
+    "application/x-iwork-numbers-sffnumbers": ["numbers"],
+    "application/x-iwork-pages-sffpages": ["pages"],
+    "application/x-java-archive-diff": ["jardiff"],
+    "application/x-java-jnlp-file": ["jnlp"],
+    "application/x-keepass2": ["kdbx"],
+    "application/x-latex": ["latex"],
+    "application/x-lua-bytecode": ["luac"],
+    "application/x-lzh-compressed": ["lzh", "lha"],
+    "application/x-makeself": ["run"],
+    "application/x-mie": ["mie"],
+    "application/x-mobipocket-ebook": ["prc", "mobi"],
+    "application/x-ms-application": ["application"],
+    "application/x-ms-shortcut": ["lnk"],
+    "application/x-ms-wmd": ["wmd"],
+    "application/x-ms-wmz": ["wmz"],
+    "application/x-ms-xbap": ["xbap"],
+    "application/x-msaccess": ["mdb"],
+    "application/x-msbinder": ["obd"],
+    "application/x-mscardfile": ["crd"],
+    "application/x-msclip": ["clp"],
+    "application/x-msdos-program": ["exe"],
+    "application/x-msdownload": ["exe", "dll", "com", "bat", "msi"],
+    "application/x-msmediaview": ["mvb", "m13", "m14"],
+    "application/x-msmetafile": ["wmf", "wmz", "emf", "emz"],
+    "application/x-msmoney": ["mny"],
+    "application/x-mspublisher": ["pub"],
+    "application/x-msschedule": ["scd"],
+    "application/x-msterminal": ["trm"],
+    "application/x-mswrite": ["wri"],
+    "application/x-netcdf": ["nc", "cdf"],
+    "application/x-ns-proxy-autoconfig": ["pac"],
+    "application/x-nzb": ["nzb"],
+    "application/x-perl": ["pl", "pm"],
+    "application/x-pilot": ["prc", "pdb"],
+    "application/x-pkcs12": ["p12", "pfx"],
+    "application/x-pkcs7-certificates": ["p7b", "spc"],
+    "application/x-pkcs7-certreqresp": ["p7r"],
+    "application/x-rar-compressed": ["rar"],
+    "application/x-redhat-package-manager": ["rpm"],
+    "application/x-research-info-systems": ["ris"],
+    "application/x-sea": ["sea"],
+    "application/x-sh": ["sh"],
+    "application/x-shar": ["shar"],
+    "application/x-shockwave-flash": ["swf"],
+    "application/x-silverlight-app": ["xap"],
+    "application/x-sql": ["sql"],
+    "application/x-stuffit": ["sit"],
+    "application/x-stuffitx": ["sitx"],
+    "application/x-subrip": ["srt"],
+    "application/x-sv4cpio": ["sv4cpio"],
+    "application/x-sv4crc": ["sv4crc"],
+    "application/x-t3vm-image": ["t3"],
+    "application/x-tads": ["gam"],
+    "application/x-tar": ["tar"],
+    "application/x-tcl": ["tcl", "tk"],
+    "application/x-tex": ["tex"],
+    "application/x-tex-tfm": ["tfm"],
+    "application/x-texinfo": ["texinfo", "texi"],
+    "application/x-tgif": ["obj"],
+    "application/x-ustar": ["ustar"],
+    "application/x-virtualbox-hdd": ["hdd"],
+    "application/x-virtualbox-ova": ["ova"],
+    "application/x-virtualbox-ovf": ["ovf"],
+    "application/x-virtualbox-vbox": ["vbox"],
+    "application/x-virtualbox-vbox-extpack": ["vbox-extpack"],
+    "application/x-virtualbox-vdi": ["vdi"],
+    "application/x-virtualbox-vhd": ["vhd"],
+    "application/x-virtualbox-vmdk": ["vmdk"],
+    "application/x-wais-source": ["src"],
+    "application/x-web-app-manifest+json": ["webapp"],
+    "application/x-x509-ca-cert": ["der", "crt", "pem"],
+    "application/x-xfig": ["fig"],
+    "application/x-xliff+xml": ["xlf"],
+    "application/x-xpinstall": ["xpi"],
+    "application/x-xz": ["xz"],
+    "application/x-zip-compressed": ["zip"],
+    "application/x-zmachine": ["z1", "z2", "z3", "z4", "z5", "z6", "z7", "z8"],
+    "application/xaml+xml": ["xaml"],
+    "application/xcap-att+xml": ["xav"],
+    "application/xcap-caps+xml": ["xca"],
+    "application/xcap-diff+xml": ["xdf"],
+    "application/xcap-el+xml": ["xel"],
+    "application/xcap-ns+xml": ["xns"],
+    "application/xenc+xml": ["xenc"],
+    "application/xfdf": ["xfdf"],
+    "application/xhtml+xml": ["xhtml", "xht"],
+    "application/xliff+xml": ["xlf"],
+    "application/xml": ["xml", "xsl", "xsd", "rng"],
+    "application/xml-dtd": ["dtd"],
+    "application/xop+xml": ["xop"],
+    "application/xproc+xml": ["xpl"],
+    "application/xslt+xml": ["xsl", "xslt"],
+    "application/xspf+xml": ["xspf"],
+    "application/xv+xml": ["mxml", "xhvml", "xvml", "xvm"],
+    "application/yang": ["yang"],
+    "application/yin+xml": ["yin"],
+    "application/zip": ["zip"],
+    "application/zip+dotlottie": ["lottie"],
+    "audio/3gpp": ["3gpp"],
+    "audio/aac": ["adts", "aac"],
+    "audio/adpcm": ["adp"],
+    "audio/amr": ["amr"],
+    "audio/basic": ["au", "snd"],
+    "audio/midi": ["mid", "midi", "kar", "rmi"],
+    "audio/mobile-xmf": ["mxmf"],
+    "audio/mp3": ["mp3"],
+    "audio/mp4": ["m4a", "mp4a", "m4b"],
+    "audio/mpeg": ["mpga", "mp2", "mp2a", "mp3", "m2a", "m3a"],
+    "audio/ogg": ["oga", "ogg", "spx", "opus"],
+    "audio/s3m": ["s3m"],
+    "audio/silk": ["sil"],
+    "audio/vnd.dece.audio": ["uva", "uvva"],
+    "audio/vnd.digital-winds": ["eol"],
+    "audio/vnd.dra": ["dra"],
+    "audio/vnd.dts": ["dts"],
+    "audio/vnd.dts.hd": ["dtshd"],
+    "audio/vnd.lucent.voice": ["lvp"],
+    "audio/vnd.ms-playready.media.pya": ["pya"],
+    "audio/vnd.nuera.ecelp4800": ["ecelp4800"],
+    "audio/vnd.nuera.ecelp7470": ["ecelp7470"],
+    "audio/vnd.nuera.ecelp9600": ["ecelp9600"],
+    "audio/vnd.rip": ["rip"],
+    "audio/wav": ["wav"],
+    "audio/wave": ["wav"],
+    "audio/webm": ["weba"],
+    "audio/x-aac": ["aac"],
+    "audio/x-aiff": ["aif", "aiff", "aifc"],
+    "audio/x-caf": ["caf"],
+    "audio/x-flac": ["flac"],
+    "audio/x-m4a": ["m4a"],
+    "audio/x-matroska": ["mka"],
+    "audio/x-mpegurl": ["m3u"],
+    "audio/x-ms-wax": ["wax"],
+    "audio/x-ms-wma": ["wma"],
+    "audio/x-pn-realaudio": ["ram", "ra"],
+    "audio/x-pn-realaudio-plugin": ["rmp"],
+    "audio/x-realaudio": ["ra"],
+    "audio/x-wav": ["wav"],
+    "audio/xm": ["xm"],
+    "chemical/x-cdx": ["cdx"],
+    "chemical/x-cif": ["cif"],
+    "chemical/x-cmdf": ["cmdf"],
+    "chemical/x-cml": ["cml"],
+    "chemical/x-csml": ["csml"],
+    "chemical/x-xyz": ["xyz"],
+    "font/collection": ["ttc"],
+    "font/otf": ["otf"],
+    "font/ttf": ["ttf"],
+    "font/woff": ["woff"],
+    "font/woff2": ["woff2"],
+    "image/aces": ["exr"],
+    "image/apng": ["apng"],
+    "image/avci": ["avci"],
+    "image/avcs": ["avcs"],
+    "image/avif": ["avif"],
+    "image/bmp": ["bmp", "dib"],
+    "image/cgm": ["cgm"],
+    "image/dicom-rle": ["drle"],
+    "image/dpx": ["dpx"],
+    "image/emf": ["emf"],
+    "image/fits": ["fits"],
+    "image/g3fax": ["g3"],
+    "image/gif": ["gif"],
+    "image/heic": ["heic"],
+    "image/heic-sequence": ["heics"],
+    "image/heif": ["heif"],
+    "image/heif-sequence": ["heifs"],
+    "image/hej2k": ["hej2"],
+    "image/ief": ["ief"],
+    "image/jaii": ["jaii"],
+    "image/jais": ["jais"],
+    "image/jls": ["jls"],
+    "image/jp2": ["jp2", "jpg2"],
+    "image/jpeg": ["jpg", "jpeg", "jpe"],
+    "image/jph": ["jph"],
+    "image/jphc": ["jhc"],
+    "image/jpm": ["jpm", "jpgm"],
+    "image/jpx": ["jpx", "jpf"],
+    "image/jxl": ["jxl"],
+    "image/jxr": ["jxr"],
+    "image/jxra": ["jxra"],
+    "image/jxrs": ["jxrs"],
+    "image/jxs": ["jxs"],
+    "image/jxsc": ["jxsc"],
+    "image/jxsi": ["jxsi"],
+    "image/jxss": ["jxss"],
+    "image/ktx": ["ktx"],
+    "image/ktx2": ["ktx2"],
+    "image/pjpeg": ["jfif"],
+    "image/png": ["png"],
+    "image/prs.btif": ["btif", "btf"],
+    "image/prs.pti": ["pti"],
+    "image/sgi": ["sgi"],
+    "image/svg+xml": ["svg", "svgz"],
+    "image/t38": ["t38"],
+    "image/tiff": ["tif", "tiff"],
+    "image/tiff-fx": ["tfx"],
+    "image/vnd.adobe.photoshop": ["psd"],
+    "image/vnd.airzip.accelerator.azv": ["azv"],
+    "image/vnd.dece.graphic": ["uvi", "uvvi", "uvg", "uvvg"],
+    "image/vnd.djvu": ["djvu", "djv"],
+    "image/vnd.dvb.subtitle": ["sub"],
+    "image/vnd.dwg": ["dwg"],
+    "image/vnd.dxf": ["dxf"],
+    "image/vnd.fastbidsheet": ["fbs"],
+    "image/vnd.fpx": ["fpx"],
+    "image/vnd.fst": ["fst"],
+    "image/vnd.fujixerox.edmics-mmr": ["mmr"],
+    "image/vnd.fujixerox.edmics-rlc": ["rlc"],
+    "image/vnd.microsoft.icon": ["ico"],
+    "image/vnd.ms-dds": ["dds"],
+    "image/vnd.ms-modi": ["mdi"],
+    "image/vnd.ms-photo": ["wdp"],
+    "image/vnd.net-fpx": ["npx"],
+    "image/vnd.pco.b16": ["b16"],
+    "image/vnd.tencent.tap": ["tap"],
+    "image/vnd.valve.source.texture": ["vtf"],
+    "image/vnd.wap.wbmp": ["wbmp"],
+    "image/vnd.xiff": ["xif"],
+    "image/vnd.zbrush.pcx": ["pcx"],
+    "image/webp": ["webp"],
+    "image/wmf": ["wmf"],
+    "image/x-3ds": ["3ds"],
+    "image/x-adobe-dng": ["dng"],
+    "image/x-cmu-raster": ["ras"],
+    "image/x-cmx": ["cmx"],
+    "image/x-freehand": ["fh", "fhc", "fh4", "fh5", "fh7"],
+    "image/x-icon": ["ico"],
+    "image/x-jng": ["jng"],
+    "image/x-mrsid-image": ["sid"],
+    "image/x-ms-bmp": ["bmp"],
+    "image/x-pcx": ["pcx"],
+    "image/x-pict": ["pic", "pct"],
+    "image/x-portable-anymap": ["pnm"],
+    "image/x-portable-bitmap": ["pbm"],
+    "image/x-portable-graymap": ["pgm"],
+    "image/x-portable-pixmap": ["ppm"],
+    "image/x-rgb": ["rgb"],
+    "image/x-tga": ["tga"],
+    "image/x-xbitmap": ["xbm"],
+    "image/x-xpixmap": ["xpm"],
+    "image/x-xwindowdump": ["xwd"],
+    "message/disposition-notification": ["disposition-notification"],
+    "message/global": ["u8msg"],
+    "message/global-delivery-status": ["u8dsn"],
+    "message/global-disposition-notification": ["u8mdn"],
+    "message/global-headers": ["u8hdr"],
+    "message/rfc822": ["eml", "mime", "mht", "mhtml"],
+    "message/vnd.wfa.wsc": ["wsc"],
+    "model/3mf": ["3mf"],
+    "model/gltf+json": ["gltf"],
+    "model/gltf-binary": ["glb"],
+    "model/iges": ["igs", "iges"],
+    "model/jt": ["jt"],
+    "model/mesh": ["msh", "mesh", "silo"],
+    "model/mtl": ["mtl"],
+    "model/obj": ["obj"],
+    "model/prc": ["prc"],
+    "model/step": ["step", "stp", "stpnc", "p21", "210"],
+    "model/step+xml": ["stpx"],
+    "model/step+zip": ["stpz"],
+    "model/step-xml+zip": ["stpxz"],
+    "model/stl": ["stl"],
+    "model/u3d": ["u3d"],
+    "model/vnd.bary": ["bary"],
+    "model/vnd.cld": ["cld"],
+    "model/vnd.collada+xml": ["dae"],
+    "model/vnd.dwf": ["dwf"],
+    "model/vnd.gdl": ["gdl"],
+    "model/vnd.gtw": ["gtw"],
+    "model/vnd.mts": ["mts"],
+    "model/vnd.opengex": ["ogex"],
+    "model/vnd.parasolid.transmit.binary": ["x_b"],
+    "model/vnd.parasolid.transmit.text": ["x_t"],
+    "model/vnd.pytha.pyox": ["pyo", "pyox"],
+    "model/vnd.sap.vds": ["vds"],
+    "model/vnd.usda": ["usda"],
+    "model/vnd.usdz+zip": ["usdz"],
+    "model/vnd.valve.source.compiled-map": ["bsp"],
+    "model/vnd.vtu": ["vtu"],
+    "model/vrml": ["wrl", "vrml"],
+    "model/x3d+binary": ["x3db", "x3dbz"],
+    "model/x3d+fastinfoset": ["x3db"],
+    "model/x3d+vrml": ["x3dv", "x3dvz"],
+    "model/x3d+xml": ["x3d", "x3dz"],
+    "model/x3d-vrml": ["x3dv"],
+    "text/cache-manifest": ["appcache", "manifest"],
+    "text/calendar": ["ics", "ifb"],
+    "text/coffeescript": ["coffee", "litcoffee"],
+    "text/css": ["css"],
+    "text/csv": ["csv"],
+    "text/html": ["html", "htm", "shtml"],
+    "text/jade": ["jade"],
+    "text/javascript": ["js", "mjs"],
+    "text/jsx": ["jsx"],
+    "text/less": ["less"],
+    "text/markdown": ["md", "markdown"],
+    "text/mathml": ["mml"],
+    "text/mdx": ["mdx"],
+    "text/n3": ["n3"],
+    "text/plain": ["txt", "text", "conf", "def", "list", "log", "in", "ini"],
+    "text/prs.lines.tag": ["dsc"],
+    "text/richtext": ["rtx"],
+    "text/rtf": ["rtf"],
+    "text/sgml": ["sgml", "sgm"],
+    "text/shex": ["shex"],
+    "text/slim": ["slim", "slm"],
+    "text/spdx": ["spdx"],
+    "text/stylus": ["stylus", "styl"],
+    "text/tab-separated-values": ["tsv"],
+    "text/troff": ["t", "tr", "roff", "man", "me", "ms"],
+    "text/turtle": ["ttl"],
+    "text/uri-list": ["uri", "uris", "urls"],
+    "text/vcard": ["vcard"],
+    "text/vnd.curl": ["curl"],
+    "text/vnd.curl.dcurl": ["dcurl"],
+    "text/vnd.curl.mcurl": ["mcurl"],
+    "text/vnd.curl.scurl": ["scurl"],
+    "text/vnd.dvb.subtitle": ["sub"],
+    "text/vnd.familysearch.gedcom": ["ged"],
+    "text/vnd.fly": ["fly"],
+    "text/vnd.fmi.flexstor": ["flx"],
+    "text/vnd.graphviz": ["gv"],
+    "text/vnd.in3d.3dml": ["3dml"],
+    "text/vnd.in3d.spot": ["spot"],
+    "text/vnd.sun.j2me.app-descriptor": ["jad"],
+    "text/vnd.wap.wml": ["wml"],
+    "text/vnd.wap.wmlscript": ["wmls"],
+    "text/vtt": ["vtt"],
+    "text/wgsl": ["wgsl"],
+    "text/x-asm": ["s", "asm"],
+    "text/x-c": ["c", "cc", "cxx", "cpp", "h", "hh", "dic"],
+    "text/x-component": ["htc"],
+    "text/x-fortran": ["f", "for", "f77", "f90"],
+    "text/x-handlebars-template": ["hbs"],
+    "text/x-java-source": ["java"],
+    "text/x-lua": ["lua"],
+    "text/x-markdown": ["mkd"],
+    "text/x-nfo": ["nfo"],
+    "text/x-opml": ["opml"],
+    "text/x-org": ["org"],
+    "text/x-pascal": ["p", "pas"],
+    "text/x-processing": ["pde"],
+    "text/x-sass": ["sass"],
+    "text/x-scss": ["scss"],
+    "text/x-setext": ["etx"],
+    "text/x-sfv": ["sfv"],
+    "text/x-suse-ymp": ["ymp"],
+    "text/x-uuencode": ["uu"],
+    "text/x-vcalendar": ["vcs"],
+    "text/x-vcard": ["vcf"],
+    "text/xml": ["xml"],
+    "text/yaml": ["yaml", "yml"],
+    "video/3gpp": ["3gp", "3gpp"],
+    "video/3gpp2": ["3g2"],
+    "video/h261": ["h261"],
+    "video/h263": ["h263"],
+    "video/h264": ["h264"],
+    "video/iso.segment": ["m4s"],
+    "video/jpeg": ["jpgv"],
+    "video/jpm": ["jpm", "jpgm"],
+    "video/mj2": ["mj2", "mjp2"],
+    "video/mp2t": ["ts", "m2t", "m2ts", "mts"],
+    "video/mp4": ["mp4", "mp4v", "mpg4"],
+    "video/mpeg": ["mpeg", "mpg", "mpe", "m1v", "m2v"],
+    "video/ogg": ["ogv"],
+    "video/quicktime": ["qt", "mov"],
+    "video/vnd.dece.hd": ["uvh", "uvvh"],
+    "video/vnd.dece.mobile": ["uvm", "uvvm"],
+    "video/vnd.dece.pd": ["uvp", "uvvp"],
+    "video/vnd.dece.sd": ["uvs", "uvvs"],
+    "video/vnd.dece.video": ["uvv", "uvvv"],
+    "video/vnd.dvb.file": ["dvb"],
+    "video/vnd.fvt": ["fvt"],
+    "video/vnd.mpegurl": ["mxu", "m4u"],
+    "video/vnd.ms-playready.media.pyv": ["pyv"],
+    "video/vnd.uvvu.mp4": ["uvu", "uvvu"],
+    "video/vnd.vivo": ["viv"],
+    "video/webm": ["webm"],
+    "video/x-f4v": ["f4v"],
+    "video/x-fli": ["fli"],
+    "video/x-flv": ["flv"],
+    "video/x-m4v": ["m4v"],
+    "video/x-matroska": ["mkv", "mk3d", "mks"],
+    "video/x-mng": ["mng"],
+    "video/x-ms-asf": ["asf", "asx"],
+    "video/x-ms-vob": ["vob"],
+    "video/x-ms-wm": ["wm"],
+    "video/x-ms-wmv": ["wmv"],
+    "video/x-ms-wmx": ["wmx"],
+    "video/x-ms-wvx": ["wvx"],
+    "video/x-msvideo": ["avi"],
+    "video/x-sgi-movie": ["movie"],
+    "video/x-smv": ["smv"],
+    "x-conference/x-cooltalk": ["ice"],
+};
+// The charset of the types that have one (text/* are UTF-8 without being here).
+exports.CHARSETS = {
+    "application/3gpdash-qoe-report+xml": "UTF-8",
+    "application/beep+xml": "UTF-8",
+    "application/cda+xml": "UTF-8",
+    "application/elm+json": "UTF-8",
+    "application/emergencycalldata.cap+xml": "UTF-8",
+    "application/fhir+json": "UTF-8",
+    "application/fhir+xml": "UTF-8",
+    "application/hl7v2+xml": "UTF-8",
+    "application/im-iscomposing+xml": "UTF-8",
+    "application/javascript": "UTF-8",
+    "application/json": "UTF-8",
+    "application/manifest+json": "UTF-8",
+    "application/msc-ivr+xml": "UTF-8",
+    "application/msc-mixer+xml": "UTF-8",
+    "application/news-checkgroups": "US-ASCII",
+    "application/news-groupinfo": "US-ASCII",
+    "application/pidf+xml": "UTF-8",
+    "application/pidf-diff+xml": "UTF-8",
+    "application/poc-settings+xml": "UTF-8",
+    "application/prs.cyn": "7-BIT",
+    "application/vnd.fdsn.stationxml+xml": "XML-BASED",
+    "application/vnd.omads-email+xml": "UTF-8",
+    "application/vnd.omads-file+xml": "UTF-8",
+    "application/vnd.omads-folder+xml": "UTF-8",
+    "application/vnd.syncml+xml": "UTF-8",
+    "application/vnd.syncml.dm+wbxml": "UTF-8",
+    "application/vnd.syncml.dm+xml": "UTF-8",
+    "application/vnd.syncml.dmddf+xml": "UTF-8",
+    "application/vnd.syncml.dmtnds+xml": "UTF-8",
+    "application/vnd.wap.wbxml": "UTF-8",
+    "text/css": "UTF-8",
+    "text/javascript": "UTF-8",
+    "text/n3": "UTF-8",
+    "text/parameters": "UTF-8",
+    "text/provenance-notation": "UTF-8",
+    "text/turtle": "UTF-8",
+    "text/vnd.debian.copyright": "UTF-8",
+    "text/vnd.esmertec.theme-descriptor": "UTF-8",
+    "text/vnd.sun.j2me.app-descriptor": "UTF-8",
+    "text/vnd.trolltech.linguist": "UTF-8",
+    "text/vtt": "UTF-8",
+};
+// The types mime-db says are compressible (true) or not (false); the others are by their name (compressible()).
+exports.COMPRESSIBLE = {
+    "application/3gpdash-qoe-report+xml": true,
+    "application/3gpp-ims+xml": true,
+    "application/3gpphal+json": true,
+    "application/3gpphalforms+json": true,
+    "application/ace+json": true,
+    "application/activity+json": true,
+    "application/aif+json": true,
+    "application/alto-cdni+json": true,
+    "application/alto-cdnifilter+json": true,
+    "application/alto-costmap+json": true,
+    "application/alto-costmapfilter+json": true,
+    "application/alto-directory+json": true,
+    "application/alto-endpointcost+json": true,
+    "application/alto-endpointcostparams+json": true,
+    "application/alto-endpointprop+json": true,
+    "application/alto-endpointpropparams+json": true,
+    "application/alto-error+json": true,
+    "application/alto-networkmap+json": true,
+    "application/alto-networkmapfilter+json": true,
+    "application/alto-propmap+json": true,
+    "application/alto-propmapparams+json": true,
+    "application/alto-tips+json": true,
+    "application/alto-tipsparams+json": true,
+    "application/alto-updatestreamcontrol+json": true,
+    "application/alto-updatestreamparams+json": true,
+    "application/appinstaller": false,
+    "application/appx": false,
+    "application/appxbundle": false,
+    "application/atom+xml": true,
+    "application/atomcat+xml": true,
+    "application/atomdeleted+xml": true,
+    "application/atomsvc+xml": true,
+    "application/atsc-dwd+xml": true,
+    "application/atsc-held+xml": true,
+    "application/atsc-rdt+json": true,
+    "application/atsc-rsat+xml": true,
+    "application/auth-policy+xml": true,
+    "application/automationml-aml+xml": true,
+    "application/automationml-amlx+zip": false,
+    "application/bacnet-xdd+zip": false,
+    "application/bdoc": false,
+    "application/beep+xml": true,
+    "application/calendar+json": true,
+    "application/calendar+xml": true,
+    "application/captive+json": true,
+    "application/ccmp+xml": true,
+    "application/ccxml+xml": true,
+    "application/cda+xml": true,
+    "application/cdfx+xml": true,
+    "application/cea-2018+xml": true,
+    "application/cellml+xml": true,
+    "application/city+json": true,
+    "application/clue+xml": true,
+    "application/clue_info+xml": true,
+    "application/cnrp+xml": true,
+    "application/coap-group+json": true,
+    "application/conference-info+xml": true,
+    "application/cpl+xml": true,
+    "application/csta+xml": true,
+    "application/cstadata+xml": true,
+    "application/csvm+json": true,
+    "application/cwl+json": true,
+    "application/dart": true,
+    "application/dash+xml": true,
+    "application/dash-patch+xml": true,
+    "application/davmount+xml": true,
+    "application/dialog-info+xml": true,
+    "application/dicom+json": true,
+    "application/dicom+xml": true,
+    "application/dns+json": true,
+    "application/docbook+xml": true,
+    "application/dskpp+xml": true,
+    "application/dssc+xml": true,
+    "application/eat-bun+json": true,
+    "application/eat-ucs+json": true,
+    "application/ecmascript": true,
+    "application/edi-x12": false,
+    "application/edifact": false,
+    "application/elm+json": true,
+    "application/elm+xml": true,
+    "application/emergencycalldata.cap+xml": true,
+    "application/emergencycalldata.comment+xml": true,
+    "application/emergencycalldata.control+xml": true,
+    "application/emergencycalldata.deviceinfo+xml": true,
+    "application/emergencycalldata.legacyesn+json": true,
+    "application/emergencycalldata.providerinfo+xml": true,
+    "application/emergencycalldata.serviceinfo+xml": true,
+    "application/emergencycalldata.subscriberinfo+xml": true,
+    "application/emergencycalldata.veds+xml": true,
+    "application/emma+xml": true,
+    "application/emotionml+xml": true,
+    "application/epp+xml": true,
+    "application/epub+zip": false,
+    "application/expect-ct-report+json": true,
+    "application/fdt+xml": true,
+    "application/fhir+json": true,
+    "application/fhir+xml": true,
+    "application/fido.trusted-apps+json": true,
+    "application/font-woff": false,
+    "application/framework-attributes+xml": true,
+    "application/geo+json": true,
+    "application/geopose+json": true,
+    "application/geoxacml+json": true,
+    "application/geoxacml+xml": true,
+    "application/gml+xml": true,
+    "application/gpx+xml": true,
+    "application/gzip": false,
+    "application/held+xml": true,
+    "application/hl7v2+xml": true,
+    "application/ibe-key-request+xml": true,
+    "application/ibe-pkg-reply+xml": true,
+    "application/im-iscomposing+xml": true,
+    "application/inkml+xml": true,
+    "application/its+xml": true,
+    "application/java-archive": false,
+    "application/java-serialized-object": false,
+    "application/java-vm": false,
+    "application/javascript": true,
+    "application/jf2feed+json": true,
+    "application/jose+json": true,
+    "application/jrd+json": true,
+    "application/jscalendar+json": true,
+    "application/jscontact+json": true,
+    "application/json": true,
+    "application/json-patch+json": true,
+    "application/jsonml+json": true,
+    "application/jwk+json": true,
+    "application/jwk-set+json": true,
+    "application/kpml-request+xml": true,
+    "application/kpml-response+xml": true,
+    "application/ld+json": true,
+    "application/lgr+xml": true,
+    "application/linkset+json": true,
+    "application/load-control+xml": true,
+    "application/lost+xml": true,
+    "application/lostsync+xml": true,
+    "application/lpf+zip": false,
+    "application/mads+xml": true,
+    "application/manifest+json": true,
+    "application/marcxml+xml": true,
+    "application/mathml+xml": true,
+    "application/mathml-content+xml": true,
+    "application/mathml-presentation+xml": true,
+    "application/mbms-associated-procedure-description+xml": true,
+    "application/mbms-deregister+xml": true,
+    "application/mbms-envelope+xml": true,
+    "application/mbms-msk+xml": true,
+    "application/mbms-msk-response+xml": true,
+    "application/mbms-protection-description+xml": true,
+    "application/mbms-reception-report+xml": true,
+    "application/mbms-register+xml": true,
+    "application/mbms-register-response+xml": true,
+    "application/mbms-schedule+xml": true,
+    "application/mbms-user-service-description+xml": true,
+    "application/media-policy-dataset+xml": true,
+    "application/media_control+xml": true,
+    "application/mediaservercontrol+xml": true,
+    "application/merge-patch+json": true,
+    "application/metalink+xml": true,
+    "application/metalink4+xml": true,
+    "application/mets+xml": true,
+    "application/mmt-aei+xml": true,
+    "application/mmt-usd+xml": true,
+    "application/mods+xml": true,
+    "application/mrb-consumer+xml": true,
+    "application/mrb-publish+xml": true,
+    "application/msc-ivr+xml": true,
+    "application/msc-mixer+xml": true,
+    "application/msix": false,
+    "application/msixbundle": false,
+    "application/msword": false,
+    "application/mud+json": true,
+    "application/nlsml+xml": true,
+    "application/octet-stream": true,
+    "application/odm+xml": true,
+    "application/oebps-package+xml": true,
+    "application/ogg": false,
+    "application/omdoc+xml": true,
+    "application/opc-nodeset+xml": true,
+    "application/p21+zip": false,
+    "application/p2p-overlay+xml": true,
+    "application/patch-ops-error+xml": true,
+    "application/pdf": false,
+    "application/pgp-encrypted": false,
+    "application/pidf+xml": true,
+    "application/pidf-diff+xml": true,
+    "application/pls+xml": true,
+    "application/poc-settings+xml": true,
+    "application/postscript": true,
+    "application/ppsp-tracker+json": true,
+    "application/problem+json": true,
+    "application/problem+xml": true,
+    "application/provenance+xml": true,
+    "application/prs.hpub+zip": false,
+    "application/prs.implied-document+xml": true,
+    "application/prs.implied-object+json": true,
+    "application/prs.xsf+xml": true,
+    "application/pskc+xml": true,
+    "application/pvd+json": true,
+    "application/raml+yaml": true,
+    "application/rdap+json": true,
+    "application/rdf+xml": true,
+    "application/reginfo+xml": true,
+    "application/reputon+json": true,
+    "application/resource-lists+xml": true,
+    "application/resource-lists-diff+xml": true,
+    "application/rfc+xml": true,
+    "application/rlmi+xml": true,
+    "application/rls-services+xml": true,
+    "application/route-apd+xml": true,
+    "application/route-s-tsid+xml": true,
+    "application/route-usd+xml": true,
+    "application/rsd+xml": true,
+    "application/rss+xml": true,
+    "application/rtf": true,
+    "application/samlassertion+xml": true,
+    "application/samlmetadata+xml": true,
+    "application/sarif+json": true,
+    "application/sarif-external-properties+json": true,
+    "application/sbml+xml": true,
+    "application/scaip+xml": true,
+    "application/scim+json": true,
+    "application/senml+json": true,
+    "application/senml+xml": true,
+    "application/senml-etch+json": true,
+    "application/sensml+json": true,
+    "application/sensml+xml": true,
+    "application/sep+xml": true,
+    "application/shf+xml": true,
+    "application/simple-filter+xml": true,
+    "application/smil+xml": true,
+    "application/soap+xml": true,
+    "application/sparql-results+xml": true,
+    "application/spdx+json": true,
+    "application/spirits-event+xml": true,
+    "application/srgs+xml": true,
+    "application/sru+xml": true,
+    "application/ssdl+xml": true,
+    "application/ssml+xml": true,
+    "application/stix+json": true,
+    "application/swid+xml": true,
+    "application/tar": true,
+    "application/taxii+json": true,
+    "application/td+json": true,
+    "application/tei+xml": true,
+    "application/thraud+xml": true,
+    "application/tlsrpt+json": true,
+    "application/tm+json": true,
+    "application/toml": true,
+    "application/trust-chain+json": true,
+    "application/ttml+xml": true,
+    "application/ubjson": false,
+    "application/ujcs+json": true,
+    "application/urc-grpsheet+xml": true,
+    "application/urc-ressheet+xml": true,
+    "application/urc-targetdesc+xml": true,
+    "application/urc-uisocketdesc+xml": true,
+    "application/vcard+json": true,
+    "application/vcard+xml": true,
+    "application/vnd.1000minds.decision-model+xml": true,
+    "application/vnd.3gpp-prose+xml": true,
+    "application/vnd.3gpp-prose-pc3a+xml": true,
+    "application/vnd.3gpp-prose-pc3ach+xml": true,
+    "application/vnd.3gpp-prose-pc3ch+xml": true,
+    "application/vnd.3gpp-prose-pc8+xml": true,
+    "application/vnd.3gpp.access-transfer-events+xml": true,
+    "application/vnd.3gpp.bsf+xml": true,
+    "application/vnd.3gpp.crs+xml": true,
+    "application/vnd.3gpp.current-location-discovery+xml": true,
+    "application/vnd.3gpp.gmop+xml": true,
+    "application/vnd.3gpp.mcdata-affiliation-command+xml": true,
+    "application/vnd.3gpp.mcdata-info+xml": true,
+    "application/vnd.3gpp.mcdata-msgstore-ctrl-request+xml": true,
+    "application/vnd.3gpp.mcdata-regroup+xml": true,
+    "application/vnd.3gpp.mcdata-service-config+xml": true,
+    "application/vnd.3gpp.mcdata-ue-config+xml": true,
+    "application/vnd.3gpp.mcdata-user-profile+xml": true,
+    "application/vnd.3gpp.mcptt-affiliation-command+xml": true,
+    "application/vnd.3gpp.mcptt-floor-request+xml": true,
+    "application/vnd.3gpp.mcptt-info+xml": true,
+    "application/vnd.3gpp.mcptt-location-info+xml": true,
+    "application/vnd.3gpp.mcptt-mbms-usage-info+xml": true,
+    "application/vnd.3gpp.mcptt-regroup+xml": true,
+    "application/vnd.3gpp.mcptt-service-config+xml": true,
+    "application/vnd.3gpp.mcptt-signed+xml": true,
+    "application/vnd.3gpp.mcptt-ue-config+xml": true,
+    "application/vnd.3gpp.mcptt-ue-init-config+xml": true,
+    "application/vnd.3gpp.mcptt-user-profile+xml": true,
+    "application/vnd.3gpp.mcvideo-affiliation-command+xml": true,
+    "application/vnd.3gpp.mcvideo-info+xml": true,
+    "application/vnd.3gpp.mcvideo-location-info+xml": true,
+    "application/vnd.3gpp.mcvideo-mbms-usage-info+xml": true,
+    "application/vnd.3gpp.mcvideo-regroup+xml": true,
+    "application/vnd.3gpp.mcvideo-service-config+xml": true,
+    "application/vnd.3gpp.mcvideo-transmission-request+xml": true,
+    "application/vnd.3gpp.mcvideo-ue-config+xml": true,
+    "application/vnd.3gpp.mcvideo-user-profile+xml": true,
+    "application/vnd.3gpp.mid-call+xml": true,
+    "application/vnd.3gpp.pinapp-info+xml": true,
+    "application/vnd.3gpp.seal-group-doc+xml": true,
+    "application/vnd.3gpp.seal-info+xml": true,
+    "application/vnd.3gpp.seal-location-info+xml": true,
+    "application/vnd.3gpp.seal-mbms-usage-info+xml": true,
+    "application/vnd.3gpp.seal-network-qos-management-info+xml": true,
+    "application/vnd.3gpp.seal-ue-config-info+xml": true,
+    "application/vnd.3gpp.seal-unicast-info+xml": true,
+    "application/vnd.3gpp.seal-user-profile-info+xml": true,
+    "application/vnd.3gpp.sms+xml": true,
+    "application/vnd.3gpp.srvcc-ext+xml": true,
+    "application/vnd.3gpp.srvcc-info+xml": true,
+    "application/vnd.3gpp.state-and-event-info+xml": true,
+    "application/vnd.3gpp.ussd+xml": true,
+    "application/vnd.3gpp.vae-info+xml": true,
+    "application/vnd.3gpp2.bcmcsinfo+xml": true,
+    "application/vnd.acm.addressxfer+json": true,
+    "application/vnd.acm.chatbot+json": true,
+    "application/vnd.adobe.air-application-installer-package+zip": false,
+    "application/vnd.adobe.xdp+xml": true,
+    "application/vnd.amadeus+json": true,
+    "application/vnd.amundsen.maze+xml": true,
+    "application/vnd.android.package-archive": false,
+    "application/vnd.api+json": true,
+    "application/vnd.aplextor.warrp+json": true,
+    "application/vnd.apothekende.reservation+json": true,
+    "application/vnd.apple.installer+xml": true,
+    "application/vnd.apple.pkpass": false,
+    "application/vnd.artisan+json": true,
+    "application/vnd.avalon+json": true,
+    "application/vnd.avistar+xml": true,
+    "application/vnd.balsamiq.bmml+xml": true,
+    "application/vnd.bbf.usp.msg+json": true,
+    "application/vnd.bekitzur-stech+json": true,
+    "application/vnd.belightsoft.lhzd+zip": false,
+    "application/vnd.belightsoft.lhzl+zip": false,
+    "application/vnd.biopax.rdf+xml": true,
+    "application/vnd.byu.uapi+json": true,
+    "application/vnd.c3voc.schedule+xml": true,
+    "application/vnd.capasystems-pg+json": true,
+    "application/vnd.chemdraw+xml": true,
+    "application/vnd.citationstyles.style+xml": true,
+    "application/vnd.cncf.helm.config.v1+json": true,
+    "application/vnd.collection+json": true,
+    "application/vnd.collection.doc+json": true,
+    "application/vnd.collection.next+json": true,
+    "application/vnd.comicbook+zip": false,
+    "application/vnd.coreos.ignition+json": true,
+    "application/vnd.criticaltools.wbs+xml": true,
+    "application/vnd.cryptii.pipe+json": true,
+    "application/vnd.ctct.ws+xml": true,
+    "application/vnd.cyan.dean.root+xml": true,
+    "application/vnd.cyclonedx+json": true,
+    "application/vnd.cyclonedx+xml": true,
+    "application/vnd.d2l.coursepackage1p0+zip": false,
+    "application/vnd.dart": true,
+    "application/vnd.datapackage+json": true,
+    "application/vnd.dataresource+json": true,
+    "application/vnd.dcmp+xml": true,
+    "application/vnd.dece.ttml+xml": true,
+    "application/vnd.dm.delegation+xml": true,
+    "application/vnd.document+json": true,
+    "application/vnd.drive+json": true,
+    "application/vnd.dvb.dvbisl+xml": true,
+    "application/vnd.dvb.notif-aggregate-root+xml": true,
+    "application/vnd.dvb.notif-container+xml": true,
+    "application/vnd.dvb.notif-generic+xml": true,
+    "application/vnd.dvb.notif-ia-msglist+xml": true,
+    "application/vnd.dvb.notif-ia-registration-request+xml": true,
+    "application/vnd.dvb.notif-ia-registration-response+xml": true,
+    "application/vnd.dvb.notif-init+xml": true,
+    "application/vnd.eclipse.ditto+json": true,
+    "application/vnd.eln+zip": false,
+    "application/vnd.emclient.accessrequest+xml": true,
+    "application/vnd.eprints.data+xml": true,
+    "application/vnd.espass-espass+zip": false,
+    "application/vnd.eszigno3+xml": true,
+    "application/vnd.etsi.aoc+xml": true,
+    "application/vnd.etsi.asic-e+zip": false,
+    "application/vnd.etsi.asic-s+zip": false,
+    "application/vnd.etsi.cug+xml": true,
+    "application/vnd.etsi.iptvcommand+xml": true,
+    "application/vnd.etsi.iptvdiscovery+xml": true,
+    "application/vnd.etsi.iptvprofile+xml": true,
+    "application/vnd.etsi.iptvsad-bc+xml": true,
+    "application/vnd.etsi.iptvsad-cod+xml": true,
+    "application/vnd.etsi.iptvsad-npvr+xml": true,
+    "application/vnd.etsi.iptvservice+xml": true,
+    "application/vnd.etsi.iptvsync+xml": true,
+    "application/vnd.etsi.iptvueprofile+xml": true,
+    "application/vnd.etsi.mcid+xml": true,
+    "application/vnd.etsi.overload-control-policy-dataset+xml": true,
+    "application/vnd.etsi.pstn+xml": true,
+    "application/vnd.etsi.sci+xml": true,
+    "application/vnd.etsi.simservs+xml": true,
+    "application/vnd.etsi.tsl+xml": true,
+    "application/vnd.eu.kasparian.car+json": true,
+    "application/vnd.exstream-empower+zip": false,
+    "application/vnd.familysearch.gedcom+zip": false,
+    "application/vnd.fdsn.stationxml+xml": true,
+    "application/vnd.ficlab.flb+zip": false,
+    "application/vnd.fujifilm.fb.jfi+xml": true,
+    "application/vnd.futoin+json": true,
+    "application/vnd.gentics.grd+json": true,
+    "application/vnd.gentoo.catmetadata+xml": true,
+    "application/vnd.gentoo.pkgmetadata+xml": true,
+    "application/vnd.geo+json": true,
+    "application/vnd.geocube+xml": true,
+    "application/vnd.gnu.taler.exchange+json": true,
+    "application/vnd.gnu.taler.merchant+json": true,
+    "application/vnd.google-apps.document": false,
+    "application/vnd.google-apps.drawing": false,
+    "application/vnd.google-apps.drive-sdk": false,
+    "application/vnd.google-apps.folder": false,
+    "application/vnd.google-apps.form": false,
+    "application/vnd.google-apps.jam": false,
+    "application/vnd.google-apps.map": false,
+    "application/vnd.google-apps.presentation": false,
+    "application/vnd.google-apps.script": false,
+    "application/vnd.google-apps.site": false,
+    "application/vnd.google-apps.spreadsheet": false,
+    "application/vnd.google-earth.kml+xml": true,
+    "application/vnd.google-earth.kmz": false,
+    "application/vnd.gov.sk.e-form+xml": true,
+    "application/vnd.gov.sk.e-form+zip": false,
+    "application/vnd.gov.sk.xmldatacontainer+xml": true,
+    "application/vnd.gpxsee.map+xml": true,
+    "application/vnd.hal+json": true,
+    "application/vnd.hal+xml": true,
+    "application/vnd.handheld-entertainment+xml": true,
+    "application/vnd.hc+json": true,
+    "application/vnd.heroku+json": true,
+    "application/vnd.hyper+json": true,
+    "application/vnd.hyper-item+json": true,
+    "application/vnd.hyperdrive+json": true,
+    "application/vnd.imagemeter.folder+zip": false,
+    "application/vnd.imagemeter.image+zip": false,
+    "application/vnd.ims.lis.v2.result+json": true,
+    "application/vnd.ims.lti.v2.toolconsumerprofile+json": true,
+    "application/vnd.ims.lti.v2.toolproxy+json": true,
+    "application/vnd.ims.lti.v2.toolproxy.id+json": true,
+    "application/vnd.ims.lti.v2.toolsettings+json": true,
+    "application/vnd.ims.lti.v2.toolsettings.simple+json": true,
+    "application/vnd.informedcontrol.rms+xml": true,
+    "application/vnd.infotech.project+xml": true,
+    "application/vnd.iptc.g2.catalogitem+xml": true,
+    "application/vnd.iptc.g2.conceptitem+xml": true,
+    "application/vnd.iptc.g2.knowledgeitem+xml": true,
+    "application/vnd.iptc.g2.newsitem+xml": true,
+    "application/vnd.iptc.g2.newsmessage+xml": true,
+    "application/vnd.iptc.g2.packageitem+xml": true,
+    "application/vnd.iptc.g2.planningitem+xml": true,
+    "application/vnd.irepository.package+xml": true,
+    "application/vnd.iso11783-10+zip": false,
+    "application/vnd.keyman.kmp+zip": false,
+    "application/vnd.las.las+json": true,
+    "application/vnd.las.las+xml": true,
+    "application/vnd.leap+json": true,
+    "application/vnd.liberty-request+xml": true,
+    "application/vnd.llamagraphics.life-balance.exchange+xml": true,
+    "application/vnd.logipipe.circuit+zip": false,
+    "application/vnd.marlin.drm.actiontoken+xml": true,
+    "application/vnd.marlin.drm.conftoken+xml": true,
+    "application/vnd.marlin.drm.license+xml": true,
+    "application/vnd.mason+json": true,
+    "application/vnd.maxar.archive.3tz+zip": false,
+    "application/vnd.micro+json": true,
+    "application/vnd.miele+json": true,
+    "application/vnd.mozilla.xul+xml": true,
+    "application/vnd.ms-excel": false,
+    "application/vnd.ms-fontobject": true,
+    "application/vnd.ms-office.activex+xml": true,
+    "application/vnd.ms-opentype": true,
+    "application/vnd.ms-outlook": false,
+    "application/vnd.ms-playready.initiator+xml": true,
+    "application/vnd.ms-powerpoint": false,
+    "application/vnd.ms-printdevicecapabilities+xml": true,
+    "application/vnd.ms-printing.printticket+xml": true,
+    "application/vnd.ms-printschematicket+xml": true,
+    "application/vnd.ms-xpsdocument": false,
+    "application/vnd.nacamar.ybrid+json": true,
+    "application/vnd.nato.bindingdataobject+json": true,
+    "application/vnd.nato.bindingdataobject+xml": true,
+    "application/vnd.nato.openxmlformats-package.iepd+zip": false,
+    "application/vnd.nearst.inv+json": true,
+    "application/vnd.nokia.conml+xml": true,
+    "application/vnd.nokia.iptv.config+xml": true,
+    "application/vnd.nokia.landmark+xml": true,
+    "application/vnd.nokia.landmarkcollection+xml": true,
+    "application/vnd.nokia.n-gage.ac+xml": true,
+    "application/vnd.nokia.pcd+xml": true,
+    "application/vnd.oai.workflows+json": true,
+    "application/vnd.oasis.opendocument.graphics": false,
+    "application/vnd.oasis.opendocument.presentation": false,
+    "application/vnd.oasis.opendocument.spreadsheet": false,
+    "application/vnd.oasis.opendocument.text": false,
+    "application/vnd.oci.image.manifest.v1+json": true,
+    "application/vnd.oftn.l10n+json": true,
+    "application/vnd.oipf.contentaccessdownload+xml": true,
+    "application/vnd.oipf.contentaccessstreaming+xml": true,
+    "application/vnd.oipf.dae.svg+xml": true,
+    "application/vnd.oipf.dae.xhtml+xml": true,
+    "application/vnd.oipf.mippvcontrolmessage+xml": true,
+    "application/vnd.oipf.spdiscovery+xml": true,
+    "application/vnd.oipf.spdlist+xml": true,
+    "application/vnd.oipf.ueprofile+xml": true,
+    "application/vnd.oipf.userprofile+xml": true,
+    "application/vnd.oma.bcast.associated-procedure-parameter+xml": true,
+    "application/vnd.oma.bcast.drm-trigger+xml": true,
+    "application/vnd.oma.bcast.imd+xml": true,
+    "application/vnd.oma.bcast.notification+xml": true,
+    "application/vnd.oma.bcast.sgdd+xml": true,
+    "application/vnd.oma.bcast.smartcard-trigger+xml": true,
+    "application/vnd.oma.bcast.sprov+xml": true,
+    "application/vnd.oma.cab-address-book+xml": true,
+    "application/vnd.oma.cab-feature-handler+xml": true,
+    "application/vnd.oma.cab-pcc+xml": true,
+    "application/vnd.oma.cab-subs-invite+xml": true,
+    "application/vnd.oma.cab-user-prefs+xml": true,
+    "application/vnd.oma.dd2+xml": true,
+    "application/vnd.oma.drm.risd+xml": true,
+    "application/vnd.oma.group-usage-list+xml": true,
+    "application/vnd.oma.lwm2m+json": true,
+    "application/vnd.oma.pal+xml": true,
+    "application/vnd.oma.poc.detailed-progress-report+xml": true,
+    "application/vnd.oma.poc.final-report+xml": true,
+    "application/vnd.oma.poc.groups+xml": true,
+    "application/vnd.oma.poc.invocation-descriptor+xml": true,
+    "application/vnd.oma.poc.optimized-progress-report+xml": true,
+    "application/vnd.oma.scidm.messages+xml": true,
+    "application/vnd.oma.xcap-directory+xml": true,
+    "application/vnd.omads-email+xml": true,
+    "application/vnd.omads-file+xml": true,
+    "application/vnd.omads-folder+xml": true,
+    "application/vnd.openblox.game+xml": true,
+    "application/vnd.openstreetmap.data+xml": true,
+    "application/vnd.openvpi.dspx+json": true,
+    "application/vnd.openxmlformats-officedocument.custom-properties+xml": true,
+    "application/vnd.openxmlformats-officedocument.customxmlproperties+xml": true,
+    "application/vnd.openxmlformats-officedocument.drawing+xml": true,
+    "application/vnd.openxmlformats-officedocument.drawingml.chart+xml": true,
+    "application/vnd.openxmlformats-officedocument.drawingml.chartshapes+xml": true,
+    "application/vnd.openxmlformats-officedocument.drawingml.diagramcolors+xml": true,
+    "application/vnd.openxmlformats-officedocument.drawingml.diagramdata+xml": true,
+    "application/vnd.openxmlformats-officedocument.drawingml.diagramlayout+xml": true,
+    "application/vnd.openxmlformats-officedocument.drawingml.diagramstyle+xml": true,
+    "application/vnd.openxmlformats-officedocument.extended-properties+xml": true,
+    "application/vnd.openxmlformats-officedocument.presentationml.commentauthors+xml": true,
+    "application/vnd.openxmlformats-officedocument.presentationml.comments+xml": true,
+    "application/vnd.openxmlformats-officedocument.presentationml.handoutmaster+xml": true,
+    "application/vnd.openxmlformats-officedocument.presentationml.notesmaster+xml": true,
+    "application/vnd.openxmlformats-officedocument.presentationml.notesslide+xml": true,
+    "application/vnd.openxmlformats-officedocument.presentationml.presentation": false,
+    "application/vnd.openxmlformats-officedocument.presentationml.presentation.main+xml": true,
+    "application/vnd.openxmlformats-officedocument.presentationml.presprops+xml": true,
+    "application/vnd.openxmlformats-officedocument.presentationml.slide+xml": true,
+    "application/vnd.openxmlformats-officedocument.presentationml.slidelayout+xml": true,
+    "application/vnd.openxmlformats-officedocument.presentationml.slidemaster+xml": true,
+    "application/vnd.openxmlformats-officedocument.presentationml.slideshow.main+xml": true,
+    "application/vnd.openxmlformats-officedocument.presentationml.slideupdateinfo+xml": true,
+    "application/vnd.openxmlformats-officedocument.presentationml.tablestyles+xml": true,
+    "application/vnd.openxmlformats-officedocument.presentationml.tags+xml": true,
+    "application/vnd.openxmlformats-officedocument.presentationml.template.main+xml": true,
+    "application/vnd.openxmlformats-officedocument.presentationml.viewprops+xml": true,
+    "application/vnd.openxmlformats-officedocument.spreadsheetml.calcchain+xml": true,
+    "application/vnd.openxmlformats-officedocument.spreadsheetml.chartsheet+xml": true,
+    "application/vnd.openxmlformats-officedocument.spreadsheetml.comments+xml": true,
+    "application/vnd.openxmlformats-officedocument.spreadsheetml.connections+xml": true,
+    "application/vnd.openxmlformats-officedocument.spreadsheetml.dialogsheet+xml": true,
+    "application/vnd.openxmlformats-officedocument.spreadsheetml.externallink+xml": true,
+    "application/vnd.openxmlformats-officedocument.spreadsheetml.pivotcachedefinition+xml": true,
+    "application/vnd.openxmlformats-officedocument.spreadsheetml.pivotcacherecords+xml": true,
+    "application/vnd.openxmlformats-officedocument.spreadsheetml.pivottable+xml": true,
+    "application/vnd.openxmlformats-officedocument.spreadsheetml.querytable+xml": true,
+    "application/vnd.openxmlformats-officedocument.spreadsheetml.revisionheaders+xml": true,
+    "application/vnd.openxmlformats-officedocument.spreadsheetml.revisionlog+xml": true,
+    "application/vnd.openxmlformats-officedocument.spreadsheetml.sharedstrings+xml": true,
+    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": false,
+    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml": true,
+    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheetmetadata+xml": true,
+    "application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml": true,
+    "application/vnd.openxmlformats-officedocument.spreadsheetml.table+xml": true,
+    "application/vnd.openxmlformats-officedocument.spreadsheetml.tablesinglecells+xml": true,
+    "application/vnd.openxmlformats-officedocument.spreadsheetml.template.main+xml": true,
+    "application/vnd.openxmlformats-officedocument.spreadsheetml.usernames+xml": true,
+    "application/vnd.openxmlformats-officedocument.spreadsheetml.volatiledependencies+xml": true,
+    "application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml": true,
+    "application/vnd.openxmlformats-officedocument.theme+xml": true,
+    "application/vnd.openxmlformats-officedocument.themeoverride+xml": true,
+    "application/vnd.openxmlformats-officedocument.wordprocessingml.comments+xml": true,
+    "application/vnd.openxmlformats-officedocument.wordprocessingml.document": false,
+    "application/vnd.openxmlformats-officedocument.wordprocessingml.document.glossary+xml": true,
+    "application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml": true,
+    "application/vnd.openxmlformats-officedocument.wordprocessingml.endnotes+xml": true,
+    "application/vnd.openxmlformats-officedocument.wordprocessingml.fonttable+xml": true,
+    "application/vnd.openxmlformats-officedocument.wordprocessingml.footer+xml": true,
+    "application/vnd.openxmlformats-officedocument.wordprocessingml.footnotes+xml": true,
+    "application/vnd.openxmlformats-officedocument.wordprocessingml.numbering+xml": true,
+    "application/vnd.openxmlformats-officedocument.wordprocessingml.settings+xml": true,
+    "application/vnd.openxmlformats-officedocument.wordprocessingml.styles+xml": true,
+    "application/vnd.openxmlformats-officedocument.wordprocessingml.template.main+xml": true,
+    "application/vnd.openxmlformats-officedocument.wordprocessingml.websettings+xml": true,
+    "application/vnd.openxmlformats-package.core-properties+xml": true,
+    "application/vnd.openxmlformats-package.digital-signature-xmlsignature+xml": true,
+    "application/vnd.openxmlformats-package.relationships+xml": true,
+    "application/vnd.oracle.resource+json": true,
+    "application/vnd.otps.ct-kip+xml": true,
+    "application/vnd.pagerduty+json": true,
+    "application/vnd.poc.group-advertisement+xml": true,
+    "application/vnd.pwg-xhtml-print+xml": true,
+    "application/vnd.radisys.moml+xml": true,
+    "application/vnd.radisys.msml+xml": true,
+    "application/vnd.radisys.msml-audit+xml": true,
+    "application/vnd.radisys.msml-audit-conf+xml": true,
+    "application/vnd.radisys.msml-audit-conn+xml": true,
+    "application/vnd.radisys.msml-audit-dialog+xml": true,
+    "application/vnd.radisys.msml-audit-stream+xml": true,
+    "application/vnd.radisys.msml-conf+xml": true,
+    "application/vnd.radisys.msml-dialog+xml": true,
+    "application/vnd.radisys.msml-dialog-base+xml": true,
+    "application/vnd.radisys.msml-dialog-fax-detect+xml": true,
+    "application/vnd.radisys.msml-dialog-fax-sendrecv+xml": true,
+    "application/vnd.radisys.msml-dialog-group+xml": true,
+    "application/vnd.radisys.msml-dialog-speech+xml": true,
+    "application/vnd.radisys.msml-dialog-transform+xml": true,
+    "application/vnd.recordare.musicxml+xml": true,
+    "application/vnd.restful+json": true,
+    "application/vnd.route66.link66+xml": true,
+    "application/vnd.seis+json": true,
+    "application/vnd.shootproof+json": true,
+    "application/vnd.shopkick+json": true,
+    "application/vnd.siren+json": true,
+    "application/vnd.software602.filler.form+xml": true,
+    "application/vnd.solent.sdkm+xml": true,
+    "application/vnd.sun.wadl+xml": true,
+    "application/vnd.sycle+xml": true,
+    "application/vnd.syft+json": true,
+    "application/vnd.syncml+xml": true,
+    "application/vnd.syncml.dm+xml": true,
+    "application/vnd.syncml.dmddf+xml": true,
+    "application/vnd.syncml.dmtnds+xml": true,
+    "application/vnd.tableschema+json": true,
+    "application/vnd.think-cell.ppttc+json": true,
+    "application/vnd.tmd.mediaflex.api+xml": true,
+    "application/vnd.uic.osdm+json": true,
+    "application/vnd.uoml+xml": true,
+    "application/vnd.vel+json": true,
+    "application/vnd.veraison.tsm-report+json": true,
+    "application/vnd.veritone.aion+json": true,
+    "application/vnd.wv.csp+xml": true,
+    "application/vnd.wv.ssp+xml": true,
+    "application/vnd.xacml+json": true,
+    "application/vnd.xmi+xml": true,
+    "application/vnd.yamaha.openscoreformat.osfpvg+xml": true,
+    "application/vnd.zzazz.deck+xml": true,
+    "application/voicexml+xml": true,
+    "application/voucher-cms+json": true,
+    "application/voucher-jws+json": true,
+    "application/wasm": true,
+    "application/watcherinfo+xml": true,
+    "application/webpush-options+json": true,
+    "application/wsdl+xml": true,
+    "application/wspolicy+xml": true,
+    "application/x-7z-compressed": false,
+    "application/x-arj": false,
+    "application/x-bdoc": false,
+    "application/x-bzip": false,
+    "application/x-bzip2": false,
+    "application/x-deb": false,
+    "application/x-dtbncx+xml": true,
+    "application/x-dtbook+xml": true,
+    "application/x-dtbresource+xml": true,
+    "application/x-dvi": false,
+    "application/x-httpd-php": true,
+    "application/x-ipynb+json": true,
+    "application/x-java-jnlp-file": false,
+    "application/x-javascript": true,
+    "application/x-latex": false,
+    "application/x-mpegurl": false,
+    "application/x-ns-proxy-autoconfig": true,
+    "application/x-pkcs12": false,
+    "application/x-rar-compressed": false,
+    "application/x-sh": true,
+    "application/x-shockwave-flash": false,
+    "application/x-stuffit": false,
+    "application/x-tar": true,
+    "application/x-virtualbox-hdd": true,
+    "application/x-virtualbox-ova": true,
+    "application/x-virtualbox-ovf": true,
+    "application/x-virtualbox-vbox": true,
+    "application/x-virtualbox-vbox-extpack": false,
+    "application/x-virtualbox-vdi": true,
+    "application/x-virtualbox-vhd": true,
+    "application/x-virtualbox-vmdk": true,
+    "application/x-web-app-manifest+json": true,
+    "application/x-www-form-urlencoded": true,
+    "application/x-xliff+xml": true,
+    "application/x-xpinstall": false,
+    "application/xacml+xml": true,
+    "application/xaml+xml": true,
+    "application/xcap-att+xml": true,
+    "application/xcap-caps+xml": true,
+    "application/xcap-diff+xml": true,
+    "application/xcap-el+xml": true,
+    "application/xcap-error+xml": true,
+    "application/xcap-ns+xml": true,
+    "application/xcon-conference-info+xml": true,
+    "application/xcon-conference-info-diff+xml": true,
+    "application/xenc+xml": true,
+    "application/xhtml+xml": true,
+    "application/xhtml-voice+xml": true,
+    "application/xliff+xml": true,
+    "application/xml": true,
+    "application/xml-dtd": true,
+    "application/xml-patch+xml": true,
+    "application/xmpp+xml": true,
+    "application/xop+xml": true,
+    "application/xproc+xml": true,
+    "application/xslt+xml": true,
+    "application/xspf+xml": true,
+    "application/xv+xml": true,
+    "application/yang-data+json": true,
+    "application/yang-data+xml": true,
+    "application/yang-patch+json": true,
+    "application/yang-patch+xml": true,
+    "application/yang-sid+json": true,
+    "application/yin+xml": true,
+    "application/zip": false,
+    "audio/3gpp": false,
+    "audio/basic": false,
+    "audio/l24": false,
+    "audio/mp3": false,
+    "audio/mp4": false,
+    "audio/mpeg": false,
+    "audio/ogg": false,
+    "audio/vnd.rn-realaudio": false,
+    "audio/vnd.wave": false,
+    "audio/vorbis": false,
+    "audio/wav": false,
+    "audio/wave": false,
+    "audio/webm": false,
+    "audio/x-aac": false,
+    "audio/x-caf": false,
+    "font/otf": true,
+    "font/ttf": true,
+    "image/apng": false,
+    "image/avif": false,
+    "image/bmp": true,
+    "image/gif": false,
+    "image/jp2": false,
+    "image/jpeg": false,
+    "image/jpm": false,
+    "image/jpx": false,
+    "image/pjpeg": false,
+    "image/png": false,
+    "image/svg+xml": true,
+    "image/tiff": false,
+    "image/vnd.adobe.photoshop": true,
+    "image/vnd.microsoft.icon": true,
+    "image/vnd.ms-dds": true,
+    "image/x-icon": true,
+    "image/x-ms-bmp": true,
+    "image/x-xcf": false,
+    "message/http": false,
+    "message/imdn+xml": true,
+    "message/partial": false,
+    "message/rfc822": true,
+    "model/gltf+json": true,
+    "model/gltf-binary": true,
+    "model/iges": false,
+    "model/mesh": false,
+    "model/step+xml": true,
+    "model/step+zip": false,
+    "model/step-xml+zip": false,
+    "model/vnd.collada+xml": true,
+    "model/vnd.moml+xml": true,
+    "model/vnd.usdz+zip": false,
+    "model/vrml": false,
+    "model/x3d+binary": false,
+    "model/x3d+vrml": false,
+    "model/x3d+xml": true,
+    "multipart/alternative": false,
+    "multipart/encrypted": false,
+    "multipart/form-data": false,
+    "multipart/related": false,
+    "multipart/signed": false,
+    "text/cache-manifest": true,
+    "text/calender": true,
+    "text/cmd": true,
+    "text/css": true,
+    "text/csv": true,
+    "text/html": true,
+    "text/javascript": true,
+    "text/jsx": true,
+    "text/less": true,
+    "text/markdown": true,
+    "text/mdx": true,
+    "text/n3": true,
+    "text/plain": true,
+    "text/richtext": true,
+    "text/rtf": true,
+    "text/tab-separated-values": true,
+    "text/uri-list": true,
+    "text/vcard": true,
+    "text/vtt": true,
+    "text/x-gwt-rpc": true,
+    "text/x-jquery-tmpl": true,
+    "text/x-markdown": true,
+    "text/x-org": true,
+    "text/x-processing": true,
+    "text/x-suse-ymp": true,
+    "text/xml": true,
+    "text/yaml": true,
+    "video/lottie+json": true,
+    "video/mp4": false,
+    "video/mpeg": false,
+    "video/ogg": false,
+    "video/quicktime": false,
+    "video/webm": false,
+    "video/x-flv": false,
+    "video/x-matroska": false,
+    "video/x-ms-wmv": false,
+    "x-shader/x-fragment": true,
+    "x-shader/x-vertex": true,
+};
+
+},
+"@xufa/http/lib/mime.js": function (module, exports, require) {
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.lookup = lookup;
+exports.charset = charset;
+exports.contentType = contentType;
+exports.extension = extension;
+// mime-types' lookup and contentType on the table of mime-db (./mime-db.js): the types of files of @xufa/http (form-data)
+// and of @xufa/express.
+const node_path_1 = __importDefault(require("node:path"));
+const mime_db_js_1 = require("./mime-db.js");
+// The type of a path or an extension ('html', '.html', 'a/b.html'), or false.
+function lookup(name) {
+    if (!name || typeof name !== 'string')
+        return false;
+    const extension = node_path_1.default.extname(`x.${name}`).toLowerCase().slice(1);
+    return (extension && mime_db_js_1.TYPES[extension]) || false;
+}
+// The charset of a type: its own, or UTF-8 for text/*; false without one.
+function charset(type) {
+    if (!type || typeof type !== 'string')
+        return false;
+    const match = /^\s*([^;\s]*)(?:;|\s|$)/.exec(type);
+    const name = match && match[1].toLowerCase();
+    if (name && mime_db_js_1.CHARSETS[name])
+        return mime_db_js_1.CHARSETS[name];
+    if (match && /^text\//i.test(match[1]))
+        return 'UTF-8';
+    return false;
+}
+// A Content-Type of a type or an extension, with its charset; false for an unknown extension. (The answers are kept,
+// up to 100 values: an app sets the same few types again and again.)
+const answers = new Map();
+function contentType(value) {
+    let type = answers.get(value);
+    if (type === undefined) {
+        type = findContentType(value);
+        if (typeof value === 'string') {
+            if (answers.size >= 100)
+                answers.clear();
+            answers.set(value, type);
+        }
+    }
+    return type;
+}
+function findContentType(value) {
+    if (!value || typeof value !== 'string')
+        return false;
+    let type = value.indexOf('/') === -1 ? lookup(value) : value;
+    if (!type)
+        return false;
+    if (type.indexOf('charset') === -1) {
+        const set = charset(type);
+        if (set)
+            type += `; charset=${set.toLowerCase()}`;
+    }
+    return type;
+}
+// The extension of a type (its first in mime-db), or false.
+function extension(type) {
+    if (!type || typeof type !== 'string')
+        return false;
+    const match = /^\s*([^;\s]*)(?:;|\s|$)/.exec(type);
+    const extensions = match && mime_db_js_1.EXTENSIONS[match[1].toLowerCase()];
+    return extensions && extensions.length ? extensions[0] : false;
+}
+
+},
+"@xufa/http/lib/multer.js": function (module, exports, require) {
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.MulterError = exports.memoryStorage = exports.diskStorage = void 0;
+exports.multer = multer;
+exports.appendField = appendField;
+exports.removeUploadedFiles = removeUploadedFiles;
+// Files of multipart/form-data requests, with multer's API (Express's middleware of uploads), read by the parser of
+// @xufa/http (./multipart.js) instead of busboy:
+//
+//   const multer = require('@xufa/http/multer');
+//   const upload = multer({ storage: multer.memoryStorage(), defParamCharset: 'utf8' });
+//   app.post('/photos', upload.single('photo'), (req, res) => res.send(req.file.originalname));
+//
+// single(name): req.file; array(name, maxCount) and any(): req.files (a list); fields([{ name, maxCount }]):
+// req.files by field; none(): fields only. The text fields are in req.body (names as a[b][0] nested, as multer's
+// append-field makes them). Files: { fieldname, originalname, encoding, mimetype } and what the storage adds:
+// memoryStorage() { buffer, size }, diskStorage({ destination, filename }) { destination, filename, path, size } (or
+// `dest`). Options: limits (fieldNameSize, fieldSize, fields, fileSize, files, parts), fileFilter(req, file, cb),
+// preservePath, defParamCharset ('latin1' as multer's; 'utf8' reads names as browsers send them). Errors: MulterError
+// (code LIMIT_PART_COUNT, LIMIT_FILE_SIZE, LIMIT_FILE_COUNT, LIMIT_FIELD_KEY, LIMIT_FIELD_VALUE, LIMIT_FIELD_COUNT,
+// LIMIT_UNEXPECTED_FILE, MISSING_FIELD_NAME; field), and those of the parser and the storage. A request that is not
+// multipart goes on as it is.
+const node_crypto_1 = __importDefault(require("node:crypto"));
+const node_events_1 = require("node:events");
+const node_fs_1 = __importDefault(require("node:fs"));
+const node_os_1 = __importDefault(require("node:os"));
+const node_path_1 = __importDefault(require("node:path"));
+const multipart_js_1 = require("./multipart.js");
+const MESSAGES = {
+    LIMIT_PART_COUNT: 'Too many parts',
+    LIMIT_FILE_SIZE: 'File too large',
+    LIMIT_FILE_COUNT: 'Too many files',
+    LIMIT_FIELD_KEY: 'Field name too long',
+    LIMIT_FIELD_VALUE: 'Field value too long',
+    LIMIT_FIELD_COUNT: 'Too many fields',
+    LIMIT_UNEXPECTED_FILE: 'Unexpected field',
+    MISSING_FIELD_NAME: 'Field name missing',
+};
+class MulterError extends Error {
+    constructor(code, field) {
+        super(MESSAGES[code]);
+        this.name = 'MulterError';
+        this.code = code;
+        if (field)
+            this.field = field;
+    }
+}
+exports.MulterError = MulterError;
+// --- Text fields: names with [] and [key] nested (the meaning of append-field, the W3C's JSON form encoding) --------
+// The steps of a name: 'a[b][0]' -> a (object), b (array), 0; or the whole name when it does not parse.
+function stepsOf(key) {
+    const whole = [{ type: 'object', key, last: true }];
+    const first = /^[^[]*/.exec(key)[0];
+    if (!first)
+        return whole;
+    let tail = { type: 'object', key: first };
+    const steps = [tail];
+    let at = first.length;
+    while (at < key.length) {
+        if (key[at] === '[' && key[at + 1] === ']') {
+            at += 2;
+            tail.append = true;
+            if (at !== key.length)
+                return whole;
+            continue;
+        }
+        const rest = key.slice(at);
+        const digits = /^\[(\d+)\]/.exec(rest);
+        if (digits) {
+            at += digits[0].length;
+            tail.nextType = 'array';
+            tail = { type: 'array', key: Number.parseInt(digits[1], 10) };
+            steps.push(tail);
+            continue;
+        }
+        const name = /^\[([^\]]+)\]/.exec(rest);
+        if (name) {
+            at += name[0].length;
+            tail.nextType = 'object';
+            tail = { type: 'object', key: name[1] };
+            steps.push(tail);
+            continue;
+        }
+        return whole;
+    }
+    tail.last = true;
+    return steps;
+}
+const kindOf = (value) => {
+    if (value === undefined)
+        return 'undefined';
+    if (Array.isArray(value))
+        return 'array';
+    return typeof value === 'object' ? 'object' : 'scalar';
+};
+function setLast(context, step, current, value) {
+    switch (kindOf(current)) {
+        case 'undefined':
+            context[step.key] = step.append ? [value] : value;
+            break;
+        case 'array':
+            context[step.key].push(value);
+            break;
+        case 'object':
+            return setLast(current, { type: 'object', key: '', last: true }, current[''], value);
+        default:
+            context[step.key] = [context[step.key], value];
+    }
+    return context;
+}
+function setStep(context, step, current, value) {
+    if (step.last)
+        return setLast(context, step, current, value);
+    switch (kindOf(current)) {
+        case 'undefined':
+            context[step.key] = step.nextType === 'array' ? [] : Object.create(null);
+            return context[step.key];
+        case 'object':
+            return context[step.key];
+        case 'array': {
+            if (step.nextType === 'array')
+                return current;
+            const object = Object.create(null);
+            context[step.key] = object;
+            current.forEach((item, i) => {
+                if (item !== undefined)
+                    object[String(i)] = item;
+            });
+            return object;
+        }
+        default: {
+            const object = Object.create(null);
+            object[''] = current;
+            context[step.key] = object;
+            return object;
+        }
+    }
+}
+function appendField(store, key, value) {
+    stepsOf(key).reduce((context, step) => setStep(context, step, context[step.key], value), store);
+}
+// --- Storages ------------------------------------------------------------------------------------------------------
+class MemoryStorage {
+    _handleFile(req, file, cb) {
+        const chunks = [];
+        file.stream.on('data', (chunk) => chunks.push(chunk));
+        file.stream.on('end', () => {
+            const buffer = Buffer.concat(chunks);
+            cb(null, { buffer, size: buffer.length });
+        });
+    }
+    _removeFile(req, file, cb) {
+        delete file.buffer;
+        cb(null);
+    }
+}
+class DiskStorage {
+    constructor(options = {}) {
+        this.getFilename =
+            options.filename ||
+                ((req, file, cb) => node_crypto_1.default.randomBytes(16, (err, raw) => cb(err, err ? undefined : raw.toString('hex'))));
+        if (typeof options.destination === 'string') {
+            node_fs_1.default.mkdirSync(options.destination, { recursive: true });
+            this.getDestination = (req, file, cb) => cb(null, options.destination);
+        }
+        else {
+            this.getDestination = options.destination || ((req, file, cb) => cb(null, node_os_1.default.tmpdir()));
+        }
+    }
+    _handleFile(req, file, cb) {
+        this.getDestination(req, file, (err, destination) => {
+            if (err)
+                return cb(err);
+            return this.getFilename(req, file, (nameError, filename) => {
+                if (nameError)
+                    return cb(nameError);
+                const finalPath = node_path_1.default.join(destination, filename);
+                const out = node_fs_1.default.createWriteStream(finalPath);
+                file.stream.pipe(out);
+                out.on('error', cb);
+                out.on('finish', () => cb(null, { destination, filename, path: finalPath, size: out.bytesWritten }));
+                return undefined;
+            });
+        });
+    }
+    _removeFile(req, file, cb) {
+        const { path: filePath } = file;
+        delete file.destination;
+        delete file.filename;
+        delete file.path;
+        node_fs_1.default.unlink(filePath, cb);
+    }
+}
+const memoryStorage = () => new MemoryStorage();
+exports.memoryStorage = memoryStorage;
+const diskStorage = (options) => new DiskStorage(options);
+exports.diskStorage = diskStorage;
+// --- The middleware ------------------------------------------------------------------------------------------------
+// Whether the request has a multipart body (type-is's: a body, Transfer-Encoding or Content-Length, and a type
+// multipart/*).
+function isMultipart(req) {
+    const { headers } = req;
+    const hasBody = headers['transfer-encoding'] !== undefined || !Number.isNaN(Number.parseInt(headers['content-length'], 10));
+    if (!hasBody)
+        return false;
+    const type = headers['content-type'];
+    return typeof type === 'string' && /^\s*multipart\/[^\s;]+/i.test(type);
+}
+// Where the files go in the request: VALUE (req.file), ARRAY (req.files), OBJECT (req.files by field), NONE.
+class FileAppender {
+    constructor(strategy, req) {
+        this.strategy = strategy;
+        this.req = req;
+        if (strategy === 'ARRAY')
+            req.files = [];
+        else if (strategy === 'OBJECT')
+            req.files = Object.create(null);
+    }
+    insertPlaceholder(file) {
+        const placeholder = { fieldname: file.fieldname };
+        if (this.strategy === 'ARRAY')
+            this.req.files.push(placeholder);
+        else if (this.strategy === 'OBJECT') {
+            if (this.req.files[file.fieldname])
+                this.req.files[file.fieldname].push(placeholder);
+            else
+                this.req.files[file.fieldname] = [placeholder];
+        }
+        return placeholder;
+    }
+    removePlaceholder(placeholder) {
+        const remove = (list) => {
+            const at = list.indexOf(placeholder);
+            if (at !== -1)
+                list.splice(at, 1);
+        };
+        if (this.strategy === 'ARRAY')
+            remove(this.req.files);
+        else if (this.strategy === 'OBJECT') {
+            if (this.req.files[placeholder.fieldname].length === 1)
+                delete this.req.files[placeholder.fieldname];
+            else
+                remove(this.req.files[placeholder.fieldname]);
+        }
+    }
+    replacePlaceholder(placeholder, file) {
+        if (this.strategy === 'VALUE') {
+            this.req.file = file;
+            return;
+        }
+        delete placeholder.fieldname;
+        Object.assign(placeholder, file);
+    }
+}
+// The stream of the request read to its end (and left), as multer drains it.
+function drain(req) {
+    req.on('readable', () => {
+        while (req.read() !== null)
+            ;
+    });
+}
+// Uploaded files removed by the storage, one after another; their errors kept.
+function removeUploadedFiles(files, remove, cb) {
+    const errors = [];
+    if (files.length === 0)
+        return cb(null, errors);
+    const next = (i) => {
+        remove(files[i], (err) => {
+            if (err) {
+                err.file = files[i];
+                err.field = files[i].fieldname;
+                errors.push(err);
+            }
+            if (i < files.length - 1)
+                setImmediate(() => next(i + 1));
+            else
+                cb(null, errors);
+        });
+    };
+    next(0);
+    return undefined;
+}
+function makeMiddleware(setup) {
+    return function multerMiddleware(req, res, next) {
+        if (!isMultipart(req))
+            return next();
+        const { limits, storage, fileFilter, fileStrategy, preservePath, defParamCharset } = setup();
+        req.body = Object.create(null);
+        let parser;
+        let finished = false;
+        let readFinished = false;
+        let failed = false;
+        const writes = Object.assign(new node_events_1.EventEmitter(), { count: 0 });
+        const uploaded = [];
+        const done = (err) => {
+            if (finished)
+                return;
+            finished = true;
+            if (parser) {
+                req.unpipe(parser);
+                setImmediate(() => parser.removeAllListeners());
+            }
+            drain(req);
+            req.resume();
+            // (An error waits for the rest of the body to come, so that the client is not cut while it sends.)
+            if (err && req.readable && !req.destroyed) {
+                let called = false;
+                const after = () => {
+                    if (called)
+                        return;
+                    called = true;
+                    next(err);
+                };
+                req.once('end', after);
+                req.once('error', after);
+                req.once('close', after);
+                return;
+            }
+            next(err);
+        };
+        const maybeDone = () => {
+            if (readFinished && writes.count === 0 && !failed)
+                done();
+        };
+        const abort = (error, now) => {
+            if (failed)
+                return;
+            failed = true;
+            const finish = () => removeUploadedFiles(uploaded, (file, cb) => storage._removeFile(req, file, cb), (err, storageErrors) => {
+                if (err)
+                    return done(err);
+                error.storageErrors = storageErrors;
+                return done(error);
+            });
+            if (now || writes.count === 0)
+                finish();
+            else
+                writes.once('zero', finish);
+        };
+        const abortWith = (code, field) => abort(new MulterError(code, field));
+        const decrement = () => {
+            writes.count -= 1;
+            if (writes.count === 0)
+                writes.emit('zero');
+        };
+        const requestFailed = (err) => {
+            if (finished)
+                return;
+            if (parser) {
+                req.unpipe(parser);
+                parser.destroy(err);
+            }
+            abort(err, true);
+        };
+        req.on('error', (err) => requestFailed(err || new Error('Request error')));
+        req.on('aborted', () => requestFailed(new Error('Request aborted')));
+        req.on('close', () => {
+            if (req.readableEnded)
+                return;
+            requestFailed(new Error('Request closed'));
+        });
+        try {
+            parser = new multipart_js_1.MultipartParser({ headers: req.headers, limits, preservePath, defParamCharset });
+        }
+        catch (err) {
+            return next(err);
+        }
+        const appender = new FileAppender(fileStrategy, req);
+        const nameTooLong = (name) => limits && Object.hasOwn(limits, 'fieldNameSize') && name.length > limits.fieldNameSize;
+        parser.on('field', (fieldname, value, { nameTruncated, valueTruncated }) => {
+            if (fieldname == null)
+                return abortWith('MISSING_FIELD_NAME');
+            if (nameTruncated)
+                return abortWith('LIMIT_FIELD_KEY');
+            if (valueTruncated)
+                return abortWith('LIMIT_FIELD_VALUE', fieldname);
+            if (nameTooLong(fieldname))
+                return abortWith('LIMIT_FIELD_KEY');
+            return appendField(req.body, fieldname, value);
+        });
+        parser.on('file', (fieldname, stream, { filename, encoding, mimeType }) => {
+            let counted = false;
+            stream.on('error', (err) => {
+                if (counted)
+                    decrement();
+                abort(err);
+            });
+            if (fieldname == null)
+                return abortWith('MISSING_FIELD_NAME');
+            // (A file input left empty: no file.)
+            if (!filename)
+                return stream.resume();
+            if (nameTooLong(fieldname))
+                return abortWith('LIMIT_FIELD_KEY');
+            const file = { fieldname, originalname: filename, encoding, mimetype: mimeType };
+            const placeholder = appender.insertPlaceholder(file);
+            fileFilter(req, file, (err, include) => {
+                if (failed) {
+                    appender.removePlaceholder(placeholder);
+                    return stream.resume();
+                }
+                if (err) {
+                    appender.removePlaceholder(placeholder);
+                    return abort(err);
+                }
+                if (!include) {
+                    appender.removePlaceholder(placeholder);
+                    return stream.resume();
+                }
+                let aborting = false;
+                counted = true;
+                writes.count += 1;
+                Object.defineProperty(file, 'stream', { configurable: true, enumerable: false, value: stream });
+                stream.on('limit', () => {
+                    aborting = true;
+                    abortWith('LIMIT_FILE_SIZE', fieldname);
+                });
+                return storage._handleFile(req, file, (storageError, info) => {
+                    if (aborting) {
+                        appender.removePlaceholder(placeholder);
+                        uploaded.push({ ...file, ...info });
+                        return decrement();
+                    }
+                    if (storageError) {
+                        appender.removePlaceholder(placeholder);
+                        decrement();
+                        return abort(storageError);
+                    }
+                    const stored = { ...file, ...info };
+                    appender.replacePlaceholder(placeholder, stored);
+                    uploaded.push(stored);
+                    decrement();
+                    return maybeDone();
+                });
+            });
+            return undefined;
+        });
+        parser.on('error', (err) => abort(err));
+        parser.on('partsLimit', () => abortWith('LIMIT_PART_COUNT'));
+        parser.on('filesLimit', () => abortWith('LIMIT_FILE_COUNT'));
+        parser.on('fieldsLimit', () => abortWith('LIMIT_FIELD_COUNT'));
+        parser.on('close', () => {
+            readFinished = true;
+            maybeDone();
+        });
+        req.pipe(parser);
+        return undefined;
+    };
+}
+const allowAll = (req, file, cb) => cb(null, true);
+class Multer {
+    constructor(options) {
+        if (options.storage)
+            this.storage = options.storage;
+        else if (options.dest)
+            this.storage = diskStorage({ destination: options.dest });
+        else
+            this.storage = memoryStorage();
+        this.limits = options.limits;
+        this.preservePath = options.preservePath;
+        this.defParamCharset = options.defParamCharset || 'latin1';
+        this.fileFilter = options.fileFilter || allowAll;
+    }
+    // A middleware taking the files of these fields ({ name, maxCount }), put as the strategy says.
+    makeMiddleware(fields, fileStrategy) {
+        return makeMiddleware(() => {
+            const left = Object.create(null);
+            for (const field of fields)
+                left[field.name] = typeof field.maxCount === 'number' ? field.maxCount : Infinity;
+            const fileFilter = (req, file, cb) => {
+                if ((left[file.fieldname] || 0) <= 0)
+                    return cb(new MulterError('LIMIT_UNEXPECTED_FILE', file.fieldname));
+                left[file.fieldname] -= 1;
+                return this.fileFilter(req, file, cb);
+            };
+            return { ...this.settings(), fileFilter, fileStrategy };
+        });
+    }
+    settings() {
+        return {
+            limits: this.limits,
+            preservePath: this.preservePath,
+            defParamCharset: this.defParamCharset,
+            storage: this.storage,
+        };
+    }
+    single(name) {
+        return this.makeMiddleware([{ name, maxCount: 1 }], 'VALUE');
+    }
+    array(name, maxCount) {
+        return this.makeMiddleware([{ name, maxCount }], 'ARRAY');
+    }
+    fields(fields) {
+        return this.makeMiddleware(fields, 'OBJECT');
+    }
+    none() {
+        return this.makeMiddleware([], 'NONE');
+    }
+    any() {
+        return makeMiddleware(() => ({ ...this.settings(), fileFilter: this.fileFilter, fileStrategy: 'ARRAY' }));
+    }
+}
+function multer(options) {
+    if (options === undefined)
+        return new Multer({});
+    if (typeof options === 'object' && options !== null)
+        return new Multer(options);
+    throw new TypeError('Expected object for argument options');
+}
+multer.diskStorage = diskStorage;
+multer.memoryStorage = memoryStorage;
+multer.MulterError = MulterError;
+
+},
+"@xufa/http/lib/multipart.js": function (module, exports, require) {
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.MultipartParser = void 0;
+exports.parseContentType = parseContentType;
+exports.parseDisposition = parseDisposition;
+exports.decoderOf = decoderOf;
+// multipart/form-data read as it arrives: a writable stream that the body of a request is piped to, and that tells of
+// each field (`field`: name, value, info) and each file (`file`: name, a readable stream of its bytes, info) as it
+// comes, without keeping the body. The meaning is busboy's (what multer is made on), so that what reads it reads the
+// same: a part is a file when it has a filename (or is application/octet-stream); file names lose their folders
+// (preservePath keeps them) and are decoded as `defParamCharset` says ('latin1' by default, as busboy's; 'utf8' reads
+// them as browsers send them; filename* says its own); values are decoded by their charset ('utf8' by default).
+//
+// Limits: fieldSize (1 MiB: a longer value is truncated, info.valueTruncated), fileSize (a file's stream gets 'limit'
+// and its bytes stop there, stream.truncated), files, fields and parts (past them the parts are skipped, and
+// 'filesLimit', 'fieldsLimit' or 'partsLimit' is told once). Errors: 'Multipart: Boundary not found' (thrown), 'Malformed
+// part header', 'Unexpected end of form'. A file whose stream is not read holds the writes (backpressure).
+//
+//   const parser = new MultipartParser({ headers: req.headers, limits: { fileSize: 1e6 } });
+//   parser.on('file', (name, stream, { filename, encoding, mimeType }) => stream.pipe(somewhere));
+//   parser.on('field', (name, value) => ...);
+//   parser.on('close', () => ...);
+//   req.pipe(parser);
+const node_stream_1 = require("node:stream");
+const CRLF = Buffer.from('\r\n');
+const HEADERS_END = Buffer.from('\r\n\r\n');
+// Where the bytes of data from a position on begin the needle (\r\n--boundary) and reach its end; data.length if none.
+function tailOf(data, from, needle) {
+    for (let at = data.indexOf(13, from); at !== -1; at = data.indexOf(13, at + 1)) {
+        if (needle.compare(data, at, data.length, 0, data.length - at) === 0)
+            return at;
+    }
+    return data.length;
+}
+// (As Node's HTTP parser: the size of a part's headers, and how many are read.)
+const MAX_HEADER_SIZE = 16 * 1024;
+const MAX_HEADER_PAIRS = 2000;
+const TOKEN = /^[!#$%&'*+\-.^_`|~0-9A-Za-z]+$/;
+// (The same characters by code: a test per character without a regular expression.)
+const TOKEN_CHAR = new Uint8Array(128);
+for (const char of "!#$%&'*+-.^_`|~0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz") {
+    TOKEN_CHAR[char.charCodeAt(0)] = 1;
+}
+const isToken = (code) => code < 128 && TOKEN_CHAR[code] === 1;
+// States of the parser.
+const PREAMBLE = 0;
+const AFTER_BOUNDARY = 1;
+const HEADERS = 2;
+const BODY = 3;
+const SKIP = 4;
+const DONE = 5;
+// A text decoder of a charset ('utf8', 'latin1', 'utf16le', 'base64', or any TextDecoder knows), or null.
+function decoderOf(charset) {
+    const name = String(charset).toLowerCase();
+    switch (name) {
+        case 'utf8':
+        case 'utf-8':
+            return (bytes) => bytes.toString('utf8');
+        case 'latin1':
+        case 'ascii':
+        case 'us-ascii':
+        case 'iso-8859-1':
+        case 'iso8859-1':
+        case 'iso88591':
+        case 'iso_8859-1':
+        case 'iso_8859-1:1987':
+        case 'windows-1252':
+        case 'cp1252':
+        case 'x-cp1252':
+            return (bytes) => bytes.toString('latin1');
+        case 'utf16le':
+        case 'utf-16le':
+        case 'ucs2':
+        case 'ucs-2':
+            return (bytes) => bytes.toString('utf16le');
+        case 'base64':
+            return (bytes) => bytes.toString('base64');
+        default:
+            try {
+                const decoder = new TextDecoder(name);
+                return (bytes) => decoder.decode(bytes);
+            }
+            catch {
+                return null;
+            }
+    }
+}
+// The parameters after a value of a header (; name=value; name="quoted"; name*=charset'lang'percent-encoded), or
+// null if malformed. Plain values are given to `decode` (they are latin1 text: their bytes as read), extended ones are
+// decoded by their own charset.
+function paramsOf(text, from, decode) {
+    const params = Object.create(null);
+    let i = from;
+    const skipSpace = () => {
+        while (i < text.length && (text[i] === ' ' || text[i] === '\t'))
+            i += 1;
+    };
+    while (i < text.length) {
+        skipSpace();
+        if (i === text.length)
+            break;
+        if (text[i] !== ';')
+            return null;
+        i += 1;
+        skipSpace();
+        if (i === text.length)
+            return null;
+        const nameStart = i;
+        while (i < text.length && text[i] !== '=') {
+            if (!isToken(text.charCodeAt(i)))
+                return null;
+            i += 1;
+        }
+        if (i === text.length || i === nameStart)
+            return null;
+        let name = text.slice(nameStart, i);
+        i += 1;
+        if (i === text.length)
+            return null;
+        let value;
+        if (name.endsWith('*')) {
+            // RFC 5987: charset'language'value, its bytes percent-encoded.
+            const quote = text.indexOf("'", i);
+            const second = quote === -1 ? -1 : text.indexOf("'", quote + 1);
+            if (second === -1)
+                return null;
+            const charset = text.slice(i, quote);
+            let end = second + 1;
+            while (end < text.length && !/[\s;]/.test(text[end]))
+                end += 1;
+            const raw = text.slice(second + 1, end);
+            if (raw === '' || /%(?![0-9A-Fa-f]{2})/.test(raw))
+                return null;
+            const decoder = decoderOf(charset || 'utf8');
+            if (!decoder)
+                return null;
+            value = decoder(Buffer.from(raw.replace(/%([0-9A-Fa-f]{2})/g, (_, hex) => String.fromCharCode(parseInt(hex, 16))), 'latin1'));
+            i = end;
+        }
+        else if (text[i] === '"') {
+            // A quoted string: \" and \\ escaped (another backslash is kept, as busboy does: Windows' paths).
+            i += 1;
+            let quoted = '';
+            let closed = false;
+            // (Runs of plain characters are sliced whole.)
+            let run = i;
+            while (i < text.length) {
+                const code = text.charCodeAt(i);
+                if (code === 92 && (text[i + 1] === '"' || text[i + 1] === '\\')) {
+                    quoted += text.slice(run, i) + text[i + 1];
+                    i += 2;
+                    run = i;
+                }
+                else if (code === 34) {
+                    quoted += text.slice(run, i);
+                    closed = true;
+                    i += 1;
+                    break;
+                }
+                else
+                    i += 1;
+            }
+            if (!closed)
+                return null;
+            value = decode(quoted);
+        }
+        else {
+            const valueStart = i;
+            while (i < text.length && isToken(text.charCodeAt(i)))
+                i += 1;
+            if (i === valueStart)
+                return null;
+            value = decode(text.slice(valueStart, i));
+        }
+        name = name.toLowerCase();
+        if (params[name] === undefined)
+            params[name] = value;
+    }
+    return params;
+}
+// { type, subtype, params } of a Content-Type, or null.
+function parseContentType(text) {
+    const match = /^([!#$%&'*+\-.^_`|~0-9A-Za-z]+)\/([!#$%&'*+\-.^_`|~0-9A-Za-z]+)/.exec(text);
+    if (!match)
+        return null;
+    const params = paramsOf(text, match[0].length, (value) => value);
+    if (!params)
+        return null;
+    return { type: match[1].toLowerCase(), subtype: match[2].toLowerCase(), params };
+}
+// { type, params } of a Content-Disposition, or null.
+function parseDisposition(text, decode) {
+    const match = /^[!#$%&'*+\-.^_`|~0-9A-Za-z]+/.exec(text);
+    if (!match)
+        return null;
+    const params = paramsOf(text, match[0].length, decode);
+    if (!params)
+        return null;
+    return { type: match[0].toLowerCase(), params };
+}
+// A path's last name ('' for '.' and '..').
+function basename(path) {
+    const name = path.slice(Math.max(path.lastIndexOf('/'), path.lastIndexOf('\\')) + 1);
+    return name === '.' || name === '..' ? '' : name;
+}
+// Whether a line of a header has a control character (but tab).
+function hasControl(line) {
+    for (let i = 0; i < line.length; i += 1) {
+        const code = line.charCodeAt(i);
+        if ((code < 32 && code !== 9) || code === 127)
+            return true;
+    }
+    return false;
+}
+// The headers of a part (name -> [values], names in lowercase), or null if malformed.
+function parseHeaders(text) {
+    const headers = Object.create(null);
+    if (text === '')
+        return headers;
+    const lines = text.split('\r\n');
+    let pairs = 0;
+    let name = null;
+    let value = '';
+    const keep = () => {
+        if (name === null)
+            return;
+        pairs += 1;
+        if (pairs < MAX_HEADER_PAIRS) {
+            const key = name.toLowerCase();
+            if (headers[key] === undefined)
+                headers[key] = [value];
+            else
+                headers[key].push(value);
+        }
+    };
+    for (const line of lines) {
+        if (hasControl(line))
+            return null;
+        if (line[0] === ' ' || line[0] === '\t') {
+            // A folded value.
+            if (name === null)
+                return null;
+            value += line.replace(/^[ \t]+/, '');
+            continue;
+        }
+        keep();
+        const colon = line.indexOf(':');
+        if (colon <= 0 || !TOKEN.test(line.slice(0, colon)))
+            return null;
+        name = line.slice(0, colon);
+        value = line.slice(colon + 1).replace(/^[ \t]+/, '');
+    }
+    keep();
+    return headers;
+}
+// The stream of a file's bytes; its reads release the writes held for it.
+class FileStream extends node_stream_1.Readable {
+    constructor(parser) {
+        super();
+        this.truncated = false;
+        this.parser = parser;
+        this.once('end', () => {
+            // (Writes held for it go on; and the parser ends when the last file was read.)
+            this.release();
+            this.parser.fileEnded();
+        });
+    }
+    release() {
+        const { waiting } = this.parser;
+        if (waiting) {
+            this.parser.waiting = null;
+            waiting();
+        }
+    }
+    _read() {
+        this.release();
+    }
+}
+class MultipartParser extends node_stream_1.Writable {
+    // headers: of the request; limits: { fieldSize, fileSize, files, fields, parts }; preservePath; defParamCharset
+    // ('latin1'); defCharset ('utf8').
+    constructor({ headers, limits = {}, preservePath = false, defParamCharset = 'latin1', defCharset = 'utf8' } = {}) {
+        super({ autoDestroy: true, emitClose: true });
+        const contentType = headers && headers['content-type'];
+        if (typeof contentType !== 'string')
+            throw new Error('Missing Content-Type');
+        const type = parseContentType(contentType);
+        if (!type)
+            throw new Error('Malformed content type');
+        if (type.type !== 'multipart' || type.subtype !== 'form-data') {
+            throw new Error(`Unsupported content type: ${contentType}`);
+        }
+        if (typeof type.params.boundary !== 'string')
+            throw new Error('Multipart: Boundary not found');
+        this.needle = Buffer.from(`\r\n--${type.params.boundary}`);
+        const decoder = decoderOf(defParamCharset || 'latin1') ?? decoderOf('latin1');
+        // (Header values are read as latin1 text: their bytes as they came.)
+        this.decodeParam = (value) => decoder(Buffer.from(value, 'latin1'));
+        this.defCharset = defCharset;
+        this.preservePath = preservePath;
+        const limitOf = (name, fallback) => (typeof limits[name] === 'number' ? limits[name] : fallback);
+        this.limits = {
+            fieldSize: limitOf('fieldSize', 1024 * 1024),
+            fileSize: limitOf('fileSize', Infinity),
+            files: limitOf('files', Infinity),
+            fields: limitOf('fields', Infinity),
+            parts: limitOf('parts', Infinity),
+        };
+        this.state = PREAMBLE;
+        // (The bytes not yet read: a tail that may begin a boundary, or headers not complete.)
+        this.pending = CRLF;
+        // (Boundaries met: the first one opens the first part.)
+        this.parts = -1;
+        this.files = 0;
+        this.fields = 0;
+        this.toldFiles = false;
+        this.toldFields = false;
+        this.part = null;
+        this.complete = false;
+        this.filesOpen = 0;
+        this.waiting = null;
+        this.finishing = null;
+    }
+    _write(chunk, encoding, callback) {
+        let held = false;
+        try {
+            // (Mostly nothing is pending: the chunk is read as it came, not copied. When something is (the CRLF before the
+            // first boundary, a tail that begins one), it is joined to the head of the chunk only, and the rest read in place.)
+            const cut = this.needle.length + 1024;
+            if (this.pending.length !== 0 && chunk.length > cut * 2) {
+                held = this.scan(Buffer.concat([this.pending, chunk.subarray(0, cut)]));
+                const rest = chunk.subarray(cut);
+                held = this.scan(this.pending.length === 0 ? rest : Buffer.concat([this.pending, rest])) || held;
+            }
+            else
+                held = this.scan(this.pending.length === 0 ? chunk : Buffer.concat([this.pending, chunk]));
+        }
+        catch (err) {
+            callback(err);
+            return;
+        }
+        // (A file that cannot take more: the next write waits for it to be read.)
+        if (held)
+            this.waiting = callback;
+        else
+            callback();
+    }
+    // Reads what can be read of the bytes, keeps the rest in pending; true when a file's stream is full.
+    scan(data) {
+        let offset = 0;
+        let full = false;
+        const { needle } = this;
+        while (offset < data.length) {
+            if (this.state === DONE) {
+                offset = data.length;
+                break;
+            }
+            if (this.state === AFTER_BOUNDARY) {
+                if (data.length - offset < 2)
+                    break;
+                if (data[offset] === 45 && data[offset + 1] === 45) {
+                    // --: the end of the form.
+                    this.complete = true;
+                    this.state = DONE;
+                    offset = data.length;
+                    break;
+                }
+                if (data[offset] === 13 && data[offset + 1] === 10) {
+                    offset += 2;
+                    // (Past the limit of parts, the rest is read and left.)
+                    this.state = this.parts >= this.limits.parts ? SKIP : HEADERS;
+                }
+                else
+                    this.state = SKIP;
+                continue;
+            }
+            if (this.state === HEADERS) {
+                // Headers end at an empty line. (A part needs a header; and a boundary before its headers end cuts them: as
+                // busboy, which looks for boundaries first, both are malformed.)
+                if (data[offset] === 13) {
+                    if (data.length - offset < 2)
+                        break;
+                    if (data[offset + 1] === 10)
+                        throw new Error('Malformed part header');
+                }
+                const end = data.indexOf(HEADERS_END, offset);
+                const boundary = data.indexOf(needle, offset);
+                if (boundary !== -1 && (end === -1 || boundary < end + HEADERS_END.length)) {
+                    throw new Error('Malformed part header');
+                }
+                if (end === -1) {
+                    if (data.length - offset > MAX_HEADER_SIZE)
+                        throw new Error('Malformed part header');
+                    break;
+                }
+                if (end - offset > MAX_HEADER_SIZE)
+                    throw new Error('Malformed part header');
+                const headers = parseHeaders(data.latin1Slice(offset, end));
+                if (!headers)
+                    throw new Error('Malformed part header');
+                offset = end + HEADERS_END.length;
+                this.startPart(headers);
+                continue;
+            }
+            // Bytes of a part (or before the first boundary, or of a part left), up to the next boundary.
+            const at = data.indexOf(needle, offset);
+            if (at === -1) {
+                // (The last bytes that begin a boundary, if any: kept for the next write.)
+                const safe = tailOf(data, Math.max(offset, data.length - (needle.length - 1)), needle);
+                if (this.state === BODY && safe > offset)
+                    full = this.partData(data.subarray(offset, safe)) || full;
+                offset = safe;
+                break;
+            }
+            if (this.state === BODY && at > offset)
+                full = this.partData(data.subarray(offset, at)) || full;
+            this.endPart();
+            offset = at + needle.length;
+            this.state = AFTER_BOUNDARY;
+            this.parts += 1;
+            if (this.parts === this.limits.parts)
+                this.emit('partsLimit');
+        }
+        this.pending = Buffer.from(data.subarray(offset));
+        return full;
+    }
+    startPart(headers) {
+        this.state = SKIP;
+        this.part = null;
+        const disposition = headers['content-disposition'];
+        if (!disposition)
+            return;
+        const parsed = parseDisposition(disposition[0], this.decodeParam);
+        if (!parsed || parsed.type !== 'form-data')
+            return;
+        // (An empty name is none, as busboy's.)
+        const name = parsed.params.name || undefined;
+        let filename = parsed.params['filename*'] ?? parsed.params.filename;
+        if (filename !== undefined && !this.preservePath)
+            filename = basename(filename);
+        let mimeType = 'text/plain';
+        let charset = this.defCharset;
+        // (The header as it came, too: info.contentType.)
+        const contentType = headers['content-type'] ? headers['content-type'][0] : undefined;
+        if (headers['content-type']) {
+            const type = parseContentType(headers['content-type'][0]);
+            if (type) {
+                mimeType = `${type.type}/${type.subtype}`;
+                if (typeof type.params.charset === 'string')
+                    charset = type.params.charset.toLowerCase();
+            }
+        }
+        const encoding = headers['content-transfer-encoding']
+            ? headers['content-transfer-encoding'][0].toLowerCase()
+            : '7bit';
+        if (mimeType === 'application/octet-stream' || filename !== undefined) {
+            if (this.files === this.limits.files) {
+                if (!this.toldFiles) {
+                    this.toldFiles = true;
+                    this.emit('filesLimit');
+                }
+                return;
+            }
+            this.files += 1;
+            if (this.listenerCount('file') === 0)
+                return;
+            const stream = new FileStream(this);
+            this.filesOpen += 1;
+            this.part = { stream, size: 0 };
+            this.state = BODY;
+            this.emit('file', name, stream, { filename, encoding, mimeType, contentType });
+            return;
+        }
+        if (this.fields === this.limits.fields) {
+            if (!this.toldFields) {
+                this.toldFields = true;
+                this.emit('fieldsLimit');
+            }
+            return;
+        }
+        this.fields += 1;
+        if (this.listenerCount('field') === 0)
+            return;
+        this.part = { name, chunks: [], size: 0, truncated: false, charset, encoding, mimeType, contentType };
+        this.state = BODY;
+    }
+    // Bytes of the part being read; true when its file's stream is full.
+    partData(bytes) {
+        const { part } = this;
+        if (part.stream) {
+            const room = this.limits.fileSize - part.size;
+            const kept = bytes.length > room ? bytes.subarray(0, room) : bytes;
+            part.size += kept.length;
+            if (part.size === this.limits.fileSize) {
+                if (kept.length > 0)
+                    part.stream.push(kept);
+                part.stream.truncated = true;
+                part.stream.emit('limit');
+                // (The rest of the file is read and left; its stream ends at its boundary.)
+                this.state = SKIP;
+                return false;
+            }
+            return !part.stream.push(kept);
+        }
+        const room = this.limits.fieldSize - part.size;
+        const kept = bytes.length > room ? bytes.subarray(0, room) : bytes;
+        part.chunks.push(kept);
+        part.size += kept.length;
+        if (part.size === this.limits.fieldSize && bytes.length >= room) {
+            part.truncated = true;
+            this.state = SKIP;
+        }
+        return false;
+    }
+    endPart() {
+        const { part } = this;
+        this.part = null;
+        if (!part)
+            return;
+        if (part.stream) {
+            part.stream.push(null);
+            return;
+        }
+        const decode = decoderOf(part.charset) ?? decoderOf('utf8');
+        const value = part.chunks.length === 0 ? '' : decode(Buffer.concat(part.chunks, part.size));
+        this.emit('field', part.name, value, {
+            nameTruncated: false,
+            valueTruncated: part.truncated,
+            encoding: part.encoding,
+            mimeType: part.mimeType,
+            contentType: part.contentType,
+        });
+    }
+    fileEnded() {
+        this.filesOpen -= 1;
+        if (this.filesOpen === 0 && this.finishing) {
+            const finish = this.finishing;
+            this.finishing = null;
+            // (Other listeners of the file's end first.)
+            process.nextTick(finish);
+        }
+    }
+    _final(callback) {
+        if (!this.complete) {
+            callback(new Error('Unexpected end of form'));
+            return;
+        }
+        // (Finished when every file was read.)
+        if (this.filesOpen > 0)
+            this.finishing = () => callback();
+        else
+            callback();
+    }
+    _destroy(err, callback) {
+        let error = err;
+        if (!error && !this.complete)
+            error = new Error('Unexpected end of form');
+        if (this.part?.stream) {
+            const { stream } = this.part;
+            this.part = null;
+            stream.destroy(err ?? new Error('Unexpected end of file'));
+        }
+        this.state = DONE;
+        callback(error);
+    }
+}
+exports.MultipartParser = MultipartParser;
 
 },
 "@xufa/http/lib/noop-set.js": function (module, exports, require) {
@@ -6454,6 +12120,184 @@ Object.defineProperties(Request.prototype, {
 exports.default = Request;
 Request.buildRequest = buildRequest;
 Request.onClientGone = onClientGone;
+
+},
+"@xufa/http/lib/response-compress.js": function (module, exports, require) {
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.compress = compress;
+// xufa.compress: answers compressed with brotli, gzip or deflate on the routes of @xufa/http, by the rules of
+// @xufa/http/compression (compression 1.8.2): the type compressible (or `filter`), Cache-Control without no-transform,
+// Vary: Accept-Encoding, from `threshold` (1kb), not HEAD, not encoded already, the encoding the request prefers.
+// Bodies of strings and Buffers are compressed at once; streams through zlib as they are read.
+//
+//   app.register(xufa.compress, { threshold: 256 });
+const node_util_1 = require("node:util");
+const node_zlib_1 = __importDefault(require("node:zlib"));
+const compression_js_1 = require("./compression.js");
+const vary_js_1 = require("./vary.js");
+function compress(app, options, done) {
+    const opts = { ...options };
+    delete opts.prefix;
+    const brotli = { ...opts.brotli };
+    brotli.params = { [node_zlib_1.default.constants.BROTLI_PARAM_QUALITY]: 4, ...brotli.params };
+    let threshold = (0, compression_js_1.parseBytes)(opts.threshold);
+    if (threshold == null)
+        threshold = 1024;
+    const enforceEncoding = opts.enforceEncoding || 'identity';
+    const filter = opts.filter ||
+        ((request, reply) => {
+            const type = reply.getHeader('content-type');
+            return type !== undefined && !!(0, compression_js_1.compressible)(type);
+        });
+    const zlibOptions = { ...opts };
+    for (const name of ['brotli', 'threshold', 'filter', 'enforceEncoding'])
+        delete zlibOptions[name];
+    const once = {
+        br: (0, node_util_1.promisify)((body, callback) => node_zlib_1.default.brotliCompress(body, brotli, callback)),
+        gzip: (0, node_util_1.promisify)((body, callback) => node_zlib_1.default.gzip(body, zlibOptions, callback)),
+        deflate: (0, node_util_1.promisify)((body, callback) => node_zlib_1.default.deflate(body, zlibOptions, callback)),
+    };
+    const streams = {
+        br: () => node_zlib_1.default.createBrotliCompress(brotli),
+        gzip: () => node_zlib_1.default.createGzip(zlibOptions),
+        deflate: () => node_zlib_1.default.createDeflate(zlibOptions),
+    };
+    app.addHook('onSend', async (request, reply, payload) => {
+        if (payload === null || payload === undefined)
+            return payload;
+        const isBytes = typeof payload === 'string' || Buffer.isBuffer(payload);
+        const isStream = !isBytes && typeof payload.pipe === 'function';
+        if (!isBytes && !isStream)
+            return payload;
+        if (!filter(request, reply))
+            return payload;
+        if ((0, compression_js_1.noTransform)(reply.getHeader('cache-control')))
+            return payload;
+        const vary = reply.getHeader('vary');
+        reply.header('vary', (0, vary_js_1.appendVary)(Array.isArray(vary) ? vary.join(', ') : String(vary || ''), 'Accept-Encoding'));
+        const declared = reply.getHeader('content-length');
+        const length = isBytes ? Buffer.byteLength(payload) : undefined;
+        if (Number(declared) < threshold || length < threshold)
+            return payload;
+        if ((reply.getHeader('content-encoding') || 'identity') !== 'identity')
+            return payload;
+        if (request.method === 'HEAD')
+            return payload;
+        const encoding = (0, compression_js_1.acceptedEncoding)(request.headers['accept-encoding'], enforceEncoding);
+        if (!encoding)
+            return payload;
+        reply.header('content-encoding', encoding);
+        reply.removeHeader('content-length');
+        return isBytes ? once[encoding](payload) : payload.pipe(streams[encoding]());
+    });
+    done();
+}
+compress[Symbol.for('skip-override')] = true;
+compress[Symbol.for('fastify.display-name')] = 'compress';
+compress[Symbol.for('plugin-meta')] = { name: 'compress' };
+
+},
+"@xufa/http/lib/response-etag.js": function (module, exports, require) {
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.etag = etag;
+// xufa.etag: ETags and 304s on the routes of @xufa/http, as Express answers them: the ETag of each body of a string
+// or Buffer (weak, by default, as Express's; `weak: false` for strong ones), unless the route set one; and for a GET or
+// HEAD of a 2xx or 304 whose client has it (If-None-Match, If-Modified-Since against Last-Modified, as fresh decides),
+// 304 without a body, its Content-Type, Content-Length or Transfer-Encoding.
+//
+//   app.register(xufa.etag);
+const fresh_js_1 = require("./fresh.js");
+function etag(app, options, done) {
+    const weak = !options || options.weak !== false;
+    app.addHook('onSend', (request, reply, payload, next) => {
+        if (typeof payload !== 'string' && !Buffer.isBuffer(payload)) {
+            next(null, payload);
+            return;
+        }
+        if (!reply.getHeader('etag'))
+            reply.header('etag', (0, fresh_js_1.entityTag)(payload, weak));
+        const { method } = request;
+        const status = reply.statusCode;
+        if ((method === 'GET' || method === 'HEAD') &&
+            ((status >= 200 && status < 300) || status === 304) &&
+            (0, fresh_js_1.fresh)(request.headers, reply.getHeader('etag'), reply.getHeader('last-modified'))) {
+            reply.code(304);
+            for (const name of ['content-type', 'content-length', 'transfer-encoding'])
+                reply.removeHeader(name);
+            next(null, '');
+            return;
+        }
+        next(null, payload);
+    });
+    done();
+}
+etag[Symbol.for('skip-override')] = true;
+etag[Symbol.for('fastify.display-name')] = 'etag';
+etag[Symbol.for('plugin-meta')] = { name: 'etag' };
+
+},
+"@xufa/http/lib/response-headers.js": function (module, exports, require) {
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.helmet = helmet;
+// xufa.helmet: the security headers of helmet (@xufa/http/helmet) on the routes of @xufa/http, with helmet's options.
+// Headers known when it is registered (most policies) are set on each request at once; a policy with values computed
+// per request (a nonce) runs helmet's middleware on the request. X-Powered-By is removed before the answer is sent.
+//
+//   app.register(xufa.helmet, { contentSecurityPolicy: { directives: { scriptSrc: ["'self'"] } } });
+const helmet_js_1 = require("./helmet.js");
+function helmet(app, options, done) {
+    const settings = { ...options };
+    // (Options of register() itself are not helmet's.)
+    delete settings.prefix;
+    let fixed;
+    let middleware;
+    try {
+        fixed = (0, helmet_js_1.staticHeaders)(settings);
+        if (!fixed)
+            middleware = (0, helmet_js_1.helmet)(settings);
+    }
+    catch (err) {
+        done(err);
+        return;
+    }
+    if (fixed) {
+        const { set, removed } = fixed;
+        app.addHook('onRequest', (request, reply, next) => {
+            reply.headers(set);
+            next();
+        });
+        if (removed.length) {
+            app.addHook('onSend', (request, reply, payload, next) => {
+                for (const name of removed)
+                    reply.removeHeader(name);
+                next(null, payload);
+            });
+        }
+    }
+    else {
+        // The middleware of helmet on the request: its headers go to the reply (its functions get request.raw, and a
+        // response whose headers are the reply's, with res.locals of the raw response).
+        app.addHook('onRequest', (request, reply, next) => {
+            const res = Object.create(reply.raw, {
+                setHeader: { value: (name, value) => reply.header(name, value) },
+                removeHeader: { value: (name) => reply.removeHeader(name) },
+                getHeader: { value: (name) => reply.getHeader(name) },
+            });
+            middleware(request.raw, res, (err) => next(err));
+        });
+        app.addHook('onSend', (request, reply, payload, next) => {
+            reply.removeHeader('X-Powered-By');
+            next(null, payload);
+        });
+    }
+    done();
+}
+helmet[Symbol.for('skip-override')] = true;
+helmet[Symbol.for('fastify.display-name')] = 'helmet';
+helmet[Symbol.for('plugin-meta')] = { name: 'helmet' };
 
 },
 "@xufa/http/lib/route-names.js": function (module, exports, require) {
@@ -9221,6 +15065,71 @@ function ValidatorSelector() {
 }
 
 },
+"@xufa/http/lib/vary.js": function (module, exports, require) {
+// The Vary header (vary): fields added to it once each, '*' alone. For @xufa/http/compression and @xufa/express.
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.tokens = tokens;
+exports.appendVary = appendVary;
+exports.vary = vary;
+const FIELD_NAME = /^[!#$%&'*+\-.^_`|~0-9A-Za-z]+$/;
+// The names of a list (commas, spaces around them).
+function tokens(text) {
+    const list = [];
+    let start = 0;
+    let end = 0;
+    for (let i = 0; i < text.length; i += 1) {
+        const code = text.charCodeAt(i);
+        if (code === 0x20) {
+            if (start === end) {
+                start = i + 1;
+                end = start;
+            }
+        }
+        else if (code === 0x2c) {
+            list.push(text.substring(start, end));
+            start = i + 1;
+            end = start;
+        }
+        else
+            end = i + 1;
+    }
+    list.push(text.substring(start, end));
+    return list;
+}
+// A Vary with the fields added (those it has once, '*' alone).
+function appendVary(header, field) {
+    if (typeof header !== 'string')
+        throw new TypeError('header argument is required');
+    if (!field)
+        throw new TypeError('field argument is required');
+    const fields = Array.isArray(field) ? field : tokens(String(field));
+    if (!fields.every((name) => FIELD_NAME.test(name))) {
+        throw new TypeError('field argument contains an invalid header name');
+    }
+    if (header === '*')
+        return header;
+    let value = header;
+    const values = tokens(header.toLowerCase());
+    if (fields.indexOf('*') !== -1 || values.indexOf('*') !== -1)
+        return '*';
+    fields.forEach((name) => {
+        const lower = name.toLowerCase();
+        if (values.indexOf(lower) === -1) {
+            values.push(lower);
+            value = value ? `${value}, ${name}` : name;
+        }
+    });
+    return value;
+}
+// Adds the fields to the Vary of a response (node:http's).
+function vary(res, field) {
+    const current = res.getHeader('Vary') || '';
+    const value = appendVary(Array.isArray(current) ? current.join(', ') : String(current), field);
+    if (value)
+        res.setHeader('Vary', value);
+}
+
+},
 "@xufa/http/lib/warnings.js": function (module, exports, require) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.XUFASEC002 = exports.XUFASEC001 = exports.XUFAWRN003 = exports.XUFAWRN001 = void 0;
@@ -9442,7 +15351,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.textOf = exports.TestClient = exports.errorPages = exports.staticFiles = exports.formBody = exports.maintenance = exports.health = exports.devErrors = exports.plugin = exports.LogController = exports.errorCodes = void 0;
+exports.textOf = exports.TestClient = exports.errorPages = exports.etag = exports.compress = exports.helmet = exports.staticFiles = exports.formBody = exports.maintenance = exports.health = exports.devErrors = exports.plugin = exports.LogController = exports.errorCodes = void 0;
 exports.xufa = xufa;
 exports["module.exports"] = xufa;
 // xufa: creates an instance. The API of fastify, built on the packages of this repository.
@@ -9480,6 +15389,12 @@ const healthModule = __importStar(require("./health.js"));
 const maintenanceModule = __importStar(require("./maintenance.js"));
 const formBodyModule = __importStar(require("./form-body.js"));
 const staticFilesModule = __importStar(require("./static-files.js"));
+const response_headers_js_1 = require("./response-headers.js");
+Object.defineProperty(exports, "helmet", { enumerable: true, get: function () { return response_headers_js_1.helmet; } });
+const response_compress_js_1 = require("./response-compress.js");
+Object.defineProperty(exports, "compress", { enumerable: true, get: function () { return response_compress_js_1.compress; } });
+const response_etag_js_1 = require("./response-etag.js");
+Object.defineProperty(exports, "etag", { enumerable: true, get: function () { return response_etag_js_1.etag; } });
 const errorPagesModule = __importStar(require("./error-pages.js"));
 const testClientModule = __importStar(require("./test-client.js"));
 const { kBoot, kChildren, kServerBindings, kBodyLimit, kSupportedHTTPMethods, kRoutePrefix, kLogLevel, kLogSerializers, kHooks, kSchemaController, kRequestAcceptVersion, kReplySerializerDefault, kContentTypeParser, kReply, kRequest, kFourOhFour, kState, kOptions, kPluginNameChain, kSchemaErrorFormatter, kErrorHandler, kKeepAliveConnections, kChildLoggerFactory, kGenReqId, kErrorHandlerAlreadySet, kHandlerTimeout, kLogController, } = symbols_js_1.default;
@@ -10191,6 +16106,9 @@ exports.formBody = __formBody;
 xufa.staticFiles = staticFilesModule.staticFiles;
 const __staticFiles = xufa.staticFiles;
 exports.staticFiles = __staticFiles;
+xufa.helmet = response_headers_js_1.helmet;
+xufa.compress = response_compress_js_1.compress;
+xufa.etag = response_etag_js_1.etag;
 xufa.errorPages = errorPagesModule.errorPages;
 const __errorPages = xufa.errorPages;
 exports.errorPages = __errorPages;
@@ -11164,8 +17082,15 @@ Logger.prototype[writeSym] = function writeLine(obj, msg, levelVal, levelPart) {
     }
     if (msg !== undefined) {
         const prefix = this[msgPrefixSym];
-        if (typeof msg === 'string')
-            line += `,${config.messageKeyJson}:${(0, stringify_js_1.asString)(prefix + msg)}`;
+        if (typeof msg === 'string') {
+            // (The part of the last message is kept: lines of the same message, as most are, are not escaped again.)
+            const text = prefix + msg;
+            if (text !== config.lastMessage) {
+                config.lastMessage = text;
+                config.lastMessagePart = `,${config.messageKeyJson}:${(0, stringify_js_1.asString)(text)}`;
+            }
+            line += config.lastMessagePart;
+        }
         else if (prefix !== '')
             line += `,${config.messageKeyJson}:${(0, stringify_js_1.asString)(prefix + String(msg))}`;
         else {
@@ -11433,6 +17358,8 @@ function createLogger(options, destination) {
         enabled: opts.enabled !== false,
         messageKey: opts.messageKey || 'msg',
         messageKeyJson: (0, stringify_js_1.asKey)(opts.messageKey || 'msg'),
+        lastMessage: null,
+        lastMessagePart: '',
         errorKey: opts.errorKey || 'err',
         nestedKey: opts.nestedKey || null,
         time,

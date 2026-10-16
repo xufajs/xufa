@@ -1,84 +1,104 @@
-'use strict'
+'use strict';
 
-const path = require('node:path')
-const fs = require('node:fs')
-const yaml = require('../xufa/yaml')
+const path = require('node:path');
+const fs = require('node:fs');
+const yaml = require('../xufa/yaml');
 
 module.exports = function (fastify, opts, done) {
-  if (!opts.specification) return done(new Error('specification is missing in the module options'))
-  if (typeof opts.specification !== 'object') return done(new Error('specification is not an object'))
+  if (!opts.specification) return done(new Error('specification is missing in the module options'));
+  if (typeof opts.specification !== 'object') return done(new Error('specification is not an object'));
 
-  let swaggerObject = {}
+  let swaggerObject = {};
+  let getDocument = () => swaggerObject;
 
   if (!opts.specification.path && !opts.specification.document) {
-    return done(new Error('both specification.path and specification.document are missing, should be path to the file or swagger document spec'))
+    return done(
+      new Error(
+        'both specification.path and specification.document are missing, should be path to the file or swagger document spec'
+      )
+    );
   } else if (opts.specification.path) {
-    if (typeof opts.specification.path !== 'string') return done(new Error('specification.path is not a string'))
+    if (typeof opts.specification.path !== 'string') return done(new Error('specification.path is not a string'));
 
-    if (!fs.existsSync(path.resolve(opts.specification.path))) return done(new Error(`${opts.specification.path} does not exist`))
+    if (!fs.existsSync(path.resolve(opts.specification.path)))
+      return done(new Error(`${opts.specification.path} does not exist`));
 
-    const extName = path.extname(opts.specification.path).toLowerCase()
-    if (['.yaml', '.json'].indexOf(extName) === -1) return done(new Error("specification.path extension name is not supported, should be one from ['.yaml', '.json']"))
+    const extName = path.extname(opts.specification.path).toLowerCase();
+    if (['.yaml', '.json'].indexOf(extName) === -1)
+      return done(
+        new Error("specification.path extension name is not supported, should be one from ['.yaml', '.json']")
+      );
 
-    if (opts.specification.postProcessor && typeof opts.specification.postProcessor !== 'function') return done(new Error('specification.postProcessor should be a function'))
+    if (opts.specification.postProcessor && typeof opts.specification.postProcessor !== 'function')
+      return done(new Error('specification.postProcessor should be a function'));
 
-    if (opts.specification.baseDir && typeof opts.specification.baseDir !== 'string') return done(new Error('specification.baseDir should be string'))
+    if (opts.specification.baseDir && typeof opts.specification.baseDir !== 'string')
+      return done(new Error('specification.baseDir should be string'));
 
     if (!opts.specification.baseDir) {
-      opts.specification.baseDir = path.resolve(path.dirname(opts.specification.path))
+      opts.specification.baseDir = path.resolve(path.dirname(opts.specification.path));
     } else {
       while (opts.specification.baseDir.endsWith('/')) {
-        opts.specification.baseDir = opts.specification.baseDir.slice(0, -1)
+        opts.specification.baseDir = opts.specification.baseDir.slice(0, -1);
       }
     }
 
     // read
-    const source = fs.readFileSync(
-      path.resolve(opts.specification.path),
-      'utf8'
-    )
+    const source = fs.readFileSync(path.resolve(opts.specification.path), 'utf8');
     switch (extName) {
       case '.yaml':
-        swaggerObject = yaml.parse(source)
-        break
+        swaggerObject = yaml.parse(source);
+        break;
       case '.json':
-        swaggerObject = JSON.parse(source)
-        break
+        swaggerObject = JSON.parse(source);
+        break;
     }
 
     // apply postProcessor, if one was passed as an argument
     if (opts.specification.postProcessor) {
-      swaggerObject = opts.specification.postProcessor(swaggerObject)
+      swaggerObject = opts.specification.postProcessor(swaggerObject);
     }
   } else {
-    if (typeof opts.specification.document !== 'object') return done(new Error('specification.document is not an object'))
-
-    swaggerObject = opts.specification.document
+    // (xufa: a function too, called once, when the document is first needed: a document made from source files
+    // costs nothing until it is read.)
+    if (typeof opts.specification.document === 'function') {
+      const make = opts.specification.document;
+      swaggerObject = null;
+      getDocument = () => {
+        if (swaggerObject === null) swaggerObject = make();
+        return swaggerObject;
+      };
+    } else if (typeof opts.specification.document !== 'object') {
+      return done(new Error('specification.document is not an object'));
+    } else {
+      swaggerObject = opts.specification.document;
+    }
   }
 
-  fastify.decorate(opts.decorator || 'swagger', swagger)
+  fastify.decorate(opts.decorator || 'swagger', swagger);
 
   const cache = {
     swaggerObject: null,
-    swaggerString: null
-  }
+    swaggerString: null,
+  };
 
-  function swagger (opts) {
+  function swagger(opts) {
     if (opts?.yaml) {
-      if (cache.swaggerString) return cache.swaggerString
+      if (cache.swaggerString) return cache.swaggerString;
     } else {
-      if (cache.swaggerObject) return cache.swaggerObject
+      if (cache.swaggerObject) return cache.swaggerObject;
     }
 
+    const document = getDocument();
     if (opts?.yaml) {
-      const swaggerString = yaml.stringify(swaggerObject, { strict: false })
-      cache.swaggerString = swaggerString
-      return swaggerString
+      const swaggerString = yaml.stringify(document, { strict: false });
+      cache.swaggerString = swaggerString;
+      return swaggerString;
     }
 
-    cache.swaggerObject = swaggerObject
-    return swaggerObject
+    cache.swaggerObject = document;
+    return document;
   }
 
-  done()
-}
+  done();
+};

@@ -11,7 +11,7 @@ import { randomUUID } from 'node:crypto';
 import { Topology, isRetryable, isStateChange } from './topology.js';
 import { COMPRESSORS } from './connection.js';
 import { ObjectId, Binary, cursorIdOf, serializeSections } from './bson.js';
-import { MongoError, MongoNetworkError } from './errors.js';
+import { MongoError, MongoNetworkError, MongoNotConnectedError } from './errors.js';
 
 function parseUrl(url) {
   const match = /^(mongodb(?:\+srv)?):\/\/(?:([^:@/]*)(?::([^@/]*))?@)?([^/?]+)(?:\/([^?]*))?(?:\?(.*))?$/.exec(url);
@@ -52,6 +52,8 @@ class Cursor {
     this.started = false;
     this.closed = false;
     this.server = null;
+    // map(): what each document is given through.
+    this.transform = null;
     // The getMore read ahead, sent but not taken yet.
     this.ahead = null;
     this.onReply = options.prefetch === false ? undefined : (message, offset) => this.readAhead(message, offset);
@@ -77,6 +79,19 @@ class Cursor {
     return this;
   }
 
+  collation(collation) {
+    this.command.collation = collation;
+    return this;
+  }
+
+  // The documents of the cursor given through fn (next, toArray, for await): as the official driver, the same cursor,
+  // and a second map applies after the first.
+  map(fn) {
+    const previous = this.transform;
+    this.transform = previous ? (doc) => fn(previous(doc)) : fn;
+    return this;
+  }
+
   batchSize(size) {
     this.options.batchSize = size;
     if (this.command.find) this.command.batchSize = size;
@@ -90,7 +105,20 @@ class Cursor {
     const doc = this.buffer[this.position];
     this.buffer[this.position] = undefined;
     this.position += 1;
-    return doc;
+    return this.transform ? this.transform(doc) : doc;
+  }
+
+  // Whether next() has a document (it stays for next()).
+  async hasNext() {
+    if (this.position >= this.buffer.length) await this.fetch();
+    return this.position < this.buffer.length;
+  }
+
+  // fn with each document, until there are no more or it returns false.
+  async forEach(fn) {
+    for (let doc = await this.next(); doc !== null; doc = await this.next()) {
+      if (fn(doc) === false) break;
+    }
   }
 
   run(command, extra) {
@@ -149,7 +177,10 @@ class Cursor {
     for (;;) {
       if (this.position >= this.buffer.length) await this.fetch();
       if (this.position >= this.buffer.length) return items;
-      for (let i = this.position; i < this.buffer.length; i += 1) items.push(this.buffer[i]);
+      const { transform } = this;
+      for (let i = this.position; i < this.buffer.length; i += 1) {
+        items.push(transform ? transform(this.buffer[i]) : this.buffer[i]);
+      }
       this.buffer = [];
       this.position = 0;
     }
@@ -188,6 +219,27 @@ const UNORDERED_PART = 1000;
 const BATCH_BYTES = 4 * 1024 * 1024;
 const MESSAGE_HEADER = 20;
 
+// The keys of an index as the official driver takes them: { field: 1 }, 'field', or [['field', 1], ...].
+function indexKeys(keys) {
+  if (typeof keys === 'string') return { [keys]: 1 };
+  if (Array.isArray(keys)) {
+    const key = {};
+    for (const item of keys) {
+      if (typeof item === 'string') key[item] = 1;
+      else key[item[0]] = item[1];
+    }
+    return key;
+  }
+  return keys;
+}
+
+// The default name of an index: field_direction joined by _ (slug_1, a_1_b_-1, title_text).
+function indexName(key) {
+  return Object.entries(key)
+    .map(([field, value]) => `${field}_${value}`)
+    .join('_');
+}
+
 // As the official driver, documents without _id get one (the server keeps _id first in the documents stored).
 function withId(doc) {
   if (doc._id === undefined) doc._id = new ObjectId();
@@ -199,11 +251,21 @@ function writesTo(pipeline) {
   return pipeline.some((stage) => stage && (stage.$out !== undefined || stage.$merge !== undefined));
 }
 
+// (Options of the methods may be null, as the official driver takes them.)
 class Collection {
   constructor(db, name) {
     this.db = db;
     this.client = db.client;
     this.name = name;
+  }
+
+  // The official driver's names of it.
+  get collectionName() {
+    return this.name;
+  }
+
+  get dbName() {
+    return this.db.name;
   }
 
   // A write (on the primary), retried once when `retry` and its server fails. options.writeConcern is sent with it.
@@ -221,18 +283,44 @@ class Collection {
     });
   }
 
-  find(filter = {}, options = {}) {
-    const { session, sort, skip, limit, projection, batchSize, hint, collation, prefetch, readPreference } = options;
-    const command = { find: this.name, filter, sort, skip, limit, projection, batchSize, hint, collation };
+  find(filter = {}, options) {
+    options = options ?? {};
+    const {
+      session,
+      sort,
+      skip,
+      limit,
+      projection,
+      batchSize,
+      hint,
+      collation,
+      allowDiskUse,
+      prefetch,
+      readPreference,
+    } = options;
+    const command = {
+      find: this.name,
+      filter,
+      sort,
+      skip,
+      limit,
+      projection,
+      batchSize,
+      hint,
+      collation,
+      allowDiskUse,
+    };
     return new Cursor(this, command, { session, batchSize, prefetch, readPreference });
   }
 
-  async findOne(filter = {}, options = {}) {
+  async findOne(filter = {}, options) {
+    options = options ?? {};
     const [doc] = await this.find(filter, { ...options, limit: 1, batchSize: 1 }).toArray();
     return doc || null;
   }
 
-  aggregate(pipeline, options = {}) {
+  aggregate(pipeline, options) {
+    options = options ?? {};
     const { session, batchSize, allowDiskUse, hint, collation, prefetch, readPreference } = options;
     const command = {
       aggregate: this.name,
@@ -252,7 +340,15 @@ class Collection {
     });
   }
 
-  async countDocuments(filter = {}, options = {}) {
+  // The count the collection's metadata keeps (fast; not filtered).
+  async estimatedDocumentCount(options) {
+    options = options ?? {};
+    const reply = await this.read({ count: this.name }, options);
+    return reply.n;
+  }
+
+  async countDocuments(filter = {}, options) {
+    options = options ?? {};
     const pipeline = [{ $match: filter }];
     if (options.skip) pipeline.push({ $skip: options.skip });
     if (options.limit) pipeline.push({ $limit: options.limit });
@@ -261,7 +357,8 @@ class Collection {
     return result ? result.n : 0;
   }
 
-  async insertOne(doc, options = {}) {
+  async insertOne(doc, options) {
+    options = options ?? {};
     const document = withId(doc);
     await this.write({ insert: this.name, documents: [document], ordered: true }, options, true);
     return { acknowledged: true, insertedId: document._id };
@@ -271,7 +368,8 @@ class Collection {
   // after the other when ordered (the default: the first error stops the insert), encoding the next while the
   // server inserts one. Unordered, a large insert is cut in parts sent at the same time on the connections of the
   // pool, which the server inserts in parallel; the first error is thrown when every part has ended.
-  async insertMany(docs, options = {}) {
+  async insertMany(docs, options) {
+    options = options ?? {};
     const documents = docs.map(withId);
     const ordered = options.ordered !== false;
     const command = { insert: this.name, ordered, writeConcern: options.writeConcern };
@@ -300,19 +398,23 @@ class Collection {
       acknowledged: true,
       matchedCount: reply.n - (reply.upserted ? reply.upserted.length : 0),
       modifiedCount: reply.nModified,
+      upsertedCount: reply.upserted ? reply.upserted.length : 0,
       upsertedId: reply.upserted ? reply.upserted[0]._id : null,
     };
   }
 
-  updateOne(filter, update, options = {}) {
+  updateOne(filter, update, options) {
+    options = options ?? {};
     return this.update(filter, update, false, options);
   }
 
-  updateMany(filter, update, options = {}) {
+  updateMany(filter, update, options) {
+    options = options ?? {};
     return this.update(filter, update, true, options);
   }
 
-  replaceOne(filter, replacement, options = {}) {
+  replaceOne(filter, replacement, options) {
+    options = options ?? {};
     return this.update(filter, replacement, false, options);
   }
 
@@ -321,36 +423,202 @@ class Collection {
     return { acknowledged: true, deletedCount: reply.n };
   }
 
-  deleteOne(filter, options = {}) {
+  deleteOne(filter, options) {
+    options = options ?? {};
     return this.remove(filter, 1, options);
   }
 
-  deleteMany(filter, options = {}) {
+  deleteMany(filter, options) {
+    options = options ?? {};
     return this.remove(filter, 0, options);
   }
 
-  async createIndex(keys, options = {}) {
+  // findAndModify, as the official driver: the document before (returnDocument 'before', the default) or after the
+  // change, or null; with includeResultMetadata, { value, ok, lastErrorObject }. A retryable write.
+  async findAndModify(filter, change, options) {
+    const { returnDocument, upsert, projection, sort, arrayFilters, collation, hint, includeResultMetadata } = options;
+    const command = { findAndModify: this.name, query: filter, ...change, sort, fields: projection, collation, hint };
+    if (!change.remove) {
+      command.new = returnDocument === 'after';
+      command.upsert = Boolean(upsert);
+      if (arrayFilters) command.arrayFilters = arrayFilters;
+    }
+    const reply = await this.write(command, options, true);
+    const value = reply.value === undefined ? null : reply.value;
+    return includeResultMetadata ? { value, ok: reply.ok, lastErrorObject: reply.lastErrorObject } : value;
+  }
+
+  findOneAndUpdate(filter, update, options) {
+    options = options ?? {};
+    return this.findAndModify(filter, { update }, options);
+  }
+
+  findOneAndReplace(filter, replacement, options) {
+    options = options ?? {};
+    return this.findAndModify(filter, { update: replacement }, options);
+  }
+
+  findOneAndDelete(filter, options) {
+    options = options ?? {};
+    return this.findAndModify(filter, { remove: true }, options);
+  }
+
+  // Renames the collection (renameCollection, on admin): the collection of the new name.
+  async rename(newName, options) {
+    options = options ?? {};
+    const command = { renameCollection: `${this.db.name}.${this.name}`, to: `${this.db.name}.${newName}` };
+    if (options.dropTarget) command.dropTarget = true;
+    await this.client.run('admin', command, { session: options.session });
+    return this.db.collection(newName);
+  }
+
+  // Inserts, updates, replacements and deletes in as few commands as they can go: as the official driver, ordered (the
+  // default) keeps their order (a run of the same kind is one command) and stops at the first error; unordered sends
+  // each kind once, inserts first. The result counts them: insertedCount, matchedCount, modifiedCount, deletedCount, upsertedCount,
+  // and insertedIds and upsertedIds by the index of their operation.
+  async bulkWrite(operations, options) {
+    options = options ?? {};
+    const ordered = options.ordered !== false;
+    const runs = [];
+    const runOf = (kind) => {
+      if (ordered) {
+        const last = runs[runs.length - 1];
+        if (last && last.kind === kind) return last;
+      } else {
+        const found = runs.find((run) => run.kind === kind);
+        if (found) return found;
+      }
+      const run = { kind, items: [], indexes: [] };
+      runs.push(run);
+      return run;
+    };
+    operations.forEach((operation, index) => {
+      const [name] = Object.keys(operation);
+      const op = operation[name];
+      let run;
+      let item;
+      switch (name) {
+        case 'insertOne':
+          run = runOf('insert');
+          item = withId(op.document);
+          break;
+        case 'updateOne':
+        case 'updateMany':
+        case 'replaceOne':
+          run = runOf('update');
+          item = { q: op.filter, u: name === 'replaceOne' ? op.replacement : op.update, multi: name === 'updateMany' };
+          item.upsert = Boolean(op.upsert);
+          if (op.arrayFilters) item.arrayFilters = op.arrayFilters;
+          if (op.collation) item.collation = op.collation;
+          if (op.hint) item.hint = op.hint;
+          break;
+        case 'deleteOne':
+        case 'deleteMany':
+          run = runOf('delete');
+          item = { q: op.filter, limit: name === 'deleteOne' ? 1 : 0 };
+          if (op.collation) item.collation = op.collation;
+          if (op.hint) item.hint = op.hint;
+          break;
+        default:
+          throw new TypeError(`Unknown operation of bulkWrite: ${name}`);
+      }
+      run.items.push(item);
+      run.indexes.push(index);
+    });
+    const result = {
+      acknowledged: true,
+      insertedCount: 0,
+      matchedCount: 0,
+      modifiedCount: 0,
+      deletedCount: 0,
+      upsertedCount: 0,
+      insertedIds: {},
+      upsertedIds: {},
+    };
+    const { session, writeConcern } = options;
+    const send = async (run) => {
+      const field = { insert: 'documents', update: 'updates', delete: 'deletes' }[run.kind];
+      const command = { [run.kind]: this.name, ordered, writeConcern };
+      const totals = await this.client.writeBatches(this.db.name, command, field, run.items, session);
+      if (run.kind === 'insert') {
+        result.insertedCount += totals.n;
+        run.items.forEach((doc, i) => {
+          result.insertedIds[run.indexes[i]] = doc._id;
+        });
+      } else if (run.kind === 'delete') {
+        result.deletedCount += totals.n;
+      } else {
+        result.upsertedCount += totals.upserted.length;
+        result.matchedCount += totals.n - totals.upserted.length;
+        result.modifiedCount += totals.nModified;
+        for (const { index, _id } of totals.upserted) result.upsertedIds[run.indexes[index]] = _id;
+      }
+    };
+    if (ordered) {
+      for (const run of runs) await send(run);
+    } else {
+      // (As the official driver: the inserts, then the updates, then the deletes. Their ids are by the index of the
+      // operation in the list given; the official driver numbers them its own way when unordered.)
+      const order = ['insert', 'update', 'delete'];
+      runs.sort((a, b) => order.indexOf(a.kind) - order.indexOf(b.kind));
+      for (const run of runs) await send(run);
+    }
+    return result;
+  }
+
+  async createIndex(keys, options) {
+    options = options ?? {};
     const { session, ...rest } = options;
-    const name =
-      rest.name ||
-      Object.entries(keys)
-        .map(([key, value]) => `${key}_${value}`)
-        .join('_');
-    await this.write({ createIndexes: this.name, indexes: [{ key: keys, ...rest, name }] }, { session });
+    const key = indexKeys(keys);
+    const name = rest.name || indexName(key);
+    await this.write({ createIndexes: this.name, indexes: [{ key, ...rest, name }] }, { session });
     return name;
   }
 
-  async dropIndex(name, options = {}) {
-    await this.write({ dropIndexes: this.name, index: name }, options);
+  // Several indexes in one command: their names.
+  async createIndexes(specs, options) {
+    options = options ?? {};
+    const { session, ...rest } = options;
+    const indexes = specs.map(({ key, name, ...spec }) => ({ key, ...spec, name: name || indexName(key) }));
+    await this.write({ createIndexes: this.name, indexes, ...rest }, { session });
+    return indexes.map((index) => index.name);
   }
 
-  async indexes(options = {}) {
-    const reply = await this.read({ listIndexes: this.name, cursor: {} }, options);
-    return reply.cursor.firstBatch;
+  // The reply of the server ({ nIndexesWas, ok }), as the official driver.
+  dropIndex(name, options) {
+    options = options ?? {};
+    return this.write({ dropIndexes: this.name, index: name }, options);
+  }
+
+  // Every index but _id's.
+  async dropIndexes(options) {
+    options = options ?? {};
+    await this.write({ dropIndexes: this.name, index: '*' }, options);
+    return true;
+  }
+
+  // The indexes, as a cursor (every batch of them).
+  listIndexes(options) {
+    options = options ?? {};
+    const { session, readPreference, batchSize } = options;
+    const command = { listIndexes: this.name, cursor: batchSize ? { batchSize } : {} };
+    return new Cursor(this, command, { session, readPreference, batchSize });
+  }
+
+  indexes(options) {
+    options = options ?? {};
+    return this.listIndexes(options).toArray();
+  }
+
+  async indexExists(names, options) {
+    options = options ?? {};
+    const existing = new Set((await this.indexes(options)).map((index) => index.name));
+    return [].concat(names).every((name) => existing.has(name));
   }
 
   // Drops the collection: false when it did not exist.
-  async drop(options = {}) {
+  async drop(options) {
+    options = options ?? {};
     try {
       await this.write({ drop: this.name }, options);
       return true;
@@ -367,31 +635,68 @@ class Db {
     this.name = name;
   }
 
+  // The official driver's name of it.
+  get databaseName() {
+    return this.name;
+  }
+
   collection(name) {
     return new Collection(this, name);
   }
 
   // A command, on the primary (or by `readPreference`).
-  command(command, options = {}) {
+  command(command, options) {
+    options = options ?? {};
     return this.client.run(this.name, command, { session: options.session, readPreference: options.readPreference });
   }
 
-  async listCollections(filter = {}, { nameOnly = false, readPreference } = {}) {
-    const reply = await this.client.run(
-      this.name,
-      { listCollections: 1, filter, nameOnly, cursor: {} },
-      { readPreference, retry: 'read' }
-    );
-    return reply.cursor.firstBatch;
+  // The collections, as a cursor (toArray(), for await), as the official driver.
+  listCollections(filter = {}, { nameOnly = false, readPreference, session, batchSize } = {}) {
+    const command = { listCollections: 1, filter, nameOnly, cursor: batchSize ? { batchSize } : {} };
+    const target = { client: this.client, db: this, name: '$cmd.listCollections' };
+    return new Cursor(target, command, { readPreference, session, batchSize });
   }
 
-  async createCollection(name, options = {}) {
+  async createCollection(name, options) {
+    options = options ?? {};
     await this.command({ create: name, ...options });
     return this.collection(name);
   }
 
   async dropDatabase() {
     await this.command({ dropDatabase: 1 });
+  }
+
+  // The commands of the deployment (on admin), as the official driver's db.admin().
+  admin() {
+    return new Admin(this.client);
+  }
+}
+
+class Admin {
+  constructor(client) {
+    this.client = client;
+  }
+
+  command(command, options = {}) {
+    return this.client.run('admin', command, { session: options.session, readPreference: options.readPreference });
+  }
+
+  // { databases: [{ name, sizeOnDisk, empty }], totalSize, ok }.
+  listDatabases({ nameOnly, session } = {}) {
+    return this.command(nameOnly ? { listDatabases: 1, nameOnly: true } : { listDatabases: 1 }, { session });
+  }
+
+  ping(options) {
+    return this.command({ ping: 1 }, options);
+  }
+
+  serverStatus(options) {
+    return this.command({ serverStatus: 1 }, options);
+  }
+
+  buildInfo(options) {
+    return this.command({ buildInfo: 1 }, options);
   }
 }
 
@@ -550,6 +855,7 @@ class MongoClient {
     this.retryWrites = !falsy(this.options.retryWrites);
     this.retryReads = !falsy(this.options.retryReads);
     this.topology = null;
+    this.closed = false;
     this.opening = null;
     // Server sessions (lsid) of retryable writes, reused.
     this.sessions = [];
@@ -611,6 +917,8 @@ class MongoClient {
       appName: options.appName,
       compressors,
       zlibCompressionLevel: number(options.zlibCompressionLevel, undefined),
+      // As the official driver: undefined values are written as null unless ignoreUndefined.
+      ignoreUndefined: truthy(options.ignoreUndefined),
       username: options.username || parsed.username,
       password: options.password !== undefined ? options.password : parsed.password || '',
       authSource: options.authSource || parsed.database || 'admin',
@@ -626,6 +934,7 @@ class MongoClient {
 
   // Connects: the servers are checked, and it resolves once there is one to write to.
   async connect() {
+    this.closed = false;
     if (this.topology && !this.opening) return this;
     if (!this.opening) {
       this.opening = (async () => {
@@ -667,6 +976,7 @@ class MongoClient {
   // fails), server (to use that one: getMore), onServer (called with the server used), onReply (with the bytes of
   // the reply, before they are decoded).
   async run(database, command, options = {}) {
+    if (this.closed) throw new MongoNotConnectedError();
     if (!this.topology) await this.connect();
     const { session, onReply } = options;
     const mode = options.readPreference || (options.retry === 'read' ? this.readPreference : 'primary');
@@ -687,6 +997,8 @@ class MongoClient {
     }
     try {
       for (;;) {
+        // (A close() while the command waited.)
+        if (!this.topology) throw new MongoNotConnectedError();
         let server = options.server || this.topology.selectNow(mode);
         if (!server) server = await this.topology.select(mode);
         if (mode !== 'primary' || (this.topology.type === 'Single' && server.type === 'RSSecondary')) {
@@ -724,7 +1036,16 @@ class MongoClient {
         doc.lsid = serverSession.id;
         doc.txnNumber = serverSession.txnNumber;
       }
-      return serializeSections(doc, identifier, docs, start, MESSAGE_HEADER, maxBytes, maxWriteBatchSize);
+      return serializeSections(
+        doc,
+        identifier,
+        docs,
+        start,
+        MESSAGE_HEADER,
+        maxBytes,
+        maxWriteBatchSize,
+        this.topology.options.ignoreUndefined
+      );
     };
     const send = async (batch, retry) => {
       const server = this.topology.selectNow('primary') || (await this.topology.select('primary'));
@@ -749,15 +1070,24 @@ class MongoClient {
     try {
       // The connection is taken before the first message is encoded: parts sent at the same time encode theirs
       // while the server runs the others.
+      // What the server counted, over every message: n, nModified, and the upserted documents (their index in docs).
+      const totals = { n: 0, nModified: 0, upserted: [] };
       let batch = null;
+      let start = 0;
       for (;;) {
         const server = this.topology.selectNow('primary') || (await this.topology.select('primary'));
         if (!server.idleConnection()) await server.connection();
         if (batch === null) batch = encode(0);
         const sent = await send(batch, retryable);
         const next = batch.end < docs.length ? encode(batch.end) : null;
-        await settle(batch, sent);
-        if (!next) return;
+        const reply = await settle(batch, sent);
+        totals.n += reply.n || 0;
+        totals.nModified += reply.nModified || 0;
+        if (reply.upserted) {
+          for (const { index, _id } of reply.upserted) totals.upserted.push({ index: index + start, _id });
+        }
+        if (!next) return totals;
+        start = batch.end;
         batch = next;
       }
     } finally {
@@ -767,6 +1097,11 @@ class MongoClient {
 
   db(name = this.parsed.database || 'test') {
     return new Db(this, name);
+  }
+
+  // As the official driver's: a client, connected.
+  static connect(url, options) {
+    return new MongoClient(url, options).connect();
   }
 
   startSession() {
@@ -783,7 +1118,9 @@ class MongoClient {
       this.topology.close();
     }
     this.topology = null;
+    // Until connect() again, its commands fail (MongoNotConnectedError), as the official driver's.
+    this.closed = true;
   }
 }
 
-export { MongoClient, Db, Collection, Cursor, ClientSession, parseUrl };
+export { MongoClient, Db, Admin, Collection, Cursor, ClientSession, parseUrl };

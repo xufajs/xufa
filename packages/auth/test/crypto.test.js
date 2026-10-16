@@ -1,6 +1,6 @@
 // Passwords, JWTs and one-time codes: their own round trips, and the test vectors of their RFCs.
 import crypto from 'node:crypto';
-import { hashPassword, verifyPassword, needsRehash, KeySet, signJwt, signJwtAsync, verifyJwt, verifyJwtAsync, decodeJwt, TokenError, base32Encode, base32Decode, generateSecret, hotp, totp, verifyTotp, totpUri, generateRecoveryCodes, hashRecoveryCode } from '../index.js';
+import { hashPassword, verifyPassword, needsRehash, KeySet, signJwt, signJwtAsync, verifyJwt, verifyJwtAsync, decodeJwt, TokenError, base32Encode, base32Decode, generateSecret, hotp, totp, verifyTotp, totpUri, parseTotpUri, generateRecoveryCodes, hashRecoveryCode } from '../index.js';
 
 // Fast parameters for the tests (the defaults take 128 MiB and a fraction of a second).
 const FAST = { ln: 10 };
@@ -259,11 +259,45 @@ describe('one-time codes', () => {
     expect(base32Encode(Buffer.from('foobar'))).toBe('MZXW6YTBOI');
     expect(base32Decode('mzxw 6ytb-oi======').toString()).toBe('foobar');
     expect(totpUri({ secret: 'JBSWY3DPEHPK3PXP', label: 'ada@example.com', issuer: 'Acme Co' })).toBe(
-      'otpauth://totp/Acme%20Co:ada%40example.com?secret=JBSWY3DPEHPK3PXP&issuer=Acme+Co'
+      'otpauth://totp/Acme%20Co:ada%40example.com?secret=JBSWY3DPEHPK3PXP&issuer=Acme%20Co'
     );
     expect(totpUri({ secret: 'JBSWY3DPEHPK3PXP', label: 'ada', algorithm: 'SHA256', digits: 8, period: 60 })).toBe(
       'otpauth://totp/ada?secret=JBSWY3DPEHPK3PXP&algorithm=SHA256&digits=8&period=60'
     );
+  });
+
+  it('reads otpauth:// URIs back, as the apps and the otpauth package read them', () => {
+    const uri = totpUri({ secret: 'JBSWY3DPEHPK3PXP', label: 'ada@example.com', issuer: 'Acme Co', algorithm: 'SHA512' });
+    expect(parseTotpUri(uri)).toEqual({
+      type: 'totp',
+      secret: 'JBSWY3DPEHPK3PXP',
+      label: 'ada@example.com',
+      issuer: 'Acme Co',
+      algorithm: 'SHA512',
+      digits: 6,
+      period: 30,
+    });
+    // A ':' of the account is kept (the first one is the separator: issuers have none, as the format says).
+    expect(parseTotpUri(totpUri({ secret: 'JBSWY3DP', label: 'a:b', issuer: 'X' }))).toMatchObject({
+      label: 'a:b',
+      issuer: 'X',
+    });
+    // The issuer of the label when there is no parameter; settings and HOTP as written.
+    expect(parseTotpUri('otpauth://totp/Acme: ada?secret=jbswy3dp&digits=8&period=60')).toMatchObject({
+      issuer: 'Acme',
+      label: 'ada',
+      secret: 'JBSWY3DP',
+      digits: 8,
+      period: 60,
+    });
+    expect(parseTotpUri('otpauth://hotp/ada?secret=JBSWY3DP&counter=5')).toMatchObject({ type: 'hotp', counter: 5 });
+    expect(() => parseTotpUri('https://example.com')).toThrow(URIError);
+    expect(() => parseTotpUri('otpauth://totp/ada?secret=JBSW1')).toThrow("Missing or invalid 'secret' parameter");
+    expect(() => parseTotpUri('otpauth://totp/ada?secret=JBSWY3DP&period=0')).toThrow("Invalid 'period' parameter");
+    expect(() => parseTotpUri('otpauth://hotp/ada?secret=JBSWY3DP')).toThrow("Missing or invalid 'counter' parameter");
+    // A code of the secret it gives is verified with its settings.
+    const parsed = parseTotpUri(uri);
+    expect(verifyTotp(totp(parsed.secret, parsed), parsed.secret, parsed)).not.toBeNull();
   });
 
   it('makes recovery codes and their hashes', () => {

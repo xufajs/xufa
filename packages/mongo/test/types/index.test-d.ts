@@ -53,3 +53,19 @@ expectTypeOf(Decimal128.fromParts(false, 1999n, -2)).toEqualTypeOf<Decimal128>()
   expectTypeOf(new MongoNetworkError('x').hasErrorLabel('TransientTransactionError')).toEqualTypeOf<boolean>();
   expectTypeOf(session.retryCommit()).toEqualTypeOf<Promise<void>>();
 }
+
+// What applications of the official driver use: map, collation, findOneAnd..., bulkWrite, rename.
+async function compat(): Promise<void> {
+  const db = new MongoClient('mongodb://localhost/test').db();
+  const books = db.collection<{ _id?: number; title: string; n: number }>('books');
+  expectTypeOf(await books.find().collation({ locale: 'en' }).map((doc) => doc.title).toArray()).toEqualTypeOf<string[]>();
+  expectTypeOf(await books.estimatedDocumentCount()).toEqualTypeOf<number>();
+  const after = await books.findOneAndUpdate({ n: 1 }, { $inc: { n: 1 } }, { returnDocument: 'after', upsert: true });
+  expectTypeOf(after).toEqualTypeOf<{ _id?: number; title: string; n: number } | null>();
+  const bulk = await books.bulkWrite([{ insertOne: { document: { title: 'a', n: 1 } } }, { deleteMany: { filter: { n: 0 } } }]);
+  expectTypeOf(bulk.upsertedCount).toEqualTypeOf<number>();
+  expectTypeOf((await books.rename('volumes', { dropTarget: true })).collectionName).toEqualTypeOf<string>();
+  expectTypeOf((await books.updateOne({ n: 1 }, { $set: { n: 2 } })).upsertedCount).toEqualTypeOf<number>();
+}
+
+void compat;

@@ -17,6 +17,7 @@ const PACKAGE_PAGES = [
   // Made from pages/*.page.html.
   ...[
     'websocket',
+    'express',
     'admin',
     'session',
     'forms',
@@ -30,8 +31,12 @@ const PACKAGE_PAGES = [
     'mongo',
     'expression',
     'template',
+    'fun',
     'rules',
+    'xlsx',
+    'html',
     'jwt',
+    'purify',
     'cluster',
     'scheduler',
     'queue',

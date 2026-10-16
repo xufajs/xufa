@@ -33,22 +33,6 @@ function convertEndOfLineOptionToCharacter(endOfLineOption) {
   return endOfLineOption === OPTION_CR ? CHARACTER_CR : endOfLineOption === OPTION_CRLF ? CHARACTER_CRLF : DEFAULT_EOL;
 }
 
-const regexps = new Map([
-  [CHARACTER_LF, /\n/g],
-  [CHARACTER_CR, /\r/g],
-  [CHARACTER_CRLF, /\r\n/g],
-]);
-/**
-@param {string} text
-@param {EndOfLine} endOfLineCharacter
-@returns {number}
-*/
-function countEndOfLineCharacters(text, endOfLineCharacter) {
-  const regex = regexps.get(endOfLineCharacter);
-
-  return text.match(regex)?.length ?? 0;
-}
-
 const END_OF_LINE_REGEXP = /\r\n?/g;
 /**
 @param {string} text
@@ -58,4 +42,4 @@ function normalizeEndOfLine(text) {
   return text.replaceAll(END_OF_LINE_REGEXP, CHARACTER_LF);
 }
 
-export { convertEndOfLineOptionToCharacter, countEndOfLineCharacters, guessEndOfLine, normalizeEndOfLine };
+export { convertEndOfLineOptionToCharacter, guessEndOfLine, normalizeEndOfLine };

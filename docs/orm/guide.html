@@ -1453,6 +1453,26 @@ update ada [
           <li><code>with(context, fn)</code> merges with the context of the code that runs it; <code>actor</code> and <code>context</code> can be functions, asked when an entry is made. Blob backends have no audit log.</li>
         </ul>
 
+        <h2 id="documents">Documents (MongoDB collections as they are)</h2>
+        <p>
+          For data that models do not describe, <code>db.documents(name, options)</code> gives a collection of MongoDB
+          as it is: schemaless documents, MongoDB's filters, updates and pipelines, and the options of the driver, with
+          the ORM's cache and faults. Documents have <code>id</code> (a string) where MongoDB has <code>_id</code>: an
+          id of 24 hex digits is an ObjectId in the database, and a filter on <code>id</code> is a filter on
+          <code>_id</code>.
+        </p>
+        <pre><code class="language-js">const products = db.documents('products', { cache: { indexes: ['code'], ttl: 60_000 } });
+const pen = await products.insertOne({ code: 'P1', name: 'Pen' }); // { code, name, id: '65f…' }
+await products.findOne({ code: 'P1' }); // the cache by an index, then the database
+await products.find({ price: { $gt: 3 } }, { sort: { price: 1 }, limit: 20 });
+await products.update({ id: pen.id, price: 4 }); // $set: the document as it is now</code></pre>
+        <p>
+          <code>findById</code>, and a <code>findOne</code> of one equality on <code>id</code> or an index field, are
+          answered from the cache; every write keeps it right. With <code>writeBehind: true</code>, writes of single
+          documents go to the cache while the database is unavailable, and <code>synchronize()</code> writes them
+          later; a duplicate key (or any error of the write itself) is still thrown.
+        </p>
+
         <h2 id="cache">Caches</h2>
         <p>
           A model with the option <code>cache</code> (<code>true</code>, or <code>{ ttl, indexes }</code>) answers

@@ -77,8 +77,9 @@ class S3Backend extends BlobBackend {
       throw new BackendError('The key of an object of the s3 backend is at most 900 bytes');
   }
 
+  // (A table of '' is the root of the container: its objects have no folder of a table.)
   objectKey(table, key) {
-    return `${this.prefix}${table}/${key}`;
+    return table === '' ? `${this.prefix}${key}` : `${this.prefix}${table}/${key}`;
   }
 
   // The URL of the bucket, or of an object of it, with a query.

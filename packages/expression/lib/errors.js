@@ -15,11 +15,14 @@ function locate(source, position) {
 }
 
 class ExpressionError extends Error {
-  constructor(message, { code = 'XUFA_EXPR_ERR_SYNTAX', source, position } = {}) {
+  // `reason`, of some runtime errors: 'notFunction' (a call of what is not a function), 'nullMember' (a member of null or
+  // undefined), for hosts that treat them apart.
+  constructor(message, { code = 'XUFA_EXPR_ERR_SYNTAX', source, position, reason } = {}) {
     const at = source !== undefined && position !== undefined ? locate(source, position) : null;
     super(at ? `${message} (line ${at.line}, column ${at.column})` : message);
     this.name = 'ExpressionError';
     this.code = code;
+    if (reason !== undefined) this.reason = reason;
     if (at) {
       this.position = position;
       this.line = at.line;

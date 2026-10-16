@@ -31,9 +31,7 @@ import { printTernaryOld } from './ternary-old.js';
 //   : c
 // ).call()
 function shouldBreakClosingParen(node, parent) {
-  return (
-    (isMemberExpression(parent) || (parent.type === 'NGPipeExpression' && parent.left === node)) && !parent.computed
-  );
+  return isMemberExpression(parent) && !parent.computed;
 }
 
 function hasMultilineBlockComments(testNodes, consequentNode, alternateNode, options) {
@@ -165,9 +163,7 @@ function printTernary(path, options, print, args) {
     args.assignmentLayout !== 'break-after-operator' &&
     (parent.type === 'AssignmentExpression' ||
       parent.type === 'VariableDeclarator' ||
-      parent.type === 'ClassProperty' ||
       parent.type === 'PropertyDefinition' ||
-      parent.type === 'ClassPrivateProperty' ||
       parent.type === 'ObjectProperty' ||
       parent.type === 'Property');
 

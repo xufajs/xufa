@@ -1,0 +1,73 @@
+{
+  "name": "@xufa/express",
+  "version": "0.1.0",
+  "description": "Express 5's API on @xufa/http, implemented anew with no dependencies: Express's own tests pass",
+  "main": "./index.js",
+  "types": "./index.d.cts",
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./index.d.cts",
+      "default": "./index.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "index.js",
+    "index.d.cts",
+    "lib",
+    "LICENSE",
+    "LICENSE.express"
+  ],
+  "scripts": {
+    "test": "xufa-test",
+    "test:types": "xufa-test --typecheck.only"
+  },
+  "keywords": [
+    "express",
+    "http",
+    "router",
+    "middleware",
+    "web",
+    "framework"
+  ],
+  "author": "Jesús Seijas <jseijas@gmail.com>",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/xufajs/xufa.git",
+    "directory": "packages/express"
+  },
+  "homepage": "https://github.com/xufajs/xufa/tree/main/packages/express#readme",
+  "bugs": {
+    "url": "https://github.com/xufajs/xufa/issues"
+  },
+  "engines": {
+    "node": "^22.22.3 || ^24.15.0 || >=25.7.0"
+  },
+  "dependencies": {
+    "@xufa/http": "workspace:*",
+    "@xufa/router": "workspace:*"
+  },
+  "devDependencies": {
+    "@xufa/test": "workspace:^",
+    "cookie-parser": "1.4.7",
+    "cookie-session": "2.1.1",
+    "ejs": "3.1.10",
+    "express": "5.2.1",
+    "express-session": "1.19.0",
+    "fastify": "^5.12.5",
+    "hbs": "4.2.0",
+    "marked": "15.0.12",
+    "method-override": "3.0.0",
+    "mime-types": "3.0.2",
+    "morgan": "1.10.1",
+    "multer": "2.1.1",
+    "on-finished": "2.4.1",
+    "pbkdf2-password": "1.2.1",
+    "vhost": "3.0.2"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}

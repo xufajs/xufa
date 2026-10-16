@@ -94,6 +94,8 @@ class Parser {
     this.index = 0;
     this.filters = Boolean(options.filters);
     this.statements = Boolean(options.statements);
+    // (Programs whose top-level scope is the context: this there is the context's this, a name read from it.)
+    this.contextThis = Boolean(options.contextThis);
     // (Shared with the parsers of the ${} of templates: names in between, and the functions they are declared in.)
     this.lowering = options.lowering ?? new Lowering();
     this.scopes = options.scopes ?? [[]];
@@ -133,6 +135,10 @@ class Parser {
   parseThis(token) {
     this.next();
     const context = this.context();
+    // (With the context as the program's scope: this of the program, and of its arrow functions, is context.this.)
+    if (this.contextThis && context.kind === 'program') {
+      return { type: 'Identifier', name: 'this', start: token.start, end: token.end };
+    }
     if (context.kind !== 'method' && context.kind !== 'constructor') {
       throw this.error('this is of the methods of classes and objects only', token);
     }
@@ -783,6 +789,7 @@ class Parser {
     return token.expressions.map((part) => {
       const parser = new Parser(this.source, part.tokens, {
         statements: this.statements,
+        contextThis: this.contextThis,
         lowering: this.lowering,
         scopes: this.scopes,
         contexts: this.contexts,

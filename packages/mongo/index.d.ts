@@ -23,6 +23,8 @@ export interface WriteConcern {
  * servers, timeouts, compression, TLS and authentication (SCRAM-SHA-256 or SCRAM-SHA-1).
  */
 export interface MongoClientOptions {
+  /** true: fields undefined are left out of the documents; false (the default, as the official driver): written as null. */
+  ignoreUndefined?: boolean;
   maxPoolSize?: number;
   readPreference?: ReadPreference;
   retryWrites?: boolean;
@@ -69,6 +71,7 @@ export interface FindOptions<T = Document> extends ReadOptions {
   batchSize?: number;
   hint?: string | Document;
   collation?: Document;
+  allowDiskUse?: boolean;
   /** false: the next batch is not asked for before the one before is read. */
   prefetch?: boolean;
   readonly __type?: T;
@@ -93,7 +96,13 @@ export declare class Cursor<T = Document> implements AsyncIterable<T> {
   limit(count: number): this;
   project(projection: Record<string, 0 | 1 | boolean>): this;
   batchSize(size: number): this;
+  collation(collation: Document): this;
+  /** A cursor giving transform(doc) instead of each document (in next, toArray and for await). */
+  map<R>(transform: (doc: T) => R): Cursor<R>;
   next(): Promise<T | null>;
+  hasNext(): Promise<boolean>;
+  /** fn with each document, until there are no more or it returns false. */
+  forEach(fn: (doc: T) => boolean | void): Promise<void>;
   toArray(): Promise<T[]>;
   close(): Promise<void>;
   [Symbol.asyncIterator](): AsyncIterator<T>;
@@ -117,7 +126,67 @@ export interface UpdateResult {
   acknowledged: boolean;
   matchedCount: number;
   modifiedCount: number;
+  upsertedCount: number;
   upsertedId: any;
+}
+
+/** Options of findOneAndUpdate / Replace / Delete. */
+export interface FindOneAndOptions extends WriteOptions {
+  sort?: Record<string, 1 | -1>;
+  projection?: Record<string, 0 | 1 | boolean>;
+  hint?: string | Document;
+  collation?: Document;
+  /** 'before' (the default) or 'after' the change. */
+  returnDocument?: 'before' | 'after';
+  /** true: the command's result ({ value, ok, lastErrorObject }) instead of the document. */
+  includeResultMetadata?: boolean;
+}
+
+/** An operation of bulkWrite(), as the official driver has them. */
+export type AnyBulkWriteOperation<T = Document> =
+  | { insertOne: { document: T } }
+  | {
+      updateOne: {
+        filter: Filter<T>;
+        update: Document;
+        upsert?: boolean;
+        arrayFilters?: Document[];
+        collation?: Document;
+        hint?: string | Document;
+      };
+    }
+  | {
+      updateMany: {
+        filter: Filter<T>;
+        update: Document;
+        upsert?: boolean;
+        arrayFilters?: Document[];
+        collation?: Document;
+        hint?: string | Document;
+      };
+    }
+  | {
+      replaceOne: {
+        filter: Filter<T>;
+        replacement: T;
+        upsert?: boolean;
+        collation?: Document;
+        hint?: string | Document;
+      };
+    }
+  | { deleteOne: { filter: Filter<T>; collation?: Document; hint?: string | Document } }
+  | { deleteMany: { filter: Filter<T>; collation?: Document; hint?: string | Document } };
+
+/** The result of bulkWrite(): the counts, and the _ids inserted and upserted by the operation's index. */
+export interface BulkWriteResult {
+  acknowledged: boolean;
+  insertedCount: number;
+  matchedCount: number;
+  modifiedCount: number;
+  deletedCount: number;
+  upsertedCount: number;
+  insertedIds: Record<number, any>;
+  upsertedIds: Record<number, any>;
 }
 
 /** The result of a delete: how many documents were deleted. */
@@ -133,10 +202,15 @@ export interface DeleteResult {
 export declare class Collection<T extends Document = Document> {
   readonly name: string;
   readonly db: Db;
+  /** The official driver's names: the collection's and its database's. */
+  readonly collectionName: string;
+  readonly dbName: string;
   find(filter?: Filter<T>, options?: FindOptions<T>): Cursor<T>;
   findOne(filter?: Filter<T>, options?: FindOptions<T>): Promise<T | null>;
   aggregate<R = Document>(pipeline: Document[], options?: AggregateOptions): Cursor<R>;
   countDocuments(filter?: Filter<T>, options?: ReadOptions & { skip?: number; limit?: number }): Promise<number>;
+  /** The count of the collection's metadata: fast, without a filter. */
+  estimatedDocumentCount(options?: ReadOptions): Promise<number>;
   insertOne(doc: T, options?: WriteOptions): Promise<InsertOneResult>;
   insertMany(docs: T[], options?: WriteOptions & { ordered?: boolean }): Promise<InsertManyResult>;
   updateOne(
@@ -152,24 +226,70 @@ export declare class Collection<T extends Document = Document> {
   replaceOne(filter: Filter<T>, replacement: T, options?: WriteOptions & { upsert?: boolean }): Promise<UpdateResult>;
   deleteOne(filter: Filter<T>, options?: WriteOptions): Promise<DeleteResult>;
   deleteMany(filter: Filter<T>, options?: WriteOptions): Promise<DeleteResult>;
-  createIndex(keys: Record<string, 1 | -1 | string>, options?: SessionOption & Document): Promise<string>;
-  dropIndex(name: string, options?: SessionOption): Promise<void>;
+  findOneAndUpdate(
+    filter: Filter<T>,
+    update: Document,
+    options?: FindOneAndOptions & { upsert?: boolean; arrayFilters?: Document[] }
+  ): Promise<T | null>;
+  findOneAndReplace(
+    filter: Filter<T>,
+    replacement: T,
+    options?: FindOneAndOptions & { upsert?: boolean }
+  ): Promise<T | null>;
+  findOneAndDelete(filter: Filter<T>, options?: FindOneAndOptions): Promise<T | null>;
+  /** Ordered (the default): in order, stopping at the first error; unordered: inserts, then updates, then deletes. */
+  bulkWrite(
+    operations: AnyBulkWriteOperation<T>[],
+    options?: WriteOptions & { ordered?: boolean }
+  ): Promise<BulkWriteResult>;
+  /** Renames the collection (dropTarget: replacing one of that name), giving the collection of the new name. */
+  rename(newName: string, options?: SessionOption & { dropTarget?: boolean }): Promise<Collection<T>>;
+  /** keys: { field: 1 }, 'field' or [['field', 1], ...]; the name of the index. */
+  createIndex(
+    keys: Record<string, 1 | -1 | string> | string | Array<string | [string, 1 | -1 | string]>,
+    options?: SessionOption & Document
+  ): Promise<string>;
+  createIndexes(
+    specs: Array<{ key: Record<string, 1 | -1 | string>; name?: string } & Document>,
+    options?: SessionOption & Document
+  ): Promise<string[]>;
+  /** The reply of the server: { nIndexesWas, ok }. */
+  dropIndex(name: string, options?: WriteOptions): Promise<Document>;
+  /** Every index but _id's. */
+  dropIndexes(options?: WriteOptions): Promise<boolean>;
+  listIndexes(options?: ReadOptions & { batchSize?: number }): Cursor<Document>;
   indexes(options?: ReadOptions): Promise<Document[]>;
+  indexExists(names: string | string[], options?: ReadOptions): Promise<boolean>;
   drop(options?: SessionOption): Promise<boolean>;
 }
 
 /** A database of the deployment: its collections, and commands. */
 export declare class Db {
   readonly name: string;
+  readonly databaseName: string;
   readonly client: MongoClient;
   collection<T extends Document = Document>(name: string): Collection<T>;
   command(command: Document, options?: ReadOptions): Promise<Document>;
   listCollections(
     filter?: Document,
-    options?: { nameOnly?: boolean; readPreference?: ReadPreference }
-  ): Promise<Document[]>;
+    options?: { nameOnly?: boolean; readPreference?: ReadPreference; batchSize?: number } & SessionOption
+  ): Cursor<Document>;
   createCollection<T extends Document = Document>(name: string, options?: Document): Promise<Collection<T>>;
   dropDatabase(): Promise<void>;
+  admin(): Admin;
+}
+
+/** The commands of the deployment, on the admin database. */
+export declare class Admin {
+  command(command: Document, options?: ReadOptions): Promise<Document>;
+  listDatabases(options?: SessionOption & { nameOnly?: boolean }): Promise<{
+    databases: Array<{ name: string; sizeOnDisk?: number; empty?: boolean }>;
+    totalSize?: number;
+    ok: number;
+  }>;
+  ping(options?: ReadOptions): Promise<Document>;
+  serverStatus(options?: ReadOptions): Promise<Document>;
+  buildInfo(options?: ReadOptions): Promise<Document>;
 }
 
 /**
@@ -195,6 +315,8 @@ export declare class ClientSession {
  */
 export declare class MongoClient {
   constructor(url?: string, options?: MongoClientOptions);
+  /** A client, connected. */
+  static connect(url?: string, options?: MongoClientOptions): Promise<MongoClient>;
   readonly supportsTransactions: boolean;
   connect(): Promise<this>;
   db(name?: string): Db;
@@ -264,6 +386,14 @@ export declare class MinKey {}
 export declare class MaxKey {}
 
 /**
+ * Registers the types of BSON in a registry of @xufa/marshal (anything with register(Class, { name, encode, decode })):
+ * ObjectId (its hex), Decimal128 (its text), Binary, Timestamp, Int32, Double, MinKey and MaxKey come back as themselves.
+ */
+export declare function registerBsonTypes<R extends { register(Class: Function, options?: object): unknown }>(
+  registry: R
+): R;
+
+/**
  * A number written as a BSON 32-bit integer (numbers are written as such when they are integers that fit, as doubles
  * otherwise).
  */
@@ -290,6 +420,10 @@ export declare class MongoError extends Error {
 }
 /** An error of the connection to a server (it could not connect, or the connection was lost). */
 export declare class MongoNetworkError extends MongoError {}
+/** A command on a client closed (until connect() again). */
+export declare class MongoNotConnectedError extends MongoError {}
+/** No server to send a command to within serverSelectionTimeoutMS. */
+export declare class MongoServerSelectionError extends MongoError {}
 /** An error the server answered, with its code and codeName (11000: a duplicate key). */
 export declare class MongoServerError extends MongoError {
   code?: number;

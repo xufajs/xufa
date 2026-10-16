@@ -9,6 +9,8 @@
 // Options: bodyLimit (the most bytes of a body: 1 MiB for urlencoded bodies, 20 MiB for multipart ones), and limits
 // of multipart bodies: files (10), fileSize (10 MiB), fields (1000), fieldSize (1 MiB), parts (1000). Past a limit the
 // answer is 413 (a file or a body too large) or 400 (too many parts, or a body that is not well made).
+import { MultipartParser } from './multipart.js';
+
 // An error of a body: its status (400, 413) and a code.
 function createError(statusCode, message) {
   const err = new Error(message);
@@ -36,76 +38,119 @@ function parseUrlencoded(text) {
   return body;
 }
 
-// The value of a parameter of a header (name="x"; filename="y"), with quotes and RFC 5987 (filename*=UTF-8''...).
-function paramOf(header, param) {
-  const star = new RegExp(`(?:^|;)\\s*${param}\\*=([^;]*)`, 'i').exec(header);
-  if (star) {
-    const value = star[1].trim().replace(/^"|"$/g, '');
-    const match = /^([\w-]+)'[^']*'(.*)$/.exec(value);
-    try {
-      return decodeURIComponent(match ? match[2] : value);
-    } catch {
-      return match ? match[2] : value;
-    }
-  }
-  const quoted = new RegExp(`(?:^|;)\\s*${param}="((?:[^"\\\\]|\\\\.)*)"`, 'i').exec(header);
-  if (quoted) return quoted[1].replace(/\\(.)/g, '$1');
-  const plain = new RegExp(`(?:^|;)\\s*${param}=([^;\\s]*)`, 'i').exec(header);
-  return plain ? plain[1] : null;
-}
-
-// A multipart body (RFC 7578) of a boundary: its fields and files into an object.
-function parseMultipart(buffer, boundary, limits) {
+// A multipart body (RFC 7578) read as it comes (./multipart.js): its fields and files into an object; past a limit,
+// or a body not well made, the error (and the rest of the body is not read).
+function readMultipart(request, payload, limits, bodyLimit, next) {
   const body = {};
-  const delimiter = Buffer.from(`--${boundary}`);
-  let at = buffer.indexOf(delimiter);
-  if (at === -1) throw createError(400, 'The multipart body has no boundary');
   let parts = 0;
   let files = 0;
   let fields = 0;
-  for (;;) {
-    at += delimiter.length;
-    // The last boundary ends with --.
-    if (buffer[at] === 0x2d && buffer[at + 1] === 0x2d) return body;
-    if (buffer[at] === 0x0d && buffer[at + 1] === 0x0a) at += 2;
-    else throw createError(400, 'A part of the multipart body is not well made');
-    const headersEnd = buffer.indexOf('\r\n\r\n', at);
-    if (headersEnd === -1) throw createError(400, 'A part of the multipart body has no end of its headers');
-    const headers = {};
-    for (const line of buffer.toString('utf8', at, headersEnd).split('\r\n')) {
-      const colon = line.indexOf(':');
-      if (colon > 0) headers[line.slice(0, colon).trim().toLowerCase()] = line.slice(colon + 1).trim();
+  let bytes = 0;
+  let failed = false;
+  let parser;
+  const fail = (err) => {
+    if (failed) return;
+    failed = true;
+    payload.unpipe(parser);
+    parser.destroy();
+    payload.resume();
+    next(err);
+  };
+  try {
+    // (Limits one past ours: busboy's tell of a value as long as the limit; ours refuse what passes it.)
+    parser = new MultipartParser({
+      headers: request.headers,
+      limits: { fileSize: limits.fileSize + 1, fieldSize: limits.fieldSize + 1 },
+      defParamCharset: 'utf8',
+    });
+  } catch {
+    payload.resume();
+    return next(createError(400, 'A multipart body needs the boundary of its content type'));
+  }
+  const counted = (name) => {
+    if (name === undefined) {
+      fail(createError(400, 'A part of the multipart body has no name'));
+      return false;
     }
-    const next = buffer.indexOf(Buffer.concat([Buffer.from('\r\n'), delimiter]), headersEnd + 4);
-    if (next === -1) throw createError(400, 'The multipart body ends before its last boundary');
-    const data = buffer.subarray(headersEnd + 4, next);
     parts += 1;
-    if (parts > limits.parts) throw createError(400, `A multipart body has at most ${limits.parts} parts`);
-    const disposition = headers['content-disposition'] || '';
-    const name = paramOf(disposition, 'name');
-    if (name === null) throw createError(400, 'A part of the multipart body has no name');
-    const filename = paramOf(disposition, 'filename');
-    if (filename !== null) {
+    if (parts > limits.parts) {
+      fail(createError(400, `A multipart body has at most ${limits.parts} parts`));
+      return false;
+    }
+    return true;
+  };
+  const field = (name, value) => {
+    fields += 1;
+    if (fields > limits.fields) return fail(createError(400, `A form sends at most ${limits.fields} fields`));
+    if (Buffer.byteLength(value) > limits.fieldSize) {
+      return fail(createError(413, `A field has at most ${limits.fieldSize} bytes`));
+    }
+    return put(body, name, value);
+  };
+  parser.on('field', (name, value, { valueTruncated }) => {
+    if (!counted(name)) return;
+    if (valueTruncated) {
+      fail(createError(413, `A field has at most ${limits.fieldSize} bytes`));
+      return;
+    }
+    field(name, value);
+  });
+  parser.on('file', (name, stream, { filename, contentType }) => {
+    if (!counted(name)) {
+      stream.resume();
+      return;
+    }
+    const chunks = [];
+    let size = 0;
+    stream.on('data', (chunk) => {
+      chunks.push(chunk);
+      size += chunk.length;
+    });
+    stream.on('limit', () => fail(createError(413, `A file has at most ${limits.fileSize} bytes`)));
+    // (Its stream ends with an error when the form stops: the first error is the answer.)
+    stream.on('error', (err) => fail(err));
+    stream.on('end', () => {
+      if (failed) return;
+      // (A part of application/octet-stream without a name of a file is a field.)
+      if (filename === undefined) {
+        field(name, Buffer.concat(chunks).toString('utf8'));
+        return;
+      }
       files += 1;
-      if (files > limits.files) throw createError(413, `A form sends at most ${limits.files} files`);
-      if (data.length > limits.fileSize) throw createError(413, `A file has at most ${limits.fileSize} bytes`);
+      if (files > limits.files) {
+        fail(createError(413, `A form sends at most ${limits.files} files`));
+        return;
+      }
       // An input of a file left empty sends a part with no name of a file and no data: no file.
-      if (filename !== '' || data.length > 0) {
+      if (filename !== '' || size > 0) {
         put(body, name, {
           filename,
-          contentType: headers['content-type'] || 'application/octet-stream',
-          size: data.length,
-          data: Buffer.from(data),
+          contentType: contentType || 'application/octet-stream',
+          size,
+          data: Buffer.concat(chunks, size),
         });
       }
-    } else {
-      fields += 1;
-      if (fields > limits.fields) throw createError(400, `A form sends at most ${limits.fields} fields`);
-      if (data.length > limits.fieldSize) throw createError(413, `A field has at most ${limits.fieldSize} bytes`);
-      put(body, name, data.toString('utf8'));
+    });
+  });
+  parser.on('error', (err) => {
+    const message = /end of form/.test(err.message)
+      ? 'The multipart body ends before its last boundary'
+      : 'A part of the multipart body is not well made';
+    fail(createError(400, parser.parts < 0 ? 'The multipart body has no boundary' : message));
+  });
+  parser.on('close', () => {
+    if (!failed && parser.writableFinished) {
+      failed = true;
+      next(null, body);
     }
-    at = next + 2;
-  }
+  });
+  payload.on('data', (chunk) => {
+    bytes += chunk.length;
+    if (bytes > bodyLimit) fail(createError(413, 'Request body is too large'));
+  });
+  payload.on('error', (err) => fail(err));
+  payload.pipe(parser);
+  return undefined;
 }
 
 function formBody(app, options, done) {
@@ -125,18 +170,8 @@ function formBody(app, options, done) {
     (request, text, next) => next(null, parseUrlencoded(text))
   );
   if (multipart) {
-    app.addContentTypeParser(
-      'multipart/form-data',
-      { parseAs: 'buffer', bodyLimit: bodyLimit || 20 * MIB },
-      (request, buffer, next) => {
-        const boundary = paramOf(request.headers['content-type'] || '', 'boundary');
-        if (!boundary) return next(createError(400, 'A multipart body needs the boundary of its content type'));
-        try {
-          return next(null, parseMultipart(buffer, boundary, limits));
-        } catch (err) {
-          return next(err);
-        }
-      }
+    app.addContentTypeParser('multipart/form-data', (request, payload, next) =>
+      readMultipart(request, payload, limits, bodyLimit || 20 * MIB, next)
     );
   }
   done();
@@ -146,4 +181,4 @@ formBody[Symbol.for('skip-override')] = true;
 formBody[Symbol.for('fastify.display-name')] = 'formBody';
 formBody[Symbol.for('plugin-meta')] = { name: 'formBody' };
 
-export { formBody, parseUrlencoded, parseMultipart };
+export { formBody, parseUrlencoded };

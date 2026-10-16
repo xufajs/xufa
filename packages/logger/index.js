@@ -196,7 +196,15 @@ Logger.prototype[writeSym] = function writeLine(obj, msg, levelVal, levelPart) {
   }
   if (msg !== undefined) {
     const prefix = this[msgPrefixSym];
-    if (typeof msg === 'string') line += `,${config.messageKeyJson}:${asString(prefix + msg)}`;
+    if (typeof msg === 'string') {
+      // (The part of the last message is kept: lines of the same message, as most are, are not escaped again.)
+      const text = prefix + msg;
+      if (text !== config.lastMessage) {
+        config.lastMessage = text;
+        config.lastMessagePart = `,${config.messageKeyJson}:${asString(text)}`;
+      }
+      line += config.lastMessagePart;
+    }
     else if (prefix !== '') line += `,${config.messageKeyJson}:${asString(prefix + String(msg))}`;
     else {
       const json = stringify(msg);
@@ -443,6 +451,8 @@ function createLogger(options, destination) {
     enabled: opts.enabled !== false,
     messageKey: opts.messageKey || 'msg',
     messageKeyJson: asKey(opts.messageKey || 'msg'),
+    lastMessage: null,
+    lastMessagePart: '',
     errorKey: opts.errorKey || 'err',
     nestedKey: opts.nestedKey || null,
     time,

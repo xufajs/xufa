@@ -212,6 +212,8 @@ class Autoscaler {
     this.upEvery = ms(options.upEvery === undefined ? '10s' : options.upEvery, 'autoscale.upEvery');
     this.downAfter = ms(options.downAfter === undefined ? '10m' : options.downAfter, 'autoscale.downAfter');
     this.current = options.initial;
+    // false: the demand scales nothing (until it is true again, and the next change of the demand).
+    this.active = options.active !== false;
     this.lastUp = 0;
     this.lowSince = null;
     this.lowMost = 0;
@@ -225,6 +227,10 @@ class Autoscaler {
   evaluate(stats) {
     clearTimeout(this.timer);
     this.timer = null;
+    if (!this.active) {
+      this.lowSince = null;
+      return;
+    }
     if (this.current === undefined) this.current = stats.nodes;
     const want = this.wanted(stats);
     const now = Date.now();
@@ -252,7 +258,9 @@ class Autoscaler {
     this.timer = unref(setTimeout(() => this.evaluate(this.pool.stats()), wait));
   }
 
-  set(count, stats) {
+  set(count, given) {
+    // (The demand's count may be all it was given: the stats in full for 'scale' and scale().)
+    const stats = given.byNode ? given : this.pool.stats();
     const from = this.current;
     this.current = count;
     this.pool.emit('scale', { from, to: count, ...stats });
@@ -415,6 +423,7 @@ class Pool extends EventEmitter {
         worker,
         id: data.ticket,
         priority: data.priority || 0,
+        kind: data.kind === undefined ? null : data.kind,
         exclude: new Set(data.exclude || []),
         resolve,
         reject,
@@ -574,10 +583,13 @@ class Pool extends EventEmitter {
       this.pump();
       return;
     }
+    const now = Date.now();
     for (let i = 0; i < this.waiting.length;) {
       const ticket = this.waiting[i];
-      const node = this.pick(ticket);
+      const node = this.pick(ticket, NO_NODES, now);
       if (!node) {
+        // (No node for a ticket that avoids none: none is free for the others either.)
+        if (ticket.exclude.size === 0) break;
         i += 1;
         continue;
       }
@@ -610,12 +622,14 @@ class Pool extends EventEmitter {
     while (!this.closed) {
       let ticket = null;
       let node = null;
+      const now = Date.now();
       for (const item of this.waiting) {
-        node = this.pick(item, full);
+        node = this.pick(item, full, now);
         if (node) {
           ticket = item;
           break;
         }
+        if (item.exclude.size === 0) break;
       }
       if (!ticket) break;
       // Held here while the store answers, so this machine does not pick it twice.
@@ -673,7 +687,15 @@ class Pool extends EventEmitter {
     node.used += 1;
     this.grants += 1;
     node.lastGrant = this.grants;
-    const lease = { key: ticket.key, worker: ticket.worker, ticket: ticket.id, nodeId: node.id, timer: null, token };
+    const lease = {
+      key: ticket.key,
+      worker: ticket.worker,
+      ticket: ticket.id,
+      kind: ticket.kind,
+      nodeId: node.id,
+      timer: null,
+      token,
+    };
     if (this.leaseTimeout) {
       lease.timer = unref(
         setTimeout(
@@ -692,6 +714,7 @@ class Pool extends EventEmitter {
     this.leases.set(lease.key, lease);
     node.leases.add(lease.key);
     ticket.resolve({ node: node.data });
+    this.emit('grant', { node: node.data, worker: ticket.worker, kind: ticket.kind });
     this.demand();
   }
 
@@ -702,8 +725,12 @@ class Pool extends EventEmitter {
     queueMicrotask(() => {
       this.demandQueued = false;
       if (this.closed) return;
-      const stats = this.stats();
-      this.emit('demand', stats);
+      // (The stats in full only for listeners of 'demand': the autoscaler needs the counts.)
+      const listened = this.listenerCount('demand') > 0;
+      const stats = listened
+        ? this.stats()
+        : { nodes: this.nodes.size, waiting: this.waiting.length, running: this.leases.size };
+      if (listened) this.emit('demand', stats);
       if (this.autoscaler) this.autoscaler.evaluate(stats);
     });
   }
@@ -717,6 +744,15 @@ class Pool extends EventEmitter {
       used += node.used;
       nodes.push({ id: node.id, slots: node.slots, running: node.used, failures: node.failures });
     }
+    // (The works of each kind (use(fn, { kind })) waiting and running.)
+    const waitingByKind = {};
+    const runningByKind = {};
+    for (const ticket of this.waiting) {
+      if (ticket.kind !== null) waitingByKind[ticket.kind] = (waitingByKind[ticket.kind] || 0) + 1;
+    }
+    for (const lease of this.leases.values()) {
+      if (lease.kind !== null) runningByKind[lease.kind] = (runningByKind[lease.kind] || 0) + 1;
+    }
     return {
       name: this.name,
       nodes: this.nodes.size,
@@ -725,6 +761,8 @@ class Pool extends EventEmitter {
       running: this.leases.size,
       waiting: this.waiting.length,
       byNode: nodes,
+      waitingByKind,
+      runningByKind,
     };
   }
 
@@ -770,12 +808,15 @@ class Lease {
     this.controller = new AbortController();
     this.signal = this.controller.signal;
     this.released = false;
+    // (use(): told when the lease is taken back.)
+    this.onRevoke = null;
   }
 
   revoke(reason) {
     this.client.forget(this);
     this.released = true;
     this.controller.abort(reason);
+    if (this.onRevoke) this.onRevoke(reason);
   }
 
   // Gives the slot back. failed: true, or the error of the work (counted in the node's stats; a busy answer leaves
@@ -813,47 +854,96 @@ class PoolClient {
   }
 
   // Waits for a free node: a Lease (release() it when done). Options: priority (higher first), exclude (ids of
-  // nodes to avoid while there are others), signal (stops waiting).
-  async acquire({ priority = 0, exclude = [], signal } = {}) {
-    if (signal && signal.aborted) throw signal.reason;
+  // nodes to avoid while there are others), signal (stops waiting), kind (a name of what the work is, counted by
+  // stats(): waitingByKind, runningByKind).
+  acquire(options) {
+    return new Promise((resolve, reject) => {
+      this.take(options, (err, lease) => (err ? reject(err) : resolve(lease)));
+    });
+  }
+
+  // acquire() with the lease to done(err, lease), called as the primary's answer arrives.
+  take({ priority = 0, exclude = [], signal, kind } = {}, done) {
+    if (signal && signal.aborted) {
+      done(signal.reason);
+      return;
+    }
     const ticket = nextTicket;
     nextTicket += 1;
     const onAbort = () => this.bus.send(CANCEL, { pool: this.name, ticket });
     if (signal) signal.addEventListener('abort', onAbort, { once: true });
-    let reply;
-    try {
-      reply = await this.bus.request(
-        ACQUIRE,
-        { pool: this.name, ticket, priority, exclude: [...exclude] },
-        { timeout: 0 }
-      );
-    } catch (err) {
-      if (signal && signal.aborted) throw signal.reason;
-      throw poolErrorOf(err);
-    } finally {
+    const data = { pool: this.name, ticket, priority, exclude: [...exclude] };
+    if (kind !== undefined) data.kind = kind;
+    this.bus.requestThen(ACQUIRE, data, { timeout: 0 }, (err, reply) => {
       if (signal) signal.removeEventListener('abort', onAbort);
-    }
-    if (!reply || !reply.node) {
-      throw new PoolError(`There is no pool ${this.name} (createPool() in the primary)`, 'XUFA_POOL_UNKNOWN');
-    }
-    const lease = new Lease(this, ticket, reply.node);
-    if (signal && signal.aborted) {
-      // Cancelled while it was given: the primary took the slot back with the cancel.
-      lease.released = true;
-      throw signal.reason;
-    }
-    this.leases.set(`${this.name}\0${ticket}`, lease);
-    return lease;
+      if (err) {
+        done(signal && signal.aborted ? signal.reason : poolErrorOf(err));
+        return;
+      }
+      if (!reply || !reply.node) {
+        done(new PoolError(`There is no pool ${this.name} (createPool() in the primary)`, 'XUFA_POOL_UNKNOWN'));
+        return;
+      }
+      const lease = new Lease(this, ticket, reply.node);
+      if (signal && signal.aborted) {
+        // Cancelled while it was given: the primary took the slot back with the cancel.
+        lease.released = true;
+        done(signal.reason);
+        return;
+      }
+      this.leases.set(`${this.name} ${ticket}`, lease);
+      done(null, lease);
+    });
+  }
+
+  // An attempt of use(): fn run on the node as soon as it is given, and its slot given back as soon as fn ends (or
+  // the lease is taken back). Its outcome: { ok, value } or { ok: false, stage ('acquire', 'work'), error, node }.
+  runOn(fn, { priority, exclude, waiting, signal, kind, attempt }) {
+    return new Promise((resolve) => {
+      this.take({ priority, exclude, signal: waiting, kind }, (acquireError, lease) => {
+        if (acquireError) {
+          resolve({ ok: false, stage: 'acquire', error: acquireError });
+          return;
+        }
+        let settled = false;
+        const fail = (error) => {
+          if (settled) return;
+          settled = true;
+          lease.onRevoke = null;
+          lease.release(error && typeof error === 'object' ? error : true);
+          resolve({ ok: false, stage: 'work', error, node: lease.node });
+        };
+        const succeed = (value) => {
+          if (settled) return;
+          settled = true;
+          lease.onRevoke = null;
+          lease.release();
+          resolve({ ok: true, value });
+        };
+        // (Taken back: the work fails with the reason, its signal aborted.)
+        lease.onRevoke = fail;
+        const work = signal ? AbortSignal.any([signal, lease.signal]) : lease.signal;
+        let result;
+        try {
+          result = fn(lease.node, { signal: work, attempt, fallback: false });
+        } catch (err) {
+          fail(err);
+          return;
+        }
+        if (result && typeof result.then === 'function') result.then(succeed, fail);
+        else succeed(result);
+      });
+    });
   }
 
   // Runs fn(node, { signal, attempt, fallback }) on a free node, and gives the slot back when it ends. With fallback
   // ({ node, after, wait }): from the attempt `after` on (or when no node is free in `wait`), on its node instead (a
   // load balancer in front of the nodes...), without a lease. Options: retries (on
-  // other nodes while there are: 0), retryOn(err, attempt) (which errors: all), priority, signal. The signal of fn
+  // other nodes while there are: 0), retryOn(err, attempt) (which errors: all), priority, signal, kind (acquire). The signal of fn
   // is aborted when the lease is taken back (leaseTimeout, its node gone), and so is its promise.
   async use(
     fn,
-    { retries = 0, retryOn = null, priority = 0, signal, avoidFailed = true, maxBusy = 20, fallback = null } = {}
+    { retries = 0, retryOn = null, priority = 0, signal, avoidFailed = true, maxBusy = 20, fallback = null, kind } = {}
   ) {
     if (typeof fn !== 'function') throw new PoolError('use(fn): fn is a function');
     const spare = fallbackOf(fallback);
@@ -874,13 +964,20 @@ class PoolClient {
           continue;
         }
       }
-      let lease;
       // With fallback.wait: no node free in that time, and the fallback takes this attempt.
       const waited = spare && spare.wait !== null ? AbortSignal.timeout(spare.wait) : null;
       const waiting = waited ? (signal ? AbortSignal.any([signal, waited]) : waited) : signal;
-      try {
-        lease = await this.acquire({ priority, exclude: avoidFailed ? failed : [], signal: waiting });
-      } catch (err) {
+      const outcome = await this.runOn(fn, {
+        priority,
+        exclude: avoidFailed ? failed : [],
+        waiting,
+        signal,
+        kind,
+        attempt,
+      });
+      if (outcome.ok) return outcome.value;
+      const err = outcome.error;
+      if (outcome.stage === 'acquire') {
         if (!waited || !waited.aborted || (signal && signal.aborted)) throw err;
         try {
           return await this.onFallback(fn, spare, attempt, lastError, signal);
@@ -891,33 +988,16 @@ class PoolClient {
           continue;
         }
       }
-      const work = signal ? AbortSignal.any([signal, lease.signal]) : lease.signal;
-      let onRevoke;
-      try {
-        const result = await Promise.race([
-          Promise.resolve().then(() => fn(lease.node, { signal: work, attempt, fallback: false })),
-          new Promise((resolve, reject) => {
-            onRevoke = () => reject(lease.signal.reason);
-            lease.signal.addEventListener('abort', onRevoke, { once: true });
-          }),
-        ]);
-        lease.release();
-        return result;
-      } catch (err) {
-        lease.release(err && typeof err === 'object' ? err : true);
-        if (signal && signal.aborted) throw signal.reason;
-        if (this.isBusy(err) && busy < maxBusy) {
-          // The node was busy: on another (or on it, once it is free again), not an attempt.
-          busy += 1;
-          attempt -= 1;
-          continue;
-        }
-        if (final(err, attempt)) throw err;
-        lastError = err;
-        if (!failed.includes(lease.node.id)) failed.push(lease.node.id);
-      } finally {
-        lease.signal.removeEventListener('abort', onRevoke);
+      if (signal && signal.aborted) throw signal.reason;
+      if (this.isBusy(err) && busy < maxBusy) {
+        // The node was busy: on another (or on it, once it is free again), not an attempt.
+        busy += 1;
+        attempt -= 1;
+        continue;
       }
+      if (final(err, attempt)) throw err;
+      lastError = err;
+      if (!failed.includes(outcome.node.id)) failed.push(outcome.node.id);
     }
   }
 

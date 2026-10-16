@@ -57,7 +57,18 @@ problems as ESLint (bench/lint.js, bench/lint-\*.js), the same output as prettie
    (listeners' arrays, `[...stack]`, ranges copied): by the profile's allocations (`--heap-prof`), the largest first.
 4. **The formatter.** `printDocToString`, `fits` and `propagateBreaks` (the doc printer) and the conversion to ESTree:
    what the profile shows, measured against bench/format.js. A smaller gain than 1 to 3: prettier's algorithms are
-   already what it spends on.
+   already what it spends on. **First pass** (bench/results/format-6.md, on a busy machine): 1% (fits() looks up the
+   printed length of fills on fills only); three other changes were not faster or not exact. Left: break propagation
+   while docs are built, widths of flat groups kept between fits() calls, getOrInsertComputed()'s caches as fields.
+   **Second pass** (bench/results/format-8.md): the timings of the first pass were partly taken on the E-cores
+   (Windows moves a process started from a background shell there: twice the time); pinned to the P-cores (`start
+/affinity FFF`) the noise of a run is ±0.5%, and phases timed apart (parse 30%, AST to doc 48%, doc to string 20%
+   of JavaScript) show what end to end cannot. Kept: propagateBreaks() pushes no strings (the doc phase 4% faster).
+   Not kept: printing a template literal's `${}` without printDocToString() when it is flat text (0.2%). What is
+   left is prettier's algorithms spread over hundreds of functions, none above 1–2% on its own: the cache helpers,
+   the dispatch of printEstree and the frames of each node print were looked at and are not the cost the profile's
+   self time suggests (it counts what V8 inlined into them). Larger gains need B2 (one conversion for linting and
+   formatting) or fewer docs made per node, not tuning.
 5. **A cache, opt-in** (`--cache`, ESLint's flag and file): a file whose text and config are as at the last run is not
    linted or formatted again. Last of A: it is a feature as much as speed.
 
@@ -82,7 +93,14 @@ problems as ESLint (bench/lint.js, bench/lint-\*.js), the same output as prettie
    coverage then shows unused of utilities/. Each removal is code no input can reach (a kind of node the converter
    cannot make, an option the formatter does not take): proved by the converter's list of kinds
    (parse/typescript-estree/node-types.js) and by a run of the coverage, not by "the repository does not use it".
-   Expected: 4,000 to 6,000 lines.
+   Expected: 4,000 to 6,000 lines. **Done** (bench/results/format-5.md): 3,972 lines out (lib/prettier/src 44,023 to
+   40,244, parse 5,141 to 4,948; 23 modules), dist/format.mjs 1,284 to 1,199 KB, the same speed. In order: the
+   printers of Flow, Hermes, Angular, Vue and HTML bindings and massage-ast; a codemod of case labels and lists of
+   types; a simplifier of the conditions those types and parsers never run make constant; what lint then showed
+   unused and the exports nothing imports, until none; markdown's MDX-only printing; the walk of postprocessing. The
+   repository's output is still prettier's in all four languages, the corpus has 0 new differences. The coverage
+   (repository and corpus, both sets of options) left 119 named functions that never ran: the rest of them are
+   reachable (decorators, Jest's each tables, insertPragma, JSON5 templates, HTML in markdown...) and stay.
 2. **A wider corpus for the checks before C1.** Done (bench/results/corpus-1.md): bench/corpus.js (5,305 files of the
    installed packages), bench/format-corpus.js (10,545 of 10,610 outputs as prettier's; three faults found and fixed:
    JSON with comments in objects, package.json, markdown in markdown), bench/lint-corpus.js (2,401 of 2,407 files with
@@ -93,7 +111,8 @@ problems as ESLint (bench/lint.js, bench/lint-\*.js), the same output as prettie
    store), and the modules used by few rules (static-value: 4, reference-tracker: 3, ast/tokens: 1) folded where they
    are used, if that is less code.
 4. **lib/typescript/typescript.cjs** (976 KB, generated): half of it never runs here; what the build keeps follows
-   what the parsers use, so it shrinks with C1 by itself.
+   what the parsers use, so it shrinks with C1 by itself. (It did not: after C1 the converter and the linter's parser
+   still use all that they used, 673 statements of 5,374.)
 
 ## Order and measures
 

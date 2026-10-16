@@ -874,6 +874,12 @@ console.log(tier.axes[0].overlaps, tier.axes[0].shadowed); // rule 3 never wins:
           ranges; written cells can be <code>{ value, style }</code> (<code>title</code>, <code>header</code>,
           <code>value</code>).
         </p>
+        <p>
+          A workbook people keep editing is patched, not written again: <code>patchXlsx(bytes, sheet, { C7: 0.5 })</code>
+          sets those cells and keeps the rest (styles, comments, other sheets); a merged range whose cells get different
+          values is split. <code>book.applyMatrix(bytes, name, matrix)</code> writes the cells of a table's matrix that
+          change, and <code>blocksOf(sheet)</code> gives the blocks of a sheet as books find their tables.
+        </p>
         <pre data-run="rules-xlsx"><code class="language-js">import { RuleBook, readXlsx } from '@xufa/rules';
 
 const book = RuleBook.fromSheets([

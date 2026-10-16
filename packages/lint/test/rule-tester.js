@@ -51,13 +51,15 @@ class RuleTester {
     };
     const unsupported = (item) => {
       const parser = item.languageOptions?.parser ?? this.config.languageOptions?.parser;
-      return Boolean(parser?.unsupported) || item.parser !== undefined;
+      // (And HTML-like comments, `<!--` and `-->` of scripts (Annex B): TypeScript's parser does not read them.)
+      return Boolean(parser?.unsupported) || item.parser !== undefined || /<!--|^\s*-->/mu.test(item.code);
     };
     const lint = (item) => {
       const messages = this.linter.verify(item.code, configOf(item), item.filename ?? 'file.js');
       const fatal = messages.find((message) => message.fatal);
       if (fatal) throw new Error(`A fatal parsing error: ${fatal.message} (line ${fatal.line}, column ${fatal.column})`);
-      return messages.filter((message) => message.ruleId === id);
+      // (Every message, as ESLint's RuleTester counts them: rules a case enables in a comment report too.)
+      return messages;
     };
     const title = (item) => (item.name ?? item.code).replace(/\s+/g, ' ').slice(0, 120);
     const test = (item, check) => {

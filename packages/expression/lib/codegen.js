@@ -299,12 +299,15 @@ class Generator {
       }
       const key = this.key(callee, env);
       // The method read here and called with its object (f.call: expressions cannot assign, so no call of a function
-      // is replaced but by the application); null objects and what is not a function by the helpers.
+      // is replaced but by the application); null objects and what is not a function by the helpers (MF: the
+      // engine's methods first).
       const t = this.temp();
       const f = this.temp();
+      const notFunction =
+        this.compiler.methods && !callee.computed ? `MF(${index}, ${t}, ${f}, ${args})` : `(${args}, NF(${index}))`;
       return (
         `((${t} = ${object}) === null || ${t} === undefined ? CN(${index}) : ` +
-        `typeof (${f} = ${t}[${key}]) !== 'function' ? (${args}, NF(${index})) : ${f}.call(${t}${callArgs}))`
+        `typeof (${f} = ${t}[${key}]) !== 'function' ? ${notFunction} : ${f}.call(${t}${callArgs}))`
       );
     }
     const fn = this.gen(callee, env, chain);
@@ -316,6 +319,8 @@ class Generator {
   helpers(options) {
     const { compiler, nodes, SHORT } = this;
     const { globals, filters, lenient, strict } = options;
+    const lenientMembers = lenient === true || lenient === 'members';
+    const lenientCalls = lenient === true || lenient === 'calls';
     const RUNTIME = 'XUFA_EXPR_ERR_RUNTIME';
     const keyOf = (n) => compiler.keyOf(nodes[n]);
     const keys = new Map();
@@ -340,12 +345,12 @@ class Generator {
       },
       // A member of null or undefined: undefined (lenient) or the error.
       MN(n) {
-        if (lenient) return undefined;
+        if (lenientMembers) return undefined;
         throw compiler.nullMember(nodes[n]);
       },
       // A method of null or undefined.
       CN(n) {
-        if (lenient) return undefined;
+        if (lenientMembers) return undefined;
         throw compiler.nullMember(nodes[n].callee);
       },
       // What a let or const holds before its declaration runs (with tdz), and its error.
@@ -355,13 +360,20 @@ class Generator {
       },
       // A call of what is not a function.
       NF(n) {
-        if (lenient) return undefined;
+        if (lenientCalls) return undefined;
+        throw compiler.notFunction(nodes[n]);
+      },
+      // A call of a method that is not a function: the engine's of its name (with the object first), else NF.
+      MF(n, object, value, args) {
+        const method = compiler.methodOf(nodes[n].callee.property, value);
+        if (method) return Reflect.apply(method, undefined, [object, ...args]);
+        if (lenientCalls) return undefined;
         throw compiler.notFunction(nodes[n]);
       },
       RA: Reflect.apply,
       M(object, key, n) {
         if (object === null || object === undefined) {
-          if (lenient) return undefined;
+          if (lenientMembers) return undefined;
           throw compiler.nullMember(nodes[n]);
         }
         return object[key];
@@ -370,7 +382,7 @@ class Generator {
         if (object === SHORT) return SHORT;
         if (object === null || object === undefined) {
           if (optional) return SHORT;
-          if (lenient) return undefined;
+          if (lenientMembers) return undefined;
           throw compiler.nullMember(nodes[n]);
         }
         return object[typeof key === 'function' ? key() : key];
@@ -379,7 +391,7 @@ class Generator {
         if (object === SHORT) return SHORT;
         if (object === null || object === undefined) {
           if (memberOptional) return SHORT;
-          if (lenient) return undefined;
+          if (lenientMembers) return undefined;
           throw compiler.nullMember(nodes[n].callee);
         }
         const fn = object[typeof key === 'function' ? key() : key];
@@ -387,14 +399,17 @@ class Generator {
         // (The arguments before the check, as JavaScript does: what they do happens.)
         const values = args();
         if (typeof fn !== 'function') {
-          if (lenient) return undefined;
+          const { callee } = nodes[n];
+          const method = callee.computed ? null : compiler.methodOf(callee.property, fn);
+          if (method) return Reflect.apply(method, undefined, [object, ...values]);
+          if (lenientCalls) return undefined;
           throw compiler.notFunction(nodes[n]);
         }
         return Reflect.apply(fn, object, values);
       },
       CF(fn, args, n) {
         if (typeof fn !== 'function') {
-          if (lenient) return undefined;
+          if (lenientCalls) return undefined;
           throw compiler.notFunction(nodes[n]);
         }
         return Reflect.apply(fn, undefined, args);
@@ -405,7 +420,7 @@ class Generator {
         // (The arguments before the check, as JavaScript does: what they do happens.)
         const values = args();
         if (typeof fn !== 'function') {
-          if (lenient) return undefined;
+          if (lenientCalls) return undefined;
           throw compiler.notFunction(nodes[n]);
         }
         return Reflect.apply(fn, undefined, values);
@@ -421,6 +436,11 @@ class Generator {
       LIM: (n) => compiler.limit(nodes[n]),
       DEEP: (n) => compiler.error(`Calls nested deeper than ${compiler.maxDepth}`, nodes[n], 'XUFA_EXPR_ERR_LIMIT'),
       LM: isLimit,
+      // (Of programs whose scope is the context: the context, checked, where a name is written; an error of a
+      // top-level statement given to onError.)
+      CW: (ctx) => compiler.contextWritable(ctx, null),
+      OE: (error, n, index, ctx) =>
+        options.onError(error, { source: compiler.text(nodes[n]), statement: index, context: ctx }),
       IV(ctx, name) {
         const value = ctx[name];
         if (value !== undefined || name in ctx) return value;
@@ -451,7 +471,7 @@ class Generator {
       SCL(home, key, self, args, n) {
         const fn = Reflect.get(home, key, self);
         if (typeof fn !== 'function') {
-          if (lenient) return undefined;
+          if (lenientCalls) return undefined;
           throw compiler.notFunction(nodes[n]);
         }
         return Reflect.apply(fn, self, args);
@@ -477,7 +497,7 @@ class Generator {
         const fn = privateGet(compiler, privates, name, object, nodes[n].callee);
         if (fn === SHORT) return SHORT;
         if (typeof fn !== 'function') {
-          if (lenient) return undefined;
+          if (lenientCalls) return undefined;
           throw compiler.notFunction(nodes[n]);
         }
         return Reflect.apply(fn, object, args);
@@ -517,6 +537,7 @@ const HELPERS = [
   'MN',
   'CN',
   'NF',
+  'MF',
   'RA',
   'U',
   'TDZ',
@@ -533,6 +554,8 @@ const HELPERS = [
   'DEEP',
   'LM',
   'IV',
+  'CW',
+  'OE',
   'MX',
   'MD',
   'CO',

@@ -22,7 +22,7 @@ function coverageOf(config, fixture = 'coverage', args = []) {
       .filter((cells) => cells.length >= 5 && /\.js|\.ts/.test(cells[0]))
       .map(([file, ...cells]) => [file, cells])
   );
-  return { rows, lcov: fs.readFileSync(path.join(dir, 'coverage', 'lcov.info'), 'utf8') };
+  return { rows, stdout, lcov: fs.readFileSync(path.join(dir, 'coverage', 'lcov.info'), 'utf8') };
 }
 
 describe('coverage of files no test loads', () => {
@@ -36,6 +36,23 @@ describe('coverage of files no test loads', () => {
 
   it('reports only the files tests loaded when it does not', () => {
     expect(Object.keys(coverageOf().rows)).toEqual(['src/math.js']);
+  });
+});
+
+describe('the report of coverage', () => {
+  it('comes before the summary, which ends with the totals and the duration (as Jest)', () => {
+    const { stdout } = coverageOf({ collectCoverageFrom: ['src/**'], coverageThreshold: { global: { lines: 90 } } });
+    const lines = stdout.trimEnd().split('\n');
+    const at = (text) => lines.findIndex((line) => line.includes(text));
+    expect(at('% Stmts')).toBeGreaterThan(-1);
+    expect(at('% Stmts')).toBeLessThan(at('Test Files'));
+    expect(at('does not meet the threshold')).toBeGreaterThan(at('% Stmts'));
+    expect(at('does not meet the threshold')).toBeLessThan(at('Test Files'));
+    expect(lines[at('Coverage  statements')].trim()).toMatch(
+      /^Coverage\s+statements [\d.]+% · branches [\d.]+% · functions [\d.]+% · lines [\d.]+%$/
+    );
+    expect(at('Coverage  statements')).toBeGreaterThan(at('Tests '));
+    expect(lines[lines.length - 1]).toMatch(/Duration/);
   });
 });
 

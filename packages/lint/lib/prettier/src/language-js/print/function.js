@@ -22,12 +22,8 @@ import { printTypeAnnotationProperty } from './type-annotation.js';
 const isMethodValue = ({ node, key, parent }) =>
   key === 'value' &&
   node.type === 'FunctionExpression' &&
-  (parent.type === 'ObjectMethod' ||
-    parent.type === 'ClassMethod' ||
-    parent.type === 'ClassPrivateMethod' ||
-    parent.type === 'MethodDefinition' ||
+  (parent.type === 'MethodDefinition' ||
     parent.type === 'TSAbstractMethodDefinition' ||
-    parent.type === 'TSDeclareMethod' ||
     (parent.type === 'Property' && isMethod(parent)));
 
 /*
@@ -59,7 +55,7 @@ function printFunction(path, options, print, args) {
   const returnTypeDoc = printReturnType(path, print);
   const shouldGroupParameters = shouldGroupFunctionParameters(node, returnTypeDoc);
 
-  const isFlowHookDeclaration = node.type === 'HookDeclaration';
+  const isFlowHookDeclaration = false;
   const keyword = isFlowHookDeclaration ? 'hook' : 'function';
 
   return [

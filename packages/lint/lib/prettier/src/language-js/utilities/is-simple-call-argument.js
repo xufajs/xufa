@@ -19,13 +19,7 @@ import { stripChainElementWrappers } from './strip-chain-element-wrappers.js';
 
 const simpleCallArgumentUnaryOperators = new Set(['!', '-', '+', '~']);
 
-const isSingleWordType = createTypeCheckFunction([
-  'Identifier',
-  'ThisExpression',
-  'Super',
-  'PrivateName',
-  'PrivateIdentifier',
-]);
+const isSingleWordType = createTypeCheckFunction(['Identifier', 'ThisExpression', 'Super', 'PrivateIdentifier']);
 
 /**
  * @param {Node} node
@@ -48,7 +42,7 @@ function isSimpleCallArgument(node, depth = 2) {
     );
   }
 
-  if (isLiteral(node) || isSingleWordType(node) || node.type === 'ArgumentPlaceholder') {
+  if (isLiteral(node) || isSingleWordType(node)) {
     return true;
   }
 

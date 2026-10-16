@@ -8,7 +8,7 @@ import { EventEmitter } from 'node:events';
 import os from 'node:os';
 import { Connection } from './connection.js';
 import { authenticate } from './scram.js';
-import { MongoError, MongoNetworkError, MongoServerError } from './errors.js';
+import { MongoError, MongoNetworkError, MongoServerError, MongoServerSelectionError } from './errors.js';
 
 import __package_json1 from '../package.json' with { type: 'json' };
 const VERSION = __package_json1.version;
@@ -83,6 +83,7 @@ class Server {
       tlsOptions: options.tlsOptions,
       connectTimeoutMS: options.connectTimeoutMS,
       zlibCompressionLevel: options.zlibCompressionLevel,
+      ignoreUndefined: options.ignoreUndefined,
     });
     await connection.connect();
     try {
@@ -350,7 +351,7 @@ class Topology extends EventEmitter {
         const errors = [...this.servers.values()].map(
           (item) => `${item.address}: ${item.error ? item.error.message : item.type}`
         );
-        throw new MongoError(
+        throw new MongoServerSelectionError(
           `No server for the read preference ${mode} in ${this.options.serverSelectionTimeoutMS} ms (${errors.join('; ')})`
         );
       }

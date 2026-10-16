@@ -51,7 +51,7 @@ with no dependencies outside xufa, and every library fastify depends on is repla
 | [`@xufa/http`](packages/http)           | `fastify`                                 | The HTTP framework, with the API of fastify                                            |
 | [`@xufa/websocket`](packages/websocket) | `ws`, `@fastify/websocket`                | WebSockets: client, server, routes and rooms                                           |
 | [`@xufa/openapi`](packages/openapi)     | `@fastify/swagger`, `@fastify/swagger-ui` | OpenAPI documents of the routes, and an explorer                                       |
-| [`@xufa/client`](packages/client)       | `got`, `axios`                            | A client of HTTP APIs on fetch                                                         |
+| [`@xufa/client`](packages/client)       | `got`, `axios`                            | A client of HTTP APIs on fetch, and axios's API (`@xufa/client/axios`)                 |
 | [`@xufa/schema`](packages/schema)       | `ajv`, `@sinclair/typebox`                | Schemas as code or JSON Schema, compiled into fast validators                          |
 | [`@xufa/orm`](packages/orm)             | the Django ORM                            | ORM for SQL and NoSQL databases, files, stores of objects and email                    |
 | [`@xufa/auth`](packages/auth)           | `otplib`                                  | Passwords, JWTs, TOTP, refresh tokens, as a plugin                                     |
@@ -68,16 +68,20 @@ with no dependencies outside xufa, and every library fastify depends on is repla
 
 ### Expressions and templates
 
-| Package                                   | Replaces                 | What it is                                        |
-| ----------------------------------------- | ------------------------ | ------------------------------------------------- |
-| [`@xufa/expression`](packages/expression) | `expr-eval`, `jexl`      | Safe JavaScript expressions, compiled once        |
-| [`@xufa/template`](packages/template)     | `handlebars`, `mustache` | Templates of text and HTML over those expressions |
+| Package                                   | Replaces                 | What it is                                         |
+| ----------------------------------------- | ------------------------ | -------------------------------------------------- |
+| [`@xufa/expression`](packages/expression) | `expr-eval`, `jexl`      | Safe JavaScript expressions, compiled once         |
+| [`@xufa/template`](packages/template)     | `handlebars`, `mustache` | Templates of text and HTML over those expressions  |
+| [`@xufa/fun`](packages/fun)               | `ramda`, `lodash/fp`     | Curried functions on any value; methods of those   |
+| [`@xufa/xlsx`](packages/xlsx)             | `exceljs`, `xlsx`        | Excel workbooks read, written with styles, patched |
+| [`@xufa/html`](packages/html)             | `parse5`, `jsdom`        | HTML parsed as browsers do, and a DOM to change it |
 
 ### Security
 
-| Package                     | Replaces       | What it is                                              |
-| --------------------------- | -------------- | ------------------------------------------------------- |
-| [`@xufa/jwt`](packages/jwt) | `jsonwebtoken` | JSON Web Tokens, with the API and tests of jsonwebtoken |
+| Package                           | Replaces              | What it is                                                |
+| --------------------------------- | --------------------- | --------------------------------------------------------- |
+| [`@xufa/jwt`](packages/jwt)       | `jsonwebtoken`        | JSON Web Tokens, with the API and tests of jsonwebtoken   |
+| [`@xufa/purify`](packages/purify) | `dompurify` + `jsdom` | DOMPurify, the XSS sanitizer, ready in Node without jsdom |
 
 ### Running
 

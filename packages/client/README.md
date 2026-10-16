@@ -113,6 +113,50 @@ const job = await retry(() => api.get(`/jobs/${id}`), {
 });
 ```
 
+## axios's API: @xufa/client/axios
+
+`@xufa/client/axios` is axios's API (1.14), xufa's own implementation: `import axios from '@xufa/client/axios'` or
+`require('@xufa/client/axios')` where axios was, with nothing else to change.
+
+```js
+import axios from '@xufa/client/axios';
+
+const api = axios.create({ baseURL: 'https://api.example.com', timeout: 5000 });
+api.interceptors.request.use((config) => {
+  config.headers.set('Authorization', `Bearer ${token}`);
+  return config;
+});
+const { data } = await api.get('/books', { params: { page: 2 } });
+try {
+  await api.post('/books', { title: 'Dune' });
+} catch (err) {
+  if (axios.isAxiosError(err)) console.log(err.code, err.response?.status, err.response?.data);
+}
+```
+
+All of it: `axios(config)`, the method aliases (and `postForm`/`putForm`/`patchForm`), `create()`, defaults,
+interceptors (`synchronous`, `runWhen`), transforms, `AxiosHeaders`, `AxiosError` and `CanceledError`, `signal` and
+`CancelToken`, `toFormData`/`formToJSON`, `getAdapter`, `HttpStatusCode`, `mergeConfig`, `all`/`spread`. The http
+adapter (the default on Node.js) follows redirects (`maxRedirects`, `beforeRedirect`), goes through proxies (the
+config's or the environment's: `http_proxy`, `https_proxy`, `no_proxy`), decompresses gzip, deflate and brotli, sends
+strings, Buffers, streams, Blobs and FormData, reports progress (`onUploadProgress`, `onDownloadProgress`), limits
+rates (`maxRate`) and sizes (`maxContentLength`, `maxBodyLength`), answers `data:` URLs, and speaks HTTP/2
+(`httpVersion: 2`); the fetch adapter (`adapter: 'fetch'`) is there too. Its types are axios's names
+(`AxiosResponse`, `AxiosError`, `AxiosRequestConfig`, `AxiosInstance`...).
+
+How it was checked:
+
+- axios's own tests (`tests/unit`, 36 files, ported by `tools/port-axios`): 422 pass. Skipped (12): tests of helpers of
+  axios's `lib/utils.js` that are not its API, a test of browsers, a test that counts frames of the test runner's stack,
+  and one that fails on Windows with axios too (a socket kept alive to a server the test before closed).
+- 92 calls through axios 1.14.0 and through it: the same requests on the wire, the same responses and errors.
+
+Measured against axios 1.14.0 (in one process, rounds alternated, medians): the same time a request over the network
+(the socket is most of it), its own work (config, headers, transforms, interceptors) 1.15x faster, and loaded in 45 ms
+where axios takes 68 ms. It has no dependencies (axios has follow-redirects, form-data and proxy-from-env): forms of
+form-data's API (`postForm` with Buffers and streams) are @xufa/http's form-data when @xufa/http is installed, Node.js's
+FormData otherwise.
+
 ## License
 
 MIT.

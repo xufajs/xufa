@@ -31,6 +31,8 @@ export interface Config {
   linterOptions?: LinterOptions;
   rules?: Record<string, RuleSetting>;
   settings?: Record<string, unknown>;
+  /** Plugins whose rules are named `plugin/rule` (their rules only). */
+  plugins?: Record<string, { rules?: Record<string, Rule> }>;
   /** The formatter's options for these files; false leaves them unformatted. */
   format?: FormatOptions | false;
 }
@@ -195,3 +197,7 @@ export declare const globals: Record<
   Record<string, boolean>
 >;
 export declare const configs: { recommended: Config };
+/** Plugins of rules ported: eslint-plugin-jest 29.12.2's 19 recommended rules. */
+export declare const plugins: {
+  readonly jest: { meta: { name: string; version: string }; rules: Record<string, Rule> };
+};

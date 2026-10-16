@@ -44,15 +44,16 @@
       <aside class="sidebar">
         <h4>Reference</h4>
         <ul>
-          <li><a href="#functions">Functions (6)</a></li>
+          <li><a href="#functions">Functions (5)</a></li>
           <li><a href="#classes">Classes (3)</a></li>
           <li><a href="#constants">Constants (1)</a></li>
-          <li><a href="#interfaces">Interfaces (21)</a></li>
-          <li><a href="#types">Types (3)</a></li>
+          <li><a href="#interfaces">Interfaces (19)</a></li>
+          <li><a href="#types">Types (1)</a></li>
         </ul>
         <h4>Packages</h4>
         <ul>
           <li><a href="../websocket/index.html">@xufa/websocket</a></li>
+          <li><a href="../express/index.html">@xufa/express</a></li>
           <li><a href="../admin/index.html">@xufa/admin</a></li>
           <li><a href="../session/index.html">@xufa/session</a></li>
           <li><a href="../forms/index.html">@xufa/forms</a></li>
@@ -102,15 +103,11 @@
         </p>
 
         <h2 id="functions">Functions</h2>
-        <p class="ref-index"><a href="#ref-readXlsx"><code>readXlsx</code></a>, <a href="#ref-writeXlsx"><code>writeXlsx</code></a>, <a href="#ref-normalize"><code>normalize</code></a>, <a href="#ref-toValue"><code>toValue</code></a>, <a href="#ref-rulesPlugin"><code>rulesPlugin</code></a>, <a href="#ref-parseProperties"><code>parseProperties</code></a></p>
+        <p class="ref-index"><a href="#ref-blocksOf"><code>blocksOf</code></a>, <a href="#ref-normalize"><code>normalize</code></a>, <a href="#ref-toValue"><code>toValue</code></a>, <a href="#ref-rulesPlugin"><code>rulesPlugin</code></a>, <a href="#ref-parseProperties"><code>parseProperties</code></a></p>
 
-        <h3 id="ref-readXlsx"><code>readXlsx</code></h3>
-        <pre><code class="language-ts">export function readXlsx(bytes: Uint8Array): { sheets: Required&lt;Sheet&gt;[] };</code></pre>
-        <p>The sheets of the bytes of a .xlsx.</p>
-
-        <h3 id="ref-writeXlsx"><code>writeXlsx</code></h3>
-        <pre><code class="language-ts">export function writeXlsx(workbook: { sheets: WritableSheet[] }): Buffer;</code></pre>
-        <p>The bytes of a .xlsx of these sheets.</p>
+        <h3 id="ref-blocksOf"><code>blocksOf</code></h3>
+        <pre><code class="language-ts">export function blocksOf(sheet: Sheet): Block[];</code></pre>
+        <p>The blocks of a sheet, as books find their tables.</p>
 
         <h3 id="ref-normalize"><code>normalize</code></h3>
         <pre><code class="language-ts">export function normalize(text: unknown): string;</code></pre>
@@ -143,7 +140,7 @@
                 <tr><td><code>static fromJSON(json: Array&lt;TableJson | CellValue[][]&gt;, options?: RuleBookOptions)</code></td><td><code><a href="#ref-RuleBook">RuleBook</a></code></td><td><p>A book of the JSON of toJSON().</p></td></tr>
                 <tr><td><code>readonly options</code></td><td><code><a href="#ref-RuleBookOptions">RuleBookOptions</a></code></td><td></td></tr>
                 <tr><td><code>dialect</code></td><td><code>'openl' | 'js'</code></td><td><p>The language of its formulas: <code>'openl'</code> (OpenL Tablets') or <code>'js'</code>.</p></td></tr>
-                <tr><td><code>readonly tables</code></td><td><code>Array&lt;<a href="#ref-Table">Table</a> | <a href="#ref-CellValue">CellValue</a>[][]&gt;</code></td><td><p>The tables, in order (blocks that are no table, as their rows).</p></td></tr>
+                <tr><td><code>readonly tables</code></td><td><code>Array&lt;<a href="#ref-Table">Table</a> | CellValue[][]&gt;</code></td><td><p>The tables, in order (blocks that are no table, as their rows).</p></td></tr>
                 <tr><td><code>readonly context</code></td><td><code>Readonly&lt;Record&lt;string, unknown&gt;&gt;</code></td><td><p>The names every expression of the book sees: Fun, the constants and the tables.</p></td></tr>
                 <tr><td><code>readonly names</code></td><td><code>string[]</code></td><td><p>The names of the tables that run (rules, spreadsheets, methods, transforms).</p></td></tr>
                 <tr><td><code>table(name: string)</code></td><td><code><a href="#ref-Table">Table</a> | undefined</code></td><td></td></tr>
@@ -160,9 +157,10 @@
                 <tr><td><code>lint()</code></td><td><code><a href="#ref-LintIssue">LintIssue</a>[]</code></td><td><p>The checks of its formulas: names of nothing, steps read before they are computed, members helpers do not have, arguments, calls of what is no table, cycles of grids.</p></td></tr>
                 <tr><td><code>coverage()</code></td><td><code><a href="#ref-Coverage">Coverage</a></code></td><td><p>The tables and rules its tests reach.</p></td></tr>
                 <tr><td><code>test(options?: { checks?: Record&lt;string, CheckFunction&gt; })</code></td><td><code>Promise&lt;string[]&gt;</code></td><td><p>Messages of what is wrong ([] when every test passes).</p></td></tr>
-                <tr><td><code>toJSON()</code></td><td><code>Array&lt;<a href="#ref-TableJson">TableJson</a> | <a href="#ref-CellValue">CellValue</a>[][]&gt;</code></td><td></td></tr>
-                <tr><td><code>toSheets()</code></td><td><code><a href="#ref-WritableSheet">WritableSheet</a>[]</code></td><td><p>The sheets of the book, each table at its place.</p></td></tr>
+                <tr><td><code>toJSON()</code></td><td><code>Array&lt;<a href="#ref-TableJson">TableJson</a> | CellValue[][]&gt;</code></td><td></td></tr>
+                <tr><td><code>toSheets()</code></td><td><code>WritableSheet[]</code></td><td><p>The sheets of the book, each table at its place.</p></td></tr>
                 <tr><td><code>toXlsx()</code></td><td><code>Buffer</code></td><td></td></tr>
+                <tr><td><code>applyMatrix(bytes: Uint8Array, name: string, matrix: CellValue[][])</code></td><td><code>Buffer</code></td><td><p>The workbook the book was read from (its bytes) with the matrix of a table changed in place (patchXlsx): only the cells that change. The matrix must be of the table's size.</p></td></tr>
               </tbody>
             </table>
           </div>
@@ -174,6 +172,8 @@
               <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
               <tbody>
                 <tr><td><code>code</code></td><td><code>| 'XUFA_RULES_ERR_TABLE' | 'XUFA_RULES_ERR_VALUE' | 'XUFA_RULES_ERR_EXPRESSION' | 'XUFA_RULES_ERR_NOT_FOUND' | 'XUFA_RULES_ERR_ZIP' | 'XUFA_RULES_ERR_RULE' | 'XUFA_RULES_ERR_NO_VERSION' | 'XUFA_RULES_ERR_AMBIGUOUS' | 'XUFA_RULES_ERR_MISS' | 'XUFA_RULES_ERR_TESTS' | (string &amp; {})</code></td><td></td></tr>
+                <tr><td><code>reason?</code></td><td><code>string</code></td><td><p>Of an error building a table: what was wrong, without where.</p></td></tr>
+                <tr><td><code>cell?</code></td><td><code>{ sheet: string; row: number; column: number }</code></td><td><p>Of an error building a table: its first cell (row and column from 0).</p></td></tr>
               </tbody>
             </table>
           </div>
@@ -203,7 +203,7 @@
   })</code></td><td><code>Promise&lt; Array&lt;{ name: string; tenant: string | null; active: number | null; last: number; updatedAt: Date | null }&gt; &gt;</code></td><td></td></tr>
                 <tr><td><code>versions(name: string, options?: { tenant?: string })</code></td><td><code>Promise&lt;<a href="#ref-RuleBookVersion">RuleBookVersion</a>[]&gt;</code></td><td></td></tr>
                 <tr><td><code>xlsx(name: string, options?: { tenant?: string; version?: number })</code></td><td><code>Promise&lt;Buffer&gt;</code></td><td><p>The .xlsx of a version: the workbook it came from, or one written of its tables.</p></td></tr>
-                <tr><td><code>sheets(name: string, options?: { tenant?: string; version?: number })</code></td><td><code>Promise&lt;{ version: number; sheets: Array&lt;Required&lt;<a href="#ref-Sheet">Sheet</a>&gt;&gt; }&gt;</code></td><td><p>The sheets of a version (the active one) to edit.</p></td></tr>
+                <tr><td><code>sheets(name: string, options?: { tenant?: string; version?: number })</code></td><td><code>Promise&lt;{ version: number; sheets: Array&lt;Required&lt;Sheet&gt;&gt; }&gt;</code></td><td><p>The sheets of a version (the active one) to edit.</p></td></tr>
                 <tr><td><code>inspect(input: Parameters&lt;RuleStore['bookOf']&gt;[0] | { sheets: Sheet[] }, options?: { tenant?: string; name?: string })</code></td><td><code>Promise&lt;{ /** properties: its own (own: their names) and those of Properties tables; of versions, how many and a runtime * context that chooses this one; of Properties tables, their scope. */ tables: Array&lt;{ kind: string; name: string | null; position: <a href="#ref-Position">Position</a> | null; properties?: Record&lt;string, unknown&gt;; own?: string[]; scope?: string; versions?: number; context?: <a href="#ref-RuntimeContext">RuntimeContext</a>; /** The language of its code (tables with code) and what told it. */ language?: 'openl' | 'js'; languageFrom?: 'property' | 'properties' | 'code' | 'book'; }&gt;; errors: string[]; tests: <a href="#ref-TestTableResults">TestTableResults</a>[]; analysis: <a href="#ref-TableAnalysis">TableAnalysis</a>[]; lint: <a href="#ref-LintIssue">LintIssue</a>[]; coverage: <a href="#ref-Coverage">Coverage</a> | null; /** The books it imports. */ imports: string[]; }&gt;</code></td><td><p>What a book would be, not kept (for editors): its tables, the messages of its tests, how each row of its tests went and the gaps and overlaps of its decision tables.</p></td></tr>
                 <tr><td><code>remove(name: string, options?: { tenant?: string })</code></td><td><code>Promise&lt;number&gt;</code></td><td></td></tr>
               </tbody>
@@ -218,42 +218,20 @@
         <p>The helpers of the expressions of a book (Fun.mean, Fun.sort...).</p>
 
         <h2 id="interfaces">Interfaces</h2>
-        <p class="ref-index"><a href="#ref-Range"><code>Range</code></a>, <a href="#ref-Sheet"><code>Sheet</code></a>, <a href="#ref-WritableSheet"><code>WritableSheet</code></a>, <a href="#ref-RuleBookOptions"><code>RuleBookOptions</code></a>, <a href="#ref-Position"><code>Position</code></a>, <a href="#ref-Table"><code>Table</code></a>, <a href="#ref-RuntimeContext"><code>RuntimeContext</code></a>, <a href="#ref-CellRef"><code>CellRef</code></a>, <a href="#ref-TestCase"><code>TestCase</code></a>, <a href="#ref-TraceNode"><code>TraceNode</code></a>, <a href="#ref-AxisAnalysis"><code>AxisAnalysis</code></a>, <a href="#ref-LintIssue"><code>LintIssue</code></a>, <a href="#ref-Coverage"><code>Coverage</code></a>, <a href="#ref-TableAnalysis"><code>TableAnalysis</code></a>, <a href="#ref-TestRowResult"><code>TestRowResult</code></a>, <a href="#ref-TestTableResults"><code>TestTableResults</code></a>, <a href="#ref-TableJson"><code>TableJson</code></a>, <a href="#ref-RuleStoreOptions"><code>RuleStoreOptions</code></a>, <a href="#ref-RuleBookVersion"><code>RuleBookVersion</code></a>, <a href="#ref-SaveOptions"><code>SaveOptions</code></a>, <a href="#ref-RulesPluginOptions"><code>RulesPluginOptions</code></a></p>
+        <p class="ref-index"><a href="#ref-Block"><code>Block</code></a>, <a href="#ref-RuleBookOptions"><code>RuleBookOptions</code></a>, <a href="#ref-Position"><code>Position</code></a>, <a href="#ref-Table"><code>Table</code></a>, <a href="#ref-RuntimeContext"><code>RuntimeContext</code></a>, <a href="#ref-CellRef"><code>CellRef</code></a>, <a href="#ref-TestCase"><code>TestCase</code></a>, <a href="#ref-TraceNode"><code>TraceNode</code></a>, <a href="#ref-AxisAnalysis"><code>AxisAnalysis</code></a>, <a href="#ref-LintIssue"><code>LintIssue</code></a>, <a href="#ref-Coverage"><code>Coverage</code></a>, <a href="#ref-TableAnalysis"><code>TableAnalysis</code></a>, <a href="#ref-TestRowResult"><code>TestRowResult</code></a>, <a href="#ref-TestTableResults"><code>TestTableResults</code></a>, <a href="#ref-TableJson"><code>TableJson</code></a>, <a href="#ref-RuleStoreOptions"><code>RuleStoreOptions</code></a>, <a href="#ref-RuleBookVersion"><code>RuleBookVersion</code></a>, <a href="#ref-SaveOptions"><code>SaveOptions</code></a>, <a href="#ref-RulesPluginOptions"><code>RulesPluginOptions</code></a></p>
 
-        <h3 id="ref-Range"><code>Range</code></h3>
-        <pre><code class="language-ts">export interface Range { ... }</code></pre>
+        <h3 id="ref-Block"><code>Block</code></h3>
+        <pre><code class="language-ts">export interface Block { ... }</code></pre>
+        <p>A block of a sheet: cells apart from the others by empty rows or columns (a table when its first cell names one).</p>
         <div class="table-wrap">
             <table class="ref-members">
               <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
               <tbody>
-                <tr><td><code>top</code></td><td><code>number</code></td><td></td></tr>
-                <tr><td><code>left</code></td><td><code>number</code></td><td></td></tr>
-                <tr><td><code>bottom</code></td><td><code>number</code></td><td></td></tr>
-                <tr><td><code>right</code></td><td><code>number</code></td><td></td></tr>
-              </tbody>
-            </table>
-          </div>
-
-        <h3 id="ref-Sheet"><code>Sheet</code></h3>
-        <pre><code class="language-ts">export interface Sheet&lt;C = CellValue&gt; { ... }</code></pre>
-        <div class="table-wrap">
-            <table class="ref-members">
-              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
-              <tbody>
-                <tr><td><code>name</code></td><td><code>string</code></td><td></td></tr>
-                <tr><td><code>rows</code></td><td><code>C[][]</code></td><td><p>Rows of cells from A1 (null where empty).</p></td></tr>
-                <tr><td><code>merges?</code></td><td><code><a href="#ref-Range">Range</a>[]</code></td><td></td></tr>
-              </tbody>
-            </table>
-          </div>
-
-        <h3 id="ref-WritableSheet"><code>WritableSheet</code></h3>
-        <pre><code class="language-ts">export interface WritableSheet extends Sheet&lt;Cell&gt; { ... }</code></pre>
-        <div class="table-wrap">
-            <table class="ref-members">
-              <thead><tr><th>Member</th><th>Type</th><th></th></tr></thead>
-              <tbody>
-                <tr><td><code>widths?</code></td><td><code>number[]</code></td><td><p>Widths of the columns, in characters.</p></td></tr>
+                <tr><td><code>rows</code></td><td><code>CellValue[][]</code></td><td><p>Its rows of values (null where empty; the cells of a merged range have its value).</p></td></tr>
+                <tr><td><code>sheet</code></td><td><code>string</code></td><td></td></tr>
+                <tr><td><code>row</code></td><td><code>number</code></td><td><p>Its first cell, from 0.</p></td></tr>
+                <tr><td><code>column</code></td><td><code>number</code></td><td></td></tr>
+                <tr><td><code>merges</code></td><td><code>Range[]</code></td><td><p>The merged ranges inside it, from its first cell.</p></td></tr>
               </tbody>
             </table>
           </div>
@@ -267,6 +245,7 @@
                 <tr><td><code>onError?</code></td><td><code>(error: Error, info: { table: string; step: string }) =&gt; void</code></td><td><p>Told of the steps of spreadsheets that fail (they are left).</p></td></tr>
                 <tr><td><code>dialect?</code></td><td><code>'auto' | 'openl' | 'js'</code></td><td><p>The language of the formulas: OpenL Tablets' (<code>'openl'</code>) or JavaScript (<code>'js'</code>); <code>'auto'</code> (the default) tells it by the sheets: a book with formulas or tables only OpenL has is of OpenL.</p></td></tr>
                 <tr><td><code>tdz?</code></td><td><code>boolean</code></td><td><p>In the bodies of Methods of JavaScript, a <code>let</code> or <code>const</code> used before its declaration runs is an error (<code>x is used before its declaration</code>), as in JavaScript; by default it is undefined.</p></td></tr>
+                <tr><td><code>methods?</code></td><td><code>Record&lt;string, unknown&gt; | null</code></td><td><p>Functions by name that values have as methods in the code of the book (JavaScript): <code>prices.sum()</code> is <code>methods.sum(prices)</code> when prices has no sum (@xufa/expression's <code>methods</code>;</p></td></tr>
                 <tr><td><code>messages?</code></td><td><code>Record&lt;string, Record&lt;string, string&gt;&gt;</code></td><td><p>The messages of msg(code, arguments...), by locale ('' the default, 'fr', 'de_DE'): code -&gt; text with {0}, {1}... (parseProperties gives them of the .properties files of OpenL's i18n folder). The locale is that of the runtime context (<code>locale</code>: 'fr-CA' takes fr_CA, then fr, then the default).</p></td></tr>
                 <tr><td><code>modules?</code></td><td><code>Record&lt;string, <a href="#ref-RuleBook">RuleBook</a> | Record&lt;string, unknown&gt;&gt;</code></td><td><p>What the Methods of JavaScript import (<code>import { Rate } from 'pricing'</code>): books (their tables) or objects of exports, by name. A RuleStore links the active versions of the books of the tenant.</p></td></tr>
               </tbody>
@@ -408,8 +387,8 @@
                 <tr><td><code>kind</code></td><td><code>string</code></td><td></td></tr>
                 <tr><td><code>cell</code></td><td><code><a href="#ref-CellRef">CellRef</a></code></td><td></td></tr>
                 <tr><td><code>code</code></td><td><code>'unknown-name' | 'not-yet' | 'unknown-member' | 'arity' | 'not-callable' | 'cycle' | 'ambiguous-language'</code></td><td></td></tr>
-                <tr><td><code>fix?</code></td><td><code>{ sheet: string; row: number; column: number; width: number; cells: <a href="#ref-CellValue">CellValue</a>[] }</code></td><td><p>Of ambiguous-language: the row that says the language, to add under the title of the table (its columns, from column, moved down a row).</p></td></tr>
-                <tr><td><code>sheetFix?</code></td><td><code>{ sheet: string; row: number; column: number; rows: <a href="#ref-CellValue">CellValue</a>[][] }</code></td><td><p>Of ambiguous-language: the rows that say the language of the whole sheet (of every table of it), when that changes no other table of it, to insert as whole rows at row (their cells from column; the rows under them moved down): a row at the end of its Properties table of scope Worksheet, or a new one at the top of the sheet.</p></td></tr>
+                <tr><td><code>fix?</code></td><td><code>{ sheet: string; row: number; column: number; width: number; cells: CellValue[] }</code></td><td><p>Of ambiguous-language: the row that says the language, to add under the title of the table (its columns, from column, moved down a row).</p></td></tr>
+                <tr><td><code>sheetFix?</code></td><td><code>{ sheet: string; row: number; column: number; rows: CellValue[][] }</code></td><td><p>Of ambiguous-language: the rows that say the language of the whole sheet (of every table of it), when that changes no other table of it, to insert as whole rows at row (their cells from column; the rows under them moved down): a row at the end of its Properties table of scope Worksheet, or a new one at the top of the sheet.</p></td></tr>
                 <tr><td><code>name</code></td><td><code>string</code></td><td></td></tr>
                 <tr><td><code>message</code></td><td><code>string</code></td><td></td></tr>
               </tbody>
@@ -564,15 +543,7 @@
           </div>
 
         <h2 id="types">Types</h2>
-        <p class="ref-index"><a href="#ref-CellValue"><code>CellValue</code></a>, <a href="#ref-Cell"><code>Cell</code></a>, <a href="#ref-CheckFunction"><code>CheckFunction</code></a></p>
-
-        <h3 id="ref-CellValue"><code>CellValue</code></h3>
-        <pre><code class="language-ts">export type CellValue = string | number | boolean | Date | null;</code></pre>
-        <p>A value of a cell, as readXlsx gives it.</p>
-
-        <h3 id="ref-Cell"><code>Cell</code></h3>
-        <pre><code class="language-ts">export type Cell = CellValue | { value: CellValue; style?: 'title' | 'header' | 'value' };</code></pre>
-        <p>A cell to write: a value, or a value and the style of its place in a table.</p>
+        <p class="ref-index"><a href="#ref-CheckFunction"><code>CheckFunction</code></a></p>
 
         <h3 id="ref-CheckFunction"><code>CheckFunction</code></h3>
         <pre><code class="language-ts">export type CheckFunction = (values: unknown[], tableName: string, checkName: string) =&gt; string[] | Promise&lt;string[]&gt;;</code></pre>

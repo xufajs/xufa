@@ -1,10 +1,9 @@
 import { group, hardline, ifBreak, indent, line, softline } from '../../document/index.js';
 import { printDanglingComments } from '../../main/comments/print.js';
-import hasNewline from '../../utilities/has-newline.js';
 import hasNewlineInRange from '../../utilities/has-newline-in-range.js';
-import { locEnd, locStart } from '../location/index.js';
+import { locStart } from '../location/index.js';
 import { iterateClassMembersPath } from '../utilities/class-members.js';
-import { CommentCheckFlags, getComments, hasComment } from '../utilities/comments.js';
+import { CommentCheckFlags, hasComment } from '../utilities/comments.js';
 import { createTypeCheckFunction } from '../utilities/create-type-check-function.js';
 import { isNextLineEmpty } from '../utilities/is-next-line-empty.js';
 import { shouldHugTheOnlyParameter } from './function-parameters.js';
@@ -20,8 +19,8 @@ import { printSemicolon, printTrailingComma } from './miscellaneous.js';
 function printClassBody(path, options, print) {
   const { node } = path;
   const parts = [];
-  const isFlowTypeAnnotation = node.type === 'ObjectTypeAnnotation';
-  const isFlowRecordDeclaration = node.type === 'RecordDeclarationBody';
+  const isFlowTypeAnnotation = false;
+  const isFlowRecordDeclaration = false;
   const isObjectType = !isClassBody(path);
   const separator = isObjectType ? line : hardline;
   const hasDanglingComments = hasComment(node, CommentCheckFlags.Dangling);
@@ -72,20 +71,6 @@ function printClassBody(path, options, print) {
   }
 
   // TODO: this part can unify with the similar part in `printObject`
-  if (node.type === 'ObjectTypeAnnotation' && node.inexact) {
-    isEmpty &&= false;
-    let printed;
-    if (hasComment(node, CommentCheckFlags.Dangling)) {
-      const hasLineComments = hasComment(node, CommentCheckFlags.Line);
-      printed = [
-        hasLineComments || hasNewline(options.originalText, locEnd(getComments(node).at(-1))) ? hardline : line,
-        '...',
-      ];
-    } else {
-      printed = [firstMember ? line : '', '...'];
-    }
-    parts.push(printed);
-  }
 
   if (isObjectType) {
     const shouldBreak =
@@ -111,11 +96,6 @@ function printClassBody(path, options, print) {
         (node, name) => name === 'typeAnnotation',
         (node, name) => name === 'typeAnnotation',
         shouldHugTheOnlyParameter
-      ) ||
-      path.match(
-        undefined,
-        (node, name) => node.type === 'FunctionTypeParam' && name === 'typeAnnotation',
-        shouldHugTheOnlyParameter
       )
     ) {
       return content;
@@ -130,22 +110,14 @@ function printClassBody(path, options, print) {
 function isClassBody(path) {
   const { node } = path;
 
-  if (node.type === 'ObjectTypeAnnotation') {
-    const { key, parent } = path;
-    return (
-      key === 'body' &&
-      (parent.type === 'InterfaceDeclaration' || parent.type === 'DeclareInterface' || parent.type === 'DeclareClass')
-    );
-  }
-
-  return node.type === 'ClassBody' || node.type === 'TSInterfaceBody' || node.type === 'RecordDeclarationBody';
+  return node.type === 'ClassBody' || node.type === 'TSInterfaceBody' || false;
 }
 
 function printClassMemberSemicolon(path, options) {
   const { parent } = path;
 
   if (path.callParent(isClassBody)) {
-    return parent.type === 'ObjectTypeAnnotation' ? ';' : printSemicolon(options);
+    return printSemicolon(options);
   }
 
   if (parent.type === 'TSTypeLiteral') {
@@ -164,10 +136,8 @@ function printClassMemberSemicolon(path, options) {
 }
 
 const isClassProperty = createTypeCheckFunction([
-  'ClassProperty',
   'PropertyDefinition',
-  'ClassPrivateProperty',
-  'ClassAccessorProperty',
+
   'AccessorProperty',
   'TSAbstractPropertyDefinition',
   'TSAbstractAccessorProperty',
@@ -227,14 +197,11 @@ function shouldPrintSemicolonAfterClassProperty({ node, next: nextNode }, option
   }
 
   switch (nextNode.type) {
-    case 'ClassProperty':
     case 'PropertyDefinition':
     case 'TSAbstractPropertyDefinition':
       return nextNode.computed;
     case 'MethodDefinition':
-    case 'TSAbstractMethodDefinition':
-    case 'ClassMethod':
-    case 'ClassPrivateMethod': {
+    case 'TSAbstractMethodDefinition': {
       // Babel
       const isAsync = nextNode.value ? nextNode.value.async : nextNode.async;
       if (isAsync || nextNode.kind === 'get' || nextNode.kind === 'set') {

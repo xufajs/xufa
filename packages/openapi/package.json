@@ -14,6 +14,10 @@
     "./ui": {
       "types": "./ui.d.ts",
       "default": "./lib/ui.js"
+    },
+    "./jsdoc": {
+      "types": "./jsdoc.d.ts",
+      "default": "./lib/xufa/jsdoc.js"
     }
   },
   "files": [
@@ -23,7 +27,8 @@
     "LICENSE",
     "LICENSE.fastify-swagger",
     "types",
-    "ui.d.ts"
+    "ui.d.ts",
+    "jsdoc.d.ts"
   ],
   "scripts": {
     "test": "xufa-test",
@@ -58,6 +63,7 @@
     "@fastify/cookie": "^11.0.1",
     "@fastify/swagger": "9.9.1",
     "@xufa/auth": "workspace:*",
+    "@xufa/browser": "workspace:^",
     "@xufa/http": "workspace:*",
     "@xufa/orm": "workspace:*",
     "@xufa/test": "workspace:^",

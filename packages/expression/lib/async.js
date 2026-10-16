@@ -233,7 +233,7 @@ const asyncStatements = {
   aExpr(node, env) {
     if (!containsAwait(node)) return lift(this.compile(node, env));
     const compiler = this;
-    const { lenient } = this;
+    const { lenientMembers } = this;
     switch (node.type) {
       case 'AwaitExpression': {
         const argument = this.aExpr(node.argument, env);
@@ -336,7 +336,7 @@ const asyncStatements = {
           if (value === SHORT) return SHORT;
           if (value === null || value === undefined) {
             if (node.optional) return SHORT;
-            if (lenient) return undefined;
+            if (lenientMembers) return undefined;
             throw compiler.nullMember(node);
           }
           return value[yield* key(s)];
@@ -456,7 +456,7 @@ const asyncStatements = {
 
   aCall(node, env) {
     const compiler = this;
-    const { lenient } = this;
+    const { lenientMembers, lenientCalls } = this;
     const args = this.aItems(node.arguments, env);
     const callOptional = node.optional;
     const { callee } = node;
@@ -468,7 +468,7 @@ const asyncStatements = {
         // (The arguments before the check, as JavaScript does: what they do happens.)
         const values = yield* args(s);
         if (typeof fn !== 'function') {
-          if (lenient) return undefined;
+          if (lenientCalls) return undefined;
           throw compiler.notFunction(node);
         }
         return Reflect.apply(fn, target, values);
@@ -485,7 +485,7 @@ const asyncStatements = {
         // (The arguments before the check, as JavaScript does: what they do happens.)
         const values = yield* args(s);
         if (typeof fn !== 'function') {
-          if (lenient) return undefined;
+          if (lenientCalls) return undefined;
           throw compiler.notFunction(node);
         }
         return Reflect.apply(fn, target, values);
@@ -498,7 +498,7 @@ const asyncStatements = {
         if (target === SHORT) return SHORT;
         if (target === null || target === undefined) {
           if (callee.optional) return SHORT;
-          if (lenient) return undefined;
+          if (lenientMembers) return undefined;
           throw compiler.nullMember(callee);
         }
         const fn = target[yield* key(s)];
@@ -506,7 +506,9 @@ const asyncStatements = {
         // (The arguments before the check, as JavaScript does: what they do happens.)
         const values = yield* args(s);
         if (typeof fn !== 'function') {
-          if (lenient) return undefined;
+          const method = callee.computed ? null : compiler.methodOf(callee.property, fn);
+          if (method) return Reflect.apply(method, undefined, [target, ...values]);
+          if (lenientCalls) return undefined;
           throw compiler.notFunction(node);
         }
         return Reflect.apply(fn, target, values);
@@ -520,7 +522,7 @@ const asyncStatements = {
       // (The arguments before the check, as JavaScript does: what they do happens.)
       const values = yield* args(s);
       if (typeof fn !== 'function') {
-        if (lenient) return undefined;
+        if (lenientCalls) return undefined;
         throw compiler.notFunction(node);
       }
       return Reflect.apply(fn, undefined, values);

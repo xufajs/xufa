@@ -6,12 +6,7 @@ import { printTypeAnnotationProperty } from './type-annotation.js';
 */
 function printTypePredicate(path, print) {
   const { node } = path;
-  const prefix =
-    node.type === 'TSTypePredicate' && node.asserts
-      ? 'asserts '
-      : node.type === 'TypePredicate' && node.kind
-        ? `${node.kind} `
-        : '';
+  const prefix = node.type === 'TSTypePredicate' && node.asserts ? 'asserts ' : '';
   return [
     prefix,
     print('parameterName'),
